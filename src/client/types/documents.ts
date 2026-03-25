@@ -8,7 +8,7 @@
 // Stripe SDK re-exports
 //
 // These types come directly from the Stripe Node SDK ('stripe' package).
-// We re-export them so consumers import from '@kkampen/better-stripe' without
+// We re-export them so consumers import from '@getdojo/better-stripe' without
 // needing a direct dependency on the stripe package.
 // ---------------------------------------------------------------------------
 import type Stripe from 'stripe';

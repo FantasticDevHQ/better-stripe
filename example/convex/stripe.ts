@@ -1,4 +1,4 @@
-import { BetterStripe } from '@kkampen/better-stripe';
+import { BetterStripe } from '@getdojo/better-stripe';
 
 import { components } from './_generated/api';
 import { internal } from './_generated/api';

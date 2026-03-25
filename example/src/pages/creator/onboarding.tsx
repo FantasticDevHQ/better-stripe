@@ -22,7 +22,7 @@ import {
   AccountOnboardingCard,
   ConnectRequirements,
   ConnectStatusBadge,
-} from '@kkampen/better-stripe/react';
+} from '@getdojo/better-stripe/react';
 import { useAction, useQuery } from 'convex/react';
 import { HelpCircle, RotateCcw } from 'lucide-react';
 

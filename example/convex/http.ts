@@ -1,4 +1,4 @@
-import { registerRoutes } from '@kkampen/better-stripe';
+import { registerRoutes } from '@getdojo/better-stripe';
 import { httpRouter } from 'convex/server';
 
 import { components } from './_generated/api';

@@ -1,4 +1,4 @@
-import { BetterStripe } from '@kellykampen/better-stripe';
+import { BetterStripe } from '@kkampen/better-stripe';
 
 import { components } from './_generated/api';
 import { internal } from './_generated/api';

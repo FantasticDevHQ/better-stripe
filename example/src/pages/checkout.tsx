@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRole } from '@/providers/role-context';
-import { EmbeddedCheckout } from '@kellykampen/better-stripe/react';
+import { EmbeddedCheckout } from '@kkampen/better-stripe/react';
 import { useAction, useQuery } from 'convex/react';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';

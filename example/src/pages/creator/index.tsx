@@ -10,7 +10,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRole } from '@/providers/role-context';
-import { AccountCreateCard, ConnectStatusBadge } from '@kellykampen/better-stripe/react';
+import { AccountCreateCard, ConnectStatusBadge } from '@kkampen/better-stripe/react';
 import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';

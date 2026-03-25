@@ -63,7 +63,7 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
-      '@kellykampen/better-stripe':
+      '@kkampen/better-stripe':
         specifier: workspace:*
         version: link:..
       '@stripe/react-stripe-js':

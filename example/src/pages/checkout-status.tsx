@@ -2,7 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckoutStatus } from '@kellykampen/better-stripe/react';
+import { CheckoutStatus } from '@kkampen/better-stripe/react';
 import { useQuery } from 'convex/react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';

@@ -21,7 +21,7 @@ export { handleV2Event, verifyV2Event } from './v2.js';
  *
  * Usage:
  * ```typescript
- * import { registerRoutes } from '@kellykampen/better-stripe';
+ * import { registerRoutes } from '@kkampen/better-stripe';
  * registerRoutes(http, components.betterStripe, {
  *   webhookPath: '/stripe/webhook',
  *   stripeSecretKey: process.env.STRIPE_SECRET_KEY,

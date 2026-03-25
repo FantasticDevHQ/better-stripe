@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRole } from '@/providers/role-context';
-import { AccountLoginCard, ConnectRequirements } from '@kellykampen/better-stripe/react';
+import { AccountLoginCard, ConnectRequirements } from '@kkampen/better-stripe/react';
 import { useQuery } from 'convex/react';
 
 import { api } from '../../../convex/_generated/api';

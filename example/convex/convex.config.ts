@@ -1,4 +1,4 @@
-import betterStripe from '@kellykampen/better-stripe/convex.config';
+import betterStripe from '@kkampen/better-stripe/convex.config';
 import { defineApp } from 'convex/server';
 
 const app = defineApp();

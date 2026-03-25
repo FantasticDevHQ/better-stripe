@@ -15,7 +15,7 @@ import {
   PaymentMethodsList,
   StripeProviderWithKey,
   usePaymentMethodActions,
-} from '@kellykampen/better-stripe/react';
+} from '@kkampen/better-stripe/react';
 import { useAction, useQuery } from 'convex/react';
 import { CreditCard } from 'lucide-react';
 

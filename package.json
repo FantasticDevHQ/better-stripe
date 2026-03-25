@@ -1,5 +1,5 @@
 {
-  "name": "@kellykampen/better-stripe",
+  "name": "@kkampen/better-stripe",
   "version": "0.1.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "license": "MIT",

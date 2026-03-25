@@ -1,0 +1,165 @@
+/**
+ * better-stripe/react — React hooks and headless UI components
+ *
+ * Entry point for the React layer of the better-stripe Convex component.
+ * Import from '@kellykampen/better-stripe/react' to access hooks and components.
+ */
+
+// Types
+export type {
+  BetterStripeComponentProps,
+  HookLoadingState,
+  StripeThemeProps,
+} from './types.js';
+
+// Re-export document types for convenience
+export type {
+  StripeComponentAccount,
+  StripeComponentCheckoutSession,
+  StripeComponentInvoice,
+  StripeComponentPayment,
+  StripeComponentPayout,
+  StripeComponentPrice,
+  StripeComponentProduct,
+  StripeComponentSubscription,
+} from './types.js';
+
+// Hook factories
+export { createUseAccount } from './hooks/useAccount.js';
+export { createUseProducts } from './hooks/useProducts.js';
+export { createUsePrices } from './hooks/usePrices.js';
+export { createUseSubscription } from './hooks/useSubscription.js';
+export { createUseSubscriptions } from './hooks/useSubscriptions.js';
+export { createUseCheckout } from './hooks/useCheckout.js';
+export { createUsePaymentMethods } from './hooks/usePaymentMethods.js';
+export { createUseInvoices } from './hooks/useInvoices.js';
+export { createUseAccountOnboarding } from './hooks/useAccountOnboarding.js';
+export { useStripePublishableKey } from './hooks/useStripePublishableKey.js';
+export { useStripeMode } from './hooks/useStripeMode.js';
+export {
+  getStripeDashboardUrl,
+  isStripeTestMode,
+  STRIPE_DASHBOARD_BASE_URL,
+  StripeDashboardResourcePath,
+} from '../client/utils/stripeDashboardUrl.js';
+export type {
+  StripeDashboardResourceType,
+  StripeMode,
+} from '../client/utils/stripeDashboardUrl.js';
+
+// Hooks — Config
+export { useStripeConfig } from './hooks/useStripeConfig.js';
+export type { StripeConfig } from './hooks/useStripeConfig.js';
+
+// Components — Provider
+export { StripeProvider } from './components/StripeProvider.js';
+export { StripeProviderWithKey } from './components/StripeProviderWithKey.js';
+export type { StripeProviderWithKeyProps } from './components/StripeProviderWithKey.js';
+export { CheckoutSessionProvider } from './components/CheckoutSessionProvider.js';
+export type { CheckoutSessionProviderProps } from './components/CheckoutSessionProvider.js';
+export { CheckoutSessionProviderWithKey } from './components/CheckoutSessionProviderWithKey.js';
+export type { CheckoutSessionProviderWithKeyProps } from './components/CheckoutSessionProviderWithKey.js';
+
+// Hooks — Checkout Session
+export { useCheckoutSession } from './hooks/useCheckoutSession.js';
+export type {
+  CheckoutSessionState,
+  CheckoutConfirmResult,
+} from './hooks/useCheckoutSession.js';
+
+// Hooks — Payment Confirmation
+export { useConfirmPayment } from './hooks/useConfirmPayment.js';
+export type { StripeConfirmResult } from './hooks/useConfirmPayment.js';
+
+// Hooks — Payment Method Actions
+export { usePaymentMethodActions } from './hooks/usePaymentMethodActions.js';
+export type {
+  PaymentMethodActionCallbacks,
+  PaymentMethodCard,
+  CreatePaymentMethodResult,
+} from './hooks/usePaymentMethodActions.js';
+
+// Re-export Stripe Elements components and hooks used by checkout/payment flows
+export {
+  PaymentElement as ElementsPaymentElement,
+  CardElement,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
+export { PaymentElement } from '@stripe/react-stripe-js/checkout';
+
+// Components — Checkout & Subscription
+export { EmbeddedCheckout } from './components/EmbeddedCheckout.js';
+export { CheckoutStatus } from './components/CheckoutStatus.js';
+export { PricePicker } from './components/PricePicker.js';
+export { PriceCard } from './components/PriceCard.js';
+export { IntervalSelector } from './components/IntervalSelector.js';
+export { SubscriptionCard } from './components/SubscriptionCard.js';
+export { SubscriptionLineItems } from './components/SubscriptionLineItems.js';
+export { PriceBadge } from './components/PriceBadge.js';
+export { TrialAlert } from './components/TrialAlert.js';
+export { BillingPortalLink } from './components/BillingPortalLink.js';
+
+// Components — Payment Methods
+export { AddCardForm } from './components/AddCardForm.js';
+export { PaymentMethodsList } from './components/PaymentMethodsList.js';
+export { DeletePaymentMethodDialog } from './components/DeletePaymentMethodDialog.js';
+
+// Components — Connect / Merchant
+export { ConnectStatusBadge } from './components/ConnectStatusBadge.js';
+export type {
+  ConnectStatus,
+  ConnectStatusDetails,
+  ConnectStatusBadgeProps,
+  ConnectStatusBadgeRenderProps,
+} from './components/ConnectStatusBadge.js';
+export { AccountOnboardingCard } from './components/AccountOnboardingCard.js';
+export type {
+  AccountOnboardingCardProps,
+  AccountOnboardingCardRenderProps,
+} from './components/AccountOnboardingCard.js';
+export { AccountCreateCard } from './components/AccountCreateCard.js';
+export type {
+  AccountCreateCardProps,
+  AccountCreateCardRenderProps,
+  AccountCreateCountry,
+} from './components/AccountCreateCard.js';
+export { AccountLoginCard } from './components/AccountLoginCard.js';
+export type {
+  AccountLoginCardProps,
+  AccountLoginCardRenderProps,
+} from './components/AccountLoginCard.js';
+export { ConnectRequirements } from './components/ConnectRequirements.js';
+export type {
+  ConnectRequirementsProps,
+  ConnectRequirementsRenderProps,
+  StructuredRequirements,
+  EnrichedRequirement,
+} from './components/ConnectRequirements.js';
+
+// Utilities
+export {
+  formatPrice,
+  formatPriceWithInterval,
+  filterPricesByInterval,
+  sortPricesByAmount,
+} from './lib/price-helpers.js';
+export {
+  deriveSubscriptionState,
+  getSubscriptionStatusLabel,
+  daysUntil,
+} from './lib/subscription-helpers.js';
+export {
+  createStripeAppearance,
+  createStripeElementStyles,
+  defaultStripeAppearance,
+  darkStripeAppearance,
+} from './lib/stripe-element-styles.js';
+export type { StripeAppearanceConfig } from './lib/stripe-element-styles.js';
+export {
+  getRequirementKey,
+  getRequirementLabel,
+} from './lib/connect-requirement-keys.js';

@@ -1,0 +1,124 @@
+import { v } from 'convex/values';
+
+import { query } from '../_generated/server';
+
+// =============================================================================
+// PRODUCT QUERIES
+// =============================================================================
+
+export const getProduct = query({
+  args: { productId: v.id('products') },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.productId);
+  },
+});
+
+export const getProductByStripeId = query({
+  args: { stripeProductId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('products')
+      .withIndex('by_stripe_product_id', (q) =>
+        q.eq('stripeProductId', args.stripeProductId),
+      )
+      .first();
+  },
+});
+
+export const listProducts = query({
+  args: {
+    accountId: v.optional(v.string()),
+    active: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+    let productsQuery;
+
+    if (args.accountId) {
+      const accountId = args.accountId;
+      productsQuery = ctx.db
+        .query('products')
+        .withIndex('by_account_id', (q) => q.eq('accountId', accountId));
+    } else {
+      productsQuery = ctx.db.query('products');
+    }
+
+    const products = await productsQuery.take(limit);
+
+    if (args.active !== undefined) {
+      return products.filter((p) => p.active === args.active);
+    }
+    return products;
+  },
+});
+
+// =============================================================================
+// PRICE QUERIES
+// =============================================================================
+
+export const getPrice = query({
+  args: { priceId: v.id('prices') },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.priceId);
+  },
+});
+
+export const getPriceByStripeId = query({
+  args: { stripePriceId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('prices')
+      .withIndex('by_stripe_price_id', (q) =>
+        q.eq('stripePriceId', args.stripePriceId),
+      )
+      .first();
+  },
+});
+
+export const listPrices = query({
+  args: {
+    productId: v.optional(v.string()),
+    active: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+    let pricesQuery;
+
+    if (args.productId) {
+      const productId = args.productId;
+      pricesQuery = ctx.db
+        .query('prices')
+        .withIndex('by_product_id', (q) => q.eq('productId', productId));
+    } else {
+      pricesQuery = ctx.db.query('prices');
+    }
+
+    const prices = await pricesQuery.take(limit);
+
+    if (args.active !== undefined) {
+      return prices.filter((p) => p.active === args.active);
+    }
+    return prices;
+  },
+});
+
+export const listPricesByProduct = query({
+  args: { stripeProductId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('prices')
+      .withIndex('by_stripe_product_id', (q) =>
+        q.eq('stripeProductId', args.stripeProductId),
+      )
+      .collect();
+  },
+});

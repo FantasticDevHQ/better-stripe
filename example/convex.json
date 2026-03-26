@@ -1,5 +1,11 @@
 {
   "$schema": "node_modules/convex/schemas/convex.schema.json",
+  "node": {
+    "nodeVersion": "22"
+  },
+  "codegen": {
+    "fileType": "ts"
+  },
   "aiFiles": {
     "disableStalenessMessage": true
   }

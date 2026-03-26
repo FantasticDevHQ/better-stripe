@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm-run-all --parallel dev:backend dev:frontend",
-    "dev:frontend": "vite",
+    "dev:frontend": "vite --clearScreen false",
     "dev:backend": "convex dev",
     "build": "tsc -b && vite build",
     "setup": "node --import tsx scripts/setup.ts",

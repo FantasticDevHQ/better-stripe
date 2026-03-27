@@ -1,14 +1,14 @@
-import { internal } from './_generated/api';
-import { internalAction, internalMutation } from './_generated/server';
-import { stripe } from './stripe';
+import { internal } from "./_generated/api";
+import { internalAction, internalMutation } from "./_generated/server";
+import { stripe } from "./stripe";
 
 /**
- * Clear all app tables (users, courses, courseAccess, webhookLog).
+ * Clear all app tables (users).
  */
 export const clearAppDb = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const tables = ['users', 'courses', 'courseAccess', 'webhookLog'] as const;
+    const tables = ["users"] as const;
     let totalCleared = 0;
 
     for (const tableName of tables) {
@@ -51,6 +51,6 @@ export const run = internalAction({
   handler: async (ctx) => {
     await ctx.runMutation(internal.reset.clearAppDb, {});
     await ctx.runAction(internal.reset.clearStripeDb, {});
-    console.log('[reset] All data cleared. Run `npm run setup` to re-seed.');
+    console.log("[reset] All data cleared. Run `npm run setup` to re-seed.");
   },
 });

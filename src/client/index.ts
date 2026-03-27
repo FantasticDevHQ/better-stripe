@@ -1,20 +1,21 @@
-import { internalActionGeneric, internalMutationGeneric } from 'convex/server';
-import { v } from 'convex/values';
-import Stripe from 'stripe';
+import { internalActionGeneric, internalMutationGeneric } from "convex/server";
+import { v } from "convex/values";
+import Stripe from "stripe";
 
-import type { ComponentApi } from '../component/_generated/component.js';
-import * as checkoutImpl from './billing/checkout.js';
-import * as invoicesImpl from './billing/invoices.js';
-import * as subscriptionsImpl from './billing/subscriptions.js';
-import * as paymentMethodsImpl from './connect/paymentMethods.js';
-import * as payoutsImpl from './connect/payouts.js';
-import * as accountLinksImpl from './core/accountLinks.js';
-import * as accountsImpl from './core/accounts.js';
-import * as configImpl from './core/config.js';
-import type { Component, RunCtx } from './helpers.js';
-import { getStripeClient } from './helpers.js';
-import * as pricesImpl from './products/prices.js';
-import * as productsImpl from './products/products.js';
+import type { ComponentApi } from "../component/_generated/component.js";
+import * as checkoutImpl from "./billing/checkout.js";
+import * as invoicesImpl from "./billing/invoices.js";
+import * as subscriptionsImpl from "./billing/subscriptions.js";
+import * as paymentMethodsImpl from "./connect/paymentMethods.js";
+import * as payoutsImpl from "./connect/payouts.js";
+import * as accountLinksImpl from "./core/accountLinks.js";
+import * as accountsImpl from "./core/accounts.js";
+import * as configImpl from "./core/config.js";
+import type { Component, RunCtx } from "./helpers.js";
+import { getStripeClient } from "./helpers.js";
+import { componentRef } from "./webhooks/helpers.js";
+import * as pricesImpl from "./products/prices.js";
+import * as productsImpl from "./products/products.js";
 import type {
   AccountLinkWithStatus,
   AsyncHooks,
@@ -26,43 +27,43 @@ import type {
   StripeComponentProduct,
   StripeComponentSubscription,
   SyncTriggers,
-} from './types.js';
-import * as dataImpl from './utils/data.js';
-import type { StripeMode } from './utils/stripeDashboardUrl.js';
-import * as webhookEndpointsImpl from './utils/webhookEndpoints.js';
+} from "./types.js";
+import * as dataImpl from "./utils/data.js";
+import type { StripeMode } from "./utils/stripeDashboardUrl.js";
+import * as webhookEndpointsImpl from "./utils/webhookEndpoints.js";
 
 // Re-export standalone webhook registration
-export { registerRoutes } from './webhooks.js';
+export { registerRoutes } from "./webhooks.js";
 export {
   getStripeDashboardUrl,
   isStripeTestMode,
   STRIPE_DASHBOARD_BASE_URL,
   StripeDashboardResourcePath,
-} from './utils/stripeDashboardUrl.js';
+} from "./utils/stripeDashboardUrl.js";
 
 // Re-export payment method utilities
 export {
   getPaymentMethodCard,
   getPaymentMethodOwner,
-} from './connect/paymentMethodUtils.js';
+} from "./connect/paymentMethodUtils.js";
 
 // Re-export webhook event constants and types
 export {
   ALL_BETTER_STRIPE_EVENTS,
   BETTER_STRIPE_V2_WEBHOOK_EVENTS,
   BETTER_STRIPE_WEBHOOK_EVENTS,
-} from './utils/webhookEndpoints.js';
+} from "./utils/webhookEndpoints.js";
 export type {
   BetterStripeV2WebhookEvent,
   BetterStripeWebhookEvent,
-} from './utils/webhookEndpoints.js';
+} from "./utils/webhookEndpoints.js";
 
 // Re-export types for consumers
-export type { BetterStripeOptions, RegisterRoutesConfig } from './types.js';
+export type { BetterStripeOptions, RegisterRoutesConfig } from "./types.js";
 export type {
   StripeDashboardResourceType,
   StripeMode,
-} from './utils/stripeDashboardUrl.js';
+} from "./utils/stripeDashboardUrl.js";
 export type {
   AccountLinkWithStatus,
   PaymentMethodCard,
@@ -80,7 +81,7 @@ export type {
   StripeWebhookEvent,
   V2ThinEvent,
   WebhookActionCtx,
-} from './types.js';
+} from "./types.js";
 
 export type BetterStripeComponent = ComponentApi;
 
@@ -105,7 +106,7 @@ export class BetterStripe {
     const key = this._apiKey;
     if (!key) {
       throw new Error(
-        'STRIPE_SECRET_KEY is not set. Pass it via BetterStripe constructor options.',
+        "STRIPE_SECRET_KEY is not set. Pass it via BetterStripe constructor options.",
       );
     }
     return key;
@@ -154,7 +155,7 @@ export class BetterStripe {
       returnUrl: string;
       accountConfiguration?: Record<string, unknown>;
       accountDefaults?: Record<string, unknown>;
-      dashboard?: 'express' | 'full' | 'none';
+      dashboard?: "express" | "full" | "none";
     },
   ): Promise<{
     stripeAccountId: string;
@@ -231,7 +232,7 @@ export class BetterStripe {
       capabilities?: Record<string, unknown>;
       requirements?: Record<string, unknown>;
       configuration?: Record<string, unknown>;
-      onboardingStatus?: 'pending' | 'in_progress' | 'complete' | 'restricted';
+      onboardingStatus?: "pending" | "in_progress" | "complete" | "restricted";
       missingRequirements?: string[];
       metadata?: Record<string, unknown>;
     },
@@ -392,8 +393,8 @@ export class BetterStripe {
       stripeProductId: string;
       unitAmount: number;
       currency?: string;
-      type: 'one_time' | 'recurring';
-      interval?: 'day' | 'week' | 'month' | 'year';
+      type: "one_time" | "recurring";
+      interval?: "day" | "week" | "month" | "year";
       intervalCount?: number;
       nickname?: string;
       metadata?: Record<string, string>;
@@ -456,8 +457,8 @@ export class BetterStripe {
       unitAmount: number;
       currency: string;
       active: boolean;
-      type: 'one_time' | 'recurring';
-      interval?: 'day' | 'week' | 'month' | 'year';
+      type: "one_time" | "recurring";
+      interval?: "day" | "week" | "month" | "year";
       intervalCount?: number;
       metadata?: Record<string, unknown>;
     },
@@ -482,8 +483,8 @@ export class BetterStripe {
       userId: string;
       orgId?: string;
       stripePriceId: string;
-      mode: 'payment' | 'subscription' | 'setup';
-      uiMode?: 'embedded' | 'redirect';
+      mode: "payment" | "subscription" | "setup";
+      uiMode?: "embedded" | "redirect";
       quantity?: number;
       returnUrl: string;
       trialDays?: number;
@@ -529,8 +530,8 @@ export class BetterStripe {
       userId: string;
       orgId?: string;
       accountId?: string;
-      mode: 'payment' | 'subscription' | 'setup';
-      status: 'open' | 'complete' | 'expired';
+      mode: "payment" | "subscription" | "setup";
+      status: "open" | "complete" | "expired";
       clientSecret?: string;
       url?: string;
       priceId?: string;
@@ -643,13 +644,13 @@ export class BetterStripe {
       userId: string;
       orgId?: string;
       status:
-        | 'active'
-        | 'trialing'
-        | 'past_due'
-        | 'canceled'
-        | 'incomplete'
-        | 'unpaid'
-        | 'paused';
+        | "active"
+        | "trialing"
+        | "past_due"
+        | "canceled"
+        | "incomplete"
+        | "unpaid"
+        | "paused";
       priceId?: string;
       quantity?: number;
       currentPeriodStart?: string;
@@ -766,7 +767,7 @@ export class BetterStripe {
       stripeAccountId: string;
       refreshUrl: string;
       returnUrl: string;
-      type: 'account_onboarding' | 'account_update';
+      type: "account_onboarding" | "account_update";
     },
   ) {
     return accountLinksImpl.createAccountLink(this.stripe(), ctx, opts);
@@ -776,7 +777,7 @@ export class BetterStripe {
     ctx: RunCtx,
     opts: {
       stripeAccountId: string;
-      type: 'account_onboarding' | 'account_update';
+      type: "account_onboarding" | "account_update";
       refreshUrl: string;
       returnUrl: string;
       configurations?: string[];
@@ -872,7 +873,7 @@ export class BetterStripe {
       name?: string;
       description?: string;
       enabledEvents?: string[];
-      eventPayload?: 'snapshot' | 'thin';
+      eventPayload?: "snapshot" | "thin";
     },
   ): Promise<{
     id: string;
@@ -881,11 +882,30 @@ export class BetterStripe {
     enabledEvents: string[];
     created: boolean;
   }> {
-    return webhookEndpointsImpl.setupEventDestination(
-      this.stripe(),
-      ctx,
-      opts,
-    );
+    return webhookEndpointsImpl.setupEventDestination(this.stripe(), ctx, opts);
+  }
+
+  // ============================================================================
+  // WEBHOOK EVENT QUERIES
+  // ============================================================================
+
+  async listWebhookEvents(
+    ctx: RunCtx,
+    opts?: { eventType?: string; status?: string; limit?: number },
+  ) {
+    return (await ctx.runQuery(
+      componentRef(this.component, "webhooks/queries/listWebhookEvents"),
+      opts ?? {},
+    )) as Array<{
+      _id: string;
+      _creationTime: number;
+      stripeEventId: string;
+      eventType: string;
+      livemode?: boolean;
+      processedAt: number;
+      status: "pending" | "processed" | "failed";
+      lastError?: string;
+    }>;
   }
 
   // ============================================================================

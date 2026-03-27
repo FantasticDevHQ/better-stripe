@@ -1,46 +1,46 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRole } from '@/providers/role-context';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
 import {
   AccountOnboardingCard,
   ConnectRequirements,
   ConnectStatusBadge,
-} from '@getdojo/better-stripe/react';
-import { useAction, useQuery } from 'convex/react';
-import { HelpCircle, RotateCcw } from 'lucide-react';
+} from "@getdojo/better-stripe/react";
+import { useAction, useQuery } from "convex/react";
+import { HelpCircle, RotateCcw } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 /** Stripe-supported test countries for Connect. */
 const CONNECT_COUNTRIES = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'SG', name: 'Singapore' },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "JP", name: "Japan" },
+  { code: "SG", name: "Singapore" },
 ];
 
-export function Onboarding() {
+export function SellerOnboarding() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
@@ -53,7 +53,7 @@ export function Onboarding() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState('US');
+  const [selectedCountry, setSelectedCountry] = useState("US");
 
   if (account === undefined) {
     return (
@@ -69,10 +69,10 @@ export function Onboarding() {
   if (account === null) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Creator Onboarding</h1>
+        <h1 className="text-2xl font-bold">Seller Onboarding</h1>
         <p className="text-muted-foreground">
           Create a Stripe Connect account to start receiving payouts for your
-          courses.
+          products.
         </p>
 
         <Card>
@@ -112,20 +112,20 @@ export function Onboarding() {
                     email: currentUser.email,
                     country: selectedCountry,
                     refreshUrl: window.location.href,
-                    returnUrl: window.location.origin + '/creator/onboarding',
+                    returnUrl: window.location.origin + "/seller/onboarding",
                   });
                   if (result.onboardingUrl) {
                     window.location.href = result.onboardingUrl;
                   }
                 } catch (err) {
-                  console.error('Failed to create account:', err);
+                  console.error("Failed to create account:", err);
                 } finally {
                   setIsCreating(false);
                 }
               }}
               disabled={isCreating || !selectedCountry}
             >
-              {isCreating ? 'Creating account...' : 'Get started'}
+              {isCreating ? "Creating account..." : "Get started"}
             </Button>
           </CardContent>
         </Card>
@@ -133,13 +133,13 @@ export function Onboarding() {
     );
   }
 
-  const onboardingStatus = account.onboardingStatus ?? 'pending';
+  const onboardingStatus = account.onboardingStatus ?? "pending";
   const missingRequirements = account.missingRequirements ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Creator Onboarding</h1>
+        <h1 className="text-2xl font-bold">Seller Onboarding</h1>
         <ConnectStatusBadge status={onboardingStatus} />
       </div>
 
@@ -150,23 +150,23 @@ export function Onboarding() {
       </p>
 
       {/* Step-by-step onboarding flow */}
-      {onboardingStatus !== 'complete' && (
+      {onboardingStatus !== "complete" && (
         <AccountOnboardingCard
-          title="Set Up Your Stripe Account"
-          description="Follow the steps to verify your identity and connect your bank account."
-          onStartOnboarding={async () => {
+          status={onboardingStatus}
+          missingRequirements={missingRequirements}
+          onContinue={async () => {
             setIsLinking(true);
             try {
               const result = await getAccountLink({
                 stripeAccountId: account.stripeAccountId,
                 refreshUrl: window.location.href,
-                returnUrl: window.location.origin + '/creator',
+                returnUrl: window.location.origin + "/seller",
               });
               if (result.url) {
                 window.location.href = result.url;
               }
             } catch (err) {
-              console.error('Failed to get onboarding link:', err);
+              console.error("Failed to get onboarding link:", err);
             } finally {
               setIsLinking(false);
             }
@@ -209,14 +209,14 @@ export function Onboarding() {
                   stripeAccountId: account.stripeAccountId,
                 });
               } catch (err) {
-                console.error('Failed to restart onboarding:', err);
+                console.error("Failed to restart onboarding:", err);
               } finally {
                 setIsRestarting(false);
               }
             }}
             disabled={isRestarting}
           >
-            {isRestarting ? 'Closing account...' : 'Close account & start over'}
+            {isRestarting ? "Closing account..." : "Close account & start over"}
           </Button>
         </CardContent>
       </Card>

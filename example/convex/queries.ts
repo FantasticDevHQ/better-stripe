@@ -1,7 +1,7 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { query } from './_generated/server';
-import { stripe } from './stripe';
+import { query } from "./_generated/server";
+import { stripe } from "./stripe";
 
 // Accounts
 export const getAccountByUserId = query({
@@ -100,4 +100,24 @@ export const getPublishableKey = query({
 export const getStripeMode = query({
   args: {},
   handler: async (ctx) => stripe.getStripeMode(ctx),
+});
+
+export const listWebhookEvents = query({
+  args: {
+    eventType: v.optional(v.string()),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.listWebhookEvents(ctx, {
+      eventType: args.eventType,
+      status: args.status,
+    }),
+});
+
+export const getSeedStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    return { userCount: users.length };
+  },
 });

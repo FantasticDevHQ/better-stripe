@@ -26,6 +26,8 @@ export type RegisterRoutesConfig = {
   stripeSecretKey?: string;
   stripeApiVersion?: string;
   webhookSecret?: string;
+  /** Separate signing secret for V2 thin event destinations. Falls back to webhookSecret. */
+  webhookSecretV2?: string;
   onEvent?: StripeEventHandler<StripeWebhookEvent>;
   events?: StripeEventHandlers;
 };

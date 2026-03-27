@@ -78,9 +78,10 @@ export async function handleWebhookRequest(
   };
 
   if (isV2Event) {
+    const v2Secret = config?.webhookSecretV2 ?? webhookSecret;
     let thinEvent: V2ThinEvent;
     try {
-      thinEvent = await verifyV2Event(stripe, body, signature, webhookSecret);
+      thinEvent = await verifyV2Event(stripe, body, signature, v2Secret);
     } catch (error) {
       console.error('[better-stripe] V2 signature verification failed:', error);
       return jsonResponse({ error: 'V2 signature verification failed' }, 400);

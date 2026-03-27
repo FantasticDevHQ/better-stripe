@@ -46,9 +46,16 @@ export {
   getPaymentMethodOwner,
 } from './connect/paymentMethodUtils.js';
 
-// Re-export webhook event constant and type
-export { BETTER_STRIPE_WEBHOOK_EVENTS } from './utils/webhookEndpoints.js';
-export type { BetterStripeWebhookEvent } from './utils/webhookEndpoints.js';
+// Re-export webhook event constants and types
+export {
+  ALL_BETTER_STRIPE_EVENTS,
+  BETTER_STRIPE_V2_WEBHOOK_EVENTS,
+  BETTER_STRIPE_WEBHOOK_EVENTS,
+} from './utils/webhookEndpoints.js';
+export type {
+  BetterStripeV2WebhookEvent,
+  BetterStripeWebhookEvent,
+} from './utils/webhookEndpoints.js';
 
 // Re-export types for consumers
 export type { BetterStripeOptions, RegisterRoutesConfig } from './types.js';
@@ -852,6 +859,33 @@ export class BetterStripe {
     },
   ): Promise<{ id: string; secret: string; url: string }> {
     return webhookEndpointsImpl.createWebhookEndpoint(this.stripe(), ctx, opts);
+  }
+
+  async listEventDestinations(ctx: RunCtx, opts?: { limit?: number }) {
+    return webhookEndpointsImpl.listEventDestinations(this.stripe(), ctx, opts);
+  }
+
+  async setupEventDestination(
+    ctx: RunCtx,
+    opts: {
+      url: string;
+      name?: string;
+      description?: string;
+      enabledEvents?: string[];
+      eventPayload?: 'snapshot' | 'thin';
+    },
+  ): Promise<{
+    id: string;
+    secret: string;
+    url: string;
+    enabledEvents: string[];
+    created: boolean;
+  }> {
+    return webhookEndpointsImpl.setupEventDestination(
+      this.stripe(),
+      ctx,
+      opts,
+    );
   }
 
   // ============================================================================

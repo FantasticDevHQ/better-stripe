@@ -5,9 +5,9 @@ import {
   useContext,
   useEffect,
   useState,
-} from 'react';
+} from "react";
 
-export type Role = 'learner' | 'creator' | 'admin';
+export type Role = "customer" | "seller" | "admin";
 
 export interface MockUser {
   id: string;
@@ -17,23 +17,23 @@ export interface MockUser {
 }
 
 const MOCK_USERS: Record<Role, MockUser> = {
-  learner: {
-    id: 'user_learner_1',
-    name: 'Alex Learner',
-    email: 'alex@example.com',
-    role: 'learner',
+  customer: {
+    id: "user_learner_1",
+    name: "Alex Customer",
+    email: "alex@example.com",
+    role: "customer",
   },
-  creator: {
-    id: 'user_creator_1',
-    name: 'Jordan Creator',
-    email: 'jordan@example.com',
-    role: 'creator',
+  seller: {
+    id: "user_creator_1",
+    name: "Jordan Seller",
+    email: "jordan@example.com",
+    role: "seller",
   },
   admin: {
-    id: 'user_admin_1',
-    name: 'Sam Admin',
-    email: 'sam@example.com',
-    role: 'admin',
+    id: "user_admin_1",
+    name: "Sam Admin",
+    email: "sam@example.com",
+    role: "admin",
   },
 };
 
@@ -45,15 +45,15 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue | null>(null);
 
-const STORAGE_KEY = 'betterlearn-role';
+const STORAGE_KEY = "betterlearn-role";
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'learner' || stored === 'creator' || stored === 'admin') {
+    if (stored === "customer" || stored === "seller" || stored === "admin") {
       return stored;
     }
-    return 'learner';
+    return "customer";
   });
 
   const setRole = useCallback((newRole: Role) => {
@@ -81,6 +81,6 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useRole() {
   const ctx = useContext(RoleContext);
-  if (!ctx) throw new Error('useRole must be used within RoleProvider');
+  if (!ctx) throw new Error("useRole must be used within RoleProvider");
   return ctx;
 }

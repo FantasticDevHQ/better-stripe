@@ -9,6 +9,7 @@ registerRoutes(http, components.betterStripe, {
   webhookPath: '/stripe/webhook',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
 });
 
 export default http;

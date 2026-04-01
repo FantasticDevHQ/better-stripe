@@ -1,10 +1,17 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-export type AccountLoginCardRenderProps = {
-  onLogin: () => void;
-  loginUrl: string | null;
+import {
+  AccountLoginButton,
+  type AccountLoginButtonRenderProps,
+} from "./AccountLoginButton.js";
+
+export type AccountLoginCardRenderProps = AccountLoginButtonRenderProps & {
+  /** Card title */
+  title: string;
+  /** Card description */
+  description: string;
 };
 
 export type AccountLoginCardProps = {
@@ -34,47 +41,58 @@ export type AccountLoginCardProps = {
 export function AccountLoginCard({
   onLogin,
   loginUrl,
-  titleLabel = 'Stripe Dashboard',
-  descriptionLabel = 'View your earnings, payouts, and account settings.',
-  loginLabel = 'Open dashboard',
+  titleLabel = "Stripe Dashboard",
+  descriptionLabel = "View your earnings, payouts, and account settings.",
+  loginLabel = "Open dashboard",
   className,
   renderStatusBadge,
   renderRequirements,
   renderDashboardLink,
   children,
 }: AccountLoginCardProps) {
-  const handleLogin = () => {
-    if (loginUrl) {
-      window.open(loginUrl, '_blank');
-    } else {
-      onLogin?.();
-    }
-  };
+  const title = titleLabel;
+  const description = descriptionLabel;
 
   if (children) {
     return (
-      <>{children({ onLogin: handleLogin, loginUrl: loginUrl ?? null })}</>
+      <AccountLoginButton
+        onLogin={onLogin}
+        loginUrl={loginUrl}
+        loginLabel={loginLabel}
+      >
+        {(buttonProps) => children({ ...buttonProps, title, description })}
+      </AccountLoginButton>
     );
   }
 
   return (
     <div className={className}>
       <div>
-        <h3>{titleLabel}</h3>
+        <h3>{title}</h3>
         {renderStatusBadge?.()}
       </div>
-      <p>{descriptionLabel}</p>
+      <p>{description}</p>
       {renderRequirements?.()}
       {renderDashboardLink ? (
-        renderDashboardLink({
-          url: loginUrl ?? '',
-          label: loginLabel,
-          onLogin: handleLogin,
-        })
+        <AccountLoginButton
+          onLogin={onLogin}
+          loginUrl={loginUrl}
+          loginLabel={loginLabel}
+        >
+          {({ onLogin: handleLogin }) =>
+            renderDashboardLink({
+              url: loginUrl ?? "",
+              label: loginLabel,
+              onLogin: handleLogin,
+            })
+          }
+        </AccountLoginButton>
       ) : (
-        <button type="button" onClick={handleLogin}>
-          {loginLabel}
-        </button>
+        <AccountLoginButton
+          onLogin={onLogin}
+          loginUrl={loginUrl}
+          loginLabel={loginLabel}
+        />
       )}
     </div>
   );

@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { formatPriceWithInterval } from '../lib/price-helpers.js';
+import { formatPriceWithInterval } from "../lib/price-helpers.js";
 import {
   deriveSubscriptionState,
   getSubscriptionStatusLabel,
-} from '../lib/subscription-helpers.js';
+} from "../lib/subscription-helpers.js";
+import { SubscriptionActions } from "./SubscriptionActions.js";
 
 export type SubscriptionCardSubscription = {
   status: string;
@@ -54,8 +55,8 @@ export function SubscriptionCard({
   productName,
   onCancel,
   onReactivate,
-  cancelLabel = 'Cancel subscription',
-  reactivateLabel = 'Reactivate',
+  cancelLabel = "Cancel subscription",
+  reactivateLabel = "Reactivate",
   statusLabels,
   className,
   children,
@@ -78,16 +79,14 @@ export function SubscriptionCard({
       {productName && <h3>{productName}</h3>}
       <p>{statusLabel}</p>
       {formattedPrice && <p>{formattedPrice}</p>}
-      {state.isActive && !state.isCanceling && onCancel && (
-        <button type="button" onClick={onCancel}>
-          {cancelLabel}
-        </button>
-      )}
-      {state.isCanceling && onReactivate && (
-        <button type="button" onClick={onReactivate}>
-          {reactivateLabel}
-        </button>
-      )}
+      <SubscriptionActions
+        status={subscription.status}
+        cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
+        onCancel={onCancel}
+        onReactivate={onReactivate}
+        cancelLabel={cancelLabel}
+        reactivateLabel={reactivateLabel}
+      />
     </div>
   );
 }

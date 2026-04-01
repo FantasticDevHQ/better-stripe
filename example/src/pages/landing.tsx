@@ -1,25 +1,25 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { IntervalSelector, PriceBadge } from '@getdojo/better-stripe/react';
-import { useQuery } from 'convex/react';
-import { Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IntervalSelector, PriceBadge } from "@getdojo/better-stripe/react";
+import { useQuery } from "convex/react";
+import { Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import { api } from '../../convex/_generated/api';
+import { api } from "../../convex/_generated/api";
 
 export function Landing() {
   const navigate = useNavigate();
-  const [interval, setInterval] = useState<'month' | 'year'>('month');
+  const [interval, setInterval] = useState<"month" | "year">("month");
 
   const productsWithPrices = useQuery(api.queries.listProductsWithPrices);
 
@@ -38,7 +38,7 @@ export function Landing() {
 
   // Filter by selected interval (show recurring prices for the interval + one-time prices)
   const filteredPrices = allPrices.filter(
-    (p) => p.interval === interval || p.type === 'one_time',
+    (p) => p.interval === interval || p.type === "one_time",
   );
 
   return (
@@ -46,11 +46,11 @@ export function Landing() {
       {/* Hero */}
       <div className="space-y-4 py-16 text-center">
         <h1 className="text-5xl font-bold tracking-tight">
-          Learn from the best creators
+          Premium tees, made for you
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          BetterLearn connects you with expert creators. Subscribe to access
-          courses, or become a creator and start earning.
+          Get premium tees or start selling as a partner. Subscribe for
+          exclusive drops and early access.
         </p>
       </div>
 
@@ -105,13 +105,13 @@ export function Landing() {
                     unitAmount={price.unitAmount}
                     currency={price.currency}
                     interval={
-                      price.type === 'one_time'
+                      price.type === "one_time"
                         ? null
                         : (price.interval ?? null)
                     }
                   />
 
-                  {price.metadata?.trialDays && (
+                  {typeof price.metadata?.trialDays === "string" && (
                     <p className="text-muted-foreground text-sm">
                       {price.metadata.trialDays}-day free trial
                     </p>

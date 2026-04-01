@@ -1,7 +1,7 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -9,34 +9,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/table";
+import { useQuery } from "convex/react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
-function formatCurrency(cents: number, currency: string = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+function formatCurrency(cents: number, currency: string = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency.toUpperCase(),
   }).format(cents / 100);
 }
 
 function statusVariant(
   status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case 'paid':
-      return 'default';
-    case 'in_transit':
-      return 'secondary';
-    case 'pending':
-      return 'secondary';
-    case 'failed':
-      return 'destructive';
-    case 'canceled':
-      return 'outline';
+    case "paid":
+      return "default";
+    case "in_transit":
+      return "secondary";
+    case "pending":
+      return "secondary";
+    case "failed":
+      return "destructive";
+    case "canceled":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 }
 
@@ -77,23 +77,23 @@ export function Payouts() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {payouts.map((payout) => (
+            {payouts.map((payout: any) => (
               <TableRow key={payout._id}>
                 <TableCell className="font-mono">
                   {payout.stripePayoutId}
                 </TableCell>
                 <TableCell className="font-medium">
-                  {formatCurrency(payout.amount ?? 0, payout.currency || 'usd')}
+                  {formatCurrency(payout.amount ?? 0, payout.currency || "usd")}
                 </TableCell>
                 <TableCell>
                   <Badge variant={statusVariant(payout.status)}>
-                    {payout.status.replace('_', ' ')}
+                    {payout.status.replace("_", " ")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {payout.arrivalDate
                     ? new Date(payout.arrivalDate).toLocaleDateString()
-                    : '\u2014'}
+                    : "\u2014"}
                 </TableCell>
               </TableRow>
             ))}

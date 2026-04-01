@@ -1,20 +1,23 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRole } from '@/providers/role-context';
-import { AccountLoginCard, ConnectRequirements } from '@getdojo/better-stripe/react';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
+import {
+  AccountLoginCard,
+  ConnectRequirements,
+} from "@getdojo/better-stripe/react";
+import { useQuery } from "convex/react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
-export function CreatorAccount() {
+export function SellerAccount() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
@@ -36,10 +39,10 @@ export function CreatorAccount() {
         <h1 className="text-2xl font-bold">Account Settings</h1>
         <Alert>
           <AlertDescription>
-            No Stripe Connect account found. Visit the{' '}
-            <a href="/creator/onboarding" className="text-primary underline">
+            No Stripe Connect account found. Visit the{" "}
+            <a href="/seller/onboarding" className="text-primary underline">
               onboarding page
-            </a>{' '}
+            </a>{" "}
             to create one.
           </AlertDescription>
         </Alert>
@@ -60,12 +63,10 @@ export function CreatorAccount() {
 
       {/* Stripe Express dashboard link */}
       <AccountLoginCard
-        title="Stripe Dashboard"
-        description="Open your Stripe Express dashboard to manage payouts, view transactions, and update your banking details."
         onLogin={() => {
           window.open(
             `https://dashboard.stripe.com/${account.stripeAccountId}`,
-            '_blank',
+            "_blank",
           );
         }}
       />
@@ -83,23 +84,23 @@ export function CreatorAccount() {
             </div>
             <div>
               <dt className="text-muted-foreground">Email</dt>
-              <dd className="mt-0.5">{account.email ?? '\u2014'}</dd>
+              <dd className="mt-0.5">{account.email ?? "\u2014"}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Country</dt>
-              <dd className="mt-0.5">{account.country ?? '\u2014'}</dd>
+              <dd className="mt-0.5">{account.country ?? "\u2014"}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Onboarding Status</dt>
               <dd className="mt-0.5">
                 <Badge
                   variant={
-                    account.onboardingStatus === 'complete'
-                      ? 'default'
-                      : 'secondary'
+                    account.onboardingStatus === "complete"
+                      ? "default"
+                      : "secondary"
                   }
                 >
-                  {account.onboardingStatus ?? 'unknown'}
+                  {account.onboardingStatus ?? "unknown"}
                 </Badge>
               </dd>
             </div>

@@ -9,7 +9,6 @@
  */
 
 import type * as actions from "../actions.js";
-import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as queries from "../queries.js";
 import type * as reset from "../reset.js";
@@ -17,7 +16,6 @@ import type * as seed from "../seed.js";
 import type * as setup from "../setup.js";
 import type * as stripe from "../stripe.js";
 import type * as users from "../users.js";
-import type * as webhookLog from "../webhookLog.js";
 
 import type {
   ApiFromModules,
@@ -28,7 +26,6 @@ import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
   actions: typeof actions;
-  courses: typeof courses;
   http: typeof http;
   queries: typeof queries;
   reset: typeof reset;
@@ -36,7 +33,6 @@ const fullApi: ApiFromModules<{
   setup: typeof setup;
   stripe: typeof stripe;
   users: typeof users;
-  webhookLog: typeof webhookLog;
 }> = anyApi as any;
 
 /**
@@ -488,6 +484,12 @@ export const components = componentsGeneric() as unknown as {
           "query",
           "internal",
           { stripeEventId: string },
+          any
+        >;
+        listWebhookEvents: FunctionReference<
+          "query",
+          "internal",
+          { eventType?: string; limit?: number; status?: string },
           any
         >;
       };

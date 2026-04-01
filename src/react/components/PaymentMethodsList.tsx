@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+
+import { PaymentMethodActions } from "./PaymentMethodActions.js";
 
 export type PaymentMethodItem = {
   id: string;
@@ -37,10 +39,10 @@ export function PaymentMethodsList({
   methods,
   onDelete,
   onSetDefault,
-  emptyLabel = 'No payment methods on file.',
-  defaultBadgeLabel = 'Default',
-  deleteLabel = 'Remove',
-  setDefaultLabel = 'Set as default',
+  emptyLabel = "No payment methods on file.",
+  defaultBadgeLabel = "Default",
+  deleteLabel = "Remove",
+  setDefaultLabel = "Set as default",
   className,
   children,
 }: PaymentMethodsListProps) {
@@ -62,16 +64,16 @@ export function PaymentMethodsList({
               : method.type}
           </span>
           {method.isDefault && <span>{defaultBadgeLabel}</span>}
-          {!method.isDefault && onSetDefault && (
-            <button type="button" onClick={() => onSetDefault(method.id)}>
-              {setDefaultLabel}
-            </button>
-          )}
-          {onDelete && (
-            <button type="button" onClick={() => onDelete(method.id)}>
-              {deleteLabel}
-            </button>
-          )}
+          <PaymentMethodActions
+            methodId={method.id}
+            isDefault={method.isDefault}
+            onDelete={onDelete ? () => onDelete(method.id) : undefined}
+            onSetDefault={
+              onSetDefault ? () => onSetDefault(method.id) : undefined
+            }
+            deleteLabel={deleteLabel}
+            setDefaultLabel={setDefaultLabel}
+          />
         </li>
       ))}
     </ul>

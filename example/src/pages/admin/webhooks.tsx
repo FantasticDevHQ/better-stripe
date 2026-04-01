@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -19,23 +19,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/table";
+import { useQuery } from "convex/react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
-type WebhookStatus = 'processed' | 'failed' | 'ignored';
+type WebhookStatus = "processed" | "failed" | "ignored";
 
 function statusVariant(
   status: WebhookStatus,
-): 'default' | 'destructive' | 'secondary' {
+): "default" | "destructive" | "secondary" {
   switch (status) {
-    case 'processed':
-      return 'default';
-    case 'failed':
-      return 'destructive';
-    case 'ignored':
-      return 'secondary';
+    case "processed":
+      return "default";
+    case "failed":
+      return "destructive";
+    case "ignored":
+      return "secondary";
   }
 }
 
@@ -44,16 +44,13 @@ function formatTimestamp(ts: number) {
 }
 
 export function AdminWebhooks() {
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
-  const events = useQuery(api.webhookLog.list, {
-    eventType: typeFilter === 'all' ? undefined : typeFilter,
-    status:
-      statusFilter === 'all'
-        ? undefined
-        : (statusFilter as 'processed' | 'failed' | 'ignored'),
+  const events = useQuery(api.queries.listWebhookEvents, {
+    eventType: typeFilter === "all" ? undefined : typeFilter,
+    status: statusFilter === "all" ? undefined : statusFilter,
   });
 
   if (events === undefined) {
@@ -146,7 +143,7 @@ export function AdminWebhooks() {
                   }
                 >
                   <TableCell className="text-muted-foreground font-mono text-sm">
-                    {formatTimestamp(event.timestamp)}
+                    {formatTimestamp(event.processedAt)}
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {event.eventType}
@@ -161,16 +158,24 @@ export function AdminWebhooks() {
                   </TableCell>
                 </TableRow>
 
-                {/* Expanded Payload */}
+                {/* Expanded Details */}
                 {expandedEvent === event._id && (
-                  <TableRow key={`${event._id}-payload`}>
+                  <TableRow key={`${event._id}-details`}>
                     <TableCell colSpan={4} className="bg-muted/30">
-                      <p className="text-muted-foreground mb-2 text-xs font-medium">
-                        Raw Payload
-                      </p>
-                      <pre className="bg-background border-border overflow-x-auto rounded-md border p-3 font-mono text-xs">
-                        {event.payload ?? 'No payload'}
-                      </pre>
+                      <div className="text-muted-foreground space-y-1 text-xs">
+                        {event.lastError && (
+                          <p>
+                            <span className="font-medium">Error:</span>{" "}
+                            {event.lastError}
+                          </p>
+                        )}
+                        {event.livemode !== undefined && (
+                          <p>
+                            <span className="font-medium">Mode:</span>{" "}
+                            {event.livemode ? "Live" : "Test"}
+                          </p>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

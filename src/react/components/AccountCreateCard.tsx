@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from "react";
+
+import { AccountCreateButton } from "./AccountCreateButton.js";
 
 export type AccountCreateCountry = {
   id: string;
@@ -46,16 +48,16 @@ export function AccountCreateCard({
   onCreate,
   isCreating = false,
   countries = [],
-  titleLabel = 'Set up payments',
-  descriptionLabel = 'Connect a Stripe account to start accepting payments.',
-  createLabel = 'Get started',
-  creatingLabel = 'Creating…',
+  titleLabel = "Set up payments",
+  descriptionLabel = "Connect a Stripe account to start accepting payments.",
+  createLabel = "Get started",
+  creatingLabel = "Creating…",
   className,
   renderCountrySelector,
   renderBenefits,
   children,
 }: AccountCreateCardProps) {
-  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   const handleCreate = (args: { email?: string; country?: string } = {}) => {
     onCreate?.({ ...args, country: args.country ?? selectedCountry });
@@ -105,14 +107,13 @@ export function AccountCreateCard({
         ) : null}
       </div>
       <div data-slot="account-create-card-footer">
-        <button
-          type="button"
-          data-slot="account-create-card-button"
-          onClick={() => handleCreate()}
-          disabled={isCreating || (!selectedCountry && countries.length > 0)}
-        >
-          {isCreating ? creatingLabel : createLabel}
-        </button>
+        <AccountCreateButton
+          onCreate={() => handleCreate()}
+          isCreating={isCreating}
+          createLabel={createLabel}
+          creatingLabel={creatingLabel}
+          disabled={!selectedCountry && countries.length > 0}
+        />
       </div>
     </div>
   );

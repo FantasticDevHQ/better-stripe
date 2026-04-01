@@ -504,6 +504,7 @@ All components accept:
 | `PriceBadge`            | Price/plan badge                                          |
 | `TrialAlert`            | Trial status and renewal alert                            |
 | `BillingPortalLink`     | Link/button to Stripe billing portal                      |
+| `SubscriptionActions`   | Cancel/reactivate action buttons (status-aware)           |
 
 ### Payment Methods
 
@@ -512,16 +513,22 @@ All components accept:
 | `AddCardForm`               | Headless add-payment-method form                   |
 | `PaymentMethodsList`        | Saved payment methods list with render props       |
 | `DeletePaymentMethodDialog` | Remove payment method (app provides dialog chrome) |
+| `PaymentMethodActions`      | Per-method set-default/delete actions              |
 
 ### Connect and Marketplace
 
-| Component               | Description                         |
-| ----------------------- | ----------------------------------- |
-| `ConnectStatusBadge`    | Connect verification status badge   |
-| `AccountOnboardingCard` | Connect onboarding progress display |
-| `AccountCreateCard`     | Create Connect account card         |
-| `AccountLoginCard`      | Login to Connect dashboard card     |
-| `ConnectRequirements`   | Missing requirements checklist      |
+| Component                 | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `ConnectStatusBadge`      | Connect verification status badge             |
+| `AccountOnboardingCard`   | Connect onboarding progress display           |
+| `AccountOnboardingButton` | Continue onboarding action (status-aware)     |
+| `AccountCreateCard`       | Create Connect account card                   |
+| `AccountCreateButton`     | Create account action with loading state      |
+| `AccountLoginCard`        | Login to Connect dashboard card               |
+| `AccountLoginButton`      | Dashboard login/open action                   |
+| `AccountCloseCard`        | Close/restart account card (status-aware)     |
+| `AccountCloseButton`      | Close/restart action with status-aware labels |
+| `ConnectRequirements`     | Missing requirements checklist                |
 
 ## Testing Utilities
 

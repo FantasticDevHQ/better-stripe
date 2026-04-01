@@ -200,7 +200,7 @@ export function SellerProducts() {
           Create Product
         </Button>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>New Product</DialogTitle>
               <DialogDescription>
@@ -217,7 +217,7 @@ export function SellerProducts() {
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
                   }
-                  placeholder="e.g. Advanced React Course"
+                  placeholder="e.g. Premium Tee"
                 />
               </div>
               <div className="grid gap-2">
@@ -231,7 +231,7 @@ export function SellerProducts() {
                       description: e.target.value,
                     })
                   }
-                  placeholder="e.g. Master React patterns and best practices"
+                  placeholder="e.g. A premium cotton t-shirt"
                 />
               </div>
             </div>

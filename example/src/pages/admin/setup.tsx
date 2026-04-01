@@ -545,6 +545,69 @@ function SyncCard() {
 }
 
 // ---------------------------------------------------------------------------
+// Step 5: Reset
+// ---------------------------------------------------------------------------
+
+function ResetCard() {
+  const resetAll = useAction(api.actions.resetAll);
+  const [isResetting, setIsResetting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleReset = async () => {
+    setIsResetting(true);
+    setError(null);
+    setDone(false);
+    try {
+      await resetAll({});
+      setDone(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  return (
+    <Card className="space-y-4 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">5. Reset</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Clear all data from the app database (users) and the better-stripe
+            component database (accounts, products, prices, subscriptions,
+            invoices, payments, payouts, webhook events). Use this when you
+            reset your Stripe sandbox.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shrink-0"
+          onClick={handleReset}
+          disabled={isResetting}
+        >
+          {isResetting ? "Resetting…" : "Reset All Data"}
+        </Button>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {done && (
+        <Alert>
+          <AlertDescription>
+            All data cleared. Click "Seed Data" above to re-populate.
+          </AlertDescription>
+        </Alert>
+      )}
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -562,6 +625,7 @@ export function AdminSetup() {
       <WebhookSetupCard />
       <SeedDataCard />
       <SyncCard />
+      <ResetCard />
     </div>
   );
 }

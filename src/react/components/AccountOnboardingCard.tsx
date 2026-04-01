@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+
+import { AccountOnboardingButton } from "./AccountOnboardingButton.js";
 
 export type AccountOnboardingCardRenderProps = {
   status: string | undefined;
@@ -14,7 +16,7 @@ export type AccountOnboardingCardRenderProps = {
 };
 
 export type AccountOnboardingCardProps = {
-  status: 'pending' | 'in_progress' | 'complete' | 'restricted' | undefined;
+  status: "pending" | "in_progress" | "complete" | "restricted" | undefined;
   missingRequirements?: string[];
   onContinue?: () => void;
   onReset?: () => void;
@@ -56,10 +58,10 @@ export function AccountOnboardingCard({
   progress: externalProgress,
   dashboardUrl,
   isLoading = false,
-  titleLabel = 'Account setup',
-  completeLabel = 'Your account is verified and ready.',
-  continueLabel = 'Continue setup',
-  resetLabel = 'Reset account',
+  titleLabel = "Account setup",
+  completeLabel = "Your account is verified and ready.",
+  continueLabel = "Continue setup",
+  resetLabel = "Reset account",
   className,
   renderProgress,
   renderSteps,
@@ -69,14 +71,14 @@ export function AccountOnboardingCard({
   renderDashboardLink,
   children,
 }: AccountOnboardingCardProps) {
-  const isComplete = status === 'complete';
+  const isComplete = status === "complete";
   const progress =
     externalProgress ??
-    (status === 'complete'
+    (status === "complete"
       ? 100
-      : status === 'in_progress'
+      : status === "in_progress"
         ? 50
-        : status === 'restricted'
+        : status === "restricted"
           ? 25
           : 0);
 
@@ -112,7 +114,7 @@ export function AccountOnboardingCard({
             (renderDashboardLink ? (
               renderDashboardLink({
                 url: dashboardUrl,
-                label: 'Open dashboard',
+                label: "Open dashboard",
               })
             ) : (
               <a href={dashboardUrl} target="_blank" rel="noopener noreferrer">
@@ -136,9 +138,11 @@ export function AccountOnboardingCard({
                 </button>
               ))}
             {onContinue && (
-              <button type="button" onClick={onContinue} disabled={isLoading}>
-                {continueLabel}
-              </button>
+              <AccountOnboardingButton
+                onContinue={onContinue}
+                isLoading={isLoading}
+                continueLabel={continueLabel}
+              />
             )}
           </div>
         </>

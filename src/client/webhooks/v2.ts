@@ -1,12 +1,12 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import { deriveAccountStatus } from '../core/accountStatus.js';
-import type { V2ThinEvent } from '../types.js';
+import { deriveAccountStatus } from "../core/accountStatus.js";
+import type { V2ThinEvent } from "../types.js";
 import {
   type WebhookContext,
   componentRef,
   extractIdentifiers,
-} from './helpers.js';
+} from "./helpers.js";
 
 // =============================================================================
 // V2 EVENT HANDLER
@@ -31,22 +31,54 @@ export async function handleV2Event(
 ): Promise<void> {
   const { stripe, ctx, component } = whCtx;
 
-  if (!thinEvent.type.startsWith('v2.core.account')) {
+  if (!thinEvent.type.startsWith("v2.core.account")) {
     console.info(`[better-stripe] Unhandled V2 event type: ${thinEvent.type}`);
     return;
   }
 
   const relatedObject = thinEvent.related_object;
-  if (!relatedObject || relatedObject.type !== 'v2.core.account') {
+  if (!relatedObject) {
     return;
   }
 
-  const account = await stripe.v2.core.accounts.retrieve(relatedObject.id);
+  // Extract the account ID — related_object may reference the account directly
+  // (type: 'v2.core.account') or a sub-resource (type: 'v2.core.account_person').
+  // For sub-resources, parse the account ID from the URL (/v2/core/accounts/acct_xxx/...).
+  let accountId: string;
+  if (relatedObject.type === "v2.core.account") {
+    accountId = relatedObject.id;
+  } else if (relatedObject.url) {
+    const match = relatedObject.url.match(/\/accounts\/(acct_[a-zA-Z0-9]+)/);
+    if (match) {
+      accountId = match[1];
+    } else {
+      console.info(
+        `[better-stripe] Could not extract account ID from V2 event: ${thinEvent.type}`,
+      );
+      return;
+    }
+  } else {
+    return;
+  }
+
+  const account = await stripe.v2.core.accounts.retrieve(accountId, {
+    include: [
+      "configuration.merchant",
+      "configuration.recipient",
+      "configuration.customer",
+      "identity",
+      "requirements",
+    ],
+  });
   const identity = account.identity;
   const metadata = (account.metadata ?? {}) as Record<string, string>;
   const { userId, orgId } = extractIdentifiers(metadata);
   const { onboardingStatus, missingRequirements } =
     deriveAccountStatus(account);
+
+  console.info(
+    `[better-stripe]   ↳ account ${accountId}: status=${onboardingStatus}, missing=${missingRequirements.length}, configs=${(account.applied_configurations ?? []).join(",")}`,
+  );
 
   // V2 Account uses contact_email at account level, individual.email in identity
   const email =
@@ -57,11 +89,11 @@ export async function handleV2Event(
     (identity?.individual
       ? [identity.individual.given_name, identity.individual.surname]
           .filter(Boolean)
-          .join(' ') || undefined
+          .join(" ") || undefined
       : undefined);
 
   await ctx.runMutation(
-    componentRef(component, 'core/mutations/upsertAccountInternal'),
+    componentRef(component, "core/mutations/upsertAccountInternal"),
     {
       stripeAccountId: account.id,
       userId: userId || account.id,

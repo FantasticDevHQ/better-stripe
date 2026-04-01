@@ -106,6 +106,15 @@ export const syncAccounts = action({
   handler: async (ctx) => stripe.syncAllAccounts(ctx),
 });
 
+// Reset — clear all app + component data
+export const resetAll = action({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runMutation(internal.reset.clearAppDb, {});
+    await ctx.runAction(internal.reset.clearStripeDb, {});
+  },
+});
+
 // Products
 export const createProduct = action({
   args: { name: v.string(), description: v.optional(v.string()) },

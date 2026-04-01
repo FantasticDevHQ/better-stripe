@@ -1,7 +1,7 @@
-# BetterLearn — better-stripe Example App
+# better-stripe Example -- T-Shirt Shop
 
 A Vite + React SPA showcasing every feature of the `better-stripe` Convex component.
-All data comes from Stripe via better-stripe — no mock data.
+All data comes from Stripe via better-stripe -- no mock data.
 
 ## Quick Start
 
@@ -10,18 +10,13 @@ cd packages/better-stripe/example
 npm install
 ```
 
-**One command sets everything up:**
+**Set the Stripe secret key:**
 
 ```bash
 npm run setup
 ```
 
-This will:
-
-1. Set `STRIPE_SECRET_KEY` in Convex environment
-2. Create a Stripe webhook endpoint with all 19 required events
-3. Set `STRIPE_WEBHOOK_SECRET` in Convex environment
-4. Seed demo data (users, courses, Stripe products & prices)
+This reads `STRIPE_SECRET_KEY` from `.env.local` and sets it as a Convex environment variable. That's all the CLI setup does.
 
 **Start the app:**
 
@@ -29,14 +24,20 @@ This will:
 npm run dev
 ```
 
-Open **http://localhost:5173** and switch between roles to explore.
+Open **http://localhost:5173** and go to **/admin/setup** to finish setup:
+
+1. Set up webhook event destinations (V1 snapshot + V2 thin)
+2. Seed demo data (users + Stripe products/prices)
+3. Sync existing Stripe data (products, subscriptions, accounts)
 
 ### Reset & Re-seed
 
 ```bash
 npx convex run reset:run   # Clear all data (app DB + better-stripe component DB)
-npm run setup               # Re-seed everything
+npm run setup               # Re-set the Stripe key
 ```
+
+Then visit `/admin/setup` again to re-seed and re-sync.
 
 ### Prerequisites
 
@@ -53,20 +54,20 @@ npm run setup               # Re-seed everything
 ## Architecture
 
 All Stripe data flows through the `better-stripe` Convex component.
-The app never calls the Stripe SDK directly — it uses:
+The app never calls the Stripe SDK directly -- it uses:
 
-- **`convex/stripe.ts`** — `BetterStripe` client instance with triggers and hooks
-- **`convex/queries.ts`** — Query wrappers exposing component data to the frontend
-- **`convex/actions.ts`** — Action wrappers for Stripe API calls (checkout, accounts, payment methods)
-- **`convex/http.ts`** — Webhook endpoint via `registerRoutes()`
+- **`convex/stripe.ts`** -- `BetterStripe` client instance with triggers and hooks
+- **`convex/queries.ts`** -- Query wrappers exposing component data to the frontend
+- **`convex/actions.ts`** -- Action wrappers for Stripe API calls (checkout, accounts, webhooks, payment methods)
+- **`convex/http.ts`** -- Webhook endpoint via `registerRoutes()` with dual webhook secrets (V1 + V2)
 
 ## Roles
 
 Use the role switcher in the header to explore different perspectives:
 
-- **Learner** — Subscribe to plans, manage billing & payment methods, view invoices
-- **Creator** — Connect onboarding, view payouts & earnings, manage Stripe account
-- **Admin** — Manage products/prices, view all subscriptions, webhook event log
+- **Customer** -- Browse products, subscribe, manage billing & payment methods, view invoices
+- **Seller** -- Connect onboarding, view payouts & earnings, manage Stripe account
+- **Admin** -- Manage products/prices, view subscriptions, webhook event log, setup
 
 ## What's Demonstrated
 
@@ -76,16 +77,18 @@ Use the role switcher in the header to explore different perspectives:
 | --------------------------------------- | ------------------------------------- |
 | `stripe.listProducts()`                 | queries.ts, admin/products            |
 | `stripe.listPricesByProduct()`          | queries.ts                            |
+| `stripe.listPrices()`                   | queries.ts                            |
 | `stripe.createProduct()`                | actions.ts, admin/products            |
 | `stripe.createPrice()`                  | actions.ts, admin/products            |
 | `stripe.listSubscriptions()`            | queries.ts, admin/subscriptions       |
 | `stripe.listSubscriptionsByUser()`      | queries.ts, dashboard/billing         |
 | `stripe.cancelSubscription()`           | actions.ts, dashboard/billing         |
 | `stripe.listInvoices()`                 | queries.ts, dashboard/invoices        |
-| `stripe.listPayouts()`                  | queries.ts, creator/payouts           |
-| `stripe.createAccountWithOnboarding()`  | actions.ts, creator/onboarding        |
-| `stripe.getAccountByUserId()`           | queries.ts, creator/account           |
-| `stripe.getAccountLinkWithStatus()`     | actions.ts, creator/onboarding        |
+| `stripe.listPayouts()`                  | queries.ts, seller/payouts            |
+| `stripe.createAccountWithOnboarding()`  | actions.ts, seller/onboarding         |
+| `stripe.restartAccountOnboarding()`     | actions.ts, seller/onboarding         |
+| `stripe.getAccountByUserId()`           | queries.ts, seller/account            |
+| `stripe.getAccountLinkWithStatus()`     | actions.ts, seller/onboarding         |
 | `stripe.createCheckoutSession()`        | actions.ts, checkout                  |
 | `stripe.getCheckoutSessionByStripeId()` | queries.ts, checkout-status           |
 | `stripe.listPaymentMethods()`           | actions.ts, dashboard/payment-methods |
@@ -93,23 +96,27 @@ Use the role switcher in the header to explore different perspectives:
 | `stripe.detachPaymentMethod()`          | actions.ts, dashboard/payment-methods |
 | `stripe.getPublishableKey()`            | queries.ts                            |
 | `stripe.getStripeMode()`                | queries.ts                            |
-| `stripe.listWebhookEndpoints()`         | setup.ts                              |
-| `stripe.createWebhookEndpoint()`        | setup.ts                              |
+| `stripe.setupEventDestination()`        | actions.ts, admin/setup               |
+| `stripe.listEventDestinations()`        | actions.ts, admin/setup               |
+| `stripe.listWebhookEvents()`            | queries.ts, admin/webhooks            |
+| `stripe.syncAllProducts()`              | actions.ts, admin/setup               |
+| `stripe.syncAllSubscriptions()`         | actions.ts, admin/setup               |
+| `stripe.syncAllAccounts()`              | actions.ts, admin/setup               |
 | `stripe.clearAll()`                     | reset.ts                              |
 
 ### Connect Onboarding (V2 Accounts)
 
-The creator onboarding flow demonstrates `createAccountWithOnboarding()`:
+The seller onboarding flow demonstrates `createAccountWithOnboarding()`:
 
 ```ts
 // Default: merchant configuration with card_payments
 const result = await stripe.createAccountWithOnboarding(ctx, {
-  userId: 'user_123',
-  email: 'creator@example.com',
-  refreshUrl: 'https://yourapp.com/onboarding',
-  returnUrl: 'https://yourapp.com/onboarding',
+  userId: "user_123",
+  email: "seller@example.com",
+  refreshUrl: "https://yourapp.com/onboarding",
+  returnUrl: "https://yourapp.com/onboarding",
 });
-// result.onboardingUrl → redirect user to Stripe hosted onboarding
+// result.onboardingUrl -> redirect user to Stripe hosted onboarding
 
 // Override: recipient only (for payouts)
 await stripe.createAccountWithOnboarding(ctx, {
@@ -136,7 +143,7 @@ await stripe.createAccountWithOnboarding(ctx, {
       },
     },
   },
-  dashboard: 'full', // or 'express' (default)
+  dashboard: "full", // or 'express' (default)
 });
 ```
 
@@ -144,17 +151,23 @@ Default configuration is exposed as `BetterStripe.DEFAULT_ACCOUNT_CONFIGURATION`
 
 ### React Components (from `better-stripe/react`)
 
-| Component                                   | Page                       |
-| ------------------------------------------- | -------------------------- |
-| `StripeProviderWithKey`                     | Payment methods            |
-| `PriceBadge`, `IntervalSelector`            | Landing                    |
-| `EmbeddedCheckout`                          | Checkout                   |
-| `CheckoutStatus`                            | Checkout status            |
-| `AddCardForm`, `PaymentMethodsList`         | Payment methods            |
-| `usePaymentMethodActions`                   | Payment methods            |
-| `AccountOnboardingCard`                     | Creator onboarding         |
-| `ConnectStatusBadge`, `ConnectRequirements` | Creator onboarding/account |
-| `formatPrice`, `formatPriceWithInterval`    | Various                    |
+| Component                                   | Page                      |
+| ------------------------------------------- | ------------------------- |
+| `StripeProviderWithKey`                     | Payment methods           |
+| `PriceBadge`, `IntervalSelector`            | Landing                   |
+| `EmbeddedCheckout`                          | Checkout                  |
+| `CheckoutStatus`                            | Checkout status           |
+| `AddCardForm`, `PaymentMethodsList`         | Payment methods           |
+| `usePaymentMethodActions`                   | Payment methods           |
+| `AccountOnboardingCard`                     | Seller onboarding         |
+| `AccountCloseButton`, `AccountCloseCard`    | Seller account            |
+| `AccountCreateButton`                       | Seller onboarding         |
+| `AccountLoginButton`                        | Seller account            |
+| `AccountOnboardingButton`                   | Seller onboarding         |
+| `ConnectStatusBadge`, `ConnectRequirements` | Seller onboarding/account |
+| `SubscriptionActions`                       | Dashboard billing         |
+| `PaymentMethodActions`                      | Dashboard payment methods |
+| `formatPrice`, `formatPriceWithInterval`    | Various                   |
 
 ### React Hooks (from `better-stripe/react`)
 
@@ -169,29 +182,25 @@ Default configuration is exposed as `BetterStripe.DEFAULT_ACCOUNT_CONFIGURATION`
 
 ### Sync Triggers & Async Hooks
 
-| Type         | Handler                       | What it does          |
-| ------------ | ----------------------------- | --------------------- |
-| Sync Trigger | `subscription.onCreate`       | Grants course access  |
-| Sync Trigger | `subscription.onDelete`       | Revokes course access |
-| Sync Trigger | `checkoutSession.onCompleted` | Logs to webhook log   |
-| Async Hook   | `onPayoutCompleted`           | Logs payout event     |
-| Async Hook   | `onInvoicePaid`               | Logs invoice event    |
-| Async Hook   | `onPaymentFailed`             | Logs failed payment   |
-| Async Hook   | `onTrialEnding`               | Logs trial ending     |
+| Type         | Handler                       | What it does               |
+| ------------ | ----------------------------- | -------------------------- |
+| Sync Trigger | `subscription.onCreate`       | Logs subscription creation |
+| Sync Trigger | `subscription.onDelete`       | Logs subscription deletion |
+| Sync Trigger | `checkoutSession.onCompleted` | Logs checkout completion   |
+| Async Hook   | `onPayoutCompleted`           | Logs payout event          |
+| Async Hook   | `onInvoicePaid`               | Logs invoice event         |
+| Async Hook   | `onPaymentFailed`             | Logs failed payment        |
+| Async Hook   | `onTrialEnding`               | Logs trial ending          |
 
 ### Setup Script (`npm run setup`)
 
-The setup script demonstrates:
-
-- `stripe.createWebhookEndpoint()` — create/replace webhook endpoints programmatically
-- `stripe.listWebhookEndpoints()` — check for existing endpoints
-- `stripe.createProduct()` / `stripe.createPrice()` — seed Stripe catalog
-- `stripe.listProducts()` — idempotency check before seeding
-- `stripe.clearAll()` — wipe component DB for reset
+The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All other setup (webhooks, seeding, syncing) is done through the Admin UI at `/admin/setup`.
 
 ### Webhook Processing
 
-`registerRoutes()` in `http.ts` handles 19 Stripe event types:
+`registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
+
+**V1 Snapshot Events (19):**
 
 - Products: `product.created`, `product.updated`
 - Prices: `price.created`, `price.updated`
@@ -201,7 +210,20 @@ The setup script demonstrates:
 - Payments: `payment_intent.succeeded/payment_failed/canceled`
 - Payouts: `payout.created/updated/paid/failed`
 
-All events are synced to the component DB and available via reactive Convex queries.
+**V2 Thin Events (12):**
+
+- Account lifecycle: `v2.core.account.*` events (created, updated, closed, etc.)
+
+The webhook endpoint accepts both V1 and V2 event payloads, verified with separate secrets (`STRIPE_WEBHOOK_SECRET` for V1, `STRIPE_WEBHOOK_SECRET_V2` for V2). All events are stored in the component's `webhookEvents` table and viewable in the admin webhook log.
+
+### Seed Data
+
+The setup flow creates:
+
+- **Users**: Alex Customer, Jordan Seller, Sam Admin
+- **Products**:
+  - Classic Tee -- $29 one-time purchase
+  - Tee of the Month Club -- $19/mo or $189/yr subscription
 
 ## Tech Stack
 
@@ -218,19 +240,17 @@ All events are synced to the component DB and available via reactive Convex quer
 example/
 ├── convex/
 │   ├── convex.config.ts        # app.use(betterStripe)
-│   ├── schema.ts               # users, courses, courseAccess, webhookLog
-│   ├── http.ts                 # registerRoutes() webhook endpoint
+│   ├── schema.ts               # users table only
+│   ├── http.ts                 # registerRoutes() webhook endpoint (V1 + V2)
 │   ├── stripe.ts               # BetterStripe client + triggers + hooks
 │   ├── queries.ts              # Query wrappers for component data
-│   ├── actions.ts              # Action wrappers for Stripe API calls
-│   ├── setup.ts                # ensureWebhook action (used by setup script)
+│   ├── actions.ts              # Action wrappers for Stripe API calls + admin setup
+│   ├── setup.ts                # ensureWebhook action (legacy, used by setup script)
 │   ├── seed.ts                 # Seed DB + Stripe products
 │   ├── reset.ts                # Clear all data
-│   ├── courses.ts              # Course CRUD + access grants
-│   ├── users.ts                # User queries
-│   └── webhookLog.ts           # Webhook event log
+│   └── users.ts                # User queries
 ├── scripts/
-│   └── setup.ts                # One-command setup script
+│   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
 ├── src/
 │   ├── main.tsx                # BrowserRouter + ConvexProvider
 │   ├── App.tsx                 # Routes
@@ -243,9 +263,9 @@ example/
 │   │   ├── landing.tsx         # Pricing (real products from Stripe)
 │   │   ├── checkout.tsx        # EmbeddedCheckout
 │   │   ├── checkout-status.tsx # CheckoutStatus
-│   │   ├── dashboard/          # Learner: billing, invoices, payment methods
-│   │   ├── creator/            # Creator: onboarding, account, payouts
-│   │   └── admin/              # Admin: products, subscriptions, webhooks
+│   │   ├── dashboard/          # Customer: billing, invoices, payment methods
+│   │   ├── seller/             # Seller: onboarding, account, payouts, products
+│   │   └── admin/              # Admin: products, subscriptions, webhooks, setup
 │   ├── providers/
 │   │   └── role-context.tsx    # Demo role switcher (mock auth)
 │   └── lib/
@@ -256,12 +276,12 @@ example/
 
 ## Scripts
 
-| Command                    | Description                                    |
-| -------------------------- | ---------------------------------------------- |
-| `npm run setup`            | Set Convex env vars, create webhook, seed data |
-| `npm run dev`              | Start Vite + Convex dev in parallel            |
-| `npm run typecheck`        | TypeScript check (frontend)                    |
-| `npm run typecheck:convex` | TypeScript check (Convex functions)            |
-| `npm run lint`             | ESLint                                         |
-| `npm run build`            | Production build                               |
-| `npx convex run reset:run` | Clear all data                                 |
+| Command                    | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `npm run setup`            | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run dev`              | Start Vite + Convex dev in parallel         |
+| `npm run typecheck`        | TypeScript check (frontend)                 |
+| `npm run typecheck:convex` | TypeScript check (Convex functions)         |
+| `npm run lint`             | ESLint                                      |
+| `npm run build`            | Production build                            |
+| `npx convex run reset:run` | Clear all data                              |

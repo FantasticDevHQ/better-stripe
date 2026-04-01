@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
@@ -24,8 +24,8 @@
   --color-destructive: oklch(0.396 0.141 25.723);
   --color-destructive-foreground: oklch(0.985 0 0);
   --radius: 0.625rem;
-  --font-sans: 'Geist Variable', sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-sans: "Geist Variable", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -40,8 +40,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
+  --color-popover-foreground: oklch(0.985 0 0);
+  --color-popover: oklch(0.205 0 0);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

@@ -1,20 +1,20 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component } from '../helpers.js';
+import type { Component } from "../helpers.js";
 import type {
   RegisterRoutesConfig,
   V2ThinEvent,
   WebhookActionCtx,
-} from '../types.js';
+} from "../types.js";
 import {
   type WebhookContext,
   componentRef,
   getStripeClient,
   jsonResponse,
-} from './helpers.js';
-import { runHooks } from './hooks.js';
-import { processEvent } from './processors.js';
-import { handleV2Event, verifyV2Event } from './v2.js';
+} from "./helpers.js";
+import { runHooks } from "./hooks.js";
+import { processEvent } from "./processors.js";
+import { handleV2Event, verifyV2Event } from "./v2.js";
 
 // =============================================================================
 // CORE WEBHOOK HANDLER
@@ -26,9 +26,9 @@ export async function handleWebhookRequest(
   component: Component,
   config?: RegisterRoutesConfig,
 ): Promise<Response> {
-  const signature = request.headers.get('stripe-signature');
+  const signature = request.headers.get("stripe-signature");
   if (!signature) {
-    return jsonResponse({ error: 'Missing stripe-signature header' }, 400);
+    return jsonResponse({ error: "Missing stripe-signature header" }, 400);
   }
 
   const body = await request.text();
@@ -37,21 +37,21 @@ export async function handleWebhookRequest(
   try {
     parsedBody = JSON.parse(body) as Record<string, unknown>;
   } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const eventType = (parsedBody.type as string) ?? '';
-  const isV2Event = eventType.startsWith('v2.');
+  const eventType = (parsedBody.type as string) ?? "";
+  const isV2Event = eventType.startsWith("v2.");
 
   const stripeSecretKey = config?.stripeSecretKey;
   const stripeApiVersion = config?.stripeApiVersion;
 
   if (!stripeSecretKey) {
     console.error(
-      '[better-stripe] Missing stripeSecretKey in registerRoutes config',
+      "[better-stripe] Missing stripeSecretKey in registerRoutes config",
     );
     return jsonResponse(
-      { error: 'Stripe component not configured: missing stripeSecretKey' },
+      { error: "Stripe component not configured: missing stripeSecretKey" },
       500,
     );
   }
@@ -59,10 +59,10 @@ export async function handleWebhookRequest(
   const webhookSecret = config?.webhookSecret;
   if (!webhookSecret) {
     console.error(
-      '[better-stripe] Missing webhookSecret in registerRoutes config',
+      "[better-stripe] Missing webhookSecret in registerRoutes config",
     );
     return jsonResponse(
-      { error: 'Stripe component not configured: missing webhookSecret' },
+      { error: "Stripe component not configured: missing webhookSecret" },
       500,
     );
   }
@@ -83,21 +83,26 @@ export async function handleWebhookRequest(
     try {
       thinEvent = await verifyV2Event(stripe, body, signature, v2Secret);
     } catch (error) {
-      console.error('[better-stripe] V2 signature verification failed:', error);
-      return jsonResponse({ error: 'V2 signature verification failed' }, 400);
+      console.error("[better-stripe] V2 signature verification failed:", error);
+      return jsonResponse({ error: "V2 signature verification failed" }, 400);
     }
 
     const eventId = thinEvent.id;
+    console.info(
+      `[better-stripe] ← V2 event received: ${thinEvent.type} (${eventId})`,
+    );
+
     try {
       const dedupStatus = await ctx.runMutation(
-        componentRef(component, 'webhooks/mutations/insertWebhookEvent'),
+        componentRef(component, "webhooks/mutations/insertWebhookEvent"),
         {
           stripeEventId: eventId,
           eventType: thinEvent.type,
           livemode: thinEvent.livemode,
         },
       );
-      if (dedupStatus !== 'inserted') {
+      if (dedupStatus !== "inserted") {
+        console.info(`[better-stripe]   ↳ deduplicated (already processed)`);
         return jsonResponse({ success: true, deduplicated: true }, 200);
       }
     } catch (error) {
@@ -109,14 +114,15 @@ export async function handleWebhookRequest(
 
     try {
       await handleV2Event(whCtx, thinEvent);
+      console.info(`[better-stripe]   ↳ processed ${thinEvent.type}`);
     } catch (error) {
       console.error(
-        `[better-stripe] Sync failed for ${thinEvent.type}:`,
+        `[better-stripe]   ✗ sync failed for ${thinEvent.type}:`,
         error,
       );
       try {
         await ctx.runMutation(
-          componentRef(component, 'webhooks/mutations/markWebhookEventFailed'),
+          componentRef(component, "webhooks/mutations/markWebhookEventFailed"),
           {
             stripeEventId: eventId,
             error: error instanceof Error ? error.message : String(error),
@@ -125,12 +131,12 @@ export async function handleWebhookRequest(
       } catch {
         // Ledger updates are best-effort only.
       }
-      return jsonResponse({ error: 'V2 account sync failed' }, 500);
+      return jsonResponse({ error: "V2 account sync failed" }, 500);
     }
 
     try {
       await ctx.runMutation(
-        componentRef(component, 'webhooks/mutations/markWebhookEventProcessed'),
+        componentRef(component, "webhooks/mutations/markWebhookEventProcessed"),
         {
           stripeEventId: eventId,
         },
@@ -164,23 +170,28 @@ export async function handleWebhookRequest(
       `[better-stripe] Webhook signature verification failed: ${msg}`,
     );
     return jsonResponse(
-      { error: 'Webhook signature verification failed' },
+      { error: "Webhook signature verification failed" },
       400,
     );
   }
 
   // --- Atomic webhook dedup via event ledger ---
   const eventId = event.id;
+  console.info(
+    `[better-stripe] ← V1 event received: ${event.type} (${eventId})`,
+  );
+
   try {
     const dedupStatus = await ctx.runMutation(
-      componentRef(component, 'webhooks/mutations/insertWebhookEvent'),
+      componentRef(component, "webhooks/mutations/insertWebhookEvent"),
       {
         stripeEventId: eventId,
         eventType: event.type,
         livemode: event.livemode,
       },
     );
-    if (dedupStatus !== 'inserted') {
+    if (dedupStatus !== "inserted") {
+      console.info(`[better-stripe]   ↳ deduplicated (already processed)`);
       return jsonResponse({ success: true, deduplicated: true }, 200);
     }
   } catch (error) {
@@ -194,11 +205,12 @@ export async function handleWebhookRequest(
   // --- Process event (sync) ---
   try {
     await processEvent(whCtx, event);
+    console.info(`[better-stripe]   ↳ processed ${event.type}`);
   } catch (error) {
-    console.error(`[better-stripe] Sync failed for ${event.type}:`, error);
+    console.error(`[better-stripe]   ✗ sync failed for ${event.type}:`, error);
     try {
       await ctx.runMutation(
-        componentRef(component, 'webhooks/mutations/markWebhookEventFailed'),
+        componentRef(component, "webhooks/mutations/markWebhookEventFailed"),
         {
           stripeEventId: eventId,
           error: error instanceof Error ? error.message : String(error),
@@ -207,13 +219,13 @@ export async function handleWebhookRequest(
     } catch {
       /* ledger update best-effort */
     }
-    return jsonResponse({ error: 'Sync processing failed' }, 500);
+    return jsonResponse({ error: "Sync processing failed" }, 500);
   }
 
   // --- Mark processed ---
   try {
     await ctx.runMutation(
-      componentRef(component, 'webhooks/mutations/markWebhookEventProcessed'),
+      componentRef(component, "webhooks/mutations/markWebhookEventProcessed"),
       {
         stripeEventId: eventId,
       },

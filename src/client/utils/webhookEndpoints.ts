@@ -7,7 +7,7 @@ import type { RunCtx } from '../helpers.js';
 // =============================================================================
 
 /**
- * All Stripe event types the better-stripe webhook handler processes.
+ * V1 Stripe event types the better-stripe webhook handler processes.
  * Use this when creating webhook endpoints to ensure all needed events are enabled.
  */
 export const BETTER_STRIPE_WEBHOOK_EVENTS = [
@@ -40,6 +40,37 @@ export const BETTER_STRIPE_WEBHOOK_EVENTS = [
 
 export type BetterStripeWebhookEvent =
   (typeof BETTER_STRIPE_WEBHOOK_EVENTS)[number];
+
+/**
+ * V2 Stripe event types for Connect account lifecycle.
+ * These are thin events — the webhook handler fetches full data from the API.
+ */
+export const BETTER_STRIPE_V2_WEBHOOK_EVENTS = [
+  'v2.core.account.updated',
+  'v2.core.account.created',
+  'v2.core.account[requirements].updated',
+  'v2.core.account[identity].updated',
+  'v2.core.account[configuration.merchant].updated',
+  'v2.core.account[configuration.merchant].capability_status_updated',
+  'v2.core.account[configuration.customer].updated',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[defaults].updated',
+  'v2.core.account_person.created',
+  'v2.core.account_person.updated',
+  'v2.core.account_link.returned',
+] as const;
+
+export type BetterStripeV2WebhookEvent =
+  (typeof BETTER_STRIPE_V2_WEBHOOK_EVENTS)[number];
+
+/**
+ * All events (V1 + V2) that better-stripe processes.
+ * Use with setupEventDestination() for complete webhook coverage.
+ */
+export const ALL_BETTER_STRIPE_EVENTS: readonly string[] = [
+  ...BETTER_STRIPE_WEBHOOK_EVENTS,
+  ...BETTER_STRIPE_V2_WEBHOOK_EVENTS,
+];
 
 export async function listWebhookEndpoints(
   stripe: Stripe,
@@ -87,5 +118,125 @@ export async function createWebhookEndpoint(
     id: endpoint.id,
     secret: endpoint.secret!,
     url: endpoint.url,
+  };
+}
+
+// =============================================================================
+// V2 Event Destination management (supports both V1 and V2 events)
+// =============================================================================
+
+export async function listEventDestinations(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts?: { limit?: number },
+) {
+  const destinations = await stripe.v2.core.eventDestinations.list({
+    limit: opts?.limit ?? 100,
+    include: ['webhook_endpoint.url'],
+  });
+  return destinations.data.map((d) => ({
+    id: d.id,
+    url: d.webhook_endpoint?.url ?? '',
+    status: d.status,
+    enabledEvents: d.enabled_events,
+    eventPayload: d.event_payload,
+    name: d.name,
+    description: d.description,
+  }));
+}
+
+/**
+ * Create or update a Stripe V2 event destination.
+ *
+ * Stripe requires separate destinations for snapshot (V1) and thin (V2) events
+ * because V2 events are inherently thin. This function finds an existing
+ * destination matching the URL and payload type, updates it if found, or
+ * creates a new one.
+ *
+ * Defaults to a thin destination with V2 account events if no overrides given.
+ */
+export async function setupEventDestination(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    url: string;
+    name?: string;
+    description?: string;
+    enabledEvents?: string[];
+    /** 'snapshot' for V1 events, 'thin' for V2 events. Defaults to 'thin'. */
+    eventPayload?: 'snapshot' | 'thin';
+  },
+): Promise<{
+  id: string;
+  secret: string;
+  url: string;
+  enabledEvents: string[];
+  created: boolean;
+}> {
+  const payloadType = opts.eventPayload ?? 'thin';
+  const events =
+    opts.enabledEvents ??
+    (payloadType === 'thin'
+      ? [...BETTER_STRIPE_V2_WEBHOOK_EVENTS]
+      : [...BETTER_STRIPE_WEBHOOK_EVENTS]);
+  const name =
+    opts.name ??
+    (payloadType === 'thin' ? 'better-stripe-v2' : 'better-stripe');
+  const description =
+    opts.description ??
+    (payloadType === 'thin'
+      ? 'better-stripe V2 Connect account events'
+      : 'better-stripe V1 payment events');
+
+  // Check for an existing destination at the same URL with matching payload type
+  const existing = await stripe.v2.core.eventDestinations.list({
+    include: ['webhook_endpoint.url'],
+  });
+  const match = existing.data.find(
+    (d) =>
+      d.webhook_endpoint?.url === opts.url &&
+      d.event_payload === payloadType,
+  );
+
+  if (match) {
+    const updated = await stripe.v2.core.eventDestinations.update(match.id, {
+      name,
+      description,
+      enabled_events: events,
+      include: ['webhook_endpoint.url'],
+    });
+
+    if (updated.status === 'disabled') {
+      await stripe.v2.core.eventDestinations.enable(match.id);
+    }
+
+    return {
+      id: updated.id,
+      secret: match.webhook_endpoint?.signing_secret ?? '',
+      url: opts.url,
+      enabledEvents: updated.enabled_events,
+      created: false,
+    };
+  }
+
+  // Create new event destination
+  const destination = await stripe.v2.core.eventDestinations.create({
+    name,
+    description,
+    type: 'webhook_endpoint',
+    event_payload: payloadType,
+    enabled_events: events,
+    events_from:
+      payloadType === 'thin' ? ['self', 'other_accounts'] : ['self'],
+    webhook_endpoint: { url: opts.url },
+    include: ['webhook_endpoint.signing_secret', 'webhook_endpoint.url'],
+  });
+
+  return {
+    id: destination.id,
+    secret: destination.webhook_endpoint?.signing_secret ?? '',
+    url: opts.url,
+    enabledEvents: destination.enabled_events,
+    created: true,
   };
 }

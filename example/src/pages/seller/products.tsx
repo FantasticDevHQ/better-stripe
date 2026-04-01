@@ -1,9 +1,9 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -11,17 +11,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -29,28 +29,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useRole } from '@/providers/role-context';
-import { useAction, useQuery } from 'convex/react';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+} from "@/components/ui/table";
+import { useRole } from "@/providers/role-context";
+import { useAction, useQuery } from "convex/react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency.toUpperCase(),
   }).format(amount / 100);
 }
 
-export function CreatorProducts() {
+export function SellerProducts() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
   const products = useQuery(
     api.queries.listProductsWithPricesByAccount,
-    account?.stripeAccountId ? { accountId: account.stripeAccountId } : 'skip',
+    account?.stripeAccountId ? { accountId: account.stripeAccountId } : "skip",
   );
   const createProduct = useAction(api.actions.createProductForAccount);
   const createPrice = useAction(api.actions.createPrice);
@@ -58,11 +58,11 @@ export function CreatorProducts() {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAddPriceFor, setShowAddPriceFor] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState({ name: '', description: '' });
+  const [newProduct, setNewProduct] = useState({ name: "", description: "" });
   const [newPrice, setNewPrice] = useState({
-    amount: '',
-    currency: 'usd',
-    interval: 'month',
+    amount: "",
+    currency: "usd",
+    interval: "month",
   });
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isCreatingPrice, setIsCreatingPrice] = useState(false);
@@ -92,10 +92,10 @@ export function CreatorProducts() {
         <Alert>
           <AlertDescription>
             You need a Stripe Connect account before creating products. Visit
-            the{' '}
-            <a href="/creator/onboarding" className="text-primary underline">
+            the{" "}
+            <a href="/seller/onboarding" className="text-primary underline">
               onboarding page
-            </a>{' '}
+            </a>{" "}
             to get started.
           </AlertDescription>
         </Alert>
@@ -104,17 +104,17 @@ export function CreatorProducts() {
   }
 
   // Onboarding incomplete
-  const onboardingStatus = account.onboardingStatus ?? 'pending';
-  if (onboardingStatus !== 'complete') {
+  const onboardingStatus = account.onboardingStatus ?? "pending";
+  if (onboardingStatus !== "complete") {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">My Products</h1>
         <Alert>
           <AlertDescription>
-            Complete your account onboarding before creating products. Visit the{' '}
-            <a href="/creator/onboarding" className="text-primary underline">
+            Complete your account onboarding before creating products. Visit the{" "}
+            <a href="/seller/onboarding" className="text-primary underline">
               onboarding page
-            </a>{' '}
+            </a>{" "}
             to continue.
           </AlertDescription>
         </Alert>
@@ -130,10 +130,10 @@ export function CreatorProducts() {
         description: newProduct.description || undefined,
         accountId: account.stripeAccountId,
       });
-      setNewProduct({ name: '', description: '' });
+      setNewProduct({ name: "", description: "" });
       setShowCreateDialog(false);
     } catch (err) {
-      console.error('Failed to create product:', err);
+      console.error("Failed to create product:", err);
     } finally {
       setIsCreatingProduct(false);
     }
@@ -143,25 +143,25 @@ export function CreatorProducts() {
     setIsCreatingPrice(true);
     try {
       const interval = newPrice.interval as
-        | 'month'
-        | 'year'
-        | 'week'
-        | 'day'
-        | 'one_time';
+        | "month"
+        | "year"
+        | "week"
+        | "day"
+        | "one_time";
       await createPrice({
         stripeProductId,
         unitAmount: Number(newPrice.amount),
         currency: newPrice.currency,
-        type: interval === 'one_time' ? 'one_time' : 'recurring',
+        type: interval === "one_time" ? "one_time" : "recurring",
         interval:
-          interval === 'one_time'
+          interval === "one_time"
             ? undefined
-            : (interval as 'month' | 'year' | 'week' | 'day'),
+            : (interval as "month" | "year" | "week" | "day"),
       });
-      setNewPrice({ amount: '', currency: 'usd', interval: 'month' });
+      setNewPrice({ amount: "", currency: "usd", interval: "month" });
       setShowAddPriceFor(null);
     } catch (err) {
-      console.error('Failed to create price:', err);
+      console.error("Failed to create price:", err);
     } finally {
       setIsCreatingPrice(false);
     }
@@ -192,7 +192,7 @@ export function CreatorProducts() {
         <div>
           <h1 className="text-2xl font-bold">My Products</h1>
           <p className="text-muted-foreground text-sm">
-            Create products and prices for your courses and subscriptions.
+            Create products and prices for your store.
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)}>
@@ -200,11 +200,11 @@ export function CreatorProducts() {
           Create Product
         </Button>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>New Product</DialogTitle>
               <DialogDescription>
-                Create a new product in your Stripe catalog. Learners will see
+                Create a new product in your Stripe catalog. Customers will see
                 this when purchasing.
               </DialogDescription>
             </DialogHeader>
@@ -217,7 +217,7 @@ export function CreatorProducts() {
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, name: e.target.value })
                   }
-                  placeholder="e.g. Advanced React Course"
+                  placeholder="e.g. Premium Tee"
                 />
               </div>
               <div className="grid gap-2">
@@ -231,7 +231,7 @@ export function CreatorProducts() {
                       description: e.target.value,
                     })
                   }
-                  placeholder="e.g. Master React patterns and best practices"
+                  placeholder="e.g. A premium cotton t-shirt"
                 />
               </div>
             </div>
@@ -246,7 +246,7 @@ export function CreatorProducts() {
                 onClick={handleCreateProduct}
                 disabled={isCreatingProduct || !newProduct.name}
               >
-                {isCreatingProduct ? 'Creating...' : 'Create'}
+                {isCreatingProduct ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -285,19 +285,19 @@ export function CreatorProducts() {
                       <div>
                         <p className="font-medium">{product.name}</p>
                         <p className="text-muted-foreground text-sm">
-                          {product.description ?? ''}
+                          {product.description ?? ""}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={product.active ? 'default' : 'secondary'}>
-                      {product.active ? 'Active' : 'Archived'}
+                    <Badge variant={product.active ? "default" : "secondary"}>
+                      {product.active ? "Active" : "Archived"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {product.prices.length} price
-                    {product.prices.length !== 1 ? 's' : ''}
+                    {product.prices.length !== 1 ? "s" : ""}
                   </TableCell>
                   <TableCell className="text-right">
                     <div
@@ -409,7 +409,7 @@ export function CreatorProducts() {
                                 }
                                 disabled={isCreatingPrice || !newPrice.amount}
                               >
-                                {isCreatingPrice ? 'Adding...' : 'Add'}
+                                {isCreatingPrice ? "Adding..." : "Add"}
                               </Button>
                             </CardContent>
                           </Card>
@@ -446,20 +446,20 @@ export function CreatorProducts() {
                                     )}
                                   </TableCell>
                                   <TableCell className="capitalize">
-                                    {price.type === 'one_time'
-                                      ? 'One-time'
-                                      : `Per ${price.interval ?? 'month'}`}
+                                    {price.type === "one_time"
+                                      ? "One-time"
+                                      : `Per ${price.interval ?? "month"}`}
                                   </TableCell>
                                   <TableCell className="capitalize">
-                                    {price.type.replace('_', ' ')}
+                                    {price.type.replace("_", " ")}
                                   </TableCell>
                                   <TableCell>
                                     <Badge
                                       variant={
-                                        price.active ? 'default' : 'secondary'
+                                        price.active ? "default" : "secondary"
                                       }
                                     >
-                                      {price.active ? 'Active' : 'Archived'}
+                                      {price.active ? "Active" : "Archived"}
                                     </Badge>
                                   </TableCell>
                                 </TableRow>
@@ -478,8 +478,7 @@ export function CreatorProducts() {
                 <TableCell colSpan={4} className="py-8 text-center">
                   <Alert>
                     <AlertDescription>
-                      No products yet. Create one to start offering courses and
-                      subscriptions.
+                      No products yet. Create one to start selling.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

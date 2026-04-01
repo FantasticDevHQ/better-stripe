@@ -1,7 +1,7 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { RunCtx } from '../helpers.js';
-import type { AccountLinkWithStatus } from '../types.js';
+import type { RunCtx } from "../helpers.js";
+import type { AccountLinkWithStatus } from "../types.js";
 
 // =============================================================================
 // Account Link methods
@@ -14,7 +14,7 @@ export async function createAccountLink(
     stripeAccountId: string;
     refreshUrl: string;
     returnUrl: string;
-    type: 'account_onboarding' | 'account_update';
+    type: "account_onboarding" | "account_update";
   },
 ) {
   const accountLink = await stripe.accountLinks.create({
@@ -31,16 +31,16 @@ export async function createV2AccountLink(
   _ctx: RunCtx,
   opts: {
     stripeAccountId: string;
-    type: 'account_onboarding' | 'account_update';
+    type: "account_onboarding" | "account_update";
     refreshUrl: string;
     returnUrl: string;
     configurations?: string[];
   },
 ) {
   const useCase: Stripe.V2.Core.AccountLinkCreateParams.UseCase =
-    opts.type === 'account_update'
+    opts.type === "account_update"
       ? {
-          type: 'account_update',
+          type: "account_update",
           account_update: {
             configurations:
               (opts.configurations as Stripe.V2.Core.AccountLinkCreateParams.UseCase.AccountUpdate.Configuration[]) ??
@@ -50,7 +50,7 @@ export async function createV2AccountLink(
           },
         }
       : {
-          type: 'account_onboarding',
+          type: "account_onboarding",
           account_onboarding: {
             configurations:
               (opts.configurations as Stripe.V2.Core.AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration[]) ??
@@ -95,29 +95,22 @@ export async function getAccountLinkWithStatus(
 ): Promise<AccountLinkWithStatus> {
   const account = await stripe.v2.core.accounts.retrieve(opts.stripeAccountId, {
     include: [
-      'configuration.merchant',
-      'configuration.recipient',
-      'configuration.customer',
+      "configuration.merchant",
+      "configuration.recipient",
+      "configuration.customer",
     ],
   });
-
-  const hasRecipientConfig =
-    account.applied_configurations?.includes('recipient');
-
-  if (!hasRecipientConfig) {
-    return { url: '', linkType: 'setup' };
-  }
 
   const getOnboardingLink = async (): Promise<AccountLinkWithStatus> => {
     const configs = account.applied_configurations ?? [];
     const link = await createV2AccountLink(stripe, ctx, {
       stripeAccountId: opts.stripeAccountId,
-      type: 'account_onboarding',
+      type: "account_onboarding",
       configurations: configs,
       refreshUrl: opts.refreshUrl,
       returnUrl: opts.returnUrl,
     });
-    return { url: link.url, linkType: 'onboarding' };
+    return { url: link.url, linkType: "onboarding" };
   };
 
   if (
@@ -127,12 +120,12 @@ export async function getAccountLinkWithStatus(
     return getOnboardingLink();
   }
 
-  if (account.dashboard === 'express') {
+  if (account.dashboard === "express") {
     try {
       const loginLinkResult = await createLoginLink(stripe, ctx, {
         stripeAccountId: opts.stripeAccountId,
       });
-      return { url: loginLinkResult.url, linkType: 'login' };
+      return { url: loginLinkResult.url, linkType: "login" };
     } catch (loginLinkError) {
       console.warn(
         `[better-stripe] Login link creation failed for ${opts.stripeAccountId}, falling back to onboarding:`,

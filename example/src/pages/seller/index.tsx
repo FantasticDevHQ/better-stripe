@@ -1,28 +1,31 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRole } from '@/providers/role-context';
-import { AccountCreateCard, ConnectStatusBadge } from '@getdojo/better-stripe/react';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
+import {
+  AccountCreateCard,
+  ConnectStatusBadge,
+} from "@getdojo/better-stripe/react";
+import { useQuery } from "convex/react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function formatCurrency(cents: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
   }).format(cents / 100);
 }
 
-export function CreatorHome() {
+export function SellerHome() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
@@ -52,24 +55,21 @@ export function CreatorHome() {
   if (account === null) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Creator Earnings</h1>
+        <h1 className="text-2xl font-bold">Seller Earnings</h1>
         <p className="text-muted-foreground">
           Connect a Stripe account to start receiving payouts.
         </p>
-        <AccountCreateCard
-          title="Get Started with Payouts"
-          description="Create a Stripe Connect account to receive earnings from your courses and subscriptions."
-        />
+        <AccountCreateCard />
       </div>
     );
   }
 
   // State: account exists but onboarding incomplete
-  const onboardingStatus = account.onboardingStatus ?? 'pending';
-  if (onboardingStatus !== 'complete') {
+  const onboardingStatus = account.onboardingStatus ?? "pending";
+  if (onboardingStatus !== "complete") {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Creator Earnings</h1>
+        <h1 className="text-2xl font-bold">Seller Earnings</h1>
         <div className="flex items-center gap-3">
           <p className="text-muted-foreground">Account status:</p>
           <ConnectStatusBadge status={onboardingStatus} />
@@ -79,10 +79,10 @@ export function CreatorHome() {
             <CardTitle>Complete Onboarding</CardTitle>
             <CardDescription>
               Your Stripe account needs additional information before you can
-              receive payouts. Visit the{' '}
-              <a href="/creator/onboarding" className="text-primary underline">
+              receive payouts. Visit the{" "}
+              <a href="/seller/onboarding" className="text-primary underline">
                 onboarding page
-              </a>{' '}
+              </a>{" "}
               to continue.
             </CardDescription>
           </CardHeader>
@@ -92,15 +92,18 @@ export function CreatorHome() {
   }
 
   // Compute earnings from real payout data
-  const paidPayouts = payouts?.filter((p) => p.status === 'paid') ?? [];
+  const paidPayouts = payouts?.filter((p: any) => p.status === "paid") ?? [];
   const pendingPayouts =
     payouts?.filter(
-      (p) => p.status === 'pending' || p.status === 'in_transit',
+      (p: any) => p.status === "pending" || p.status === "in_transit",
     ) ?? [];
 
-  const totalPayouts = paidPayouts.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  const totalPayouts = paidPayouts.reduce(
+    (sum: number, p: any) => sum + (p.amount ?? 0),
+    0,
+  );
   const pendingBalance = pendingPayouts.reduce(
-    (sum, p) => sum + (p.amount ?? 0),
+    (sum: number, p: any) => sum + (p.amount ?? 0),
     0,
   );
   const totalEarned = totalPayouts + pendingBalance;
@@ -111,16 +114,16 @@ export function CreatorHome() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Creator Earnings</h1>
-        <ConnectStatusBadge status="active" />
+        <h1 className="text-2xl font-bold">Seller Earnings</h1>
+        <ConnectStatusBadge status="complete" />
       </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { label: 'Total Earned', value: formatCurrency(totalEarned) },
-          { label: 'Pending Balance', value: formatCurrency(pendingBalance) },
-          { label: 'Total Payouts', value: formatCurrency(totalPayouts) },
+          { label: "Total Earned", value: formatCurrency(totalEarned) },
+          { label: "Pending Balance", value: formatCurrency(pendingBalance) },
+          { label: "Total Payouts", value: formatCurrency(totalPayouts) },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="pb-2">
@@ -155,13 +158,13 @@ export function CreatorHome() {
             </Alert>
           ) : (
             <div className="space-y-1">
-              {recentPayouts.map((payout, i) => (
+              {recentPayouts.map((payout: any, i: number) => (
                 <div key={payout._id}>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground text-sm">
                       {payout.arrivalDate
                         ? new Date(payout.arrivalDate).toLocaleDateString()
-                        : '\u2014'}
+                        : "\u2014"}
                     </span>
                     <span className="font-medium">
                       {formatCurrency(payout.amount ?? 0)}

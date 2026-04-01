@@ -1,40 +1,41 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRole } from '@/providers/role-context';
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
 import {
   AddCardForm,
+  type PaymentMethodItem,
   PaymentMethodsList,
   StripeProviderWithKey,
   usePaymentMethodActions,
-} from '@getdojo/better-stripe/react';
-import { useAction, useQuery } from 'convex/react';
-import { CreditCard } from 'lucide-react';
+} from "@getdojo/better-stripe/react";
+import { useAction, useQuery } from "convex/react";
+import { CreditCard } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
   const listMethods = useAction(api.actions.listPaymentMethods);
   const attachMethod = useAction(api.actions.attachPaymentMethod);
   const detachMethod = useAction(api.actions.detachPaymentMethod);
-  const [methods, setMethods] = useState<Array<Record<string, unknown>>>([]);
+  const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await listMethods({ stripeCustomerId: stripeAccountId });
-      setMethods(result ?? []);
+      setMethods((result as PaymentMethodItem[]) ?? []);
     } catch (err) {
-      console.error('Failed to load payment methods:', err);
+      console.error("Failed to load payment methods:", err);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +73,7 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
           <CardDescription>Add a new card to your account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AddCardForm onSubmit={createAndAttach} />
+          <AddCardForm onSuccess={async () => await reload()} />
         </CardContent>
       </Card>
 
@@ -136,8 +137,8 @@ export function PaymentMethods() {
         <Alert>
           <AlertDescription>
             No Stripe account is linked to your profile. Complete a checkout to
-            create one, or visit the{' '}
-            <a href="/creator/onboarding" className="text-primary underline">
+            create one, or visit the{" "}
+            <a href="/seller/onboarding" className="text-primary underline">
               onboarding page
             </a>
             .

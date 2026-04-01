@@ -1,10 +1,10 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
 
-import type { Component } from '../helpers.js';
-import type { WebhookActionCtx } from '../types.js';
+import type { Component } from "../helpers.js";
+import type { WebhookActionCtx } from "../types.js";
 
-const DEFAULT_API_VERSION = '2026-02-25.clover';
-const TO_REFERENCE_PATH = Symbol.for('toReferencePath');
+const DEFAULT_API_VERSION = "2026-02-25.clover";
+const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
 // =============================================================================
 // COMPONENT FUNCTION MAP
@@ -12,53 +12,53 @@ const TO_REFERENCE_PATH = Symbol.for('toReferencePath');
 
 const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   // Core
-  getAccount: 'core/queries/getAccount',
-  getAccountByStripeId: 'core/queries/getAccountByStripeId',
-  getAccountByUserId: 'core/queries/getAccountByUserId',
-  getAccountByOrgId: 'core/queries/getAccountByOrgId',
-  getAccountOnboardingStatus: 'core/queries/getAccountOnboardingStatus',
-  getPublishableKey: 'core/queries/getPublishableKey',
-  getStripeMode: 'core/queries/getStripeMode',
-  upsertAccount: 'core/mutations/upsertAccount',
-  upsertAccountInternal: 'core/mutations/upsertAccountInternal',
-  deleteAccountByStripeId: 'core/mutations/deleteAccountByStripeId',
-  clearAllTables: 'core/mutations/clearAllTables',
+  getAccount: "core/queries/getAccount",
+  getAccountByStripeId: "core/queries/getAccountByStripeId",
+  getAccountByUserId: "core/queries/getAccountByUserId",
+  getAccountByOrgId: "core/queries/getAccountByOrgId",
+  getAccountOnboardingStatus: "core/queries/getAccountOnboardingStatus",
+  getPublishableKey: "core/queries/getPublishableKey",
+  getStripeMode: "core/queries/getStripeMode",
+  upsertAccount: "core/mutations/upsertAccount",
+  upsertAccountInternal: "core/mutations/upsertAccountInternal",
+  deleteAccountByStripeId: "core/mutations/deleteAccountByStripeId",
+  clearAllTables: "core/mutations/clearAllTables",
   // Products
-  getProduct: 'products/queries/getProduct',
-  getProductByStripeId: 'products/queries/getProductByStripeId',
-  listProducts: 'products/queries/listProducts',
-  getPrice: 'products/queries/getPrice',
-  getPriceByStripeId: 'products/queries/getPriceByStripeId',
-  listPrices: 'products/queries/listPrices',
-  listPricesByProduct: 'products/queries/listPricesByProduct',
-  upsertProduct: 'products/mutations/upsertProduct',
-  upsertPrice: 'products/mutations/upsertPrice',
+  getProduct: "products/queries/getProduct",
+  getProductByStripeId: "products/queries/getProductByStripeId",
+  listProducts: "products/queries/listProducts",
+  getPrice: "products/queries/getPrice",
+  getPriceByStripeId: "products/queries/getPriceByStripeId",
+  listPrices: "products/queries/listPrices",
+  listPricesByProduct: "products/queries/listPricesByProduct",
+  upsertProduct: "products/mutations/upsertProduct",
+  upsertPrice: "products/mutations/upsertPrice",
   // Billing
-  getSubscription: 'billing/queries/getSubscription',
-  getSubscriptionByStripeId: 'billing/queries/getSubscriptionByStripeId',
-  listSubscriptions: 'billing/queries/listSubscriptions',
-  listSubscriptionsByUser: 'billing/queries/listSubscriptionsByUser',
-  listSubscriptionsByOrg: 'billing/queries/listSubscriptionsByOrg',
-  getActiveSubscription: 'billing/queries/getActiveSubscription',
-  getTrialStatus: 'billing/queries/getTrialStatus',
-  getCheckoutSession: 'billing/queries/getCheckoutSession',
-  getCheckoutSessionByStripeId: 'billing/queries/getCheckoutSessionByStripeId',
-  listCheckoutSessionsByUser: 'billing/queries/listCheckoutSessionsByUser',
-  listInvoices: 'billing/queries/listInvoices',
-  upsertSubscription: 'billing/mutations/upsertSubscription',
-  upsertCheckoutSession: 'billing/mutations/upsertCheckoutSession',
-  upsertInvoice: 'billing/mutations/upsertInvoice',
+  getSubscription: "billing/queries/getSubscription",
+  getSubscriptionByStripeId: "billing/queries/getSubscriptionByStripeId",
+  listSubscriptions: "billing/queries/listSubscriptions",
+  listSubscriptionsByUser: "billing/queries/listSubscriptionsByUser",
+  listSubscriptionsByOrg: "billing/queries/listSubscriptionsByOrg",
+  getActiveSubscription: "billing/queries/getActiveSubscription",
+  getTrialStatus: "billing/queries/getTrialStatus",
+  getCheckoutSession: "billing/queries/getCheckoutSession",
+  getCheckoutSessionByStripeId: "billing/queries/getCheckoutSessionByStripeId",
+  listCheckoutSessionsByUser: "billing/queries/listCheckoutSessionsByUser",
+  listInvoices: "billing/queries/listInvoices",
+  upsertSubscription: "billing/mutations/upsertSubscription",
+  upsertCheckoutSession: "billing/mutations/upsertCheckoutSession",
+  upsertInvoice: "billing/mutations/upsertInvoice",
   // Connect
-  getPayout: 'connect/queries/getPayout',
-  listPayouts: 'connect/queries/listPayouts',
-  upsertPayment: 'connect/mutations/upsertPayment',
-  upsertPayout: 'connect/mutations/upsertPayout',
+  getPayout: "connect/queries/getPayout",
+  listPayouts: "connect/queries/listPayouts",
+  upsertPayment: "connect/mutations/upsertPayment",
+  upsertPayout: "connect/mutations/upsertPayout",
   // Webhooks
-  getWebhookEvent: 'webhooks/queries/getWebhookEvent',
-  insertWebhookEvent: 'webhooks/mutations/insertWebhookEvent',
-  markWebhookEventProcessed: 'webhooks/mutations/markWebhookEventProcessed',
-  markWebhookEventFailed: 'webhooks/mutations/markWebhookEventFailed',
-  markWebhookEventIgnored: 'webhooks/mutations/markWebhookEventIgnored',
+  getWebhookEvent: "webhooks/queries/getWebhookEvent",
+  insertWebhookEvent: "webhooks/mutations/insertWebhookEvent",
+  markWebhookEventProcessed: "webhooks/mutations/markWebhookEventProcessed",
+  markWebhookEventFailed: "webhooks/mutations/markWebhookEventFailed",
+  markWebhookEventIgnored: "webhooks/mutations/markWebhookEventIgnored",
 };
 
 // =============================================================================
@@ -87,7 +87,7 @@ export function deriveTrialFields(subscription: Stripe.Subscription): {
   trialEnd: string | undefined;
 } {
   return {
-    isTrialing: subscription.status === 'trialing',
+    isTrialing: subscription.status === "trialing",
     trialStart: epochToIso(subscription.trial_start),
     trialEnd: epochToIso(subscription.trial_end),
   };
@@ -97,7 +97,7 @@ export function extractIdentifiers(
   metadata: Record<string, string> | null | undefined,
 ): { userId: string; orgId: string | undefined } {
   return {
-    userId: metadata?.userId ?? metadata?.user_id ?? '',
+    userId: metadata?.userId ?? metadata?.user_id ?? "",
     orgId: metadata?.orgId ?? metadata?.org_id ?? undefined,
   };
 }
@@ -108,7 +108,7 @@ export function jsonResponse(
 ): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -125,9 +125,8 @@ export function getComponentRef(
 ) {
   // Try direct property access on the component proxy first
   // (handles both old flat paths and new nested paths)
-  const parts = COMPONENT_FUNCTION_MAP[exportName]?.split('/') ?? [];
+  const parts = COMPONENT_FUNCTION_MAP[exportName]?.split("/") ?? [];
   if (parts.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let ref: any = component;
     for (const part of parts) {
       ref = ref?.[part];
@@ -147,7 +146,7 @@ export function getComponentRef(
 
   const anchorPath: string = anchor[TO_REFERENCE_PATH];
   // Extract the component prefix (e.g. 'betterStripe')
-  const basePath = anchorPath.split('/')[0];
+  const basePath = anchorPath.split("/")[0];
 
   const mappedPath = COMPONENT_FUNCTION_MAP[exportName];
   if (mappedPath) {
@@ -155,7 +154,7 @@ export function getComponentRef(
   }
 
   // Fallback: assume same module
-  const modulePrefix = anchorPath.replace(/\/[^/]+$/, '');
+  const modulePrefix = anchorPath.replace(/\/[^/]+$/, "");
   return { [TO_REFERENCE_PATH]: `${modulePrefix}/${exportName}` } as any;
 }
 
@@ -165,8 +164,8 @@ export function getComponentRef(
  */
 export function componentRef(component: Component, path: string) {
   // Try direct property access
-  const parts = path.split('/');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parts = path.split("/");
+
   let ref: any = component;
   for (const part of parts) {
     ref = ref?.[part];
@@ -180,12 +179,11 @@ export function componentRef(component: Component, path: string) {
     throw new Error(`[better-stripe] Cannot resolve component path: ${path}`);
   }
   const anchorPath: string = anchor[TO_REFERENCE_PATH];
-  const basePath = anchorPath.split('/')[0];
+  const basePath = anchorPath.split("/")[0];
   return { [TO_REFERENCE_PATH]: `${basePath}/${path}` } as any;
 }
 
 function findAnchorRef(component: Component): any {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const comp = component as any;
   // Try new paths first, then old
   const candidates = [
@@ -198,14 +196,14 @@ function findAnchorRef(component: Component): any {
   // Walk the component to find any ref
   for (const key of Object.keys(comp ?? {})) {
     const mod = comp[key];
-    if (!mod || typeof mod !== 'object') continue;
+    if (!mod || typeof mod !== "object") continue;
     for (const fn of Object.keys(mod)) {
       if (mod[fn]?.[TO_REFERENCE_PATH]) return mod[fn];
     }
     // Check nested (e.g. core.queries.getAccount)
     for (const subKey of Object.keys(mod)) {
       const sub = mod[subKey];
-      if (!sub || typeof sub !== 'object') continue;
+      if (!sub || typeof sub !== "object") continue;
       for (const fn of Object.keys(sub)) {
         if (sub[fn]?.[TO_REFERENCE_PATH]) return sub[fn];
       }
@@ -221,7 +219,7 @@ function findAnchorRef(component: Component): any {
 export type WebhookContext = {
   ctx: WebhookActionCtx;
   component: Component;
-  config?: import('../types.js').RegisterRoutesConfig;
+  config?: import("../types.js").RegisterRoutesConfig;
   stripe: Stripe;
   webhookSecret: string;
 };

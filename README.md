@@ -37,8 +37,8 @@ The consumer contract has three steps:
 
 ```typescript
 // convex/convex.config.ts
-import betterStripe from 'better-stripe/convex.config';
-import { defineApp } from 'convex/server';
+import betterStripe from "better-stripe/convex.config";
+import { defineApp } from "convex/server";
 
 const app = defineApp();
 app.use(betterStripe);
@@ -50,9 +50,9 @@ export default app;
 
 ```typescript
 // convex/billing/stripe.ts
-import { BetterStripe } from 'better-stripe';
+import { BetterStripe } from "better-stripe";
 
-import { components } from '../_generated/api';
+import { components } from "../_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
@@ -88,19 +88,24 @@ export const {
 
 ```typescript
 // convex/http.ts
-import { registerRoutes } from 'better-stripe';
-import { httpRouter } from 'convex/server';
+import { registerRoutes } from "better-stripe";
+import { httpRouter } from "convex/server";
 
-import { components } from './_generated/api';
+import { components } from "./_generated/api";
 
 const http = httpRouter();
 
 registerRoutes(http, components.betterStripe, {
-  webhookPath: '/stripe/webhook',
+  webhookPath: "/stripe/webhook",
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
 });
 
 export default http;
 ```
+
+> **Why two webhook secrets?** Stripe requires separate event destinations for V1 snapshot events (payments, subscriptions) and V2 thin events (Connect account lifecycle). Each destination has its own signing secret. The handler uses `webhookSecret` for V1 events and `webhookSecretV2` for V2 events. See [Webhook Setup](#webhook-setup) for details.
 
 ## Client API Reference
 
@@ -176,12 +181,16 @@ All methods are available on the `BetterStripe` class instance. Methods that cal
 
 ### Operational
 
-| Method                      | Description                                                        |
-| --------------------------- | ------------------------------------------------------------------ |
-| `syncAllAccounts(ctx)`      | Sync all V2 accounts from Stripe to component DB                   |
-| `syncAllProducts(ctx)`      | Sync all products and prices from Stripe                           |
-| `syncAllSubscriptions(ctx)` | Sync all subscriptions from Stripe                                 |
-| `triggersApi()`             | Returns Convex-callable wrappers for configured triggers and hooks |
+| Method                                               | Description                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------ |
+| `syncAllAccounts(ctx)`                               | Sync all V2 accounts from Stripe to component DB                   |
+| `syncAllProducts(ctx)`                               | Sync all products and prices from Stripe                           |
+| `syncAllSubscriptions(ctx)`                          | Sync all subscriptions from Stripe                                 |
+| `setupEventDestination(ctx, { url, eventPayload? })` | Create or update a V2 event destination (snapshot or thin)         |
+| `listEventDestinations(ctx)`                         | List all V2 event destinations                                     |
+| `listWebhookEndpoints(ctx)`                          | List V1 webhook endpoints                                          |
+| `createWebhookEndpoint(ctx, { url })`                | Create a V1 webhook endpoint                                       |
+| `triggersApi()`                                      | Returns Convex-callable wrappers for configured triggers and hooks |
 
 ### Standalone Function
 
@@ -199,12 +208,56 @@ Register the webhook endpoint on your Convex HTTP router:
 import { registerRoutes } from 'better-stripe';
 
 registerRoutes(http, components.betterStripe, {
-  webhookPath: '/stripe/webhook',      // Default path
-  STRIPE_SECRET_KEY: '...',            // Falls back to env var
-  STRIPE_WEBHOOK_SECRET: '...',        // Falls back to env var
-  events: { ... },                     // Optional per-event handlers (advanced)
-  onEvent: (ctx, event) => { ... },    // Optional catch-all handler (advanced)
+  webhookPath: '/stripe/webhook',             // Default path
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,  // For V2 thin events
+  events: { ... },                            // Optional per-event handlers (advanced)
+  onEvent: (ctx, event) => { ... },           // Optional catch-all handler (advanced)
 });
+```
+
+### Webhook Setup
+
+Stripe event destinations come in two flavors that cannot be mixed:
+
+- **Snapshot** (`event_payload: 'snapshot'`) — V1 events include the full object in the payload. Used for payments, subscriptions, invoices, products, and payouts.
+- **Thin** (`event_payload: 'thin'`) — V2 events include only the event type and object reference. The handler fetches the full object from the Stripe API. Used for Connect account lifecycle events.
+
+You need **two** event destinations pointing to the same webhook URL, each with its own signing secret.
+
+#### Programmatic setup
+
+Use `setupEventDestination()` to create or update destinations:
+
+```typescript
+// Create V1 snapshot destination
+const v1 = await stripe.setupEventDestination(ctx, {
+  url: webhookUrl,
+  eventPayload: "snapshot",
+});
+
+// Create V2 thin destination
+const v2 = await stripe.setupEventDestination(ctx, {
+  url: webhookUrl,
+  eventPayload: "thin",
+});
+```
+
+The method is idempotent — it finds an existing destination matching the URL and payload type, updates its events, or creates a new one.
+
+#### Admin UI setup
+
+The example app includes an `/admin/setup` page that handles webhook creation, env var verification, demo data seeding, and Stripe data syncing — all from the browser.
+
+#### Event constants
+
+```typescript
+import {
+  BETTER_STRIPE_WEBHOOK_EVENTS, // V1 snapshot events (19 events)
+  BETTER_STRIPE_V2_WEBHOOK_EVENTS, // V2 thin events (12 events)
+  ALL_BETTER_STRIPE_EVENTS, // Combined (31 events)
+} from "better-stripe";
 ```
 
 ### Event Processing
@@ -230,13 +283,17 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 
 ### Supported Events
 
-**Accounts V2 (thin events -- component fetches latest state):**
+**Accounts V2 (thin events -- component fetches latest state, requires V2 event destination):**
 
-- `v2.core.account.created`
+- `v2.core.account.created`, `.updated`
 - `v2.core.account[identity].updated`
 - `v2.core.account[requirements].updated`
+- `v2.core.account[configuration.merchant].updated`, `.capability_status_updated`
 - `v2.core.account[configuration.customer].updated`
-- `v2.core.account.closed`
+- `v2.core.account[configuration.recipient].updated`
+- `v2.core.account[defaults].updated`
+- `v2.core.account_person.created`, `.updated`
+- `v2.core.account_link.returned`
 
 **Billing (snapshot events -- payload contains full state):**
 
@@ -361,7 +418,7 @@ import {
   CheckoutSessionProvider,
   PaymentElement,
   useCheckoutSession,
-} from 'better-stripe/react';
+} from "better-stripe/react";
 
 <CheckoutSessionProvider publishableKey={pk} clientSecret={token}>
   <MyForm />
@@ -369,7 +426,7 @@ import {
 
 function MyForm() {
   const checkout = useCheckoutSession();
-  if (checkout.type !== 'success') return <Spinner />;
+  if (checkout.type !== "success") return <Spinner />;
   return (
     <>
       <PaymentElement />
@@ -447,6 +504,7 @@ All components accept:
 | `PriceBadge`            | Price/plan badge                                          |
 | `TrialAlert`            | Trial status and renewal alert                            |
 | `BillingPortalLink`     | Link/button to Stripe billing portal                      |
+| `SubscriptionActions`   | Cancel/reactivate action buttons (status-aware)           |
 
 ### Payment Methods
 
@@ -455,16 +513,22 @@ All components accept:
 | `AddCardForm`               | Headless add-payment-method form                   |
 | `PaymentMethodsList`        | Saved payment methods list with render props       |
 | `DeletePaymentMethodDialog` | Remove payment method (app provides dialog chrome) |
+| `PaymentMethodActions`      | Per-method set-default/delete actions              |
 
 ### Connect and Marketplace
 
-| Component               | Description                         |
-| ----------------------- | ----------------------------------- |
-| `ConnectStatusBadge`    | Connect verification status badge   |
-| `AccountOnboardingCard` | Connect onboarding progress display |
-| `AccountCreateCard`     | Create Connect account card         |
-| `AccountLoginCard`      | Login to Connect dashboard card     |
-| `ConnectRequirements`   | Missing requirements checklist      |
+| Component                 | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `ConnectStatusBadge`      | Connect verification status badge             |
+| `AccountOnboardingCard`   | Connect onboarding progress display           |
+| `AccountOnboardingButton` | Continue onboarding action (status-aware)     |
+| `AccountCreateCard`       | Create Connect account card                   |
+| `AccountCreateButton`     | Create account action with loading state      |
+| `AccountLoginCard`        | Login to Connect dashboard card               |
+| `AccountLoginButton`      | Dashboard login/open action                   |
+| `AccountCloseCard`        | Close/restart account card (status-aware)     |
+| `AccountCloseButton`      | Close/restart action with status-aware labels |
+| `ConnectRequirements`     | Missing requirements checklist                |
 
 ## Testing Utilities
 
@@ -475,7 +539,7 @@ Import from `better-stripe/testing`.
 Guards against running test fixtures with live Stripe keys:
 
 ```typescript
-import { assertTestEnvironment } from 'better-stripe/testing';
+import { assertTestEnvironment } from "better-stripe/testing";
 
 assertTestEnvironment(); // Throws if STRIPE_SECRET_KEY does not start with sk_test_
 ```
@@ -490,14 +554,14 @@ import {
   createTestPrice,
   createTestProduct,
   createTestSubscription,
-} from 'better-stripe/testing';
+} from "better-stripe/testing";
 
-const account = await createTestAccount(stripe, { email: 'test@example.com' });
-const product = await createTestProduct(stripe, { name: 'Pro Plan' });
+const account = await createTestAccount(stripe, { email: "test@example.com" });
+const product = await createTestProduct(stripe, { name: "Pro Plan" });
 const price = await createTestPrice(stripe, {
   productId: product.id,
   unitAmount: 2999,
-  interval: 'month',
+  interval: "month",
 });
 ```
 
@@ -511,11 +575,11 @@ import {
   mockCheckoutCompleted,
   mockInvoicePaid,
   mockSubscriptionUpdated,
-} from 'better-stripe/testing';
+} from "better-stripe/testing";
 
 const event = mockCheckoutCompleted({
-  stripeSessionId: 'cs_test_123',
-  metadata: { userId: 'user_abc' },
+  stripeSessionId: "cs_test_123",
+  metadata: { userId: "user_abc" },
 });
 ```
 
@@ -523,11 +587,12 @@ const event = mockCheckoutCompleted({
 
 ### Environment Variables
 
-| Variable                 | Required    | Description                                                                                              |
-| ------------------------ | ----------- | -------------------------------------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`      | Yes         | Passed via constructor or `registerRoutes`. Falls back to `process.env.STRIPE_SECRET_KEY`.               |
-| `STRIPE_WEBHOOK_SECRET`  | Yes         | Passed to `registerRoutes`. Falls back to `process.env.STRIPE_WEBHOOK_SECRET`.                           |
-| `STRIPE_PUBLISHABLE_KEY` | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`. |
+| Variable                   | Required    | Description                                                                                                       |
+| -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`        | Yes         | Passed via constructor or `registerRoutes`. Falls back to `process.env.STRIPE_SECRET_KEY`.                        |
+| `STRIPE_WEBHOOK_SECRET`    | Yes         | Signing secret for the V1 snapshot event destination.                                                             |
+| `STRIPE_WEBHOOK_SECRET_V2` | Yes         | Signing secret for the V2 thin event destination (Connect account events). Falls back to `STRIPE_WEBHOOK_SECRET`. |
+| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`.          |
 
 ### Stripe API Version
 

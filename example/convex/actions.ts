@@ -1,7 +1,119 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { action } from './_generated/server';
-import { stripe } from './stripe';
+import { action } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { stripe } from "./stripe";
+
+// Webhook setup — creates both V1 (snapshot) and V2 (thin) event destinations
+export const setupWebhooks = action({
+  args: { siteUrl: v.string() },
+  handler: async (ctx, args) => {
+    const webhookUrl = `${args.siteUrl}/stripe/webhook`;
+
+    // 1. Ensure V1 snapshot destination exists (payments, subscriptions, etc.)
+    const v1 = await stripe.setupEventDestination(ctx, {
+      url: webhookUrl,
+      eventPayload: "snapshot",
+    });
+
+    // 2. Ensure V2 thin destination exists (Connect account lifecycle)
+    const v2 = await stripe.setupEventDestination(ctx, {
+      url: webhookUrl,
+      eventPayload: "thin",
+    });
+
+    return { v1, v2 };
+  },
+});
+
+export const getWebhookStatus = action({
+  args: { siteUrl: v.string() },
+  handler: async (ctx, args) => {
+    const webhookUrl = `${args.siteUrl}/stripe/webhook`;
+    const destinations = await stripe.listEventDestinations(ctx);
+
+    const v1Match = destinations.find(
+      (d) => d.url === webhookUrl && d.eventPayload === "snapshot",
+    );
+    const v2Match = destinations.find(
+      (d) => d.url === webhookUrl && d.eventPayload === "thin",
+    );
+
+    return {
+      v1: v1Match
+        ? {
+            id: v1Match.id,
+            name: v1Match.name,
+            status: v1Match.status,
+            eventCount: v1Match.enabledEvents.length,
+          }
+        : null,
+      v2: v2Match
+        ? {
+            id: v2Match.id,
+            name: v2Match.name,
+            status: v2Match.status,
+            eventCount: v2Match.enabledEvents.length,
+          }
+        : null,
+    };
+  },
+});
+
+export const verifyWebhookEnvs = action({
+  args: {},
+  handler: async () => {
+    return {
+      v1: !!process.env.STRIPE_WEBHOOK_SECRET,
+      v2: !!process.env.STRIPE_WEBHOOK_SECRET_V2,
+    };
+  },
+});
+
+export const checkEnvVars = action({
+  args: {},
+  handler: async () => {
+    return {
+      stripeSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      webhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      webhookSecretV2: !!process.env.STRIPE_WEBHOOK_SECRET_V2,
+    };
+  },
+});
+
+// Setup — seed demo data
+export const seedDemoData = action({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runMutation(internal.seed.seedDb, {});
+    await ctx.runAction(internal.seed.seedStripe, {});
+  },
+});
+
+// Setup — sync from Stripe
+export const syncProducts = action({
+  args: {},
+  handler: async (ctx) => stripe.syncAllProducts(ctx),
+});
+
+export const syncSubscriptions = action({
+  args: {},
+  handler: async (ctx) => stripe.syncAllSubscriptions(ctx),
+});
+
+export const syncAccounts = action({
+  args: {},
+  handler: async (ctx) => stripe.syncAllAccounts(ctx),
+});
+
+// Reset — clear all app + component data
+export const resetAll = action({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runMutation(internal.reset.clearAppDb, {});
+    await ctx.runAction(internal.reset.clearStripeDb, {});
+  },
+});
 
 // Products
 export const createProduct = action({
@@ -14,13 +126,13 @@ export const createPrice = action({
     stripeProductId: v.string(),
     unitAmount: v.number(),
     currency: v.string(),
-    type: v.union(v.literal('one_time'), v.literal('recurring')),
+    type: v.union(v.literal("one_time"), v.literal("recurring")),
     interval: v.optional(
       v.union(
-        v.literal('month'),
-        v.literal('year'),
-        v.literal('week'),
-        v.literal('day'),
+        v.literal("month"),
+        v.literal("year"),
+        v.literal("week"),
+        v.literal("day"),
       ),
     ),
   },
@@ -83,7 +195,7 @@ export const listPaymentMethods = action({
   handler: async (ctx, args) =>
     stripe.listPaymentMethods(ctx, {
       stripeCustomerId: args.stripeCustomerId,
-      type: 'card',
+      type: "card",
     }),
 });
 
@@ -108,9 +220,9 @@ export const createCheckoutSession = action({
     stripe.createCheckoutSession(ctx, {
       userId: args.userId,
       stripePriceId: args.stripePriceId,
-      mode: 'subscription',
+      mode: "subscription",
       returnUrl: args.returnUrl,
-      uiMode: 'embedded',
+      uiMode: "embedded",
     }),
 });
 

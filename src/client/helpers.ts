@@ -2,12 +2,12 @@ import type {
   FunctionReference,
   FunctionReturnType,
   OptionalRestArgs,
-} from 'convex/server';
-import Stripe from 'stripe';
+} from "convex/server";
+import Stripe from "stripe";
 
-import type { ComponentApi } from '../component/_generated/component.js';
+import type { ComponentApi } from "../component/_generated/component.js";
 
-export const DEFAULT_API_VERSION = '2026-02-25.clover';
+export const DEFAULT_API_VERSION = "2026-03-25.dahlia";
 
 /** The component API type — use this instead of `any` for the component param */
 export type Component = ComponentApi;
@@ -17,12 +17,12 @@ export type Component = ComponentApi;
 // =============================================================================
 
 export type RunCtx = {
-  runQuery: <Query extends FunctionReference<'query', 'public' | 'internal'>>(
+  runQuery: <Query extends FunctionReference<"query", "public" | "internal">>(
     query: Query,
     ...args: OptionalRestArgs<Query>
   ) => Promise<FunctionReturnType<Query>>;
   runMutation?: <
-    Mutation extends FunctionReference<'mutation', 'public' | 'internal'>,
+    Mutation extends FunctionReference<"mutation", "public" | "internal">,
   >(
     mutation: Mutation,
     ...args: OptionalRestArgs<Mutation>
@@ -34,7 +34,7 @@ export function getStripeClient(
   apiVersion?: string,
 ): Stripe {
   return new Stripe(secretKey, {
-    apiVersion: (apiVersion || DEFAULT_API_VERSION) as Stripe.LatestApiVersion,
+    apiVersion: (apiVersion || DEFAULT_API_VERSION) as string,
   });
 }
 
@@ -46,15 +46,15 @@ export function epochToIso(
 }
 
 export async function runMutationOrThrow<
-  Mutation extends FunctionReference<'mutation', 'public' | 'internal'>,
+  Mutation extends FunctionReference<"mutation", "public" | "internal">,
 >(
   ctx: RunCtx,
   ref: Mutation,
-  args: Mutation['_args'],
+  args: Mutation["_args"],
 ): Promise<FunctionReturnType<Mutation>> {
   if (!ctx.runMutation) {
     throw new Error(
-      'This BetterStripe method requires a Convex ctx with runMutation.',
+      "This BetterStripe method requires a Convex ctx with runMutation.",
     );
   }
 

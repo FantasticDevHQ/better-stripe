@@ -70,22 +70,22 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^5.6.1",
     "@stripe/stripe-js": "^8.11.0",
-    "stripe": "^20.4.1"
+    "stripe": "^22.0.0"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@typescript-eslint/parser": "^8.57.2",
+    "@typescript-eslint/parser": "^8.58.0",
     "convex": "^1.34.1",
-    "convex-test": "^0.0.44",
+    "convex-test": "^0.0.46",
     "eslint": "^9.39.4",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "pretty-quick": "^4.2.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {

@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import type { Component } from "../helpers.js";
 import type { WebhookActionCtx } from "../types.js";
 
-const DEFAULT_API_VERSION = "2026-02-25.clover";
+const DEFAULT_API_VERSION = "2026-03-25.dahlia";
 const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
 // =============================================================================
@@ -70,7 +70,7 @@ export function getStripeClient(
   apiVersion?: string,
 ): Stripe {
   return new Stripe(secretKey, {
-    apiVersion: (apiVersion || DEFAULT_API_VERSION) as Stripe.LatestApiVersion,
+    apiVersion: (apiVersion || DEFAULT_API_VERSION) as string,
   });
 }
 

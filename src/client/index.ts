@@ -13,6 +13,10 @@ import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
+import type {
+  V2AccountRetrieveInclude,
+  V2AccountUpdateParams,
+} from "./stripe-types.js";
 import { componentRef } from "./webhooks/helpers.js";
 import * as pricesImpl from "./products/prices.js";
 import * as productsImpl from "./products/products.js";
@@ -256,7 +260,7 @@ export class BetterStripe {
     ctx: RunCtx,
     opts: {
       stripeAccountId: string;
-      include?: Stripe.V2.Core.AccountRetrieveParams.Include[];
+      include?: V2AccountRetrieveInclude[];
     },
   ) {
     return accountsImpl.getV2Account(this.stripe(), ctx, opts);
@@ -266,7 +270,7 @@ export class BetterStripe {
     ctx: RunCtx,
     opts: {
       stripeAccountId: string;
-      updateParams: Stripe.V2.Core.AccountUpdateParams;
+      updateParams: V2AccountUpdateParams;
     },
   ) {
     return accountsImpl.updateV2Account(this.stripe(), ctx, opts);

@@ -1,6 +1,10 @@
 import type Stripe from "stripe";
 
 import type { RunCtx } from "../helpers.js";
+import type {
+  V2AccountLinkCreateParams,
+  V2AppliedConfiguration,
+} from "../stripe-types.js";
 import type { AccountLinkWithStatus } from "../types.js";
 
 // =============================================================================
@@ -37,14 +41,13 @@ export async function createV2AccountLink(
     configurations?: string[];
   },
 ) {
-  const useCase: Stripe.V2.Core.AccountLinkCreateParams.UseCase =
+  const useCase: V2AccountLinkCreateParams["use_case"] =
     opts.type === "account_update"
       ? {
           type: "account_update",
           account_update: {
-            configurations:
-              (opts.configurations as Stripe.V2.Core.AccountLinkCreateParams.UseCase.AccountUpdate.Configuration[]) ??
-              [],
+            configurations: (opts.configurations ??
+              []) as V2AppliedConfiguration[],
             refresh_url: opts.refreshUrl,
             return_url: opts.returnUrl,
           },
@@ -52,9 +55,8 @@ export async function createV2AccountLink(
       : {
           type: "account_onboarding",
           account_onboarding: {
-            configurations:
-              (opts.configurations as Stripe.V2.Core.AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration[]) ??
-              [],
+            configurations: (opts.configurations ??
+              []) as V2AppliedConfiguration[],
             refresh_url: opts.refreshUrl,
             return_url: opts.returnUrl,
           },

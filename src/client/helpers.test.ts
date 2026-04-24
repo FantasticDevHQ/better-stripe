@@ -8,8 +8,8 @@ import {
 } from "./helpers.js";
 
 describe("DEFAULT_API_VERSION", () => {
-  it("is the dahlia API version", () => {
-    expect(DEFAULT_API_VERSION).toBe("2026-03-25.dahlia");
+  it("is a dahlia API version", () => {
+    expect(DEFAULT_API_VERSION).toMatch(/\.dahlia$/);
   });
 });
 

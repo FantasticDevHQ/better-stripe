@@ -1,7 +1,7 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { mutation } from '../_generated/server';
-import { priceIntervalValidator, priceTypeValidator } from './validators';
+import { mutation } from "../_generated/server";
+import { priceIntervalValidator, priceTypeValidator } from "./validators";
 
 // =============================================================================
 // PRODUCT MUTATIONS
@@ -19,16 +19,16 @@ export const upsertProduct = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('products')
-      .withIndex('by_stripe_product_id', (q) =>
-        q.eq('stripeProductId', args.stripeProductId),
+      .query("products")
+      .withIndex("by_stripe_product_id", (q) =>
+        q.eq("stripeProductId", args.stripeProductId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch("products", existing._id, args);
     } else {
-      await ctx.db.insert('products', args);
+      await ctx.db.insert("products", args);
     }
 
     return null;
@@ -56,16 +56,16 @@ export const upsertPrice = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('prices')
-      .withIndex('by_stripe_price_id', (q) =>
-        q.eq('stripePriceId', args.stripePriceId),
+      .query("prices")
+      .withIndex("by_stripe_price_id", (q) =>
+        q.eq("stripePriceId", args.stripePriceId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch("prices", existing._id, args);
     } else {
-      await ctx.db.insert('prices', args);
+      await ctx.db.insert("prices", args);
     }
 
     return null;

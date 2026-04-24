@@ -38,6 +38,14 @@
     "./convex.config.js": {
       "types": "./dist/component/convex.config.d.ts",
       "default": "./dist/component/convex.config.js"
+    },
+    "./_generated/component": {
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
+    },
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts",
+      "default": "./dist/component/_generated/component.js"
     }
   },
   "main": "index.js",
@@ -68,25 +76,26 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^5.6.1",
-    "@stripe/stripe-js": "^8.11.0",
-    "stripe": "^22.0.0"
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.3.1",
+    "stripe": "^22.1.0"
   },
   "devDependencies": {
+    "@convex-dev/eslint-plugin": "^2.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@typescript-eslint/parser": "^8.58.0",
-    "convex": "^1.34.1",
-    "convex-test": "^0.0.46",
+    "@typescript-eslint/parser": "^8.59.0",
+    "convex": "^1.36.1",
+    "convex-test": "^0.0.50",
     "eslint": "^9.39.4",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "pretty-quick": "^4.2.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.58.0",
-    "vitest": "^4.1.2"
+    "typescript-eslint": "^8.59.0",
+    "vitest": "^4.1.5"
   },
   "peerDependencies": {
     "convex": "^1.29.3",

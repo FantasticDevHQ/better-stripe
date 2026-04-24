@@ -1,14 +1,15 @@
-import js from '@eslint/js';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import { defineConfig, globalIgnores } from 'eslint/config';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
+import convexPlugin from "@convex-dev/eslint-plugin";
+import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import { defineConfig, globalIgnores } from "eslint/config";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(['dist', 'convex/_generated', 'src/components/ui']),
+  globalIgnores(["dist", "convex/_generated", "src/components/ui"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -18,6 +19,16 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+  },
+  // Convex-specific rules for example/convex. The plugin's "recommended" preset
+  // targets **/convex/**/*.ts which matches this directory automatically.
+  ...convexPlugin.configs.recommended,
+  {
+    files: ["convex/**/*.ts"],
+    ignores: ["convex/_generated/**", "convex/**/*.test.ts"],
+    rules: {
+      "@convex-dev/no-collect-in-query": "error",
     },
   },
 ]);

@@ -1,6 +1,6 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { mutation } from '../_generated/server';
+import { mutation } from "../_generated/server";
 
 // =============================================================================
 // WEBHOOK EVENT LEDGER
@@ -17,17 +17,17 @@ export const insertWebhookEvent = mutation({
     livemode: v.optional(v.boolean()),
   },
   returns: v.union(
-    v.literal('inserted'),
-    v.literal('processing'),
-    v.literal('processed'),
-    v.literal('failed'),
-    v.literal('ignored'),
+    v.literal("inserted"),
+    v.literal("processing"),
+    v.literal("processed"),
+    v.literal("failed"),
+    v.literal("ignored"),
   ),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('webhookEvents')
-      .withIndex('by_stripeEventId', (q) =>
-        q.eq('stripeEventId', args.stripeEventId),
+      .query("webhookEvents")
+      .withIndex("by_stripeEventId", (q) =>
+        q.eq("stripeEventId", args.stripeEventId),
       )
       .first();
 
@@ -35,14 +35,14 @@ export const insertWebhookEvent = mutation({
       return existing.status;
     }
 
-    await ctx.db.insert('webhookEvents', {
+    await ctx.db.insert("webhookEvents", {
       stripeEventId: args.stripeEventId,
       eventType: args.eventType,
       livemode: args.livemode,
       processedAt: Date.now(),
-      status: 'processing',
+      status: "processing",
     });
-    return 'inserted' as const;
+    return "inserted" as const;
   },
 });
 
@@ -54,15 +54,15 @@ export const markWebhookEventProcessed = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('webhookEvents')
-      .withIndex('by_stripeEventId', (q) =>
-        q.eq('stripeEventId', args.stripeEventId),
+      .query("webhookEvents")
+      .withIndex("by_stripeEventId", (q) =>
+        q.eq("stripeEventId", args.stripeEventId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        status: 'processed',
+      await ctx.db.patch("webhookEvents", existing._id, {
+        status: "processed",
         processedAt: Date.now(),
       });
     }
@@ -81,15 +81,15 @@ export const markWebhookEventFailed = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('webhookEvents')
-      .withIndex('by_stripeEventId', (q) =>
-        q.eq('stripeEventId', args.stripeEventId),
+      .query("webhookEvents")
+      .withIndex("by_stripeEventId", (q) =>
+        q.eq("stripeEventId", args.stripeEventId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        status: 'failed',
+      await ctx.db.patch("webhookEvents", existing._id, {
+        status: "failed",
         lastError: args.error,
         processedAt: Date.now(),
       });
@@ -106,15 +106,15 @@ export const markWebhookEventIgnored = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('webhookEvents')
-      .withIndex('by_stripeEventId', (q) =>
-        q.eq('stripeEventId', args.stripeEventId),
+      .query("webhookEvents")
+      .withIndex("by_stripeEventId", (q) =>
+        q.eq("stripeEventId", args.stripeEventId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        status: 'ignored',
+      await ctx.db.patch("webhookEvents", existing._id, {
+        status: "ignored",
         processedAt: Date.now(),
       });
     }

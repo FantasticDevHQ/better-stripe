@@ -1,10 +1,12 @@
 import Stripe from "stripe";
 
+import type { StripeApiVersion } from "../../client/stripe-types.js";
+
 /**
  * Pinned Stripe API version. Upgrading this is a breaking change
  * that requires a component release and changelog entry.
  */
-export const PINNED_API_VERSION = "2026-03-25.dahlia";
+export const PINNED_API_VERSION: StripeApiVersion = "2026-04-22.dahlia";
 
 /**
  * Keyed cache for Stripe SDK instances.
@@ -25,7 +27,7 @@ export function getStripe(apiKey: string): Stripe {
   let client = _clients.get(cacheKey);
   if (!client) {
     client = new Stripe(apiKey, {
-      apiVersion: PINNED_API_VERSION as string,
+      apiVersion: PINNED_API_VERSION,
       typescript: true,
     });
     _clients.set(cacheKey, client);

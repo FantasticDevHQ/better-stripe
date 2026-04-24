@@ -1,11 +1,11 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { mutation } from '../_generated/server';
+import { mutation } from "../_generated/server";
 import {
   appliedConfigurationsValidator,
   onboardingStatusValidator,
   optionalOnboardingStatusValidator,
-} from './validators';
+} from "./validators";
 
 // =============================================================================
 // ACCOUNT MUTATIONS
@@ -30,21 +30,21 @@ export const upsertAccount = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('accounts')
-      .withIndex('by_stripe_account_id', (q) =>
-        q.eq('stripeAccountId', args.stripeAccountId),
+      .query("accounts")
+      .withIndex("by_stripe_account_id", (q) =>
+        q.eq("stripeAccountId", args.stripeAccountId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
+      await ctx.db.patch("accounts", existing._id, {
         ...args,
         onboardingStatus: args.onboardingStatus ?? existing.onboardingStatus,
       });
     } else {
-      await ctx.db.insert('accounts', {
+      await ctx.db.insert("accounts", {
         ...args,
-        onboardingStatus: args.onboardingStatus ?? 'pending',
+        onboardingStatus: args.onboardingStatus ?? "pending",
       });
     }
 
@@ -61,14 +61,14 @@ export const deleteAccountByStripeId = mutation({
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('accounts')
-      .withIndex('by_stripe_account_id', (q) =>
-        q.eq('stripeAccountId', args.stripeAccountId),
+      .query("accounts")
+      .withIndex("by_stripe_account_id", (q) =>
+        q.eq("stripeAccountId", args.stripeAccountId),
       )
       .first();
 
     if (!existing) return false;
-    await ctx.db.delete(existing._id);
+    await ctx.db.delete("accounts", existing._id);
     return true;
   },
 });
@@ -96,16 +96,16 @@ export const upsertAccountInternal = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('accounts')
-      .withIndex('by_stripe_account_id', (q) =>
-        q.eq('stripeAccountId', args.stripeAccountId),
+      .query("accounts")
+      .withIndex("by_stripe_account_id", (q) =>
+        q.eq("stripeAccountId", args.stripeAccountId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch("accounts", existing._id, args);
     } else {
-      await ctx.db.insert('accounts', args);
+      await ctx.db.insert("accounts", args);
     }
 
     return null;
@@ -124,22 +124,27 @@ export const clearAllTables = mutation({
   }),
   handler: async (ctx) => {
     const tables = [
-      'accounts',
-      'products',
-      'prices',
-      'subscriptions',
-      'checkoutSessions',
-      'invoices',
-      'payments',
-      'payouts',
+      "accounts",
+      "products",
+      "prices",
+      "subscriptions",
+      "checkoutSessions",
+      "invoices",
+      "payments",
+      "payouts",
     ];
     let totalCleared = 0;
 
     for (const tableName of tables) {
+      // Dev/test reset utility: deliberately clears every row in every table.
+      // eslint-disable-next-line @convex-dev/no-collect-in-query
       const docs = await ctx.db.query(tableName as any).collect();
 
       if (docs.length > 0) {
-        await Promise.all(docs.map((doc: any) => ctx.db.delete(doc._id)));
+        await Promise.all(
+          // eslint-disable-next-line @convex-dev/explicit-table-ids
+          docs.map((doc: any) => ctx.db.delete(doc._id)),
+        );
         totalCleared += docs.length;
       }
     }

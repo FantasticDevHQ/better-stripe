@@ -79,3 +79,30 @@ export type V2CloseAppliedConfiguration = NonNullable<
 export type CheckoutSessionCreateParams = NonNullable<
   Parameters<Stripe["checkout"]["sessions"]["create"]>[0]
 >;
+
+// =============================================================================
+// Stripe constructor config — apiVersion type
+// =============================================================================
+
+/**
+ * The exact `apiVersion` literal the installed Stripe SDK targets.
+ *
+ * In stripe@22.1+, `StripeConfig.apiVersion` is typed as the current
+ * `LatestApiVersion` literal rather than plain `string`. Because stripe
+ * does not re-export `LatestApiVersion` through the `Stripe` namespace,
+ * we extract it from the new Stripe instance constructor shape via the
+ * SDK's own typings (Stripe has a static `API_VERSION: string`, but we
+ * need the literal — so we use the config accepted by the class).
+ *
+ * Callers pinning to a specific API version should cast their string
+ * through this type (or just pass the literal directly) to satisfy the
+ * tightened constructor types.
+ */
+// Stripe is imported type-only at the top of this file; to access the
+// constructor via `typeof`, we need the value side. Re-importing as a
+// value here is a pure type-level trick — `StripeValue` is only used
+// inside a `typeof` expression, so no runtime code is emitted.
+import StripeValue from "stripe";
+export type StripeApiVersion = NonNullable<
+  NonNullable<ConstructorParameters<typeof StripeValue>[1]>["apiVersion"]
+>;

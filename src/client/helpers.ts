@@ -6,8 +6,9 @@ import type {
 import Stripe from "stripe";
 
 import type { ComponentApi } from "../component/_generated/component.js";
+import type { StripeApiVersion } from "./stripe-types.js";
 
-export const DEFAULT_API_VERSION = "2026-03-25.dahlia";
+export const DEFAULT_API_VERSION: StripeApiVersion = "2026-04-22.dahlia";
 
 /** The component API type — use this instead of `any` for the component param */
 export type Component = ComponentApi;
@@ -34,7 +35,7 @@ export function getStripeClient(
   apiVersion?: string,
 ): Stripe {
   return new Stripe(secretKey, {
-    apiVersion: (apiVersion || DEFAULT_API_VERSION) as string,
+    apiVersion: (apiVersion as StripeApiVersion) || DEFAULT_API_VERSION,
   });
 }
 

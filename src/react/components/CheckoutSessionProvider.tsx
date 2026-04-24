@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo } from "react";
 
-import { CheckoutProvider } from '@stripe/react-stripe-js/checkout';
-import { type Appearance, loadStripe } from '@stripe/stripe-js';
+import { CheckoutElementsProvider } from "@stripe/react-stripe-js/checkout";
+import { type Appearance, loadStripe } from "@stripe/stripe-js";
 
-import { defaultStripeAppearance } from '../lib/stripe-element-styles.js';
+import { defaultStripeAppearance } from "../lib/stripe-element-styles.js";
 
 export type CheckoutSessionProviderProps = {
   /** Stripe publishable key (pk_test_... or pk_live_...) */
@@ -22,9 +22,10 @@ export type CheckoutSessionProviderProps = {
 /**
  * Provider for Stripe Checkout Session custom UI flows.
  *
- * Wraps Stripe's `CheckoutProvider` from `@stripe/react-stripe-js/checkout`.
- * Use with `useCheckoutSession()` in child components to access checkout state
- * and confirmation methods.
+ * Wraps Stripe's `CheckoutElementsProvider` from `@stripe/react-stripe-js/checkout`
+ * (renamed from `CheckoutProvider` in a recent release). Use with
+ * `useCheckoutSession()` in child components to access checkout state and
+ * confirmation methods.
  *
  * @example
  * ```tsx
@@ -62,8 +63,8 @@ export function CheckoutSessionProvider({
   );
 
   return (
-    <CheckoutProvider stripe={stripePromise} options={options}>
+    <CheckoutElementsProvider stripe={stripePromise} options={options}>
       {children}
-    </CheckoutProvider>
+    </CheckoutElementsProvider>
   );
 }

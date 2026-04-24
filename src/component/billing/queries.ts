@@ -1,16 +1,16 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { query } from '../_generated/server';
+import { query } from "../_generated/server";
 
 // =============================================================================
 // SUBSCRIPTION QUERIES
 // =============================================================================
 
 export const getSubscription = query({
-  args: { subscriptionId: v.id('subscriptions') },
+  args: { subscriptionId: v.id("subscriptions") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.subscriptionId);
+    return await ctx.db.get("subscriptions", args.subscriptionId);
   },
 });
 
@@ -19,9 +19,9 @@ export const getSubscriptionByStripeId = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('subscriptions')
-      .withIndex('by_stripe_subscription_id', (q) =>
-        q.eq('stripeSubscriptionId', args.stripeSubscriptionId),
+      .query("subscriptions")
+      .withIndex("by_stripe_subscription_id", (q) =>
+        q.eq("stripeSubscriptionId", args.stripeSubscriptionId),
       )
       .first();
   },
@@ -39,10 +39,10 @@ export const listSubscriptions = query({
 
     if (args.status) {
       subsQuery = ctx.db
-        .query('subscriptions')
-        .withIndex('by_status', (q) => q.eq('status', args.status as any));
+        .query("subscriptions")
+        .withIndex("by_status", (q) => q.eq("status", args.status as any));
     } else {
-      subsQuery = ctx.db.query('subscriptions');
+      subsQuery = ctx.db.query("subscriptions");
     }
 
     return await subsQuery.take(limit);
@@ -56,9 +56,11 @@ export const listSubscriptionsByUser = query({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    // A user typically has a small number of subscriptions (current + historical).
+    // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .query("subscriptions")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .collect();
 
     if (args.status) {
@@ -75,9 +77,11 @@ export const listSubscriptionsByOrg = query({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    // An org typically has a small number of subscriptions (current + historical).
+    // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_org_id', (q) => q.eq('orgId', args.orgId))
+      .query("subscriptions")
+      .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
       .collect();
 
     if (args.status) {
@@ -94,27 +98,30 @@ export const getActiveSubscription = query({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    // Scoped to a single user/org — bounded by number of subscriptions per entity.
     const subs = args.orgId
-      ? await ctx.db
-          .query('subscriptions')
-          .withIndex('by_org_id', (q) => q.eq('orgId', args.orgId))
+      ? // eslint-disable-next-line @convex-dev/no-collect-in-query
+        await ctx.db
+          .query("subscriptions")
+          .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
           .collect()
-      : await ctx.db
-          .query('subscriptions')
-          .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      : // eslint-disable-next-line @convex-dev/no-collect-in-query
+        await ctx.db
+          .query("subscriptions")
+          .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
           .collect();
 
     return (
-      subs.find((s) => s.status === 'active' || s.status === 'trialing') ?? null
+      subs.find((s) => s.status === "active" || s.status === "trialing") ?? null
     );
   },
 });
 
 export const getTrialStatus = query({
-  args: { subscriptionId: v.id('subscriptions') },
+  args: { subscriptionId: v.id("subscriptions") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const sub = await ctx.db.get(args.subscriptionId);
+    const sub = await ctx.db.get("subscriptions", args.subscriptionId);
     if (!sub) return null;
 
     let daysRemaining = 0;
@@ -144,10 +151,10 @@ export const getTrialStatus = query({
 // =============================================================================
 
 export const getCheckoutSession = query({
-  args: { sessionId: v.id('checkoutSessions') },
+  args: { sessionId: v.id("checkoutSessions") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.sessionId);
+    return await ctx.db.get("checkoutSessions", args.sessionId);
   },
 });
 
@@ -156,9 +163,9 @@ export const getCheckoutSessionByStripeId = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('checkoutSessions')
-      .withIndex('by_stripe_session_id', (q) =>
-        q.eq('stripeSessionId', args.stripeSessionId),
+      .query("checkoutSessions")
+      .withIndex("by_stripe_session_id", (q) =>
+        q.eq("stripeSessionId", args.stripeSessionId),
       )
       .first();
   },
@@ -174,8 +181,8 @@ export const listCheckoutSessionsByUser = query({
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
     const sessions = await ctx.db
-      .query('checkoutSessions')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .query("checkoutSessions")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .take(limit);
 
     if (args.status) {
@@ -203,8 +210,8 @@ export const listInvoices = query({
     if (args.userId) {
       const userId = args.userId;
       const invoices = await ctx.db
-        .query('invoices')
-        .withIndex('by_user_id', (q) => q.eq('userId', userId))
+        .query("invoices")
+        .withIndex("by_user_id", (q) => q.eq("userId", userId))
         .take(limit);
       if (args.status) return invoices.filter((i) => i.status === args.status);
       return invoices;
@@ -213,16 +220,16 @@ export const listInvoices = query({
     if (args.subscriptionId) {
       const subscriptionId = args.subscriptionId;
       const invoices = await ctx.db
-        .query('invoices')
-        .withIndex('by_subscription_id', (q) =>
-          q.eq('subscriptionId', subscriptionId),
+        .query("invoices")
+        .withIndex("by_subscription_id", (q) =>
+          q.eq("subscriptionId", subscriptionId),
         )
         .take(limit);
       if (args.status) return invoices.filter((i) => i.status === args.status);
       return invoices;
     }
 
-    const invoices = await ctx.db.query('invoices').take(limit);
+    const invoices = await ctx.db.query("invoices").take(limit);
     if (args.status) return invoices.filter((i) => i.status === args.status);
     return invoices;
   },

@@ -1,10 +1,10 @@
 import Stripe from "stripe";
 
+import { STRIPE_API_VERSION } from "../constants.js";
 import type { Component } from "../helpers.js";
 import type { StripeApiVersion } from "../stripe-types.js";
 import type { WebhookActionCtx } from "../types.js";
 
-const DEFAULT_API_VERSION: StripeApiVersion = "2026-04-22.dahlia";
 const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
 // =============================================================================
@@ -71,7 +71,7 @@ export function getStripeClient(
   apiVersion?: string,
 ): Stripe {
   return new Stripe(secretKey, {
-    apiVersion: (apiVersion as StripeApiVersion) || DEFAULT_API_VERSION,
+    apiVersion: (apiVersion as StripeApiVersion) || STRIPE_API_VERSION,
   });
 }
 

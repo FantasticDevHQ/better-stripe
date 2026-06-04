@@ -116,6 +116,10 @@ export type {
   PaymentMethodActionsRenderProps,
 } from "./components/PaymentMethodActions.js";
 export { PaymentMethodsList } from "./components/PaymentMethodsList.js";
+export type {
+  PaymentMethodItem,
+  PaymentMethodsListProps,
+} from "./components/PaymentMethodsList.js";
 export { DeletePaymentMethodDialog } from "./components/DeletePaymentMethodDialog.js";
 
 // Components — Connect / Merchant

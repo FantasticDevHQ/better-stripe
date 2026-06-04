@@ -62,8 +62,12 @@
     "build": "tsc --project ./tsconfig.build.json",
     "dev": "cd example && pnpm run dev",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/ --cache --cache-location node_modules/.cache/eslint/",
+    "typecheck": "npm run typecheck:lib && npm run typecheck:example",
+    "typecheck:lib": "tsc --noEmit",
+    "typecheck:example": "pnpm --filter ./example run typecheck",
+    "lint": "npm run lint:lib && npm run lint:example",
+    "lint:lib": "eslint src/ --cache --cache-location node_modules/.cache/eslint/",
+    "lint:example": "pnpm --filter ./example run lint",
     "build:clean": "rm -rf dist *.tsbuildinfo && npm run build",
     "format": "prettier --check --ignore-path ./.prettierignore \"**/*.{js,cjs,mjs,ts,tsx,md,json,sql}\"",
     "format:fix": "prettier --write --ignore-path ./.prettierignore \"**/*.{js,cjs,mjs,ts,tsx,md,json,sql}\"",
@@ -76,26 +80,26 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^6.2.0",
-    "@stripe/stripe-js": "^9.3.1",
-    "stripe": "^22.1.0"
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^9.7.0",
+    "stripe": "^22.2.0"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^2.0.0",
     "@edge-runtime/vm": "^5.0.0",
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.16",
     "@types/react-dom": "19.2.3",
-    "@typescript-eslint/parser": "^8.59.0",
-    "convex": "^1.36.1",
-    "convex-test": "^0.0.50",
+    "@typescript-eslint/parser": "^8.60.1",
+    "convex": "^1.40.0",
+    "convex-test": "^0.0.53",
     "eslint": "^9.39.4",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "pretty-quick": "^4.2.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.0",
-    "vitest": "^4.1.5"
+    "typescript-eslint": "^8.60.1",
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "convex": "^1.29.3",

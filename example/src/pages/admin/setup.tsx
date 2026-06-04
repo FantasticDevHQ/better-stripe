@@ -63,6 +63,7 @@ function EnvVarsCard() {
   }, [checkEnvVars]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
     refresh();
   }, [refresh]);
 
@@ -260,6 +261,7 @@ function WebhookSetupCard() {
   }, [siteUrl, getWebhookStatus]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
     checkStatus();
   }, [checkStatus]);
 

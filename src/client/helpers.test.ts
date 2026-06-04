@@ -1,15 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  DEFAULT_API_VERSION,
-  epochToIso,
-  getStripeClient,
-  runMutationOrThrow,
-} from "./helpers.js";
+import { STRIPE_API_VERSION } from "./constants.js";
+import { epochToIso, getStripeClient, runMutationOrThrow } from "./helpers.js";
 
-describe("DEFAULT_API_VERSION", () => {
+describe("STRIPE_API_VERSION", () => {
   it("is a dahlia API version", () => {
-    expect(DEFAULT_API_VERSION).toMatch(/\.dahlia$/);
+    expect(STRIPE_API_VERSION).toMatch(/\.dahlia$/);
   });
 });
 

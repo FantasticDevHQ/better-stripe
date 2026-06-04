@@ -1,21 +1,21 @@
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CheckoutStatus } from '@getdojo/better-stripe/react';
-import { useQuery } from 'convex/react';
-import { CheckCircle, XCircle } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CheckoutStatus } from "@getdojo/better-stripe/react";
+import { useQuery } from "convex/react";
+import { CheckCircle, XCircle } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
-import { api } from '../../convex/_generated/api';
+import { api } from "../../convex/_generated/api";
 
 export function CheckoutStatusPage() {
   const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams.get("session_id");
 
   const session = useQuery(
     api.queries.getCheckoutSessionByStripeId,
-    sessionId ? { stripeSessionId: sessionId } : 'skip',
+    sessionId ? { stripeSessionId: sessionId } : "skip",
   );
 
   if (!sessionId) {
@@ -25,8 +25,8 @@ export function CheckoutStatusPage() {
           <AlertTitle>No session found</AlertTitle>
           <AlertDescription>Missing checkout session ID.</AlertDescription>
         </Alert>
-        <Button variant="link" asChild>
-          <Link to="/">Back to pricing</Link>
+        <Button variant="link" render={<Link to="/" />}>
+          Back to pricing
         </Button>
       </div>
     );
@@ -40,7 +40,7 @@ export function CheckoutStatusPage() {
     );
   }
 
-  const status = session?.status as 'open' | 'complete' | 'expired' | undefined;
+  const status = session?.status as "open" | "complete" | "expired" | undefined;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-8">
@@ -56,9 +56,7 @@ export function CheckoutStatusPage() {
                 Your subscription is now active. You can start learning right
                 away.
               </p>
-              <Button asChild>
-                <Link to="/dashboard">Go to Dashboard</Link>
-              </Button>
+              <Button render={<Link to="/dashboard" />}>Go to Dashboard</Button>
             </CardContent>
           </Card>
         )}
@@ -70,9 +68,7 @@ export function CheckoutStatusPage() {
               <p className="text-muted-foreground">
                 This checkout session has expired. Please try again.
               </p>
-              <Button asChild>
-                <Link to="/">Back to pricing</Link>
-              </Button>
+              <Button render={<Link to="/" />}>Back to pricing</Button>
             </CardContent>
           </Card>
         )}
@@ -95,9 +91,7 @@ export function CheckoutStatusPage() {
             <p className="text-muted-foreground">
               We could not find this checkout session.
             </p>
-            <Button asChild>
-              <Link to="/">Back to pricing</Link>
-            </Button>
+            <Button render={<Link to="/" />}>Back to pricing</Button>
           </CardContent>
         </Card>
       )}

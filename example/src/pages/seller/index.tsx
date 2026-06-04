@@ -13,6 +13,7 @@ import { useRole } from "@/providers/role-context";
 import {
   AccountCreateCard,
   ConnectStatusBadge,
+  type StripeComponentPayout,
 } from "@getdojo/better-stripe/react";
 import { useQuery } from "convex/react";
 
@@ -30,7 +31,9 @@ export function SellerHome() {
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
-  const payouts = useQuery(api.queries.listPayouts);
+  const payouts = useQuery(api.queries.listPayouts) as
+    | StripeComponentPayout[]
+    | undefined;
 
   if (account === undefined) {
     return (
@@ -92,18 +95,15 @@ export function SellerHome() {
   }
 
   // Compute earnings from real payout data
-  const paidPayouts = payouts?.filter((p: any) => p.status === "paid") ?? [];
+  const paidPayouts = payouts?.filter((p) => p.status === "paid") ?? [];
   const pendingPayouts =
     payouts?.filter(
-      (p: any) => p.status === "pending" || p.status === "in_transit",
+      (p) => p.status === "pending" || p.status === "in_transit",
     ) ?? [];
 
-  const totalPayouts = paidPayouts.reduce(
-    (sum: number, p: any) => sum + (p.amount ?? 0),
-    0,
-  );
+  const totalPayouts = paidPayouts.reduce((sum, p) => sum + (p.amount ?? 0), 0);
   const pendingBalance = pendingPayouts.reduce(
-    (sum: number, p: any) => sum + (p.amount ?? 0),
+    (sum, p) => sum + (p.amount ?? 0),
     0,
   );
   const totalEarned = totalPayouts + pendingBalance;
@@ -158,7 +158,7 @@ export function SellerHome() {
             </Alert>
           ) : (
             <div className="space-y-1">
-              {recentPayouts.map((payout: any, i: number) => (
+              {recentPayouts.map((payout, i) => (
                 <div key={payout._id}>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground text-sm">

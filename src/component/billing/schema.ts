@@ -1,11 +1,11 @@
-import { defineTable } from 'convex/server';
-import { v } from 'convex/values';
+import { defineTable } from "convex/server";
+import { v } from "convex/values";
 
 import {
   checkoutSessionModeValidator,
   checkoutSessionStatusValidator,
   subscriptionStatusValidator,
-} from './validators';
+} from "./validators";
 
 /**
  * Subscriptions with first-class trial tracking.
@@ -27,11 +27,11 @@ export const subscriptionsTable = defineTable({
   trialEnd: v.optional(v.string()),
   metadata: v.optional(v.any()),
 })
-  .index('by_stripe_subscription_id', ['stripeSubscriptionId'])
-  .index('by_user_id', ['userId'])
-  .index('by_org_id', ['orgId'])
-  .index('by_status', ['status'])
-  .index('by_account_id', ['accountId']);
+  .index("by_stripe_subscription_id", ["stripeSubscriptionId"])
+  .index("by_user_id", ["userId"])
+  .index("by_org_id", ["orgId"])
+  .index("by_status", ["status"])
+  .index("by_account_id", ["accountId"]);
 
 /**
  * Checkout sessions (embedded + redirect modes).
@@ -48,8 +48,8 @@ export const checkoutSessionsTable = defineTable({
   priceId: v.optional(v.string()),
   metadata: v.optional(v.any()),
 })
-  .index('by_stripe_session_id', ['stripeSessionId'])
-  .index('by_user_id', ['userId']);
+  .index("by_stripe_session_id", ["stripeSessionId"])
+  .index("by_user_id", ["userId"]);
 
 /**
  * Invoice summaries (line items fetched on demand from Stripe).
@@ -70,6 +70,6 @@ export const invoicesTable = defineTable({
   periodEnd: v.optional(v.string()),
   metadata: v.optional(v.any()),
 })
-  .index('by_stripe_invoice_id', ['stripeInvoiceId'])
-  .index('by_user_id', ['userId'])
-  .index('by_subscription_id', ['subscriptionId']);
+  .index("by_stripe_invoice_id", ["stripeInvoiceId"])
+  .index("by_user_id", ["userId"])
+  .index("by_subscription_id", ["subscriptionId"]);

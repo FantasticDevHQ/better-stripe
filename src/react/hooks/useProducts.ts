@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentProduct } from '../types.js';
+import type { StripeComponentProduct } from "../types.js";
 
 export type UseProductsResult = {
   products: StripeComponentProduct[] | undefined;

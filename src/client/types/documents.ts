@@ -11,23 +11,23 @@
 // We re-export them so consumers import from '@getdojo/better-stripe' without
 // needing a direct dependency on the stripe package.
 // ---------------------------------------------------------------------------
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
 import type {
   CheckoutSessionMode,
   CheckoutSessionStatus,
   SubscriptionStatus,
-} from '../../component/billing/validators.js';
+} from "../../component/billing/validators.js";
 import type {
   PaymentStatus,
   PayoutStatus,
-} from '../../component/connect/validators.js';
+} from "../../component/connect/validators.js";
 import type {
   AppliedConfiguration,
   OnboardingStatus,
-} from '../../component/core/validators.js';
-import type { PriceType } from '../../component/products/validators.js';
-import type { WebhookEventStatus } from '../../component/webhooks/validators.js';
+} from "../../component/core/validators.js";
+import type { PriceType } from "../../component/products/validators.js";
+import type { WebhookEventStatus } from "../../component/webhooks/validators.js";
 
 export type StripeComponentAccount = {
   _id: string;
@@ -106,7 +106,7 @@ export type StripeComponentPrice = {
   currency: string;
   active: boolean;
   type: PriceType;
-  interval?: 'day' | 'week' | 'month' | 'year';
+  interval?: "day" | "week" | "month" | "year";
   intervalCount?: number;
   metadata?: Record<string, unknown>;
 };
@@ -183,5 +183,5 @@ export type PaymentMethodCard = Stripe.PaymentMethod.Card;
 
 export type AccountLinkWithStatus = {
   url: string;
-  linkType: 'login' | 'onboarding' | 'setup';
+  linkType: "login" | "onboarding" | "setup";
 };

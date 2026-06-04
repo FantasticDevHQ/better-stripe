@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from "react";
 
 import {
   filterPricesByInterval,
   sortPricesByAmount,
-} from '../lib/price-helpers.js';
-import { type BillingInterval, IntervalSelector } from './IntervalSelector.js';
-import { PriceCard, type PriceCardPrice } from './PriceCard.js';
+} from "../lib/price-helpers.js";
+import { type BillingInterval, IntervalSelector } from "./IntervalSelector.js";
+import { PriceCard, type PriceCardPrice } from "./PriceCard.js";
 
 export type PricePickerProps = {
   prices: PriceCardPrice[];
@@ -37,7 +37,7 @@ export function PricePicker({
   prices,
   productName,
   currentPriceId,
-  defaultInterval = 'month',
+  defaultInterval = "month",
   onSelect,
   monthLabel,
   yearLabel,

@@ -1,7 +1,7 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Payout methods
@@ -20,7 +20,7 @@ export async function createPayout(
   const payout = await stripe.payouts.create(
     {
       amount: opts.amount,
-      currency: opts.currency ?? 'usd',
+      currency: opts.currency ?? "usd",
       metadata: opts.metadata ?? undefined,
     },
     { stripeAccount: opts.stripeAccountId },
@@ -34,7 +34,7 @@ export async function getPayout(
   opts: { payoutId: string },
 ) {
   return ctx.runQuery(
-    componentRef(component, 'connect/queries/getPayout'),
+    componentRef(component, "connect/queries/getPayout"),
     opts,
   );
 }
@@ -45,7 +45,7 @@ export async function listPayouts(
   opts?: { accountId?: string; status?: string; limit?: number },
 ) {
   return ctx.runQuery(
-    componentRef(component, 'connect/queries/listPayouts'),
+    componentRef(component, "connect/queries/listPayouts"),
     opts ?? {},
   );
 }

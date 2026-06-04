@@ -1,15 +1,15 @@
-import { httpActionGeneric } from 'convex/server';
-import type { HttpRouter } from 'convex/server';
+import { httpActionGeneric } from "convex/server";
+import type { HttpRouter } from "convex/server";
 
-import type { Component } from '../helpers.js';
-import type { RegisterRoutesConfig, WebhookActionCtx } from '../types.js';
-import { handleWebhookRequest } from './handler.js';
+import type { Component } from "../helpers.js";
+import type { RegisterRoutesConfig, WebhookActionCtx } from "../types.js";
+import { handleWebhookRequest } from "./handler.js";
 
 // Re-export sub-modules for direct access
-export { handleWebhookRequest } from './handler.js';
-export { runHooks } from './hooks.js';
-export { processEvent } from './processors.js';
-export { handleV2Event, verifyV2Event } from './v2.js';
+export { handleWebhookRequest } from "./handler.js";
+export { runHooks } from "./hooks.js";
+export { processEvent } from "./processors.js";
+export { handleV2Event, verifyV2Event } from "./v2.js";
 
 // =============================================================================
 // WEBHOOK REGISTRATION
@@ -34,11 +34,11 @@ export function registerRoutes(
   component: Component,
   config?: RegisterRoutesConfig,
 ) {
-  const path = config?.webhookPath ?? '/stripe/webhook';
+  const path = config?.webhookPath ?? "/stripe/webhook";
 
   http.route({
     path,
-    method: 'POST',
+    method: "POST",
     handler: httpActionGeneric(async (ctx, request) => {
       return handleWebhookRequest(
         ctx as WebhookActionCtx,

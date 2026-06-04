@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo } from "react";
 
-import { Elements } from '@stripe/react-stripe-js';
-import { type Appearance, loadStripe } from '@stripe/stripe-js';
+import { Elements } from "@stripe/react-stripe-js";
+import { type Appearance, loadStripe } from "@stripe/stripe-js";
 
-import { defaultStripeAppearance } from '../lib/stripe-element-styles.js';
+import { defaultStripeAppearance } from "../lib/stripe-element-styles.js";
 
 export type StripeProviderProps = {
   /** Stripe publishable key (pk_test_... or pk_live_...) */
@@ -25,7 +25,7 @@ export function createStripeElementsOptions({
   stripeOptions,
 }: Pick<
   StripeProviderProps,
-  'appearance' | 'elementsOptions' | 'stripeOptions'
+  "appearance" | "elementsOptions" | "stripeOptions"
 >) {
   return {
     ...stripeOptions,

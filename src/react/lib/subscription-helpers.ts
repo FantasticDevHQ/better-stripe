@@ -28,7 +28,7 @@ export function daysUntil(dateStr: string | null | undefined): number {
  * Derive display-friendly subscription state.
  */
 export function deriveSubscriptionState(sub: SubscriptionLike) {
-  const isActive = sub.status === 'active' || sub.status === 'trialing';
+  const isActive = sub.status === "active" || sub.status === "trialing";
   const daysUntilRenewal = daysUntil(sub.currentPeriodEnd);
   const daysUntilTrialEnd = sub.isTrialing ? daysUntil(sub.trialEnd) : 0;
 
@@ -36,8 +36,8 @@ export function deriveSubscriptionState(sub: SubscriptionLike) {
     isActive,
     isTrialing: sub.isTrialing,
     isCanceling: sub.cancelAtPeriodEnd && isActive,
-    isCanceled: sub.status === 'canceled',
-    isPastDue: sub.status === 'past_due',
+    isCanceled: sub.status === "canceled",
+    isPastDue: sub.status === "past_due",
     daysUntilRenewal,
     daysUntilTrialEnd,
   };
@@ -51,14 +51,14 @@ export function getSubscriptionStatusLabel(
   labels?: Partial<Record<string, string>>,
 ): string {
   const defaults: Record<string, string> = {
-    active: 'Active',
-    trialing: 'Trial',
-    past_due: 'Past Due',
-    canceled: 'Canceled',
-    incomplete: 'Incomplete',
-    incomplete_expired: 'Expired',
-    unpaid: 'Unpaid',
-    paused: 'Paused',
+    active: "Active",
+    trialing: "Trial",
+    past_due: "Past Due",
+    canceled: "Canceled",
+    incomplete: "Incomplete",
+    incomplete_expired: "Expired",
+    unpaid: "Unpaid",
+    paused: "Paused",
   };
   return labels?.[status] ?? defaults[status] ?? status;
 }

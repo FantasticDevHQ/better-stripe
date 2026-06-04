@@ -2,7 +2,7 @@ import type {
   FunctionReference,
   FunctionReturnType,
   OptionalRestArgs,
-} from 'convex/server';
+} from "convex/server";
 
 import type {
   StripeComponentAccount,
@@ -13,7 +13,7 @@ import type {
   StripeComponentPrice,
   StripeComponentProduct,
   StripeComponentSubscription,
-} from './documents.js';
+} from "./documents.js";
 
 // ---------------------------------------------------------------------------
 // Sync Triggers (run in same transaction as component DB write)
@@ -106,12 +106,12 @@ export interface SyncTriggers {
 
 /** Context passed to sync triggers — mutation-compatible (DB reads/writes only) */
 export type SyncTriggerCtx = {
-  runQuery: <Query extends FunctionReference<'query', 'public' | 'internal'>>(
+  runQuery: <Query extends FunctionReference<"query", "public" | "internal">>(
     query: Query,
     ...args: OptionalRestArgs<Query>
   ) => Promise<FunctionReturnType<Query>>;
   runMutation: <
-    Mutation extends FunctionReference<'mutation', 'public' | 'internal'>,
+    Mutation extends FunctionReference<"mutation", "public" | "internal">,
   >(
     mutation: Mutation,
     ...args: OptionalRestArgs<Mutation>
@@ -163,18 +163,18 @@ export interface AsyncHooks {
 
 /** Context passed to async hooks — action-compatible (external API calls OK) */
 export type AsyncHookCtx = {
-  runQuery: <Query extends FunctionReference<'query', 'public' | 'internal'>>(
+  runQuery: <Query extends FunctionReference<"query", "public" | "internal">>(
     query: Query,
     ...args: OptionalRestArgs<Query>
   ) => Promise<FunctionReturnType<Query>>;
   runMutation: <
-    Mutation extends FunctionReference<'mutation', 'public' | 'internal'>,
+    Mutation extends FunctionReference<"mutation", "public" | "internal">,
   >(
     mutation: Mutation,
     ...args: OptionalRestArgs<Mutation>
   ) => Promise<FunctionReturnType<Mutation>>;
   runAction: <
-    Action extends FunctionReference<'action', 'public' | 'internal'>,
+    Action extends FunctionReference<"action", "public" | "internal">,
   >(
     action: Action,
     ...args: OptionalRestArgs<Action>

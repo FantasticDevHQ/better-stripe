@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { StripeComponentCheckoutSession } from '../types.js';
+import type { StripeComponentCheckoutSession } from "../types.js";
 
 export type UseCheckoutResult = {
   session: StripeComponentCheckoutSession | null | undefined;
-  status: 'open' | 'complete' | 'expired' | undefined;
+  status: "open" | "complete" | "expired" | undefined;
   isLoading: boolean;
   isComplete: boolean;
 };
@@ -22,7 +22,7 @@ export function createUseCheckout(
       session: session ?? null,
       status: session?.status,
       isLoading: session === undefined && sessionId !== undefined,
-      isComplete: session?.status === 'complete',
+      isComplete: session?.status === "complete",
     };
   };
 }

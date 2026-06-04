@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { deriveSubscriptionState } from '../lib/subscription-helpers.js';
-import type { StripeComponentSubscription } from '../types.js';
+import { deriveSubscriptionState } from "../lib/subscription-helpers.js";
+import type { StripeComponentSubscription } from "../types.js";
 
 export type UseSubscriptionResult = {
   subscription: StripeComponentSubscription | null | undefined;

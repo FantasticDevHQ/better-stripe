@@ -1,17 +1,17 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
 export type BetterStripeOnboardingStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'complete'
-  | 'restricted';
+  | "pending"
+  | "in_progress"
+  | "complete"
+  | "restricted";
 
 /**
  * Accepts a V2 Account (or partial shape with configuration/requirements).
  */
 type StripeAccountLike = Pick<
   Partial<Stripe.V2.Core.Account>,
-  'configuration' | 'requirements'
+  "configuration" | "requirements"
 >;
 
 export function deriveAccountStatus(account: StripeAccountLike): {
@@ -26,15 +26,15 @@ export function deriveAccountStatus(account: StripeAccountLike): {
     new Set(
       entries
         .map((entry) => entry.description)
-        .filter((value): value is string => typeof value === 'string'),
+        .filter((value): value is string => typeof value === "string"),
     ),
   );
 
   // Check deadline status for disabled-like conditions
   const deadlineStatus = requirements?.summary?.minimum_deadline?.status;
-  if (deadlineStatus === 'past_due') {
+  if (deadlineStatus === "past_due") {
     return {
-      onboardingStatus: 'restricted',
+      onboardingStatus: "restricted",
       missingRequirements,
     };
   }
@@ -43,19 +43,19 @@ export function deriveAccountStatus(account: StripeAccountLike): {
   const hasRestrictingImpact = entries.some(
     (entry) =>
       (entry.impact?.restricts_capabilities?.length ?? 0) > 0 &&
-      entry.awaiting_action_from === 'user',
+      entry.awaiting_action_from === "user",
   );
 
   if (hasRestrictingImpact && missingRequirements.length > 0) {
     return {
-      onboardingStatus: 'restricted',
+      onboardingStatus: "restricted",
       missingRequirements,
     };
   }
 
   if (missingRequirements.length > 0) {
     return {
-      onboardingStatus: 'in_progress',
+      onboardingStatus: "in_progress",
       missingRequirements,
     };
   }
@@ -63,7 +63,7 @@ export function deriveAccountStatus(account: StripeAccountLike): {
   const configuration = account.configuration;
   if (!configuration) {
     return {
-      onboardingStatus: 'pending',
+      onboardingStatus: "pending",
       missingRequirements,
     };
   }
@@ -77,7 +77,7 @@ export function deriveAccountStatus(account: StripeAccountLike): {
 
   if (configs.length === 0) {
     return {
-      onboardingStatus: 'pending',
+      onboardingStatus: "pending",
       missingRequirements,
     };
   }
@@ -85,7 +85,7 @@ export function deriveAccountStatus(account: StripeAccountLike): {
   const allApplied = configs.every((cfg) => cfg?.applied === true);
 
   return {
-    onboardingStatus: allApplied ? 'complete' : 'in_progress',
+    onboardingStatus: allApplied ? "complete" : "in_progress",
     missingRequirements,
   };
 }

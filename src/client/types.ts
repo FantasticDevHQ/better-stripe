@@ -26,4 +26,4 @@ export type {
   SyncTriggerCtx,
   AsyncHooks,
   AsyncHookCtx,
-} from './types/index.js';
+} from "./types/index.js";

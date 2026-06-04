@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { formatPrice } from '../lib/price-helpers.js';
+import { formatPrice } from "../lib/price-helpers.js";
 
 export type LineItem = {
   description: string;
@@ -26,7 +26,7 @@ export type SubscriptionLineItemsProps = {
  */
 export function SubscriptionLineItems({
   items,
-  totalLabel = 'Total',
+  totalLabel = "Total",
   className,
   children,
 }: SubscriptionLineItemsProps) {
@@ -36,7 +36,7 @@ export function SubscriptionLineItems({
   }));
 
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-  const currency = items[0]?.currency ?? 'usd';
+  const currency = items[0]?.currency ?? "usd";
   const formattedTotal = formatPrice(totalAmount, currency);
 
   if (children) {

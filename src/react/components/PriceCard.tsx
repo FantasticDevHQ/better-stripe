@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { formatPriceWithInterval } from '../lib/price-helpers.js';
+import { formatPriceWithInterval } from "../lib/price-helpers.js";
 
 export type PriceCardPrice = {
   stripePriceId: string;
@@ -43,8 +43,8 @@ export function PriceCard({
   isSelected = false,
   isCurrentPlan = false,
   onSelect,
-  currentPlanLabel = 'Current plan',
-  selectLabel = 'Select',
+  currentPlanLabel = "Current plan",
+  selectLabel = "Select",
   children,
   className,
 }: PriceCardProps) {

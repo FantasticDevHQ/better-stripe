@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { formatPriceWithInterval } from '../lib/price-helpers.js';
+import { formatPriceWithInterval } from "../lib/price-helpers.js";
 
 export type PriceBadgeProps = {
   unitAmount?: number | null;
@@ -24,9 +24,9 @@ export function PriceBadge({
   currency,
   interval,
   intervalCount,
-  type = 'recurring',
+  type = "recurring",
   active = true,
-  freeLabel = 'Free',
+  freeLabel = "Free",
   className,
   children,
 }: PriceBadgeProps) {

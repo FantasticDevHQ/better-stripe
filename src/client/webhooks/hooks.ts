@@ -2,7 +2,7 @@ import type {
   RegisterRoutesConfig,
   StripeWebhookEvent,
   WebhookActionCtx,
-} from '../types.js';
+} from "../types.js";
 
 // =============================================================================
 // HOOK RUNNER

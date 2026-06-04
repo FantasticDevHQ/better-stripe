@@ -1,8 +1,8 @@
-import { NavSidebar } from '@/components/nav-sidebar';
-import { RoleSwitcher } from '@/components/role-switcher';
-import { Separator } from '@/components/ui/separator';
-import { useRole } from '@/providers/role-context';
-import { Outlet } from 'react-router-dom';
+import { NavSidebar } from "@/components/nav-sidebar";
+import { RoleSwitcher } from "@/components/role-switcher";
+import { Separator } from "@/components/ui/separator";
+import { useRole } from "@/providers/role-context";
+import { Outlet } from "react-router-dom";
 
 export function AppShell() {
   const { currentUser } = useRole();

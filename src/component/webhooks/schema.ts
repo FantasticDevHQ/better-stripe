@@ -1,7 +1,7 @@
-import { defineTable } from 'convex/server';
-import { v } from 'convex/values';
+import { defineTable } from "convex/server";
+import { v } from "convex/values";
 
-import { webhookEventStatusValidator } from './validators';
+import { webhookEventStatusValidator } from "./validators";
 
 /**
  * Internal-only ledger for webhook replay protection and observability.
@@ -14,5 +14,5 @@ export const webhookEventsTable = defineTable({
   status: webhookEventStatusValidator,
   lastError: v.optional(v.string()),
 })
-  .index('by_stripeEventId', ['stripeEventId'])
-  .index('by_status', ['status']);
+  .index("by_stripeEventId", ["stripeEventId"])
+  .index("by_status", ["status"]);

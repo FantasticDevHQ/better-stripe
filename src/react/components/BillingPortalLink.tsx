@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type BillingPortalLinkProps = {
   /** URL to Stripe billing portal (from createBillingPortalSession) */
@@ -24,20 +24,20 @@ export type BillingPortalLinkProps = {
 export function BillingPortalLink({
   portalUrl,
   onCreateSession,
-  label = 'Manage billing',
-  loadingLabel = 'Loading...',
+  label = "Manage billing",
+  loadingLabel = "Loading...",
   className,
   children,
 }: BillingPortalLinkProps) {
   const handleClick = async () => {
     if (portalUrl) {
-      window.open(portalUrl, '_blank');
+      window.open(portalUrl, "_blank");
       return;
     }
     if (onCreateSession) {
       const url = await onCreateSession();
       if (url) {
-        window.open(url, '_blank');
+        window.open(url, "_blank");
       }
     }
   };

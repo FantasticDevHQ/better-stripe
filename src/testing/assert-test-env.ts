@@ -7,13 +7,13 @@ export function assertTestEnvironment(stripeSecretKey?: string): void {
 
   if (!key) {
     throw new Error(
-      '[better-stripe] STRIPE_SECRET_KEY is not set. Cannot run test fixtures.',
+      "[better-stripe] STRIPE_SECRET_KEY is not set. Cannot run test fixtures.",
     );
   }
 
-  if (!key.startsWith('sk_test_')) {
+  if (!key.startsWith("sk_test_")) {
     throw new Error(
-      '[better-stripe] REFUSING to run test fixtures against a live Stripe account. ' +
+      "[better-stripe] REFUSING to run test fixtures against a live Stripe account. " +
         `Key starts with "${key.slice(0, 7)}..." — expected "sk_test_..."`,
     );
   }

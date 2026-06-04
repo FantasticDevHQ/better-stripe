@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
 export type AddCardFormProps = {
   onSuccess?: (paymentMethodId: string) => void;
@@ -23,7 +23,7 @@ export type AddCardFormProps = {
 export function AddCardForm({
   onSuccess,
   onError,
-  submitLabel = 'Add card',
+  submitLabel = "Add card",
   className,
   children,
 }: AddCardFormProps) {
@@ -37,12 +37,12 @@ export function AddCardForm({
     if (!cardElement) return;
 
     const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
+      type: "card",
       card: cardElement,
     });
 
     if (error) {
-      onError?.(error.message ?? 'Failed to add card');
+      onError?.(error.message ?? "Failed to add card");
     } else if (paymentMethod) {
       onSuccess?.(paymentMethod.id);
     }

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import type { Appearance } from '@stripe/stripe-js';
+import type { Appearance } from "@stripe/stripe-js";
 
-import { useStripePublishableKey } from '../hooks/useStripePublishableKey.js';
-import { CheckoutSessionProvider } from './CheckoutSessionProvider.js';
+import { useStripePublishableKey } from "../hooks/useStripePublishableKey.js";
+import { CheckoutSessionProvider } from "./CheckoutSessionProvider.js";
 
 export type CheckoutSessionProviderWithKeyProps = {
   /** Convex query ref that returns the Stripe publishable key. */
@@ -64,7 +64,7 @@ export function CheckoutSessionProviderWithKey({
   }
 
   if (!publishableKey) {
-    const msg = 'Stripe configuration error. Please contact support.';
+    const msg = "Stripe configuration error. Please contact support.";
     return renderError ? (
       renderError(msg)
     ) : (

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentInvoice } from '../types.js';
+import type { StripeComponentInvoice } from "../types.js";
 
 export type UseInvoicesResult = {
   invoices: StripeComponentInvoice[] | undefined;

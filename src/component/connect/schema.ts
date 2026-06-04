@@ -1,7 +1,7 @@
-import { defineTable } from 'convex/server';
-import { v } from 'convex/values';
+import { defineTable } from "convex/server";
+import { v } from "convex/values";
 
-import { paymentStatusValidator, payoutStatusValidator } from './validators';
+import { paymentStatusValidator, payoutStatusValidator } from "./validators";
 
 /**
  * Payment intents.
@@ -16,8 +16,8 @@ export const paymentsTable = defineTable({
   status: paymentStatusValidator,
   metadata: v.optional(v.any()),
 })
-  .index('by_stripe_payment_intent_id', ['stripePaymentIntentId'])
-  .index('by_user_id', ['userId']);
+  .index("by_stripe_payment_intent_id", ["stripePaymentIntentId"])
+  .index("by_user_id", ["userId"]);
 
 /**
  * Payouts to V2 accounts (marketplace).
@@ -32,6 +32,6 @@ export const payoutsTable = defineTable({
   method: v.optional(v.string()),
   metadata: v.optional(v.any()),
 })
-  .index('by_stripe_payout_id', ['stripePayoutId'])
-  .index('by_account_id', ['accountId'])
-  .index('by_status', ['status']);
+  .index("by_stripe_payout_id", ["stripePayoutId"])
+  .index("by_account_id", ["accountId"])
+  .index("by_status", ["status"]);

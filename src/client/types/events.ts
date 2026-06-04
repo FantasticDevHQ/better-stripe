@@ -2,8 +2,8 @@ import type {
   FunctionReference,
   FunctionReturnType,
   OptionalRestArgs,
-} from 'convex/server';
-import type Stripe from 'stripe';
+} from "convex/server";
+import type Stripe from "stripe";
 
 // ---------------------------------------------------------------------------
 // Event types
@@ -51,18 +51,18 @@ export type StripeEventHandlers = {
  * This is a Convex runtime type, not a Stripe type.
  */
 export type WebhookActionCtx = {
-  runQuery: <Query extends FunctionReference<'query', 'public' | 'internal'>>(
+  runQuery: <Query extends FunctionReference<"query", "public" | "internal">>(
     query: Query,
     ...args: OptionalRestArgs<Query>
   ) => Promise<FunctionReturnType<Query>>;
   runMutation: <
-    Mutation extends FunctionReference<'mutation', 'public' | 'internal'>,
+    Mutation extends FunctionReference<"mutation", "public" | "internal">,
   >(
     mutation: Mutation,
     ...args: OptionalRestArgs<Mutation>
   ) => Promise<FunctionReturnType<Mutation>>;
   runAction: <
-    Action extends FunctionReference<'action', 'public' | 'internal'>,
+    Action extends FunctionReference<"action", "public" | "internal">,
   >(
     action: Action,
     ...args: OptionalRestArgs<Action>

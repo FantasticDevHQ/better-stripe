@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentPrice } from '../types.js';
+import type { StripeComponentPrice } from "../types.js";
 
 export type UsePricesResult = {
   prices: StripeComponentPrice[] | undefined;

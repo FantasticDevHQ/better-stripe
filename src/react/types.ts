@@ -11,7 +11,7 @@ export type {
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
-} from '../client/types/documents.js';
+} from "../client/types/documents.js";
 
 /** Props accepted by all headless better-stripe components */
 export type BetterStripeComponentProps = {

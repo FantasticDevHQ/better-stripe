@@ -2,8 +2,8 @@ import type {
   StripeEventHandler,
   StripeEventHandlers,
   StripeWebhookEvent,
-} from './events.js';
-import type { AsyncHooks, SyncTriggers } from './triggers.js';
+} from "./events.js";
+import type { AsyncHooks, SyncTriggers } from "./triggers.js";
 
 // ---------------------------------------------------------------------------
 // Client options

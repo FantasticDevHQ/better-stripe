@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-export type BillingInterval = 'month' | 'year';
+export type BillingInterval = "month" | "year";
 
 export type IntervalSelectorProps = {
   value: BillingInterval;
@@ -23,13 +23,13 @@ export type IntervalSelectorProps = {
 export function IntervalSelector({
   value,
   onChange,
-  monthLabel = 'Monthly',
-  yearLabel = 'Yearly',
+  monthLabel = "Monthly",
+  yearLabel = "Yearly",
   className,
   children,
 }: IntervalSelectorProps) {
-  const setMonth = () => onChange('month');
-  const setYear = () => onChange('year');
+  const setMonth = () => onChange("month");
+  const setYear = () => onChange("year");
 
   if (children) {
     return <>{children({ value, setMonth, setYear })}</>;
@@ -40,7 +40,7 @@ export function IntervalSelector({
       <button
         type="button"
         role="radio"
-        aria-checked={value === 'month'}
+        aria-checked={value === "month"}
         onClick={setMonth}
       >
         {monthLabel}
@@ -48,7 +48,7 @@ export function IntervalSelector({
       <button
         type="button"
         role="radio"
-        aria-checked={value === 'year'}
+        aria-checked={value === "year"}
         onClick={setYear}
       >
         {yearLabel}

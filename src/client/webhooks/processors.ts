@@ -1,4 +1,4 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
 import {
   type WebhookContext,
@@ -6,7 +6,7 @@ import {
   deriveTrialFields,
   epochToIso,
   extractIdentifiers,
-} from './helpers.js';
+} from "./helpers.js";
 
 // =============================================================================
 // EVENT PROCESSOR
@@ -20,37 +20,37 @@ export async function processEvent(
   const obj = event.data.object;
 
   switch (event.type) {
-    case 'product.created':
-    case 'product.updated':
+    case "product.created":
+    case "product.updated":
       await handleProductEvent(whCtx, obj as Stripe.Product);
       break;
-    case 'price.created':
-    case 'price.updated':
+    case "price.created":
+    case "price.updated":
       await handlePriceEvent(whCtx, obj as Stripe.Price);
       break;
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted":
       await upsertSubscriptionFromStripe(whCtx, obj as Stripe.Subscription);
       break;
-    case 'checkout.session.completed':
+    case "checkout.session.completed":
       await handleCheckoutEvent(whCtx, obj as Stripe.Checkout.Session);
       break;
-    case 'invoice.created':
-    case 'invoice.finalized':
-    case 'invoice.paid':
-    case 'invoice.payment_failed':
+    case "invoice.created":
+    case "invoice.finalized":
+    case "invoice.paid":
+    case "invoice.payment_failed":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
-    case 'payment_intent.succeeded':
-    case 'payment_intent.payment_failed':
-    case 'payment_intent.canceled':
+    case "payment_intent.succeeded":
+    case "payment_intent.payment_failed":
+    case "payment_intent.canceled":
       await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
       break;
-    case 'payout.created':
-    case 'payout.updated':
-    case 'payout.paid':
-    case 'payout.failed':
+    case "payout.created":
+    case "payout.updated":
+    case "payout.paid":
+    case "payout.failed":
       await handlePayoutEvent(whCtx, obj as Stripe.Payout);
       break;
     default:
@@ -73,11 +73,11 @@ async function handleProductEvent(
   const productAccount = (product as ConnectProduct).account;
 
   await ctx.runMutation(
-    componentRef(component, 'products/mutations/upsertProduct'),
+    componentRef(component, "products/mutations/upsertProduct"),
     {
       stripeProductId: product.id,
       accountId:
-        typeof productAccount === 'string' ? productAccount : undefined,
+        typeof productAccount === "string" ? productAccount : undefined,
       name: product.name,
       description: product.description ?? undefined,
       active: product.active,
@@ -92,12 +92,12 @@ async function handlePriceEvent(
 ): Promise<void> {
   const { ctx, component, stripe } = whCtx;
   const stripeProductId: string =
-    typeof price.product === 'string'
+    typeof price.product === "string"
       ? price.product
-      : (price.product?.id ?? '');
+      : (price.product?.id ?? "");
 
   let internalProduct = (await ctx.runQuery(
-    componentRef(component, 'products/queries/getProductByStripeId'),
+    componentRef(component, "products/queries/getProductByStripeId"),
     { stripeProductId },
   )) as { _id: string } | null;
 
@@ -105,7 +105,7 @@ async function handlePriceEvent(
     try {
       const stripeProduct = await stripe.products.retrieve(stripeProductId);
       await ctx.runMutation(
-        componentRef(component, 'products/mutations/upsertProduct'),
+        componentRef(component, "products/mutations/upsertProduct"),
         {
           stripeProductId: stripeProduct.id,
           name: stripeProduct.name,
@@ -115,7 +115,7 @@ async function handlePriceEvent(
         },
       );
       internalProduct = (await ctx.runQuery(
-        componentRef(component, 'products/queries/getProductByStripeId'),
+        componentRef(component, "products/queries/getProductByStripeId"),
         { stripeProductId },
       )) as { _id: string } | null;
     } catch (err) {
@@ -134,7 +134,7 @@ async function handlePriceEvent(
   }
 
   await ctx.runMutation(
-    componentRef(component, 'products/mutations/upsertPrice'),
+    componentRef(component, "products/mutations/upsertPrice"),
     {
       stripePriceId: price.id,
       productId: internalProduct._id as string,
@@ -167,12 +167,12 @@ async function upsertSubscriptionFromStripe(
   const periodEnd = firstItem?.current_period_end ?? undefined;
 
   const accountId =
-    typeof subscription.customer === 'string'
+    typeof subscription.customer === "string"
       ? subscription.customer
       : (subscription.customer?.id ?? undefined);
 
   await ctx.runMutation(
-    componentRef(component, 'billing/mutations/upsertSubscription'),
+    componentRef(component, "billing/mutations/upsertSubscription"),
     {
       stripeSubscriptionId: subscription.id,
       accountId,
@@ -209,7 +209,7 @@ async function handleCheckoutEvent(
     (session.metadata as Record<string, string> | undefined) ?? undefined;
   try {
     const existing = (await ctx.runQuery(
-      componentRef(component, 'billing/queries/getCheckoutSessionByStripeId'),
+      componentRef(component, "billing/queries/getCheckoutSessionByStripeId"),
       { stripeSessionId: session.id },
     )) as { metadata?: Record<string, string> } | null;
     if (existing?.metadata) {
@@ -223,17 +223,17 @@ async function handleCheckoutEvent(
   }
 
   await ctx.runMutation(
-    componentRef(component, 'billing/mutations/upsertCheckoutSession'),
+    componentRef(component, "billing/mutations/upsertCheckoutSession"),
     {
       stripeSessionId: session.id,
       userId,
       orgId,
       accountId:
-        typeof session.customer === 'string'
+        typeof session.customer === "string"
           ? session.customer
           : (session.customer?.id ?? undefined),
-      mode: (session.mode ?? 'payment') as 'payment' | 'subscription' | 'setup',
-      status: (session.status ?? 'open') as 'open' | 'complete' | 'expired',
+      mode: (session.mode ?? "payment") as "payment" | "subscription" | "setup",
+      status: (session.status ?? "open") as "open" | "complete" | "expired",
       clientSecret: session.client_secret ?? undefined,
       url: session.url ?? undefined,
       priceId,
@@ -253,20 +253,20 @@ async function upsertInvoiceFromStripe(
 
   const parentSub = invoice.parent?.subscription_details?.subscription;
   const subscriptionId =
-    typeof parentSub === 'string' ? parentSub : (parentSub?.id ?? undefined);
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
 
   await ctx.runMutation(
-    componentRef(component, 'billing/mutations/upsertInvoice'),
+    componentRef(component, "billing/mutations/upsertInvoice"),
     {
       stripeInvoiceId: invoice.id!,
       userId,
       orgId,
       accountId:
-        typeof invoice.customer === 'string'
+        typeof invoice.customer === "string"
           ? invoice.customer
           : (invoice.customer?.id ?? undefined),
       subscriptionId,
-      status: invoice.status ?? 'draft',
+      status: invoice.status ?? "draft",
       currency: invoice.currency!,
       amountDue: invoice.amount_due,
       amountPaid: invoice.amount_paid,
@@ -289,29 +289,29 @@ async function upsertPaymentFromStripe(
   );
 
   const statusMap: Record<string, string> = {
-    succeeded: 'succeeded',
-    canceled: 'canceled',
-    processing: 'processing',
-    requires_action: 'requires_action',
-    requires_confirmation: 'requires_action',
-    requires_payment_method: 'requires_action',
-    requires_capture: 'requires_action',
+    succeeded: "succeeded",
+    canceled: "canceled",
+    processing: "processing",
+    requires_action: "requires_action",
+    requires_confirmation: "requires_action",
+    requires_payment_method: "requires_action",
+    requires_capture: "requires_action",
   };
-  const status = (statusMap[paymentIntent.status] ?? 'failed') as
-    | 'succeeded'
-    | 'failed'
-    | 'canceled'
-    | 'processing'
-    | 'requires_action';
+  const status = (statusMap[paymentIntent.status] ?? "failed") as
+    | "succeeded"
+    | "failed"
+    | "canceled"
+    | "processing"
+    | "requires_action";
 
   await ctx.runMutation(
-    componentRef(component, 'connect/mutations/upsertPayment'),
+    componentRef(component, "connect/mutations/upsertPayment"),
     {
       stripePaymentIntentId: paymentIntent.id,
       userId,
       orgId,
       accountId:
-        typeof paymentIntent.customer === 'string'
+        typeof paymentIntent.customer === "string"
           ? paymentIntent.customer
           : (paymentIntent.customer?.id ?? undefined),
       amount: paymentIntent.amount,
@@ -329,21 +329,21 @@ async function handlePayoutEvent(
   const { ctx, component } = whCtx;
 
   await ctx.runMutation(
-    componentRef(component, 'connect/mutations/upsertPayout'),
+    componentRef(component, "connect/mutations/upsertPayout"),
     {
       stripePayoutId: payout.id,
       accountId:
-        typeof payout.destination === 'string'
+        typeof payout.destination === "string"
           ? payout.destination
-          : (payout.destination?.id ?? ''),
+          : (payout.destination?.id ?? ""),
       amount: payout.amount,
       currency: payout.currency,
       status: payout.status as
-        | 'pending'
-        | 'paid'
-        | 'failed'
-        | 'canceled'
-        | 'in_transit',
+        | "pending"
+        | "paid"
+        | "failed"
+        | "canceled"
+        | "in_transit",
       arrivalDate: epochToIso(payout.arrival_date),
       method: payout.method ?? undefined,
       metadata: payout.metadata ?? undefined,

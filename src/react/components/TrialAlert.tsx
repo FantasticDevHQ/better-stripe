@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type TrialAlertProps = {
   isTrialing: boolean;
@@ -22,15 +22,15 @@ export type TrialAlertProps = {
 export function TrialAlert({
   isTrialing,
   daysRemaining,
-  trialLabel = 'Trial ends in {days} days',
-  renewalLabel = 'Renews in {days} days',
+  trialLabel = "Trial ends in {days} days",
+  renewalLabel = "Renews in {days} days",
   className,
   children,
 }: TrialAlertProps) {
   if (!isTrialing && daysRemaining <= 0) return null;
 
   const template = isTrialing ? trialLabel : renewalLabel;
-  const message = template.replace('{days}', String(daysRemaining));
+  const message = template.replace("{days}", String(daysRemaining));
 
   if (children) {
     return <>{children({ isTrialing, daysRemaining, message })}</>;

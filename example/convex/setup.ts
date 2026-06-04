@@ -3,10 +3,10 @@
  *
  * Called by the setup script: `npx convex run setup:ensureWebhook`
  */
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { action } from './_generated/server';
-import { stripe } from './stripe';
+import { action } from "./_generated/server";
+import { stripe } from "./stripe";
 
 /**
  * Ensure a Stripe webhook endpoint exists for this deployment.
@@ -37,11 +37,11 @@ export const ensureWebhook = action({
     // Create (or replace) to get a fresh signing secret
     const result = await stripe.createWebhookEndpoint(ctx, {
       url: webhookUrl,
-      description: 'better-stripe example app (managed by setup script)',
+      description: "better-stripe example app (managed by setup script)",
     });
 
     console.log(
-      `[setup] ${existing ? 'Replaced' : 'Created'} webhook endpoint: ${result.id} → ${result.url}`,
+      `[setup] ${existing ? "Replaced" : "Created"} webhook endpoint: ${result.id} → ${result.url}`,
     );
 
     return {

@@ -1,9 +1,9 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentInvoice } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import type { StripeComponentInvoice } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Invoice methods
@@ -20,7 +20,7 @@ export async function listInvoices(
   },
 ): Promise<StripeComponentInvoice[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listInvoices'),
+    componentRef(component, "billing/queries/listInvoices"),
     opts ?? {},
   )) as StripeComponentInvoice[];
 }
@@ -31,7 +31,7 @@ export async function listInvoicesByUser(
   opts: { userId: string },
 ) {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listInvoices'),
+    componentRef(component, "billing/queries/listInvoices"),
     {
       userId: opts.userId,
     },
@@ -60,7 +60,7 @@ export async function upsertInvoice(
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'billing/mutations/upsertInvoice'),
+    componentRef(component, "billing/mutations/upsertInvoice"),
     opts,
   );
   return null;

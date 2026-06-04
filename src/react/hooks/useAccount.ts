@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentAccount } from '../types.js';
+import type { StripeComponentAccount } from "../types.js";
 
 /**
  * Hook to get the Stripe account for a user.

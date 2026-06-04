@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAction, useQuery } from 'convex/react';
-import { Clock, ExternalLink } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAction, useQuery } from "convex/react";
+import { Clock, ExternalLink } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return '\u2014';
+  if (!dateStr) return "\u2014";
   return new Date(dateStr).toLocaleDateString();
 }
 
@@ -41,7 +41,7 @@ export function Billing() {
 
   // Find the first active/trialing subscription
   const subscription = subscriptions.find(
-    (s) => s.status === 'active' || s.status === 'trialing',
+    (s) => s.status === "active" || s.status === "trialing",
   );
 
   const isTrialing = subscription?.isTrialing ?? false;
@@ -55,7 +55,7 @@ export function Billing() {
         stripeSubscriptionId: subscription.stripeSubscriptionId,
       });
     } catch (err) {
-      console.error('Failed to cancel subscription:', err);
+      console.error("Failed to cancel subscription:", err);
     } finally {
       setIsCancelling(false);
     }
@@ -95,21 +95,21 @@ export function Billing() {
                   {subscription.stripeSubscriptionId}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {subscription.priceId ?? 'Unknown price'}
+                  {subscription.priceId ?? "Unknown price"}
                 </p>
               </div>
               <Badge
                 variant={
-                  subscription.cancelAtPeriodEnd ? 'destructive' : 'default'
+                  subscription.cancelAtPeriodEnd ? "destructive" : "default"
                 }
               >
                 {subscription.cancelAtPeriodEnd
-                  ? 'Cancels at period end'
+                  ? "Cancels at period end"
                   : subscription.status}
               </Badge>
             </div>
             <p className="text-muted-foreground text-sm">
-              Current period: {formatDate(subscription.currentPeriodStart)}{' '}
+              Current period: {formatDate(subscription.currentPeriodStart)}{" "}
               &mdash; {formatDate(subscription.currentPeriodEnd)}
             </p>
           </CardContent>
@@ -139,9 +139,9 @@ export function Billing() {
                     {invoice.stripeInvoiceId}
                   </span>
                   <span className="font-medium">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: invoice.currency?.toUpperCase() || 'USD',
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: invoice.currency?.toUpperCase() || "USD",
                     }).format((invoice.amountPaid ?? 0) / 100)}
                   </span>
                   <Badge variant="outline" className="capitalize">
@@ -166,8 +166,8 @@ export function Billing() {
                 variant="outline"
                 onClick={() => {
                   window.open(
-                    'https://billing.stripe.com/p/login/test',
-                    '_blank',
+                    "https://billing.stripe.com/p/login/test",
+                    "_blank",
                   );
                 }}
               >
@@ -181,7 +181,7 @@ export function Billing() {
                   onClick={handleCancel}
                   disabled={isCancelling}
                 >
-                  {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                  {isCancelling ? "Cancelling..." : "Cancel Subscription"}
                 </Button>
               )}
             </div>

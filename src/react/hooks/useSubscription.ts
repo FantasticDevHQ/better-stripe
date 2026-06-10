@@ -13,6 +13,11 @@ export type UseSubscriptionResult = {
   daysUntilTrialEnd: number;
 };
 
+/**
+ * Factory for a hook that gets a subscription and derived billing state.
+ *
+ * The `useQuery` binding must support Convex's `"skip"` sentinel.
+ */
 export function createUseSubscription(
   useQuery: (queryRef: any, args: any) => any,
   queryRef: any,
@@ -20,9 +25,10 @@ export function createUseSubscription(
   return function useSubscription(
     subscriptionId: string | undefined,
   ): UseSubscriptionResult {
-    const subscription = subscriptionId
-      ? useQuery(queryRef, { subscriptionId })
-      : undefined;
+    const subscription = useQuery(
+      queryRef,
+      subscriptionId ? { subscriptionId } : "skip",
+    );
 
     if (!subscription) {
       return {

@@ -7,12 +7,17 @@ export type UsePricesResult = {
   isLoading: boolean;
 };
 
+/**
+ * Factory for a hook that lists prices for a product.
+ *
+ * The `useQuery` binding must support Convex's `"skip"` sentinel.
+ */
 export function createUsePrices(
   useQuery: (queryRef: any, args: any) => any,
   queryRef: any,
 ) {
   return function usePrices(productId: string | undefined): UsePricesResult {
-    const prices = productId ? useQuery(queryRef, { productId }) : undefined;
+    const prices = useQuery(queryRef, productId ? { productId } : "skip");
     return {
       prices,
       isLoading: prices === undefined && productId !== undefined,

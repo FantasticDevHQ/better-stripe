@@ -11,13 +11,15 @@ export type UseAccountResult = {
  * Factory for a hook that gets the Stripe account for a user.
  * Pass the app's `useQuery` binding and a reference to the
  * component's getAccountByUserId query.
+ *
+ * The `useQuery` binding must support Convex's `"skip"` sentinel.
  */
 export function createUseAccount(
   useQuery: (queryRef: any, args: any) => any,
   queryRef: any,
 ) {
   return function useAccount(userId: string | undefined): UseAccountResult {
-    const account = userId ? useQuery(queryRef, { userId }) : undefined;
+    const account = useQuery(queryRef, userId ? { userId } : "skip");
     return {
       account: account ?? null,
       isLoading: account === undefined && userId !== undefined,

@@ -9,6 +9,11 @@ export type UseCheckoutResult = {
   isComplete: boolean;
 };
 
+/**
+ * Factory for a hook that tracks a checkout session's status.
+ *
+ * The `useQuery` binding must support Convex's `"skip"` sentinel.
+ */
 export function createUseCheckout(
   useQuery: (queryRef: any, args: any) => any,
   queryRef: any,
@@ -16,7 +21,7 @@ export function createUseCheckout(
   return function useCheckout(
     sessionId: string | undefined,
   ): UseCheckoutResult {
-    const session = sessionId ? useQuery(queryRef, { sessionId }) : undefined;
+    const session = useQuery(queryRef, sessionId ? { sessionId } : "skip");
 
     return {
       session: session ?? null,

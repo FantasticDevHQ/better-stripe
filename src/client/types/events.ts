@@ -2,6 +2,7 @@ import type {
   FunctionReference,
   FunctionReturnType,
   OptionalRestArgs,
+  Scheduler,
 } from "convex/server";
 import type Stripe from "stripe";
 
@@ -67,11 +68,5 @@ export type WebhookActionCtx = {
     action: Action,
     ...args: OptionalRestArgs<Action>
   ) => Promise<FunctionReturnType<Action>>;
-  scheduler?: {
-    runAfter: (
-      delayMs: number,
-      functionReference: FunctionReference<"action", "public" | "internal">,
-      args?: Record<string, unknown>,
-    ) => Promise<unknown>;
-  };
+  scheduler?: Pick<Scheduler, "runAfter">;
 };

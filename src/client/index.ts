@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import Stripe from "stripe";
 
 import type { ComponentApi } from "../component/_generated/component.js";
+import type { SubscriptionStatus } from "../component/billing/validators.js";
+import type { PayoutStatus } from "../component/connect/validators.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
@@ -611,7 +613,7 @@ export class BetterStripe {
 
   async listSubscriptions(
     ctx: RunCtx,
-    opts?: { status?: string; limit?: number },
+    opts?: { status?: SubscriptionStatus; limit?: number },
   ): Promise<StripeComponentSubscription[]> {
     return subscriptionsImpl.listSubscriptions(this.component, ctx, opts);
   }
@@ -874,7 +876,7 @@ export class BetterStripe {
 
   async listPayouts(
     ctx: RunCtx,
-    opts?: { accountId?: string; status?: string; limit?: number },
+    opts?: { accountId?: string; status?: PayoutStatus; limit?: number },
   ) {
     return payoutsImpl.listPayouts(this.component, ctx, opts);
   }

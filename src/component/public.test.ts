@@ -688,6 +688,17 @@ describe("billing — listSubscriptions with filters", () => {
     expect(canceled[0].stripeSubscriptionId).toBe("sub_canceled");
   });
 
+  it("rejects an invalid status with a validation error", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.query(api.billing.queries.listSubscriptions, {
+        // @ts-expect-error — invalid status must be rejected by the validator
+        status: "not_a_real_status",
+      }),
+    ).rejects.toThrow(/Validator error/);
+  });
+
   it("respects limit", async () => {
     const t = convexTest(schema, modules);
 

@@ -458,6 +458,41 @@ describe("BetterStripe", () => {
     });
   });
 
+  describe("listInvoices", () => {
+    it("maps stripeAccountId to the component accountId arg", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listInvoices(mockCtx, {
+        stripeAccountId: "acct_map_001",
+        status: "paid",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.listInvoices,
+        { accountId: "acct_map_001", status: "paid" },
+      );
+    });
+
+    it("passes no accountId when stripeAccountId is omitted", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listInvoices(mockCtx, { userId: "user_map_001" });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.listInvoices,
+        { userId: "user_map_001" },
+      );
+    });
+  });
+
   // =========================================================================
   // Payment method: setDefaultPaymentMethod
   // =========================================================================

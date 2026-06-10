@@ -158,6 +158,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            accountId?: string;
             limit?: number;
             status?: string;
             subscriptionId?: string;
@@ -169,7 +170,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listSubscriptions: FunctionReference<
           "query",
           "internal",
-          { limit?: number; status?: string },
+          {
+            limit?: number;
+            status?:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+          },
           any,
           Name
         >;
@@ -254,7 +266,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listPayouts: FunctionReference<
           "query",
           "internal",
-          { accountId?: string; limit?: number; status?: string },
+          {
+            accountId?: string;
+            limit?: number;
+            status?: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+          },
           any,
           Name
         >;

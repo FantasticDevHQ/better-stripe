@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import type { SubscriptionStatus } from "../../component/billing/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { epochToIso, runMutationOrThrow } from "../helpers.js";
 import type { StripeComponentSubscription } from "../types.js";
@@ -75,7 +76,7 @@ export async function updateSubscriptionQuantity(
 export async function listSubscriptions(
   component: Component,
   ctx: RunCtx,
-  opts?: { status?: string; limit?: number },
+  opts?: { status?: SubscriptionStatus; limit?: number },
 ): Promise<StripeComponentSubscription[]> {
   return (await ctx.runQuery(
     componentRef(component, "billing/queries/listSubscriptions"),

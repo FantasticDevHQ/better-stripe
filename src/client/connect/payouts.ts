@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import type { PayoutStatus } from "../../component/connect/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
 
@@ -42,7 +43,7 @@ export async function getPayout(
 export async function listPayouts(
   component: Component,
   ctx: RunCtx,
-  opts?: { accountId?: string; status?: string; limit?: number },
+  opts?: { accountId?: string; status?: PayoutStatus; limit?: number },
 ) {
   return ctx.runQuery(
     componentRef(component, "connect/queries/listPayouts"),

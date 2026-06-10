@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { components as _components } from "./setup.test.js";
@@ -51,6 +52,9 @@ const mockStripeInstance = {
     retrieve: vi.fn(),
   },
   accountLinks: {
+    create: vi.fn(),
+  },
+  accountSessions: {
     create: vi.fn(),
   },
   accounts: {
@@ -470,6 +474,67 @@ describe("BetterStripe", () => {
           paymentMethodId: "pm_123",
         }),
       ).rejects.toThrow("setDefaultPaymentMethod is not yet implemented");
+    });
+  });
+
+  // =========================================================================
+  // Account link methods: createAccountSession
+  // =========================================================================
+
+  describe("createAccountSession", () => {
+    it("calls Stripe accountSessions.create and returns the clientSecret", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.accountSessions.create.mockResolvedValue({
+        client_secret: "as_secret_123",
+      });
+
+      const result = await bs.createAccountSession(mockCtx, {
+        stripeAccountId: "acct_123",
+        components: {
+          account_management: { enabled: true },
+        },
+      });
+
+      expect(mockStripeInstance.accountSessions.create).toHaveBeenCalledWith({
+        account: "acct_123",
+        components: {
+          account_management: { enabled: true },
+        },
+      });
+      expect(result).toEqual({ clientSecret: "as_secret_123" });
+    });
+
+    it("wraps Stripe failures in a structured STRIPE_API_ERROR", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.accountSessions.create.mockRejectedValue(
+        Object.assign(new Error("No such account: acct_missing"), {
+          type: "StripeInvalidRequestError",
+          code: "resource_missing",
+        }),
+      );
+
+      const error = await bs
+        .createAccountSession(mockCtx, {
+          stripeAccountId: "acct_missing",
+          components: { account_onboarding: { enabled: true } },
+        })
+        .catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(ConvexError);
+      expect((error as { data: Record<string, unknown> }).data).toMatchObject({
+        code: "STRIPE_API_ERROR",
+        stripeError: {
+          type: "StripeInvalidRequestError",
+          code: "resource_missing",
+          message: "No such account: acct_missing",
+        },
+      });
     });
   });
 

@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import { throwStripeError } from "../errors.js";
 import type { RunCtx } from "../helpers.js";
 import type {
   V2AccountLinkCreateParams,
@@ -71,6 +72,34 @@ export async function createV2AccountLink(
     url: accountLink.url,
     expiresAt: accountLink.expires_at,
   };
+}
+
+/**
+ * Create a Stripe Account Session for embedded components.
+ * The returned client secret is consumed by Stripe Connect embedded
+ * components on the frontend.
+ */
+export async function createAccountSession(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    stripeAccountId: string;
+    components: Stripe.AccountSessionCreateParams.Components;
+  },
+) {
+  try {
+    const session = await stripe.accountSessions.create({
+      account: opts.stripeAccountId,
+      components: opts.components,
+    });
+    return { clientSecret: session.client_secret };
+  } catch (error) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      `Failed to create account session for ${opts.stripeAccountId}`,
+      error,
+    );
+  }
 }
 
 export async function createLoginLink(

@@ -811,6 +811,16 @@ export class BetterStripe {
     return accountLinksImpl.createV2AccountLink(this.stripe(), ctx, opts);
   }
 
+  async createAccountSession(
+    ctx: RunCtx,
+    opts: {
+      stripeAccountId: string;
+      components: Stripe.AccountSessionCreateParams.Components;
+    },
+  ) {
+    return accountLinksImpl.createAccountSession(this.stripe(), ctx, opts);
+  }
+
   async createLoginLink(ctx: RunCtx, opts: { stripeAccountId: string }) {
     return accountLinksImpl.createLoginLink(this.stripe(), ctx, opts);
   }

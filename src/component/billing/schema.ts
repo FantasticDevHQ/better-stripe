@@ -49,7 +49,8 @@ export const checkoutSessionsTable = defineTable({
   metadata: v.optional(v.any()),
 })
   .index("by_stripe_session_id", ["stripeSessionId"])
-  .index("by_user_id", ["userId"]);
+  .index("by_user_id", ["userId"])
+  .index("by_account_id", ["accountId"]);
 
 /**
  * Invoice summaries (line items fetched on demand from Stripe).
@@ -72,4 +73,5 @@ export const invoicesTable = defineTable({
 })
   .index("by_stripe_invoice_id", ["stripeInvoiceId"])
   .index("by_user_id", ["userId"])
-  .index("by_subscription_id", ["subscriptionId"]);
+  .index("by_subscription_id", ["subscriptionId"])
+  .index("by_account_id", ["accountId"]);

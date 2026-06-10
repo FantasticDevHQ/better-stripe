@@ -688,6 +688,7 @@ export class BetterStripe {
   async listInvoices(
     ctx: RunCtx,
     opts?: {
+      stripeAccountId?: string;
       userId?: string;
       subscriptionId?: string;
       status?: string;

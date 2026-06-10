@@ -13,15 +13,20 @@ export async function listInvoices(
   component: Component,
   ctx: RunCtx,
   opts?: {
+    stripeAccountId?: string;
     userId?: string;
     subscriptionId?: string;
     status?: string;
     limit?: number;
   },
 ): Promise<StripeComponentInvoice[]> {
+  const { stripeAccountId, ...rest } = opts ?? {};
   return (await ctx.runQuery(
     componentRef(component, "billing/queries/listInvoices"),
-    opts ?? {},
+    {
+      ...rest,
+      ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+    },
   )) as StripeComponentInvoice[];
 }
 

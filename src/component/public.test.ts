@@ -951,6 +951,57 @@ describe("billing — listInvoices with filters", () => {
     expect(paidOnly).toHaveLength(1);
     expect(paidOnly[0].status).toBe("paid");
   });
+
+  it("filters by accountId", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_acct_a1",
+      userId: "user_acct_a",
+      accountId: "acct_inv_a",
+      status: "paid",
+      currency: "usd",
+      amountDue: 1000,
+      amountPaid: 1000,
+    });
+
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_acct_a2",
+      userId: "user_acct_a",
+      accountId: "acct_inv_a",
+      status: "open",
+      currency: "usd",
+      amountDue: 2000,
+      amountPaid: 0,
+    });
+
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_acct_b1",
+      userId: "user_acct_b",
+      accountId: "acct_inv_b",
+      status: "paid",
+      currency: "usd",
+      amountDue: 3000,
+      amountPaid: 3000,
+    });
+
+    const invoices = await t.query(api.billing.queries.listInvoices, {
+      accountId: "acct_inv_a",
+    });
+
+    expect(invoices).toHaveLength(2);
+    for (const invoice of invoices) {
+      expect(invoice.accountId).toBe("acct_inv_a");
+    }
+
+    const statusFiltered = await t.query(api.billing.queries.listInvoices, {
+      accountId: "acct_inv_a",
+      status: "paid",
+    });
+
+    expect(statusFiltered).toHaveLength(1);
+    expect(statusFiltered[0].stripeInvoiceId).toBe("inv_acct_a1");
+  });
 });
 
 describe("billing — subscription backfills orphaned invoices", () => {

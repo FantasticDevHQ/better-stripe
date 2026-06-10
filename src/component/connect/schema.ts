@@ -17,7 +17,8 @@ export const paymentsTable = defineTable({
   metadata: v.optional(v.any()),
 })
   .index("by_stripe_payment_intent_id", ["stripePaymentIntentId"])
-  .index("by_user_id", ["userId"]);
+  .index("by_user_id", ["userId"])
+  .index("by_account_id", ["accountId"]);
 
 /**
  * Payouts to V2 accounts (marketplace).

@@ -212,6 +212,7 @@ export const getInvoiceByStripeId = query({
 export const listInvoices = query({
   args: {
     userId: v.optional(v.string()),
+    accountId: v.optional(v.string()),
     subscriptionId: v.optional(v.string()),
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
@@ -219,6 +220,16 @@ export const listInvoices = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
+
+    if (args.accountId) {
+      const accountId = args.accountId;
+      const invoices = await ctx.db
+        .query("invoices")
+        .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        .take(limit);
+      if (args.status) return invoices.filter((i) => i.status === args.status);
+      return invoices;
+    }
 
     if (args.userId) {
       const userId = args.userId;

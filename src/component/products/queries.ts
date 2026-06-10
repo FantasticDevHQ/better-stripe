@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
+import { priceDocValidator, productDocValidator } from "./validators";
 
 // =============================================================================
 // PRODUCT QUERIES
@@ -8,7 +9,7 @@ import { query } from "../_generated/server";
 
 export const getProduct = query({
   args: { productId: v.id("products") },
-  returns: v.any(),
+  returns: v.union(productDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("products", args.productId);
   },
@@ -16,7 +17,7 @@ export const getProduct = query({
 
 export const getProductByStripeId = query({
   args: { stripeProductId: v.string() },
-  returns: v.any(),
+  returns: v.union(productDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("products")
@@ -33,7 +34,7 @@ export const listProducts = query({
     active: v.optional(v.boolean()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(productDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
     let productsQuery;
@@ -62,7 +63,7 @@ export const listProducts = query({
 
 export const getPrice = query({
   args: { priceId: v.id("prices") },
-  returns: v.any(),
+  returns: v.union(priceDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("prices", args.priceId);
   },
@@ -70,7 +71,7 @@ export const getPrice = query({
 
 export const getPriceByStripeId = query({
   args: { stripePriceId: v.string() },
-  returns: v.any(),
+  returns: v.union(priceDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("prices")
@@ -87,7 +88,7 @@ export const listPrices = query({
     active: v.optional(v.boolean()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(priceDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
     let pricesQuery;
@@ -112,7 +113,7 @@ export const listPrices = query({
 
 export const listPricesByProduct = query({
   args: { stripeProductId: v.string() },
-  returns: v.any(),
+  returns: v.array(priceDocValidator),
   handler: async (ctx, args) => {
     // A product typically has a small, bounded number of prices.
     // eslint-disable-next-line @convex-dev/no-collect-in-query

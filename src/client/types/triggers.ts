@@ -228,7 +228,7 @@ export type AsyncHookRef = FunctionReference<
 /**
  * Function references to the wrappers returned by `triggersApi()`.
  * The app exports them from a Convex module and passes that module here:
- * `triggers: internal.stripe as unknown as TriggerApiRefs`.
+ * `triggers: internal.stripe` (no cast needed).
  * All fields optional — the handler falls back to direct component
  * upserts for any dispatcher that is missing.
  */

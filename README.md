@@ -14,7 +14,7 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 - **Payments** -- Payment intent tracking and status management
 - **Payouts** -- Payout tracking for Connect/marketplace flows
 - **Webhook handling** -- Single-endpoint processing with ledger-based deduplication and replay protection
-- **Trigger system** -- BetterAuth-style sync triggers (same transaction) and async hooks (separate action) for app-layer extensibility
+- **Trigger system** -- BetterAuth-style sync triggers (same transaction) and async hooks (scheduled action) for app-layer extensibility
 - **React hooks** -- Read hooks and flow hooks for all billing domains
 - **Headless UI components** -- Checkout, subscription, payment method, and Connect components with render-prop customization
 - **Test utilities** -- Typed fixture factories, mock webhook events, and `assertTestEnvironment` guard
@@ -22,7 +22,7 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 ## Installation
 
 ```bash
-npm install better-stripe
+npm install @getdojo/better-stripe
 ```
 
 The package bundles `stripe`, `@stripe/stripe-js`, and `@stripe/react-stripe-js` as dependencies. You do not need to install Stripe packages separately.
@@ -37,7 +37,7 @@ The consumer contract has three steps:
 
 ```typescript
 // convex/convex.config.ts
-import betterStripe from "better-stripe/convex.config";
+import betterStripe from "@getdojo/better-stripe/convex.config";
 import { defineApp } from "convex/server";
 
 const app = defineApp();
@@ -49,10 +49,10 @@ export default app;
 ### Step 2: Create a BetterStripe instance with triggers
 
 ```typescript
-// convex/billing/stripe.ts
-import { BetterStripe } from "better-stripe";
+// convex/stripe.ts
+import { BetterStripe } from "@getdojo/better-stripe";
 
-import { components } from "../_generated/api";
+import { components } from "./_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
@@ -75,12 +75,26 @@ export const stripe = new BetterStripe(components.betterStripe, {
   },
 });
 
-// Export Convex-callable wrappers for the trigger system
+// Export trigger dispatchers + async hooks; http.ts passes their refs to registerRoutes
 export const {
-  onCheckoutSessionCompleted,
-  onSubscriptionUpdated,
-  onAccountUpdated,
+  accountUpserted,
+  productUpserted,
+  priceUpserted,
+  subscriptionUpserted,
+  subscriptionDeleted,
+  checkoutSessionUpserted,
+  invoiceUpserted,
+  paymentUpserted,
+  payoutUpserted,
+  afterAccountUpdated,
   afterCheckoutCompleted,
+  afterSubscriptionUpdated,
+  afterSubscriptionCanceled,
+  afterTrialEnding,
+  afterInvoicePaid,
+  afterPaymentSucceeded,
+  afterPaymentFailed,
+  afterPayoutCompleted,
 } = stripe.triggersApi();
 ```
 
@@ -88,10 +102,10 @@ export const {
 
 ```typescript
 // convex/http.ts
-import { registerRoutes } from "better-stripe";
+import { registerRoutes } from "@getdojo/better-stripe";
 import { httpRouter } from "convex/server";
 
-import { components } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -100,10 +114,13 @@ registerRoutes(http, components.betterStripe, {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
+  triggers: internal.stripe,
 });
 
 export default http;
 ```
+
+The `triggers: internal.stripe` line passes the function references of the dispatchers you exported in step 2 (here from `convex/stripe.ts`). When provided, webhook upserts run through those dispatchers so your sync triggers execute in the same transaction as the component write, and your async hooks are scheduled after commit. If omitted, the handler falls back to direct component upserts and no triggers fire.
 
 > **Why two webhook secrets?** Stripe requires separate event destinations for V1 snapshot events (payments, subscriptions) and V2 thin events (Connect account lifecycle). Each destination has its own signing secret. The handler uses `webhookSecret` for V1 events and `webhookSecretV2` for V2 events. See [Webhook Setup](#webhook-setup) for details.
 
@@ -111,86 +128,90 @@ export default http;
 
 All methods are available on the `BetterStripe` class instance. Methods that call the Stripe API are actions; methods that only read Convex data are queries.
 
+Methods named `get<Entity>` take the component document ID; methods named `get<Entity>ByStripeId` take the Stripe ID (`acct_...`, `prod_...`, `price_...`, `cs_...`, `sub_...`).
+
 ### Account
 
-| Method                                                                     | Description                                              |
-| -------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `createAccount(ctx, { email, country, userId?, metadata? })`               | Create a V2 account in Stripe and the component database |
-| `getAccount(ctx, { stripeAccountId })`                                     | Get account by Stripe account ID                         |
-| `getOrCreateAccount(ctx, { email, country, userId?, metadata? })`          | Get existing or create new account                       |
-| `getAccountByUserId(ctx, { userId })`                                      | Get account by app-layer user ID                         |
-| `getAccountByOrgId(ctx, { orgId })`                                        | Get account by organization/team ID                      |
-| `getAccountOnboardingStatus(ctx, { stripeAccountId })`                     | Get Connect onboarding status                            |
-| `updateAccount(ctx, { stripeAccountId, ...updates })`                      | Update account fields                                    |
-| `createAccountLink(ctx, { stripeAccountId, refreshUrl, returnUrl, type })` | Create Connect onboarding or update link                 |
-| `createAccountSession(ctx, { stripeAccountId, components })`               | Create embedded account management session               |
-| `createLoginLink(ctx, { stripeAccountId })`                                | Create Express dashboard login link                      |
-| `addRecipientConfiguration(ctx, { stripeAccountId })`                      | Add recipient configuration to an existing account       |
+| Method                                                                            | Description                                              |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `createAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })`      | Create a V2 account in Stripe and the component database |
+| `getAccount(ctx, { accountId })`                                                  | Get account by component document ID                     |
+| `getAccountByStripeId(ctx, { stripeAccountId })`                                  | Get account by Stripe account ID                         |
+| `getOrCreateAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })` | Get existing or create new account                       |
+| `getAccountByUserId(ctx, { userId })`                                             | Get account by app-layer user ID                         |
+| `getAccountByOrgId(ctx, { orgId })`                                               | Get account by organization/team ID                      |
+| `getAccountOnboardingStatus(ctx, { accountId })`                                  | Get Connect onboarding status (by component document ID) |
+| `updateAccount(ctx, { stripeAccountId, email?, name?, metadata? })`               | Update account fields                                    |
+| `createAccountLink(ctx, { stripeAccountId, refreshUrl, returnUrl, type })`        | Create Connect onboarding or update link                 |
+| `createAccountSession(ctx, { stripeAccountId, components })`                      | Create embedded account management session               |
+| `createLoginLink(ctx, { stripeAccountId })`                                       | Create Express dashboard login link                      |
+| `addRecipientConfiguration(ctx, { stripeAccountId })`                             | Add recipient configuration to an existing account       |
 
 ### Product and Price
 
-| Method                                                                                       | Description                                   |
-| -------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `createProduct(ctx, { name, description?, trialDays?, metadata?, userId? })`                 | Create product in Stripe and component DB     |
-| `getProduct(ctx, { stripeProductId })`                                                       | Get product by Stripe product ID              |
-| `getProductByStripeId(ctx, { stripeProductId })`                                             | Alias for getProduct                          |
-| `listProducts(ctx, { stripeAccountId?, active? })`                                           | List products with optional filters           |
-| `updateProduct(ctx, { stripeProductId, ...updates })`                                        | Update product fields                         |
-| `deactivateProduct(ctx, { stripeProductId })`                                                | Deactivate product in Stripe and component DB |
-| `createPrice(ctx, { stripeProductId, unitAmount, currency, interval?, metadata?, userId? })` | Create price in Stripe and component DB       |
-| `getPrice(ctx, { stripePriceId })`                                                           | Get price by Stripe price ID                  |
-| `getPriceByStripeId(ctx, { stripePriceId })`                                                 | Alias for getPrice                            |
-| `listPrices(ctx, { stripeProductId?, active? })`                                             | List prices with optional filters             |
-| `updatePrice(ctx, { stripePriceId, ...updates })`                                            | Update price fields                           |
-| `deactivatePrice(ctx, { stripePriceId })`                                                    | Deactivate price in Stripe and component DB   |
+| Method                                                                                                                | Description                                   |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB     |
+| `getProduct(ctx, { productId })`                                                                                      | Get product by component document ID          |
+| `getProductByStripeId(ctx, { stripeProductId })`                                                                      | Get product by Stripe product ID              |
+| `listProducts(ctx, { accountId?, active?, limit? })`                                                                  | List products with optional filters           |
+| `updateProduct(ctx, { stripeProductId, ...updates })`                                                                 | Update product fields                         |
+| `deactivateProduct(ctx, { stripeProductId })`                                                                         | Deactivate product in Stripe and component DB |
+| `createPrice(ctx, { stripeProductId, unitAmount, type, currency?, interval?, intervalCount?, nickname?, metadata? })` | Create price in Stripe and component DB       |
+| `getPrice(ctx, { priceId })`                                                                                          | Get price by component document ID            |
+| `getPriceByStripeId(ctx, { stripePriceId })`                                                                          | Get price by Stripe price ID                  |
+| `listPrices(ctx, { productId?, active?, limit? })`                                                                    | List prices with optional filters             |
+| `updatePrice(ctx, { stripePriceId, ...updates })`                                                                     | Update price fields                           |
+| `deactivatePrice(ctx, { stripePriceId })`                                                                             | Deactivate price in Stripe and component DB   |
 
 ### Checkout and Subscription
 
-| Method                                                                                                                                                                         | Description                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `createCheckoutSession(ctx, { stripePriceId, stripeAccountId?, userId?, mode, successUrl?, cancelUrl?, returnUrl?, quantity?, metadata?, subscriptionMetadata?, trialDays? })` | Create checkout session (embedded or redirect)     |
-| `getCheckoutSession(ctx, { stripeSessionId })`                                                                                                                                 | Get checkout session by Stripe session ID          |
-| `getCheckoutSessionByStripeId(ctx, { stripeSessionId })`                                                                                                                       | Alias for getCheckoutSession                       |
-| `getSubscription(ctx, { stripeSubscriptionId })`                                                                                                                               | Get subscription by Stripe subscription ID         |
-| `getSubscriptionByStripeId(ctx, { stripeSubscriptionId })`                                                                                                                     | Alias for getSubscription                          |
-| `listSubscriptions(ctx, { stripeAccountId?, userId?, status? })`                                                                                                               | List subscriptions with optional filters           |
-| `listSubscriptionsByUser(ctx, { userId })`                                                                                                                                     | List all subscriptions for a user                  |
-| `listSubscriptionsByOrg(ctx, { orgId })`                                                                                                                                       | List all subscriptions for an organization         |
-| `getActiveSubscription(ctx, { stripeAccountId?, userId? })`                                                                                                                    | Get the active subscription for an account or user |
-| `getTrialStatus(ctx, { stripeSubscriptionId })`                                                                                                                                | Get trial state for a subscription                 |
-| `cancelSubscription(ctx, { stripeSubscriptionId, cancelAtPeriodEnd? })`                                                                                                        | Cancel subscription immediately or at period end   |
-| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                        | Reactivate a canceled subscription                 |
-| `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                          | Update subscription seat quantity                  |
+| Method                                                                                                                                                                     | Description                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `createCheckoutSession(ctx, { userId, stripePriceId, mode, returnUrl, uiMode?, quantity?, trialDays?, accountId?, orgId?, customerEmail?, metadata?, sessionOverrides? })` | Create checkout session (embedded or redirect)                                                                    |
+| `getCheckoutSession(ctx, { sessionId })`                                                                                                                                   | Get checkout session by component document ID                                                                     |
+| `getCheckoutSessionByStripeId(ctx, { stripeSessionId })`                                                                                                                   | Get checkout session by Stripe session ID                                                                         |
+| `getSubscription(ctx, { subscriptionId })`                                                                                                                                 | Get subscription by component document ID                                                                         |
+| `getSubscriptionByStripeId(ctx, { stripeSubscriptionId })`                                                                                                                 | Get subscription by Stripe subscription ID                                                                        |
+| `listSubscriptions(ctx, { stripeAccountId?, status?, limit? })`                                                                                                            | List subscriptions, optionally scoped to a Connect account (use `listSubscriptionsByUser` for per-user filtering) |
+| `listSubscriptionsByUser(ctx, { userId, status? })`                                                                                                                        | List all subscriptions for a user                                                                                 |
+| `listSubscriptionsByOrg(ctx, { orgId, status? })`                                                                                                                          | List all subscriptions for an organization                                                                        |
+| `getActiveSubscription(ctx, { userId, orgId? })`                                                                                                                           | Get the active subscription for a user or org                                                                     |
+| `getTrialStatus(ctx, { subscriptionId })`                                                                                                                                  | Get trial state for a subscription                                                                                |
+| `cancelSubscription(ctx, { stripeSubscriptionId, cancelAtPeriodEnd? })`                                                                                                    | Cancel subscription immediately or at period end                                                                  |
+| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                    | Reactivate a canceled subscription                                                                                |
+| `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                      | Update subscription seat quantity                                                                                 |
 
 ### Invoice, Payment Method, and Payout
 
-| Method                                                               | Description                                    |
-| -------------------------------------------------------------------- | ---------------------------------------------- |
-| `getInvoice(ctx, { stripeInvoiceId })`                               | Get invoice by Stripe invoice ID               |
-| `listInvoices(ctx, { stripeAccountId?, userId? })`                   | List invoices with optional filters            |
-| `listInvoicesByUser(ctx, { userId })`                                | List all invoices for a user                   |
-| `getInvoiceFromStripe(ctx, { stripeInvoiceId })`                     | Fetch latest invoice data directly from Stripe |
-| `listPaymentMethods(ctx, { stripeAccountId })`                       | List saved payment methods                     |
-| `attachPaymentMethod(ctx, { stripeAccountId, paymentMethodId })`     | Attach a payment method to an account          |
-| `detachPaymentMethod(ctx, { paymentMethodId })`                      | Detach a payment method                        |
-| `setDefaultPaymentMethod(ctx, { stripeAccountId, paymentMethodId })` | Set the default payment method                 |
-| `createBillingPortalSession(ctx, { stripeAccountId, returnUrl })`    | Create a Stripe billing portal session URL     |
-| `createPayout(ctx, { stripeAccountId, amount, currency })`           | Create a payout for a Connect account          |
-| `getPayout(ctx, { stripePayoutId })`                                 | Get payout by Stripe payout ID                 |
-| `listPayouts(ctx, { stripeAccountId })`                              | List payouts for an account                    |
+| Method                                                                               | Description                                                                                |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `getInvoice(ctx, { stripeInvoiceId })`                                               | Get invoice by Stripe invoice ID                                                           |
+| `getInvoiceByStripeId(ctx, { stripeInvoiceId })`                                     | Alias for getInvoice                                                                       |
+| `listInvoices(ctx, { stripeAccountId?, userId?, subscriptionId?, status?, limit? })` | List invoices with optional filters                                                        |
+| `listInvoicesByUser(ctx, { userId })`                                                | List all invoices for a user                                                               |
+| `getInvoiceFromStripe(ctx, { stripeInvoiceId })`                                     | Fetch latest invoice data directly from Stripe                                             |
+| `listPaymentMethods(ctx, { stripeCustomerId, type? })`                               | List saved payment methods                                                                 |
+| `attachPaymentMethod(ctx, { paymentMethodId, stripeCustomerId })`                    | Attach a payment method to a customer account                                              |
+| `detachPaymentMethod(ctx, { paymentMethodId })`                                      | Detach a payment method                                                                    |
+| `setDefaultPaymentMethod(ctx, { stripeAccountId, paymentMethodId })`                 | Not supported for V2 accounts — throws with guidance to use `createBillingPortalSession()` |
+| `createBillingPortalSession(ctx, { stripeAccountId, returnUrl })`                    | Create a Stripe billing portal session URL                                                 |
+| `createPayout(ctx, { stripeAccountId, amount, currency?, metadata? })`               | Create a payout for a Connect account                                                      |
+| `getPayout(ctx, { payoutId })`                                                       | Get payout by component document ID                                                        |
+| `listPayouts(ctx, { stripeAccountId?, status?, limit? })`                            | List payouts with optional filters                                                         |
 
 ### Operational
 
-| Method                                               | Description                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------ |
-| `syncAllAccounts(ctx)`                               | Sync all V2 accounts from Stripe to component DB                   |
-| `syncAllProducts(ctx)`                               | Sync all products and prices from Stripe                           |
-| `syncAllSubscriptions(ctx)`                          | Sync all subscriptions from Stripe                                 |
-| `setupEventDestination(ctx, { url, eventPayload? })` | Create or update a V2 event destination (snapshot or thin)         |
-| `listEventDestinations(ctx)`                         | List all V2 event destinations                                     |
-| `listWebhookEndpoints(ctx)`                          | List V1 webhook endpoints                                          |
-| `createWebhookEndpoint(ctx, { url })`                | Create a V1 webhook endpoint                                       |
-| `triggersApi()`                                      | Returns Convex-callable wrappers for configured triggers and hooks |
+| Method                                                                                    | Description                                                                               |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `syncAllAccounts(ctx)`                                                                    | Sync all V2 accounts from Stripe to component DB                                          |
+| `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                                  |
+| `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                                        |
+| `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                                |
+| `listEventDestinations(ctx)`                                                              | List all V2 event destinations                                                            |
+| `listWebhookEndpoints(ctx)`                                                               | List V1 webhook endpoints                                                                 |
+| `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                              |
+| `triggersApi()`                                                                           | Returns the trigger dispatchers and `after*` hook wrappers to export from a Convex module |
 
 ### Standalone Function
 
@@ -205,15 +226,16 @@ All methods are available on the `BetterStripe` class instance. Methods that cal
 Register the webhook endpoint on your Convex HTTP router:
 
 ```typescript
-import { registerRoutes } from 'better-stripe';
+import { registerRoutes } from "@getdojo/better-stripe";
 
 registerRoutes(http, components.betterStripe, {
-  webhookPath: '/stripe/webhook',             // Default path
+  webhookPath: "/stripe/webhook", // Default path
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,  // For V2 thin events
-  events: { ... },                            // Optional per-event handlers (advanced)
-  onEvent: (ctx, event) => { ... },           // Optional catch-all handler (advanced)
+  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2, // For V2 thin events
+  triggers: internal.stripe, // Trigger dispatchers exported via triggersApi()
+  events: { ... }, // Optional per-event handlers (advanced)
+  onEvent: (ctx, event) => { ... }, // Optional catch-all handler (advanced)
 });
 ```
 
@@ -254,10 +276,10 @@ The example app includes an `/admin/setup` page that handles webhook creation, e
 
 ```typescript
 import {
-  BETTER_STRIPE_WEBHOOK_EVENTS, // V1 snapshot events (19 events)
+  BETTER_STRIPE_WEBHOOK_EVENTS, // V1 snapshot events (20 events)
   BETTER_STRIPE_V2_WEBHOOK_EVENTS, // V2 thin events (12 events)
-  ALL_BETTER_STRIPE_EVENTS, // Combined (31 events)
-} from "better-stripe";
+  ALL_BETTER_STRIPE_EVENTS, // Combined (32 events)
+} from "@getdojo/better-stripe";
 ```
 
 ### Event Processing
@@ -265,19 +287,17 @@ import {
 The webhook handler processes events through these steps:
 
 1. Verify Stripe signature
-2. Check `webhookEvents` ledger by `stripeEventId`
-3. If already `processed` or `ignored`, return 200 immediately
-4. Insert/update ledger row to `processing`
-5. Upsert component-owned domain tables
-6. Invoke sync trigger wrapper (same transaction, can throw to rollback)
-7. Mark ledger row `processed`
-8. Schedule async hook wrapper (separate action)
+2. Record the event in the `webhookEvents` ledger by `stripeEventId`. If the event was already seen and is `processing`, `processed`, or `ignored`, return 200 immediately. If the previous delivery `failed` (its writes rolled back), the ledger row is reset and the event is reprocessed on Stripe's retry.
+3. Upsert the component-owned domain table. When `triggers` is configured, the upsert runs through the app's trigger dispatcher — an internal mutation that performs the upsert **and** the sync trigger in the same transaction.
+4. On failure, mark the ledger row `failed` and return 500 so Stripe retries; otherwise mark it `processed`
+5. Schedule the matching `after*` async hook via `ctx.scheduler` (separate action)
 
 ### Ledger-Based Deduplication
 
 The component maintains a `webhookEvents` table that tracks every event by its Stripe event ID. This provides:
 
 - **Replay protection** -- duplicate events are detected and skipped
+- **Retry recovery** -- events whose processing failed (and rolled back) are reprocessed when Stripe retries, instead of deduplicating forever
 - **Failure tracking** -- failed events are marked with status and error message
 - **Observability** -- all events (including unsupported types) are logged with `ignored` status
 
@@ -298,7 +318,7 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 **Billing (snapshot events -- payload contains full state):**
 
 - `checkout.session.completed`
-- `customer.subscription.created`, `.updated`, `.deleted`
+- `customer.subscription.created`, `.updated`, `.deleted`, `.trial_will_end`
 - `invoice.created`, `.finalized`, `.paid`, `.payment_failed`
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
 - `payout.created`, `.updated`, `.paid`, `.failed`
@@ -309,11 +329,11 @@ Note: Subscription and invoice events use v1 Billing API event names even when t
 
 ## Trigger API
 
-The trigger system follows the BetterAuth pattern: define callbacks at client init time, export Convex-callable wrappers via `triggersApi()`.
+The trigger system follows the BetterAuth pattern: define callbacks at client init time, export Convex-callable wrappers via `triggersApi()`, and pass their function references to `registerRoutes` via `triggers`.
 
 ### SyncTriggers
 
-Sync triggers run in the same transaction as the component's database write. They must be DB-only and idempotent. Throwing from a sync trigger rolls back the entire transaction, causing Stripe to retry the webhook.
+Sync triggers run in the same transaction as the component's database write. They must be DB-only and idempotent. Throwing from a sync trigger rolls back the entire transaction (including the component upsert), causing Stripe to retry the webhook.
 
 ```typescript
 interface SyncTriggers {
@@ -353,7 +373,7 @@ interface SyncTriggers {
 
 ### AsyncHooks
 
-Async hooks run after the component's database write commits, in a separate action. Use these for external API calls (email, Slack, analytics). Failures do not roll back the component write.
+Async hooks run after the component's database write commits, in a separate scheduled action. Use these for external API calls (email, Slack, analytics). Failures do not roll back the component write.
 
 ```typescript
 interface AsyncHooks {
@@ -371,38 +391,62 @@ interface AsyncHooks {
 
 ### triggersApi()
 
-Returns Convex-callable wrappers that bridge your app callbacks into the webhook processing pipeline. You must export these from your billing composition root file:
+Returns the Convex function definitions that bridge your app callbacks into the webhook processing pipeline. You must export them from a Convex module (e.g. `convex/stripe.ts`) so they get function references the webhook handler can call:
 
 ```typescript
 export const {
-  onCheckoutSessionCompleted,
-  onSubscriptionUpdated,
-  onAccountUpdated,
+  // Sync dispatchers (internal mutations)
+  accountUpserted,
+  productUpserted,
+  priceUpserted,
+  subscriptionUpserted,
+  subscriptionDeleted,
+  checkoutSessionUpserted,
+  invoiceUpserted,
+  paymentUpserted,
+  payoutUpserted,
+  // Async hook wrappers (internal actions)
+  afterAccountUpdated,
   afterCheckoutCompleted,
+  afterSubscriptionUpdated,
+  afterSubscriptionCanceled,
+  afterTrialEnding,
+  afterInvoicePaid,
+  afterPaymentSucceeded,
+  afterPaymentFailed,
+  afterPayoutCompleted,
 } = stripe.triggersApi();
 ```
 
-The raw callbacks you pass to `triggers` and `hooks` are the source of truth for app behavior. The exported wrappers are the bridge that makes them callable from the Convex runtime.
+Then pass the module to `registerRoutes` as `triggers: internal.stripe`.
+
+**How the dispatchers work.** Each `*Upserted`/`*Deleted` export is an internal mutation that performs the component table upsert **and** your configured sync trigger inside one transaction. The dispatcher reads the existing doc (to decide `onCreate` vs `onUpdate` and supply `oldDoc`), runs the upsert, re-reads the doc, and invokes your trigger. If the trigger throws, the whole mutation — including the component write — rolls back, the webhook handler marks the ledger row `failed`, and returns 500 so Stripe retries. On retry, failed ledger rows are reset and the event is reprocessed.
+
+**How the `after*` hooks work.** Each `after*` export is an internal action. After the dispatcher transaction commits and the ledger marks the event `processed`, the webhook handler schedules the matching hook via `ctx.scheduler` with the committed doc. Hook failures never roll back the component write.
+
+> **Note:** async hooks should be idempotent. Duplicate delivery is possible in rare ledger-failure cases (e.g. the event is processed and the hook scheduled, but the ledger update fails and Stripe redelivers).
+
+The raw callbacks you pass to `triggers` and `hooks` on the `BetterStripe` constructor are the source of truth for app behavior. The exported wrappers are the bridge that makes them callable from the Convex runtime — exports for triggers you did not configure are inert (upsert-only dispatchers and no-op hooks).
 
 ## React Hooks
 
-Import from `better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
+Import from `@getdojo/better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
 
-Hooks are exported as factory functions that accept the component API reference, allowing them to work with any component registration name.
+Read hooks are exported as factory functions that take the app's `useQuery` binding and a query function reference, allowing them to work with any component registration name. Hooks that take a single ID argument accept `undefined` and skip the query (via Convex's `"skip"` sentinel) until the ID is available.
 
 ### Read Hooks
 
-| Hook Factory                 | Arguments          | Returns                                                     |
-| ---------------------------- | ------------------ | ----------------------------------------------------------- |
-| `createUseAccount`           | `(userId)`         | `{ account, isLoading }`                                    |
-| `createUseProducts`          | `(accountId?)`     | `{ products, isLoading }`                                   |
-| `createUsePrices`            | `(productId)`      | `{ prices, isLoading }`                                     |
-| `createUseSubscription`      | `(subscriptionId)` | `{ subscription, isTrialing, daysUntilRenewal, isLoading }` |
-| `createUseSubscriptions`     | `(accountId)`      | `{ subscriptions, activeSubscription, isLoading }`          |
-| `createUseCheckout`          | `(sessionId)`      | `{ session, status, isLoading }`                            |
-| `createUsePaymentMethods`    | `(accountId)`      | `{ methods, defaultMethod, isLoading }`                     |
-| `createUseInvoices`          | `(accountId)`      | `{ invoices, isLoading }`                                   |
-| `createUseAccountOnboarding` | `(accountId)`      | `{ status, requirements, isReady, isLoading }`              |
+| Hook Factory                 | Hook Arguments                             | Returns                                                                                               |
+| ---------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `createUseAccount`           | `(userId?)`                                | `{ account, isLoading }`                                                                              |
+| `createUseProducts`          | `({ accountId?, active? }?)`               | `{ products, isLoading }`                                                                             |
+| `createUsePrices`            | `(productId?)`                             | `{ prices, isLoading }`                                                                               |
+| `createUseSubscription`      | `(subscriptionId?)`                        | `{ subscription, isActive, isTrialing, isCanceling, daysUntilRenewal, daysUntilTrialEnd, isLoading }` |
+| `createUseSubscriptions`     | `({ userId?, status? }?)`                  | `{ subscriptions, activeSubscription, isLoading }`                                                    |
+| `createUseCheckout`          | `(sessionId?)`                             | `{ session, status, isComplete, isLoading }`                                                          |
+| `createUsePaymentMethods`    | `(accountId?)`                             | `{ methods, defaultMethod, isLoading }`                                                               |
+| `createUseInvoices`          | `({ userId?, subscriptionId?, status? }?)` | `{ invoices, isLoading }`                                                                             |
+| `createUseAccountOnboarding` | `(accountId?)`                             | `{ account, status, isReady, missingRequirements, isLoading }`                                        |
 
 ### Checkout Session Hooks
 
@@ -418,7 +462,7 @@ import {
   CheckoutSessionProvider,
   PaymentElement,
   useCheckoutSession,
-} from "better-stripe/react";
+} from "@getdojo/better-stripe/react";
 
 <CheckoutSessionProvider publishableKey={pk} clientSecret={token}>
   <MyForm />
@@ -474,7 +518,7 @@ These are re-exported so apps never need to import from `@stripe/react-stripe-js
 
 ## React Components
 
-Import from `better-stripe/react`. All components are headless by default -- they provide behavior and minimal structure. Style them with Tailwind or any CSS approach.
+Import from `@getdojo/better-stripe/react`. All components are headless by default -- they provide behavior and minimal structure. Style them with Tailwind or any CSS approach.
 
 All components accept:
 
@@ -532,14 +576,14 @@ All components accept:
 
 ## Testing Utilities
 
-Import from `better-stripe/testing`.
+Import from `@getdojo/better-stripe/testing`.
 
 ### assertTestEnvironment
 
 Guards against running test fixtures with live Stripe keys:
 
 ```typescript
-import { assertTestEnvironment } from "better-stripe/testing";
+import { assertTestEnvironment } from "@getdojo/better-stripe/testing";
 
 assertTestEnvironment(); // Throws if STRIPE_SECRET_KEY does not start with sk_test_
 ```
@@ -554,7 +598,7 @@ import {
   createTestPrice,
   createTestProduct,
   createTestSubscription,
-} from "better-stripe/testing";
+} from "@getdojo/better-stripe/testing";
 
 const account = await createTestAccount(stripe, { email: "test@example.com" });
 const product = await createTestProduct(stripe, { name: "Pro Plan" });
@@ -575,7 +619,7 @@ import {
   mockCheckoutCompleted,
   mockInvoicePaid,
   mockSubscriptionUpdated,
-} from "better-stripe/testing";
+} from "@getdojo/better-stripe/testing";
 
 const event = mockCheckoutCompleted({
   stripeSessionId: "cs_test_123",
@@ -596,7 +640,7 @@ const event = mockCheckoutCompleted({
 
 ### Stripe API Version
 
-The component pins the Stripe API version internally (`2026-02-25.clover`). Upgrading the pinned version requires a package release and changelog entry. Apps do not need to set `STRIPE_API_VERSION`.
+The component pins the Stripe API version internally (`2026-05-27.dahlia`). Upgrading the pinned version requires a package release and changelog entry. Apps do not need to set `STRIPE_API_VERSION`.
 
 ### SDK Management
 
@@ -636,34 +680,36 @@ Example app-layer tables (from a typical integration):
 Stripe Webhook Event
   |
   v
-Component: Verify signature + check ledger
+Webhook handler: Verify signature + check ledger
   |
   v
-Component: Upsert domain table
+Trigger dispatcher (one mutation transaction)
+  - Upsert component domain table
+  - Run sync trigger                   --> App updates its own tables
+  |                                        Throwing rolls back the upsert;
+  |                                        Stripe retries and the failed
+  |                                        ledger row is reprocessed
+  v
+Mark ledger row processed
   |
   v
-Sync Trigger (same transaction)        --> App updates its own tables
-  |                                         Can throw to rollback everything
-  v
-Commit
-  |
-  v
-Async Hook (scheduled action)          --> App calls external APIs
-                                            Failures do not roll back
+Async hook (scheduled action)          --> App calls external APIs
+                                           Failures do not roll back;
+                                           hooks should be idempotent
 ```
 
 ### Package Entry Points
 
-| Entry Point                   | Contents                                                 |
-| ----------------------------- | -------------------------------------------------------- |
-| `better-stripe`               | `BetterStripe` class, `registerRoutes`, TypeScript types |
-| `better-stripe/react`         | React hooks, headless UI components, formatting helpers  |
-| `better-stripe/testing`       | Test fixtures, mock webhooks, `assertTestEnvironment`    |
-| `better-stripe/convex.config` | Convex component registration                            |
+| Entry Point                            | Contents                                                 |
+| -------------------------------------- | -------------------------------------------------------- |
+| `@getdojo/better-stripe`               | `BetterStripe` class, `registerRoutes`, TypeScript types |
+| `@getdojo/better-stripe/react`         | React hooks, headless UI components, formatting helpers  |
+| `@getdojo/better-stripe/testing`       | Test fixtures, mock webhooks, `assertTestEnvironment`    |
+| `@getdojo/better-stripe/convex.config` | Convex component registration                            |
 
 ### Error Handling
 
-All errors are thrown as `ConvexError` with a structured payload:
+Structured errors are thrown as `ConvexError` with a `BetterStripeError` payload:
 
 ```typescript
 interface BetterStripeError {
@@ -677,7 +723,9 @@ interface BetterStripeError {
 }
 ```
 
-Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, `PRICE_NOT_FOUND`, `SUBSCRIPTION_NOT_FOUND`, `CHECKOUT_CREATE_FAILED`, `CHECKOUT_NOT_FOUND`, `PAYMENT_METHOD_FAILED`, `WEBHOOK_VERIFICATION_FAILED`, `STRIPE_API_ERROR`, `TEST_ENV_REQUIRED`, `INVALID_CONFIGURATION`.
+Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, `PRICE_NOT_FOUND`, `SUBSCRIPTION_NOT_FOUND`, `CHECKOUT_CREATE_FAILED`, `CHECKOUT_NOT_FOUND`, `PAYMENT_METHOD_FAILED`, `WEBHOOK_VERIFICATION_FAILED`, `WEBHOOK_DUPLICATE_EVENT`, `STRIPE_API_ERROR`, `TEST_ENV_REQUIRED`, `INVALID_CONFIGURATION`.
+
+> **Note:** error semantics are not yet uniform across the API. Newer methods such as `createAccountSession` throw structured `ConvexError(BetterStripeError)` payloads, while some older methods propagate raw Stripe SDK errors. Aligning all methods on structured errors is planned.
 
 ## Resources
 

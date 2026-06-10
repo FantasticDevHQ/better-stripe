@@ -998,7 +998,7 @@ export class BetterStripe {
    * ```
    *
    * then pass the module to `registerRoutes` as
-   * `triggers: internal.stripe as unknown as TriggerApiRefs`.
+   * `triggers: internal.stripe` (no cast needed).
    *
    * Contract:
    * - The `*Upserted`/`*Deleted` dispatchers are internal mutations that

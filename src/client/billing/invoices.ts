@@ -66,6 +66,17 @@ export async function upsertInvoice(
   return null;
 }
 
+export async function getInvoice(
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeInvoiceId: string },
+): Promise<StripeComponentInvoice | null> {
+  return (await ctx.runQuery(
+    componentRef(component, "billing/queries/getInvoiceByStripeId"),
+    { stripeInvoiceId: opts.stripeInvoiceId },
+  )) as StripeComponentInvoice | null;
+}
+
 export async function getInvoiceFromStripe(
   stripe: Stripe,
   _ctx: RunCtx,

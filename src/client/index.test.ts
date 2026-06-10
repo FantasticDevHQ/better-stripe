@@ -391,6 +391,70 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // Invoice methods
+  // =========================================================================
+
+  describe("getInvoice", () => {
+    it("runs the getInvoiceByStripeId component query with the invoice id", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      const fakeInvoice = {
+        stripeInvoiceId: "in_123",
+        status: "paid",
+        amountDue: 1000,
+      };
+      mockCtx.runQuery.mockResolvedValue(fakeInvoice);
+
+      const result = await bs.getInvoice(mockCtx, {
+        stripeInvoiceId: "in_123",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.getInvoiceByStripeId,
+        { stripeInvoiceId: "in_123" },
+      );
+      expect(result).toEqual(fakeInvoice);
+    });
+
+    it("returns null when the invoice is not found", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue(null);
+
+      const result = await bs.getInvoice(mockCtx, {
+        stripeInvoiceId: "in_missing",
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getInvoiceByStripeId", () => {
+    it("is an alias that runs the same component query", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      const fakeInvoice = { stripeInvoiceId: "in_456", status: "open" };
+      mockCtx.runQuery.mockResolvedValue(fakeInvoice);
+
+      const result = await bs.getInvoiceByStripeId(mockCtx, {
+        stripeInvoiceId: "in_456",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.getInvoiceByStripeId,
+        { stripeInvoiceId: "in_456" },
+      );
+      expect(result).toEqual(fakeInvoice);
+    });
+  });
+
+  // =========================================================================
   // Payment method: setDefaultPaymentMethod
   // =========================================================================
 

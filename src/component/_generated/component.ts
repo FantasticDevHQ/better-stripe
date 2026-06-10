@@ -7,6 +7,7 @@
  * To regenerate, run `npx convex dev`.
  * @module
  */
+
 import type { FunctionReference } from "convex/server";
 
 /**
@@ -16,18 +17,332 @@ import type { FunctionReference } from "convex/server";
  * Usage:
  * ```ts
  * async function myFunction(ctx: QueryCtx, component: ComponentApi) {
- *   return ctx.runQuery(component.core.queries.getAccount, { ...args });
+ *   return ctx.runQuery(component.someFile.someQuery, { ...args });
  * }
  * ```
  */
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
+    billing: {
+      mutations: {
+        upsertCheckoutSession: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            clientSecret?: string;
+            metadata?: any;
+            mode: "payment" | "subscription" | "setup";
+            orgId?: string;
+            priceId?: string;
+            status: "open" | "complete" | "expired";
+            stripeSessionId: string;
+            url?: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+        upsertInvoice: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            amountDue: number;
+            amountPaid: number;
+            currency: string;
+            hostedInvoiceUrl?: string;
+            invoicePdf?: string;
+            metadata?: any;
+            orgId?: string;
+            periodEnd?: string;
+            periodStart?: string;
+            status: string;
+            stripeInvoiceId: string;
+            subscriptionId?: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+        upsertSubscription: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            cancelAtPeriodEnd: boolean;
+            canceledAt?: string;
+            currentPeriodEnd?: string;
+            currentPeriodStart?: string;
+            isTrialing: boolean;
+            metadata?: any;
+            orgId?: string;
+            priceId?: string;
+            quantity?: number;
+            status:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+            stripeSubscriptionId: string;
+            trialEnd?: string;
+            trialStart?: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        getActiveSubscription: FunctionReference<
+          "query",
+          "internal",
+          { orgId?: string; userId: string },
+          any,
+          Name
+        >;
+        getCheckoutSession: FunctionReference<
+          "query",
+          "internal",
+          { sessionId: string },
+          any,
+          Name
+        >;
+        getCheckoutSessionByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeSessionId: string },
+          any,
+          Name
+        >;
+        getInvoiceByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeInvoiceId: string },
+          any,
+          Name
+        >;
+        getSubscription: FunctionReference<
+          "query",
+          "internal",
+          { subscriptionId: string },
+          any,
+          Name
+        >;
+        getSubscriptionByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeSubscriptionId: string },
+          any,
+          Name
+        >;
+        getTrialStatus: FunctionReference<
+          "query",
+          "internal",
+          { subscriptionId: string },
+          any,
+          Name
+        >;
+        listCheckoutSessionsByUser: FunctionReference<
+          "query",
+          "internal",
+          { limit?: number; status?: string; userId: string },
+          any,
+          Name
+        >;
+        listInvoices: FunctionReference<
+          "query",
+          "internal",
+          {
+            limit?: number;
+            status?: string;
+            subscriptionId?: string;
+            userId?: string;
+          },
+          any,
+          Name
+        >;
+        listSubscriptions: FunctionReference<
+          "query",
+          "internal",
+          { limit?: number; status?: string },
+          any,
+          Name
+        >;
+        listSubscriptionsByOrg: FunctionReference<
+          "query",
+          "internal",
+          { orgId: string; status?: string },
+          any,
+          Name
+        >;
+        listSubscriptionsByUser: FunctionReference<
+          "query",
+          "internal",
+          { status?: string; userId: string },
+          any,
+          Name
+        >;
+      };
+    };
+    connect: {
+      mutations: {
+        upsertPayment: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            amount: number;
+            currency: string;
+            metadata?: any;
+            orgId?: string;
+            status:
+              | "succeeded"
+              | "failed"
+              | "canceled"
+              | "processing"
+              | "requires_action";
+            stripePaymentIntentId: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+        upsertPayout: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amount: number;
+            arrivalDate?: string;
+            currency: string;
+            metadata?: any;
+            method?: string;
+            status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+            stripePayoutId: string;
+          },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        getPaymentByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripePaymentIntentId: string },
+          any,
+          Name
+        >;
+        getPayout: FunctionReference<
+          "query",
+          "internal",
+          { payoutId: string },
+          any,
+          Name
+        >;
+        getPayoutByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripePayoutId: string },
+          any,
+          Name
+        >;
+        listPayouts: FunctionReference<
+          "query",
+          "internal",
+          { accountId?: string; limit?: number; status?: string },
+          any,
+          Name
+        >;
+      };
+    };
     core: {
+      mutations: {
+        clearAllTables: FunctionReference<
+          "mutation",
+          "internal",
+          {},
+          { cleared: number; tables: Array<string> },
+          Name
+        >;
+        deleteAccountByStripeId: FunctionReference<
+          "mutation",
+          "internal",
+          { stripeAccountId: string },
+          boolean,
+          Name
+        >;
+        upsertAccount: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            appliedConfigurations?: Array<
+              "customer" | "merchant" | "recipient"
+            >;
+            capabilities?: any;
+            configuration?: any;
+            country?: string;
+            email?: string;
+            metadata?: any;
+            missingRequirements?: Array<string>;
+            name?: string;
+            onboardingStatus?:
+              | "pending"
+              | "in_progress"
+              | "complete"
+              | "restricted";
+            orgId?: string;
+            requirements?: any;
+            stripeAccountId: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+        upsertAccountInternal: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            appliedConfigurations?: Array<
+              "customer" | "merchant" | "recipient"
+            >;
+            capabilities?: any;
+            configuration?: any;
+            country?: string;
+            email?: string;
+            metadata?: any;
+            missingRequirements?: Array<string>;
+            name?: string;
+            onboardingStatus:
+              | "pending"
+              | "in_progress"
+              | "complete"
+              | "restricted";
+            orgId?: string;
+            requirements?: any;
+            stripeAccountId: string;
+            userId: string;
+          },
+          null,
+          Name
+        >;
+      };
       queries: {
         getAccount: FunctionReference<
           "query",
           "internal",
           { accountId: string },
+          any,
+          Name
+        >;
+        getAccountByOrgId: FunctionReference<
+          "query",
+          "internal",
+          { orgId: string },
           any,
           Name
         >;
@@ -42,13 +357,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           { userId: string },
-          any,
-          Name
-        >;
-        getAccountByOrgId: FunctionReference<
-          "query",
-          "internal",
-          { orgId: string },
           any,
           Name
         >;
@@ -74,100 +382,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+    };
+    products: {
       mutations: {
-        upsertAccount: FunctionReference<
+        upsertPrice: FunctionReference<
           "mutation",
           "internal",
           {
-            stripeAccountId: string;
-            userId: string;
-            orgId?: string;
-            email?: string;
-            name?: string;
-            country?: string;
-            capabilities?: any;
-            requirements?: any;
-            configuration?: any;
-            appliedConfigurations?: Array<
-              "customer" | "merchant" | "recipient"
-            >;
-            onboardingStatus?:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
-            missingRequirements?: Array<string>;
+            active: boolean;
+            currency: string;
+            interval?: "day" | "week" | "month" | "year";
+            intervalCount?: number;
             metadata?: any;
+            nickname?: string;
+            productId: string;
+            stripePriceId: string;
+            stripeProductId: string;
+            type: "one_time" | "recurring";
+            unitAmount: number;
           },
           null,
           Name
         >;
-        deleteAccountByStripeId: FunctionReference<
-          "mutation",
-          "internal",
-          { stripeAccountId: string },
-          boolean,
-          Name
-        >;
-        upsertAccountInternal: FunctionReference<
+        upsertProduct: FunctionReference<
           "mutation",
           "internal",
           {
-            stripeAccountId: string;
-            userId: string;
-            orgId?: string;
-            email?: string;
-            name?: string;
-            country?: string;
-            capabilities?: any;
-            requirements?: any;
-            configuration?: any;
-            appliedConfigurations?: Array<
-              "customer" | "merchant" | "recipient"
-            >;
-            onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
-            missingRequirements?: Array<string>;
+            accountId?: string;
+            active: boolean;
+            description?: string;
             metadata?: any;
+            name: string;
+            stripeProductId: string;
           },
           null,
-          Name
-        >;
-        clearAllTables: FunctionReference<
-          "mutation",
-          "internal",
-          {},
-          { cleared: number; tables: Array<string> },
           Name
         >;
       };
-    };
-    products: {
       queries: {
-        getProduct: FunctionReference<
-          "query",
-          "internal",
-          { productId: string },
-          any,
-          Name
-        >;
-        getProductByStripeId: FunctionReference<
-          "query",
-          "internal",
-          { stripeProductId: string },
-          any,
-          Name
-        >;
-        listProducts: FunctionReference<
-          "query",
-          "internal",
-          { accountId?: string; active?: boolean; limit?: number },
-          any,
-          Name
-        >;
         getPrice: FunctionReference<
           "query",
           "internal",
@@ -182,10 +434,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        getProduct: FunctionReference<
+          "query",
+          "internal",
+          { productId: string },
+          any,
+          Name
+        >;
+        getProductByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeProductId: string },
+          any,
+          Name
+        >;
         listPrices: FunctionReference<
           "query",
           "internal",
-          { productId?: string; active?: boolean; limit?: number },
+          { active?: boolean; limit?: number; productId?: string },
           any,
           Name
         >;
@@ -196,279 +462,36 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
-      };
-      mutations: {
-        upsertProduct: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripeProductId: string;
-            accountId?: string;
-            name: string;
-            description?: string;
-            active: boolean;
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-        upsertPrice: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripePriceId: string;
-            productId: string;
-            stripeProductId: string;
-            nickname?: string;
-            unitAmount: number;
-            currency: string;
-            active: boolean;
-            type: "one_time" | "recurring";
-            interval?: "day" | "week" | "month" | "year";
-            intervalCount?: number;
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-      };
-    };
-    billing: {
-      queries: {
-        getSubscription: FunctionReference<
+        listProducts: FunctionReference<
           "query",
           "internal",
-          { subscriptionId: string },
+          { accountId?: string; active?: boolean; limit?: number },
           any,
-          Name
-        >;
-        getSubscriptionByStripeId: FunctionReference<
-          "query",
-          "internal",
-          { stripeSubscriptionId: string },
-          any,
-          Name
-        >;
-        listSubscriptions: FunctionReference<
-          "query",
-          "internal",
-          { status?: string; limit?: number },
-          any,
-          Name
-        >;
-        listSubscriptionsByUser: FunctionReference<
-          "query",
-          "internal",
-          { userId: string; status?: string },
-          any,
-          Name
-        >;
-        listSubscriptionsByOrg: FunctionReference<
-          "query",
-          "internal",
-          { orgId: string; status?: string },
-          any,
-          Name
-        >;
-        getActiveSubscription: FunctionReference<
-          "query",
-          "internal",
-          { userId: string; orgId?: string },
-          any,
-          Name
-        >;
-        getTrialStatus: FunctionReference<
-          "query",
-          "internal",
-          { subscriptionId: string },
-          any,
-          Name
-        >;
-        getCheckoutSession: FunctionReference<
-          "query",
-          "internal",
-          { sessionId: string },
-          any,
-          Name
-        >;
-        getCheckoutSessionByStripeId: FunctionReference<
-          "query",
-          "internal",
-          { stripeSessionId: string },
-          any,
-          Name
-        >;
-        listCheckoutSessionsByUser: FunctionReference<
-          "query",
-          "internal",
-          { userId: string; status?: string; limit?: number },
-          any,
-          Name
-        >;
-        listInvoices: FunctionReference<
-          "query",
-          "internal",
-          {
-            userId?: string;
-            subscriptionId?: string;
-            status?: string;
-            limit?: number;
-          },
-          any,
-          Name
-        >;
-      };
-      mutations: {
-        upsertSubscription: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripeSubscriptionId: string;
-            accountId?: string;
-            userId: string;
-            orgId?: string;
-            status:
-              | "active"
-              | "trialing"
-              | "past_due"
-              | "canceled"
-              | "incomplete"
-              | "incomplete_expired"
-              | "unpaid"
-              | "paused";
-            priceId?: string;
-            quantity?: number;
-            currentPeriodStart?: string;
-            currentPeriodEnd?: string;
-            cancelAtPeriodEnd: boolean;
-            canceledAt?: string;
-            isTrialing: boolean;
-            trialStart?: string;
-            trialEnd?: string;
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-        upsertCheckoutSession: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripeSessionId: string;
-            userId: string;
-            orgId?: string;
-            accountId?: string;
-            mode: "payment" | "subscription" | "setup";
-            status: "open" | "complete" | "expired";
-            clientSecret?: string;
-            url?: string;
-            priceId?: string;
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-        upsertInvoice: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripeInvoiceId: string;
-            userId: string;
-            orgId?: string;
-            accountId?: string;
-            subscriptionId?: string;
-            status: string;
-            currency: string;
-            amountDue: number;
-            amountPaid: number;
-            hostedInvoiceUrl?: string;
-            invoicePdf?: string;
-            periodStart?: string;
-            periodEnd?: string;
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-      };
-    };
-    connect: {
-      queries: {
-        getPayout: FunctionReference<
-          "query",
-          "internal",
-          { payoutId: string },
-          any,
-          Name
-        >;
-        listPayouts: FunctionReference<
-          "query",
-          "internal",
-          { accountId?: string; status?: string; limit?: number },
-          any,
-          Name
-        >;
-      };
-      mutations: {
-        upsertPayment: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripePaymentIntentId: string;
-            userId: string;
-            orgId?: string;
-            accountId?: string;
-            amount: number;
-            currency: string;
-            status:
-              | "succeeded"
-              | "failed"
-              | "canceled"
-              | "processing"
-              | "requires_action";
-            metadata?: any;
-          },
-          null,
-          Name
-        >;
-        upsertPayout: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripePayoutId: string;
-            accountId: string;
-            amount: number;
-            currency: string;
-            status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
-            arrivalDate?: string;
-            method?: string;
-            metadata?: any;
-          },
-          null,
           Name
         >;
       };
     };
     webhooks: {
-      queries: {
-        getWebhookEvent: FunctionReference<
-          "query",
-          "internal",
-          { stripeEventId: string },
-          any,
-          Name
-        >;
-      };
       mutations: {
         insertWebhookEvent: FunctionReference<
           "mutation",
           "internal",
-          {
-            stripeEventId: string;
-            eventType: string;
-            livemode?: boolean;
-          },
+          { eventType: string; livemode?: boolean; stripeEventId: string },
           "inserted" | "processing" | "processed" | "failed" | "ignored",
+          Name
+        >;
+        markWebhookEventFailed: FunctionReference<
+          "mutation",
+          "internal",
+          { error: string; stripeEventId: string },
+          null,
+          Name
+        >;
+        markWebhookEventIgnored: FunctionReference<
+          "mutation",
+          "internal",
+          { stripeEventId: string },
+          null,
           Name
         >;
         markWebhookEventProcessed: FunctionReference<
@@ -478,21 +501,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           null,
           Name
         >;
-        markWebhookEventFailed: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            stripeEventId: string;
-            error: string;
-          },
-          null,
-          Name
-        >;
-        markWebhookEventIgnored: FunctionReference<
-          "mutation",
+      };
+      queries: {
+        getWebhookEvent: FunctionReference<
+          "query",
           "internal",
           { stripeEventId: string },
-          null,
+          any,
+          Name
+        >;
+        listWebhookEvents: FunctionReference<
+          "query",
+          "internal",
+          { eventType?: string; limit?: number; status?: string },
+          any,
           Name
         >;
       };

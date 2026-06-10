@@ -701,6 +701,20 @@ export class BetterStripe {
     return invoicesImpl.listInvoicesByUser(this.component, ctx, opts);
   }
 
+  async getInvoice(
+    ctx: RunCtx,
+    opts: { stripeInvoiceId: string },
+  ): Promise<StripeComponentInvoice | null> {
+    return invoicesImpl.getInvoice(this.component, ctx, opts);
+  }
+
+  async getInvoiceByStripeId(
+    ctx: RunCtx,
+    opts: { stripeInvoiceId: string },
+  ): Promise<StripeComponentInvoice | null> {
+    return invoicesImpl.getInvoice(this.component, ctx, opts);
+  }
+
   async upsertInvoice(
     ctx: RunCtx,
     opts: {

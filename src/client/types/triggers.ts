@@ -205,6 +205,18 @@ export type TriggerDispatcherName =
   | "paymentUpserted"
   | "payoutUpserted";
 
+/** Names of the async hook refs in {@link TriggerApiRefs}. */
+export type AsyncHookName =
+  | "afterAccountUpdated"
+  | "afterCheckoutCompleted"
+  | "afterSubscriptionUpdated"
+  | "afterSubscriptionCanceled"
+  | "afterTrialEnding"
+  | "afterInvoicePaid"
+  | "afterPaymentSucceeded"
+  | "afterPaymentFailed"
+  | "afterPayoutCompleted";
+
 /** Internal action that runs an async hook with the committed doc. */
 export type AsyncHookRef = FunctionReference<
   "action",

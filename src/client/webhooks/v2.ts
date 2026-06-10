@@ -25,20 +25,25 @@ export async function verifyV2Event(
   return JSON.parse(rawBody) as V2ThinEvent;
 }
 
+/**
+ * Process a V2 thin event by syncing the connected account.
+ * Returns the upserted account's Stripe id, or null when the event
+ * was skipped (unhandled type, missing related object, etc.).
+ */
 export async function handleV2Event(
   whCtx: WebhookContext,
   thinEvent: V2ThinEvent,
-): Promise<void> {
+): Promise<string | null> {
   const { stripe } = whCtx;
 
   if (!thinEvent.type.startsWith("v2.core.account")) {
     console.info(`[better-stripe] Unhandled V2 event type: ${thinEvent.type}`);
-    return;
+    return null;
   }
 
   const relatedObject = thinEvent.related_object;
   if (!relatedObject) {
-    return;
+    return null;
   }
 
   // Extract the account ID — related_object may reference the account directly
@@ -55,10 +60,10 @@ export async function handleV2Event(
       console.info(
         `[better-stripe] Could not extract account ID from V2 event: ${thinEvent.type}`,
       );
-      return;
+      return null;
     }
   } else {
-    return;
+    return null;
   }
 
   const account = await stripe.v2.core.accounts.retrieve(accountId, {
@@ -106,4 +111,6 @@ export async function handleV2Event(
     missingRequirements,
     metadata,
   });
+
+  return account.id;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
@@ -29,41 +29,43 @@ export function AddCardForm({
 }: AddCardFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!stripe || !elements) return;
-
+    if (!stripe || !elements || isProcessing) return;
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) return;
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card: cardElement,
-    });
-
-    if (error) {
-      onError?.(error.message ?? "Failed to add card");
-    } else if (paymentMethod) {
-      onSuccess?.(paymentMethod.id);
+    setIsProcessing(true);
+    setError(null);
+    try {
+      const { error: stripeError, paymentMethod } =
+        await stripe.createPaymentMethod({ type: "card", card: cardElement });
+      if (stripeError) {
+        const message = stripeError.message ?? "Failed to add card";
+        setError(message);
+        onError?.(message);
+      } else if (paymentMethod) {
+        onSuccess?.(paymentMethod.id);
+      }
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   if (children) {
-    return (
-      <>
-        {children({
-          handleSubmit,
-          isProcessing: false,
-          error: null,
-        })}
-      </>
-    );
+    return <>{children({ handleSubmit, isProcessing, error })}</>;
   }
 
   return (
     <div className={className}>
       <CardElement />
-      <button type="button" onClick={handleSubmit} disabled={!stripe}>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!stripe || isProcessing}
+      >
         {submitLabel}
       </button>
     </div>

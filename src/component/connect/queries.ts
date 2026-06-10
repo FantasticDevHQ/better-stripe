@@ -1,7 +1,11 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
-import { payoutStatusValidator } from "./validators";
+import {
+  paymentDocValidator,
+  payoutDocValidator,
+  payoutStatusValidator,
+} from "./validators";
 
 // =============================================================================
 // PAYMENT QUERIES
@@ -9,7 +13,7 @@ import { payoutStatusValidator } from "./validators";
 
 export const getPaymentByStripeId = query({
   args: { stripePaymentIntentId: v.string() },
-  returns: v.any(),
+  returns: v.union(paymentDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("payments")
@@ -26,7 +30,7 @@ export const getPaymentByStripeId = query({
 
 export const getPayout = query({
   args: { payoutId: v.id("payouts") },
-  returns: v.any(),
+  returns: v.union(payoutDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("payouts", args.payoutId);
   },
@@ -34,7 +38,7 @@ export const getPayout = query({
 
 export const getPayoutByStripeId = query({
   args: { stripePayoutId: v.string() },
-  returns: v.any(),
+  returns: v.union(payoutDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("payouts")
@@ -51,7 +55,7 @@ export const listPayouts = query({
     status: v.optional(payoutStatusValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(payoutDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 

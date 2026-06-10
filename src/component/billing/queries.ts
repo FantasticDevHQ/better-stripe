@@ -5,6 +5,7 @@ import {
   checkoutSessionDocValidator,
   invoiceDocValidator,
   subscriptionDocValidator,
+  subscriptionFields,
   subscriptionStatusValidator,
 } from "./validators";
 
@@ -141,8 +142,8 @@ export const getTrialStatus = query({
   returns: v.union(
     v.object({
       isTrialing: v.boolean(),
-      trialStart: v.optional(v.string()),
-      trialEnd: v.optional(v.string()),
+      trialStart: subscriptionFields.trialStart,
+      trialEnd: subscriptionFields.trialEnd,
       daysRemaining: v.number(),
       status: subscriptionStatusValidator,
     }),

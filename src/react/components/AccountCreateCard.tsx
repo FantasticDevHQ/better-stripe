@@ -27,6 +27,8 @@ export type AccountCreateCardProps = {
   descriptionLabel?: string;
   createLabel?: string;
   creatingLabel?: string;
+  /** Label for the placeholder option in the default country selector */
+  countryPlaceholder?: string;
   className?: string;
   /** Render prop for custom country selector UI */
   renderCountrySelector?: (props: {
@@ -52,6 +54,7 @@ export function AccountCreateCard({
   descriptionLabel = "Connect a Stripe account to start accepting payments.",
   createLabel = "Get started",
   creatingLabel = "Creating…",
+  countryPlaceholder = "Select a country…",
   className,
   renderCountrySelector,
   renderBenefits,
@@ -97,7 +100,7 @@ export function AccountCreateCard({
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
           >
-            <option value="">Select a country…</option>
+            <option value="">{countryPlaceholder}</option>
             {countries.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}

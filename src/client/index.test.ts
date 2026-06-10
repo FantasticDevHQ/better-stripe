@@ -414,29 +414,29 @@ describe("BetterStripe", () => {
   // =========================================================================
 
   describe("triggersApi", () => {
-    it("returns correct shape with expected keys", () => {
+    // Registered Convex functions expose their raw handler via `_handler`
+    // (set by convex/server's registration impl) — invoke dispatchers that way.
+    const invokeHandler = (fn: unknown, ctx: unknown, args: unknown) =>
+      (fn as { _handler: (ctx: unknown, args: unknown) => Promise<null> })
+        ._handler(ctx, args);
+
+    it("returns all 18 TriggerApiRefs keys (9 dispatchers + 9 after* hooks)", () => {
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",
       });
 
       const api = bs.triggersApi();
 
-      const expectedSyncKeys = [
-        "onAccountCreated",
-        "onAccountUpdated",
-        "onSubscriptionCreated",
-        "onSubscriptionUpdated",
-        "onSubscriptionDeleted",
-        "onCheckoutSessionCompleted",
-        "onProductCreated",
-        "onProductUpdated",
-        "onPriceCreated",
-        "onPriceUpdated",
-        "onInvoiceCreated",
-        "onInvoiceUpdated",
-        "onPaymentCreated",
-        "onPayoutCreated",
-        "onPayoutUpdated",
+      const expectedDispatcherKeys = [
+        "accountUpserted",
+        "productUpserted",
+        "priceUpserted",
+        "subscriptionUpserted",
+        "subscriptionDeleted",
+        "checkoutSessionUpserted",
+        "invoiceUpserted",
+        "paymentUpserted",
+        "payoutUpserted",
       ];
 
       const expectedAsyncKeys = [
@@ -451,44 +451,231 @@ describe("BetterStripe", () => {
         "afterPayoutCompleted",
       ];
 
-      for (const key of [...expectedSyncKeys, ...expectedAsyncKeys]) {
-        expect(api).toHaveProperty(key);
+      const allKeys = [...expectedDispatcherKeys, ...expectedAsyncKeys];
+      for (const key of allKeys) {
+        expect(api, `missing key: ${key}`).toHaveProperty(key);
+        expect(
+          (api as Record<string, unknown>)[key],
+          `key not defined: ${key}`,
+        ).toBeDefined();
       }
+      expect(allKeys).toHaveLength(18);
     });
 
-    it("sync triggers are Convex function definitions", () => {
+    it("subscriptionUpserted upserts and fires onCreate for a new doc", async () => {
+      const onCreate = vi.fn().mockResolvedValue(undefined);
+      const onUpdate = vi.fn().mockResolvedValue(undefined);
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: {
-          account: {
-            onCreate: vi.fn(),
-          },
-        },
+        triggers: { subscription: { onCreate, onUpdate } },
       });
 
-      const api = bs.triggersApi();
+      const newDoc = { stripeSubscriptionId: "sub_1", status: "active" };
+      mockCtx.runQuery
+        .mockResolvedValueOnce(null) // old doc lookup
+        .mockResolvedValueOnce(newDoc); // new doc lookup
 
-      // internalMutationGeneric returns an object (Convex function definition)
-      // Verify the sync trigger entries exist and are truthy (not undefined)
-      expect(api.onAccountCreated).toBeDefined();
-      expect(api.onAccountUpdated).toBeDefined();
-      expect(api.onSubscriptionCreated).toBeDefined();
+      const api = bs.triggersApi();
+      await invokeHandler(api.subscriptionUpserted, mockCtx, {
+        data: { stripeSubscriptionId: "sub_1", status: "active" },
+      });
+
+      // Component upsert performed exactly once
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(mockCtx.runMutation).toHaveBeenCalledWith(expect.anything(), {
+        stripeSubscriptionId: "sub_1",
+        status: "active",
+      });
+      // Lookup uses the Stripe id from data
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+        stripeSubscriptionId: "sub_1",
+      });
+      expect(onCreate).toHaveBeenCalledTimes(1);
+      expect(onCreate).toHaveBeenCalledWith(mockCtx, newDoc);
+      expect(onUpdate).not.toHaveBeenCalled();
     });
 
-    it("async hooks are Convex function definitions", () => {
+    it("subscriptionUpserted fires onUpdate (not onCreate) for an existing doc", async () => {
+      const onCreate = vi.fn().mockResolvedValue(undefined);
+      const onUpdate = vi.fn().mockResolvedValue(undefined);
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",
-        hooks: {
-          onAccountUpdated: vi.fn(),
-          onCheckoutCompleted: vi.fn(),
-        },
+        triggers: { subscription: { onCreate, onUpdate } },
       });
 
+      const oldDoc = { stripeSubscriptionId: "sub_1", status: "trialing" };
+      const newDoc = { stripeSubscriptionId: "sub_1", status: "active" };
+      mockCtx.runQuery
+        .mockResolvedValueOnce(oldDoc)
+        .mockResolvedValueOnce(newDoc);
+
+      const api = bs.triggersApi();
+      await invokeHandler(api.subscriptionUpserted, mockCtx, {
+        data: { stripeSubscriptionId: "sub_1", status: "active" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(onUpdate).toHaveBeenCalledWith(mockCtx, newDoc, oldDoc);
+      expect(onCreate).not.toHaveBeenCalled();
+    });
+
+    it("checkoutSessionUpserted fires onCompleted on transition into 'complete'", async () => {
+      const onCompleted = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { checkoutSession: { onCompleted } },
+      });
       const api = bs.triggersApi();
 
-      expect(api.afterAccountUpdated).toBeDefined();
-      expect(api.afterCheckoutCompleted).toBeDefined();
-      expect(api.afterSubscriptionUpdated).toBeDefined();
+      const newDoc = { stripeSessionId: "cs_1", status: "complete" };
+      mockCtx.runQuery
+        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "open" })
+        .mockResolvedValueOnce(newDoc);
+
+      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
+        data: { stripeSessionId: "cs_1", status: "complete" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(onCompleted).toHaveBeenCalledTimes(1);
+      expect(onCompleted).toHaveBeenCalledWith(mockCtx, newDoc);
+    });
+
+    it("checkoutSessionUpserted does NOT re-fire onCompleted when already complete", async () => {
+      const onCompleted = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { checkoutSession: { onCompleted } },
+      });
+      const api = bs.triggersApi();
+
+      mockCtx.runQuery
+        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "complete" })
+        .mockResolvedValueOnce({
+          stripeSessionId: "cs_1",
+          status: "complete",
+        });
+
+      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
+        data: { stripeSessionId: "cs_1", status: "complete" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(onCompleted).not.toHaveBeenCalled();
+    });
+
+    it("checkoutSessionUpserted does NOT fire onCompleted when new status is not 'complete'", async () => {
+      const onCompleted = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { checkoutSession: { onCompleted } },
+      });
+      const api = bs.triggersApi();
+
+      mockCtx.runQuery
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "open" });
+
+      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
+        data: { stripeSessionId: "cs_1", status: "open" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(onCompleted).not.toHaveBeenCalled();
+    });
+
+    it("subscriptionDeleted upserts and fires subscription.onDelete with the fetched doc", async () => {
+      const onDelete = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { subscription: { onDelete } },
+      });
+      const api = bs.triggersApi();
+
+      const doc = { stripeSubscriptionId: "sub_1", status: "canceled" };
+      mockCtx.runQuery.mockResolvedValueOnce(doc);
+
+      await invokeHandler(api.subscriptionDeleted, mockCtx, {
+        data: { stripeSubscriptionId: "sub_1", status: "canceled" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(mockCtx.runMutation).toHaveBeenCalledWith(expect.anything(), {
+        stripeSubscriptionId: "sub_1",
+        status: "canceled",
+      });
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+        stripeSubscriptionId: "sub_1",
+      });
+      expect(onDelete).toHaveBeenCalledTimes(1);
+      expect(onDelete).toHaveBeenCalledWith(mockCtx, doc);
+    });
+
+    it("propagates trigger errors so the transaction rolls back", async () => {
+      const onCreate = vi.fn().mockRejectedValue(new Error("trigger boom"));
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { subscription: { onCreate } },
+      });
+      const api = bs.triggersApi();
+
+      mockCtx.runQuery
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ stripeSubscriptionId: "sub_1" });
+
+      await expect(
+        invokeHandler(api.subscriptionUpserted, mockCtx, {
+          data: { stripeSubscriptionId: "sub_1" },
+        }),
+      ).rejects.toThrow("trigger boom");
+    });
+
+    it("performs the upsert without throwing when no triggers are configured", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+      const api = bs.triggersApi();
+
+      mockCtx.runQuery
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ stripeSubscriptionId: "sub_1" });
+
+      await expect(
+        invokeHandler(api.subscriptionUpserted, mockCtx, {
+          data: { stripeSubscriptionId: "sub_1" },
+        }),
+      ).resolves.toBeNull();
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+    });
+
+    it("afterCheckoutCompleted invokes the configured hook with (ctx, doc)", async () => {
+      const onCheckoutCompleted = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        hooks: { onCheckoutCompleted },
+      });
+      const api = bs.triggersApi();
+
+      const doc = { stripeSessionId: "cs_1", status: "complete" };
+      await invokeHandler(api.afterCheckoutCompleted, mockCtx, { doc });
+
+      expect(onCheckoutCompleted).toHaveBeenCalledTimes(1);
+      expect(onCheckoutCompleted).toHaveBeenCalledWith(mockCtx, doc);
+    });
+
+    it("afterCheckoutCompleted resolves without error when no hook configured", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+      const api = bs.triggersApi();
+
+      await expect(
+        invokeHandler(api.afterCheckoutCompleted, mockCtx, {
+          doc: { stripeSessionId: "cs_1" },
+        }),
+      ).resolves.toBeNull();
     });
   });
 

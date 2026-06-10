@@ -424,6 +424,22 @@ Then pass the module to `registerRoutes` as `triggers: internal.stripe`.
 
 **How the `after*` hooks work.** Each `after*` export is an internal action. After the dispatcher transaction commits and the ledger marks the event `processed`, the webhook handler schedules the matching hook via `ctx.scheduler` with the committed doc. Hook failures never roll back the component write.
 
+Exactly one hook (at most) is scheduled per event:
+
+| Stripe event                                      | Scheduled hook              |
+| ------------------------------------------------- | --------------------------- |
+| `v2.core.account*` (all account lifecycle events) | `afterAccountUpdated`       |
+| `checkout.session.completed`                      | `afterCheckoutCompleted`    |
+| `customer.subscription.created` / `.updated`      | `afterSubscriptionUpdated`  |
+| `customer.subscription.deleted`                   | `afterSubscriptionCanceled` |
+| `customer.subscription.trial_will_end`            | `afterTrialEnding`          |
+| `invoice.paid`                                    | `afterInvoicePaid`          |
+| `payment_intent.succeeded`                        | `afterPaymentSucceeded`     |
+| `payment_intent.payment_failed`                   | `afterPaymentFailed`        |
+| `payout.paid`                                     | `afterPayoutCompleted`      |
+
+All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `invoice.created`) update the component tables but schedule no hook.
+
 > **Note:** async hooks should be idempotent. Duplicate delivery is possible in rare ledger-failure cases (e.g. the event is processed and the hook scheduled, but the ledger update fails and Stripe redelivers).
 
 The raw callbacks you pass to `triggers` and `hooks` on the `BetterStripe` constructor are the source of truth for app behavior. The exported wrappers are the bridge that makes them callable from the Convex runtime — exports for triggers you did not configure are inert (upsert-only dispatchers and no-op hooks).

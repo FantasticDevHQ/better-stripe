@@ -15,7 +15,7 @@ export type UseCheckoutResult = {
  * The `useQuery` binding must support Convex's `"skip"` sentinel.
  */
 export function createUseCheckout(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,
   queryRef: any,
 ) {
   return function useCheckout(

@@ -16,7 +16,7 @@ export type UseAccountOnboardingResult = {
  * The `useQuery` binding must support Convex's `"skip"` sentinel.
  */
 export function createUseAccountOnboarding(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,
   queryRef: any,
 ) {
   return function useAccountOnboarding(

@@ -61,6 +61,7 @@ export function AddCardForm({
   return (
     <div className={className}>
       <CardElement />
+      {error && <div role="alert">{error}</div>}
       <button
         type="button"
         onClick={handleSubmit}

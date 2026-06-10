@@ -19,7 +19,7 @@ export type UseSubscriptionResult = {
  * The `useQuery` binding must support Convex's `"skip"` sentinel.
  */
 export function createUseSubscription(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,
   queryRef: any,
 ) {
   return function useSubscription(

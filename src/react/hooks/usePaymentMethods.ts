@@ -24,7 +24,7 @@ export type UsePaymentMethodsResult = {
  * The `useQuery` binding must support Convex's `"skip"` sentinel.
  */
 export function createUsePaymentMethods(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,
   queryRef: any,
 ) {
   return function usePaymentMethods(

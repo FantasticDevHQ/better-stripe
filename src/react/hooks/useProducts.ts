@@ -8,7 +8,7 @@ export type UseProductsResult = {
 };
 
 export function createUseProducts(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown>) => any,
   queryRef: any,
 ) {
   return function useProducts(args?: {

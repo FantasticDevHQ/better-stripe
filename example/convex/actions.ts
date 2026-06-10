@@ -189,6 +189,14 @@ export const getAccountLinkWithStatus = action({
   handler: async (ctx, args) => stripe.getAccountLinkWithStatus(ctx, args),
 });
 
+export const createBillingPortalSession = action({
+  args: {
+    stripeAccountId: v.string(),
+    returnUrl: v.string(),
+  },
+  handler: async (ctx, args) => stripe.createBillingPortalSession(ctx, args),
+});
+
 // Payment Methods
 export const listPaymentMethods = action({
   args: { stripeCustomerId: v.string() },

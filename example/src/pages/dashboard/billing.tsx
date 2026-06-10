@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
+import { BillingPortalLink } from "@getdojo/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { Clock, ExternalLink } from "lucide-react";
 
@@ -17,9 +19,16 @@ function formatDate(dateStr: string | undefined) {
 
 export function Billing() {
   const [isCancelling, setIsCancelling] = useState(false);
+  const { currentUser } = useRole();
   const subscriptions = useQuery(api.queries.listSubscriptions);
   const invoices = useQuery(api.queries.listInvoices);
+  const account = useQuery(api.queries.getAccountByUserId, {
+    userId: currentUser.id,
+  });
   const cancelSubscription = useAction(api.actions.cancelSubscription);
+  const createBillingPortalSession = useAction(
+    api.actions.createBillingPortalSession,
+  );
 
   if (subscriptions === undefined) {
     return (
@@ -162,18 +171,36 @@ export function Billing() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  window.open(
-                    "https://billing.stripe.com/p/login/test",
-                    "_blank",
-                  );
+              <BillingPortalLink
+                onCreateSession={async () => {
+                  if (!account) return;
+                  try {
+                    const { url } = await createBillingPortalSession({
+                      stripeAccountId: account.stripeAccountId,
+                      returnUrl: window.location.href,
+                    });
+                    // Navigate in the same tab; opening a new tab after an
+                    // await is liable to be blocked by popup blockers.
+                    window.location.assign(url);
+                  } catch (err) {
+                    console.error(
+                      "Failed to create billing portal session:",
+                      err,
+                    );
+                  }
                 }}
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open Billing Portal
-              </Button>
+                {({ onClick, isLoading }) => (
+                  <Button
+                    variant="outline"
+                    onClick={onClick}
+                    disabled={isLoading || !account}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    {isLoading ? "Opening portal..." : "Open Billing Portal"}
+                  </Button>
+                )}
+              </BillingPortalLink>
 
               {!subscription.cancelAtPeriodEnd && (
                 <Button

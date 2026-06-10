@@ -318,11 +318,22 @@ describe("core — clearAllTables", () => {
       isTrialing: false,
     });
 
+    await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+      stripeEventId: "evt_clear",
+      eventType: "invoice.paid",
+    });
+
     const result = await t.mutation(api.core.mutations.clearAllTables, {});
 
     expect(result.cleared).toBeGreaterThan(0);
     expect(result.tables).toContain("products");
     expect(result.tables).toContain("subscriptions");
+    expect(result.tables).toContain("webhookEvents");
+
+    const event = await t.query(api.webhooks.queries.getWebhookEvent, {
+      stripeEventId: "evt_clear",
+    });
+    expect(event).toBeNull();
   });
 });
 

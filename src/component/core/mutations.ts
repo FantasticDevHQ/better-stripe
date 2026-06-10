@@ -132,6 +132,7 @@ export const clearAllTables = mutation({
       "invoices",
       "payments",
       "payouts",
+      "webhookEvents",
     ];
     let totalCleared = 0;
 

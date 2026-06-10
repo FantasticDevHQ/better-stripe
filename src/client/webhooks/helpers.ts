@@ -45,6 +45,7 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   getCheckoutSession: "billing/queries/getCheckoutSession",
   getCheckoutSessionByStripeId: "billing/queries/getCheckoutSessionByStripeId",
   listCheckoutSessionsByUser: "billing/queries/listCheckoutSessionsByUser",
+  getInvoiceByStripeId: "billing/queries/getInvoiceByStripeId",
   listInvoices: "billing/queries/listInvoices",
   upsertSubscription: "billing/mutations/upsertSubscription",
   upsertCheckoutSession: "billing/mutations/upsertCheckoutSession",

@@ -196,6 +196,19 @@ export const listCheckoutSessionsByUser = query({
 // INVOICE QUERIES
 // =============================================================================
 
+export const getInvoiceByStripeId = query({
+  args: { stripeInvoiceId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("invoices")
+      .withIndex("by_stripe_invoice_id", (q) =>
+        q.eq("stripeInvoiceId", args.stripeInvoiceId),
+      )
+      .first();
+  },
+});
+
 export const listInvoices = query({
   args: {
     userId: v.optional(v.string()),

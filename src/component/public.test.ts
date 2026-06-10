@@ -266,6 +266,38 @@ describe("billing — invoice mutations and queries", () => {
 
     expect(invoices).toHaveLength(2);
   });
+
+  it("getInvoiceByStripeId: returns matching invoice", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_by_stripe_001",
+      userId: "user_031",
+      status: "paid",
+      currency: "usd",
+      amountDue: 1500,
+      amountPaid: 1500,
+    });
+
+    const invoice = await t.query(api.billing.queries.getInvoiceByStripeId, {
+      stripeInvoiceId: "inv_by_stripe_001",
+    });
+
+    expect(invoice).not.toBeNull();
+    expect(invoice!.stripeInvoiceId).toBe("inv_by_stripe_001");
+    expect(invoice!.userId).toBe("user_031");
+    expect(invoice!.amountDue).toBe(1500);
+  });
+
+  it("getInvoiceByStripeId: returns null for unknown id", async () => {
+    const t = convexTest(schema, modules);
+
+    const invoice = await t.query(api.billing.queries.getInvoiceByStripeId, {
+      stripeInvoiceId: "inv_does_not_exist",
+    });
+
+    expect(invoice).toBeNull();
+  });
 });
 
 describe("core — clearAllTables", () => {

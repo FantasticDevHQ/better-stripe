@@ -3,7 +3,7 @@ import type {
   StripeEventHandlers,
   StripeWebhookEvent,
 } from "./events.js";
-import type { AsyncHooks, SyncTriggers } from "./triggers.js";
+import type { AsyncHooks, SyncTriggers, TriggerApiRefs } from "./triggers.js";
 
 // ---------------------------------------------------------------------------
 // Client options
@@ -30,4 +30,11 @@ export type RegisterRoutesConfig = {
   webhookSecretV2?: string;
   onEvent?: StripeEventHandler<StripeWebhookEvent>;
   events?: StripeEventHandlers;
+  /**
+   * Function references to the app's exported `triggersApi()` wrappers.
+   * When provided, webhook upserts run through these dispatchers so sync
+   * triggers execute in the same transaction as the component write, and
+   * async hooks are scheduled after commit.
+   */
+  triggers?: TriggerApiRefs;
 };

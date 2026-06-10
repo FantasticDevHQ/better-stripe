@@ -70,6 +70,7 @@ export type {
 } from "./utils/stripeDashboardUrl.js";
 export type {
   AccountLinkWithStatus,
+  AsyncHookRef,
   PaymentMethodCard,
   PaymentMethodLike,
   StripeComponentAccount,
@@ -83,6 +84,8 @@ export type {
   StripeEventHandlers,
   StripeV2Account,
   StripeWebhookEvent,
+  TriggerApiRefs,
+  TriggerDispatchRef,
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";

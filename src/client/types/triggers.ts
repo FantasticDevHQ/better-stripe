@@ -180,3 +180,51 @@ export type AsyncHookCtx = {
     ...args: OptionalRestArgs<Action>
   ) => Promise<FunctionReturnType<Action>>;
 };
+
+// ---------------------------------------------------------------------------
+// Trigger API function references (passed to registerRoutes by the app)
+// ---------------------------------------------------------------------------
+
+/** Internal mutation that upserts a component doc and runs the sync trigger. */
+export type TriggerDispatchRef = FunctionReference<
+  "mutation",
+  "internal",
+  { data: Record<string, unknown> },
+  null
+>;
+
+/** Internal action that runs an async hook with the committed doc. */
+export type AsyncHookRef = FunctionReference<
+  "action",
+  "internal",
+  { doc: Record<string, unknown> },
+  null
+>;
+
+/**
+ * Function references to the wrappers returned by `triggersApi()`.
+ * The app exports them from a Convex module and passes that module here:
+ * `triggers: internal.stripe as unknown as TriggerApiRefs`.
+ * All fields optional — the handler falls back to direct component
+ * upserts for any dispatcher that is missing.
+ */
+export type TriggerApiRefs = Partial<{
+  accountUpserted: TriggerDispatchRef;
+  productUpserted: TriggerDispatchRef;
+  priceUpserted: TriggerDispatchRef;
+  subscriptionUpserted: TriggerDispatchRef;
+  subscriptionDeleted: TriggerDispatchRef;
+  checkoutSessionUpserted: TriggerDispatchRef;
+  invoiceUpserted: TriggerDispatchRef;
+  paymentUpserted: TriggerDispatchRef;
+  payoutUpserted: TriggerDispatchRef;
+  afterAccountUpdated: AsyncHookRef;
+  afterCheckoutCompleted: AsyncHookRef;
+  afterSubscriptionUpdated: AsyncHookRef;
+  afterSubscriptionCanceled: AsyncHookRef;
+  afterTrialEnding: AsyncHookRef;
+  afterInvoicePaid: AsyncHookRef;
+  afterPaymentSucceeded: AsyncHookRef;
+  afterPaymentFailed: AsyncHookRef;
+  afterPayoutCompleted: AsyncHookRef;
+}>;

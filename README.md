@@ -128,7 +128,7 @@ The `triggers: internal.stripe` line passes the function references of the dispa
 
 All methods are available on the `BetterStripe` class instance. Methods that call the Stripe API are actions; methods that only read Convex data are queries.
 
-Methods named `get<Entity>` take the component document ID; methods named `get<Entity>ByStripeId` take the Stripe ID (`acct_...`, `prod_...`, `price_...`, `cs_...`, `sub_...`).
+Methods named `get<Entity>` take the component document ID (exception: `getInvoice`, which takes the Stripe invoice ID); methods named `get<Entity>ByStripeId` take the Stripe ID (`acct_...`, `prod_...`, `price_...`, `cs_...`, `sub_...`).
 
 ### Account
 
@@ -208,8 +208,8 @@ Methods named `get<Entity>` take the component document ID; methods named `get<E
 | `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                                  |
 | `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                                        |
 | `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                                |
-| `listEventDestinations(ctx)`                                                              | List all V2 event destinations                                                            |
-| `listWebhookEndpoints(ctx)`                                                               | List V1 webhook endpoints                                                                 |
+| `listEventDestinations(ctx, { limit? })`                                                  | List all V2 event destinations                                                            |
+| `listWebhookEndpoints(ctx, { limit? })`                                                   | List V1 webhook endpoints                                                                 |
 | `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                              |
 | `triggersApi()`                                                                           | Returns the trigger dispatchers and `after*` hook wrappers to export from a Convex module |
 
@@ -633,7 +633,7 @@ const event = mockCheckoutCompleted({
 
 | Variable                   | Required    | Description                                                                                                       |
 | -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`        | Yes         | Passed via constructor or `registerRoutes`. Falls back to `process.env.STRIPE_SECRET_KEY`.                        |
+| `STRIPE_SECRET_KEY`        | Yes         | Must be passed explicitly via the `BetterStripe` constructor and `registerRoutes` (no automatic env fallback).    |
 | `STRIPE_WEBHOOK_SECRET`    | Yes         | Signing secret for the V1 snapshot event destination.                                                             |
 | `STRIPE_WEBHOOK_SECRET_V2` | Yes         | Signing secret for the V2 thin event destination (Connect account events). Falls back to `STRIPE_WEBHOOK_SECRET`. |
 | `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`.          |

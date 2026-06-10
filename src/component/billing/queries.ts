@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
-import { subscriptionStatusValidator } from "./validators";
+import {
+  checkoutSessionDocValidator,
+  invoiceDocValidator,
+  subscriptionDocValidator,
+  subscriptionStatusValidator,
+} from "./validators";
 
 // =============================================================================
 // SUBSCRIPTION QUERIES
@@ -9,7 +14,7 @@ import { subscriptionStatusValidator } from "./validators";
 
 export const getSubscription = query({
   args: { subscriptionId: v.id("subscriptions") },
-  returns: v.any(),
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("subscriptions", args.subscriptionId);
   },
@@ -17,7 +22,7 @@ export const getSubscription = query({
 
 export const getSubscriptionByStripeId = query({
   args: { stripeSubscriptionId: v.string() },
-  returns: v.any(),
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("subscriptions")
@@ -34,7 +39,7 @@ export const listSubscriptions = query({
     status: v.optional(subscriptionStatusValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 
@@ -68,7 +73,7 @@ export const listSubscriptionsByUser = query({
     userId: v.string(),
     status: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
     // A user typically has a small number of subscriptions (current + historical).
     // eslint-disable-next-line @convex-dev/no-collect-in-query
@@ -89,7 +94,7 @@ export const listSubscriptionsByOrg = query({
     orgId: v.string(),
     status: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
     // An org typically has a small number of subscriptions (current + historical).
     // eslint-disable-next-line @convex-dev/no-collect-in-query
@@ -110,7 +115,7 @@ export const getActiveSubscription = query({
     userId: v.string(),
     orgId: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
     // Scoped to a single user/org — bounded by number of subscriptions per entity.
     const subs = args.orgId
@@ -133,7 +138,16 @@ export const getActiveSubscription = query({
 
 export const getTrialStatus = query({
   args: { subscriptionId: v.id("subscriptions") },
-  returns: v.any(),
+  returns: v.union(
+    v.object({
+      isTrialing: v.boolean(),
+      trialStart: v.optional(v.string()),
+      trialEnd: v.optional(v.string()),
+      daysRemaining: v.number(),
+      status: subscriptionStatusValidator,
+    }),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
     const sub = await ctx.db.get("subscriptions", args.subscriptionId);
     if (!sub) return null;
@@ -166,7 +180,7 @@ export const getTrialStatus = query({
 
 export const getCheckoutSession = query({
   args: { sessionId: v.id("checkoutSessions") },
-  returns: v.any(),
+  returns: v.union(checkoutSessionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("checkoutSessions", args.sessionId);
   },
@@ -174,7 +188,7 @@ export const getCheckoutSession = query({
 
 export const getCheckoutSessionByStripeId = query({
   args: { stripeSessionId: v.string() },
-  returns: v.any(),
+  returns: v.union(checkoutSessionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("checkoutSessions")
@@ -191,7 +205,7 @@ export const listCheckoutSessionsByUser = query({
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(checkoutSessionDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
     const sessions = await ctx.db
@@ -212,7 +226,7 @@ export const listCheckoutSessionsByUser = query({
 
 export const getInvoiceByStripeId = query({
   args: { stripeInvoiceId: v.string() },
-  returns: v.any(),
+  returns: v.union(invoiceDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("invoices")
@@ -231,7 +245,7 @@ export const listInvoices = query({
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(invoiceDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 

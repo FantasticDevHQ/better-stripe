@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 export type BillingPortalLinkProps = {
   /** URL to Stripe billing portal (from createBillingPortalSession) */
@@ -29,15 +29,22 @@ export function BillingPortalLink({
   className,
   children,
 }: BillingPortalLinkProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleClick = async () => {
     if (portalUrl) {
       window.open(portalUrl, "_blank");
       return;
     }
-    if (onCreateSession) {
-      const url = await onCreateSession();
-      if (url) {
-        window.open(url, "_blank");
+    if (onCreateSession && !isLoading) {
+      setIsLoading(true);
+      try {
+        const url = await onCreateSession();
+        if (url) {
+          window.open(url, "_blank");
+        }
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -48,15 +55,20 @@ export function BillingPortalLink({
         {children({
           url: portalUrl ?? null,
           onClick: handleClick,
-          isLoading: false,
+          isLoading,
         })}
       </>
     );
   }
 
   return (
-    <button type="button" onClick={handleClick} className={className}>
-      {label}
+    <button
+      type="button"
+      onClick={handleClick}
+      className={className}
+      disabled={isLoading}
+    >
+      {isLoading ? loadingLabel : label}
     </button>
   );
 }

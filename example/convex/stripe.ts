@@ -12,6 +12,11 @@ export const stripe = new BetterStripe(components.betterStripe, {
           `[trigger] Subscription created: ${doc.stripeSubscriptionId} for user ${doc.userId}`,
         );
       },
+      onUpdate: async (_ctx, newDoc, oldDoc) => {
+        console.log(
+          `[trigger] Subscription updated: ${newDoc.stripeSubscriptionId} (${oldDoc.status} -> ${newDoc.status})`,
+        );
+      },
       onDelete: async (_ctx, doc) => {
         console.log(
           `[trigger] Subscription deleted: ${doc.stripeSubscriptionId} for user ${doc.userId}`,
@@ -51,10 +56,24 @@ export const stripe = new BetterStripe(components.betterStripe, {
   },
 });
 
-// Export trigger API for use in http.ts
+// Export trigger dispatchers + async hooks; http.ts passes their refs to registerRoutes
 export const {
-  onCheckoutSessionCompleted,
-  onSubscriptionCreated,
-  onSubscriptionUpdated,
-  onSubscriptionDeleted,
+  accountUpserted,
+  productUpserted,
+  priceUpserted,
+  subscriptionUpserted,
+  subscriptionDeleted,
+  checkoutSessionUpserted,
+  invoiceUpserted,
+  paymentUpserted,
+  payoutUpserted,
+  afterAccountUpdated,
+  afterCheckoutCompleted,
+  afterSubscriptionUpdated,
+  afterSubscriptionCanceled,
+  afterTrialEnding,
+  afterInvoicePaid,
+  afterPaymentSucceeded,
+  afterPaymentFailed,
+  afterPayoutCompleted,
 } = stripe.triggersApi();

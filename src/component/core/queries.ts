@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
+import { accountDocValidator, onboardingStatusValidator } from "./validators";
 
 // =============================================================================
 // ACCOUNT QUERIES
@@ -8,7 +9,7 @@ import { query } from "../_generated/server";
 
 export const getAccount = query({
   args: { accountId: v.id("accounts") },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("accounts", args.accountId);
   },
@@ -16,7 +17,7 @@ export const getAccount = query({
 
 export const getAccountByStripeId = query({
   args: { stripeAccountId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("accounts")
@@ -29,7 +30,7 @@ export const getAccountByStripeId = query({
 
 export const getAccountByUserId = query({
   args: { userId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("accounts")
@@ -40,7 +41,7 @@ export const getAccountByUserId = query({
 
 export const getAccountByOrgId = query({
   args: { orgId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("accounts")
@@ -51,7 +52,15 @@ export const getAccountByOrgId = query({
 
 export const getAccountOnboardingStatus = query({
   args: { accountId: v.id("accounts") },
-  returns: v.any(),
+  returns: v.union(
+    v.object({
+      onboardingStatus: onboardingStatusValidator,
+      isReady: v.boolean(),
+      missingRequirements: v.array(v.string()),
+      capabilities: v.any(),
+    }),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
     const account = await ctx.db.get("accounts", args.accountId);
     if (!account) return null;

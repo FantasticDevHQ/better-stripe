@@ -92,23 +92,18 @@ export async function handleV2Event(
           .join(" ") || undefined
       : undefined);
 
-  await dispatchUpsert(
-    whCtx,
-    "accountUpserted",
-    "core/mutations/upsertAccountInternal",
-    {
-      stripeAccountId: account.id,
-      userId: userId || account.id,
-      orgId,
-      email,
-      name,
-      country: identity?.country ?? undefined,
-      requirements: account.requirements ?? undefined,
-      configuration: account.configuration ?? undefined,
-      appliedConfigurations: account.applied_configurations ?? undefined,
-      onboardingStatus,
-      missingRequirements,
-      metadata,
-    },
-  );
+  await dispatchUpsert(whCtx, "accountUpserted", {
+    stripeAccountId: account.id,
+    userId: userId || account.id,
+    orgId,
+    email,
+    name,
+    country: identity?.country ?? undefined,
+    requirements: account.requirements ?? undefined,
+    configuration: account.configuration ?? undefined,
+    appliedConfigurations: account.applied_configurations ?? undefined,
+    onboardingStatus,
+    missingRequirements,
+    metadata,
+  });
 }

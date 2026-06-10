@@ -17,7 +17,7 @@ import type {
   V2AccountRetrieveInclude,
   V2AccountUpdateParams,
 } from "./stripe-types.js";
-import { componentRef } from "./webhooks/helpers.js";
+import { componentRef, DISPATCHER_UPSERT_PATHS } from "./webhooks/helpers.js";
 import * as pricesImpl from "./products/prices.js";
 import * as productsImpl from "./products/products.js";
 import type {
@@ -1084,7 +1084,7 @@ export class BetterStripe {
           getter: "core/queries/getAccountByStripeId",
           idArg: "stripeAccountId",
           idField: "stripeAccountId",
-          upsert: "core/mutations/upsertAccountInternal",
+          upsert: DISPATCHER_UPSERT_PATHS.accountUpserted,
         },
         splitCreateUpdate(
           triggers?.account?.onCreate,
@@ -1097,7 +1097,7 @@ export class BetterStripe {
           getter: "products/queries/getProductByStripeId",
           idArg: "stripeProductId",
           idField: "stripeProductId",
-          upsert: "products/mutations/upsertProduct",
+          upsert: DISPATCHER_UPSERT_PATHS.productUpserted,
         },
         splitCreateUpdate(
           triggers?.product?.onCreate,
@@ -1110,7 +1110,7 @@ export class BetterStripe {
           getter: "products/queries/getPriceByStripeId",
           idArg: "stripePriceId",
           idField: "stripePriceId",
-          upsert: "products/mutations/upsertPrice",
+          upsert: DISPATCHER_UPSERT_PATHS.priceUpserted,
         },
         splitCreateUpdate(triggers?.price?.onCreate, triggers?.price?.onUpdate),
       ),
@@ -1120,7 +1120,7 @@ export class BetterStripe {
           getter: "billing/queries/getSubscriptionByStripeId",
           idArg: "stripeSubscriptionId",
           idField: "stripeSubscriptionId",
-          upsert: "billing/mutations/upsertSubscription",
+          upsert: DISPATCHER_UPSERT_PATHS.subscriptionUpserted,
         },
         splitCreateUpdate(
           triggers?.subscription?.onCreate,
@@ -1141,7 +1141,10 @@ export class BetterStripe {
             );
           }
           await ctx.runMutation(
-            componentRef(component, "billing/mutations/upsertSubscription"),
+            componentRef(
+              component,
+              DISPATCHER_UPSERT_PATHS.subscriptionDeleted,
+            ),
             record,
           );
           if (!onSubscriptionDeleted) return null;
@@ -1171,7 +1174,7 @@ export class BetterStripe {
             getter: "billing/queries/getCheckoutSessionByStripeId",
             idArg: "stripeSessionId",
             idField: "stripeSessionId",
-            upsert: "billing/mutations/upsertCheckoutSession",
+            upsert: DISPATCHER_UPSERT_PATHS.checkoutSessionUpserted,
           },
           onCheckoutCompleted
             ? async (ctx, newDoc, oldDoc) => {
@@ -1192,7 +1195,7 @@ export class BetterStripe {
           getter: "billing/queries/getInvoiceByStripeId",
           idArg: "stripeInvoiceId",
           idField: "stripeInvoiceId",
-          upsert: "billing/mutations/upsertInvoice",
+          upsert: DISPATCHER_UPSERT_PATHS.invoiceUpserted,
         },
         splitCreateUpdate(
           triggers?.invoice?.onCreate,
@@ -1205,7 +1208,7 @@ export class BetterStripe {
           getter: "connect/queries/getPaymentByStripeId",
           idArg: "stripePaymentIntentId",
           idField: "stripePaymentIntentId",
-          upsert: "connect/mutations/upsertPayment",
+          upsert: DISPATCHER_UPSERT_PATHS.paymentUpserted,
         },
         // SyncTriggers.payment has no onUpdate
         splitCreateUpdate(triggers?.payment?.onCreate, undefined),
@@ -1216,7 +1219,7 @@ export class BetterStripe {
           getter: "connect/queries/getPayoutByStripeId",
           idArg: "stripePayoutId",
           idField: "stripePayoutId",
-          upsert: "connect/mutations/upsertPayout",
+          upsert: DISPATCHER_UPSERT_PATHS.payoutUpserted,
         },
         splitCreateUpdate(
           triggers?.payout?.onCreate,

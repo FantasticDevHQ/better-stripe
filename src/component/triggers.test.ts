@@ -79,6 +79,63 @@ describe("webhook event ledger", () => {
     expect(secondResult).toBe("processing");
   });
 
+  it("insertWebhookEvent: failed events become reprocessable on retry", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+      stripeEventId: "evt_test_failed_retry",
+      eventType: "customer.subscription.updated",
+    });
+    await t.mutation(api.webhooks.mutations.markWebhookEventFailed, {
+      stripeEventId: "evt_test_failed_retry",
+      error: "trigger exploded",
+    });
+
+    // Stripe retries the same event — the failed row must NOT deduplicate,
+    // since the failed attempt's writes were rolled back.
+    const retryResult = await t.mutation(
+      api.webhooks.mutations.insertWebhookEvent,
+      {
+        stripeEventId: "evt_test_failed_retry",
+        eventType: "customer.subscription.updated",
+      },
+    );
+    expect(retryResult).toBe("inserted");
+
+    // The ledger row is reset to in-flight for the new attempt.
+    const entry = await t.query(api.webhooks.queries.getWebhookEvent, {
+      stripeEventId: "evt_test_failed_retry",
+    });
+    expect(entry!.status).toBe("processing");
+  });
+
+  it("insertWebhookEvent: processed events keep deduplicating after a retry cycle", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+      stripeEventId: "evt_test_processed_dedup",
+      eventType: "invoice.paid",
+    });
+    await t.mutation(api.webhooks.mutations.markWebhookEventFailed, {
+      stripeEventId: "evt_test_processed_dedup",
+      error: "transient",
+    });
+    // Retry succeeds this time.
+    await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+      stripeEventId: "evt_test_processed_dedup",
+      eventType: "invoice.paid",
+    });
+    await t.mutation(api.webhooks.mutations.markWebhookEventProcessed, {
+      stripeEventId: "evt_test_processed_dedup",
+    });
+
+    const result = await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+      stripeEventId: "evt_test_processed_dedup",
+      eventType: "invoice.paid",
+    });
+    expect(result).toBe("processed");
+  });
+
   it("markWebhookEventProcessed: updates status to processed", async () => {
     const t = convexTest(schema, modules);
 

@@ -189,6 +189,24 @@ export function componentRef(component: Component, path: string) {
 }
 
 /**
+ * Component upsert mutation path for each trigger dispatcher. Single source
+ * of truth shared by `dispatchUpsert` (direct-mutation fallback) and
+ * `triggersApi()`'s dispatcher specs — keeps the pairing in sync by
+ * construction.
+ */
+export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
+  accountUpserted: "core/mutations/upsertAccountInternal",
+  productUpserted: "products/mutations/upsertProduct",
+  priceUpserted: "products/mutations/upsertPrice",
+  subscriptionUpserted: "billing/mutations/upsertSubscription",
+  subscriptionDeleted: "billing/mutations/upsertSubscription",
+  checkoutSessionUpserted: "billing/mutations/upsertCheckoutSession",
+  invoiceUpserted: "billing/mutations/upsertInvoice",
+  paymentUpserted: "connect/mutations/upsertPayment",
+  payoutUpserted: "connect/mutations/upsertPayout",
+};
+
+/**
  * Run a domain upsert. When the app registered a trigger dispatcher for this
  * domain, route through it so the sync trigger runs in the same transaction
  * as the component write. Otherwise call the component mutation directly.
@@ -196,7 +214,6 @@ export function componentRef(component: Component, path: string) {
 export async function dispatchUpsert(
   whCtx: WebhookContext,
   dispatcherName: TriggerDispatcherName,
-  componentMutationPath: string,
   data: Record<string, unknown>,
 ): Promise<void> {
   const ref = whCtx.config?.triggers?.[dispatcherName];
@@ -204,7 +221,7 @@ export async function dispatchUpsert(
     await whCtx.ctx.runMutation(ref, { data });
   } else {
     await whCtx.ctx.runMutation(
-      componentRef(whCtx.component, componentMutationPath),
+      componentRef(whCtx.component, DISPATCHER_UPSERT_PATHS[dispatcherName]),
       data,
     );
   }

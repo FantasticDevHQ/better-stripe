@@ -387,6 +387,56 @@ describe("webhooks", () => {
       );
     });
 
+    it("reprocesses a previously failed event on Stripe retry", async () => {
+      const event = makeV1Event("product.created", {
+        id: "prod_retry",
+        name: "Retry Product",
+        active: true,
+        metadata: {},
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      // --- First delivery: processor mutation rejects ---
+      (ctx.runMutation as Mock)
+        .mockResolvedValueOnce("inserted") // insertWebhookEvent
+        .mockRejectedValueOnce(new Error("trigger exploded")) // upsertProduct
+        .mockResolvedValueOnce(undefined); // markWebhookEventFailed
+
+      const first = await handler(
+        ctx,
+        makeRequest({ type: "product.created" }),
+      );
+      expect(first.status).toBe(500);
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.webhooks.mutations.markWebhookEventFailed,
+        expect.objectContaining({
+          stripeEventId: event.id,
+          error: "trigger exploded",
+        }),
+      );
+
+      // --- Second delivery of the SAME event id: insertWebhookEvent resets
+      // the failed ledger row and returns "inserted" again, so the handler
+      // must fully reprocess instead of deduplicating.
+      (ctx.runMutation as Mock).mockClear();
+      (ctx.runMutation as Mock).mockResolvedValue("inserted");
+
+      const second = await handler(
+        ctx,
+        makeRequest({ type: "product.created" }),
+      );
+      expect(second.status).toBe(200);
+      expect(JSON.parse(await second.text()).deduplicated).toBeUndefined();
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.products.mutations.upsertProduct,
+        expect.objectContaining({ stripeProductId: "prod_retry" }),
+      );
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.webhooks.mutations.markWebhookEventProcessed,
+        { stripeEventId: event.id },
+      );
+    });
+
     it("runHooks error does not crash handler", async () => {
       const event = makeV1Event("product.created", {
         id: "prod_123",
@@ -1093,6 +1143,38 @@ describe("webhooks", () => {
       expect(ctx.runMutation).not.toHaveBeenCalledWith(
         subscriptionUpserted,
         expect.anything(),
+      );
+    });
+
+    it("dispatcher rejection returns 500 and marks the ledger row failed", async () => {
+      const subscriptionUpserted = makeAppRef(
+        "app/stripe/subscriptionUpserted",
+      );
+      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+
+      const event = makeSubscriptionEvent("customer.subscription.updated");
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      (ctx.runMutation as Mock)
+        .mockResolvedValueOnce("inserted") // insertWebhookEvent
+        .mockRejectedValueOnce(new Error("sync trigger threw")) // dispatcher
+        .mockResolvedValueOnce(undefined); // markWebhookEventFailed
+
+      const response = await triggerHandler(
+        ctx,
+        makeRequest({ type: "customer.subscription.updated" }),
+      );
+      expect(response.status).toBe(500);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionUpserted, {
+        data: expect.objectContaining({ stripeSubscriptionId: "sub_777" }),
+      });
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.webhooks.mutations.markWebhookEventFailed,
+        expect.objectContaining({
+          stripeEventId: event.id,
+          error: "sync trigger threw",
+        }),
       );
     });
   });

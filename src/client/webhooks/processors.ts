@@ -82,20 +82,14 @@ async function handleProductEvent(
 ): Promise<void> {
   const productAccount = (product as ConnectProduct).account;
 
-  await dispatchUpsert(
-    whCtx,
-    "productUpserted",
-    "products/mutations/upsertProduct",
-    {
-      stripeProductId: product.id,
-      accountId:
-        typeof productAccount === "string" ? productAccount : undefined,
-      name: product.name,
-      description: product.description ?? undefined,
-      active: product.active,
-      metadata: product.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, "productUpserted", {
+    stripeProductId: product.id,
+    accountId: typeof productAccount === "string" ? productAccount : undefined,
+    name: product.name,
+    description: product.description ?? undefined,
+    active: product.active,
+    metadata: product.metadata ?? undefined,
+  });
 }
 
 async function handlePriceEvent(
@@ -145,24 +139,19 @@ async function handlePriceEvent(
     return;
   }
 
-  await dispatchUpsert(
-    whCtx,
-    "priceUpserted",
-    "products/mutations/upsertPrice",
-    {
-      stripePriceId: price.id,
-      productId: internalProduct._id as string,
-      stripeProductId,
-      nickname: price.nickname ?? undefined,
-      unitAmount: price.unit_amount ?? 0,
-      currency: price.currency,
-      active: price.active,
-      type: price.type,
-      interval: price.recurring?.interval,
-      intervalCount: price.recurring?.interval_count ?? undefined,
-      metadata: price.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, "priceUpserted", {
+    stripePriceId: price.id,
+    productId: internalProduct._id as string,
+    stripeProductId,
+    nickname: price.nickname ?? undefined,
+    unitAmount: price.unit_amount ?? 0,
+    currency: price.currency,
+    active: price.active,
+    type: price.type,
+    interval: price.recurring?.interval,
+    intervalCount: price.recurring?.interval_count ?? undefined,
+    metadata: price.metadata ?? undefined,
+  });
 }
 
 async function upsertSubscriptionFromStripe(
@@ -185,28 +174,23 @@ async function upsertSubscriptionFromStripe(
       ? subscription.customer
       : (subscription.customer?.id ?? undefined);
 
-  await dispatchUpsert(
-    whCtx,
-    dispatcherName,
-    "billing/mutations/upsertSubscription",
-    {
-      stripeSubscriptionId: subscription.id,
-      accountId,
-      userId,
-      orgId,
-      status: subscription.status,
-      priceId,
-      quantity: firstItem?.quantity ?? undefined,
-      currentPeriodStart: epochToIso(periodStart),
-      currentPeriodEnd: epochToIso(periodEnd),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      canceledAt: epochToIso(subscription.canceled_at),
-      isTrialing: trial.isTrialing,
-      trialStart: trial.trialStart,
-      trialEnd: trial.trialEnd,
-      metadata: subscription.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, dispatcherName, {
+    stripeSubscriptionId: subscription.id,
+    accountId,
+    userId,
+    orgId,
+    status: subscription.status,
+    priceId,
+    quantity: firstItem?.quantity ?? undefined,
+    currentPeriodStart: epochToIso(periodStart),
+    currentPeriodEnd: epochToIso(periodEnd),
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    canceledAt: epochToIso(subscription.canceled_at),
+    isTrialing: trial.isTrialing,
+    trialStart: trial.trialStart,
+    trialEnd: trial.trialEnd,
+    metadata: subscription.metadata ?? undefined,
+  });
 }
 
 async function handleCheckoutEvent(
@@ -238,26 +222,21 @@ async function handleCheckoutEvent(
     // First time seeing this session
   }
 
-  await dispatchUpsert(
-    whCtx,
-    "checkoutSessionUpserted",
-    "billing/mutations/upsertCheckoutSession",
-    {
-      stripeSessionId: session.id,
-      userId,
-      orgId,
-      accountId:
-        typeof session.customer === "string"
-          ? session.customer
-          : (session.customer?.id ?? undefined),
-      mode: (session.mode ?? "payment") as "payment" | "subscription" | "setup",
-      status: (session.status ?? "open") as "open" | "complete" | "expired",
-      clientSecret: session.client_secret ?? undefined,
-      url: session.url ?? undefined,
-      priceId,
-      metadata: mergedMetadata,
-    },
-  );
+  await dispatchUpsert(whCtx, "checkoutSessionUpserted", {
+    stripeSessionId: session.id,
+    userId,
+    orgId,
+    accountId:
+      typeof session.customer === "string"
+        ? session.customer
+        : (session.customer?.id ?? undefined),
+    mode: (session.mode ?? "payment") as "payment" | "subscription" | "setup",
+    status: (session.status ?? "open") as "open" | "complete" | "expired",
+    clientSecret: session.client_secret ?? undefined,
+    url: session.url ?? undefined,
+    priceId,
+    metadata: mergedMetadata,
+  });
 }
 
 async function upsertInvoiceFromStripe(
@@ -272,30 +251,25 @@ async function upsertInvoiceFromStripe(
   const subscriptionId =
     typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
 
-  await dispatchUpsert(
-    whCtx,
-    "invoiceUpserted",
-    "billing/mutations/upsertInvoice",
-    {
-      stripeInvoiceId: invoice.id!,
-      userId,
-      orgId,
-      accountId:
-        typeof invoice.customer === "string"
-          ? invoice.customer
-          : (invoice.customer?.id ?? undefined),
-      subscriptionId,
-      status: invoice.status ?? "draft",
-      currency: invoice.currency!,
-      amountDue: invoice.amount_due,
-      amountPaid: invoice.amount_paid,
-      hostedInvoiceUrl: invoice.hosted_invoice_url ?? undefined,
-      invoicePdf: invoice.invoice_pdf ?? undefined,
-      periodStart: epochToIso(invoice.period_start),
-      periodEnd: epochToIso(invoice.period_end),
-      metadata: invoice.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, "invoiceUpserted", {
+    stripeInvoiceId: invoice.id!,
+    userId,
+    orgId,
+    accountId:
+      typeof invoice.customer === "string"
+        ? invoice.customer
+        : (invoice.customer?.id ?? undefined),
+    subscriptionId,
+    status: invoice.status ?? "draft",
+    currency: invoice.currency!,
+    amountDue: invoice.amount_due,
+    amountPaid: invoice.amount_paid,
+    hostedInvoiceUrl: invoice.hosted_invoice_url ?? undefined,
+    invoicePdf: invoice.invoice_pdf ?? undefined,
+    periodStart: epochToIso(invoice.period_start),
+    periodEnd: epochToIso(invoice.period_end),
+    metadata: invoice.metadata ?? undefined,
+  });
 }
 
 async function upsertPaymentFromStripe(
@@ -322,51 +296,41 @@ async function upsertPaymentFromStripe(
     | "processing"
     | "requires_action";
 
-  await dispatchUpsert(
-    whCtx,
-    "paymentUpserted",
-    "connect/mutations/upsertPayment",
-    {
-      stripePaymentIntentId: paymentIntent.id,
-      userId,
-      orgId,
-      accountId:
-        typeof paymentIntent.customer === "string"
-          ? paymentIntent.customer
-          : (paymentIntent.customer?.id ?? undefined),
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      status,
-      metadata: paymentIntent.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, "paymentUpserted", {
+    stripePaymentIntentId: paymentIntent.id,
+    userId,
+    orgId,
+    accountId:
+      typeof paymentIntent.customer === "string"
+        ? paymentIntent.customer
+        : (paymentIntent.customer?.id ?? undefined),
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    status,
+    metadata: paymentIntent.metadata ?? undefined,
+  });
 }
 
 async function handlePayoutEvent(
   whCtx: WebhookContext,
   payout: Stripe.Payout,
 ): Promise<void> {
-  await dispatchUpsert(
-    whCtx,
-    "payoutUpserted",
-    "connect/mutations/upsertPayout",
-    {
-      stripePayoutId: payout.id,
-      accountId:
-        typeof payout.destination === "string"
-          ? payout.destination
-          : (payout.destination?.id ?? ""),
-      amount: payout.amount,
-      currency: payout.currency,
-      status: payout.status as
-        | "pending"
-        | "paid"
-        | "failed"
-        | "canceled"
-        | "in_transit",
-      arrivalDate: epochToIso(payout.arrival_date),
-      method: payout.method ?? undefined,
-      metadata: payout.metadata ?? undefined,
-    },
-  );
+  await dispatchUpsert(whCtx, "payoutUpserted", {
+    stripePayoutId: payout.id,
+    accountId:
+      typeof payout.destination === "string"
+        ? payout.destination
+        : (payout.destination?.id ?? ""),
+    amount: payout.amount,
+    currency: payout.currency,
+    status: payout.status as
+      | "pending"
+      | "paid"
+      | "failed"
+      | "canceled"
+      | "in_transit",
+    arrivalDate: epochToIso(payout.arrival_date),
+    method: payout.method ?? undefined,
+    metadata: payout.metadata ?? undefined,
+  });
 }

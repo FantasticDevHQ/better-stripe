@@ -4,7 +4,7 @@ import { deriveAccountStatus } from "../core/accountStatus.js";
 import type { V2ThinEvent } from "../types.js";
 import {
   type WebhookContext,
-  componentRef,
+  dispatchUpsert,
   extractIdentifiers,
 } from "./helpers.js";
 
@@ -29,7 +29,7 @@ export async function handleV2Event(
   whCtx: WebhookContext,
   thinEvent: V2ThinEvent,
 ): Promise<void> {
-  const { stripe, ctx, component } = whCtx;
+  const { stripe } = whCtx;
 
   if (!thinEvent.type.startsWith("v2.core.account")) {
     console.info(`[better-stripe] Unhandled V2 event type: ${thinEvent.type}`);
@@ -92,8 +92,10 @@ export async function handleV2Event(
           .join(" ") || undefined
       : undefined);
 
-  await ctx.runMutation(
-    componentRef(component, "core/mutations/upsertAccountInternal"),
+  await dispatchUpsert(
+    whCtx,
+    "accountUpserted",
+    "core/mutations/upsertAccountInternal",
     {
       stripeAccountId: account.id,
       userId: userId || account.id,

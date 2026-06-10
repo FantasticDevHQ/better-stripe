@@ -193,6 +193,18 @@ export type TriggerDispatchRef = FunctionReference<
   null
 >;
 
+/** Names of the upsert dispatcher refs in {@link TriggerApiRefs}. */
+export type TriggerDispatcherName =
+  | "accountUpserted"
+  | "productUpserted"
+  | "priceUpserted"
+  | "subscriptionUpserted"
+  | "subscriptionDeleted"
+  | "checkoutSessionUpserted"
+  | "invoiceUpserted"
+  | "paymentUpserted"
+  | "payoutUpserted";
+
 /** Internal action that runs an async hook with the committed doc. */
 export type AsyncHookRef = FunctionReference<
   "action",

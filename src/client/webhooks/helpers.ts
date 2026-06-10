@@ -4,6 +4,7 @@ import { STRIPE_API_VERSION } from "../constants.js";
 import type { Component } from "../helpers.js";
 import type { StripeApiVersion } from "../stripe-types.js";
 import type { WebhookActionCtx } from "../types.js";
+import type { TriggerDispatcherName } from "../types/triggers.js";
 
 const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
@@ -185,6 +186,28 @@ export function componentRef(component: Component, path: string) {
   const anchorPath: string = anchor[TO_REFERENCE_PATH];
   const basePath = anchorPath.split("/")[0];
   return { [TO_REFERENCE_PATH]: `${basePath}/${path}` } as any;
+}
+
+/**
+ * Run a domain upsert. When the app registered a trigger dispatcher for this
+ * domain, route through it so the sync trigger runs in the same transaction
+ * as the component write. Otherwise call the component mutation directly.
+ */
+export async function dispatchUpsert(
+  whCtx: WebhookContext,
+  dispatcherName: TriggerDispatcherName,
+  componentMutationPath: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const ref = whCtx.config?.triggers?.[dispatcherName];
+  if (ref) {
+    await whCtx.ctx.runMutation(ref, { data });
+  } else {
+    await whCtx.ctx.runMutation(
+      componentRef(whCtx.component, componentMutationPath),
+      data,
+    );
+  }
 }
 
 function findAnchorRef(component: Component): any {

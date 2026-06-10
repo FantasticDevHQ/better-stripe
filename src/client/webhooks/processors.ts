@@ -4,6 +4,7 @@ import {
   type WebhookContext,
   componentRef,
   deriveTrialFields,
+  dispatchUpsert,
   epochToIso,
   extractIdentifiers,
 } from "./helpers.js";
@@ -30,8 +31,18 @@ export async function processEvent(
       break;
     case "customer.subscription.created":
     case "customer.subscription.updated":
+      await upsertSubscriptionFromStripe(
+        whCtx,
+        obj as Stripe.Subscription,
+        "subscriptionUpserted",
+      );
+      break;
     case "customer.subscription.deleted":
-      await upsertSubscriptionFromStripe(whCtx, obj as Stripe.Subscription);
+      await upsertSubscriptionFromStripe(
+        whCtx,
+        obj as Stripe.Subscription,
+        "subscriptionDeleted",
+      );
       break;
     case "checkout.session.completed":
       await handleCheckoutEvent(whCtx, obj as Stripe.Checkout.Session);
@@ -69,11 +80,12 @@ async function handleProductEvent(
   whCtx: WebhookContext,
   product: Stripe.Product,
 ): Promise<void> {
-  const { ctx, component } = whCtx;
   const productAccount = (product as ConnectProduct).account;
 
-  await ctx.runMutation(
-    componentRef(component, "products/mutations/upsertProduct"),
+  await dispatchUpsert(
+    whCtx,
+    "productUpserted",
+    "products/mutations/upsertProduct",
     {
       stripeProductId: product.id,
       accountId:
@@ -133,8 +145,10 @@ async function handlePriceEvent(
     return;
   }
 
-  await ctx.runMutation(
-    componentRef(component, "products/mutations/upsertPrice"),
+  await dispatchUpsert(
+    whCtx,
+    "priceUpserted",
+    "products/mutations/upsertPrice",
     {
       stripePriceId: price.id,
       productId: internalProduct._id as string,
@@ -154,8 +168,8 @@ async function handlePriceEvent(
 async function upsertSubscriptionFromStripe(
   whCtx: WebhookContext,
   subscription: Stripe.Subscription,
+  dispatcherName: "subscriptionUpserted" | "subscriptionDeleted",
 ): Promise<void> {
-  const { ctx, component } = whCtx;
   const { userId, orgId } = extractIdentifiers(
     subscription.metadata as Record<string, string> | null,
   );
@@ -171,8 +185,10 @@ async function upsertSubscriptionFromStripe(
       ? subscription.customer
       : (subscription.customer?.id ?? undefined);
 
-  await ctx.runMutation(
-    componentRef(component, "billing/mutations/upsertSubscription"),
+  await dispatchUpsert(
+    whCtx,
+    dispatcherName,
+    "billing/mutations/upsertSubscription",
     {
       stripeSubscriptionId: subscription.id,
       accountId,
@@ -222,8 +238,10 @@ async function handleCheckoutEvent(
     // First time seeing this session
   }
 
-  await ctx.runMutation(
-    componentRef(component, "billing/mutations/upsertCheckoutSession"),
+  await dispatchUpsert(
+    whCtx,
+    "checkoutSessionUpserted",
+    "billing/mutations/upsertCheckoutSession",
     {
       stripeSessionId: session.id,
       userId,
@@ -246,7 +264,6 @@ async function upsertInvoiceFromStripe(
   whCtx: WebhookContext,
   invoice: Stripe.Invoice,
 ): Promise<void> {
-  const { ctx, component } = whCtx;
   const { userId, orgId } = extractIdentifiers(
     invoice.metadata as Record<string, string> | null,
   );
@@ -255,8 +272,10 @@ async function upsertInvoiceFromStripe(
   const subscriptionId =
     typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
 
-  await ctx.runMutation(
-    componentRef(component, "billing/mutations/upsertInvoice"),
+  await dispatchUpsert(
+    whCtx,
+    "invoiceUpserted",
+    "billing/mutations/upsertInvoice",
     {
       stripeInvoiceId: invoice.id!,
       userId,
@@ -283,7 +302,6 @@ async function upsertPaymentFromStripe(
   whCtx: WebhookContext,
   paymentIntent: Stripe.PaymentIntent,
 ): Promise<void> {
-  const { ctx, component } = whCtx;
   const { userId, orgId } = extractIdentifiers(
     paymentIntent.metadata as Record<string, string> | null,
   );
@@ -304,8 +322,10 @@ async function upsertPaymentFromStripe(
     | "processing"
     | "requires_action";
 
-  await ctx.runMutation(
-    componentRef(component, "connect/mutations/upsertPayment"),
+  await dispatchUpsert(
+    whCtx,
+    "paymentUpserted",
+    "connect/mutations/upsertPayment",
     {
       stripePaymentIntentId: paymentIntent.id,
       userId,
@@ -326,10 +346,10 @@ async function handlePayoutEvent(
   whCtx: WebhookContext,
   payout: Stripe.Payout,
 ): Promise<void> {
-  const { ctx, component } = whCtx;
-
-  await ctx.runMutation(
-    componentRef(component, "connect/mutations/upsertPayout"),
+  await dispatchUpsert(
+    whCtx,
+    "payoutUpserted",
+    "connect/mutations/upsertPayout",
     {
       stripePayoutId: payout.id,
       accountId:

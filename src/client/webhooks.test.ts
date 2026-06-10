@@ -897,4 +897,203 @@ describe("webhooks", () => {
       consoleSpy.mockRestore();
     });
   });
+
+  // =========================================================================
+  // Trigger dispatchers
+  // =========================================================================
+
+  describe("Trigger dispatchers", () => {
+    /** App-side refs (e.g. internal.stripe.*) are NOT component refs. */
+    function makeAppRef(path: string) {
+      return { [TO_REFERENCE_PATH]: path };
+    }
+
+    function setupHandlerWithTriggers(
+      triggers: Record<string, unknown>,
+    ): (ctx: WebhookActionCtx, request: Request) => Promise<Response> {
+      let rawHandler: any;
+      const fakeRouter = {
+        route: (opts: any) => {
+          rawHandler = opts.handler;
+        },
+      };
+      registerRoutes(fakeRouter as any, component, {
+        ...makeBaseConfig(),
+        triggers: triggers as any,
+      });
+      return rawHandler;
+    }
+
+    function makeSubscriptionEvent(type: string): any {
+      return makeV1Event(type, {
+        id: "sub_777",
+        status: "active",
+        customer: "cus_abc",
+        cancel_at_period_end: false,
+        canceled_at: null,
+        trial_start: null,
+        trial_end: null,
+        metadata: { userId: "user_42" },
+        items: {
+          data: [
+            {
+              price: { id: "price_123" },
+              quantity: 1,
+              current_period_start: 1700000000,
+              current_period_end: 1702592000,
+            },
+          ],
+        },
+      });
+    }
+
+    it("routes subscription upsert through triggers.subscriptionUpserted", async () => {
+      const subscriptionUpserted = makeAppRef(
+        "app/stripe/subscriptionUpserted",
+      );
+      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+
+      const event = makeSubscriptionEvent("customer.subscription.updated");
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const response = await triggerHandler(
+        ctx,
+        makeRequest({ type: "customer.subscription.updated" }),
+      );
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionUpserted, {
+        data: expect.objectContaining({
+          stripeSubscriptionId: "sub_777",
+          status: "active",
+          userId: "user_42",
+          priceId: "price_123",
+        }),
+      });
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        component.billing.mutations.upsertSubscription,
+        expect.anything(),
+      );
+    });
+
+    it("falls back to direct component mutation without triggers", async () => {
+      const event = makeSubscriptionEvent("customer.subscription.updated");
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const response = await handler(
+        ctx,
+        makeRequest({ type: "customer.subscription.updated" }),
+      );
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.billing.mutations.upsertSubscription,
+        expect.objectContaining({
+          stripeSubscriptionId: "sub_777",
+          status: "active",
+        }),
+      );
+    });
+
+    it("routes subscription deletion through triggers.subscriptionDeleted", async () => {
+      const subscriptionUpserted = makeAppRef(
+        "app/stripe/subscriptionUpserted",
+      );
+      const subscriptionDeleted = makeAppRef("app/stripe/subscriptionDeleted");
+      const triggerHandler = setupHandlerWithTriggers({
+        subscriptionUpserted,
+        subscriptionDeleted,
+      });
+
+      const event = makeSubscriptionEvent("customer.subscription.deleted");
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const response = await triggerHandler(
+        ctx,
+        makeRequest({ type: "customer.subscription.deleted" }),
+      );
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionDeleted, {
+        data: expect.objectContaining({ stripeSubscriptionId: "sub_777" }),
+      });
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        subscriptionUpserted,
+        expect.anything(),
+      );
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        component.billing.mutations.upsertSubscription,
+        expect.anything(),
+      );
+    });
+
+    it("routes V2 account upsert through triggers.accountUpserted", async () => {
+      const accountUpserted = makeAppRef("app/stripe/accountUpserted");
+      const triggerHandler = setupHandlerWithTriggers({ accountUpserted });
+
+      const thinEvent = makeV2ThinEvent();
+      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockAccountRetrieve.mockResolvedValue({
+        id: "acct_test_123",
+        contact_email: "test@example.com",
+        identity: {
+          business_details: { registered_name: "Test Business" },
+          country: "US",
+        },
+        metadata: { userId: "user_123" },
+        requirements: {},
+        configuration: { customer: { applied: true } },
+      });
+
+      const response = await triggerHandler(ctx, makeRequest(thinEvent));
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(accountUpserted, {
+        data: expect.objectContaining({
+          stripeAccountId: "acct_test_123",
+          userId: "user_123",
+          email: "test@example.com",
+        }),
+      });
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        component.core.mutations.upsertAccountInternal,
+        expect.anything(),
+      );
+    });
+
+    it("partial triggers: checkout falls back to direct component mutation", async () => {
+      const subscriptionUpserted = makeAppRef(
+        "app/stripe/subscriptionUpserted",
+      );
+      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+
+      const event = makeV1Event("checkout.session.completed", {
+        id: "cs_999",
+        mode: "subscription",
+        status: "complete",
+        customer: "cus_abc",
+        url: null,
+        metadata: { userId: "user_42" },
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const response = await triggerHandler(
+        ctx,
+        makeRequest({ type: "checkout.session.completed" }),
+      );
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.billing.mutations.upsertCheckoutSession,
+        expect.objectContaining({
+          stripeSessionId: "cs_999",
+          userId: "user_42",
+        }),
+      );
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        subscriptionUpserted,
+        expect.anything(),
+      );
+    });
+  });
 });

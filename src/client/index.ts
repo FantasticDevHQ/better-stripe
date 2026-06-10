@@ -28,6 +28,8 @@ import type {
   StripeComponentAccount,
   StripeComponentCheckoutSession,
   StripeComponentInvoice,
+  StripeComponentPayment,
+  StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
   StripeComponentSubscription,
@@ -990,17 +992,38 @@ export class BetterStripe {
       upsert: string;
     };
 
+    /**
+     * Build an internal mutation that upserts a component doc and then runs
+     * `dispatch` with the post-upsert doc (and the pre-upsert doc, if any).
+     * When no `dispatch` is configured the before/after doc reads are skipped
+     * and only the upsert runs.
+     */
     const createUpsertDispatcher = <T>(
+      name: string,
       spec: DispatcherSpec,
-      onCreate?: (ctx: SyncTriggerCtx, doc: T) => Promise<void>,
-      onUpdate?: (ctx: SyncTriggerCtx, newDoc: T, oldDoc: T) => Promise<void>,
+      dispatch?: (
+        ctx: SyncTriggerCtx,
+        newDoc: T,
+        oldDoc: T | null,
+      ) => Promise<void>,
     ) =>
       internalMutationGeneric({
         args: { data: v.any() },
         returns: v.null(),
         handler: async (ctx, { data }) => {
           const record = data as Record<string, unknown>;
-          const lookup = { [spec.idArg]: record[spec.idField] };
+          const id = record[spec.idField];
+          if (typeof id !== "string") {
+            throw new Error(
+              `[better-stripe] ${name}: missing ${spec.idField} in data`,
+            );
+          }
+          if (!dispatch) {
+            // No trigger configured — upsert only, skip the doc reads.
+            await ctx.runMutation(componentRef(component, spec.upsert), record);
+            return null;
+          }
+          const lookup = { [spec.idArg]: id };
           const oldDoc = (await ctx.runQuery(
             componentRef(component, spec.getter),
             lookup,
@@ -1009,15 +1032,34 @@ export class BetterStripe {
           const newDoc = (await ctx.runQuery(
             componentRef(component, spec.getter),
             lookup,
-          )) as T;
-          if (oldDoc === null) {
-            await onCreate?.(ctx as unknown as SyncTriggerCtx, newDoc);
-          } else {
-            await onUpdate?.(ctx as unknown as SyncTriggerCtx, newDoc, oldDoc);
+          )) as T | null;
+          if (newDoc === null) {
+            // Mutations read their own writes, so this cannot happen;
+            // fail loudly if it ever does.
+            throw new Error(
+              `[better-stripe] ${name}: doc not found after upsert ` +
+                `(${spec.idField}=${id})`,
+            );
           }
+          await dispatch(ctx as unknown as SyncTriggerCtx, newDoc, oldDoc);
           return null;
         },
       });
+
+    /** Standard create/update split used by most dispatchers. */
+    const splitCreateUpdate = <T>(
+      onCreate?: (ctx: SyncTriggerCtx, doc: T) => Promise<void>,
+      onUpdate?: (ctx: SyncTriggerCtx, newDoc: T, oldDoc: T) => Promise<void>,
+    ) =>
+      onCreate || onUpdate
+        ? async (ctx: SyncTriggerCtx, newDoc: T, oldDoc: T | null) => {
+            if (oldDoc === null) {
+              await onCreate?.(ctx, newDoc);
+            } else {
+              await onUpdate?.(ctx, newDoc, oldDoc);
+            }
+          }
+        : undefined;
 
     const createAsyncHook = <T>(
       handler?: (ctx: AsyncHookCtx, doc: T) => Promise<void>,
@@ -1031,134 +1073,155 @@ export class BetterStripe {
         },
       });
 
+    const onCheckoutCompleted = triggers?.checkoutSession?.onCompleted;
+    const onSubscriptionDeleted = triggers?.subscription?.onDelete;
+
     return {
       // --- Sync dispatchers: component upsert + trigger, one transaction ---
       accountUpserted: createUpsertDispatcher<StripeComponentAccount>(
+        "accountUpserted",
         {
           getter: "core/queries/getAccountByStripeId",
           idArg: "stripeAccountId",
           idField: "stripeAccountId",
           upsert: "core/mutations/upsertAccountInternal",
         },
-        triggers?.account?.onCreate,
-        triggers?.account?.onUpdate,
+        splitCreateUpdate(
+          triggers?.account?.onCreate,
+          triggers?.account?.onUpdate,
+        ),
       ),
       productUpserted: createUpsertDispatcher<StripeComponentProduct>(
+        "productUpserted",
         {
           getter: "products/queries/getProductByStripeId",
           idArg: "stripeProductId",
           idField: "stripeProductId",
           upsert: "products/mutations/upsertProduct",
         },
-        triggers?.product?.onCreate,
-        triggers?.product?.onUpdate,
+        splitCreateUpdate(
+          triggers?.product?.onCreate,
+          triggers?.product?.onUpdate,
+        ),
       ),
       priceUpserted: createUpsertDispatcher<StripeComponentPrice>(
+        "priceUpserted",
         {
           getter: "products/queries/getPriceByStripeId",
           idArg: "stripePriceId",
           idField: "stripePriceId",
           upsert: "products/mutations/upsertPrice",
         },
-        triggers?.price?.onCreate,
-        triggers?.price?.onUpdate,
+        splitCreateUpdate(triggers?.price?.onCreate, triggers?.price?.onUpdate),
       ),
       subscriptionUpserted: createUpsertDispatcher<StripeComponentSubscription>(
+        "subscriptionUpserted",
         {
           getter: "billing/queries/getSubscriptionByStripeId",
           idArg: "stripeSubscriptionId",
           idField: "stripeSubscriptionId",
           upsert: "billing/mutations/upsertSubscription",
         },
-        triggers?.subscription?.onCreate,
-        triggers?.subscription?.onUpdate,
+        splitCreateUpdate(
+          triggers?.subscription?.onCreate,
+          triggers?.subscription?.onUpdate,
+        ),
       ),
+      // Special case: marks the subscription canceled via upsert, then fires
+      // onDelete with the resulting doc. No pre-upsert read is needed.
       subscriptionDeleted: internalMutationGeneric({
         args: { data: v.any() },
         returns: v.null(),
         handler: async (ctx, { data }) => {
           const record = data as Record<string, unknown>;
+          const id = record.stripeSubscriptionId;
+          if (typeof id !== "string") {
+            throw new Error(
+              "[better-stripe] subscriptionDeleted: missing stripeSubscriptionId in data",
+            );
+          }
           await ctx.runMutation(
             componentRef(component, "billing/mutations/upsertSubscription"),
             record,
           );
+          if (!onSubscriptionDeleted) return null;
           const doc = (await ctx.runQuery(
             componentRef(
               component,
               "billing/queries/getSubscriptionByStripeId",
             ),
-            { stripeSubscriptionId: record.stripeSubscriptionId },
-          )) as StripeComponentSubscription;
-          await triggers?.subscription?.onDelete?.(
-            ctx as unknown as SyncTriggerCtx,
-            doc,
-          );
-          return null;
-        },
-      }),
-      checkoutSessionUpserted: internalMutationGeneric({
-        args: { data: v.any() },
-        returns: v.null(),
-        handler: async (ctx, { data }) => {
-          const record = data as Record<string, unknown>;
-          const lookup = { stripeSessionId: record.stripeSessionId };
-          const oldDoc = (await ctx.runQuery(
-            componentRef(
-              component,
-              "billing/queries/getCheckoutSessionByStripeId",
-            ),
-            lookup,
-          )) as StripeComponentCheckoutSession | null;
-          await ctx.runMutation(
-            componentRef(component, "billing/mutations/upsertCheckoutSession"),
-            record,
-          );
-          const newDoc = (await ctx.runQuery(
-            componentRef(
-              component,
-              "billing/queries/getCheckoutSessionByStripeId",
-            ),
-            lookup,
-          )) as StripeComponentCheckoutSession;
-          // Fire onCompleted exactly once: on the transition into "complete".
-          if (newDoc?.status === "complete" && oldDoc?.status !== "complete") {
-            await triggers?.checkoutSession?.onCompleted?.(
-              ctx as unknown as SyncTriggerCtx,
-              newDoc,
+            { stripeSubscriptionId: id },
+          )) as StripeComponentSubscription | null;
+          if (doc === null) {
+            // Mutations read their own writes, so this cannot happen;
+            // fail loudly if it ever does.
+            throw new Error(
+              "[better-stripe] subscriptionDeleted: doc not found after " +
+                `upsert (stripeSubscriptionId=${id})`,
             );
           }
+          await onSubscriptionDeleted(ctx as unknown as SyncTriggerCtx, doc);
           return null;
         },
       }),
+      checkoutSessionUpserted:
+        createUpsertDispatcher<StripeComponentCheckoutSession>(
+          "checkoutSessionUpserted",
+          {
+            getter: "billing/queries/getCheckoutSessionByStripeId",
+            idArg: "stripeSessionId",
+            idField: "stripeSessionId",
+            upsert: "billing/mutations/upsertCheckoutSession",
+          },
+          onCheckoutCompleted
+            ? async (ctx, newDoc, oldDoc) => {
+                // Fire onCompleted exactly once: on the transition into
+                // "complete".
+                if (
+                  newDoc.status === "complete" &&
+                  oldDoc?.status !== "complete"
+                ) {
+                  await onCheckoutCompleted(ctx, newDoc);
+                }
+              }
+            : undefined,
+        ),
       invoiceUpserted: createUpsertDispatcher<StripeComponentInvoice>(
+        "invoiceUpserted",
         {
           getter: "billing/queries/getInvoiceByStripeId",
           idArg: "stripeInvoiceId",
           idField: "stripeInvoiceId",
           upsert: "billing/mutations/upsertInvoice",
         },
-        triggers?.invoice?.onCreate,
-        triggers?.invoice?.onUpdate,
+        splitCreateUpdate(
+          triggers?.invoice?.onCreate,
+          triggers?.invoice?.onUpdate,
+        ),
       ),
-      paymentUpserted: createUpsertDispatcher(
+      paymentUpserted: createUpsertDispatcher<StripeComponentPayment>(
+        "paymentUpserted",
         {
           getter: "connect/queries/getPaymentByStripeId",
           idArg: "stripePaymentIntentId",
           idField: "stripePaymentIntentId",
           upsert: "connect/mutations/upsertPayment",
         },
-        triggers?.payment?.onCreate,
-        undefined, // SyncTriggers.payment has no onUpdate
+        // SyncTriggers.payment has no onUpdate
+        splitCreateUpdate(triggers?.payment?.onCreate, undefined),
       ),
-      payoutUpserted: createUpsertDispatcher(
+      payoutUpserted: createUpsertDispatcher<StripeComponentPayout>(
+        "payoutUpserted",
         {
           getter: "connect/queries/getPayoutByStripeId",
           idArg: "stripePayoutId",
           idField: "stripePayoutId",
           upsert: "connect/mutations/upsertPayout",
         },
-        triggers?.payout?.onCreate,
-        triggers?.payout?.onUpdate,
+        splitCreateUpdate(
+          triggers?.payout?.onCreate,
+          triggers?.payout?.onUpdate,
+        ),
       ),
 
       // --- Async hook wrappers (scheduled by the webhook handler) ---

@@ -417,8 +417,15 @@ describe("BetterStripe", () => {
     // Registered Convex functions expose their raw handler via `_handler`
     // (set by convex/server's registration impl) — invoke dispatchers that way.
     const invokeHandler = (fn: unknown, ctx: unknown, args: unknown) =>
-      (fn as { _handler: (ctx: unknown, args: unknown) => Promise<null> })
-        ._handler(ctx, args);
+      (
+        fn as { _handler: (ctx: unknown, args: unknown) => Promise<null> }
+      )._handler(ctx, args);
+
+    // Component refs expose their function path via the toReferencePath
+    // symbol (e.g. "_reference/childComponent/betterStripe/billing/...").
+    // Asserting on the path suffix catches typo'd dispatcher spec paths.
+    const refPath = (ref: unknown): string =>
+      (ref as Record<symbol, string>)[Symbol.for("toReferencePath")];
 
     it("returns all 18 TriggerApiRefs keys (9 dispatchers + 9 after* hooks)", () => {
       const bs = new BetterStripe(components.betterStripe, {
@@ -480,16 +487,24 @@ describe("BetterStripe", () => {
         data: { stripeSubscriptionId: "sub_1", status: "active" },
       });
 
-      // Component upsert performed exactly once
+      // Component upsert performed exactly once, against the right function
       expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(mockCtx.runMutation).toHaveBeenCalledWith(expect.anything(), {
+      const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
+      expect(refPath(upsertRef)).toMatch(
+        /\/billing\/mutations\/upsertSubscription$/,
+      );
+      expect(upsertArgs).toEqual({
         stripeSubscriptionId: "sub_1",
         status: "active",
       });
-      // Lookup uses the Stripe id from data
-      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
-        stripeSubscriptionId: "sub_1",
-      });
+      // Both doc lookups hit the getter with the Stripe id from data
+      expect(mockCtx.runQuery).toHaveBeenCalledTimes(2);
+      for (const [getterRef, getterArgs] of mockCtx.runQuery.mock.calls) {
+        expect(refPath(getterRef)).toMatch(
+          /\/billing\/queries\/getSubscriptionByStripeId$/,
+        );
+        expect(getterArgs).toEqual({ stripeSubscriptionId: "sub_1" });
+      }
       expect(onCreate).toHaveBeenCalledTimes(1);
       expect(onCreate).toHaveBeenCalledWith(mockCtx, newDoc);
       expect(onUpdate).not.toHaveBeenCalled();
@@ -531,6 +546,34 @@ describe("BetterStripe", () => {
       const newDoc = { stripeSessionId: "cs_1", status: "complete" };
       mockCtx.runQuery
         .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "open" })
+        .mockResolvedValueOnce(newDoc);
+
+      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
+        data: { stripeSessionId: "cs_1", status: "complete" },
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      expect(refPath(mockCtx.runMutation.mock.calls[0][0])).toMatch(
+        /\/billing\/mutations\/upsertCheckoutSession$/,
+      );
+      expect(refPath(mockCtx.runQuery.mock.calls[0][0])).toMatch(
+        /\/billing\/queries\/getCheckoutSessionByStripeId$/,
+      );
+      expect(onCompleted).toHaveBeenCalledTimes(1);
+      expect(onCompleted).toHaveBeenCalledWith(mockCtx, newDoc);
+    });
+
+    it("checkoutSessionUpserted fires onCompleted when first seen already complete (null -> complete)", async () => {
+      const onCompleted = vi.fn().mockResolvedValue(undefined);
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { checkoutSession: { onCompleted } },
+      });
+      const api = bs.triggersApi();
+
+      const newDoc = { stripeSessionId: "cs_1", status: "complete" };
+      mockCtx.runQuery
+        .mockResolvedValueOnce(null) // no prior doc
         .mockResolvedValueOnce(newDoc);
 
       await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
@@ -601,15 +644,41 @@ describe("BetterStripe", () => {
       });
 
       expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(mockCtx.runMutation).toHaveBeenCalledWith(expect.anything(), {
+      const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
+      expect(refPath(upsertRef)).toMatch(
+        /\/billing\/mutations\/upsertSubscription$/,
+      );
+      expect(upsertArgs).toEqual({
         stripeSubscriptionId: "sub_1",
         status: "canceled",
       });
-      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
-        stripeSubscriptionId: "sub_1",
-      });
+      const [getterRef, getterArgs] = mockCtx.runQuery.mock.calls[0];
+      expect(refPath(getterRef)).toMatch(
+        /\/billing\/queries\/getSubscriptionByStripeId$/,
+      );
+      expect(getterArgs).toEqual({ stripeSubscriptionId: "sub_1" });
       expect(onDelete).toHaveBeenCalledTimes(1);
       expect(onDelete).toHaveBeenCalledWith(mockCtx, doc);
+    });
+
+    it("rejects with a clear error when the Stripe id field is missing from data", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        triggers: { subscription: { onCreate: vi.fn() } },
+      });
+      const api = bs.triggersApi();
+
+      await expect(
+        invokeHandler(api.subscriptionUpserted, mockCtx, {
+          data: { status: "active" },
+        }),
+      ).rejects.toThrow(
+        "[better-stripe] subscriptionUpserted: missing stripeSubscriptionId in data",
+      );
+
+      // Nothing was written or read
+      expect(mockCtx.runMutation).not.toHaveBeenCalled();
+      expect(mockCtx.runQuery).not.toHaveBeenCalled();
     });
 
     it("propagates trigger errors so the transaction rolls back", async () => {
@@ -637,10 +706,6 @@ describe("BetterStripe", () => {
       });
       const api = bs.triggersApi();
 
-      mockCtx.runQuery
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ stripeSubscriptionId: "sub_1" });
-
       await expect(
         invokeHandler(api.subscriptionUpserted, mockCtx, {
           data: { stripeSubscriptionId: "sub_1" },
@@ -648,6 +713,8 @@ describe("BetterStripe", () => {
       ).resolves.toBeNull();
 
       expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+      // No trigger configured -> the before/after doc reads are skipped
+      expect(mockCtx.runQuery).not.toHaveBeenCalled();
     });
 
     it("afterCheckoutCompleted invokes the configured hook with (ctx, doc)", async () => {

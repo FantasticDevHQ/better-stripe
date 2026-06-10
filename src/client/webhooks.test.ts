@@ -936,6 +936,49 @@ describe("webhooks", () => {
       );
     });
 
+    it("trial_will_end events: upserts subscription with trial fields", async () => {
+      const trialStart = Math.floor(Date.now() / 1000) - 11 * 86400;
+      const trialEnd = trialStart + 14 * 86400;
+      const event = makeV1Event("customer.subscription.trial_will_end", {
+        id: "sub_trial_456",
+        status: "trialing",
+        customer: "cus_abc",
+        cancel_at_period_end: false,
+        canceled_at: null,
+        trial_start: trialStart,
+        trial_end: trialEnd,
+        metadata: { userId: "user_42" },
+        items: {
+          data: [
+            {
+              price: { id: "price_123" },
+              quantity: 1,
+              current_period_start: trialStart,
+              current_period_end: trialEnd,
+            },
+          ],
+        },
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const request = makeRequest({
+        type: "customer.subscription.trial_will_end",
+      });
+      const response = await handler(ctx, request);
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.billing.mutations.upsertSubscription,
+        expect.objectContaining({
+          stripeSubscriptionId: "sub_trial_456",
+          isTrialing: true,
+          trialStart: new Date(trialStart * 1000).toISOString(),
+          trialEnd: new Date(trialEnd * 1000).toISOString(),
+          userId: "user_42",
+        }),
+      );
+    });
+
     it("unhandled event type: logs and returns 200", async () => {
       const event = makeV1Event("some.unknown.event", { id: "obj_999" });
       mockConstructEventAsync.mockResolvedValue(event);
@@ -1356,7 +1399,39 @@ describe("webhooks", () => {
       );
     });
 
-    it("no scheduler on ctx: does not throw, still returns 200", async () => {
+    it("customer.subscription.trial_will_end schedules afterTrialEnding with the subscription doc", async () => {
+      const afterTrialEnding = makeAppRef("app/stripe/afterTrialEnding");
+      const runAfter = vi.fn().mockResolvedValue(undefined);
+      const schedCtx = createMockCtx({ scheduler: { runAfter } });
+
+      const subDoc = {
+        _id: "doc_sub_trial",
+        stripeSubscriptionId: "sub_hook_777",
+        isTrialing: true,
+      };
+      (schedCtx.runQuery as Mock).mockResolvedValue(subDoc);
+
+      const triggerHandler = setupHandlerWithTriggers({ afterTrialEnding });
+      mockConstructEventAsync.mockResolvedValue(
+        makeSubscriptionEvent("customer.subscription.trial_will_end"),
+      );
+
+      const response = await triggerHandler(
+        schedCtx,
+        makeRequest({ type: "customer.subscription.trial_will_end" }),
+      );
+      expect(response.status).toBe(200);
+
+      expect(schedCtx.runQuery).toHaveBeenCalledWith(
+        component.billing.queries.getSubscriptionByStripeId,
+        { stripeSubscriptionId: "sub_hook_777" },
+      );
+      expect(runAfter).toHaveBeenCalledWith(0, afterTrialEnding, {
+        doc: subDoc,
+      });
+    });
+
+    it("no scheduler on ctx: warns, does not throw, still returns 200", async () => {
       const afterCheckoutCompleted = makeAppRef(
         "app/stripe/afterCheckoutCompleted",
       );
@@ -1364,6 +1439,8 @@ describe("webhooks", () => {
       (plainCtx.runQuery as Mock).mockResolvedValue({
         stripeSessionId: "cs_hook_123",
       });
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const triggerHandler = setupHandlerWithTriggers({
         afterCheckoutCompleted,
@@ -1375,6 +1452,12 @@ describe("webhooks", () => {
         makeRequest({ type: "checkout.session.completed" }),
       );
       expect(response.status).toBe(200);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Async hook afterCheckoutCompleted configured but ctx.scheduler unavailable",
+        ),
+      );
+      warnSpy.mockRestore();
     });
 
     it("no matching hook ref in config.triggers: does not schedule, returns 200", async () => {

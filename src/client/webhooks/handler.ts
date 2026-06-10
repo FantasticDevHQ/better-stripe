@@ -12,7 +12,7 @@ import {
   getStripeClient,
   jsonResponse,
 } from "./helpers.js";
-import { runHooks, scheduleAsyncHooks } from "./hooks.js";
+import { runHooks, scheduleAsyncHook } from "./hooks.js";
 import { processEvent } from "./processors.js";
 import { handleV2Event, verifyV2Event } from "./v2.js";
 
@@ -146,8 +146,8 @@ export async function handleWebhookRequest(
       // Ledger updates are best-effort only.
     }
 
-    // Schedule async hooks with the committed doc (never throws).
-    await scheduleAsyncHooks(whCtx, thinEvent.type, accountId);
+    // Schedule the async hook with the committed doc (never throws).
+    await scheduleAsyncHook(whCtx, thinEvent.type, accountId);
 
     try {
       await runHooks(ctx, config, thinEvent);
@@ -238,9 +238,9 @@ export async function handleWebhookRequest(
     /* ledger update best-effort */
   }
 
-  // --- Schedule async hooks with the committed doc (never throws) ---
+  // --- Schedule the async hook with the committed doc (never throws) ---
   const objectId = (event.data.object as { id?: string }).id ?? null;
-  await scheduleAsyncHooks(whCtx, event.type, objectId);
+  await scheduleAsyncHook(whCtx, event.type, objectId);
 
   // --- Run async hooks (errors must not crash the handler) ---
   try {

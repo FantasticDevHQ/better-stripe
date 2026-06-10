@@ -112,10 +112,11 @@ const V2_ACCOUNT_HOOK: HookSpec = {
 
 /**
  * Schedule the app's async hook for this event, if configured.
+ * Each event maps to at most one hook, so at most one function is scheduled.
  * Runs after the component write committed and the ledger row is marked
  * processed — failures are logged, never thrown.
  */
-export async function scheduleAsyncHooks(
+export async function scheduleAsyncHook(
   whCtx: WebhookContext,
   eventType: string,
   stripeObjectId: string | null | undefined,
@@ -126,8 +127,15 @@ export async function scheduleAsyncHooks(
   if (!spec || !stripeObjectId) return;
 
   const ref = whCtx.config?.triggers?.[spec.hook];
+  if (!ref) return;
+
   const scheduler = whCtx.ctx.scheduler;
-  if (!ref || !scheduler) return;
+  if (!scheduler) {
+    console.warn(
+      `[better-stripe] Async hook ${spec.hook} configured but ctx.scheduler unavailable — hook skipped`,
+    );
+    return;
+  }
 
   try {
     const doc = (await whCtx.ctx.runQuery(

@@ -31,6 +31,7 @@ export async function processEvent(
       break;
     case "customer.subscription.created":
     case "customer.subscription.updated":
+    case "customer.subscription.trial_will_end":
       await upsertSubscriptionFromStripe(
         whCtx,
         obj as Stripe.Subscription,

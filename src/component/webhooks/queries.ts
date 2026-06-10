@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
+import { webhookEventDocValidator } from "./validators";
 
 /**
  * Check if a Stripe event has already been processed.
@@ -8,7 +9,7 @@ import { query } from "../_generated/server";
  */
 export const getWebhookEvent = query({
   args: { stripeEventId: v.string() },
-  returns: v.any(),
+  returns: v.union(webhookEventDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("webhookEvents")
@@ -29,7 +30,7 @@ export const listWebhookEvents = query({
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(webhookEventDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 200;
     const all = await ctx.db.query("webhookEvents").order("desc").take(limit);

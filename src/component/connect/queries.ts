@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
+import { payoutStatusValidator } from "./validators";
 
 // =============================================================================
 // PAYMENT QUERIES
@@ -47,7 +48,7 @@ export const getPayoutByStripeId = query({
 export const listPayouts = query({
   args: {
     accountId: v.optional(v.string()),
-    status: v.optional(v.string()),
+    status: v.optional(payoutStatusValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
@@ -65,9 +66,10 @@ export const listPayouts = query({
     }
 
     if (args.status) {
+      const status = args.status;
       return await ctx.db
         .query("payouts")
-        .withIndex("by_status", (q) => q.eq("status", args.status as any))
+        .withIndex("by_status", (q) => q.eq("status", status))
         .take(limit);
     }
 

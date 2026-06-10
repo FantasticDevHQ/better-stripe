@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
+import { subscriptionStatusValidator } from "./validators";
 
 // =============================================================================
 // SUBSCRIPTION QUERIES
@@ -29,7 +30,7 @@ export const getSubscriptionByStripeId = query({
 
 export const listSubscriptions = query({
   args: {
-    status: v.optional(v.string()),
+    status: v.optional(subscriptionStatusValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
@@ -38,9 +39,10 @@ export const listSubscriptions = query({
     let subsQuery;
 
     if (args.status) {
+      const status = args.status;
       subsQuery = ctx.db
         .query("subscriptions")
-        .withIndex("by_status", (q) => q.eq("status", args.status as any));
+        .withIndex("by_status", (q) => q.eq("status", status));
     } else {
       subsQuery = ctx.db.query("subscriptions");
     }

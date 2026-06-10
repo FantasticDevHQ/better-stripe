@@ -613,7 +613,11 @@ export class BetterStripe {
 
   async listSubscriptions(
     ctx: RunCtx,
-    opts?: { status?: SubscriptionStatus; limit?: number },
+    opts?: {
+      stripeAccountId?: string;
+      status?: SubscriptionStatus;
+      limit?: number;
+    },
   ): Promise<StripeComponentSubscription[]> {
     return subscriptionsImpl.listSubscriptions(this.component, ctx, opts);
   }
@@ -876,7 +880,7 @@ export class BetterStripe {
 
   async listPayouts(
     ctx: RunCtx,
-    opts?: { accountId?: string; status?: PayoutStatus; limit?: number },
+    opts?: { stripeAccountId?: string; status?: PayoutStatus; limit?: number },
   ) {
     return payoutsImpl.listPayouts(this.component, ctx, opts);
   }

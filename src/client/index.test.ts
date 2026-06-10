@@ -493,6 +493,76 @@ describe("BetterStripe", () => {
     });
   });
 
+  describe("listSubscriptions", () => {
+    it("maps stripeAccountId to the component accountId arg", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listSubscriptions(mockCtx, {
+        stripeAccountId: "acct_map_sub_001",
+        status: "active",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.listSubscriptions,
+        { accountId: "acct_map_sub_001", status: "active" },
+      );
+    });
+
+    it("passes no accountId when stripeAccountId is omitted", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listSubscriptions(mockCtx, { status: "canceled" });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.billing.queries.listSubscriptions,
+        { status: "canceled" },
+      );
+    });
+  });
+
+  describe("listPayouts", () => {
+    it("maps stripeAccountId to the component accountId arg", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listPayouts(mockCtx, {
+        stripeAccountId: "acct_map_po_001",
+        status: "paid",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.connect.queries.listPayouts,
+        { accountId: "acct_map_po_001", status: "paid" },
+      );
+    });
+
+    it("passes no accountId when stripeAccountId is omitted", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listPayouts(mockCtx, { status: "pending", limit: 10 });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(
+        components.betterStripe.connect.queries.listPayouts,
+        { status: "pending", limit: 10 },
+      );
+    });
+  });
+
   // =========================================================================
   // Payment method: setDefaultPaymentMethod
   // =========================================================================

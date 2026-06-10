@@ -43,10 +43,11 @@ export async function getPayout(
 export async function listPayouts(
   component: Component,
   ctx: RunCtx,
-  opts?: { accountId?: string; status?: PayoutStatus; limit?: number },
+  opts?: { stripeAccountId?: string; status?: PayoutStatus; limit?: number },
 ) {
-  return ctx.runQuery(
-    componentRef(component, "connect/queries/listPayouts"),
-    opts ?? {},
-  );
+  const { stripeAccountId, ...rest } = opts ?? {};
+  return ctx.runQuery(componentRef(component, "connect/queries/listPayouts"), {
+    ...rest,
+    ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+  });
 }

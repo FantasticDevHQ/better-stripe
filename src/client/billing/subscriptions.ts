@@ -76,11 +76,19 @@ export async function updateSubscriptionQuantity(
 export async function listSubscriptions(
   component: Component,
   ctx: RunCtx,
-  opts?: { status?: SubscriptionStatus; limit?: number },
+  opts?: {
+    stripeAccountId?: string;
+    status?: SubscriptionStatus;
+    limit?: number;
+  },
 ): Promise<StripeComponentSubscription[]> {
+  const { stripeAccountId, ...rest } = opts ?? {};
   return (await ctx.runQuery(
     componentRef(component, "billing/queries/listSubscriptions"),
-    opts ?? {},
+    {
+      ...rest,
+      ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+    },
   )) as StripeComponentSubscription[];
 }
 

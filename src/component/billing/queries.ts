@@ -30,12 +30,24 @@ export const getSubscriptionByStripeId = query({
 
 export const listSubscriptions = query({
   args: {
+    accountId: v.optional(v.string()),
     status: v.optional(subscriptionStatusValidator),
     limit: v.optional(v.number()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
+
+    if (args.accountId) {
+      const accountId = args.accountId;
+      const subs = await ctx.db
+        .query("subscriptions")
+        .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        .take(limit);
+      if (args.status) return subs.filter((s) => s.status === args.status);
+      return subs;
+    }
+
     let subsQuery;
 
     if (args.status) {

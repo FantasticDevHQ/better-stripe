@@ -171,6 +171,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
+            accountId?: string;
             limit?: number;
             status?:
               | "active"

@@ -718,6 +718,57 @@ describe("billing — listSubscriptions with filters", () => {
 
     expect(limited).toHaveLength(2);
   });
+
+  it("filters by accountId", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_acct_a1",
+      accountId: "acct_sub_a",
+      userId: "user_sub_acct_a",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_acct_a2",
+      accountId: "acct_sub_a",
+      userId: "user_sub_acct_a",
+      status: "canceled",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_acct_b1",
+      accountId: "acct_sub_b",
+      userId: "user_sub_acct_b",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const subs = await t.query(api.billing.queries.listSubscriptions, {
+      accountId: "acct_sub_a",
+    });
+
+    expect(subs).toHaveLength(2);
+    for (const sub of subs) {
+      expect(sub.accountId).toBe("acct_sub_a");
+    }
+
+    const statusFiltered = await t.query(
+      api.billing.queries.listSubscriptions,
+      {
+        accountId: "acct_sub_a",
+        status: "active",
+      },
+    );
+
+    expect(statusFiltered).toHaveLength(1);
+    expect(statusFiltered[0].stripeSubscriptionId).toBe("sub_acct_a1");
+  });
 });
 
 describe("billing — listSubscriptionsByOrg", () => {

@@ -120,7 +120,7 @@ registerRoutes(http, components.betterStripe, {
 export default http;
 ```
 
-The `triggers: internal.stripe` line passes the function references of the dispatchers you exported in step 2 (here from `convex/stripe.ts`). When provided, webhook upserts run through those dispatchers so your sync triggers execute in the same transaction as the component write, and your async hooks are scheduled after commit. If omitted, the handler falls back to direct component upserts and no triggers fire.
+The `triggers: internal.stripe` line passes the function references of the dispatchers you exported in step 2 (here from `convex/stripe.ts`). Note that this `triggers` option takes function references — unlike the callback `triggers` on the `BetterStripe` constructor in step 2, which takes your raw handlers. When provided, webhook upserts run through those dispatchers so your sync triggers execute in the same transaction as the component write, and your async hooks are scheduled after commit. If omitted, the handler falls back to direct component upserts and no triggers fire.
 
 > **Why two webhook secrets?** Stripe requires separate event destinations for V1 snapshot events (payments, subscriptions) and V2 thin events (Connect account lifecycle). Each destination has its own signing secret. The handler uses `webhookSecret` for V1 events and `webhookSecretV2` for V2 events. See [Webhook Setup](#webhook-setup) for details.
 
@@ -631,12 +631,12 @@ const event = mockCheckoutCompleted({
 
 ### Environment Variables
 
-| Variable                   | Required    | Description                                                                                                       |
-| -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`        | Yes         | Must be passed explicitly via the `BetterStripe` constructor and `registerRoutes` (no automatic env fallback).    |
-| `STRIPE_WEBHOOK_SECRET`    | Yes         | Signing secret for the V1 snapshot event destination.                                                             |
-| `STRIPE_WEBHOOK_SECRET_V2` | Yes         | Signing secret for the V2 thin event destination (Connect account events). Falls back to `STRIPE_WEBHOOK_SECRET`. |
-| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`.          |
+| Variable                   | Required    | Description                                                                                                                                                                                             |
+| -------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`        | Yes         | Must be passed explicitly via the `BetterStripe` constructor and `registerRoutes` (no automatic env fallback).                                                                                          |
+| `STRIPE_WEBHOOK_SECRET`    | Yes         | Signing secret for the V1 snapshot event destination.                                                                                                                                                   |
+| `STRIPE_WEBHOOK_SECRET_V2` | No\*        | Signing secret for the V2 thin event destination (Connect account events). \*Required whenever your V2 destination has its own secret (the usual case); falls back to `STRIPE_WEBHOOK_SECRET` if unset. |
+| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`.                                                                                                |
 
 ### Stripe API Version
 

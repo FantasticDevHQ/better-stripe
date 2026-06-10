@@ -51,7 +51,9 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   upsertCheckoutSession: "billing/mutations/upsertCheckoutSession",
   upsertInvoice: "billing/mutations/upsertInvoice",
   // Connect
+  getPaymentByStripeId: "connect/queries/getPaymentByStripeId",
   getPayout: "connect/queries/getPayout",
+  getPayoutByStripeId: "connect/queries/getPayoutByStripeId",
   listPayouts: "connect/queries/listPayouts",
   upsertPayment: "connect/mutations/upsertPayment",
   upsertPayout: "connect/mutations/upsertPayout",

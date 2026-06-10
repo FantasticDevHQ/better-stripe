@@ -1031,6 +1031,37 @@ describe("connect — payment mutations and queries", () => {
     expect(payments).toHaveLength(1);
     expect(payments[0].status).toBe("succeeded");
   });
+
+  it("getPaymentByStripeId: returns matching payment", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertPayment, {
+      stripePaymentIntentId: "pi_by_stripe_001",
+      userId: "user_pay_003",
+      amount: 4200,
+      currency: "usd",
+      status: "succeeded",
+    });
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_by_stripe_001",
+    });
+
+    expect(payment).not.toBeNull();
+    expect(payment!.stripePaymentIntentId).toBe("pi_by_stripe_001");
+    expect(payment!.userId).toBe("user_pay_003");
+    expect(payment!.amount).toBe(4200);
+  });
+
+  it("getPaymentByStripeId: returns null for unknown id", async () => {
+    const t = convexTest(schema, modules);
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_does_not_exist",
+    });
+
+    expect(payment).toBeNull();
+  });
 });
 
 describe("connect — payout mutations and queries", () => {
@@ -1167,6 +1198,37 @@ describe("connect — payout mutations and queries", () => {
     const all = await t.query(api.connect.queries.listPayouts, {});
 
     expect(all).toHaveLength(2);
+  });
+
+  it("getPayoutByStripeId: returns matching payout", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertPayout, {
+      stripePayoutId: "po_by_stripe_001",
+      accountId: "acct_po_stripe",
+      amount: 8800,
+      currency: "usd",
+      status: "paid",
+    });
+
+    const payout = await t.query(api.connect.queries.getPayoutByStripeId, {
+      stripePayoutId: "po_by_stripe_001",
+    });
+
+    expect(payout).not.toBeNull();
+    expect(payout!.stripePayoutId).toBe("po_by_stripe_001");
+    expect(payout!.accountId).toBe("acct_po_stripe");
+    expect(payout!.amount).toBe(8800);
+  });
+
+  it("getPayoutByStripeId: returns null for unknown id", async () => {
+    const t = convexTest(schema, modules);
+
+    const payout = await t.query(api.connect.queries.getPayoutByStripeId, {
+      stripePayoutId: "po_does_not_exist",
+    });
+
+    expect(payout).toBeNull();
   });
 });
 

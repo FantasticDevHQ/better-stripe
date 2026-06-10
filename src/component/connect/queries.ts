@@ -3,6 +3,23 @@ import { v } from "convex/values";
 import { query } from "../_generated/server";
 
 // =============================================================================
+// PAYMENT QUERIES
+// =============================================================================
+
+export const getPaymentByStripeId = query({
+  args: { stripePaymentIntentId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("payments")
+      .withIndex("by_stripe_payment_intent_id", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+      )
+      .first();
+  },
+});
+
+// =============================================================================
 // PAYOUT QUERIES
 // =============================================================================
 
@@ -11,6 +28,19 @@ export const getPayout = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     return await ctx.db.get("payouts", args.payoutId);
+  },
+});
+
+export const getPayoutByStripeId = query({
+  args: { stripePayoutId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("payouts")
+      .withIndex("by_stripe_payout_id", (q) =>
+        q.eq("stripePayoutId", args.stripePayoutId),
+      )
+      .first();
   },
 });
 

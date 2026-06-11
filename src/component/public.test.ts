@@ -1628,3 +1628,101 @@ describe("regression — listProducts returns complete results beyond limit", ()
     expect(result.every((p) => p.active === false)).toBe(true);
   });
 });
+
+describe("guard — empty userId/orgId never matches user-scoped queries", () => {
+  it("getActiveSubscription({ userId: '' }) returns null even when an unattributed row exists", async () => {
+    const t = convexTest(schema, modules);
+
+    // Insert an unattributed subscription (the sentinel row written by webhook processors).
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_unattr_001",
+      userId: "",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const result = await t.query(api.billing.queries.getActiveSubscription, {
+      userId: "",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("listSubscriptionsByUser({ userId: '' }) returns [] even when an unattributed row exists", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_unattr_002",
+      userId: "",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const result = await t.query(api.billing.queries.listSubscriptionsByUser, {
+      userId: "",
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("listSubscriptionsByUser({ userId: 'user_1' }) returns only the user_1 row, not the '' row", async () => {
+    const t = convexTest(schema, modules);
+
+    // Insert one unattributed and one attributed subscription.
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_unattr_003",
+      userId: "",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_user1_001",
+      userId: "user_1",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const result = await t.query(api.billing.queries.listSubscriptionsByUser, {
+      userId: "user_1",
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].stripeSubscriptionId).toBe("sub_user1_001");
+  });
+
+  it("listInvoices({ userId: '' }) falls through to the unfiltered branch", async () => {
+    const t = convexTest(schema, modules);
+
+    // Insert one unattributed invoice and one attributed invoice.
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_unattr_001",
+      userId: "",
+      status: "paid",
+      currency: "usd",
+      amountDue: 1000,
+      amountPaid: 1000,
+    });
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_user2_001",
+      userId: "user_2",
+      status: "paid",
+      currency: "usd",
+      amountDue: 2000,
+      amountPaid: 2000,
+    });
+
+    // With userId: "" the guard causes fallthrough to the unfiltered take — both rows should appear.
+    const result = await t.query(api.billing.queries.listInvoices, {
+      userId: "",
+    });
+
+    expect(result.length).toBeGreaterThanOrEqual(2);
+    const ids = result.map((i) => i.stripeInvoiceId);
+    expect(ids).toContain("inv_unattr_001");
+    expect(ids).toContain("inv_user2_001");
+  });
+});

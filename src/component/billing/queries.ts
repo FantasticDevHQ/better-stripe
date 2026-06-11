@@ -83,6 +83,8 @@ export const listSubscriptionsByUser = query({
   },
   returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
+    if (args.userId === "") return [];
+
     // A user typically has a small number of subscriptions (current + historical).
     // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
@@ -104,6 +106,8 @@ export const listSubscriptionsByOrg = query({
   },
   returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
+    if (args.orgId === "") return [];
+
     // An org typically has a small number of subscriptions (current + historical).
     // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
@@ -125,12 +129,16 @@ export const getActiveSubscription = query({
   },
   returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
+    // Empty orgId is treated as absent.
+    const orgId = args.orgId === "" ? undefined : args.orgId;
+    if (args.userId === "" && orgId === undefined) return null;
+
     // Scoped to a single user/org — bounded by number of subscriptions per entity.
-    const subs = args.orgId
+    const subs = orgId
       ? // eslint-disable-next-line @convex-dev/no-collect-in-query
         await ctx.db
           .query("subscriptions")
-          .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
+          .withIndex("by_org_id", (q) => q.eq("orgId", orgId))
           .collect()
       : // eslint-disable-next-line @convex-dev/no-collect-in-query
         await ctx.db
@@ -215,6 +223,8 @@ export const listCheckoutSessionsByUser = query({
   },
   returns: v.array(checkoutSessionDocValidator),
   handler: async (ctx, args) => {
+    if (args.userId === "") return [];
+
     const limit = args.limit ?? 50;
 
     if (args.status !== undefined) {
@@ -280,7 +290,7 @@ export const listInvoices = query({
         .take(limit);
     }
 
-    if (args.userId !== undefined) {
+    if (args.userId !== undefined && args.userId !== "") {
       const userId = args.userId;
       if (args.status !== undefined) {
         const status = args.status;

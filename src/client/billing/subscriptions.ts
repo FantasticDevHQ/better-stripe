@@ -210,6 +210,8 @@ export async function syncAllSubscriptions(
   })) {
     try {
       const metadata = (sub.metadata ?? {}) as Record<string, string>;
+      // Returns userId "" when no userId metadata is present (e.g. created in the Stripe Dashboard).
+      // "" rows are stored but never matched by user-scoped queries.
       const userId = metadata.userId ?? metadata.user_id ?? "";
       const orgId = metadata.orgId ?? metadata.org_id ?? undefined;
 

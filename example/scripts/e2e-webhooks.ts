@@ -20,11 +20,7 @@
  * Usage: pnpm --filter ./example run e2e:webhooks
  */
 import { config } from "dotenv";
-import {
-  execFileSync,
-  spawn,
-  type ChildProcessWithoutNullStreams,
-} from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
 
 const exampleDir = resolve(import.meta.dirname, "..");
@@ -55,10 +51,12 @@ function convexEnvSet(name: string, value: string): void {
 }
 
 function stripeTrigger(event: string, apiKey: string): void {
-  execFileSync(STRIPE_BIN, ["trigger", event, "--api-key", apiKey], {
+  // Key passed via env (not argv) so it never shows up in `ps` output.
+  execFileSync(STRIPE_BIN, ["trigger", event], {
     encoding: "utf-8",
     timeout: 180_000,
     stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, STRIPE_API_KEY: apiKey },
   });
 }
 
@@ -106,7 +104,8 @@ function printTable(checks: Check[]): void {
 
 // ─── Main ────────────────────────────────────────────────────────────────
 
-let listenChild: ChildProcessWithoutNullStreams | null = null;
+// stdin is "ignore" (null), so this is not a ChildProcessWithoutNullStreams.
+let listenChild: ChildProcess | null = null;
 
 function killListen(): void {
   if (listenChild && !listenChild.killed) {
@@ -118,6 +117,11 @@ function killListen(): void {
 process.on("SIGINT", () => {
   killListen();
   process.exit(130);
+});
+
+process.on("SIGTERM", () => {
+  killListen();
+  process.exit(143);
 });
 
 async function main(): Promise<void> {
@@ -285,9 +289,7 @@ async function main(): Promise<void> {
   const ledgerHas =
     (type: string) =>
     (ledger: LedgerEvent[]): boolean =>
-      ledger.some(
-        (e) => e.eventType === type && e._creationTime >= startMs,
-      );
+      ledger.some((e) => e.eventType === type && e._creationTime >= startMs);
   const logHas =
     (source: "trigger" | "hook", kind: string) =>
     (_: LedgerEvent[], log: TriggerLogRow[]): boolean =>
@@ -401,9 +403,7 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log(
-    `\n── Polling assertions (up to ${POLL_TIMEOUT_MS / 1000}s) ──`,
-  );
+  console.log(`\n── Polling assertions (up to ${POLL_TIMEOUT_MS / 1000}s) ──`);
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   for (;;) {
     const ledger = convexRun<LedgerEvent[]>("queries:listWebhookEvents", {
@@ -455,17 +455,14 @@ function startListen(
   extraArgs: string[],
 ): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {
-    const args = [
-      "listen",
-      "--api-key",
-      apiKey,
-      "--forward-to",
-      webhookUrl,
-      ...extraArgs,
-    ];
-    console.log(`  $ stripe listen --forward-to ${webhookUrl} ${extraArgs.join(" ")}`);
+    const args = ["listen", "--forward-to", webhookUrl, ...extraArgs];
+    console.log(
+      `  $ stripe listen --forward-to ${webhookUrl} ${extraArgs.join(" ")}`,
+    );
+    // Key passed via env (not argv) so it never shows up in `ps` output.
     const child = spawn(STRIPE_BIN, args, {
       stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, STRIPE_API_KEY: apiKey },
     });
     listenChild = child;
 
@@ -474,7 +471,9 @@ function startListen(
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
-        rejectPromise(new Error(`stripe listen not Ready within 30s:\n${buffer}`));
+        rejectPromise(
+          new Error(`stripe listen not Ready within 30s:\n${buffer}`),
+        );
       }
     }, 30_000);
 

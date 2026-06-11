@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 
 /**
  * Record a sync-trigger or async-hook invocation.
@@ -21,17 +21,27 @@ export const record = internalMutation({
   },
 });
 
-/** List recent trigger-log rows, optionally filtered. Newest first. */
-export const listTriggerLog = query({
+/**
+ * List recent trigger-log rows, optionally filtered. Newest first.
+ * Internal — only the E2E test harness reads this (via `npx convex run`,
+ * which can invoke internal functions on a dev deployment).
+ */
+export const listTriggerLog = internalQuery({
   args: {
     kind: v.optional(v.string()),
     source: v.optional(v.union(v.literal("trigger"), v.literal("hook"))),
     sinceCreationTime: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const rows = await ctx.db.query("triggerLog").order("desc").take(500);
+    const kind = args.kind;
+    const rows = kind
+      ? await ctx.db
+          .query("triggerLog")
+          .withIndex("by_kind", (q) => q.eq("kind", kind))
+          .order("desc")
+          .take(500)
+      : await ctx.db.query("triggerLog").order("desc").take(500);
     return rows.filter((row) => {
-      if (args.kind && row.kind !== args.kind) return false;
       if (args.source && row.source !== args.source) return false;
       if (
         args.sinceCreationTime !== undefined &&

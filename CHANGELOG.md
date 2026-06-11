@@ -17,9 +17,11 @@
 - `TriggerApiRefs` type and `triggers` field on `RegisterRoutesConfig`.
 - React: `countryPlaceholder` i18n prop on `AccountCreateCard`.
 - Example app: trigger dispatchers wired into `registerRoutes`; billing portal session created via a component-backed action.
+- Example app: automated E2E webhook test harness (`npm run e2e:webhooks`) — fires real Stripe-signed events via `stripe trigger`/`stripe listen` against the deployed endpoint and asserts the ledger plus a new `triggerLog` table that records every sync-trigger/async-hook invocation (sync triggers write in the same transaction as the dispatcher).
 
 ### Fixed
 
+- V2 thin-event verification was broken under stripe-node v22: `webhooks.constructEventAsync` rejects thin payloads after verifying the signature, so every correctly signed `v2.core.*` event was returned a 400. `verifyV2Event` now uses `stripe.parseEventNotificationAsync`.
 - Failed webhook ledger events are reprocessed on Stripe retry instead of deduplicating forever; sync-trigger failures roll back the component upsert and return 500 so Stripe retries.
 - Async hooks now run after the upsert transaction commits, with the committed doc.
 - React rules-of-hooks violations: `useQuery` is always called, using Convex's `"skip"` sentinel in 6 conditional read hooks.

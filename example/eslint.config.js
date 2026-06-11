@@ -21,6 +21,14 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // Node CLI scripts (tsx) — same TS rules as above, but with Node globals
+  // instead of browser globals.
+  {
+    files: ["scripts/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   // Convex-specific rules for example/convex. The plugin's "recommended" preset
   // targets **/convex/**/*.ts which matches this directory automatically.
   ...convexPlugin.configs.recommended,

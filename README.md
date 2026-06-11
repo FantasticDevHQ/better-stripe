@@ -739,9 +739,9 @@ interface BetterStripeError {
 }
 ```
 
-Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, `PRICE_NOT_FOUND`, `SUBSCRIPTION_NOT_FOUND`, `CHECKOUT_CREATE_FAILED`, `CHECKOUT_NOT_FOUND`, `PAYMENT_METHOD_FAILED`, `WEBHOOK_VERIFICATION_FAILED`, `WEBHOOK_DUPLICATE_EVENT`, `STRIPE_API_ERROR`, `TEST_ENV_REQUIRED`, `INVALID_CONFIGURATION`.
+Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, `PRICE_NOT_FOUND`, `SUBSCRIPTION_NOT_FOUND`, `SUBSCRIPTION_UPDATE_FAILED`, `CHECKOUT_CREATE_FAILED`, `CHECKOUT_NOT_FOUND`, `PAYMENT_METHOD_FAILED`, `WEBHOOK_VERIFICATION_FAILED`, `WEBHOOK_DUPLICATE_EVENT`, `STRIPE_API_ERROR`, `TEST_ENV_REQUIRED`, `INVALID_CONFIGURATION`.
 
-> **Note:** error semantics are not yet uniform across the API. Newer methods such as `createAccountSession` throw structured `ConvexError(BetterStripeError)` payloads, while some older methods propagate raw Stripe SDK errors. Aligning all methods on structured errors is planned.
+> **Note:** All methods that throw their own errors or catch-and-rethrow now use structured `ConvexError(BetterStripeError)` payloads. Methods that let uncaught Stripe SDK errors propagate are a separate policy decision and not yet aligned.
 
 ## Resources
 

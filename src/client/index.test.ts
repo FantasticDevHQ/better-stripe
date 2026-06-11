@@ -1,6 +1,7 @@
 import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { isBetterStripeError } from "./errors.js";
 import { components as _components } from "./setup.test.js";
 
 const components = _components;
@@ -1091,6 +1092,135 @@ describe("BetterStripe", () => {
           ]),
         }),
       );
+    });
+  });
+
+  // =========================================================================
+  // Structured error alignment — one test per converted raw-throw site
+  // =========================================================================
+
+  describe("structured error alignment", () => {
+    it("createAccountWithOnboarding throws BetterStripeError ACCOUNT_CREATE_FAILED on config error", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      const fakeAccount = {
+        id: "acct_err",
+        applied_configurations: [],
+        configuration: {},
+        metadata: {},
+        requirements: { entries: [], summary: { minimum_deadline: { status: "no_requirements" } } },
+      };
+      mockStripeInstance.v2.core.accounts.create.mockResolvedValue(fakeAccount);
+      mockStripeInstance.v2.core.accounts.update.mockRejectedValue({
+        type: "api_error",
+        code: "resource_missing",
+        message: "config failed",
+      });
+      mockCtx.runMutation.mockResolvedValue(undefined);
+
+      let caught: unknown;
+      try {
+        await bs.createAccountWithOnboarding(mockCtx, {
+          userId: "user_123",
+          country: "US",
+          refreshUrl: "https://example.com/refresh",
+          returnUrl: "https://example.com/return",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("ACCOUNT_CREATE_FAILED");
+      expect(data.message).toContain("Failed to apply account configuration after create");
+    });
+
+    it("updateSubscriptionQuantity throws BetterStripeError SUBSCRIPTION_UPDATE_FAILED when sub has no items", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        id: "sub_no_items",
+        items: { data: [] },
+      });
+
+      let caught: unknown;
+      try {
+        await bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_no_items",
+          quantity: 2,
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("SUBSCRIPTION_UPDATE_FAILED");
+      expect(data.message).toBe("Subscription has no items");
+    });
+
+    it("createPrice throws BetterStripeError PRODUCT_NOT_FOUND when product missing from DB", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.prices.create.mockResolvedValue({
+        id: "price_new",
+        nickname: null,
+        unit_amount: 500,
+        currency: "usd",
+        active: true,
+        metadata: {},
+      });
+      // runQuery returns null — product not found in component DB
+      mockCtx.runQuery.mockResolvedValue(null);
+
+      let caught: unknown;
+      try {
+        await bs.createPrice(mockCtx, {
+          stripeProductId: "prod_missing",
+          unitAmount: 500,
+          currency: "usd",
+          type: "one_time",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("PRODUCT_NOT_FOUND");
+      expect(data.message).toContain("prod_missing");
+    });
+
+    it("setDefaultPaymentMethod throws BetterStripeError PAYMENT_METHOD_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      let caught: unknown;
+      try {
+        await bs.setDefaultPaymentMethod(mockCtx, {
+          stripeAccountId: "acct_123",
+          paymentMethodId: "pm_123",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("PAYMENT_METHOD_FAILED");
+      expect(data.message).toContain("setDefaultPaymentMethod is not yet implemented");
     });
   });
 });

@@ -6,6 +6,7 @@ export type BetterStripeErrorCode =
   | "PRODUCT_NOT_FOUND"
   | "PRICE_NOT_FOUND"
   | "SUBSCRIPTION_NOT_FOUND"
+  | "SUBSCRIPTION_UPDATE_FAILED"
   | "CHECKOUT_CREATE_FAILED"
   | "CHECKOUT_NOT_FOUND"
   | "PAYMENT_METHOD_FAILED"
@@ -45,6 +46,9 @@ export function throwStripeError(
     };
   }
 
+  // Cast required: ConvexError constructor expects `Value` (which requires an index signature),
+  // but BetterStripeError is a concrete interface without one. The convex package's constructor
+  // typing forces this double cast.
   throw new ConvexError(errorData as unknown as string);
 }
 

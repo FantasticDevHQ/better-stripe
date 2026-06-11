@@ -1491,3 +1491,140 @@ describe("webhooks — listWebhookEvents", () => {
     expect(result[0].stripeEventId).toBe("evt_combo_2");
   });
 });
+
+// =============================================================================
+// REGRESSION: filter-after-take completeness (plan 002)
+// =============================================================================
+
+describe("regression — listSubscriptions returns complete results beyond limit", () => {
+  it("returns all active subscriptions even when canceled ones fill the default limit", async () => {
+    const t = convexTest(schema, modules);
+    const accountId = "acct_regression_sub";
+
+    // Insert 55 canceled then 5 active subscriptions for the same accountId.
+    // Old code: take(50) → JS filter → returns 0 active. New code: compound index → 5.
+    for (let i = 0; i < 55; i++) {
+      await t.mutation(api.billing.mutations.upsertSubscription, {
+        stripeSubscriptionId: `sub_canceled_${i}`,
+        accountId,
+        userId: "user_regression_sub",
+        status: "canceled",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      });
+    }
+    for (let i = 0; i < 5; i++) {
+      await t.mutation(api.billing.mutations.upsertSubscription, {
+        stripeSubscriptionId: `sub_active_${i}`,
+        accountId,
+        userId: "user_regression_sub",
+        status: "active",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      });
+    }
+
+    const result = await t.query(api.billing.queries.listSubscriptions, {
+      accountId,
+      status: "active",
+    });
+
+    expect(result).toHaveLength(5);
+    expect(result.every((s) => s.status === "active")).toBe(true);
+  });
+
+  it("respects limit when filtering by status via compound index", async () => {
+    const t = convexTest(schema, modules);
+    const accountId = "acct_regression_sub_limit";
+
+    for (let i = 0; i < 60; i++) {
+      await t.mutation(api.billing.mutations.upsertSubscription, {
+        stripeSubscriptionId: `sub_lim_active_${i}`,
+        accountId,
+        userId: "user_regression_sub_limit",
+        status: "active",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      });
+    }
+
+    const result = await t.query(api.billing.queries.listSubscriptions, {
+      accountId,
+      status: "active",
+      limit: 10,
+    });
+
+    expect(result).toHaveLength(10);
+  });
+});
+
+describe("regression — listInvoices returns complete results beyond limit (userId branch)", () => {
+  it("returns all paid invoices even when other statuses fill the default limit", async () => {
+    const t = convexTest(schema, modules);
+    const userId = "user_regression_inv";
+
+    // Insert 55 open then 5 paid invoices for the same userId.
+    for (let i = 0; i < 55; i++) {
+      await t.mutation(api.billing.mutations.upsertInvoice, {
+        stripeInvoiceId: `inv_open_${i}`,
+        userId,
+        status: "open",
+        currency: "usd",
+        amountDue: 1000,
+        amountPaid: 0,
+      });
+    }
+    for (let i = 0; i < 5; i++) {
+      await t.mutation(api.billing.mutations.upsertInvoice, {
+        stripeInvoiceId: `inv_paid_${i}`,
+        userId,
+        status: "paid",
+        currency: "usd",
+        amountDue: 1000,
+        amountPaid: 1000,
+      });
+    }
+
+    const result = await t.query(api.billing.queries.listInvoices, {
+      userId,
+      status: "paid",
+    });
+
+    expect(result).toHaveLength(5);
+    expect(result.every((i) => i.status === "paid")).toBe(true);
+  });
+});
+
+describe("regression — listProducts returns complete results beyond limit", () => {
+  it("returns all inactive products even when active ones fill the default limit", async () => {
+    const t = convexTest(schema, modules);
+    const accountId = "acct_regression_prod";
+
+    // Insert 55 active then 5 inactive products for the same accountId.
+    for (let i = 0; i < 55; i++) {
+      await t.mutation(api.products.mutations.upsertProduct, {
+        stripeProductId: `prod_active_${i}`,
+        accountId,
+        name: `Active Product ${i}`,
+        active: true,
+      });
+    }
+    for (let i = 0; i < 5; i++) {
+      await t.mutation(api.products.mutations.upsertProduct, {
+        stripeProductId: `prod_inactive_${i}`,
+        accountId,
+        name: `Inactive Product ${i}`,
+        active: false,
+      });
+    }
+
+    const result = await t.query(api.products.queries.listProducts, {
+      accountId,
+      active: false,
+    });
+
+    // Old code: take(50) → JS filter on active===false → returns 0. New: compound index → 5.
+    expect(result).toHaveLength(5);
+    expect(result.every((p) => p.active === false)).toBe(true);
+  });
+});

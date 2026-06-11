@@ -7,7 +7,9 @@ import { priceFields, productFields } from "./validators";
  */
 export const productsTable = defineTable(productFields)
   .index("by_stripe_product_id", ["stripeProductId"])
-  .index("by_account_id", ["accountId"]);
+  .index("by_account_id", ["accountId"])
+  .index("by_account_active", ["accountId", "active"])
+  .index("by_active", ["active"]);
 
 /**
  * Prices linked to products.
@@ -15,4 +17,6 @@ export const productsTable = defineTable(productFields)
 export const pricesTable = defineTable(priceFields)
   .index("by_stripe_price_id", ["stripePriceId"])
   .index("by_product_id", ["productId"])
-  .index("by_stripe_product_id", ["stripeProductId"]);
+  .index("by_stripe_product_id", ["stripeProductId"])
+  .index("by_product_active", ["productId", "active"])
+  .index("by_active", ["active"]);

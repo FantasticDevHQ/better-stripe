@@ -4,6 +4,16 @@ A reusable [Convex component](https://docs.convex.dev/components) for the Stripe
 
 Built for Convex + Next.js applications. Follows the conventions established by [`@convex-dev/stripe`](https://github.com/get-convex/stripe) and [`@convex-dev/better-auth`](https://github.com/get-convex/better-auth).
 
+## Status
+
+**Version**: `0.2.0` (pre-1.0). API may change between minor versions until 1.0.
+
+Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
+
+### Relation to `@convex-dev/stripe`
+
+This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first) with a transactional trigger system. [`@convex-dev/stripe`](https://github.com/get-convex/stripe) targets the classic Customers/V1 API. They are different data models — there is no automated migration. Choose by which Stripe API generation your app uses.
+
 ## Features
 
 - **V2 Accounts API** -- Account creation, onboarding, Connect/marketplace, merchant and recipient configurations

@@ -394,6 +394,54 @@ describe("BetterStripe", () => {
     });
   });
 
+  describe("updateSubscriptionQuantity", () => {
+    it("retrieves the subscription and updates the first item quantity", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptionItems.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionQuantity(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        quantity: 3,
+      });
+
+      expect(mockStripeInstance.subscriptions.retrieve).toHaveBeenCalledWith(
+        "sub_123",
+      );
+      expect(mockStripeInstance.subscriptionItems.update).toHaveBeenCalledWith(
+        "si_1",
+        { quantity: 3 },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("rejects when the subscription has no items and does not call update", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [] },
+      });
+
+      await expect(
+        bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          quantity: 3,
+        }),
+      ).rejects.toThrow("Subscription has no items");
+
+      expect(
+        mockStripeInstance.subscriptionItems.update,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
   // =========================================================================
   // Invoice methods
   // =========================================================================
@@ -564,6 +612,135 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // Payout: createPayout
+  // =========================================================================
+
+  describe("createPayout", () => {
+    it("calls payouts.create with the stripeAccount routing header and default currency", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.payouts.create.mockResolvedValue({ id: "po_1" });
+
+      const result = await bs.createPayout(mockCtx, {
+        stripeAccountId: "acct_1",
+        amount: 5000,
+      });
+
+      expect(mockStripeInstance.payouts.create).toHaveBeenCalledWith(
+        { amount: 5000, currency: "usd", metadata: undefined },
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ stripePayoutId: "po_1" });
+    });
+
+    it("passes through a currency override and returns stripePayoutId", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.payouts.create.mockResolvedValue({ id: "po_2" });
+
+      const result = await bs.createPayout(mockCtx, {
+        stripeAccountId: "acct_1",
+        amount: 10000,
+        currency: "gbp",
+      });
+
+      expect(mockStripeInstance.payouts.create).toHaveBeenCalledWith(
+        { amount: 10000, currency: "gbp", metadata: undefined },
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ stripePayoutId: "po_2" });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: listPaymentMethods
+  // =========================================================================
+
+  describe("listPaymentMethods", () => {
+    it("defaults to card type and uses the V2 customer_account param", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.list.mockResolvedValue({ data: [] });
+
+      await bs.listPaymentMethods(mockCtx, { stripeCustomerId: "acct_1" });
+
+      expect(mockStripeInstance.paymentMethods.list).toHaveBeenCalledWith({
+        customer_account: "acct_1",
+        type: "card",
+      });
+    });
+
+    it("passes through an explicit type", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.list.mockResolvedValue({ data: [] });
+
+      await bs.listPaymentMethods(mockCtx, {
+        stripeCustomerId: "acct_1",
+        type: "us_bank_account",
+      });
+
+      expect(mockStripeInstance.paymentMethods.list).toHaveBeenCalledWith({
+        customer_account: "acct_1",
+        type: "us_bank_account",
+      });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: attachPaymentMethod
+  // =========================================================================
+
+  describe("attachPaymentMethod", () => {
+    it("attaches with the V2 customer_account param and returns success", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.attach.mockResolvedValue({});
+
+      const result = await bs.attachPaymentMethod(mockCtx, {
+        paymentMethodId: "pm_1",
+        stripeCustomerId: "acct_1",
+      });
+
+      expect(mockStripeInstance.paymentMethods.attach).toHaveBeenCalledWith(
+        "pm_1",
+        { customer_account: "acct_1" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: detachPaymentMethod
+  // =========================================================================
+
+  describe("detachPaymentMethod", () => {
+    it("calls paymentMethods.detach with the payment method id", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.detach.mockResolvedValue({});
+
+      await bs.detachPaymentMethod(mockCtx, { paymentMethodId: "pm_1" });
+
+      expect(mockStripeInstance.paymentMethods.detach).toHaveBeenCalledWith(
+        "pm_1",
+      );
+    });
+  });
+
+  // =========================================================================
   // Payment method: setDefaultPaymentMethod
   // =========================================================================
 
@@ -578,7 +755,7 @@ describe("BetterStripe", () => {
           stripeAccountId: "acct_123",
           paymentMethodId: "pm_123",
         }),
-      ).rejects.toThrow("setDefaultPaymentMethod is not yet implemented");
+      ).rejects.toThrow("not yet implemented for V2 Accounts");
     });
   });
 

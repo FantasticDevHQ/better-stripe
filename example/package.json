@@ -9,6 +9,7 @@
     "dev:backend": "convex dev",
     "build": "tsc -b && vite build",
     "setup": "node --import tsx scripts/setup.ts",
+    "e2e:webhooks": "node --import tsx scripts/e2e-webhooks.ts",
     "typecheck": "tsc -b",
     "typecheck:convex": "npx convex dev --once",
     "lint": "eslint .",

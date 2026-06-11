@@ -192,9 +192,15 @@ Default configuration is exposed as `BetterStripe.DEFAULT_ACCOUNT_CONFIGURATION`
 | Async Hook   | `onPaymentFailed`             | Logs failed payment        |
 | Async Hook   | `onTrialEnding`               | Logs trial ending          |
 
+Every trigger and hook also records a row in the app's `triggerLog` table (`convex/triggerLogger.ts`) so the E2E webhook test can assert they actually ran — sync triggers write in the same transaction as the dispatcher mutation.
+
 ### Setup Script (`npm run setup`)
 
 The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All other setup (webhooks, seeding, syncing) is done through the Admin UI at `/admin/setup`.
+
+### E2E Webhook Test (`npm run e2e:webhooks`)
+
+`scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
 ### Webhook Processing
 
@@ -279,6 +285,7 @@ example/
 | Command                    | Description                                 |
 | -------------------------- | ------------------------------------------- |
 | `npm run setup`            | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run e2e:webhooks`     | Automated E2E webhook test (see below)      |
 | `npm run dev`              | Start Vite + Convex dev in parallel         |
 | `npm run typecheck`        | TypeScript check (frontend)                 |
 | `npm run typecheck:convex` | TypeScript check (Convex functions)         |

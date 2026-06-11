@@ -20,6 +20,7 @@ import { registerRoutes } from "./webhooks.js";
 
 const mockConstructEventAsync = vi.fn();
 const mockParseEventNotification = vi.fn();
+const mockParseEventNotificationAsync = vi.fn();
 const mockAccountRetrieve = vi.fn();
 
 vi.mock("stripe", () => {
@@ -27,6 +28,7 @@ vi.mock("stripe", () => {
     default: class StripeMock {
       webhooks = { constructEventAsync: mockConstructEventAsync };
       parseEventNotification = mockParseEventNotification;
+      parseEventNotificationAsync = mockParseEventNotificationAsync;
       v2 = { core: { accounts: { retrieve: mockAccountRetrieve } } };
       products = { retrieve: vi.fn() };
     },
@@ -511,24 +513,67 @@ describe("webhooks", () => {
       return defaultAccount;
     }
 
-    it("verifies signature via constructEventAsync", async () => {
+    it("verifies signature via parseEventNotificationAsync, not constructEventAsync", async () => {
+      // stripe-node v22+ throws if a thin payload is passed to
+      // webhooks.constructEventAsync ("Use stripe.parseEventNotificationAsync
+      // instead"), so the V2 path MUST use the thin-event API.
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks();
 
       const request = makeV2Request(thinEvent);
       await handler(ctx, request);
 
-      expect(mockConstructEventAsync).toHaveBeenCalledWith(
+      expect(mockParseEventNotificationAsync).toHaveBeenCalledWith(
         v2Body(thinEvent),
         "test_sig_v2",
         "whsec_test_123",
       );
+      expect(mockConstructEventAsync).not.toHaveBeenCalled();
+    });
+
+    it("uses webhookSecretV2 for thin-event verification when configured", async () => {
+      const thinEvent = makeV2ThinEvent();
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
+      setupV2Mocks();
+
+      let rawHandler: any;
+      const fakeRouter = {
+        route: (opts: any) => {
+          rawHandler = opts.handler;
+        },
+      };
+      registerRoutes(fakeRouter as any, component, {
+        ...makeBaseConfig(),
+        webhookSecretV2: "whsec_v2_456",
+      });
+
+      await rawHandler(ctx, makeV2Request(thinEvent));
+
+      expect(mockParseEventNotificationAsync).toHaveBeenCalledWith(
+        v2Body(thinEvent),
+        "test_sig_v2",
+        "whsec_v2_456",
+      );
+    });
+
+    it("returns 400 when thin-event verification fails", async () => {
+      const thinEvent = makeV2ThinEvent();
+      mockParseEventNotificationAsync.mockRejectedValue(
+        new Error("No signatures found matching the expected signature"),
+      );
+
+      const request = makeV2Request(thinEvent);
+      const response = await handler(ctx, request);
+
+      expect(response.status).toBe(400);
+      const body = await parseJson(response);
+      expect(body.error).toMatch(/signature/i);
     });
 
     it("uses parsed body as verified event data", async () => {
       const thinEvent = makeV2ThinEvent({ id: "evt_v2_parsed" });
-      mockConstructEventAsync.mockResolvedValue({});
+      mockParseEventNotificationAsync.mockResolvedValue({});
       setupV2Mocks();
 
       const request = makeV2Request(thinEvent);
@@ -545,7 +590,7 @@ describe("webhooks", () => {
 
     it("duplicate event returns 200", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       (ctx.runMutation as Mock).mockResolvedValueOnce("already_processed");
 
       const request = makeV2Request(thinEvent);
@@ -557,7 +602,7 @@ describe("webhooks", () => {
 
     it("calls upsertAccount mutation", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks();
 
       const request = makeV2Request(thinEvent);
@@ -577,7 +622,7 @@ describe("webhooks", () => {
 
     it("calls onEvent hook", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks();
 
       const onEvent = vi.fn().mockResolvedValue(undefined);
@@ -600,7 +645,7 @@ describe("webhooks", () => {
 
     it("calls typed event handler", async () => {
       const thinEvent = makeV2ThinEvent({ type: "v2.core.account.updated" });
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks();
 
       const typedHandler = vi.fn().mockResolvedValue(undefined);
@@ -623,7 +668,7 @@ describe("webhooks", () => {
 
     it("marks ledger failed on sync error", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       mockAccountRetrieve.mockRejectedValue(new Error("Stripe API down"));
 
       (ctx.runMutation as Mock)
@@ -645,7 +690,7 @@ describe("webhooks", () => {
 
     it("marks ledger processed on success", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks();
 
       const request = makeV2Request(thinEvent);
@@ -660,7 +705,7 @@ describe("webhooks", () => {
 
     it("derives pending onboarding status", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks({
         requirements: {},
         configuration: {},
@@ -679,7 +724,7 @@ describe("webhooks", () => {
 
     it("derives in_progress when requirements due", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks({
         requirements: {
           entries: [
@@ -717,7 +762,7 @@ describe("webhooks", () => {
 
     it("derives restricted when deadline is past_due", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks({
         requirements: {
           entries: [
@@ -750,7 +795,7 @@ describe("webhooks", () => {
 
     it("derives complete when configurations applied", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks({
         requirements: {},
         configuration: {
@@ -772,7 +817,7 @@ describe("webhooks", () => {
 
     it("persists missingRequirements array", async () => {
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       setupV2Mocks({
         requirements: {
           entries: [
@@ -1130,7 +1175,7 @@ describe("webhooks", () => {
       const triggerHandler = setupHandlerWithTriggers({ accountUpserted });
 
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       mockAccountRetrieve.mockResolvedValue({
         id: "acct_test_123",
         contact_email: "test@example.com",
@@ -1517,7 +1562,7 @@ describe("webhooks", () => {
       (schedCtx.runQuery as Mock).mockResolvedValue(accountDoc);
 
       const thinEvent = makeV2ThinEvent();
-      mockConstructEventAsync.mockResolvedValue(thinEvent);
+      mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
       mockAccountRetrieve.mockResolvedValue({
         id: "acct_test_123",
         contact_email: "test@example.com",

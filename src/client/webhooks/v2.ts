@@ -18,10 +18,18 @@ export async function verifyV2Event(
   signature: string,
   webhookSecret: string,
 ): Promise<V2ThinEvent> {
-  // SECURITY: Verify the webhook signature using async crypto.
-  await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+  // SECURITY: Verify the webhook signature using async crypto via the
+  // thin-event API. stripe-node v22+ rejects thin payloads passed to
+  // `webhooks.constructEventAsync` ("Use stripe.parseEventNotificationAsync
+  // instead"), so this is the only verification path that works for V2
+  // events. It also rejects V1 snapshot payloads, which can't reach here
+  // (the handler routes by event type prefix).
+  await stripe.parseEventNotificationAsync(rawBody, signature, webhookSecret);
 
-  // Signature verified — parse the raw body as a V2 thin event.
+  // Signature verified — return our own parse of the raw body. The SDK's
+  // EventNotification return value mutates `context` into a StripeContext
+  // object and attaches fetchEvent()/fetchRelatedObject() closures, which
+  // doesn't match the plain-data V2ThinEvent contract (context?: string).
   return JSON.parse(rawBody) as V2ThinEvent;
 }
 

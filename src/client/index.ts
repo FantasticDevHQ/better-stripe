@@ -3,7 +3,10 @@ import { v } from "convex/values";
 import Stripe from "stripe";
 
 import type { ComponentApi } from "../component/_generated/component.js";
-import type { SubscriptionStatus } from "../component/billing/validators.js";
+import type {
+  InvoiceStatus,
+  SubscriptionStatus,
+} from "../component/billing/validators.js";
 import type { PayoutStatus } from "../component/connect/validators.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
@@ -736,7 +739,7 @@ export class BetterStripe {
       orgId?: string;
       accountId?: string;
       subscriptionId?: string;
-      status: string;
+      status: InvoiceStatus;
       currency: string;
       amountDue: number;
       amountPaid: number;

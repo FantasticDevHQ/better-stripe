@@ -7,6 +7,8 @@ export type BillingPortalLinkProps = {
   portalUrl?: string | null;
   /** Called to create a billing portal session on demand */
   onCreateSession?: () => Promise<string | void>;
+  /** Called when onCreateSession throws; failures are also logged to the console */
+  onError?: (error: string) => void;
   label?: string;
   loadingLabel?: string;
   className?: string;
@@ -24,6 +26,7 @@ export type BillingPortalLinkProps = {
 export function BillingPortalLink({
   portalUrl,
   onCreateSession,
+  onError,
   label = "Manage billing",
   loadingLabel = "Loading...",
   className,
@@ -43,6 +46,11 @@ export function BillingPortalLink({
         if (url) {
           window.open(url, "_blank");
         }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to open billing portal";
+        console.error("[better-stripe] BillingPortalLink:", err);
+        onError?.(message);
       } finally {
         setIsLoading(false);
       }

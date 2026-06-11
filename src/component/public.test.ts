@@ -239,6 +239,22 @@ describe("billing — checkout session mutations and queries", () => {
 });
 
 describe("billing — invoice mutations and queries", () => {
+  it("rejects an invalid invoice status with a validation error", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.mutation(api.billing.mutations.upsertInvoice, {
+        stripeInvoiceId: "inv_bad_status",
+        userId: "user_030",
+        // @ts-expect-error — invalid status must be rejected by the validator
+        status: "not_a_real_status",
+        currency: "usd",
+        amountDue: 1000,
+        amountPaid: 0,
+      }),
+    ).rejects.toThrow(/Validator error/);
+  });
+
   it("upsertInvoice + listInvoices", async () => {
     const t = convexTest(schema, modules);
 

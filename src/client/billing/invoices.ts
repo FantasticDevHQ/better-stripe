@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import type { InvoiceStatus } from "../../component/billing/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { StripeComponentInvoice } from "../types.js";
@@ -52,7 +53,7 @@ export async function upsertInvoice(
     orgId?: string;
     accountId?: string;
     subscriptionId?: string;
-    status: string;
+    status: InvoiceStatus;
     currency: string;
     amountDue: number;
     amountPaid: number;

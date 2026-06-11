@@ -83,6 +83,15 @@ export const checkoutSessionDocValidator = v.object({
   ...checkoutSessionFields,
 });
 
+export const invoiceStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("open"),
+  v.literal("paid"),
+  v.literal("uncollectible"),
+  v.literal("void"),
+);
+export type InvoiceStatus = Infer<typeof invoiceStatusValidator>;
+
 /**
  * Field validators for the `invoices` table.
  * Shared between the schema definition and the doc validator so the
@@ -94,7 +103,7 @@ export const invoiceFields = {
   orgId: v.optional(v.string()),
   accountId: v.optional(v.string()),
   subscriptionId: v.optional(v.string()),
-  status: v.string(),
+  status: invoiceStatusValidator,
   currency: v.string(),
   amountDue: v.number(),
   amountPaid: v.number(),

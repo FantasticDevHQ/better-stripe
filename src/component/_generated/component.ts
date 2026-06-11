@@ -57,7 +57,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
-            status: string;
+            status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
             userId: string;
@@ -188,7 +188,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
-            status: string;
+            status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
             userId: string;
@@ -325,7 +325,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
-            status: string;
+            status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
             userId: string;

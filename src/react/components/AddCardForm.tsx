@@ -49,6 +49,12 @@ export function AddCardForm({
       } else if (paymentMethod) {
         onSuccess?.(paymentMethod.id);
       }
+    } catch (err) {
+      // createPaymentMethod normally resolves with { error }, but network
+      // failures and timeouts reject — surface those the same way.
+      const message = err instanceof Error ? err.message : "Failed to add card";
+      setError(message);
+      onError?.(message);
     } finally {
       setIsProcessing(false);
     }

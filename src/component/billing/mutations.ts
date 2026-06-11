@@ -4,6 +4,7 @@ import { mutation } from "../_generated/server";
 import {
   checkoutSessionModeValidator,
   checkoutSessionStatusValidator,
+  invoiceStatusValidator,
   subscriptionStatusValidator,
 } from "./validators";
 
@@ -116,7 +117,7 @@ export const upsertInvoice = mutation({
     orgId: v.optional(v.string()),
     accountId: v.optional(v.string()),
     subscriptionId: v.optional(v.string()),
-    status: v.string(),
+    status: invoiceStatusValidator,
     currency: v.string(),
     amountDue: v.number(),
     amountPaid: v.number(),

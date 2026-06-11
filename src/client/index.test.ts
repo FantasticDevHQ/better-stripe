@@ -981,6 +981,57 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // syncAllProducts
+  // =========================================================================
+
+  describe("syncAllProducts", () => {
+    /** Helper: returns an async iterable from an array (matches Stripe's auto-pagination API). */
+    async function* asyncIter<T>(items: T[]): AsyncIterable<T> {
+      for (const item of items) {
+        yield item;
+      }
+    }
+
+    it("calls getProductByStripeId exactly once per distinct product even with multiple prices", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.products.list.mockReturnValue(
+        asyncIter([{ id: "prod_1", name: "Product 1", active: true, description: null, metadata: {} }]),
+      );
+
+      // Three prices all belonging to the same product
+      mockStripeInstance.prices.list.mockReturnValue(
+        asyncIter([
+          { id: "price_1", product: "prod_1", active: true, currency: "usd", unit_amount: 1000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          { id: "price_2", product: "prod_1", active: true, currency: "usd", unit_amount: 2000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          { id: "price_3", product: "prod_1", active: true, currency: "usd", unit_amount: 3000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+        ]),
+      );
+
+      // Resolve query for prod_1 → an internal product
+      mockCtx.runQuery.mockResolvedValue({ _id: "internal_prod_1" });
+      // runMutation succeeds silently
+      mockCtx.runMutation.mockResolvedValue(undefined);
+
+      const result = await bs.syncAllProducts(mockCtx);
+
+      // 1 product upserted + 3 prices upserted
+      expect(result.productsSynced).toBe(1);
+      expect(result.pricesSynced).toBe(3);
+
+      // getProductByStripeId must have been queried exactly once (cache hit on 2nd/3rd price)
+      const queryCallsForGetProduct = mockCtx.runQuery.mock.calls.filter(
+        (call) =>
+          (call[1] as { stripeProductId?: string } | undefined)
+            ?.stripeProductId === "prod_1",
+      );
+      expect(queryCallsForGetProduct).toHaveLength(1);
+    });
+  });
+
+  // =========================================================================
   // syncAllAccounts
   // =========================================================================
 

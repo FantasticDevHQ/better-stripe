@@ -298,6 +298,7 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 
 - **Replay protection** -- duplicate events are detected and skipped
 - **Retry recovery** -- events whose processing failed (and rolled back) are reprocessed when Stripe retries, instead of deduplicating forever
+- **Crash recovery** -- if a delivery dies mid-processing (timeout, restart), the `processing` row goes stale after 10 minutes and the event is reprocessed on Stripe's next retry instead of deduplicating forever
 - **Failure tracking** -- failed events are marked with status and error message
 - **Observability** -- all events (including unsupported types) are logged with `ignored` status
 

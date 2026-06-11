@@ -1,6 +1,6 @@
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Data management
@@ -16,7 +16,7 @@ export async function clearAll(
 ): Promise<{ cleared: number; tables: string[] }> {
   return runMutationOrThrow(
     ctx,
-    componentRef(component, 'core/mutations/clearAllTables'),
+    componentRef(component, "core/mutations/clearAllTables"),
     {},
   );
 }

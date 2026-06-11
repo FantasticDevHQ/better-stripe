@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from "react";
 
 import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout as StripeEmbeddedCheckout,
-} from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
 export type EmbeddedCheckoutProps = {
   /** Stripe publishable key */

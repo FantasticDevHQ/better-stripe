@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type DeletePaymentMethodDialogProps = {
   isOpen: boolean;
@@ -28,19 +28,19 @@ export type DeletePaymentMethodDialogProps = {
 export function DeletePaymentMethodDialog({
   isOpen,
   methodId,
-  methodLabel = 'this payment method',
+  methodLabel = "this payment method",
   onConfirm,
   onCancel,
-  titleLabel = 'Remove payment method',
-  messageLabel = 'Are you sure you want to remove {method}?',
-  confirmLabel = 'Remove',
-  cancelLabel = 'Cancel',
+  titleLabel = "Remove payment method",
+  messageLabel = "Are you sure you want to remove {method}?",
+  confirmLabel = "Remove",
+  cancelLabel = "Cancel",
   className,
   children,
 }: DeletePaymentMethodDialogProps) {
   if (!isOpen) return null;
 
-  const message = messageLabel.replace('{method}', methodLabel);
+  const message = messageLabel.replace("{method}", methodLabel);
 
   if (children) {
     return <>{children({ isOpen, methodLabel, onConfirm, onCancel })}</>;

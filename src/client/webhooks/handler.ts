@@ -12,7 +12,7 @@ import {
   getStripeClient,
   jsonResponse,
 } from "./helpers.js";
-import { runHooks } from "./hooks.js";
+import { runHooks, scheduleAsyncHook } from "./hooks.js";
 import { processEvent } from "./processors.js";
 import { handleV2Event, verifyV2Event } from "./v2.js";
 
@@ -112,8 +112,9 @@ export async function handleWebhookRequest(
       );
     }
 
+    let accountId: string | null = null;
     try {
-      await handleV2Event(whCtx, thinEvent);
+      accountId = await handleV2Event(whCtx, thinEvent);
       console.info(`[better-stripe]   ↳ processed ${thinEvent.type}`);
     } catch (error) {
       console.error(
@@ -144,6 +145,9 @@ export async function handleWebhookRequest(
     } catch {
       // Ledger updates are best-effort only.
     }
+
+    // Schedule the async hook with the committed doc (never throws).
+    await scheduleAsyncHook(whCtx, thinEvent.type, accountId);
 
     try {
       await runHooks(ctx, config, thinEvent);
@@ -233,6 +237,10 @@ export async function handleWebhookRequest(
   } catch {
     /* ledger update best-effort */
   }
+
+  // --- Schedule the async hook with the committed doc (never throws) ---
+  const objectId = (event.data.object as { id?: string }).id ?? null;
+  await scheduleAsyncHook(whCtx, event.type, objectId);
 
   // --- Run async hooks (errors must not crash the handler) ---
   try {

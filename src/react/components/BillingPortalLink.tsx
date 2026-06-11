@@ -1,12 +1,14 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from "react";
 
 export type BillingPortalLinkProps = {
   /** URL to Stripe billing portal (from createBillingPortalSession) */
   portalUrl?: string | null;
   /** Called to create a billing portal session on demand */
   onCreateSession?: () => Promise<string | void>;
+  /** Called when onCreateSession throws; failures are also logged to the console */
+  onError?: (error: string) => void;
   label?: string;
   loadingLabel?: string;
   className?: string;
@@ -24,20 +26,33 @@ export type BillingPortalLinkProps = {
 export function BillingPortalLink({
   portalUrl,
   onCreateSession,
-  label = 'Manage billing',
-  loadingLabel = 'Loading...',
+  onError,
+  label = "Manage billing",
+  loadingLabel = "Loading...",
   className,
   children,
 }: BillingPortalLinkProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleClick = async () => {
     if (portalUrl) {
-      window.open(portalUrl, '_blank');
+      window.open(portalUrl, "_blank");
       return;
     }
-    if (onCreateSession) {
-      const url = await onCreateSession();
-      if (url) {
-        window.open(url, '_blank');
+    if (onCreateSession && !isLoading) {
+      setIsLoading(true);
+      try {
+        const url = await onCreateSession();
+        if (url) {
+          window.open(url, "_blank");
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to open billing portal";
+        console.error("[better-stripe] BillingPortalLink:", err);
+        onError?.(message);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -48,15 +63,20 @@ export function BillingPortalLink({
         {children({
           url: portalUrl ?? null,
           onClick: handleClick,
-          isLoading: false,
+          isLoading,
         })}
       </>
     );
   }
 
   return (
-    <button type="button" onClick={handleClick} className={className}>
-      {label}
+    <button
+      type="button"
+      onClick={handleClick}
+      className={className}
+      disabled={isLoading}
+    >
+      {isLoading ? loadingLabel : label}
     </button>
   );
 }

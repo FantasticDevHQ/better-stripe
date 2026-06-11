@@ -1,7 +1,7 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { mutation } from '../_generated/server';
-import { paymentStatusValidator, payoutStatusValidator } from './validators';
+import { mutation } from "../_generated/server";
+import { paymentStatusValidator, payoutStatusValidator } from "./validators";
 
 // =============================================================================
 // PAYMENT MUTATIONS
@@ -21,16 +21,16 @@ export const upsertPayment = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('payments')
-      .withIndex('by_stripe_payment_intent_id', (q) =>
-        q.eq('stripePaymentIntentId', args.stripePaymentIntentId),
+      .query("payments")
+      .withIndex("by_stripe_payment_intent_id", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch("payments", existing._id, args);
     } else {
-      await ctx.db.insert('payments', args);
+      await ctx.db.insert("payments", args);
     }
 
     return null;
@@ -55,16 +55,16 @@ export const upsertPayout = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const existing = await ctx.db
-      .query('payouts')
-      .withIndex('by_stripe_payout_id', (q) =>
-        q.eq('stripePayoutId', args.stripePayoutId),
+      .query("payouts")
+      .withIndex("by_stripe_payout_id", (q) =>
+        q.eq("stripePayoutId", args.stripePayoutId),
       )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, args);
+      await ctx.db.patch("payouts", existing._id, args);
     } else {
-      await ctx.db.insert('payouts', args);
+      await ctx.db.insert("payouts", args);
     }
 
     return null;

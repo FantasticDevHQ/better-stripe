@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
-import { useElements, useStripe } from '@stripe/react-stripe-js';
+import { useElements, useStripe } from "@stripe/react-stripe-js";
 
 /**
  * Normalized result from a Stripe confirmation operation.
@@ -39,12 +39,12 @@ export function useConfirmPayment() {
   const confirmPayment = useCallback(
     async (clientSecret: string): Promise<StripeConfirmResult> => {
       if (!stripe) {
-        return { success: false, error: 'Stripe not initialized' };
+        return { success: false, error: "Stripe not initialized" };
       }
 
       const { error } = await stripe.confirmCardPayment(clientSecret);
       if (error) {
-        return { success: false, error: error.message ?? 'Payment failed' };
+        return { success: false, error: error.message ?? "Payment failed" };
       }
       return { success: true };
     },
@@ -59,12 +59,12 @@ export function useConfirmPayment() {
   const confirmCardSetup = useCallback(
     async (clientSecret: string): Promise<StripeConfirmResult> => {
       if (!stripe) {
-        return { success: false, error: 'Stripe not initialized' };
+        return { success: false, error: "Stripe not initialized" };
       }
 
       const { error } = await stripe.confirmCardSetup(clientSecret);
       if (error) {
-        return { success: false, error: error.message ?? 'Setup failed' };
+        return { success: false, error: error.message ?? "Setup failed" };
       }
       return { success: true };
     },
@@ -80,7 +80,7 @@ export function useConfirmPayment() {
   const confirmSetup = useCallback(
     async (returnUrl?: string): Promise<StripeConfirmResult> => {
       if (!stripe || !elements) {
-        return { success: false, error: 'Stripe not initialized' };
+        return { success: false, error: "Stripe not initialized" };
       }
 
       const { error } = await stripe.confirmSetup({
@@ -88,13 +88,13 @@ export function useConfirmPayment() {
         confirmParams: {
           return_url: returnUrl ?? window.location.href,
         },
-        redirect: 'if_required',
+        redirect: "if_required",
       });
 
       if (error) {
         return {
           success: false,
-          error: error.message ?? 'Failed to confirm setup',
+          error: error.message ?? "Failed to confirm setup",
         };
       }
       return { success: true };

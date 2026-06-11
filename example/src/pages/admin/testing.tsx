@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useQuery } from "convex/react";
 import {
   CheckCircle,
   FlaskConical,
@@ -18,15 +18,15 @@ import {
   ShieldCheck,
   Trash2,
   XCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 interface LogEntry {
   timestamp: string;
   action: string;
   result: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
 }
 
 export function AdminTesting() {
@@ -36,7 +36,7 @@ export function AdminTesting() {
   const addLog = (
     action: string,
     result: string,
-    status: 'success' | 'error' = 'success',
+    status: "success" | "error" = "success",
   ) => {
     setLog((prev) => [
       {
@@ -54,10 +54,10 @@ export function AdminTesting() {
       <div>
         <h1 className="text-2xl font-bold">Testing Utilities</h1>
         <p className="text-muted-foreground mt-1">
-          Demonstrates{' '}
+          Demonstrates{" "}
           <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
             better-stripe/testing
-          </code>{' '}
+          </code>{" "}
           exports for development and testing workflows.
           {stripeMode && (
             <Badge variant="outline" className="ml-2">
@@ -77,7 +77,7 @@ export function AdminTesting() {
           <CardDescription>
             <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
               assertTestEnvironment()
-            </code>{' '}
+            </code>{" "}
             throws if called in production. Use it to guard test-only code
             paths.
           </CardDescription>
@@ -85,7 +85,7 @@ export function AdminTesting() {
         <CardContent>
           <Button
             onClick={() => {
-              addLog('assertTestEnvironment()', 'Test environment confirmed');
+              addLog("assertTestEnvironment()", "Test environment confirmed");
             }}
           >
             <Play className="mr-2 h-4 w-4" />
@@ -112,8 +112,8 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'mockCheckoutCompleted()',
-                  'Checkout session completed event fired',
+                  "mockCheckoutCompleted()",
+                  "Checkout session completed event fired",
                 );
               }}
             >
@@ -123,8 +123,8 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'mockSubscriptionUpdated()',
-                  'Subscription updated event fired',
+                  "mockSubscriptionUpdated()",
+                  "Subscription updated event fired",
                 );
               }}
             >
@@ -133,7 +133,7 @@ export function AdminTesting() {
             <Button
               variant="outline"
               onClick={() => {
-                addLog('mockAccountUpdated()', 'Account updated event fired');
+                addLog("mockAccountUpdated()", "Account updated event fired");
               }}
             >
               Account Updated
@@ -141,7 +141,7 @@ export function AdminTesting() {
             <Button
               variant="outline"
               onClick={() => {
-                addLog('mockInvoicePaid()', 'Invoice paid event fired');
+                addLog("mockInvoicePaid()", "Invoice paid event fired");
               }}
             >
               Invoice Paid
@@ -167,12 +167,12 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'createTestAccount()',
+                  "createTestAccount()",
                   JSON.stringify({
-                    stripeAccountId: 'acct_test_1',
-                    userId: 'test_user_1',
-                    country: 'US',
-                    onboardingStatus: 'complete',
+                    stripeAccountId: "acct_test_1",
+                    userId: "test_user_1",
+                    country: "US",
+                    onboardingStatus: "complete",
                   }),
                 );
               }}
@@ -183,10 +183,10 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'createTestProduct()',
+                  "createTestProduct()",
                   JSON.stringify({
-                    stripeProductId: 'prod_test_1',
-                    name: 'Test Product',
+                    stripeProductId: "prod_test_1",
+                    name: "Test Product",
                     active: true,
                   }),
                 );
@@ -198,12 +198,12 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'createTestPrice()',
+                  "createTestPrice()",
                   JSON.stringify({
-                    stripePriceId: 'price_test_1',
+                    stripePriceId: "price_test_1",
                     amount: 2900,
-                    currency: 'usd',
-                    interval: 'month',
+                    currency: "usd",
+                    interval: "month",
                   }),
                 );
               }}
@@ -214,12 +214,12 @@ export function AdminTesting() {
               variant="outline"
               onClick={() => {
                 addLog(
-                  'createTestSubscription()',
+                  "createTestSubscription()",
                   JSON.stringify({
-                    stripeSubscriptionId: 'sub_test_1',
-                    userId: 'test_user_1',
-                    status: 'active',
-                    currentPeriodEnd: '2026-04-24',
+                    stripeSubscriptionId: "sub_test_1",
+                    userId: "test_user_1",
+                    status: "active",
+                    currentPeriodEnd: "2026-04-24",
                   }),
                 );
               }}
@@ -250,7 +250,7 @@ export function AdminTesting() {
                     <span className="text-muted-foreground shrink-0 font-mono">
                       {entry.timestamp}
                     </span>
-                    {entry.status === 'success' ? (
+                    {entry.status === "success" ? (
                       <CheckCircle className="h-4 w-4 shrink-0 text-green-400" />
                     ) : (
                       <XCircle className="h-4 w-4 shrink-0 text-red-400" />

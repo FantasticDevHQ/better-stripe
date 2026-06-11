@@ -1,27 +1,28 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { query } from '../_generated/server';
+import { query } from "../_generated/server";
+import { accountDocValidator, onboardingStatusValidator } from "./validators";
 
 // =============================================================================
 // ACCOUNT QUERIES
 // =============================================================================
 
 export const getAccount = query({
-  args: { accountId: v.id('accounts') },
-  returns: v.any(),
+  args: { accountId: v.id("accounts") },
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.accountId);
+    return await ctx.db.get("accounts", args.accountId);
   },
 });
 
 export const getAccountByStripeId = query({
   args: { stripeAccountId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('accounts')
-      .withIndex('by_stripe_account_id', (q) =>
-        q.eq('stripeAccountId', args.stripeAccountId),
+      .query("accounts")
+      .withIndex("by_stripe_account_id", (q) =>
+        q.eq("stripeAccountId", args.stripeAccountId),
       )
       .first();
   },
@@ -29,36 +30,44 @@ export const getAccountByStripeId = query({
 
 export const getAccountByUserId = query({
   args: { userId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('accounts')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .query("accounts")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .first();
   },
 });
 
 export const getAccountByOrgId = query({
   args: { orgId: v.string() },
-  returns: v.any(),
+  returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('accounts')
-      .withIndex('by_org_id', (q) => q.eq('orgId', args.orgId))
+      .query("accounts")
+      .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
       .first();
   },
 });
 
 export const getAccountOnboardingStatus = query({
-  args: { accountId: v.id('accounts') },
-  returns: v.any(),
+  args: { accountId: v.id("accounts") },
+  returns: v.union(
+    v.object({
+      onboardingStatus: onboardingStatusValidator,
+      isReady: v.boolean(),
+      missingRequirements: v.array(v.string()),
+      capabilities: v.any(),
+    }),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
-    const account = await ctx.db.get(args.accountId);
+    const account = await ctx.db.get("accounts", args.accountId);
     if (!account) return null;
 
     return {
       onboardingStatus: account.onboardingStatus,
-      isReady: account.onboardingStatus === 'complete',
+      isReady: account.onboardingStatus === "complete",
       missingRequirements: account.missingRequirements ?? [],
       capabilities: account.capabilities ?? {},
     };
@@ -83,9 +92,9 @@ export const getPublishableKey = query({
 
 export const getStripeMode = query({
   args: {},
-  returns: v.union(v.literal('test'), v.literal('live')),
+  returns: v.union(v.literal("test"), v.literal("live")),
   handler: async () => {
     const secretKey = process.env.STRIPE_SECRET_KEY;
-    return secretKey?.startsWith('sk_test_') ? 'test' : 'live';
+    return secretKey?.startsWith("sk_test_") ? "test" : "live";
   },
 });

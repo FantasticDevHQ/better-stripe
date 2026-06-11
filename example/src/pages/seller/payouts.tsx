@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { StripeComponentPayout } from "@getdojo/better-stripe/react";
 import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
@@ -41,7 +42,9 @@ function statusVariant(
 }
 
 export function Payouts() {
-  const payouts = useQuery(api.queries.listPayouts);
+  const payouts = useQuery(api.queries.listPayouts) as
+    | StripeComponentPayout[]
+    | undefined;
 
   if (payouts === undefined) {
     return (
@@ -77,7 +80,7 @@ export function Payouts() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {payouts.map((payout: any) => (
+            {payouts.map((payout) => (
               <TableRow key={payout._id}>
                 <TableCell className="font-mono">
                   {payout.stripePayoutId}

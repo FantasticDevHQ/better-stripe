@@ -1,8 +1,8 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -10,33 +10,33 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useQuery } from 'convex/react';
-import { ExternalLink } from 'lucide-react';
+} from "@/components/ui/table";
+import { useQuery } from "convex/react";
+import { ExternalLink } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function statusVariant(
   status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case 'paid':
-      return 'default';
-    case 'refunded':
-      return 'secondary';
-    case 'failed':
-    case 'uncollectible':
-      return 'destructive';
-    case 'open':
-      return 'secondary';
+    case "paid":
+      return "default";
+    case "refunded":
+      return "secondary";
+    case "failed":
+    case "uncollectible":
+      return "destructive";
+    case "open":
+      return "secondary";
     default:
-      return 'outline';
+      return "outline";
   }
 }
 
 function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency.toUpperCase(),
   }).format(amount / 100);
 }
@@ -90,7 +90,7 @@ export function Invoices() {
                 <TableCell className="font-medium">
                   {formatCurrency(
                     invoice.amountPaid ?? invoice.amountDue ?? 0,
-                    invoice.currency || 'usd',
+                    invoice.currency || "usd",
                   )}
                 </TableCell>
                 <TableCell>
@@ -100,19 +100,23 @@ export function Invoices() {
                 </TableCell>
                 <TableCell className="text-right">
                   {invoice.hostedInvoiceUrl ? (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a
-                        href={invoice.hostedInvoiceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="mr-1 h-3 w-3" />
-                        View
-                      </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      render={
+                        <a
+                          href={invoice.hostedInvoiceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      }
+                    >
+                      <ExternalLink className="mr-1 h-3 w-3" />
+                      View
                     </Button>
                   ) : (
                     <span className="text-muted-foreground text-sm">
-                      {'\u2014'}
+                      {"\u2014"}
                     </span>
                   )}
                 </TableCell>

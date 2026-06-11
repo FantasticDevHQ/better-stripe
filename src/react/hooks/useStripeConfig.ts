@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import type { StripeMode } from '../../client/utils/stripeDashboardUrl.js';
-import { useStripePublishableKey } from './useStripePublishableKey.js';
+import type { StripeMode } from "../../client/utils/stripeDashboardUrl.js";
+import { useStripePublishableKey } from "./useStripePublishableKey.js";
 
 export type StripeConfig = {
   publishableKey: string | null | undefined;
@@ -20,12 +20,12 @@ export function useStripeConfig(publishableKeyQuery: any): StripeConfig {
   const isLoading = publishableKey === undefined;
   const error =
     publishableKey === null
-      ? 'Stripe configuration error. Publishable key is missing.'
+      ? "Stripe configuration error. Publishable key is missing."
       : null;
   const stripeMode: StripeMode | undefined = publishableKey
-    ? publishableKey.startsWith('pk_live_')
-      ? 'live'
-      : 'test'
+    ? publishableKey.startsWith("pk_live_")
+      ? "live"
+      : "test"
     : undefined;
   return { publishableKey, stripeMode, isLoading, error };
 }

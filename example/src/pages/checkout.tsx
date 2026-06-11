@@ -1,16 +1,16 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRole } from '@/providers/role-context';
-import { EmbeddedCheckout } from '@getdojo/better-stripe/react';
-import { useAction, useQuery } from 'convex/react';
-import { ArrowLeft } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
+import { EmbeddedCheckout } from "@getdojo/better-stripe/react";
+import { useAction, useQuery } from "convex/react";
+import { ArrowLeft } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
-import { api } from '../../convex/_generated/api';
+import { api } from "../../convex/_generated/api";
 
 function CheckoutForm({
   priceId,
@@ -24,44 +24,43 @@ function CheckoutForm({
   const createCheckout = useAction(api.actions.createCheckoutSession);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const hasInitiated = useRef(false);
 
   const initCheckout = useCallback(async () => {
     if (hasInitiated.current) return;
     hasInitiated.current = true;
-    setIsLoading(true);
     try {
       const session = await createCheckout({
         userId,
         stripePriceId: priceId,
         returnUrl:
           window.location.origin +
-          '/checkout/status?session_id={CHECKOUT_SESSION_ID}',
+          "/checkout/status?session_id={CHECKOUT_SESSION_ID}",
       });
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
       } else {
         setError(
-          'Failed to create checkout session. No client secret returned.',
+          "Failed to create checkout session. No client secret returned.",
         );
       }
     } catch (err) {
-      console.error('Checkout session error:', err);
+      console.error("Checkout session error:", err);
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to create checkout session.',
+          : "Failed to create checkout session.",
       );
-    } finally {
-      setIsLoading(false);
     }
   }, [createCheckout, userId, priceId]);
 
-  // Trigger checkout on first render via a lazy initializer pattern
-  if (!clientSecret && !error && !isLoading && !hasInitiated.current) {
+  // Kick off checkout-session creation once on mount. The `hasInitiated`
+  // ref guard inside `initCheckout` keeps it idempotent under StrictMode's
+  // double-invoked effects.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: creates the checkout session on mount
     void initCheckout();
-  }
+  }, [initCheckout]);
 
   if (error) {
     return (
@@ -87,7 +86,7 @@ function CheckoutForm({
       publishableKey={publishableKey}
       clientSecret={clientSecret}
       onComplete={() => {
-        window.location.href = '/checkout/status?session_id=complete';
+        window.location.href = "/checkout/status?session_id=complete";
       }}
     />
   );
@@ -95,7 +94,7 @@ function CheckoutForm({
 
 export function Checkout() {
   const [searchParams] = useSearchParams();
-  const priceId = searchParams.get('priceId');
+  const priceId = searchParams.get("priceId");
   const { currentUser } = useRole();
   const publishableKey = useQuery(api.queries.getPublishableKey);
 
@@ -108,8 +107,8 @@ export function Checkout() {
             Please select a price from the pricing page to continue.
           </AlertDescription>
         </Alert>
-        <Button variant="link" asChild>
-          <Link to="/">Back to pricing</Link>
+        <Button variant="link" render={<Link to="/" />}>
+          Back to pricing
         </Button>
       </div>
     );
@@ -120,7 +119,7 @@ export function Checkout() {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Checkout</h1>
         <p className="text-muted-foreground">
-          Completing purchase for price:{' '}
+          Completing purchase for price:{" "}
           <code className="bg-muted rounded px-2 py-0.5 text-sm">
             {priceId}
           </code>
@@ -145,11 +144,9 @@ export function Checkout() {
         </CardContent>
       </Card>
 
-      <Button variant="ghost" size="sm" asChild>
-        <Link to="/">
-          <ArrowLeft className="mr-1 h-3 w-3" />
-          Back to pricing
-        </Link>
+      <Button variant="ghost" size="sm" render={<Link to="/" />}>
+        <ArrowLeft className="mr-1 h-3 w-3" />
+        Back to pricing
       </Button>
     </div>
   );

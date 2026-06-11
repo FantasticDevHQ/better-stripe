@@ -1,27 +1,34 @@
-import { v } from 'convex/values';
+import { v } from "convex/values";
 
-import { query } from '../_generated/server';
+import { query } from "../_generated/server";
+import {
+  checkoutSessionDocValidator,
+  invoiceDocValidator,
+  subscriptionDocValidator,
+  subscriptionFields,
+  subscriptionStatusValidator,
+} from "./validators";
 
 // =============================================================================
 // SUBSCRIPTION QUERIES
 // =============================================================================
 
 export const getSubscription = query({
-  args: { subscriptionId: v.id('subscriptions') },
-  returns: v.any(),
+  args: { subscriptionId: v.id("subscriptions") },
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.subscriptionId);
+    return await ctx.db.get("subscriptions", args.subscriptionId);
   },
 });
 
 export const getSubscriptionByStripeId = query({
   args: { stripeSubscriptionId: v.string() },
-  returns: v.any(),
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('subscriptions')
-      .withIndex('by_stripe_subscription_id', (q) =>
-        q.eq('stripeSubscriptionId', args.stripeSubscriptionId),
+      .query("subscriptions")
+      .withIndex("by_stripe_subscription_id", (q) =>
+        q.eq("stripeSubscriptionId", args.stripeSubscriptionId),
       )
       .first();
   },
@@ -29,20 +36,33 @@ export const getSubscriptionByStripeId = query({
 
 export const listSubscriptions = query({
   args: {
-    status: v.optional(v.string()),
+    accountId: v.optional(v.string()),
+    status: v.optional(subscriptionStatusValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
+
+    if (args.accountId) {
+      const accountId = args.accountId;
+      const subs = await ctx.db
+        .query("subscriptions")
+        .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        .take(limit);
+      if (args.status) return subs.filter((s) => s.status === args.status);
+      return subs;
+    }
+
     let subsQuery;
 
     if (args.status) {
+      const status = args.status;
       subsQuery = ctx.db
-        .query('subscriptions')
-        .withIndex('by_status', (q) => q.eq('status', args.status as any));
+        .query("subscriptions")
+        .withIndex("by_status", (q) => q.eq("status", status));
     } else {
-      subsQuery = ctx.db.query('subscriptions');
+      subsQuery = ctx.db.query("subscriptions");
     }
 
     return await subsQuery.take(limit);
@@ -54,11 +74,13 @@ export const listSubscriptionsByUser = query({
     userId: v.string(),
     status: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
+    // A user typically has a small number of subscriptions (current + historical).
+    // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .query("subscriptions")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .collect();
 
     if (args.status) {
@@ -73,11 +95,13 @@ export const listSubscriptionsByOrg = query({
     orgId: v.string(),
     status: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {
+    // An org typically has a small number of subscriptions (current + historical).
+    // eslint-disable-next-line @convex-dev/no-collect-in-query
     const subs = await ctx.db
-      .query('subscriptions')
-      .withIndex('by_org_id', (q) => q.eq('orgId', args.orgId))
+      .query("subscriptions")
+      .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
       .collect();
 
     if (args.status) {
@@ -92,29 +116,41 @@ export const getActiveSubscription = query({
     userId: v.string(),
     orgId: v.optional(v.string()),
   },
-  returns: v.any(),
+  returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
+    // Scoped to a single user/org — bounded by number of subscriptions per entity.
     const subs = args.orgId
-      ? await ctx.db
-          .query('subscriptions')
-          .withIndex('by_org_id', (q) => q.eq('orgId', args.orgId))
+      ? // eslint-disable-next-line @convex-dev/no-collect-in-query
+        await ctx.db
+          .query("subscriptions")
+          .withIndex("by_org_id", (q) => q.eq("orgId", args.orgId))
           .collect()
-      : await ctx.db
-          .query('subscriptions')
-          .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      : // eslint-disable-next-line @convex-dev/no-collect-in-query
+        await ctx.db
+          .query("subscriptions")
+          .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
           .collect();
 
     return (
-      subs.find((s) => s.status === 'active' || s.status === 'trialing') ?? null
+      subs.find((s) => s.status === "active" || s.status === "trialing") ?? null
     );
   },
 });
 
 export const getTrialStatus = query({
-  args: { subscriptionId: v.id('subscriptions') },
-  returns: v.any(),
+  args: { subscriptionId: v.id("subscriptions") },
+  returns: v.union(
+    v.object({
+      isTrialing: v.boolean(),
+      trialStart: subscriptionFields.trialStart,
+      trialEnd: subscriptionFields.trialEnd,
+      daysRemaining: v.number(),
+      status: subscriptionStatusValidator,
+    }),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
-    const sub = await ctx.db.get(args.subscriptionId);
+    const sub = await ctx.db.get("subscriptions", args.subscriptionId);
     if (!sub) return null;
 
     let daysRemaining = 0;
@@ -144,21 +180,21 @@ export const getTrialStatus = query({
 // =============================================================================
 
 export const getCheckoutSession = query({
-  args: { sessionId: v.id('checkoutSessions') },
-  returns: v.any(),
+  args: { sessionId: v.id("checkoutSessions") },
+  returns: v.union(checkoutSessionDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.sessionId);
+    return await ctx.db.get("checkoutSessions", args.sessionId);
   },
 });
 
 export const getCheckoutSessionByStripeId = query({
   args: { stripeSessionId: v.string() },
-  returns: v.any(),
+  returns: v.union(checkoutSessionDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('checkoutSessions')
-      .withIndex('by_stripe_session_id', (q) =>
-        q.eq('stripeSessionId', args.stripeSessionId),
+      .query("checkoutSessions")
+      .withIndex("by_stripe_session_id", (q) =>
+        q.eq("stripeSessionId", args.stripeSessionId),
       )
       .first();
   },
@@ -170,12 +206,12 @@ export const listCheckoutSessionsByUser = query({
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(checkoutSessionDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
     const sessions = await ctx.db
-      .query('checkoutSessions')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .query("checkoutSessions")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .take(limit);
 
     if (args.status) {
@@ -189,22 +225,46 @@ export const listCheckoutSessionsByUser = query({
 // INVOICE QUERIES
 // =============================================================================
 
+export const getInvoiceByStripeId = query({
+  args: { stripeInvoiceId: v.string() },
+  returns: v.union(invoiceDocValidator, v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("invoices")
+      .withIndex("by_stripe_invoice_id", (q) =>
+        q.eq("stripeInvoiceId", args.stripeInvoiceId),
+      )
+      .first();
+  },
+});
+
 export const listInvoices = query({
   args: {
     userId: v.optional(v.string()),
+    accountId: v.optional(v.string()),
     subscriptionId: v.optional(v.string()),
     status: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
-  returns: v.any(),
+  returns: v.array(invoiceDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
+
+    if (args.accountId) {
+      const accountId = args.accountId;
+      const invoices = await ctx.db
+        .query("invoices")
+        .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        .take(limit);
+      if (args.status) return invoices.filter((i) => i.status === args.status);
+      return invoices;
+    }
 
     if (args.userId) {
       const userId = args.userId;
       const invoices = await ctx.db
-        .query('invoices')
-        .withIndex('by_user_id', (q) => q.eq('userId', userId))
+        .query("invoices")
+        .withIndex("by_user_id", (q) => q.eq("userId", userId))
         .take(limit);
       if (args.status) return invoices.filter((i) => i.status === args.status);
       return invoices;
@@ -213,16 +273,16 @@ export const listInvoices = query({
     if (args.subscriptionId) {
       const subscriptionId = args.subscriptionId;
       const invoices = await ctx.db
-        .query('invoices')
-        .withIndex('by_subscription_id', (q) =>
-          q.eq('subscriptionId', subscriptionId),
+        .query("invoices")
+        .withIndex("by_subscription_id", (q) =>
+          q.eq("subscriptionId", subscriptionId),
         )
         .take(limit);
       if (args.status) return invoices.filter((i) => i.status === args.status);
       return invoices;
     }
 
-    const invoices = await ctx.db.query('invoices').take(limit);
+    const invoices = await ctx.db.query("invoices").take(limit);
     if (args.status) return invoices.filter((i) => i.status === args.status);
     return invoices;
   },

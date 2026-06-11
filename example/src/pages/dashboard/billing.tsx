@@ -1,25 +1,34 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAction, useQuery } from 'convex/react';
-import { Clock, ExternalLink } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRole } from "@/providers/role-context";
+import { BillingPortalLink } from "@getdojo/better-stripe/react";
+import { useAction, useQuery } from "convex/react";
+import { Clock, ExternalLink } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return '\u2014';
+  if (!dateStr) return "\u2014";
   return new Date(dateStr).toLocaleDateString();
 }
 
 export function Billing() {
   const [isCancelling, setIsCancelling] = useState(false);
+  const { currentUser } = useRole();
   const subscriptions = useQuery(api.queries.listSubscriptions);
   const invoices = useQuery(api.queries.listInvoices);
+  const account = useQuery(api.queries.getAccountByUserId, {
+    userId: currentUser.id,
+  });
   const cancelSubscription = useAction(api.actions.cancelSubscription);
+  const createBillingPortalSession = useAction(
+    api.actions.createBillingPortalSession,
+  );
 
   if (subscriptions === undefined) {
     return (
@@ -41,7 +50,7 @@ export function Billing() {
 
   // Find the first active/trialing subscription
   const subscription = subscriptions.find(
-    (s) => s.status === 'active' || s.status === 'trialing',
+    (s) => s.status === "active" || s.status === "trialing",
   );
 
   const isTrialing = subscription?.isTrialing ?? false;
@@ -55,7 +64,7 @@ export function Billing() {
         stripeSubscriptionId: subscription.stripeSubscriptionId,
       });
     } catch (err) {
-      console.error('Failed to cancel subscription:', err);
+      console.error("Failed to cancel subscription:", err);
     } finally {
       setIsCancelling(false);
     }
@@ -95,21 +104,21 @@ export function Billing() {
                   {subscription.stripeSubscriptionId}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {subscription.priceId ?? 'Unknown price'}
+                  {subscription.priceId ?? "Unknown price"}
                 </p>
               </div>
               <Badge
                 variant={
-                  subscription.cancelAtPeriodEnd ? 'destructive' : 'default'
+                  subscription.cancelAtPeriodEnd ? "destructive" : "default"
                 }
               >
                 {subscription.cancelAtPeriodEnd
-                  ? 'Cancels at period end'
+                  ? "Cancels at period end"
                   : subscription.status}
               </Badge>
             </div>
             <p className="text-muted-foreground text-sm">
-              Current period: {formatDate(subscription.currentPeriodStart)}{' '}
+              Current period: {formatDate(subscription.currentPeriodStart)}{" "}
               &mdash; {formatDate(subscription.currentPeriodEnd)}
             </p>
           </CardContent>
@@ -139,9 +148,9 @@ export function Billing() {
                     {invoice.stripeInvoiceId}
                   </span>
                   <span className="font-medium">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: invoice.currency?.toUpperCase() || 'USD',
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: invoice.currency?.toUpperCase() || "USD",
                     }).format((invoice.amountPaid ?? 0) / 100)}
                   </span>
                   <Badge variant="outline" className="capitalize">
@@ -162,18 +171,36 @@ export function Billing() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  window.open(
-                    'https://billing.stripe.com/p/login/test',
-                    '_blank',
-                  );
+              <BillingPortalLink
+                onCreateSession={async () => {
+                  if (!account) return;
+                  try {
+                    const { url } = await createBillingPortalSession({
+                      stripeAccountId: account.stripeAccountId,
+                      returnUrl: window.location.href,
+                    });
+                    // Navigate in the same tab; opening a new tab after an
+                    // await is liable to be blocked by popup blockers.
+                    window.location.assign(url);
+                  } catch (err) {
+                    console.error(
+                      "Failed to create billing portal session:",
+                      err,
+                    );
+                  }
                 }}
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open Billing Portal
-              </Button>
+                {({ onClick, isLoading }) => (
+                  <Button
+                    variant="outline"
+                    onClick={onClick}
+                    disabled={isLoading || !account}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    {isLoading ? "Opening portal..." : "Open Billing Portal"}
+                  </Button>
+                )}
+              </BillingPortalLink>
 
               {!subscription.cancelAtPeriodEnd && (
                 <Button
@@ -181,7 +208,7 @@ export function Billing() {
                   onClick={handleCancel}
                   disabled={isCancelling}
                 >
-                  {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                  {isCancelling ? "Cancelling..." : "Cancel Subscription"}
                 </Button>
               )}
             </div>

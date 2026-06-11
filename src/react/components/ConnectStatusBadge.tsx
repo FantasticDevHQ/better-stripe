@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type ConnectStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'complete'
-  | 'restricted';
+  | "pending"
+  | "in_progress"
+  | "complete"
+  | "restricted";
 
 export type ConnectStatusDetails = {
   detailsSubmitted: boolean;
@@ -31,10 +31,10 @@ export type ConnectStatusBadgeProps = {
 };
 
 const DEFAULT_LABELS: Record<ConnectStatus, string> = {
-  pending: 'Not started',
-  in_progress: 'In progress',
-  complete: 'Verified',
-  restricted: 'Restricted',
+  pending: "Not started",
+  in_progress: "In progress",
+  complete: "Verified",
+  restricted: "Restricted",
 };
 
 /**
@@ -49,7 +49,7 @@ export function ConnectStatusBadge({
 }: ConnectStatusBadgeProps) {
   const label = status
     ? (labels?.[status] ?? DEFAULT_LABELS[status])
-    : 'Unknown';
+    : "Unknown";
 
   if (children) return <>{children({ status, label, statusDetails })}</>;
   return (

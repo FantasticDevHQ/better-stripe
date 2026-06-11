@@ -1,9 +1,10 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentInvoice } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { InvoiceStatus } from "../../component/billing/validators.js";
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import type { StripeComponentInvoice } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Invoice methods
@@ -13,15 +14,20 @@ export async function listInvoices(
   component: Component,
   ctx: RunCtx,
   opts?: {
+    stripeAccountId?: string;
     userId?: string;
     subscriptionId?: string;
     status?: string;
     limit?: number;
   },
 ): Promise<StripeComponentInvoice[]> {
+  const { stripeAccountId, ...rest } = opts ?? {};
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listInvoices'),
-    opts ?? {},
+    componentRef(component, "billing/queries/listInvoices"),
+    {
+      ...rest,
+      ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+    },
   )) as StripeComponentInvoice[];
 }
 
@@ -31,7 +37,7 @@ export async function listInvoicesByUser(
   opts: { userId: string },
 ) {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listInvoices'),
+    componentRef(component, "billing/queries/listInvoices"),
     {
       userId: opts.userId,
     },
@@ -47,7 +53,7 @@ export async function upsertInvoice(
     orgId?: string;
     accountId?: string;
     subscriptionId?: string;
-    status: string;
+    status: InvoiceStatus;
     currency: string;
     amountDue: number;
     amountPaid: number;
@@ -60,10 +66,21 @@ export async function upsertInvoice(
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'billing/mutations/upsertInvoice'),
+    componentRef(component, "billing/mutations/upsertInvoice"),
     opts,
   );
   return null;
+}
+
+export async function getInvoice(
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeInvoiceId: string },
+): Promise<StripeComponentInvoice | null> {
+  return (await ctx.runQuery(
+    componentRef(component, "billing/queries/getInvoiceByStripeId"),
+    { stripeInvoiceId: opts.stripeInvoiceId },
+  )) as StripeComponentInvoice | null;
 }
 
 export async function getInvoiceFromStripe(

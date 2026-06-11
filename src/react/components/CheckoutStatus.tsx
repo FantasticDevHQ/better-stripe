@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type CheckoutStatusProps = {
   /** Checkout session status */
-  status: 'open' | 'complete' | 'expired' | undefined;
+  status: "open" | "complete" | "expired" | undefined;
   /** Whether data is still loading */
   isLoading?: boolean;
   /** Custom render for each state */
@@ -32,10 +32,10 @@ export function CheckoutStatus({
   renderComplete,
   renderExpired,
   renderLoading,
-  openLabel = 'Processing payment...',
-  completeLabel = 'Payment successful!',
-  expiredLabel = 'Checkout session expired.',
-  loadingLabel = 'Loading...',
+  openLabel = "Processing payment...",
+  completeLabel = "Payment successful!",
+  expiredLabel = "Checkout session expired.",
+  loadingLabel = "Loading...",
   className,
 }: CheckoutStatusProps) {
   if (isLoading) {
@@ -47,19 +47,19 @@ export function CheckoutStatus({
   }
 
   switch (status) {
-    case 'open':
+    case "open":
       return (
         <div className={className}>
           {renderOpen ? renderOpen() : <p>{openLabel}</p>}
         </div>
       );
-    case 'complete':
+    case "complete":
       return (
         <div className={className}>
           {renderComplete ? renderComplete() : <p>{completeLabel}</p>}
         </div>
       );
-    case 'expired':
+    case "expired":
       return (
         <div className={className}>
           {renderExpired ? renderExpired() : <p>{expiredLabel}</p>}

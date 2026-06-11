@@ -1,5 +1,5 @@
-import schema from './component/schema';
+import schema from "./component/schema";
 
 export { schema };
 
-export const modules = import.meta.glob('./component/**/*.ts');
+export const modules = import.meta.glob("./component/**/*.ts");

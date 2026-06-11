@@ -1,20 +1,20 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe('better-stripe/react PaymentElement exports', () => {
+describe("better-stripe/react PaymentElement exports", () => {
   afterEach(() => {
     vi.resetModules();
-    vi.doUnmock('@stripe/react-stripe-js');
-    vi.doUnmock('@stripe/react-stripe-js/checkout');
+    vi.doUnmock("@stripe/react-stripe-js");
+    vi.doUnmock("@stripe/react-stripe-js/checkout");
   });
 
-  it('uses checkout PaymentElement as the default export and keeps the Elements variant aliased', async () => {
-    const checkoutPaymentElement = Symbol('checkout-payment-element');
-    const elementsPaymentElement = Symbol('elements-payment-element');
+  it("uses checkout PaymentElement as the default export and keeps the Elements variant aliased", async () => {
+    const checkoutPaymentElement = Symbol("checkout-payment-element");
+    const elementsPaymentElement = Symbol("elements-payment-element");
 
-    vi.doMock('@stripe/react-stripe-js', async () => {
+    vi.doMock("@stripe/react-stripe-js", async () => {
       const actual = await vi.importActual<
-        typeof import('@stripe/react-stripe-js')
-      >('@stripe/react-stripe-js');
+        typeof import("@stripe/react-stripe-js")
+      >("@stripe/react-stripe-js");
 
       return {
         ...actual,
@@ -22,10 +22,10 @@ describe('better-stripe/react PaymentElement exports', () => {
       };
     });
 
-    vi.doMock('@stripe/react-stripe-js/checkout', async () => {
+    vi.doMock("@stripe/react-stripe-js/checkout", async () => {
       const actual = await vi.importActual<
-        typeof import('@stripe/react-stripe-js/checkout')
-      >('@stripe/react-stripe-js/checkout');
+        typeof import("@stripe/react-stripe-js/checkout")
+      >("@stripe/react-stripe-js/checkout");
 
       return {
         ...actual,
@@ -33,7 +33,7 @@ describe('better-stripe/react PaymentElement exports', () => {
       };
     });
 
-    const reactExports = await import('./index.js');
+    const reactExports = await import("./index.js");
 
     expect(reactExports.PaymentElement).toBe(checkoutPaymentElement);
     expect(reactExports.ElementsPaymentElement).toBe(elementsPaymentElement);

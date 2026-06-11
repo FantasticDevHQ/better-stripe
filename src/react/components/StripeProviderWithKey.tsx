@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from "react";
 
-import type { Appearance } from '@stripe/stripe-js';
+import type { Appearance } from "@stripe/stripe-js";
 
-import { useStripePublishableKey } from '../hooks/useStripePublishableKey.js';
-import { StripeProvider } from './StripeProvider.js';
+import { useStripePublishableKey } from "../hooks/useStripePublishableKey.js";
+import { StripeProvider } from "./StripeProvider.js";
 
 export type StripeProviderWithKeyProps = {
   /** Convex query ref that returns the Stripe publishable key. */
@@ -76,7 +76,7 @@ export function StripeProviderWithKey({
   }
 
   if (!publishableKey) {
-    const msg = 'Stripe configuration error. Please contact support.';
+    const msg = "Stripe configuration error. Please contact support.";
     return renderError ? renderError(msg) : <DefaultError message={msg} />;
   }
 

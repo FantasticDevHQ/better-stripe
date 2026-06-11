@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useQuery } from 'convex/react';
+import { useQuery } from "convex/react";
 
 export function useStripePublishableKey(
   queryRef: any,

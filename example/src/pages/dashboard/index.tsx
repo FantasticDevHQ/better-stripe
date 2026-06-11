@@ -65,8 +65,8 @@ export function Dashboard() {
                 access.
               </AlertDescription>
             </Alert>
-            <Button asChild className="mt-4">
-              <Link to="/">View Plans</Link>
+            <Button render={<Link to="/" />} className="mt-4">
+              View Plans
             </Button>
           </CardContent>
         </Card>

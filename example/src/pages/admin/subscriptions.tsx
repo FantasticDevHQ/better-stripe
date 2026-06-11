@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -11,45 +11,45 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useQuery } from 'convex/react';
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "convex/react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 const tabs = [
-  { label: 'All', value: 'all' },
-  { label: 'Active', value: 'active' },
-  { label: 'Trialing', value: 'trialing' },
-  { label: 'Past Due', value: 'past_due' },
-  { label: 'Canceled', value: 'canceled' },
+  { label: "All", value: "all" },
+  { label: "Active", value: "active" },
+  { label: "Trialing", value: "trialing" },
+  { label: "Past Due", value: "past_due" },
+  { label: "Canceled", value: "canceled" },
 ] as const;
 
 function statusVariant(
   status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case 'active':
-      return 'default';
-    case 'trialing':
-      return 'secondary';
-    case 'past_due':
-      return 'destructive';
-    case 'canceled':
-      return 'outline';
+    case "active":
+      return "default";
+    case "trialing":
+      return "secondary";
+    case "past_due":
+      return "destructive";
+    case "canceled":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 }
 
 function formatDate(dateStr: string | undefined) {
-  if (!dateStr) return '\u2014';
+  if (!dateStr) return "\u2014";
   return new Date(dateStr).toLocaleDateString();
 }
 
 export function AdminSubscriptions() {
   const subscriptions = useQuery(api.queries.listSubscriptions);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
 
   if (subscriptions === undefined) {
     return (
@@ -68,7 +68,7 @@ export function AdminSubscriptions() {
   }
 
   const filtered =
-    filter === 'all'
+    filter === "all"
       ? subscriptions
       : subscriptions.filter((s) => s.status === filter);
 
@@ -86,7 +86,7 @@ export function AdminSubscriptions() {
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
               <span className="text-muted-foreground ml-1.5 text-xs">
-                {tab.value === 'all'
+                {tab.value === "all"
                   ? subscriptions.length
                   : countByStatus(tab.value)}
               </span>
@@ -120,15 +120,15 @@ export function AdminSubscriptions() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusVariant(sub.status)}>
-                        {sub.status.replace('_', ' ')}
+                        {sub.status.replace("_", " ")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(sub.currentPeriodStart)} &rarr;{' '}
+                      {formatDate(sub.currentPeriodStart)} &rarr;{" "}
                       {formatDate(sub.currentPeriodEnd)}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {sub.trialEnd ? formatDate(sub.trialEnd) : '\u2014'}
+                      {sub.trialEnd ? formatDate(sub.trialEnd) : "\u2014"}
                     </TableCell>
                   </TableRow>
                 ))}

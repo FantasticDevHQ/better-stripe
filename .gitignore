@@ -6,3 +6,5 @@ dist/
 .env.local
 !.env.example
 .turbo/
+.docs
+.DS_Store

@@ -1,57 +1,97 @@
 import { BetterStripe } from "@getdojo/better-stripe";
 
-import { components } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 
   triggers: {
     subscription: {
-      onCreate: async (_ctx, doc) => {
+      onCreate: async (ctx, doc) => {
         console.log(
           `[trigger] Subscription created: ${doc.stripeSubscriptionId} for user ${doc.userId}`,
         );
+        await ctx.runMutation(internal.triggerLogger.record, {
+          source: "trigger",
+          kind: "subscription.onCreate",
+          stripeId: doc.stripeSubscriptionId,
+        });
       },
-      onUpdate: async (_ctx, newDoc, oldDoc) => {
+      onUpdate: async (ctx, newDoc, oldDoc) => {
         console.log(
           `[trigger] Subscription updated: ${newDoc.stripeSubscriptionId} (${oldDoc.status} -> ${newDoc.status})`,
         );
+        await ctx.runMutation(internal.triggerLogger.record, {
+          source: "trigger",
+          kind: "subscription.onUpdate",
+          stripeId: newDoc.stripeSubscriptionId,
+        });
       },
-      onDelete: async (_ctx, doc) => {
+      onDelete: async (ctx, doc) => {
         console.log(
           `[trigger] Subscription deleted: ${doc.stripeSubscriptionId} for user ${doc.userId}`,
         );
+        await ctx.runMutation(internal.triggerLogger.record, {
+          source: "trigger",
+          kind: "subscription.onDelete",
+          stripeId: doc.stripeSubscriptionId,
+        });
       },
     },
     checkoutSession: {
-      onCompleted: async (_ctx, doc) => {
+      onCompleted: async (ctx, doc) => {
         console.log(
           `[trigger] Checkout completed: ${doc.stripeSessionId} (${doc.mode})`,
         );
+        await ctx.runMutation(internal.triggerLogger.record, {
+          source: "trigger",
+          kind: "checkoutSession.onCompleted",
+          stripeId: doc.stripeSessionId,
+        });
       },
     },
   },
 
   hooks: {
-    onPayoutCompleted: async (_ctx, doc) => {
+    onPayoutCompleted: async (ctx, doc) => {
       console.log(
         `[hook] Payout completed: ${doc.stripePayoutId} ($${doc.amount / 100})`,
       );
+      await ctx.runMutation(internal.triggerLogger.record, {
+        source: "hook",
+        kind: "onPayoutCompleted",
+        stripeId: doc.stripePayoutId,
+      });
     },
-    onInvoicePaid: async (_ctx, doc) => {
+    onInvoicePaid: async (ctx, doc) => {
       console.log(
         `[hook] Invoice paid: ${doc.stripeInvoiceId} ($${doc.amountPaid / 100})`,
       );
+      await ctx.runMutation(internal.triggerLogger.record, {
+        source: "hook",
+        kind: "onInvoicePaid",
+        stripeId: doc.stripeInvoiceId,
+      });
     },
-    onPaymentFailed: async (_ctx, doc) => {
+    onPaymentFailed: async (ctx, doc) => {
       console.log(
         `[hook] Payment failed: ${doc.stripePaymentIntentId} ($${doc.amount / 100})`,
       );
+      await ctx.runMutation(internal.triggerLogger.record, {
+        source: "hook",
+        kind: "onPaymentFailed",
+        stripeId: doc.stripePaymentIntentId,
+      });
     },
-    onTrialEnding: async (_ctx, doc) => {
+    onTrialEnding: async (ctx, doc) => {
       console.log(
         `[hook] Trial ending: ${doc.stripeSubscriptionId} (ends ${doc.trialEnd})`,
       );
+      await ctx.runMutation(internal.triggerLogger.record, {
+        source: "hook",
+        kind: "onTrialEnding",
+        stripeId: doc.stripeSubscriptionId,
+      });
     },
   },
 });

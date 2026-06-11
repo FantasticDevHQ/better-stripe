@@ -15,6 +15,7 @@ import type * as reset from "../reset.js";
 import type * as seed from "../seed.js";
 import type * as setup from "../setup.js";
 import type * as stripe from "../stripe.js";
+import type * as triggerLogger from "../triggerLogger.js";
 import type * as users from "../users.js";
 
 import type {
@@ -32,6 +33,7 @@ const fullApi: ApiFromModules<{
   seed: typeof seed;
   setup: typeof setup;
   stripe: typeof stripe;
+  triggerLogger: typeof triggerLogger;
   users: typeof users;
 }> = anyApi as any;
 

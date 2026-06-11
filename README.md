@@ -10,6 +10,10 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
+### Releasing
+
+Merging to `main` publishes automatically **when `package.json`'s version is new to npm**: bump the version and update `CHANGELOG.md` in the release PR; merges without a version bump are no-ops for the registry. CI publishes with provenance and creates the matching `vX.Y.Z` tag and GitHub release.
+
 ### Relation to `@convex-dev/stripe`
 
 This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first) with a transactional trigger system. [`@convex-dev/stripe`](https://github.com/get-convex/stripe) targets the classic Customers/V1 API. They are different data models — there is no automated migration. Choose by which Stripe API generation your app uses.

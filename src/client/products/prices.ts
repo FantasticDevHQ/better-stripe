@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
 import type { StripeComponentPrice } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
@@ -46,9 +47,7 @@ export async function createPrice(
     { stripeProductId: opts.stripeProductId },
   );
   if (!internalProduct) {
-    throw new Error(
-      `Product ${opts.stripeProductId} not found in component DB when creating price`,
-    );
+    throwStripeError("PRODUCT_NOT_FOUND", `Product ${opts.stripeProductId} not found in component DB when creating price`);
   }
 
   await runMutationOrThrow(

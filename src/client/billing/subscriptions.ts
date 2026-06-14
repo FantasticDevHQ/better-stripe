@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import type { SubscriptionStatus } from "../../component/billing/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { epochToIso, runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
 import type { StripeComponentSubscription } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
@@ -68,7 +69,7 @@ export async function updateSubscriptionQuantity(
 ) {
   const sub = await stripe.subscriptions.retrieve(opts.stripeSubscriptionId);
   const itemId = sub.items?.data?.[0]?.id;
-  if (!itemId) throw new Error("Subscription has no items");
+  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
   await stripe.subscriptionItems.update(itemId, { quantity: opts.quantity });
   return { success: true };
 }

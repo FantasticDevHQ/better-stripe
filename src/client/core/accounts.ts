@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
 import type {
   V2AccountCreateParams,
   V2AccountUpdateParams,
@@ -144,7 +145,7 @@ export async function createAccountWithOnboarding(
     } catch {
       // Best effort cleanup
     }
-    throw configError;
+    throwStripeError("ACCOUNT_CREATE_FAILED", "Failed to apply account configuration after create; account was rolled back", configError);
   }
 
   // Re-fetch account to get actual applied_configurations from Stripe

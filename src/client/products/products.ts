@@ -198,15 +198,20 @@ export async function syncAllProducts(
   }
 
   let pricesSynced = 0;
+  const productCache = new Map<string, { _id: string } | null>();
   for await (const price of stripe.prices.list({ limit: 100 })) {
     try {
       const stripeProductId =
         typeof price.product === "string" ? price.product : "";
 
-      const internalProduct = await ctx.runQuery(
-        componentRef(component, "products/queries/getProductByStripeId"),
-        { stripeProductId },
-      );
+      let internalProduct = productCache.get(stripeProductId);
+      if (internalProduct === undefined) {
+        internalProduct = (await ctx.runQuery(
+          componentRef(component, "products/queries/getProductByStripeId"),
+          { stripeProductId },
+        )) as { _id: string } | null;
+        productCache.set(stripeProductId, internalProduct);
+      }
 
       if (!internalProduct) {
         console.warn(

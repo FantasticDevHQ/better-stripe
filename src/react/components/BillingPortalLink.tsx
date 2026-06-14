@@ -40,13 +40,24 @@ export function BillingPortalLink({
       return;
     }
     if (onCreateSession && !isLoading) {
+      // Open synchronously inside the user gesture so popup blockers allow it;
+      // navigate it once the session URL arrives.
+      const portalWindow = window.open("", "_blank");
       setIsLoading(true);
       try {
         const url = await onCreateSession();
         if (url) {
-          window.open(url, "_blank");
+          if (portalWindow) {
+            portalWindow.location.href = url;
+          } else {
+            // Popup was blocked anyway — fall back to same-tab navigation.
+            window.location.href = url;
+          }
+        } else {
+          portalWindow?.close();
         }
       } catch (err) {
+        portalWindow?.close();
         const message =
           err instanceof Error ? err.message : "Failed to open billing portal";
         console.error("[better-stripe] BillingPortalLink:", err);

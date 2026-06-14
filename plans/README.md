@@ -13,17 +13,18 @@ accompany every behavior change.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 | ---- | ----- | -------- | ------ | ---------- | ------ |
-| 001 | Run CI on the develop branch | P1 | S | — | TODO |
-| 002 | Fix filter-after-take list queries (compound indexes) | P1 | M | 001 | TODO |
-| 003 | Stale-"processing" webhook ledger escape hatch | P1 | S–M | 001 | TODO |
-| 004 | Empty-string userId never matches user-scoped queries | P2 | S | 002 | TODO |
-| 005 | Unit tests for untested money-touching client methods | P2 | M | — | TODO |
-| 006 | Structured BetterStripeError alignment (4 raw-throw sites) | P2 | M | 001 | TODO |
-| 007 | Repo hygiene: .env.local.example, shadcn dep, README gaps, CLAUDE.md | P2 | S | — | TODO |
-| 008 | syncAllProducts N+1 + BillingPortalLink popup fix | P3 | S | — | TODO |
-| 009 | Publish readiness (npm metadata, changelog, status docs) | P2 | S–M | soft: 002/003/004/006 | TODO |
-| 010 | SPIKE: subscription write surface design (pause/plan-change) | P3 | M | — | TODO |
-| 011 | SPIKE: refunds & disputes design | P3 | M | — | TODO |
+| 001 | Run CI on the develop branch | P1 | S | — | DONE (branch `advisor/001-ci-on-develop`, commits 04bfbc2+55c42cd incl. amended build step — awaiting operator merge) |
+| 002 | Fix filter-after-take list queries (compound indexes) | P1 | M | 001 | DONE (worktree branch `worktree-agent-a60d21a4aba9c639e`, commit 69effed — awaiting operator merge) |
+| 003 | Stale-"processing" webhook ledger escape hatch | P1 | S–M | 001 | DONE (worktree branch `worktree-agent-a48b0b90e2594bc52`, commit 42049ce — awaiting operator merge) |
+| 004 | Empty-string userId never matches user-scoped queries | P2 | S | 002 | DONE (worktree branch `worktree-agent-ac1ab3e61e9e9fac4`, commit f4aaffe stacked on 002's 69effed — merge 002 first or merge this branch which contains both) |
+| 005 | Unit tests for untested money-touching client methods | P2 | M | — | DONE (worktree branch `advisor/005-money-method-tests`, commit 4754d9c — awaiting operator merge) |
+| 006 | Structured BetterStripeError alignment (4 raw-throw sites) | P2 | M | 001 | DONE (worktree branch `worktree-agent-a454c71edd88c4ab7`, commit 7d3df8f — awaiting operator merge) |
+| 007 | Repo hygiene: .env.local.example, shadcn dep, README gaps, CLAUDE.md | P2 | S | — | DONE (branch `advisor/007-repo-hygiene`, 4 commits ee4c451..27f4e55 — awaiting operator merge) |
+| 008 | syncAllProducts N+1 + BillingPortalLink popup fix | P3 | S | — | DONE (worktree branch `worktree-agent-a0209aa2c982117e1`, 3 commits 4b87840..ad7d74c — awaiting operator merge) |
+| 009 | Publish readiness (npm metadata, changelog, status docs) | P2 | S–M | soft: 002/003/004/006 | DONE (worktree branch `worktree-agent-ab83281813b08263b`, commit ff462fa — operator: do NOT publish until 002/003/004/006 merge) |
+| 010 | SPIKE: subscription write surface design (pause/plan-change) | P3 | M | — | DONE (design doc on worktree branch `worktree-agent-a9d19cca0ea186ff2`, commit d5d077f; 5 methods adopted, 5 open questions for maintainer; note: implementation should use SUBSCRIPTION_UPDATE_FAILED not SUBSCRIPTION_NOT_FOUND for the no-items error) |
+| 011 | SPIKE: refunds & disputes design | P3 | M | — | DONE (design doc on worktree branch `worktree-agent-a49651948d817f973`, commit on 7cbbd55; key findings: use refund.* events not charge.refunded; PI linkage direct; no third destination; refund.* not stripe-trigger-able so E2E needs real API flow) |
+| 012 | Auto-publish to npm on merge to main (version-gated workflow) | P2 | S–M | 009 | DONE (worktree branch `worktree-agent-a8b7f557c44cc3a13`, commit 78af001 stacked on 009's ff462fa — merge this branch to get both) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale).
 
@@ -39,6 +40,10 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   operator should not actually publish until those merge.
 - **010/011 are spikes**: deliverables are design docs in `plans/outputs/`,
   not code. Their implementation plans get written after maintainer review.
+- **012 after 009 (hard)**: the publish workflow can't succeed while
+  `publishConfig.access` is `restricted`; 009 also sets the version/changelog
+  state that 012's version gate keys off. The first automated publish should
+  be the deliberate merge of 009's `0.2.0` bump to main.
 - 005, 007, 008 are fully independent and parallelizable (distinct files).
 
 ## Findings considered and rejected

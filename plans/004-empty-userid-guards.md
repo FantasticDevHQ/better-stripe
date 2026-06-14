@@ -124,7 +124,13 @@ At the top of each listed handler in `src/component/billing/queries.ts`:
   `userId: ""` with a valid orgId is a legitimate org-scoped lookup and must
   NOT return null. The guard only fires when BOTH identifiers are
   empty/absent — the case that would otherwise match unattributed `""` rows.
-- `listInvoices`: in the userId branch, change the condition `if (args.userId)` — it already skips `""` because empty string is falsy. **Verify this is true in the live code and leave it; add a test instead of a code change.**
+- `listInvoices`: **(updated after Plan 002 landed)** Plan 002's rewrite
+  changed the branch checks from truthiness to `args.userId !== undefined`,
+  so `""` now enters the userId branch and would match unattributed rows.
+  Change the userId-branch conditions (both the `userId`-only and
+  `userId`+`status` compound branches) to also require `args.userId !== ""`,
+  so an empty userId falls through to the later branches exactly as the old
+  falsy check did.
 
 **Verify**: `pnpm typecheck` → exit 0.
 
@@ -163,8 +169,9 @@ pattern: `src/component/triggers.test.ts`):
    a `""` row present → returns only the `user_1` row (pins that legitimate
    lookups are unaffected).
 4. `listInvoices({ userId: "" })` → falls through to the unfiltered branch
-   (documents current falsy-skip behavior; assert it does NOT return only
-   `""`-attributed invoices as if matching).
+   (post-002 this requires the explicit `!== ""` condition from Step 1;
+   assert the result is the unfiltered take, NOT only `""`-attributed
+   invoices).
 
 **Verify**: `pnpm test` → all pass including the new tests.
 

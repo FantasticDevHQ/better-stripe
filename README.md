@@ -284,6 +284,8 @@ import {
 
 ### Event Processing
 
+Records synced from Stripe objects without `userId` metadata are stored unattributed (`userId: ""`) and are not returned by user-scoped queries.
+
 The webhook handler processes events through these steps:
 
 1. Verify Stripe signature

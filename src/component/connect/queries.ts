@@ -59,17 +59,25 @@ export const listPayouts = query({
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
 
-    if (args.accountId) {
+    if (args.accountId !== undefined && args.status !== undefined) {
+      const { accountId, status } = args;
+      return await ctx.db
+        .query("payouts")
+        .withIndex("by_account_status", (q) =>
+          q.eq("accountId", accountId).eq("status", status),
+        )
+        .take(limit);
+    }
+
+    if (args.accountId !== undefined) {
       const accountId = args.accountId;
-      const payouts = await ctx.db
+      return await ctx.db
         .query("payouts")
         .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
         .take(limit);
-      if (args.status) return payouts.filter((p) => p.status === args.status);
-      return payouts;
     }
 
-    if (args.status) {
+    if (args.status !== undefined) {
       const status = args.status;
       return await ctx.db
         .query("payouts")

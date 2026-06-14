@@ -98,6 +98,13 @@ export function deriveTrialFields(subscription: Stripe.Subscription): {
   };
 }
 
+/**
+ * Extracts userId and orgId from Stripe object metadata.
+ *
+ * Returns userId `""` when the Stripe object has no userId metadata
+ * (e.g. created in the Stripe Dashboard). `""` rows are stored but
+ * never matched by user-scoped queries.
+ */
 export function extractIdentifiers(
   metadata: Record<string, string> | null | undefined,
 ): { userId: string; orgId: string | undefined } {

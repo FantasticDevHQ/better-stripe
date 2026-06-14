@@ -62,7 +62,7 @@ on:
 **Out of scope**:
 
 - `.github/workflows/publish.yml` — release workflow, separate concern.
-- Any change to the CI steps themselves (node version, caching, commands).
+- Any change to the CI steps beyond the build step in Step 1b (node version, caching, other commands).
 
 ## Git workflow
 
@@ -88,9 +88,25 @@ on:
 **Verify**: `python3 -c "import yaml; print(yaml.safe_load(open('.github/workflows/ci.yml'))['on'])"` → prints a dict where both `push` and `pull_request` have `branches: ['main', 'develop']`.
 (Note: PyYAML parses the unquoted key `on` as boolean `True`; if the above prints `None`, use `['push']` lookup via `list(yaml.safe_load(...))` to confirm the structure instead — the file content is what matters.)
 
+### Step 1b: Add a build step before typecheck
+
+(Amended 2026-06-11 after executor discovery.) On a fresh checkout,
+`pnpm typecheck` fails: the `typecheck:example` half resolves
+`@getdojo/better-stripe` (a `workspace:*` dep) through package `exports`
+that point at `./dist/`, which only `pnpm build` creates. CI does a fresh
+checkout every run, so without a build step the workflow this plan enables
+would be red on every develop push. Insert one step into the job between
+`pnpm install --frozen-lockfile` and `pnpm typecheck`:
+
+```yaml
+      - run: pnpm build
+```
+
+**Verify**: the job's `run` steps read, in order: install → build → typecheck → lint → test.
+
 ### Step 2: Confirm the checks pass locally
 
-**Verify**: `pnpm typecheck && pnpm lint && pnpm test` → all exit 0 (this is exactly what CI will now run on develop).
+**Verify**: `rm -rf dist && pnpm build && pnpm typecheck && pnpm lint && pnpm test` → all exit 0 (this mirrors the CI job exactly, including the Step 1b build step from a clean state).
 
 ## Test plan
 
@@ -100,7 +116,8 @@ the same three commands CI executes.
 ## Done criteria
 
 - [ ] `.github/workflows/ci.yml` contains `branches: [main, develop]` under both `push` and `pull_request`
-- [ ] `pnpm typecheck && pnpm lint && pnpm test` exits 0
+- [ ] `ci.yml` runs `pnpm build` between install and typecheck (fresh-checkout requirement)
+- [ ] From a clean state (`rm -rf dist`), `pnpm build && pnpm typecheck && pnpm lint && pnpm test` exits 0
 - [ ] No files outside the in-scope list are modified (`git status`)
 - [ ] `plans/README.md` status row updated
 

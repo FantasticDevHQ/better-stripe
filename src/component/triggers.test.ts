@@ -1,6 +1,6 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { api } from "./_generated/api.js";
 import schema from "./schema.js";
@@ -226,6 +226,112 @@ describe("webhook event ledger", () => {
     expect(entry!.eventType).toBe("checkout.session.completed");
     expect(entry!.livemode).toBe(false);
     expect(entry!.processedAt).toBeTypeOf("number");
+  });
+
+  describe("staleness escape hatch", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("fresh processing dedupes", async () => {
+      const t = convexTest(schema, modules);
+
+      const first = await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+        stripeEventId: "evt_stale_001",
+        eventType: "invoice.paid",
+      });
+      expect(first).toBe("inserted");
+
+      // Immediate second insert — row is fresh processing, must dedupe.
+      const second = await t.mutation(
+        api.webhooks.mutations.insertWebhookEvent,
+        {
+          stripeEventId: "evt_stale_001",
+          eventType: "invoice.paid",
+        },
+      );
+      expect(second).toBe("processing");
+    });
+
+    it("stale processing reprocesses and refreshes processedAt", async () => {
+      const t = convexTest(schema, modules);
+
+      const baseTime = Date.now();
+      vi.spyOn(Date, "now").mockReturnValue(baseTime);
+
+      await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+        stripeEventId: "evt_stale_002",
+        eventType: "invoice.paid",
+      });
+
+      // Advance past the 10-minute staleness window.
+      const laterTime = baseTime + 11 * 60 * 1000;
+      vi.spyOn(Date, "now").mockReturnValue(laterTime);
+
+      const result = await t.mutation(
+        api.webhooks.mutations.insertWebhookEvent,
+        {
+          stripeEventId: "evt_stale_002",
+          eventType: "invoice.paid",
+        },
+      );
+      expect(result).toBe("inserted");
+
+      const entry = await t.query(api.webhooks.queries.getWebhookEvent, {
+        stripeEventId: "evt_stale_002",
+      });
+      expect(entry!.status).toBe("processing");
+      expect(entry!.processedAt).toBe(laterTime);
+    });
+
+    it("terminal statuses still dedupe regardless of age", async () => {
+      const t = convexTest(schema, modules);
+
+      const baseTime = Date.now();
+      vi.spyOn(Date, "now").mockReturnValue(baseTime);
+
+      await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+        stripeEventId: "evt_stale_003",
+        eventType: "invoice.paid",
+      });
+      await t.mutation(api.webhooks.mutations.markWebhookEventProcessed, {
+        stripeEventId: "evt_stale_003",
+      });
+
+      // Advance past the 10-minute staleness window.
+      vi.spyOn(Date, "now").mockReturnValue(baseTime + 11 * 60 * 1000);
+
+      const result = await t.mutation(
+        api.webhooks.mutations.insertWebhookEvent,
+        {
+          stripeEventId: "evt_stale_003",
+          eventType: "invoice.paid",
+        },
+      );
+      expect(result).toBe("processed");
+    });
+
+    it("failed still reprocesses (regression pin)", async () => {
+      const t = convexTest(schema, modules);
+
+      await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
+        stripeEventId: "evt_stale_004",
+        eventType: "invoice.paid",
+      });
+      await t.mutation(api.webhooks.mutations.markWebhookEventFailed, {
+        stripeEventId: "evt_stale_004",
+        error: "handler crashed",
+      });
+
+      const result = await t.mutation(
+        api.webhooks.mutations.insertWebhookEvent,
+        {
+          stripeEventId: "evt_stale_004",
+          eventType: "invoice.paid",
+        },
+      );
+      expect(result).toBe("inserted");
+    });
   });
 
   it("insertWebhookEvent is atomic under repeated calls", async () => {

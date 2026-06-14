@@ -146,6 +146,11 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `createAccountSession(ctx, { stripeAccountId, components })`                      | Create embedded account management session               |
 | `createLoginLink(ctx, { stripeAccountId })`                                       | Create Express dashboard login link                      |
 | `addRecipientConfiguration(ctx, { stripeAccountId })`                             | Add recipient configuration to an existing account       |
+| `getV2Account(ctx, { stripeAccountId, include? })`                                | Retrieve a V2 account directly from Stripe               |
+| `updateV2Account(ctx, { stripeAccountId, updateParams })`                         | Update a V2 account in Stripe                            |
+| `listStripeAccounts(ctx, { limit? })`                                             | List V2 accounts directly from Stripe                    |
+| `closeAccount(ctx, { stripeAccountId })`                                          | Close a V2 account; returns `{ closed: boolean }`        |
+| `restartAccountOnboarding(ctx, { stripeAccountId })`                              | Close the account so onboarding can restart fresh        |
 
 ### Product and Price
 

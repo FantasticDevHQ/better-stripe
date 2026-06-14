@@ -108,9 +108,6 @@ importers:
       react-router-dom:
         specifier: ^7.17.0
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      shadcn:
-        specifier: ^4.11.0
-        version: 4.11.0(typescript@5.9.3)
       stripe:
         specifier: ^22.2.0
         version: 22.2.0(@types/node@25.9.2)
@@ -160,6 +157,9 @@ importers:
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
+      shadcn:
+        specifier: ^4.11.0
+        version: 4.11.0(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.0

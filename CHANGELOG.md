@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-06-11
+
 ### Breaking
 
 - Trigger system is now wired into webhook processing. `triggersApi()` no longer returns `on*`/`after*` wrappers keyed by event; it returns 9 sync dispatchers (`accountUpserted`, `productUpserted`, `priceUpserted`, `subscriptionUpserted`, `subscriptionDeleted`, `checkoutSessionUpserted`, `invoiceUpserted`, `paymentUpserted`, `payoutUpserted`) plus 9 async hook wrappers (`afterAccountUpdated`, `afterCheckoutCompleted`, `afterSubscriptionUpdated`, `afterSubscriptionCanceled`, `afterTrialEnding`, `afterInvoicePaid`, `afterPaymentSucceeded`, `afterPaymentFailed`, `afterPayoutCompleted`). Each dispatcher performs the component upsert and the configured sync trigger in one transaction; `after*` hooks are scheduled via `ctx.scheduler` after the event is marked processed.

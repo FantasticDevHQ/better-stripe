@@ -11,7 +11,8 @@ concurrency:
 
 permissions:
   contents: write # create the release tag
-  id-token: write # npm provenance
+  # (npm provenance / id-token: write omitted — provenance requires a public
+  # source repo, and this repo is private. Re-add both if the repo goes public.)
 
 jobs:
   publish:
@@ -52,7 +53,7 @@ jobs:
         run: pnpm test
       - if: steps.gate.outputs.publish == 'true'
         name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance
+        run: pnpm publish --no-git-checks
         env:
           # The committed root .npmrc reads ${NPM_TOKEN}; setup-node's npmrc reads
           # NODE_AUTH_TOKEN. Provide both so auth resolves regardless of which wins.

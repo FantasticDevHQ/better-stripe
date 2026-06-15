@@ -75,7 +75,7 @@
     "format:staged": "pretty-quick --staged",
     "format:changed": "pretty-quick",
     "format:branch": "pretty-quick --branch main",
-    "prepublishOnly": "npm run clean && npm run typecheck && npm run build",
+    "prepublishOnly": "npm run clean && npm run build && npm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

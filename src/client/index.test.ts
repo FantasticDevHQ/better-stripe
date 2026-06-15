@@ -1,6 +1,7 @@
 import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { isBetterStripeError } from "./errors.js";
 import { components as _components } from "./setup.test.js";
 
 const components = _components;
@@ -394,6 +395,54 @@ describe("BetterStripe", () => {
     });
   });
 
+  describe("updateSubscriptionQuantity", () => {
+    it("retrieves the subscription and updates the first item quantity", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptionItems.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionQuantity(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        quantity: 3,
+      });
+
+      expect(mockStripeInstance.subscriptions.retrieve).toHaveBeenCalledWith(
+        "sub_123",
+      );
+      expect(mockStripeInstance.subscriptionItems.update).toHaveBeenCalledWith(
+        "si_1",
+        { quantity: 3 },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("rejects when the subscription has no items and does not call update", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [] },
+      });
+
+      await expect(
+        bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          quantity: 3,
+        }),
+      ).rejects.toThrow("Subscription has no items");
+
+      expect(
+        mockStripeInstance.subscriptionItems.update,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
   // =========================================================================
   // Invoice methods
   // =========================================================================
@@ -564,6 +613,135 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // Payout: createPayout
+  // =========================================================================
+
+  describe("createPayout", () => {
+    it("calls payouts.create with the stripeAccount routing header and default currency", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.payouts.create.mockResolvedValue({ id: "po_1" });
+
+      const result = await bs.createPayout(mockCtx, {
+        stripeAccountId: "acct_1",
+        amount: 5000,
+      });
+
+      expect(mockStripeInstance.payouts.create).toHaveBeenCalledWith(
+        { amount: 5000, currency: "usd", metadata: undefined },
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ stripePayoutId: "po_1" });
+    });
+
+    it("passes through a currency override and returns stripePayoutId", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.payouts.create.mockResolvedValue({ id: "po_2" });
+
+      const result = await bs.createPayout(mockCtx, {
+        stripeAccountId: "acct_1",
+        amount: 10000,
+        currency: "gbp",
+      });
+
+      expect(mockStripeInstance.payouts.create).toHaveBeenCalledWith(
+        { amount: 10000, currency: "gbp", metadata: undefined },
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ stripePayoutId: "po_2" });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: listPaymentMethods
+  // =========================================================================
+
+  describe("listPaymentMethods", () => {
+    it("defaults to card type and uses the V2 customer_account param", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.list.mockResolvedValue({ data: [] });
+
+      await bs.listPaymentMethods(mockCtx, { stripeCustomerId: "acct_1" });
+
+      expect(mockStripeInstance.paymentMethods.list).toHaveBeenCalledWith({
+        customer_account: "acct_1",
+        type: "card",
+      });
+    });
+
+    it("passes through an explicit type", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.list.mockResolvedValue({ data: [] });
+
+      await bs.listPaymentMethods(mockCtx, {
+        stripeCustomerId: "acct_1",
+        type: "us_bank_account",
+      });
+
+      expect(mockStripeInstance.paymentMethods.list).toHaveBeenCalledWith({
+        customer_account: "acct_1",
+        type: "us_bank_account",
+      });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: attachPaymentMethod
+  // =========================================================================
+
+  describe("attachPaymentMethod", () => {
+    it("attaches with the V2 customer_account param and returns success", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.attach.mockResolvedValue({});
+
+      const result = await bs.attachPaymentMethod(mockCtx, {
+        paymentMethodId: "pm_1",
+        stripeCustomerId: "acct_1",
+      });
+
+      expect(mockStripeInstance.paymentMethods.attach).toHaveBeenCalledWith(
+        "pm_1",
+        { customer_account: "acct_1" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  // =========================================================================
+  // Payment method: detachPaymentMethod
+  // =========================================================================
+
+  describe("detachPaymentMethod", () => {
+    it("calls paymentMethods.detach with the payment method id", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.paymentMethods.detach.mockResolvedValue({});
+
+      await bs.detachPaymentMethod(mockCtx, { paymentMethodId: "pm_1" });
+
+      expect(mockStripeInstance.paymentMethods.detach).toHaveBeenCalledWith(
+        "pm_1",
+      );
+    });
+  });
+
+  // =========================================================================
   // Payment method: setDefaultPaymentMethod
   // =========================================================================
 
@@ -578,7 +756,7 @@ describe("BetterStripe", () => {
           stripeAccountId: "acct_123",
           paymentMethodId: "pm_123",
         }),
-      ).rejects.toThrow("setDefaultPaymentMethod is not yet implemented");
+      ).rejects.toThrow("not yet implemented for V2 Accounts");
     });
   });
 
@@ -981,6 +1159,57 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // syncAllProducts
+  // =========================================================================
+
+  describe("syncAllProducts", () => {
+    /** Helper: returns an async iterable from an array (matches Stripe's auto-pagination API). */
+    async function* asyncIter<T>(items: T[]): AsyncIterable<T> {
+      for (const item of items) {
+        yield item;
+      }
+    }
+
+    it("calls getProductByStripeId exactly once per distinct product even with multiple prices", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.products.list.mockReturnValue(
+        asyncIter([{ id: "prod_1", name: "Product 1", active: true, description: null, metadata: {} }]),
+      );
+
+      // Three prices all belonging to the same product
+      mockStripeInstance.prices.list.mockReturnValue(
+        asyncIter([
+          { id: "price_1", product: "prod_1", active: true, currency: "usd", unit_amount: 1000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          { id: "price_2", product: "prod_1", active: true, currency: "usd", unit_amount: 2000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          { id: "price_3", product: "prod_1", active: true, currency: "usd", unit_amount: 3000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+        ]),
+      );
+
+      // Resolve query for prod_1 → an internal product
+      mockCtx.runQuery.mockResolvedValue({ _id: "internal_prod_1" });
+      // runMutation succeeds silently
+      mockCtx.runMutation.mockResolvedValue(undefined);
+
+      const result = await bs.syncAllProducts(mockCtx);
+
+      // 1 product upserted + 3 prices upserted
+      expect(result.productsSynced).toBe(1);
+      expect(result.pricesSynced).toBe(3);
+
+      // getProductByStripeId must have been queried exactly once (cache hit on 2nd/3rd price)
+      const queryCallsForGetProduct = mockCtx.runQuery.mock.calls.filter(
+        (call) =>
+          (call[1] as { stripeProductId?: string } | undefined)
+            ?.stripeProductId === "prod_1",
+      );
+      expect(queryCallsForGetProduct).toHaveLength(1);
+    });
+  });
+
+  // =========================================================================
   // syncAllAccounts
   // =========================================================================
 
@@ -1091,6 +1320,135 @@ describe("BetterStripe", () => {
           ]),
         }),
       );
+    });
+  });
+
+  // =========================================================================
+  // Structured error alignment — one test per converted raw-throw site
+  // =========================================================================
+
+  describe("structured error alignment", () => {
+    it("createAccountWithOnboarding throws BetterStripeError ACCOUNT_CREATE_FAILED on config error", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      const fakeAccount = {
+        id: "acct_err",
+        applied_configurations: [],
+        configuration: {},
+        metadata: {},
+        requirements: { entries: [], summary: { minimum_deadline: { status: "no_requirements" } } },
+      };
+      mockStripeInstance.v2.core.accounts.create.mockResolvedValue(fakeAccount);
+      mockStripeInstance.v2.core.accounts.update.mockRejectedValue({
+        type: "api_error",
+        code: "resource_missing",
+        message: "config failed",
+      });
+      mockCtx.runMutation.mockResolvedValue(undefined);
+
+      let caught: unknown;
+      try {
+        await bs.createAccountWithOnboarding(mockCtx, {
+          userId: "user_123",
+          country: "US",
+          refreshUrl: "https://example.com/refresh",
+          returnUrl: "https://example.com/return",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("ACCOUNT_CREATE_FAILED");
+      expect(data.message).toContain("Failed to apply account configuration after create");
+    });
+
+    it("updateSubscriptionQuantity throws BetterStripeError SUBSCRIPTION_UPDATE_FAILED when sub has no items", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        id: "sub_no_items",
+        items: { data: [] },
+      });
+
+      let caught: unknown;
+      try {
+        await bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_no_items",
+          quantity: 2,
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("SUBSCRIPTION_UPDATE_FAILED");
+      expect(data.message).toBe("Subscription has no items");
+    });
+
+    it("createPrice throws BetterStripeError PRODUCT_NOT_FOUND when product missing from DB", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.prices.create.mockResolvedValue({
+        id: "price_new",
+        nickname: null,
+        unit_amount: 500,
+        currency: "usd",
+        active: true,
+        metadata: {},
+      });
+      // runQuery returns null — product not found in component DB
+      mockCtx.runQuery.mockResolvedValue(null);
+
+      let caught: unknown;
+      try {
+        await bs.createPrice(mockCtx, {
+          stripeProductId: "prod_missing",
+          unitAmount: 500,
+          currency: "usd",
+          type: "one_time",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("PRODUCT_NOT_FOUND");
+      expect(data.message).toContain("prod_missing");
+    });
+
+    it("setDefaultPaymentMethod throws BetterStripeError PAYMENT_METHOD_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      let caught: unknown;
+      try {
+        await bs.setDefaultPaymentMethod(mockCtx, {
+          stripeAccountId: "acct_123",
+          paymentMethodId: "pm_123",
+        });
+        expect.unreachable("should have thrown");
+      } catch (e) {
+        caught = e;
+      }
+
+      expect(isBetterStripeError(caught)).toBe(true);
+      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      expect(data.code).toBe("PAYMENT_METHOD_FAILED");
+      expect(data.message).toContain("setDefaultPaymentMethod is not yet implemented");
     });
   });
 });

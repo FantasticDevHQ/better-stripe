@@ -7,6 +7,15 @@ import { mutation } from "../_generated/server";
 // =============================================================================
 
 /**
+ * How long a "processing" ledger row is trusted to be genuinely in flight.
+ * Convex HTTP actions and scheduled work complete well within this window;
+ * a row older than this means the original delivery died before marking the
+ * event processed/failed, and the event would otherwise dedupe forever.
+ * Stripe's retry schedule spans hours/days, so retries will arrive after it.
+ */
+const PROCESSING_STALE_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
  * Atomically check-and-insert a webhook event for deduplication.
  * Returns 'inserted' if new (or if a prior attempt failed and the event
  * should be reprocessed), or the existing status when deduplicating.
@@ -33,21 +42,23 @@ export const insertWebhookEvent = mutation({
       .first();
 
     if (existing) {
-      if (existing.status === "failed") {
-        // A previous delivery failed and its writes rolled back, so the
-        // event was never applied. Stripe is retrying — reset the row to
-        // in-flight and tell the handler to reprocess. Without this, failed
-        // events would deduplicate forever and be permanently dropped.
+      const stale =
+        existing.status === "processing" &&
+        Date.now() - existing.processedAt > PROCESSING_STALE_MS;
+
+      if (existing.status === "failed" || stale) {
+        // failed: prior delivery rolled back — reprocess on retry.
+        // stale processing: prior delivery died without marking the row —
+        // without this branch the event would deduplicate forever.
         await ctx.db.patch("webhookEvents", existing._id, {
           status: "processing",
           processedAt: Date.now(),
         });
         return "inserted" as const;
       }
-      // "processing" keeps deduplicating: it means another delivery of this
-      // event is in flight right now, and reprocessing concurrently would
-      // double-apply. If that attempt fails it marks the row "failed" and
-      // the next retry takes the branch above.
+      // fresh "processing": another delivery is in flight right now, and
+      // reprocessing concurrently would double-apply. If that attempt fails
+      // it marks the row "failed" and the next retry takes the branch above.
       // "processed" and "ignored" are terminal — always deduplicate.
       return existing.status;
     }

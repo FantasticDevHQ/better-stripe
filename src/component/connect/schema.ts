@@ -16,4 +16,5 @@ export const paymentsTable = defineTable(paymentFields)
 export const payoutsTable = defineTable(payoutFields)
   .index("by_stripe_payout_id", ["stripePayoutId"])
   .index("by_account_id", ["accountId"])
-  .index("by_status", ["status"]);
+  .index("by_status", ["status"])
+  .index("by_account_status", ["accountId", "status"]);

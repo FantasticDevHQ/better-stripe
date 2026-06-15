@@ -1,6 +1,6 @@
 {
   "name": "@getdojo/better-stripe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -48,7 +48,7 @@
       "default": "./dist/component/_generated/component.js"
     }
   },
-  "main": "index.js",
+  "main": "./dist/client/index.js",
   "types": "./dist/client/index.d.ts",
   "directories": {
     "doc": "docs",
@@ -56,7 +56,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",
@@ -110,7 +111,7 @@
     "node": ">=v18.18.0"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "module": "./dist/client/index.js",
   "packageManager": "pnpm@10.32.1"

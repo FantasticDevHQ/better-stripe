@@ -37,23 +37,34 @@ export const listProducts = query({
   returns: v.array(productDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
-    let productsQuery;
 
-    if (args.accountId) {
-      const accountId = args.accountId;
-      productsQuery = ctx.db
+    if (args.accountId !== undefined && args.active !== undefined) {
+      const { accountId, active } = args;
+      return await ctx.db
         .query("products")
-        .withIndex("by_account_id", (q) => q.eq("accountId", accountId));
-    } else {
-      productsQuery = ctx.db.query("products");
+        .withIndex("by_account_active", (q) =>
+          q.eq("accountId", accountId).eq("active", active),
+        )
+        .take(limit);
     }
 
-    const products = await productsQuery.take(limit);
+    if (args.accountId !== undefined) {
+      const accountId = args.accountId;
+      return await ctx.db
+        .query("products")
+        .withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        .take(limit);
+    }
 
     if (args.active !== undefined) {
-      return products.filter((p) => p.active === args.active);
+      const active = args.active;
+      return await ctx.db
+        .query("products")
+        .withIndex("by_active", (q) => q.eq("active", active))
+        .take(limit);
     }
-    return products;
+
+    return await ctx.db.query("products").take(limit);
   },
 });
 
@@ -91,23 +102,34 @@ export const listPrices = query({
   returns: v.array(priceDocValidator),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
-    let pricesQuery;
 
-    if (args.productId) {
-      const productId = args.productId;
-      pricesQuery = ctx.db
+    if (args.productId !== undefined && args.active !== undefined) {
+      const { productId, active } = args;
+      return await ctx.db
         .query("prices")
-        .withIndex("by_product_id", (q) => q.eq("productId", productId));
-    } else {
-      pricesQuery = ctx.db.query("prices");
+        .withIndex("by_product_active", (q) =>
+          q.eq("productId", productId).eq("active", active),
+        )
+        .take(limit);
     }
 
-    const prices = await pricesQuery.take(limit);
+    if (args.productId !== undefined) {
+      const productId = args.productId;
+      return await ctx.db
+        .query("prices")
+        .withIndex("by_product_id", (q) => q.eq("productId", productId))
+        .take(limit);
+    }
 
     if (args.active !== undefined) {
-      return prices.filter((p) => p.active === args.active);
+      const active = args.active;
+      return await ctx.db
+        .query("prices")
+        .withIndex("by_active", (q) => q.eq("active", active))
+        .take(limit);
     }
-    return prices;
+
+    return await ctx.db.query("prices").take(limit);
   },
 });
 

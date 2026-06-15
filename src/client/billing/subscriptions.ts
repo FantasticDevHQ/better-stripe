@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import type { SubscriptionStatus } from "../../component/billing/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { epochToIso, runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
 import type { StripeComponentSubscription } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
@@ -68,7 +69,7 @@ export async function updateSubscriptionQuantity(
 ) {
   const sub = await stripe.subscriptions.retrieve(opts.stripeSubscriptionId);
   const itemId = sub.items?.data?.[0]?.id;
-  if (!itemId) throw new Error("Subscription has no items");
+  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
   await stripe.subscriptionItems.update(itemId, { quantity: opts.quantity });
   return { success: true };
 }
@@ -210,6 +211,8 @@ export async function syncAllSubscriptions(
   })) {
     try {
       const metadata = (sub.metadata ?? {}) as Record<string, string>;
+      // Returns userId "" when no userId metadata is present (e.g. created in the Stripe Dashboard).
+      // "" rows are stored but never matched by user-scoped queries.
       const userId = metadata.userId ?? metadata.user_id ?? "";
       const orgId = metadata.orgId ?? metadata.org_id ?? undefined;
 

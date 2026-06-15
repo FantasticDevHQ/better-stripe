@@ -1,6 +1,7 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { RunCtx } from '../helpers.js';
+import type { RunCtx } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
 
 // =============================================================================
 // Payment Method methods
@@ -13,7 +14,7 @@ export async function listPaymentMethods(
 ) {
   const methods = await stripe.paymentMethods.list({
     customer_account: opts.stripeCustomerId,
-    type: (opts.type as Stripe.PaymentMethodListParams.Type) ?? 'card',
+    type: (opts.type as Stripe.PaymentMethodListParams.Type) ?? "card",
   });
   return methods.data;
 }
@@ -50,8 +51,5 @@ export async function setDefaultPaymentMethod(
   _ctx: RunCtx,
   _opts: { stripeAccountId: string; paymentMethodId: string },
 ) {
-  throw new Error(
-    '[better-stripe] setDefaultPaymentMethod is not yet implemented for V2 Accounts. ' +
-      'Use createBillingPortalSession() to let users manage payment methods.',
-  );
+  throwStripeError("PAYMENT_METHOD_FAILED", "[better-stripe] setDefaultPaymentMethod is not yet implemented for V2 Accounts. Use createBillingPortalSession() to let users manage payment methods.");
 }

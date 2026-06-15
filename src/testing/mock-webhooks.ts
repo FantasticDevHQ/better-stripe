@@ -22,14 +22,14 @@ export function mockCheckoutCompleted(
 ): MockEvent {
   return {
     id: nextEventId(),
-    type: 'checkout.session.completed',
+    type: "checkout.session.completed",
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     data: {
       object: {
         id: `cs_test_${Date.now()}`,
-        mode: 'subscription',
-        status: 'complete',
+        mode: "subscription",
+        status: "complete",
         metadata: {},
         ...overrides,
       },
@@ -42,16 +42,16 @@ export function mockSubscriptionUpdated(
 ): MockEvent {
   return {
     id: nextEventId(),
-    type: 'customer.subscription.updated',
+    type: "customer.subscription.updated",
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     data: {
       object: {
         id: `sub_test_${Date.now()}`,
-        status: 'active',
+        status: "active",
         cancel_at_period_end: false,
         metadata: {},
-        items: { data: [{ price: { id: 'price_test' } }] },
+        items: { data: [{ price: { id: "price_test" } }] },
         ...overrides,
       },
     },
@@ -63,7 +63,7 @@ export function mockAccountUpdated(
 ): MockEvent {
   return {
     id: nextEventId(),
-    type: 'account.updated',
+    type: "account.updated",
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     data: {
@@ -83,16 +83,16 @@ export function mockInvoicePaid(
 ): MockEvent {
   return {
     id: nextEventId(),
-    type: 'invoice.paid',
+    type: "invoice.paid",
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     data: {
       object: {
         id: `in_test_${Date.now()}`,
-        status: 'paid',
+        status: "paid",
         amount_due: 2000,
         amount_paid: 2000,
-        currency: 'usd',
+        currency: "usd",
         metadata: {},
         ...overrides,
       },

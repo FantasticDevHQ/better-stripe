@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { getRequirementLabel } from '../lib/connect-requirement-keys.js';
+import { getRequirementLabel } from "../lib/connect-requirement-keys.js";
 
 export type StructuredRequirements = {
   currentlyDue?: string[];
@@ -39,7 +39,7 @@ export type ConnectRequirementsProps = {
   className?: string;
   /** Render prop for individual requirement categories */
   renderCategory?: (props: {
-    category: 'currentlyDue' | 'eventuallyDue' | 'pendingVerification';
+    category: "currentlyDue" | "eventuallyDue" | "pendingVerification";
     items: EnrichedRequirement[];
     deadline?: number;
   }) => ReactNode;
@@ -69,8 +69,8 @@ export function ConnectRequirements({
   requirements,
   labelOverrides,
   structuredRequirements,
-  titleLabel = 'Missing requirements',
-  emptyLabel = 'All requirements met.',
+  titleLabel = "Missing requirements",
+  emptyLabel = "All requirements met.",
   className,
   renderCategory,
   renderDisabledReason,
@@ -117,18 +117,18 @@ export function ConnectRequirements({
       <div className={className}>
         {structured.currentlyDue.length > 0 &&
           renderCategory({
-            category: 'currentlyDue',
+            category: "currentlyDue",
             items: structured.currentlyDue,
             deadline: structured.currentDeadline,
           })}
         {structured.pendingVerification.length > 0 &&
           renderCategory({
-            category: 'pendingVerification',
+            category: "pendingVerification",
             items: structured.pendingVerification,
           })}
         {structured.eventuallyDue.length > 0 &&
           renderCategory({
-            category: 'eventuallyDue',
+            category: "eventuallyDue",
             items: structured.eventuallyDue,
           })}
         {structured.disabledReason &&

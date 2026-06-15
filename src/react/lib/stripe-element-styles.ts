@@ -1,4 +1,4 @@
-import type { Appearance } from '@stripe/stripe-js';
+import type { Appearance } from "@stripe/stripe-js";
 
 /**
  * Configuration for creating a Stripe Appearance object.
@@ -26,38 +26,38 @@ export type StripeAppearanceConfig = {
   /** Spacing unit (e.g. '4px') */
   spacingUnit?: string;
   /** Stripe base theme */
-  baseTheme?: 'stripe' | 'flat' | 'night';
+  baseTheme?: "stripe" | "flat" | "night";
 };
 
 const DEFAULT_FONT_FAMILY =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 const LIGHT_DEFAULTS: Required<StripeAppearanceConfig> = {
-  primary: '#0570de',
-  background: '#ffffff',
-  text: '#30313d',
-  textSecondary: '#737373',
-  danger: '#df1b41',
-  border: '#e0e0e0',
-  borderRadius: '8px',
+  primary: "#0570de",
+  background: "#ffffff",
+  text: "#30313d",
+  textSecondary: "#737373",
+  danger: "#df1b41",
+  border: "#e0e0e0",
+  borderRadius: "8px",
   fontFamily: DEFAULT_FONT_FAMILY,
-  fontSize: '14px',
-  spacingUnit: '4px',
-  baseTheme: 'flat',
+  fontSize: "14px",
+  spacingUnit: "4px",
+  baseTheme: "flat",
 };
 
 const DARK_DEFAULTS: Required<StripeAppearanceConfig> = {
-  primary: '#7c3aed',
-  background: '#1a1a2e',
-  text: '#e2e8f0',
-  textSecondary: '#a3a3a3',
-  danger: '#ef4444',
-  border: '#27272a',
-  borderRadius: '8px',
+  primary: "#7c3aed",
+  background: "#1a1a2e",
+  text: "#e2e8f0",
+  textSecondary: "#a3a3a3",
+  danger: "#ef4444",
+  border: "#27272a",
+  borderRadius: "8px",
   fontFamily: DEFAULT_FONT_FAMILY,
-  fontSize: '14px',
-  spacingUnit: '4px',
-  baseTheme: 'night',
+  fontSize: "14px",
+  spacingUnit: "4px",
+  baseTheme: "night",
 };
 
 /**
@@ -87,7 +87,7 @@ export function createStripeAppearance(
   config: StripeAppearanceConfig = {},
 ): Appearance {
   const defaults =
-    config.baseTheme === 'night' ? DARK_DEFAULTS : LIGHT_DEFAULTS;
+    config.baseTheme === "night" ? DARK_DEFAULTS : LIGHT_DEFAULTS;
   const c = { ...defaults, ...config };
 
   return {
@@ -104,22 +104,22 @@ export function createStripeAppearance(
       spacingUnit: c.spacingUnit,
     },
     rules: {
-      '.Input': {
-        padding: '10px 12px',
+      ".Input": {
+        padding: "10px 12px",
         border: `1px solid ${c.border}`,
-        transition: 'border-color 150ms ease, box-shadow 150ms ease',
+        transition: "border-color 150ms ease, box-shadow 150ms ease",
       },
-      '.Input:focus': {
+      ".Input:focus": {
         borderColor: c.primary,
         boxShadow: `0 0 0 1px ${c.primary}`,
       },
-      '.Input--invalid': {
+      ".Input--invalid": {
         borderColor: c.danger,
         boxShadow: `0 0 0 1px ${c.danger}`,
       },
-      '.Label': {
+      ".Label": {
         fontSize: c.fontSize,
-        fontWeight: '500',
+        fontWeight: "500",
         color: c.text,
       },
     },
@@ -139,7 +139,7 @@ export function createStripeAppearance(
 export function createStripeElementStyles(
   config: Pick<
     StripeAppearanceConfig,
-    'text' | 'textSecondary' | 'danger' | 'fontFamily' | 'fontSize'
+    "text" | "textSecondary" | "danger" | "fontFamily" | "fontSize"
   > = {},
 ) {
   const text = config.text ?? LIGHT_DEFAULTS.text;
@@ -154,9 +154,9 @@ export function createStripeElementStyles(
         fontSize,
         fontFamily,
         color: text,
-        backgroundColor: 'transparent',
-        '::placeholder': { color: placeholder },
-        ':focus': { color: text },
+        backgroundColor: "transparent",
+        "::placeholder": { color: placeholder },
+        ":focus": { color: text },
       },
       invalid: {
         color: danger,
@@ -174,5 +174,5 @@ export const defaultStripeAppearance = createStripeAppearance();
 
 /** Dark mode Stripe Elements appearance. */
 export const darkStripeAppearance = createStripeAppearance({
-  baseTheme: 'night',
+  baseTheme: "night",
 });

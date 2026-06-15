@@ -1,9 +1,10 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentPrice } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
+import type { StripeComponentPrice } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Price methods
@@ -17,8 +18,8 @@ export async function createPrice(
     stripeProductId: string;
     unitAmount: number;
     currency?: string;
-    type: 'one_time' | 'recurring';
-    interval?: 'day' | 'week' | 'month' | 'year';
+    type: "one_time" | "recurring";
+    interval?: "day" | "week" | "month" | "year";
     intervalCount?: number;
     nickname?: string;
     metadata?: Record<string, string>;
@@ -27,12 +28,12 @@ export async function createPrice(
   const priceParams: Stripe.PriceCreateParams = {
     product: opts.stripeProductId,
     unit_amount: opts.unitAmount,
-    currency: opts.currency ?? 'usd',
+    currency: opts.currency ?? "usd",
     nickname: opts.nickname ?? undefined,
     metadata: opts.metadata ?? undefined,
   };
 
-  if (opts.type === 'recurring' && opts.interval) {
+  if (opts.type === "recurring" && opts.interval) {
     priceParams.recurring = {
       interval: opts.interval,
       interval_count: opts.intervalCount ?? 1,
@@ -42,18 +43,16 @@ export async function createPrice(
   const price = await stripe.prices.create(priceParams);
 
   const internalProduct = await ctx.runQuery(
-    componentRef(component, 'products/queries/getProductByStripeId'),
+    componentRef(component, "products/queries/getProductByStripeId"),
     { stripeProductId: opts.stripeProductId },
   );
   if (!internalProduct) {
-    throw new Error(
-      `Product ${opts.stripeProductId} not found in component DB when creating price`,
-    );
+    throwStripeError("PRODUCT_NOT_FOUND", `Product ${opts.stripeProductId} not found in component DB when creating price`);
   }
 
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'products/mutations/upsertPrice'),
+    componentRef(component, "products/mutations/upsertPrice"),
     {
       stripePriceId: price.id,
       productId: internalProduct._id,
@@ -105,7 +104,7 @@ export async function getPrice(
   opts: { priceId: string },
 ): Promise<StripeComponentPrice | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/getPrice'),
+    componentRef(component, "products/queries/getPrice"),
     opts,
   )) as StripeComponentPrice | null;
 }
@@ -116,7 +115,7 @@ export async function getPriceByStripeId(
   opts: { stripePriceId: string },
 ): Promise<StripeComponentPrice | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/getPriceByStripeId'),
+    componentRef(component, "products/queries/getPriceByStripeId"),
     opts,
   )) as StripeComponentPrice | null;
 }
@@ -127,7 +126,7 @@ export async function listPrices(
   opts?: { productId?: string; active?: boolean; limit?: number },
 ): Promise<StripeComponentPrice[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/listPrices'),
+    componentRef(component, "products/queries/listPrices"),
     opts ?? {},
   )) as StripeComponentPrice[];
 }
@@ -138,7 +137,7 @@ export async function listPricesByProduct(
   opts: { stripeProductId: string },
 ): Promise<StripeComponentPrice[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/listPricesByProduct'),
+    componentRef(component, "products/queries/listPricesByProduct"),
     opts,
   )) as StripeComponentPrice[];
 }
@@ -154,15 +153,15 @@ export async function upsertPrice(
     unitAmount: number;
     currency: string;
     active: boolean;
-    type: 'one_time' | 'recurring';
-    interval?: 'day' | 'week' | 'month' | 'year';
+    type: "one_time" | "recurring";
+    interval?: "day" | "week" | "month" | "year";
     intervalCount?: number;
     metadata?: Record<string, unknown>;
   },
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'products/mutations/upsertPrice'),
+    componentRef(component, "products/mutations/upsertPrice"),
     opts,
   );
   return null;

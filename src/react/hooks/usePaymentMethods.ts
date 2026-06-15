@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 export type PaymentMethodInfo = {
   id: string;
@@ -18,14 +18,19 @@ export type UsePaymentMethodsResult = {
   isLoading: boolean;
 };
 
+/**
+ * Factory for a hook that lists a customer's saved payment methods.
+ *
+ * The `useQuery` binding must support Convex's `"skip"` sentinel.
+ */
 export function createUsePaymentMethods(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,
   queryRef: any,
 ) {
   return function usePaymentMethods(
     accountId: string | undefined,
   ): UsePaymentMethodsResult {
-    const methods = accountId ? useQuery(queryRef, { accountId }) : undefined;
+    const methods = useQuery(queryRef, accountId ? { accountId } : "skip");
 
     const defaultMethod =
       methods?.find((m: PaymentMethodInfo) => m.isDefault) ?? null;

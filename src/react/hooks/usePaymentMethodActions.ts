@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from "react";
 
-import { useElements, useStripe } from '@stripe/react-stripe-js';
+import { useElements, useStripe } from "@stripe/react-stripe-js";
 
 /**
  * Backend action callbacks for payment method operations.
@@ -84,22 +84,22 @@ export function usePaymentMethodActions(
    */
   const createAndAttach = useCallback(
     async (
-      elementType: 'card' | 'cardNumber' = 'cardNumber',
+      elementType: "card" | "cardNumber" = "cardNumber",
     ): Promise<CreatePaymentMethodResult> => {
       if (!stripe || !elements) {
-        const msg = 'Stripe not initialized';
+        const msg = "Stripe not initialized";
         setError(msg);
         return { success: false, error: msg };
       }
 
       // Dynamically get the right element based on type
       const cardElement =
-        elementType === 'card'
-          ? elements.getElement('card')
-          : elements.getElement('cardNumber');
+        elementType === "card"
+          ? elements.getElement("card")
+          : elements.getElement("cardNumber");
 
       if (!cardElement) {
-        const msg = 'Card element not found';
+        const msg = "Card element not found";
         setError(msg);
         return { success: false, error: msg };
       }
@@ -110,18 +110,18 @@ export function usePaymentMethodActions(
       try {
         const { paymentMethod, error: stripeError } =
           await stripe.createPaymentMethod({
-            type: 'card',
+            type: "card",
             card: cardElement,
           });
 
         if (stripeError) {
-          const msg = stripeError.message ?? 'Failed to create payment method';
+          const msg = stripeError.message ?? "Failed to create payment method";
           setError(msg);
           return { success: false, error: msg };
         }
 
         if (!paymentMethod) {
-          const msg = 'No payment method returned';
+          const msg = "No payment method returned";
           setError(msg);
           return { success: false, error: msg };
         }
@@ -133,15 +133,15 @@ export function usePaymentMethodActions(
         await callbacksRef.current.reload();
 
         const card: PaymentMethodCard = {
-          brand: paymentMethod.card?.brand ?? '',
-          last4: paymentMethod.card?.last4 ?? '',
+          brand: paymentMethod.card?.brand ?? "",
+          last4: paymentMethod.card?.last4 ?? "",
           expMonth: paymentMethod.card?.exp_month ?? 0,
           expYear: paymentMethod.card?.exp_year ?? 0,
         };
 
         return { success: true, paymentMethodId: paymentMethod.id, card };
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'An error occurred';
+        const msg = err instanceof Error ? err.message : "An error occurred";
         setError(msg);
         return { success: false, error: msg };
       } finally {
@@ -161,7 +161,7 @@ export function usePaymentMethodActions(
       await callbacksRef.current.detach(paymentMethodId);
       await callbacksRef.current.reload();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to detach';
+      const msg = err instanceof Error ? err.message : "Failed to detach";
       setError(msg);
       throw err;
     } finally {
@@ -179,7 +179,7 @@ export function usePaymentMethodActions(
       await callbacksRef.current.setDefault(paymentMethodId);
       await callbacksRef.current.reload();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to set default';
+      const msg = err instanceof Error ? err.message : "Failed to set default";
       setError(msg);
       throw err;
     } finally {

@@ -18,10 +18,10 @@ type PriceLike = {
 export function formatPrice(
   amountInCents: number,
   currency: string,
-  locale = 'en-US',
+  locale = "en-US",
 ): string {
   return new Intl.NumberFormat(locale, {
-    style: 'currency',
+    style: "currency",
     currency: currency.toUpperCase(),
     minimumFractionDigits: 2,
   }).format(amountInCents / 100);
@@ -33,10 +33,10 @@ export function formatPrice(
  */
 export function formatPriceWithInterval(
   price: PriceLike,
-  locale = 'en-US',
+  locale = "en-US",
 ): string {
   const amount = formatPrice(price.unitAmount ?? 0, price.currency, locale);
-  if (price.type === 'one_time' || !price.interval) {
+  if (price.type === "one_time" || !price.interval) {
     return amount;
   }
   const count = price.intervalCount ?? 1;
@@ -51,7 +51,7 @@ export function formatPriceWithInterval(
  */
 export function filterPricesByInterval<T extends PriceLike>(
   prices: T[] | undefined | null,
-  interval: 'month' | 'year' | 'week' | 'day',
+  interval: "month" | "year" | "week" | "day",
 ): T[] {
   if (!prices) return [];
   return prices.filter((p) => p.interval === interval && p.active);

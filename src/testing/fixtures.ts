@@ -1,6 +1,6 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
 
-import { assertTestEnvironment } from './assert-test-env.js';
+import { assertTestEnvironment } from "./assert-test-env.js";
 
 /**
  * Create a test V2 account in Stripe.
@@ -17,7 +17,7 @@ export async function createTestAccount(
   assertTestEnvironment((stripe as any)._apiKey ?? undefined);
 
   const account = await (stripe as any).v2.core.accounts.create({
-    contact_email: overrides?.email ?? 'test@example.com',
+    contact_email: overrides?.email ?? "test@example.com",
     metadata: overrides?.metadata ?? {},
     configuration: {
       customer: { automatic_indirect_tax: { enabled: false } },
@@ -41,8 +41,8 @@ export async function createTestProduct(
   assertTestEnvironment((stripe as any)._apiKey ?? undefined);
 
   return await stripe.products.create({
-    name: overrides?.name ?? 'Test Product',
-    description: overrides?.description ?? 'A test product for development',
+    name: overrides?.name ?? "Test Product",
+    description: overrides?.description ?? "A test product for development",
     metadata: overrides?.metadata ?? {},
   });
 }
@@ -56,7 +56,7 @@ export async function createTestPrice(
     productId: string;
     unitAmount: number;
     currency?: string;
-    interval?: 'month' | 'year';
+    interval?: "month" | "year";
   },
 ): Promise<Stripe.Price> {
   assertTestEnvironment((stripe as any)._apiKey ?? undefined);
@@ -64,7 +64,7 @@ export async function createTestPrice(
   const params: Stripe.PriceCreateParams = {
     product: args.productId,
     unit_amount: args.unitAmount,
-    currency: args.currency ?? 'usd',
+    currency: args.currency ?? "usd",
   };
 
   if (args.interval) {

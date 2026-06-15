@@ -4,7 +4,7 @@ import { deriveAccountStatus } from "../core/accountStatus.js";
 import type { V2ThinEvent } from "../types.js";
 import {
   type WebhookContext,
-  componentRef,
+  dispatchUpsert,
   extractIdentifiers,
 } from "./helpers.js";
 
@@ -18,27 +18,40 @@ export async function verifyV2Event(
   signature: string,
   webhookSecret: string,
 ): Promise<V2ThinEvent> {
-  // SECURITY: Verify the webhook signature using async crypto.
-  await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+  // SECURITY: Verify the webhook signature using async crypto via the
+  // thin-event API. stripe-node v22+ rejects thin payloads passed to
+  // `webhooks.constructEventAsync` ("Use stripe.parseEventNotificationAsync
+  // instead"), so this is the only verification path that works for V2
+  // events. It also rejects V1 snapshot payloads, which can't reach here
+  // (the handler routes by event type prefix).
+  await stripe.parseEventNotificationAsync(rawBody, signature, webhookSecret);
 
-  // Signature verified — parse the raw body as a V2 thin event.
+  // Signature verified — return our own parse of the raw body. The SDK's
+  // EventNotification return value mutates `context` into a StripeContext
+  // object and attaches fetchEvent()/fetchRelatedObject() closures, which
+  // doesn't match the plain-data V2ThinEvent contract (context?: string).
   return JSON.parse(rawBody) as V2ThinEvent;
 }
 
+/**
+ * Process a V2 thin event by syncing the connected account.
+ * Returns the upserted account's Stripe id, or null when the event
+ * was skipped (unhandled type, missing related object, etc.).
+ */
 export async function handleV2Event(
   whCtx: WebhookContext,
   thinEvent: V2ThinEvent,
-): Promise<void> {
-  const { stripe, ctx, component } = whCtx;
+): Promise<string | null> {
+  const { stripe } = whCtx;
 
   if (!thinEvent.type.startsWith("v2.core.account")) {
     console.info(`[better-stripe] Unhandled V2 event type: ${thinEvent.type}`);
-    return;
+    return null;
   }
 
   const relatedObject = thinEvent.related_object;
   if (!relatedObject) {
-    return;
+    return null;
   }
 
   // Extract the account ID — related_object may reference the account directly
@@ -55,10 +68,10 @@ export async function handleV2Event(
       console.info(
         `[better-stripe] Could not extract account ID from V2 event: ${thinEvent.type}`,
       );
-      return;
+      return null;
     }
   } else {
-    return;
+    return null;
   }
 
   const account = await stripe.v2.core.accounts.retrieve(accountId, {
@@ -92,21 +105,20 @@ export async function handleV2Event(
           .join(" ") || undefined
       : undefined);
 
-  await ctx.runMutation(
-    componentRef(component, "core/mutations/upsertAccountInternal"),
-    {
-      stripeAccountId: account.id,
-      userId: userId || account.id,
-      orgId,
-      email,
-      name,
-      country: identity?.country ?? undefined,
-      requirements: account.requirements ?? undefined,
-      configuration: account.configuration ?? undefined,
-      appliedConfigurations: account.applied_configurations ?? undefined,
-      onboardingStatus,
-      missingRequirements,
-      metadata,
-    },
-  );
+  await dispatchUpsert(whCtx, "accountUpserted", {
+    stripeAccountId: account.id,
+    userId: userId || account.id,
+    orgId,
+    email,
+    name,
+    country: identity?.country ?? undefined,
+    requirements: account.requirements ?? undefined,
+    configuration: account.configuration ?? undefined,
+    appliedConfigurations: account.applied_configurations ?? undefined,
+    onboardingStatus,
+    missingRequirements,
+    metadata,
+  });
+
+  return account.id;
 }

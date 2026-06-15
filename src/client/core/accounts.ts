@@ -1,10 +1,18 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentAccount } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
-import { deriveAccountStatus } from './accountStatus.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
+import type {
+  V2AccountCreateParams,
+  V2AccountUpdateParams,
+  V2AccountRetrieveInclude,
+  V2AccountListParams,
+  V2CloseAppliedConfiguration,
+} from "../stripe-types.js";
+import type { StripeComponentAccount } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
+import { deriveAccountStatus } from "./accountStatus.js";
 
 // =============================================================================
 // Account CRUD
@@ -29,7 +37,7 @@ export async function createAccount(
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };
 
-  const createParams: Stripe.V2.Core.AccountCreateParams = {
+  const createParams: V2AccountCreateParams = {
     contact_email: opts.email,
     metadata,
   };
@@ -43,7 +51,7 @@ export async function createAccount(
 
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'core/mutations/upsertAccount'),
+    componentRef(component, "core/mutations/upsertAccount"),
     {
       stripeAccountId: account.id,
       userId: opts.userId,
@@ -51,14 +59,14 @@ export async function createAccount(
       email: opts.email,
       name: opts.name,
       country: opts.country,
-      appliedConfigurations: [] as ('customer' | 'merchant' | 'recipient')[],
-      onboardingStatus: 'pending' as const,
+      appliedConfigurations: [] as ("customer" | "merchant" | "recipient")[],
+      onboardingStatus: "pending" as const,
       metadata,
     },
   );
 
   const stored = await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountByStripeId'),
+    componentRef(component, "core/queries/getAccountByStripeId"),
     { stripeAccountId: account.id },
   );
 
@@ -79,8 +87,8 @@ export const DEFAULT_ACCOUNT_CONFIGURATION: Record<string, unknown> = {
 
 export const DEFAULT_ACCOUNT_DEFAULTS: Record<string, unknown> = {
   responsibilities: {
-    losses_collector: 'application',
-    fees_collector: 'application',
+    losses_collector: "application",
+    fees_collector: "application",
   },
 };
 
@@ -99,7 +107,7 @@ export async function createAccountWithOnboarding(
     returnUrl: string;
     accountConfiguration?: Record<string, unknown>;
     accountDefaults?: Record<string, unknown>;
-    dashboard?: 'express' | 'full' | 'none';
+    dashboard?: "express" | "full" | "none";
   },
 ): Promise<{
   stripeAccountId: string;
@@ -122,22 +130,22 @@ export async function createAccountWithOnboarding(
     // Apply configuration — this must succeed for onboarding to work correctly
     await stripe.v2.core.accounts.update(result.stripeAccountId, {
       configuration,
-      dashboard: opts.dashboard ?? 'express',
+      dashboard: opts.dashboard ?? "express",
       defaults,
-    } as Stripe.V2.Core.AccountUpdateParams);
+    } as V2AccountUpdateParams);
   } catch (configError) {
     // Roll back: delete the half-created account from Convex so retries
     // don't get stuck on an unusable pending account
     try {
       await runMutationOrThrow(
         ctx,
-        componentRef(component, 'core/mutations/deleteAccountByStripeId'),
+        componentRef(component, "core/mutations/deleteAccountByStripeId"),
         { stripeAccountId: result.stripeAccountId },
       );
     } catch {
       // Best effort cleanup
     }
-    throw configError;
+    throwStripeError("ACCOUNT_CREATE_FAILED", "Failed to apply account configuration after create; account was rolled back", configError);
   }
 
   // Re-fetch account to get actual applied_configurations from Stripe
@@ -149,12 +157,12 @@ export async function createAccountWithOnboarding(
   // Update our DB with the applied configurations
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'core/mutations/upsertAccount'),
+    componentRef(component, "core/mutations/upsertAccount"),
     {
       stripeAccountId: result.stripeAccountId,
       userId: opts.userId,
       appliedConfigurations: appliedConfigs,
-      onboardingStatus: 'in_progress' as const,
+      onboardingStatus: "in_progress" as const,
     },
   );
 
@@ -162,7 +170,7 @@ export async function createAccountWithOnboarding(
     account: result.stripeAccountId,
     refresh_url: opts.refreshUrl,
     return_url: opts.returnUrl,
-    type: 'account_onboarding',
+    type: "account_onboarding",
   });
 
   return {
@@ -177,7 +185,7 @@ export async function getAccount(
   opts: { accountId: string },
 ): Promise<StripeComponentAccount | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccount'),
+    componentRef(component, "core/queries/getAccount"),
     opts,
   )) as StripeComponentAccount | null;
 }
@@ -197,13 +205,13 @@ export async function getOrCreateAccount(
 ) {
   const existing = opts.orgId
     ? await ctx.runQuery(
-        componentRef(component, 'core/queries/getAccountByOrgId'),
+        componentRef(component, "core/queries/getAccountByOrgId"),
         {
           orgId: opts.orgId,
         },
       )
     : await ctx.runQuery(
-        componentRef(component, 'core/queries/getAccountByUserId'),
+        componentRef(component, "core/queries/getAccountByUserId"),
         {
           userId: opts.userId,
         },
@@ -227,7 +235,7 @@ export async function getAccountByUserId(
   opts: { userId: string },
 ): Promise<StripeComponentAccount | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountByUserId'),
+    componentRef(component, "core/queries/getAccountByUserId"),
     opts,
   )) as StripeComponentAccount | null;
 }
@@ -238,7 +246,7 @@ export async function getAccountByOrgId(
   opts: { orgId: string },
 ): Promise<StripeComponentAccount | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountByOrgId'),
+    componentRef(component, "core/queries/getAccountByOrgId"),
     opts,
   )) as StripeComponentAccount | null;
 }
@@ -249,7 +257,7 @@ export async function getAccountByStripeId(
   opts: { stripeAccountId: string },
 ): Promise<StripeComponentAccount | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountByStripeId'),
+    componentRef(component, "core/queries/getAccountByStripeId"),
     opts,
   )) as StripeComponentAccount | null;
 }
@@ -260,7 +268,7 @@ export async function getAccountOnboardingStatus(
   opts: { accountId: string },
 ) {
   return ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountOnboardingStatus'),
+    componentRef(component, "core/queries/getAccountOnboardingStatus"),
     opts,
   );
 }
@@ -278,14 +286,14 @@ export async function upsertAccount(
     capabilities?: Record<string, unknown>;
     requirements?: Record<string, unknown>;
     configuration?: Record<string, unknown>;
-    onboardingStatus?: 'pending' | 'in_progress' | 'complete' | 'restricted';
+    onboardingStatus?: "pending" | "in_progress" | "complete" | "restricted";
     missingRequirements?: string[];
     metadata?: Record<string, unknown>;
   },
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'core/mutations/upsertAccount'),
+    componentRef(component, "core/mutations/upsertAccount"),
     opts,
   );
   return null;
@@ -301,7 +309,7 @@ export async function updateAccount(
     metadata?: Record<string, string>;
   },
 ) {
-  const updateParams: Stripe.V2.Core.AccountUpdateParams = {};
+  const updateParams: V2AccountUpdateParams = {};
   if (opts.email) updateParams.contact_email = opts.email;
   if (opts.metadata) updateParams.metadata = opts.metadata;
   await stripe.v2.core.accounts.update(opts.stripeAccountId, updateParams);
@@ -313,7 +321,7 @@ export async function getV2Account(
   _ctx: RunCtx,
   opts: {
     stripeAccountId: string;
-    include?: Stripe.V2.Core.AccountRetrieveParams.Include[];
+    include?: V2AccountRetrieveInclude[];
   },
 ): Promise<Stripe.V2.Core.Account> {
   return await stripe.v2.core.accounts.retrieve(opts.stripeAccountId, {
@@ -326,7 +334,7 @@ export async function updateV2Account(
   _ctx: RunCtx,
   opts: {
     stripeAccountId: string;
-    updateParams: Stripe.V2.Core.AccountUpdateParams;
+    updateParams: V2AccountUpdateParams;
   },
 ): Promise<Stripe.V2.Core.Account> {
   return await stripe.v2.core.accounts.update(
@@ -346,9 +354,7 @@ export async function listStripeAccounts(
 
   // TODO: Remove manual pagination when Stripe SDK adds starting_after to AccountListParams
   while (hasMore) {
-    const listParams: Stripe.V2.Core.AccountListParams & {
-      starting_after?: string;
-    } = {
+    const listParams: V2AccountListParams & { starting_after?: string } = {
       limit: opts?.limit ?? 100,
     };
     if (startingAfter) listParams.starting_after = startingAfter;
@@ -374,7 +380,7 @@ export async function closeAccount(
   let appliedConfigs: string[] = [];
 
   const dbAccount = await ctx.runQuery(
-    componentRef(component, 'core/queries/getAccountByStripeId'),
+    componentRef(component, "core/queries/getAccountByStripeId"),
     { stripeAccountId: opts.stripeAccountId },
   );
   if (dbAccount?.appliedConfigurations) {
@@ -394,15 +400,14 @@ export async function closeAccount(
   // Close the account on Stripe — must pass all applied_configurations
   // See: https://docs.stripe.com/api/v2/core/accounts/close
   await stripe.v2.core.accounts.close(opts.stripeAccountId, {
-    applied_configurations:
-      appliedConfigs as Stripe.V2.Core.AccountCloseParams.AppliedConfiguration[],
+    applied_configurations: appliedConfigs as V2CloseAppliedConfiguration[],
   });
 
   // Only remove from component DB after Stripe close succeeds
   // This prevents Convex/Stripe getting out of sync if close fails
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'core/mutations/deleteAccountByStripeId'),
+    componentRef(component, "core/mutations/deleteAccountByStripeId"),
     { stripeAccountId: opts.stripeAccountId },
   );
 
@@ -431,7 +436,7 @@ export async function addRecipientConfiguration(
         },
       },
     },
-  } as Stripe.V2.Core.AccountUpdateParams);
+  } as V2AccountUpdateParams);
   return { success: true };
 }
 
@@ -451,9 +456,9 @@ export async function syncAllAccounts(
 
   while (hasMore) {
     // TODO: Remove manual pagination when Stripe SDK adds starting_after to AccountListParams
-    const params: Stripe.V2.Core.AccountListParams & {
-      starting_after?: string;
-    } = { limit: 20 };
+    const params: V2AccountListParams & { starting_after?: string } = {
+      limit: 20,
+    };
     if (startingAfter) params.starting_after = startingAfter;
 
     const page = await stripe.v2.core.accounts.list(params);
@@ -477,12 +482,12 @@ export async function syncAllAccounts(
           (identity?.individual
             ? [identity.individual.given_name, identity.individual.surname]
                 .filter(Boolean)
-                .join(' ') || undefined
+                .join(" ") || undefined
             : undefined);
 
         await runMutationOrThrow(
           ctx,
-          componentRef(component, 'core/mutations/upsertAccount'),
+          componentRef(component, "core/mutations/upsertAccount"),
           {
             stripeAccountId: account.id,
             userId,
@@ -500,7 +505,7 @@ export async function syncAllAccounts(
         synced++;
       } catch (error) {
         errors.push(
-          `Account ${account.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Account ${account.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     }

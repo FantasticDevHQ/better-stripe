@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentSubscription } from '../types.js';
+import type { StripeComponentSubscription } from "../types.js";
 
 export type UseSubscriptionsResult = {
   subscriptions: StripeComponentSubscription[] | undefined;
@@ -9,7 +9,7 @@ export type UseSubscriptionsResult = {
 };
 
 export function createUseSubscriptions(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown>) => any,
   queryRef: any,
 ) {
   return function useSubscriptions(args?: {
@@ -21,7 +21,7 @@ export function createUseSubscriptions(
     const activeSubscription =
       subscriptions?.find(
         (s: StripeComponentSubscription) =>
-          s.status === 'active' || s.status === 'trialing',
+          s.status === "active" || s.status === "trialing",
       ) ?? null;
 
     return {

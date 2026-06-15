@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useCheckout } from '@stripe/react-stripe-js/checkout';
+import { useCheckout } from "@stripe/react-stripe-js/checkout";
 
 /** Extract error message from Stripe's loosely-typed error objects. */
 function extractErrorMessage(error: unknown, fallback: string): string {
-  if (error && typeof error === 'object' && 'message' in error) {
+  if (error && typeof error === "object" && "message" in error) {
     return String(error.message);
   }
   return fallback;
@@ -14,15 +14,15 @@ function extractErrorMessage(error: unknown, fallback: string): string {
  * Result of a checkout confirmation attempt.
  */
 export type CheckoutConfirmResult =
-  | { type: 'success' }
-  | { type: 'error'; message: string };
+  | { type: "success" }
+  | { type: "error"; message: string };
 
 /**
  * Checkout session state and actions.
  */
 export type CheckoutSessionState =
   | {
-      type: 'success';
+      type: "success";
       /** Stripe checkout session ID */
       sessionId: string;
       /** Whether the checkout form is ready for confirmation */
@@ -35,8 +35,8 @@ export type CheckoutSessionState =
         paymentMethod?: string;
       }) => Promise<CheckoutConfirmResult>;
     }
-  | { type: 'loading' }
-  | { type: 'error'; message: string };
+  | { type: "loading" }
+  | { type: "error"; message: string };
 
 /**
  * Hook for accessing Stripe Checkout Session state and actions.
@@ -70,20 +70,20 @@ export type CheckoutSessionState =
 export function useCheckoutSession(): CheckoutSessionState {
   const result = useCheckout();
 
-  if (result.type === 'loading') {
-    return { type: 'loading' };
+  if (result.type === "loading") {
+    return { type: "loading" };
   }
 
-  if (result.type === 'error') {
+  if (result.type === "error") {
     const message =
-      'error' in result
-        ? extractErrorMessage(result.error, 'Checkout failed to load')
-        : 'Checkout failed to load';
-    return { type: 'error', message };
+      "error" in result
+        ? extractErrorMessage(result.error, "Checkout failed to load")
+        : "Checkout failed to load";
+    return { type: "error", message };
   }
 
   return {
-    type: 'success',
+    type: "success",
     sessionId: result.checkout.id,
     canConfirm: result.checkout.canConfirm,
     confirm: async (options) => {
@@ -93,18 +93,18 @@ export function useCheckoutSession(): CheckoutSessionState {
           : undefined,
       );
 
-      if (confirmResult.type === 'error') {
+      if (confirmResult.type === "error") {
         const errorMessage =
-          'error' in confirmResult
+          "error" in confirmResult
             ? extractErrorMessage(
                 confirmResult.error,
-                'Payment confirmation failed',
+                "Payment confirmation failed",
               )
-            : 'Payment confirmation failed';
-        return { type: 'error', message: errorMessage };
+            : "Payment confirmation failed";
+        return { type: "error", message: errorMessage };
       }
 
-      return { type: 'success' };
+      return { type: "success" };
     },
   };
 }

@@ -1,9 +1,9 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState } from "react";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -11,17 +11,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -29,15 +29,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useAction, useQuery } from 'convex/react';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+} from "@/components/ui/table";
+import { useAction, useQuery } from "convex/react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
-import { api } from '../../../convex/_generated/api';
+import { api } from "../../../convex/_generated/api";
 
 function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency: currency.toUpperCase(),
   }).format(amount / 100);
 }
@@ -50,11 +50,11 @@ export function AdminProducts() {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAddPriceFor, setShowAddPriceFor] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState({ name: '', description: '' });
+  const [newProduct, setNewProduct] = useState({ name: "", description: "" });
   const [newPrice, setNewPrice] = useState({
-    amount: '',
-    currency: 'usd',
-    interval: 'month',
+    amount: "",
+    currency: "usd",
+    interval: "month",
   });
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isCreatingPrice, setIsCreatingPrice] = useState(false);
@@ -66,10 +66,10 @@ export function AdminProducts() {
         name: newProduct.name,
         description: newProduct.description || undefined,
       });
-      setNewProduct({ name: '', description: '' });
+      setNewProduct({ name: "", description: "" });
       setShowCreateDialog(false);
     } catch (err) {
-      console.error('Failed to create product:', err);
+      console.error("Failed to create product:", err);
     } finally {
       setIsCreatingProduct(false);
     }
@@ -79,25 +79,25 @@ export function AdminProducts() {
     setIsCreatingPrice(true);
     try {
       const interval = newPrice.interval as
-        | 'month'
-        | 'year'
-        | 'week'
-        | 'day'
-        | 'one_time';
+        | "month"
+        | "year"
+        | "week"
+        | "day"
+        | "one_time";
       await createPrice({
         stripeProductId,
         unitAmount: Number(newPrice.amount),
         currency: newPrice.currency,
-        type: interval === 'one_time' ? 'one_time' : 'recurring',
+        type: interval === "one_time" ? "one_time" : "recurring",
         interval:
-          interval === 'one_time'
+          interval === "one_time"
             ? undefined
-            : (interval as 'month' | 'year' | 'week' | 'day'),
+            : (interval as "month" | "year" | "week" | "day"),
       });
-      setNewPrice({ amount: '', currency: 'usd', interval: 'month' });
+      setNewPrice({ amount: "", currency: "usd", interval: "month" });
       setShowAddPriceFor(null);
     } catch (err) {
-      console.error('Failed to create price:', err);
+      console.error("Failed to create price:", err);
     } finally {
       setIsCreatingPrice(false);
     }
@@ -175,7 +175,7 @@ export function AdminProducts() {
                 onClick={handleCreateProduct}
                 disabled={isCreatingProduct || !newProduct.name}
               >
-                {isCreatingProduct ? 'Creating...' : 'Create'}
+                {isCreatingProduct ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -215,19 +215,19 @@ export function AdminProducts() {
                       <div>
                         <p className="font-medium">{product.name}</p>
                         <p className="text-muted-foreground text-sm">
-                          {product.description ?? ''}
+                          {product.description ?? ""}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={product.active ? 'default' : 'secondary'}>
-                      {product.active ? 'Active' : 'Archived'}
+                    <Badge variant={product.active ? "default" : "secondary"}>
+                      {product.active ? "Active" : "Archived"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {product.prices.length} price
-                    {product.prices.length !== 1 ? 's' : ''}
+                    {product.prices.length !== 1 ? "s" : ""}
                   </TableCell>
                   <TableCell className="text-right">
                     <div
@@ -347,7 +347,7 @@ export function AdminProducts() {
                                 }
                                 disabled={isCreatingPrice || !newPrice.amount}
                               >
-                                {isCreatingPrice ? 'Adding...' : 'Add'}
+                                {isCreatingPrice ? "Adding..." : "Add"}
                               </Button>
                             </CardContent>
                           </Card>
@@ -378,20 +378,20 @@ export function AdminProducts() {
                                   )}
                                 </TableCell>
                                 <TableCell className="capitalize">
-                                  {price.type === 'one_time'
-                                    ? 'One-time'
-                                    : `Per ${price.interval ?? 'month'}`}
+                                  {price.type === "one_time"
+                                    ? "One-time"
+                                    : `Per ${price.interval ?? "month"}`}
                                 </TableCell>
                                 <TableCell className="capitalize">
-                                  {price.type.replace('_', ' ')}
+                                  {price.type.replace("_", " ")}
                                 </TableCell>
                                 <TableCell>
                                   <Badge
                                     variant={
-                                      price.active ? 'default' : 'secondary'
+                                      price.active ? "default" : "secondary"
                                     }
                                   >
-                                    {price.active ? 'Active' : 'Archived'}
+                                    {price.active ? "Active" : "Archived"}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">

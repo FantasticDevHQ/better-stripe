@@ -1,9 +1,11 @@
 import Stripe from "stripe";
 
+import { STRIPE_API_VERSION } from "../constants.js";
 import type { Component } from "../helpers.js";
+import type { StripeApiVersion } from "../stripe-types.js";
 import type { WebhookActionCtx } from "../types.js";
+import type { TriggerDispatcherName } from "../types/triggers.js";
 
-const DEFAULT_API_VERSION = "2026-02-25.clover";
 const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
 // =============================================================================
@@ -44,12 +46,15 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   getCheckoutSession: "billing/queries/getCheckoutSession",
   getCheckoutSessionByStripeId: "billing/queries/getCheckoutSessionByStripeId",
   listCheckoutSessionsByUser: "billing/queries/listCheckoutSessionsByUser",
+  getInvoiceByStripeId: "billing/queries/getInvoiceByStripeId",
   listInvoices: "billing/queries/listInvoices",
   upsertSubscription: "billing/mutations/upsertSubscription",
   upsertCheckoutSession: "billing/mutations/upsertCheckoutSession",
   upsertInvoice: "billing/mutations/upsertInvoice",
   // Connect
+  getPaymentByStripeId: "connect/queries/getPaymentByStripeId",
   getPayout: "connect/queries/getPayout",
+  getPayoutByStripeId: "connect/queries/getPayoutByStripeId",
   listPayouts: "connect/queries/listPayouts",
   upsertPayment: "connect/mutations/upsertPayment",
   upsertPayout: "connect/mutations/upsertPayout",
@@ -70,7 +75,7 @@ export function getStripeClient(
   apiVersion?: string,
 ): Stripe {
   return new Stripe(secretKey, {
-    apiVersion: (apiVersion || DEFAULT_API_VERSION) as Stripe.LatestApiVersion,
+    apiVersion: (apiVersion as StripeApiVersion) || STRIPE_API_VERSION,
   });
 }
 
@@ -93,6 +98,13 @@ export function deriveTrialFields(subscription: Stripe.Subscription): {
   };
 }
 
+/**
+ * Extracts userId and orgId from Stripe object metadata.
+ *
+ * Returns userId `""` when the Stripe object has no userId metadata
+ * (e.g. created in the Stripe Dashboard). `""` rows are stored but
+ * never matched by user-scoped queries.
+ */
 export function extractIdentifiers(
   metadata: Record<string, string> | null | undefined,
 ): { userId: string; orgId: string | undefined } {
@@ -181,6 +193,45 @@ export function componentRef(component: Component, path: string) {
   const anchorPath: string = anchor[TO_REFERENCE_PATH];
   const basePath = anchorPath.split("/")[0];
   return { [TO_REFERENCE_PATH]: `${basePath}/${path}` } as any;
+}
+
+/**
+ * Component upsert mutation path for each trigger dispatcher. Single source
+ * of truth shared by `dispatchUpsert` (direct-mutation fallback) and
+ * `triggersApi()`'s dispatcher specs — keeps the pairing in sync by
+ * construction.
+ */
+export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
+  accountUpserted: "core/mutations/upsertAccountInternal",
+  productUpserted: "products/mutations/upsertProduct",
+  priceUpserted: "products/mutations/upsertPrice",
+  subscriptionUpserted: "billing/mutations/upsertSubscription",
+  subscriptionDeleted: "billing/mutations/upsertSubscription",
+  checkoutSessionUpserted: "billing/mutations/upsertCheckoutSession",
+  invoiceUpserted: "billing/mutations/upsertInvoice",
+  paymentUpserted: "connect/mutations/upsertPayment",
+  payoutUpserted: "connect/mutations/upsertPayout",
+};
+
+/**
+ * Run a domain upsert. When the app registered a trigger dispatcher for this
+ * domain, route through it so the sync trigger runs in the same transaction
+ * as the component write. Otherwise call the component mutation directly.
+ */
+export async function dispatchUpsert(
+  whCtx: WebhookContext,
+  dispatcherName: TriggerDispatcherName,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const ref = whCtx.config?.triggers?.[dispatcherName];
+  if (ref) {
+    await whCtx.ctx.runMutation(ref, { data });
+  } else {
+    await whCtx.ctx.runMutation(
+      componentRef(whCtx.component, DISPATCHER_UPSERT_PATHS[dispatcherName]),
+      data,
+    );
+  }
 }
 
 function findAnchorRef(component: Component): any {

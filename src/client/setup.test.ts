@@ -6,19 +6,19 @@
  * - `initConvexTest` — creates a typed convex-test instance with component modules
  * - `components` — typed mock of the component API via componentsGeneric()
  */
-import { convexTest } from 'convex-test';
+import { convexTest } from "convex-test";
 import {
   type GenericSchema,
   type SchemaDefinition,
   componentsGeneric,
   defineSchema,
-} from 'convex/server';
-import { expect, test } from 'vitest';
+} from "convex/server";
+import { expect, test } from "vitest";
 
-import type { ComponentApi } from '../component/_generated/component.js';
+import type { ComponentApi } from "../component/_generated/component.js";
 
 // Load all component modules (ts/js/tsx/jsx) for convex-test's in-memory runtime
-const modules = import.meta.glob('../component/**/*.{ts,js,tsx,jsx}');
+const modules = import.meta.glob("../component/**/*.{ts,js,tsx,jsx}");
 
 /**
  * Create a typed convex-test instance preloaded with the component's modules.
@@ -41,7 +41,7 @@ export const components = componentsGeneric() as unknown as {
   betterStripe: ComponentApi;
 };
 
-test('setup exports are defined', () => {
-  expect(initConvexTest).toBeTypeOf('function');
+test("setup exports are defined", () => {
+  expect(initConvexTest).toBeTypeOf("function");
   expect(components.betterStripe).toBeDefined();
 });

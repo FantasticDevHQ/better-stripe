@@ -1,10 +1,6 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
 
-/**
- * Pinned Stripe API version. Upgrading this is a breaking change
- * that requires a component release and changelog entry.
- */
-export const PINNED_API_VERSION = '2026-02-25.clover';
+import { STRIPE_API_VERSION } from "../../client/constants.js";
 
 /**
  * Keyed cache for Stripe SDK instances.
@@ -21,11 +17,11 @@ const _clients = new Map<string, Stripe>();
  * Uses the component's pinned API version.
  */
 export function getStripe(apiKey: string): Stripe {
-  const cacheKey = `${apiKey}:${PINNED_API_VERSION}`;
+  const cacheKey = `${apiKey}:${STRIPE_API_VERSION}`;
   let client = _clients.get(cacheKey);
   if (!client) {
     client = new Stripe(apiKey, {
-      apiVersion: PINNED_API_VERSION as Stripe.LatestApiVersion,
+      apiVersion: STRIPE_API_VERSION,
       typescript: true,
     });
     _clients.set(cacheKey, client);

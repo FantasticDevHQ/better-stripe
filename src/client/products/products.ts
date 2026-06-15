@@ -1,9 +1,9 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentProduct } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { Component, RunCtx } from "../helpers.js";
+import { runMutationOrThrow } from "../helpers.js";
+import type { StripeComponentProduct } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Product methods
@@ -30,7 +30,7 @@ export async function createProduct(
 
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'products/mutations/upsertProduct'),
+    componentRef(component, "products/mutations/upsertProduct"),
     {
       stripeProductId: product.id,
       accountId: opts.accountId,
@@ -42,7 +42,7 @@ export async function createProduct(
   );
 
   const stored = await ctx.runQuery(
-    componentRef(component, 'products/queries/getProductByStripeId'),
+    componentRef(component, "products/queries/getProductByStripeId"),
     { stripeProductId: product.id },
   );
 
@@ -70,7 +70,7 @@ export async function updateProduct(
     updateParams.description = opts.description;
   if (opts.active !== undefined) updateParams.active = opts.active;
   if (opts.defaultPrice !== undefined) {
-    updateParams.default_price = opts.defaultPrice ?? '';
+    updateParams.default_price = opts.defaultPrice ?? "";
   }
   if (opts.metadata !== undefined) updateParams.metadata = opts.metadata;
   await stripe.products.update(opts.stripeProductId, updateParams);
@@ -92,7 +92,7 @@ export async function getProduct(
   opts: { productId: string },
 ): Promise<StripeComponentProduct | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/getProduct'),
+    componentRef(component, "products/queries/getProduct"),
     opts,
   )) as StripeComponentProduct | null;
 }
@@ -103,7 +103,7 @@ export async function getProductByStripeId(
   opts: { stripeProductId: string },
 ): Promise<StripeComponentProduct | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/getProductByStripeId'),
+    componentRef(component, "products/queries/getProductByStripeId"),
     opts,
   )) as StripeComponentProduct | null;
 }
@@ -114,7 +114,7 @@ export async function listProducts(
   opts?: { accountId?: string; active?: boolean; limit?: number },
 ): Promise<StripeComponentProduct[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'products/queries/listProducts'),
+    componentRef(component, "products/queries/listProducts"),
     opts ?? {},
   )) as StripeComponentProduct[];
 }
@@ -133,7 +133,7 @@ export async function upsertProduct(
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'products/mutations/upsertProduct'),
+    componentRef(component, "products/mutations/upsertProduct"),
     opts,
   );
   return null;
@@ -180,7 +180,7 @@ export async function syncAllProducts(
     try {
       await runMutationOrThrow(
         ctx,
-        componentRef(component, 'products/mutations/upsertProduct'),
+        componentRef(component, "products/mutations/upsertProduct"),
         {
           stripeProductId: product.id,
           name: product.name,
@@ -192,21 +192,26 @@ export async function syncAllProducts(
       synced++;
     } catch (error) {
       errors.push(
-        `Product ${product.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Product ${product.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }
 
   let pricesSynced = 0;
+  const productCache = new Map<string, { _id: string } | null>();
   for await (const price of stripe.prices.list({ limit: 100 })) {
     try {
       const stripeProductId =
-        typeof price.product === 'string' ? price.product : '';
+        typeof price.product === "string" ? price.product : "";
 
-      const internalProduct = await ctx.runQuery(
-        componentRef(component, 'products/queries/getProductByStripeId'),
-        { stripeProductId },
-      );
+      let internalProduct = productCache.get(stripeProductId);
+      if (internalProduct === undefined) {
+        internalProduct = (await ctx.runQuery(
+          componentRef(component, "products/queries/getProductByStripeId"),
+          { stripeProductId },
+        )) as { _id: string } | null;
+        productCache.set(stripeProductId, internalProduct);
+      }
 
       if (!internalProduct) {
         console.warn(
@@ -217,7 +222,7 @@ export async function syncAllProducts(
 
       await runMutationOrThrow(
         ctx,
-        componentRef(component, 'products/mutations/upsertPrice'),
+        componentRef(component, "products/mutations/upsertPrice"),
         {
           stripePriceId: price.id,
           productId: internalProduct._id,
@@ -235,7 +240,7 @@ export async function syncAllProducts(
       pricesSynced++;
     } catch (error) {
       errors.push(
-        `Price ${price.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Price ${price.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

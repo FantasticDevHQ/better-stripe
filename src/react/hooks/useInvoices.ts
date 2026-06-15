@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type { StripeComponentInvoice } from '../types.js';
+import type { StripeComponentInvoice } from "../types.js";
 
 export type UseInvoicesResult = {
   invoices: StripeComponentInvoice[] | undefined;
@@ -8,7 +8,7 @@ export type UseInvoicesResult = {
 };
 
 export function createUseInvoices(
-  useQuery: (queryRef: any, args: any) => any,
+  useQuery: (queryRef: any, args: Record<string, unknown>) => any,
   queryRef: any,
 ) {
   return function useInvoices(args?: {

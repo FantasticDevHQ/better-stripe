@@ -1,9 +1,11 @@
-import type Stripe from 'stripe';
+import type Stripe from "stripe";
 
-import type { Component, RunCtx } from '../helpers.js';
-import { epochToIso, runMutationOrThrow } from '../helpers.js';
-import type { StripeComponentSubscription } from '../types.js';
-import { componentRef } from '../webhooks/helpers.js';
+import type { SubscriptionStatus } from "../../component/billing/validators.js";
+import type { Component, RunCtx } from "../helpers.js";
+import { epochToIso, runMutationOrThrow } from "../helpers.js";
+import { throwStripeError } from "../errors.js";
+import type { StripeComponentSubscription } from "../types.js";
+import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
 // Subscription methods
@@ -15,7 +17,7 @@ export async function getSubscription(
   opts: { subscriptionId: string },
 ): Promise<StripeComponentSubscription | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/getSubscription'),
+    componentRef(component, "billing/queries/getSubscription"),
     opts,
   )) as StripeComponentSubscription | null;
 }
@@ -26,7 +28,7 @@ export async function getSubscriptionByStripeId(
   opts: { stripeSubscriptionId: string },
 ): Promise<StripeComponentSubscription | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/getSubscriptionByStripeId'),
+    componentRef(component, "billing/queries/getSubscriptionByStripeId"),
     opts,
   )) as StripeComponentSubscription | null;
 }
@@ -67,7 +69,7 @@ export async function updateSubscriptionQuantity(
 ) {
   const sub = await stripe.subscriptions.retrieve(opts.stripeSubscriptionId);
   const itemId = sub.items?.data?.[0]?.id;
-  if (!itemId) throw new Error('Subscription has no items');
+  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
   await stripe.subscriptionItems.update(itemId, { quantity: opts.quantity });
   return { success: true };
 }
@@ -75,11 +77,19 @@ export async function updateSubscriptionQuantity(
 export async function listSubscriptions(
   component: Component,
   ctx: RunCtx,
-  opts?: { status?: string; limit?: number },
+  opts?: {
+    stripeAccountId?: string;
+    status?: SubscriptionStatus;
+    limit?: number;
+  },
 ): Promise<StripeComponentSubscription[]> {
+  const { stripeAccountId, ...rest } = opts ?? {};
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listSubscriptions'),
-    opts ?? {},
+    componentRef(component, "billing/queries/listSubscriptions"),
+    {
+      ...rest,
+      ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+    },
   )) as StripeComponentSubscription[];
 }
 
@@ -94,7 +104,7 @@ export async function listStripeSubscriptions(
   const subscriptions: Stripe.Subscription[] = [];
 
   for await (const subscription of stripe.subscriptions.list({
-    status: opts?.status ?? 'all',
+    status: opts?.status ?? "all",
     limit: opts?.limit ?? 100,
   })) {
     subscriptions.push(subscription);
@@ -109,7 +119,7 @@ export async function listSubscriptionsByUser(
   opts: { userId: string; status?: string },
 ): Promise<StripeComponentSubscription[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listSubscriptionsByUser'),
+    componentRef(component, "billing/queries/listSubscriptionsByUser"),
     opts,
   )) as StripeComponentSubscription[];
 }
@@ -120,7 +130,7 @@ export async function listSubscriptionsByOrg(
   opts: { orgId: string; status?: string },
 ): Promise<StripeComponentSubscription[]> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/listSubscriptionsByOrg'),
+    componentRef(component, "billing/queries/listSubscriptionsByOrg"),
     opts,
   )) as StripeComponentSubscription[];
 }
@@ -131,7 +141,7 @@ export async function getActiveSubscription(
   opts: { userId: string; orgId?: string },
 ): Promise<StripeComponentSubscription | null> {
   return (await ctx.runQuery(
-    componentRef(component, 'billing/queries/getActiveSubscription'),
+    componentRef(component, "billing/queries/getActiveSubscription"),
     opts,
   )) as StripeComponentSubscription | null;
 }
@@ -145,13 +155,13 @@ export async function upsertSubscription(
     userId: string;
     orgId?: string;
     status:
-      | 'active'
-      | 'trialing'
-      | 'past_due'
-      | 'canceled'
-      | 'incomplete'
-      | 'unpaid'
-      | 'paused';
+      | "active"
+      | "trialing"
+      | "past_due"
+      | "canceled"
+      | "incomplete"
+      | "unpaid"
+      | "paused";
     priceId?: string;
     quantity?: number;
     currentPeriodStart?: string;
@@ -166,7 +176,7 @@ export async function upsertSubscription(
 ) {
   await runMutationOrThrow(
     ctx,
-    componentRef(component, 'billing/mutations/upsertSubscription'),
+    componentRef(component, "billing/mutations/upsertSubscription"),
     opts,
   );
   return null;
@@ -178,7 +188,7 @@ export async function getTrialStatus(
   opts: { subscriptionId: string },
 ) {
   return ctx.runQuery(
-    componentRef(component, 'billing/queries/getTrialStatus'),
+    componentRef(component, "billing/queries/getTrialStatus"),
     opts,
   );
 }
@@ -196,12 +206,14 @@ export async function syncAllSubscriptions(
   const errors: string[] = [];
 
   for await (const sub of stripe.subscriptions.list({
-    status: 'all',
+    status: "all",
     limit: 100,
   })) {
     try {
       const metadata = (sub.metadata ?? {}) as Record<string, string>;
-      const userId = metadata.userId ?? metadata.user_id ?? '';
+      // Returns userId "" when no userId metadata is present (e.g. created in the Stripe Dashboard).
+      // "" rows are stored but never matched by user-scoped queries.
+      const userId = metadata.userId ?? metadata.user_id ?? "";
       const orgId = metadata.orgId ?? metadata.org_id ?? undefined;
 
       const firstItem = sub.items?.data?.[0];
@@ -210,13 +222,13 @@ export async function syncAllSubscriptions(
 
       await runMutationOrThrow(
         ctx,
-        componentRef(component, 'billing/mutations/upsertSubscription'),
+        componentRef(component, "billing/mutations/upsertSubscription"),
         {
           stripeSubscriptionId: sub.id,
           accountId:
-            typeof sub.customer === 'string'
+            typeof sub.customer === "string"
               ? sub.customer
-              : (sub.customer?.id ?? ''),
+              : (sub.customer?.id ?? ""),
           userId,
           orgId,
           status: sub.status,
@@ -226,7 +238,7 @@ export async function syncAllSubscriptions(
           currentPeriodEnd: epochToIso(periodEnd),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
           canceledAt: epochToIso(sub.canceled_at),
-          isTrialing: sub.status === 'trialing',
+          isTrialing: sub.status === "trialing",
           trialStart: epochToIso(sub.trial_start),
           trialEnd: epochToIso(sub.trial_end),
           metadata: sub.metadata ?? undefined,
@@ -235,7 +247,7 @@ export async function syncAllSubscriptions(
       synced++;
     } catch (error) {
       errors.push(
-        `Subscription ${sub.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Subscription ${sub.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

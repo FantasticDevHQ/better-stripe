@@ -15,7 +15,6 @@ import {
   type PaymentMethodItem,
   PaymentMethodsList,
   StripeProviderWithKey,
-  usePaymentMethodActions,
 } from "@getdojo/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CreditCard } from "lucide-react";
@@ -33,7 +32,21 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
     setIsLoading(true);
     try {
       const result = await listMethods({ stripeCustomerId: stripeAccountId });
-      setMethods((result as PaymentMethodItem[]) ?? []);
+      setMethods(
+        (result ?? []).map((pm) => ({
+          id: pm.id,
+          type: pm.type,
+          card: pm.card
+            ? {
+                brand: pm.card.brand,
+                last4: pm.card.last4,
+                expMonth: pm.card.exp_month,
+                expYear: pm.card.exp_year,
+              }
+            : undefined,
+          isDefault: false,
+        })),
+      );
     } catch (err) {
       console.error("Failed to load payment methods:", err);
     } finally {
@@ -42,25 +55,11 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
   }, [listMethods, stripeAccountId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
     void reload();
     // Only reload on mount or when stripeAccountId changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stripeAccountId]);
-
-  const { createAndAttach } = usePaymentMethodActions({
-    attach: async (paymentMethodId: string) => {
-      await attachMethod({
-        paymentMethodId,
-        stripeCustomerId: stripeAccountId,
-      });
-      await reload();
-    },
-    detach: async (paymentMethodId: string) => {
-      await detachMethod({ paymentMethodId });
-      await reload();
-    },
-    reload,
-  });
 
   return (
     <div className="space-y-6">
@@ -73,7 +72,15 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
           <CardDescription>Add a new card to your account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AddCardForm onSuccess={async () => await reload()} />
+          <AddCardForm
+            onSuccess={async (paymentMethodId) => {
+              await attachMethod({
+                paymentMethodId,
+                stripeCustomerId: stripeAccountId,
+              });
+              await reload();
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -97,7 +104,7 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
           ) : (
             <PaymentMethodsList
               methods={methods}
-              onDetach={async (paymentMethodId: string) => {
+              onDelete={async (paymentMethodId: string) => {
                 await detachMethod({ paymentMethodId });
                 await reload();
               }}

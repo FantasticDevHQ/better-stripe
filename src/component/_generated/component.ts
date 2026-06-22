@@ -285,7 +285,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listCheckoutSessionsByUser: FunctionReference<
           "query",
           "internal",
-          { limit?: number; status?: string; userId: string },
+          {
+            limit?: number;
+            status?: "open" | "complete" | "expired";
+            userId: string;
+          },
           Array<{
             _creationTime: number;
             _id: string;
@@ -308,7 +312,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             accountId?: string;
             limit?: number;
-            status?: string;
+            status?: "draft" | "open" | "paid" | "uncollectible" | "void";
             subscriptionId?: string;
             userId?: string;
           },

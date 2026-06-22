@@ -14,6 +14,8 @@ export type {
   StripeComponentAccount,
   StripeComponentPayment,
   StripeComponentPayout,
+  StripeComponentRefund,
+  StripeComponentDispute,
   StripeComponentWebhookEvent,
   StripeComponentProduct,
   StripeComponentPrice,
@@ -26,7 +28,5 @@ export type {
   SyncTriggerCtx,
   AsyncHooks,
   AsyncHookCtx,
-  TriggerApiRefs,
-  TriggerDispatchRef,
-  AsyncHookRef,
+  WebhookHandlerRefs,
 } from "./types/index.js";

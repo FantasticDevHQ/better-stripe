@@ -65,6 +65,22 @@ export async function processEvent(
     case "payout.failed":
       await handlePayoutEvent(whCtx, obj as Stripe.Payout);
       break;
+    case "refund.created":
+    case "refund.updated":
+    case "refund.failed":
+      await handleRefundEvent(whCtx, obj as Stripe.Refund);
+      break;
+    case "charge.dispute.created":
+    case "charge.dispute.updated":
+    case "charge.dispute.closed":
+    case "charge.dispute.funds_withdrawn":
+    case "charge.dispute.funds_reinstated":
+      await handleDisputeEvent(
+        whCtx,
+        obj as Stripe.Dispute,
+        event.type.replace("charge.dispute.", ""),
+      );
+      break;
     default:
       console.info(`[better-stripe] Unhandled event type: ${event.type}`);
   }
@@ -333,5 +349,84 @@ async function handlePayoutEvent(
     arrivalDate: epochToIso(payout.arrival_date),
     method: payout.method ?? undefined,
     metadata: payout.metadata ?? undefined,
+  });
+}
+
+// Stripe types Refund.status as `string | null`; clamp to the documented union.
+const REFUND_STATUSES = new Set([
+  "pending",
+  "requires_action",
+  "succeeded",
+  "failed",
+  "canceled",
+]);
+const REFUND_REASONS = new Set([
+  "duplicate",
+  "fraudulent",
+  "requested_by_customer",
+  "expired_uncaptured_charge",
+]);
+
+async function handleRefundEvent(
+  whCtx: WebhookContext,
+  refund: Stripe.Refund,
+): Promise<void> {
+  const paymentIntentId =
+    typeof refund.payment_intent === "string"
+      ? refund.payment_intent
+      : (refund.payment_intent?.id ?? undefined);
+  const chargeId =
+    typeof refund.charge === "string"
+      ? refund.charge
+      : (refund.charge?.id ?? undefined);
+
+  const status =
+    refund.status && REFUND_STATUSES.has(refund.status)
+      ? refund.status
+      : "pending";
+  const reason =
+    refund.reason && REFUND_REASONS.has(refund.reason)
+      ? refund.reason
+      : undefined;
+
+  await dispatchUpsert(whCtx, "refundUpserted", {
+    stripeRefundId: refund.id,
+    stripePaymentIntentId: paymentIntentId,
+    stripeChargeId: chargeId,
+    amount: refund.amount,
+    currency: refund.currency,
+    status,
+    reason,
+    failureReason: refund.failure_reason ?? undefined,
+    metadata: refund.metadata ?? undefined,
+  });
+}
+
+async function handleDisputeEvent(
+  whCtx: WebhookContext,
+  dispute: Stripe.Dispute,
+  lastEvent: string,
+): Promise<void> {
+  const paymentIntentId =
+    typeof dispute.payment_intent === "string"
+      ? dispute.payment_intent
+      : (dispute.payment_intent?.id ?? undefined);
+  const chargeId =
+    typeof dispute.charge === "string"
+      ? dispute.charge
+      : (dispute.charge?.id ?? undefined);
+
+  await dispatchUpsert(whCtx, "disputeUpserted", {
+    stripeDisputeId: dispute.id,
+    stripePaymentIntentId: paymentIntentId,
+    stripeChargeId: chargeId,
+    amount: dispute.amount,
+    currency: dispute.currency,
+    // Stripe.Dispute.Status is exactly the component's disputeStatusValidator union.
+    status: dispute.status,
+    reason: dispute.reason,
+    isChargeRefundable: dispute.is_charge_refundable,
+    lastEvent,
+    metadata: dispute.metadata ?? undefined,
   });
 }

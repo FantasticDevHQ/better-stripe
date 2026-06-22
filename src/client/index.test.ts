@@ -44,6 +44,13 @@ const mockStripeInstance = {
   subscriptionItems: {
     update: vi.fn(),
   },
+  refunds: {
+    create: vi.fn(),
+  },
+  disputes: {
+    update: vi.fn(),
+    close: vi.fn(),
+  },
   paymentMethods: {
     list: vi.fn(),
     attach: vi.fn(),
@@ -441,6 +448,269 @@ describe("BetterStripe", () => {
         mockStripeInstance.subscriptionItems.update,
       ).not.toHaveBeenCalled();
     });
+
+    it("surfaces a STRIPE_API_ERROR when the retrieve call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          quantity: 3,
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("cancelSubscription error handling", () => {
+    it("surfaces a STRIPE_API_ERROR when the Stripe call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.cancelSubscription(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          cancelAtPeriodEnd: true,
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("pauseSubscription", () => {
+    it("defaults behavior to keep_as_draft when omitted", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.pauseSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: { behavior: "keep_as_draft" } },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes resumes_at and behavior when provided", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.pauseSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        behavior: "void",
+        resumesAt: 1893456000,
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: { behavior: "void", resumes_at: 1893456000 } },
+      );
+    });
+
+    it("surfaces a STRIPE_API_ERROR when the Stripe call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.pauseSubscription(mockCtx, { stripeSubscriptionId: "sub_123" }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("resumeSubscription", () => {
+    it("clears pause_collection with the empty-string sentinel", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.resumeSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: "" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSubscriptionPrice", () => {
+    it("retrieves the item id and defaults proration_behavior to none", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionPrice(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_new",
+      });
+
+      expect(mockStripeInstance.subscriptions.retrieve).toHaveBeenCalledWith(
+        "sub_123",
+      );
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        {
+          items: [{ id: "si_1", price: "price_new" }],
+          proration_behavior: "none",
+        },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes through a caller-provided prorationBehavior", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.updateSubscriptionPrice(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_new",
+        prorationBehavior: "always_invoice",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        {
+          items: [{ id: "si_1", price: "price_new" }],
+          proration_behavior: "always_invoice",
+        },
+      );
+    });
+
+    it("rejects when the subscription has no items and does not call update", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [] },
+      });
+
+      await expect(
+        bs.updateSubscriptionPrice(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          stripePriceId: "price_new",
+        }),
+      ).rejects.toThrow("Subscription has no items");
+
+      expect(mockStripeInstance.subscriptions.update).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a STRIPE_API_ERROR when the update call throws after a successful retrieve", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.updateSubscriptionPrice(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          stripePriceId: "price_new",
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("updateSubscriptionMetadata", () => {
+    it("calls update with the provided metadata", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionMetadata(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        metadata: { plan: "pro" },
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { metadata: { plan: "pro" } },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSubscriptionTrialEnd", () => {
+    it("ends the trial immediately with 'now'", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionTrialEnd(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        trialEnd: "now",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { trial_end: "now" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes a numeric timestamp through unchanged", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.updateSubscriptionTrialEnd(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        trialEnd: 1893456000,
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { trial_end: 1893456000 },
+      );
+    });
   });
 
   // =========================================================================
@@ -658,6 +928,172 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // Refund methods
+  // =========================================================================
+
+  describe("createRefund", () => {
+    it("creates a refund for a payment intent and returns the refund id", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_1" });
+
+      const result = await bs.createRefund(mockCtx, {
+        stripePaymentIntentId: "pi_1",
+        amount: 250,
+        reason: "requested_by_customer",
+      });
+
+      expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith(
+        {
+          payment_intent: "pi_1",
+          amount: 250,
+          reason: "requested_by_customer",
+        },
+        undefined,
+      );
+      expect(result).toEqual({ stripeRefundId: "re_1" });
+    });
+
+    it("routes to a connected account when stripeAccountId is given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_2" });
+
+      await bs.createRefund(mockCtx, {
+        stripeChargeId: "ch_1",
+        stripeAccountId: "acct_1",
+      });
+
+      expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith(
+        { charge: "ch_1" },
+        { stripeAccount: "acct_1" },
+      );
+    });
+
+    it("rejects with REFUND_CREATE_FAILED when neither PI nor charge is given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      await expect(bs.createRefund(mockCtx, {})).rejects.toMatchObject({
+        data: { code: "REFUND_CREATE_FAILED" },
+      });
+      expect(mockStripeInstance.refunds.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects with REFUND_CREATE_FAILED when both PI and charge are given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      await expect(
+        bs.createRefund(mockCtx, {
+          stripePaymentIntentId: "pi_1",
+          stripeChargeId: "ch_1",
+        }),
+      ).rejects.toMatchObject({ data: { code: "REFUND_CREATE_FAILED" } });
+      expect(mockStripeInstance.refunds.create).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a STRIPE API failure as REFUND_CREATE_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        bs.createRefund(mockCtx, { stripePaymentIntentId: "pi_1" }),
+      ).rejects.toMatchObject({ data: { code: "REFUND_CREATE_FAILED" } });
+    });
+  });
+
+  describe("listRefunds / getRefundByStripeId", () => {
+    it("forwards reads to the component, mapping stripeAccountId to accountId", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listRefunds(mockCtx, {
+        stripeAccountId: "acct_1",
+        status: "succeeded",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+        accountId: "acct_1",
+        status: "succeeded",
+      });
+    });
+  });
+
+  // =========================================================================
+  // Dispute methods
+  // =========================================================================
+
+  describe("updateDispute", () => {
+    it("submits evidence with the submit flag", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.update.mockResolvedValue({});
+
+      const result = await bs.updateDispute(mockCtx, {
+        stripeDisputeId: "dp_1",
+        evidence: { product_description: "A widget" },
+        submit: true,
+      });
+
+      expect(mockStripeInstance.disputes.update).toHaveBeenCalledWith(
+        "dp_1",
+        { evidence: { product_description: "A widget" }, submit: true },
+        undefined,
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("surfaces a STRIPE API failure as DISPUTE_UPDATE_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.update.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        bs.updateDispute(mockCtx, { stripeDisputeId: "dp_1", submit: true }),
+      ).rejects.toMatchObject({ data: { code: "DISPUTE_UPDATE_FAILED" } });
+    });
+  });
+
+  describe("closeDispute", () => {
+    it("closes the dispute, passing routing options in the third arg", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.close.mockResolvedValue({});
+
+      const result = await bs.closeDispute(mockCtx, {
+        stripeDisputeId: "dp_1",
+        stripeAccountId: "acct_1",
+      });
+
+      expect(mockStripeInstance.disputes.close).toHaveBeenCalledWith(
+        "dp_1",
+        {},
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  // =========================================================================
   // Payment method: listPaymentMethods
   // =========================================================================
 
@@ -822,343 +1258,6 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
-  // triggersApi
-  // =========================================================================
-
-  describe("triggersApi", () => {
-    // Registered Convex functions expose their raw handler via `_handler`
-    // (set by convex/server's registration impl) — invoke dispatchers that way.
-    const invokeHandler = (fn: unknown, ctx: unknown, args: unknown) =>
-      (
-        fn as { _handler: (ctx: unknown, args: unknown) => Promise<null> }
-      )._handler(ctx, args);
-
-    // Component refs expose their function path via the toReferencePath
-    // symbol (e.g. "_reference/childComponent/betterStripe/billing/...").
-    // Asserting on the path suffix catches typo'd dispatcher spec paths.
-    const refPath = (ref: unknown): string =>
-      (ref as Record<symbol, string>)[Symbol.for("toReferencePath")];
-
-    it("returns all 18 TriggerApiRefs keys (9 dispatchers + 9 after* hooks)", () => {
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-      });
-
-      const api = bs.triggersApi();
-
-      const expectedDispatcherKeys = [
-        "accountUpserted",
-        "productUpserted",
-        "priceUpserted",
-        "subscriptionUpserted",
-        "subscriptionDeleted",
-        "checkoutSessionUpserted",
-        "invoiceUpserted",
-        "paymentUpserted",
-        "payoutUpserted",
-      ];
-
-      const expectedAsyncKeys = [
-        "afterAccountUpdated",
-        "afterCheckoutCompleted",
-        "afterSubscriptionUpdated",
-        "afterSubscriptionCanceled",
-        "afterTrialEnding",
-        "afterInvoicePaid",
-        "afterPaymentSucceeded",
-        "afterPaymentFailed",
-        "afterPayoutCompleted",
-      ];
-
-      const allKeys = [...expectedDispatcherKeys, ...expectedAsyncKeys];
-      for (const key of allKeys) {
-        expect(api, `missing key: ${key}`).toHaveProperty(key);
-        expect(
-          (api as Record<string, unknown>)[key],
-          `key not defined: ${key}`,
-        ).toBeDefined();
-      }
-      expect(allKeys).toHaveLength(18);
-    });
-
-    it("subscriptionUpserted upserts and fires onCreate for a new doc", async () => {
-      const onCreate = vi.fn().mockResolvedValue(undefined);
-      const onUpdate = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onCreate, onUpdate } },
-      });
-
-      const newDoc = { stripeSubscriptionId: "sub_1", status: "active" };
-      mockCtx.runQuery
-        .mockResolvedValueOnce(null) // old doc lookup
-        .mockResolvedValueOnce(newDoc); // new doc lookup
-
-      const api = bs.triggersApi();
-      await invokeHandler(api.subscriptionUpserted, mockCtx, {
-        data: { stripeSubscriptionId: "sub_1", status: "active" },
-      });
-
-      // Component upsert performed exactly once, against the right function
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
-      expect(refPath(upsertRef)).toMatch(
-        /\/billing\/mutations\/upsertSubscription$/,
-      );
-      expect(upsertArgs).toEqual({
-        stripeSubscriptionId: "sub_1",
-        status: "active",
-      });
-      // Both doc lookups hit the getter with the Stripe id from data
-      expect(mockCtx.runQuery).toHaveBeenCalledTimes(2);
-      for (const [getterRef, getterArgs] of mockCtx.runQuery.mock.calls) {
-        expect(refPath(getterRef)).toMatch(
-          /\/billing\/queries\/getSubscriptionByStripeId$/,
-        );
-        expect(getterArgs).toEqual({ stripeSubscriptionId: "sub_1" });
-      }
-      expect(onCreate).toHaveBeenCalledTimes(1);
-      expect(onCreate).toHaveBeenCalledWith(mockCtx, newDoc);
-      expect(onUpdate).not.toHaveBeenCalled();
-    });
-
-    it("subscriptionUpserted fires onUpdate (not onCreate) for an existing doc", async () => {
-      const onCreate = vi.fn().mockResolvedValue(undefined);
-      const onUpdate = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onCreate, onUpdate } },
-      });
-
-      const oldDoc = { stripeSubscriptionId: "sub_1", status: "trialing" };
-      const newDoc = { stripeSubscriptionId: "sub_1", status: "active" };
-      mockCtx.runQuery
-        .mockResolvedValueOnce(oldDoc)
-        .mockResolvedValueOnce(newDoc);
-
-      const api = bs.triggersApi();
-      await invokeHandler(api.subscriptionUpserted, mockCtx, {
-        data: { stripeSubscriptionId: "sub_1", status: "active" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(onUpdate).toHaveBeenCalledTimes(1);
-      expect(onUpdate).toHaveBeenCalledWith(mockCtx, newDoc, oldDoc);
-      expect(onCreate).not.toHaveBeenCalled();
-    });
-
-    it("checkoutSessionUpserted fires onCompleted on transition into 'complete'", async () => {
-      const onCompleted = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { checkoutSession: { onCompleted } },
-      });
-      const api = bs.triggersApi();
-
-      const newDoc = { stripeSessionId: "cs_1", status: "complete" };
-      mockCtx.runQuery
-        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "open" })
-        .mockResolvedValueOnce(newDoc);
-
-      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
-        data: { stripeSessionId: "cs_1", status: "complete" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(refPath(mockCtx.runMutation.mock.calls[0][0])).toMatch(
-        /\/billing\/mutations\/upsertCheckoutSession$/,
-      );
-      expect(refPath(mockCtx.runQuery.mock.calls[0][0])).toMatch(
-        /\/billing\/queries\/getCheckoutSessionByStripeId$/,
-      );
-      expect(onCompleted).toHaveBeenCalledTimes(1);
-      expect(onCompleted).toHaveBeenCalledWith(mockCtx, newDoc);
-    });
-
-    it("checkoutSessionUpserted fires onCompleted when first seen already complete (null -> complete)", async () => {
-      const onCompleted = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { checkoutSession: { onCompleted } },
-      });
-      const api = bs.triggersApi();
-
-      const newDoc = { stripeSessionId: "cs_1", status: "complete" };
-      mockCtx.runQuery
-        .mockResolvedValueOnce(null) // no prior doc
-        .mockResolvedValueOnce(newDoc);
-
-      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
-        data: { stripeSessionId: "cs_1", status: "complete" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(onCompleted).toHaveBeenCalledTimes(1);
-      expect(onCompleted).toHaveBeenCalledWith(mockCtx, newDoc);
-    });
-
-    it("checkoutSessionUpserted does NOT re-fire onCompleted when already complete", async () => {
-      const onCompleted = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { checkoutSession: { onCompleted } },
-      });
-      const api = bs.triggersApi();
-
-      mockCtx.runQuery
-        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "complete" })
-        .mockResolvedValueOnce({
-          stripeSessionId: "cs_1",
-          status: "complete",
-        });
-
-      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
-        data: { stripeSessionId: "cs_1", status: "complete" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(onCompleted).not.toHaveBeenCalled();
-    });
-
-    it("checkoutSessionUpserted does NOT fire onCompleted when new status is not 'complete'", async () => {
-      const onCompleted = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { checkoutSession: { onCompleted } },
-      });
-      const api = bs.triggersApi();
-
-      mockCtx.runQuery
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ stripeSessionId: "cs_1", status: "open" });
-
-      await invokeHandler(api.checkoutSessionUpserted, mockCtx, {
-        data: { stripeSessionId: "cs_1", status: "open" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      expect(onCompleted).not.toHaveBeenCalled();
-    });
-
-    it("subscriptionDeleted upserts and fires subscription.onDelete with the fetched doc", async () => {
-      const onDelete = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onDelete } },
-      });
-      const api = bs.triggersApi();
-
-      const doc = { stripeSubscriptionId: "sub_1", status: "canceled" };
-      mockCtx.runQuery.mockResolvedValueOnce(doc);
-
-      await invokeHandler(api.subscriptionDeleted, mockCtx, {
-        data: { stripeSubscriptionId: "sub_1", status: "canceled" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
-      expect(refPath(upsertRef)).toMatch(
-        /\/billing\/mutations\/upsertSubscription$/,
-      );
-      expect(upsertArgs).toEqual({
-        stripeSubscriptionId: "sub_1",
-        status: "canceled",
-      });
-      const [getterRef, getterArgs] = mockCtx.runQuery.mock.calls[0];
-      expect(refPath(getterRef)).toMatch(
-        /\/billing\/queries\/getSubscriptionByStripeId$/,
-      );
-      expect(getterArgs).toEqual({ stripeSubscriptionId: "sub_1" });
-      expect(onDelete).toHaveBeenCalledTimes(1);
-      expect(onDelete).toHaveBeenCalledWith(mockCtx, doc);
-    });
-
-    it("rejects with a clear error when the Stripe id field is missing from data", async () => {
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onCreate: vi.fn() } },
-      });
-      const api = bs.triggersApi();
-
-      await expect(
-        invokeHandler(api.subscriptionUpserted, mockCtx, {
-          data: { status: "active" },
-        }),
-      ).rejects.toThrow(
-        "[better-stripe] subscriptionUpserted: missing stripeSubscriptionId in data",
-      );
-
-      // Nothing was written or read
-      expect(mockCtx.runMutation).not.toHaveBeenCalled();
-      expect(mockCtx.runQuery).not.toHaveBeenCalled();
-    });
-
-    it("propagates trigger errors so the transaction rolls back", async () => {
-      const onCreate = vi.fn().mockRejectedValue(new Error("trigger boom"));
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onCreate } },
-      });
-      const api = bs.triggersApi();
-
-      mockCtx.runQuery
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ stripeSubscriptionId: "sub_1" });
-
-      await expect(
-        invokeHandler(api.subscriptionUpserted, mockCtx, {
-          data: { stripeSubscriptionId: "sub_1" },
-        }),
-      ).rejects.toThrow("trigger boom");
-    });
-
-    it("performs the upsert without throwing when no triggers are configured", async () => {
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-      });
-      const api = bs.triggersApi();
-
-      await expect(
-        invokeHandler(api.subscriptionUpserted, mockCtx, {
-          data: { stripeSubscriptionId: "sub_1" },
-        }),
-      ).resolves.toBeNull();
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      // No trigger configured -> the before/after doc reads are skipped
-      expect(mockCtx.runQuery).not.toHaveBeenCalled();
-    });
-
-    it("afterCheckoutCompleted invokes the configured hook with (ctx, doc)", async () => {
-      const onCheckoutCompleted = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        hooks: { onCheckoutCompleted },
-      });
-      const api = bs.triggersApi();
-
-      const doc = { stripeSessionId: "cs_1", status: "complete" };
-      await invokeHandler(api.afterCheckoutCompleted, mockCtx, { doc });
-
-      expect(onCheckoutCompleted).toHaveBeenCalledTimes(1);
-      expect(onCheckoutCompleted).toHaveBeenCalledWith(mockCtx, doc);
-    });
-
-    it("afterCheckoutCompleted resolves without error when no hook configured", async () => {
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-      });
-      const api = bs.triggersApi();
-
-      await expect(
-        invokeHandler(api.afterCheckoutCompleted, mockCtx, {
-          doc: { stripeSessionId: "cs_1" },
-        }),
-      ).resolves.toBeNull();
-    });
-  });
-
-  // =========================================================================
   // syncAllProducts
   // =========================================================================
 
@@ -1176,15 +1275,53 @@ describe("BetterStripe", () => {
       });
 
       mockStripeInstance.products.list.mockReturnValue(
-        asyncIter([{ id: "prod_1", name: "Product 1", active: true, description: null, metadata: {} }]),
+        asyncIter([
+          {
+            id: "prod_1",
+            name: "Product 1",
+            active: true,
+            description: null,
+            metadata: {},
+          },
+        ]),
       );
 
       // Three prices all belonging to the same product
       mockStripeInstance.prices.list.mockReturnValue(
         asyncIter([
-          { id: "price_1", product: "prod_1", active: true, currency: "usd", unit_amount: 1000, type: "one_time", recurring: null, nickname: null, metadata: {} },
-          { id: "price_2", product: "prod_1", active: true, currency: "usd", unit_amount: 2000, type: "one_time", recurring: null, nickname: null, metadata: {} },
-          { id: "price_3", product: "prod_1", active: true, currency: "usd", unit_amount: 3000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          {
+            id: "price_1",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 1000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
+          {
+            id: "price_2",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 2000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
+          {
+            id: "price_3",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 3000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
         ]),
       );
 
@@ -1338,7 +1475,10 @@ describe("BetterStripe", () => {
         applied_configurations: [],
         configuration: {},
         metadata: {},
-        requirements: { entries: [], summary: { minimum_deadline: { status: "no_requirements" } } },
+        requirements: {
+          entries: [],
+          summary: { minimum_deadline: { status: "no_requirements" } },
+        },
       };
       mockStripeInstance.v2.core.accounts.create.mockResolvedValue(fakeAccount);
       mockStripeInstance.v2.core.accounts.update.mockRejectedValue({
@@ -1362,9 +1502,12 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("ACCOUNT_CREATE_FAILED");
-      expect(data.message).toContain("Failed to apply account configuration after create");
+      expect(data.message).toContain(
+        "Failed to apply account configuration after create",
+      );
     });
 
     it("updateSubscriptionQuantity throws BetterStripeError SUBSCRIPTION_UPDATE_FAILED when sub has no items", async () => {
@@ -1389,7 +1532,8 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("SUBSCRIPTION_UPDATE_FAILED");
       expect(data.message).toBe("Subscription has no items");
     });
@@ -1424,7 +1568,8 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("PRODUCT_NOT_FOUND");
       expect(data.message).toContain("prod_missing");
     });
@@ -1446,9 +1591,12 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("PAYMENT_METHOD_FAILED");
-      expect(data.message).toContain("setDefaultPaymentMethod is not yet implemented");
+      expect(data.message).toContain(
+        "setDefaultPaymentMethod is not yet implemented",
+      );
     });
   });
 });

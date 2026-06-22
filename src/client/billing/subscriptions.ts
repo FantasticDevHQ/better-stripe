@@ -11,6 +11,20 @@ import { componentRef } from "../webhooks/helpers.js";
 // Subscription methods
 // =============================================================================
 
+/**
+ * Run a Stripe SDK call and surface any failure as a structured
+ * `ConvexError<BetterStripeError>` (`STRIPE_API_ERROR`) so it serializes across
+ * the Convex action/mutation boundary instead of propagating as a raw `Error`.
+ * This is the Plan 006 convention; see `src/client/errors.ts`.
+ */
+async function callStripe<T>(message: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    throwStripeError("STRIPE_API_ERROR", message, err);
+  }
+}
+
 export async function getSubscription(
   component: Component,
   ctx: RunCtx,
@@ -41,11 +55,15 @@ export async function cancelSubscription(
   const cancelAtPeriodEnd = opts.cancelAtPeriodEnd ?? true;
 
   if (cancelAtPeriodEnd) {
-    await stripe.subscriptions.update(opts.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
+    await callStripe("Failed to cancel subscription", () =>
+      stripe.subscriptions.update(opts.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      }),
+    );
   } else {
-    await stripe.subscriptions.cancel(opts.stripeSubscriptionId);
+    await callStripe("Failed to cancel subscription", () =>
+      stripe.subscriptions.cancel(opts.stripeSubscriptionId),
+    );
   }
 
   return { success: true };
@@ -56,9 +74,11 @@ export async function reactivateSubscription(
   _ctx: RunCtx,
   opts: { stripeSubscriptionId: string },
 ) {
-  await stripe.subscriptions.update(opts.stripeSubscriptionId, {
-    cancel_at_period_end: false,
-  });
+  await callStripe("Failed to reactivate subscription", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      cancel_at_period_end: false,
+    }),
+  );
   return { success: true };
 }
 
@@ -67,10 +87,130 @@ export async function updateSubscriptionQuantity(
   _ctx: RunCtx,
   opts: { stripeSubscriptionId: string; quantity: number },
 ) {
-  const sub = await stripe.subscriptions.retrieve(opts.stripeSubscriptionId);
+  const sub = await callStripe("Failed to retrieve subscription", () =>
+    stripe.subscriptions.retrieve(opts.stripeSubscriptionId),
+  );
   const itemId = sub.items?.data?.[0]?.id;
   if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
-  await stripe.subscriptionItems.update(itemId, { quantity: opts.quantity });
+  await callStripe("Failed to update subscription quantity", () =>
+    stripe.subscriptionItems.update(itemId, { quantity: opts.quantity }),
+  );
+  return { success: true };
+}
+
+/**
+ * Pause collection on a subscription. Sets `pause_collection` (Stripe transitions
+ * the subscription to `status: "paused"`); the component DB is updated when the
+ * resulting `customer.subscription.updated` webhook arrives.
+ */
+export async function pauseSubscription(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    stripeSubscriptionId: string;
+    behavior?: "keep_as_draft" | "mark_uncollectible" | "void";
+    resumesAt?: number; // Unix timestamp
+  },
+) {
+  await callStripe("Failed to pause subscription", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      pause_collection: {
+        behavior: opts.behavior ?? "keep_as_draft",
+        ...(opts.resumesAt !== undefined ? { resumes_at: opts.resumesAt } : {}),
+      },
+    }),
+  );
+  return { success: true };
+}
+
+/**
+ * Resume a paused subscription by clearing `pause_collection`. There is no
+ * dedicated Stripe resume endpoint — passing the empty-string sentinel
+ * (`Emptyable<PauseCollection>`) clears the field and Stripe returns the
+ * subscription to its prior active status.
+ */
+export async function resumeSubscription(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: { stripeSubscriptionId: string },
+) {
+  await callStripe("Failed to resume subscription", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      // Emptyable<PauseCollection> — "" clears the field.
+      pause_collection: "",
+    }),
+  );
+  return { success: true };
+}
+
+/**
+ * Swap the price on a subscription's first item. Defaults to
+ * `proration_behavior: "none"` so the change takes effect without generating
+ * proration line items. Operates only on `items.data[0]` (single-item
+ * assumption shared with {@link updateSubscriptionQuantity}).
+ */
+export async function updateSubscriptionPrice(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    stripeSubscriptionId: string;
+    stripePriceId: string;
+    prorationBehavior?: "always_invoice" | "create_prorations" | "none";
+  },
+) {
+  const sub = await callStripe("Failed to retrieve subscription", () =>
+    stripe.subscriptions.retrieve(opts.stripeSubscriptionId),
+  );
+  const itemId = sub.items?.data?.[0]?.id;
+  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
+  await callStripe("Failed to update subscription price", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      items: [{ id: itemId, price: opts.stripePriceId }],
+      proration_behavior: opts.prorationBehavior ?? "none",
+    }),
+  );
+  return { success: true };
+}
+
+/**
+ * Merge the provided keys into the subscription's metadata. Stripe upserts the
+ * given keys and preserves any existing keys not included here (pass a key with
+ * an empty-string value to delete that key). Fires `customer.subscription.updated`,
+ * which syncs `metadata` to the component doc via `upsertSubscriptionFromStripe`.
+ */
+export async function updateSubscriptionMetadata(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    stripeSubscriptionId: string;
+    metadata: Record<string, string>;
+  },
+) {
+  await callStripe("Failed to update subscription metadata", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      metadata: opts.metadata,
+    }),
+  );
+  return { success: true };
+}
+
+/**
+ * Extend or end a subscription's trial. `trialEnd` accepts a Unix timestamp or
+ * `"now"` to end the trial immediately.
+ */
+export async function updateSubscriptionTrialEnd(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: {
+    stripeSubscriptionId: string;
+    trialEnd: "now" | number; // Unix timestamp or "now" to end immediately
+  },
+) {
+  await callStripe("Failed to update subscription trial end", () =>
+    stripe.subscriptions.update(opts.stripeSubscriptionId, {
+      trial_end: opts.trialEnd,
+    }),
+  );
   return { success: true };
 }
 

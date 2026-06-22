@@ -58,6 +58,12 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   listPayouts: "connect/queries/listPayouts",
   upsertPayment: "connect/mutations/upsertPayment",
   upsertPayout: "connect/mutations/upsertPayout",
+  getRefundByStripeId: "connect/queries/getRefundByStripeId",
+  listRefunds: "connect/queries/listRefunds",
+  upsertRefund: "connect/mutations/upsertRefund",
+  getDisputeByStripeId: "connect/queries/getDisputeByStripeId",
+  listDisputes: "connect/queries/listDisputes",
+  upsertDispute: "connect/mutations/upsertDispute",
   // Webhooks
   getWebhookEvent: "webhooks/queries/getWebhookEvent",
   insertWebhookEvent: "webhooks/mutations/insertWebhookEvent",
@@ -198,7 +204,7 @@ export function componentRef(component: Component, path: string) {
 /**
  * Component upsert mutation path for each trigger dispatcher. Single source
  * of truth shared by `dispatchUpsert` (direct-mutation fallback) and
- * `triggersApi()`'s dispatcher specs — keeps the pairing in sync by
+ * `webhookHandlers()`'s dispatcher specs — keeps the pairing in sync by
  * construction.
  */
 export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
@@ -211,11 +217,13 @@ export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
   invoiceUpserted: "billing/mutations/upsertInvoice",
   paymentUpserted: "connect/mutations/upsertPayment",
   payoutUpserted: "connect/mutations/upsertPayout",
+  refundUpserted: "connect/mutations/upsertRefund",
+  disputeUpserted: "connect/mutations/upsertDispute",
 };
 
 /**
- * Run a domain upsert. When the app registered a trigger dispatcher for this
- * domain, route through it so the sync trigger runs in the same transaction
+ * Run a domain upsert. When the app registered the `webhooks` handler pair,
+ * route through `syncWebhook` so the sync trigger runs in the same transaction
  * as the component write. Otherwise call the component mutation directly.
  */
 export async function dispatchUpsert(
@@ -223,9 +231,12 @@ export async function dispatchUpsert(
   dispatcherName: TriggerDispatcherName,
   data: Record<string, unknown>,
 ): Promise<void> {
-  const ref = whCtx.config?.triggers?.[dispatcherName];
-  if (ref) {
-    await whCtx.ctx.runMutation(ref, { data });
+  const refs = whCtx.config?.webhooks;
+  if (refs) {
+    await whCtx.ctx.runMutation(refs.syncWebhook, {
+      dispatcher: dispatcherName,
+      data,
+    });
   } else {
     await whCtx.ctx.runMutation(
       componentRef(whCtx.component, DISPATCHER_UPSERT_PATHS[dispatcherName]),

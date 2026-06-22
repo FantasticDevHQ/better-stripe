@@ -28,7 +28,7 @@
 
 ## Rules
 
-- Never commit without being told to commit.
+- Make commits when asked; don't commit on your own initiative.
 - Tests accompany every change.
 - `plans/` holds advisor-written implementation plans — read `plans/README.md` before starting one.
 

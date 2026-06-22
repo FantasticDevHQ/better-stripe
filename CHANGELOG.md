@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+<!--
+  This file is maintained by Changesets — do not hand-edit released sections.
+  To record a change, run `pnpm changeset` and commit the generated file in
+  `.changeset/`. New version sections are prepended above by `changeset version`
+  (run automatically in the "Version Packages" PR). History below 0.3.0 was
+  written by hand before Changesets was adopted.
+-->
 
 ## 0.2.0 — 2026-06-11
 

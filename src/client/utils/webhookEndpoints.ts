@@ -37,6 +37,16 @@ export const BETTER_STRIPE_WEBHOOK_EVENTS = [
   "payout.updated",
   "payout.paid",
   "payout.failed",
+  // Refunds
+  "refund.created",
+  "refund.updated",
+  "refund.failed",
+  // Disputes
+  "charge.dispute.created",
+  "charge.dispute.updated",
+  "charge.dispute.closed",
+  "charge.dispute.funds_withdrawn",
+  "charge.dispute.funds_reinstated",
 ] as const;
 
 export type BetterStripeWebhookEvent =

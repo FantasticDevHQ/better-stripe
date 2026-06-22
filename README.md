@@ -12,7 +12,13 @@ Used in production by its authors. Webhook pipeline is covered by unit tests and
 
 ### Releasing
 
-Merging to `main` publishes automatically **when `package.json`'s version is new to npm**: bump the version and update `CHANGELOG.md` in the release PR; merges without a version bump are no-ops for the registry. CI publishes with provenance and creates the matching `vX.Y.Z` tag and GitHub release.
+Releases are automated with [Changesets](https://github.com/changesets/changesets). The version number and `CHANGELOG.md` are derived from changeset files — **do not bump the version or edit the changelog by hand.**
+
+1. **Every PR that changes published behavior** adds a changeset: run `pnpm changeset`, pick the bump (`patch`/`minor`/`major`), and write the user-facing note. Commit the generated `.changeset/*.md` file. (Docs-only or internal-only PRs need none.) Pre-1.0, breaking changes use `minor`.
+2. **On merge to `main`**, the `Release` workflow opens (or updates) a **"Version Packages" PR** that consumes the changesets, bumps `package.json`, and folds the notes into `CHANGELOG.md`.
+3. **Merging that PR** triggers the workflow again to publish to npm (only versions not already on the registry), create the git tag, and cut a GitHub release.
+
+The private `example` workspace is excluded from versioning/publishing. See `pnpm changeset:status` to preview the pending bump.
 
 ### Relation to `@convex-dev/stripe`
 
@@ -27,6 +33,8 @@ This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first
 - **Invoices** -- Invoice syncing and querying with metadata propagation from subscriptions
 - **Payments** -- Payment intent tracking and status management
 - **Payouts** -- Payout tracking for Connect/marketplace flows
+- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment
+- **Disputes** -- Chargeback/dispute tracking with evidence submission and close helpers
 - **Webhook handling** -- Single-endpoint processing with ledger-based deduplication and replay protection
 - **Trigger system** -- BetterAuth-style sync triggers (same transaction) and async hooks (scheduled action) for app-layer extensibility
 - **React hooks** -- Read hooks and flow hooks for all billing domains
@@ -53,9 +61,16 @@ The consumer contract has three steps:
 // convex/convex.config.ts
 import betterStripe from "@getdojo/better-stripe/convex.config";
 import { defineApp } from "convex/server";
+import { v } from "convex/values";
 
-const app = defineApp();
-app.use(betterStripe);
+// betterStripe requires STRIPE_SECRET_KEY; declare it at the app level and pass
+// it to the component by reference (see "Wiring component env vars" below).
+const app = defineApp({
+  env: { STRIPE_SECRET_KEY: v.string() },
+});
+app.use(betterStripe, {
+  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+});
 
 export default app;
 ```
@@ -89,27 +104,10 @@ export const stripe = new BetterStripe(components.betterStripe, {
   },
 });
 
-// Export trigger dispatchers + async hooks; http.ts passes their refs to registerRoutes
-export const {
-  accountUpserted,
-  productUpserted,
-  priceUpserted,
-  subscriptionUpserted,
-  subscriptionDeleted,
-  checkoutSessionUpserted,
-  invoiceUpserted,
-  paymentUpserted,
-  payoutUpserted,
-  afterAccountUpdated,
-  afterCheckoutCompleted,
-  afterSubscriptionUpdated,
-  afterSubscriptionCanceled,
-  afterTrialEnding,
-  afterInvoicePaid,
-  afterPaymentSucceeded,
-  afterPaymentFailed,
-  afterPayoutCompleted,
-} = stripe.triggersApi();
+// Export the webhook handler pair; http.ts passes their refs to registerRoutes.
+// `syncWebhook` runs your sync triggers in the same transaction as the component
+// upsert; `asyncWebhook` runs your async hooks after commit.
+export const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();
 ```
 
 ### Step 3: Register webhook routes
@@ -128,13 +126,13 @@ registerRoutes(http, components.betterStripe, {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
-  triggers: internal.stripe,
+  webhooks: internal.stripe,
 });
 
 export default http;
 ```
 
-The `triggers: internal.stripe` line passes the function references of the dispatchers you exported in step 2 (here from `convex/stripe.ts`). Note that this `triggers` option takes function references — unlike the callback `triggers` on the `BetterStripe` constructor in step 2, which takes your raw handlers. When provided, webhook upserts run through those dispatchers so your sync triggers execute in the same transaction as the component write, and your async hooks are scheduled after commit. If omitted, the handler falls back to direct component upserts and no triggers fire.
+The `webhooks: internal.stripe` line passes the function references of the `syncWebhook`/`asyncWebhook` pair you exported in step 2 (here from `convex/stripe.ts`). Don't confuse this with the callback `triggers`/`hooks` on the `BetterStripe` constructor in step 2, which take your raw handlers. When `webhooks` is provided, webhook upserts run through `syncWebhook` so your sync triggers execute in the same transaction as the component write, and your async hooks are scheduled (via `asyncWebhook`) after commit. If omitted, the handler falls back to direct component upserts and no triggers fire.
 
 > **Why two webhook secrets?** Stripe requires separate event destinations for V1 snapshot events (payments, subscriptions) and V2 thin events (Connect account lifecycle). Each destination has its own signing secret. The handler uses `webhookSecret` for V1 events and `webhookSecretV2` for V2 events. See [Webhook Setup](#webhook-setup) for details.
 
@@ -219,18 +217,32 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `getPayout(ctx, { payoutId })`                                                       | Get payout by component document ID                                                        |
 | `listPayouts(ctx, { stripeAccountId?, status?, limit? })`                            | List payouts with optional filters                                                         |
 
+### Refund and Dispute
+
+| Method                                                                                                          | Description                                                                      |
+| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId? })` | Issue a refund (provide a payment intent or charge); synced via `refund.created` |
+| `getRefundByStripeId(ctx, { stripeRefundId })`                                                                  | Get a refund by Stripe refund ID                                                 |
+| `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                               | List refunds with optional filters                                               |
+| `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                | Get a dispute by Stripe dispute ID                                               |
+| `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                              | List disputes with optional filters                                              |
+| `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                      | Submit/stage dispute evidence (`submit: true` finalizes the response)            |
+| `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                      | Accept a dispute (concede the chargeback) — irreversible                         |
+
+Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
+
 ### Operational
 
-| Method                                                                                    | Description                                                                               |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `syncAllAccounts(ctx)`                                                                    | Sync all V2 accounts from Stripe to component DB                                          |
-| `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                                  |
-| `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                                        |
-| `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                                |
-| `listEventDestinations(ctx, { limit? })`                                                  | List all V2 event destinations                                                            |
-| `listWebhookEndpoints(ctx, { limit? })`                                                   | List V1 webhook endpoints                                                                 |
-| `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                              |
-| `triggersApi()`                                                                           | Returns the trigger dispatchers and `after*` hook wrappers to export from a Convex module |
+| Method                                                                                    | Description                                                                     |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `syncAllAccounts(ctx)`                                                                    | Sync all V2 accounts from Stripe to component DB                                |
+| `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                        |
+| `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                              |
+| `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                      |
+| `listEventDestinations(ctx, { limit? })`                                                  | List all V2 event destinations                                                  |
+| `listWebhookEndpoints(ctx, { limit? })`                                                   | List V1 webhook endpoints                                                       |
+| `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                    |
+| `webhookHandlers()`                                                                       | Returns the `{ syncWebhook, asyncWebhook }` pair to export from a Convex module |
 
 ### Standalone Function
 
@@ -252,7 +264,7 @@ registerRoutes(http, components.betterStripe, {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2, // For V2 thin events
-  triggers: internal.stripe, // Trigger dispatchers exported via triggersApi()
+  webhooks: internal.stripe, // The { syncWebhook, asyncWebhook } pair from webhookHandlers()
   events: { ... }, // Optional per-event handlers (advanced)
   onEvent: (ctx, event) => { ... }, // Optional catch-all handler (advanced)
 });
@@ -309,7 +321,7 @@ The webhook handler processes events through these steps:
 
 1. Verify Stripe signature
 2. Record the event in the `webhookEvents` ledger by `stripeEventId`. If the event was already seen and is `processing`, `processed`, or `ignored`, return 200 immediately. If the previous delivery `failed` (its writes rolled back), the ledger row is reset and the event is reprocessed on Stripe's retry.
-3. Upsert the component-owned domain table. When `triggers` is configured, the upsert runs through the app's trigger dispatcher — an internal mutation that performs the upsert **and** the sync trigger in the same transaction.
+3. Upsert the component-owned domain table. When `webhooks` is configured, the upsert runs through `syncWebhook` — an internal mutation that performs the upsert **and** the sync trigger in the same transaction.
 4. On failure, mark the ledger row `failed` and return 500 so Stripe retries; otherwise mark it `processed`
 5. Schedule the matching `after*` async hook via `ctx.scheduler` (separate action)
 
@@ -344,6 +356,8 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `invoice.created`, `.finalized`, `.paid`, `.payment_failed`
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
 - `payout.created`, `.updated`, `.paid`, `.failed`
+- `refund.created`, `.updated`, `.failed`
+- `charge.dispute.created`, `.updated`, `.closed`, `.funds_withdrawn`, `.funds_reinstated`
 - `product.created`, `.updated`
 - `price.created`, `.updated`
 
@@ -351,7 +365,7 @@ Note: Subscription and invoice events use v1 Billing API event names even when t
 
 ## Trigger API
 
-The trigger system follows the BetterAuth pattern: define callbacks at client init time, export Convex-callable wrappers via `triggersApi()`, and pass their function references to `registerRoutes` via `triggers`.
+The trigger system follows the BetterAuth pattern: define callbacks at client init time, export the `syncWebhook`/`asyncWebhook` pair via `webhookHandlers()`, and pass their function references to `registerRoutes` via `webhooks`.
 
 ### SyncTriggers
 
@@ -390,6 +404,14 @@ interface SyncTriggers {
     onCreate?: (ctx, doc) => Promise<void>;
     onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
   };
+  refund?: {
+    onCreate?: (ctx, doc) => Promise<void>;
+    onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
+  };
+  dispute?: {
+    onCreate?: (ctx, doc) => Promise<void>;
+    onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
+  };
 }
 ```
 
@@ -408,43 +430,25 @@ interface AsyncHooks {
   onPaymentSucceeded?: (ctx, payment) => Promise<void>;
   onPaymentFailed?: (ctx, payment) => Promise<void>;
   onPayoutCompleted?: (ctx, payout) => Promise<void>;
+  onRefundCreated?: (ctx, refund) => Promise<void>;
+  onDisputeCreated?: (ctx, dispute) => Promise<void>;
+  onDisputeClosed?: (ctx, dispute) => Promise<void>;
 }
 ```
 
-### triggersApi()
+### webhookHandlers()
 
-Returns the Convex function definitions that bridge your app callbacks into the webhook processing pipeline. You must export them from a Convex module (e.g. `convex/stripe.ts`) so they get function references the webhook handler can call:
+Returns the `{ syncWebhook, asyncWebhook }` pair that bridges your app callbacks into the webhook processing pipeline. Export them from a Convex module (e.g. `convex/stripe.ts`) so they get function references the webhook handler can call:
 
 ```typescript
-export const {
-  // Sync dispatchers (internal mutations)
-  accountUpserted,
-  productUpserted,
-  priceUpserted,
-  subscriptionUpserted,
-  subscriptionDeleted,
-  checkoutSessionUpserted,
-  invoiceUpserted,
-  paymentUpserted,
-  payoutUpserted,
-  // Async hook wrappers (internal actions)
-  afterAccountUpdated,
-  afterCheckoutCompleted,
-  afterSubscriptionUpdated,
-  afterSubscriptionCanceled,
-  afterTrialEnding,
-  afterInvoicePaid,
-  afterPaymentSucceeded,
-  afterPaymentFailed,
-  afterPayoutCompleted,
-} = stripe.triggersApi();
+export const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();
 ```
 
-Then pass the module to `registerRoutes` as `triggers: internal.stripe`.
+Then pass the module to `registerRoutes` as `webhooks: internal.stripe`.
 
-**How the dispatchers work.** Each `*Upserted`/`*Deleted` export is an internal mutation that performs the component table upsert **and** your configured sync trigger inside one transaction. The dispatcher reads the existing doc (to decide `onCreate` vs `onUpdate` and supply `oldDoc`), runs the upsert, re-reads the doc, and invokes your trigger. If the trigger throws, the whole mutation — including the component write — rolls back, the webhook handler marks the ledger row `failed`, and returns 500 so Stripe retries. On retry, failed ledger rows are reset and the event is reprocessed.
+**How `syncWebhook` works.** It is a single internal mutation that routes by a `dispatcher` discriminator to perform the component table upsert **and** your configured sync trigger inside one transaction. It reads the existing doc (to decide `onCreate` vs `onUpdate` and supply `oldDoc`), runs the upsert, re-reads the doc, and invokes your trigger. If the trigger throws, the whole mutation — including the component write — rolls back, the webhook handler marks the ledger row `failed`, and returns 500 so Stripe retries. On retry, failed ledger rows are reset and the event is reprocessed.
 
-**How the `after*` hooks work.** Each `after*` export is an internal action. After the dispatcher transaction commits and the ledger marks the event `processed`, the webhook handler schedules the matching hook via `ctx.scheduler` with the committed doc. Hook failures never roll back the component write.
+**How `asyncWebhook` works.** It is a single internal action that routes by a `hook` discriminator. After the `syncWebhook` transaction commits and the ledger marks the event `processed`, the webhook handler schedules `asyncWebhook` via `ctx.scheduler` with the committed doc. Hook failures never roll back the component write.
 
 Exactly one hook (at most) is scheduled per event:
 
@@ -459,12 +463,15 @@ Exactly one hook (at most) is scheduled per event:
 | `payment_intent.succeeded`                        | `afterPaymentSucceeded`     |
 | `payment_intent.payment_failed`                   | `afterPaymentFailed`        |
 | `payout.paid`                                     | `afterPayoutCompleted`      |
+| `refund.created`                                  | `afterRefundCreated`        |
+| `charge.dispute.created`                          | `afterDisputeCreated`       |
+| `charge.dispute.closed`                           | `afterDisputeClosed`        |
 
-All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `invoice.created`) update the component tables but schedule no hook.
+All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `invoice.created`, `refund.updated`, `charge.dispute.funds_withdrawn`) update the component tables but schedule no hook.
 
 > **Note:** async hooks should be idempotent. Duplicate delivery is possible in rare ledger-failure cases (e.g. the event is processed and the hook scheduled, but the ledger update fails and Stripe redelivers).
 
-The raw callbacks you pass to `triggers` and `hooks` on the `BetterStripe` constructor are the source of truth for app behavior. The exported wrappers are the bridge that makes them callable from the Convex runtime — exports for triggers you did not configure are inert (upsert-only dispatchers and no-op hooks).
+The raw callbacks you pass to `triggers` and `hooks` on the `BetterStripe` constructor are the source of truth for app behavior. The exported `syncWebhook`/`asyncWebhook` pair is the bridge that makes them callable from the Convex runtime — events whose triggers you did not configure simply run the upsert (no sync trigger) and schedule no hook.
 
 ## React Hooks
 
@@ -669,12 +676,41 @@ const event = mockCheckoutCompleted({
 
 ### Environment Variables
 
-| Variable                   | Required    | Description                                                                                                                                                                                             |
-| -------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`        | Yes         | Must be passed explicitly via the `BetterStripe` constructor and `registerRoutes` (no automatic env fallback).                                                                                          |
-| `STRIPE_WEBHOOK_SECRET`    | Yes         | Signing secret for the V1 snapshot event destination.                                                                                                                                                   |
-| `STRIPE_WEBHOOK_SECRET_V2` | No\*        | Signing secret for the V2 thin event destination (Connect account events). \*Required whenever your V2 destination has its own secret (the usual case); falls back to `STRIPE_WEBHOOK_SECRET` if unset. |
-| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Set in Convex env. Exposed via `getPublishableKey` query. App queries it and passes to `StripeProvider`.                                                                                                |
+| Variable                   | Required    | Read by   | Description                                                                                                                                                                                                                                               |
+| -------------------------- | ----------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`        | Yes         | Component | Declared in the component's `convex.config.ts` (required) and read by the component (e.g. `getStripeMode`). Also passed explicitly via the `BetterStripe` constructor and `registerRoutes`. The installing app must wire it to the component — see below. |
+| `STRIPE_WEBHOOK_SECRET`    | Yes         | App       | Signing secret for the V1 snapshot event destination. Read by `registerRoutes` in the app, not the component.                                                                                                                                             |
+| `STRIPE_WEBHOOK_SECRET_V2` | No\*        | App       | Signing secret for the V2 thin event destination (Connect account events). \*Required whenever your V2 destination has its own secret (the usual case); falls back to `STRIPE_WEBHOOK_SECRET` if unset.                                                   |
+| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Frontend  | A public, frontend-only key. Supply it from the frontend's own env (`VITE_STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) and pass it as the `publishableKey` prop to the React components. It is **not** a component env var.            |
+
+### Wiring component env vars
+
+The component declares `STRIPE_SECRET_KEY` as a required environment variable in
+its `convex.config.ts`. Convex isolates a component's functions from the
+deployment's `process.env`, so setting the var with `convex env set` is **not**
+enough on its own — the installing app must provide it to the component via
+`app.use`:
+
+```ts
+// convex/convex.config.ts
+import { defineApp } from "convex/server";
+import { v } from "convex/values";
+import betterStripe from "@getdojo/better-stripe/convex.config";
+
+const app = defineApp({
+  env: { STRIPE_SECRET_KEY: v.string() },
+});
+// Pass by reference so the component always sees the deployment's current value
+// (set via `convex env set STRIPE_SECRET_KEY ...`).
+app.use(betterStripe, {
+  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+});
+export default app;
+```
+
+The webhook secrets (`STRIPE_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET_V2`) are read
+by the app's `registerRoutes`, not the component, so they only need to be set in
+the deployment env — no `app.use` wiring required.
 
 ### Stripe API Version
 
@@ -721,7 +757,7 @@ Stripe Webhook Event
 Webhook handler: Verify signature + check ledger
   |
   v
-Trigger dispatcher (one mutation transaction)
+syncWebhook (one mutation transaction)
   - Upsert component domain table
   - Run sync trigger                   --> App updates its own tables
   |                                        Throwing rolls back the upsert;

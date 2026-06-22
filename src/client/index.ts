@@ -7,12 +7,18 @@ import type {
   InvoiceStatus,
   SubscriptionStatus,
 } from "../component/billing/validators.js";
-import type { PayoutStatus } from "../component/connect/validators.js";
+import type {
+  DisputeStatus,
+  PayoutStatus,
+  RefundStatus,
+} from "../component/connect/validators.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
+import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
+import * as refundsImpl from "./connect/refunds.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
@@ -32,15 +38,18 @@ import type {
   BetterStripeOptions,
   StripeComponentAccount,
   StripeComponentCheckoutSession,
+  StripeComponentDispute,
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
+  StripeComponentRefund,
   StripeComponentSubscription,
   SyncTriggerCtx,
   SyncTriggers,
 } from "./types.js";
+import type { AsyncHookName, TriggerDispatcherName } from "./types/triggers.js";
 import * as dataImpl from "./utils/data.js";
 import type { StripeMode } from "./utils/stripeDashboardUrl.js";
 import * as webhookEndpointsImpl from "./utils/webhookEndpoints.js";
@@ -80,17 +89,18 @@ export type {
 export type {
   AccountLinkWithStatus,
   AsyncHookCtx,
-  AsyncHookRef,
   AsyncHooks,
   PaymentMethodCard,
   PaymentMethodLike,
   StripeComponentAccount,
   StripeComponentCheckoutSession,
+  StripeComponentDispute,
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
+  StripeComponentRefund,
   StripeComponentSubscription,
   StripeCountrySpecs,
   StripeEventHandler,
@@ -99,8 +109,6 @@ export type {
   StripeWebhookEvent,
   SyncTriggerCtx,
   SyncTriggers,
-  TriggerApiRefs,
-  TriggerDispatchRef,
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";
@@ -620,6 +628,57 @@ export class BetterStripe {
     );
   }
 
+  async pauseSubscription(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      behavior?: "keep_as_draft" | "mark_uncollectible" | "void";
+      resumesAt?: number;
+    },
+  ) {
+    return subscriptionsImpl.pauseSubscription(this.stripe(), ctx, opts);
+  }
+
+  async resumeSubscription(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string },
+  ) {
+    return subscriptionsImpl.resumeSubscription(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionPrice(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      stripePriceId: string;
+      prorationBehavior?: "always_invoice" | "create_prorations" | "none";
+    },
+  ) {
+    return subscriptionsImpl.updateSubscriptionPrice(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionMetadata(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; metadata: Record<string, string> },
+  ) {
+    return subscriptionsImpl.updateSubscriptionMetadata(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
+  async updateSubscriptionTrialEnd(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; trialEnd: "now" | number },
+  ) {
+    return subscriptionsImpl.updateSubscriptionTrialEnd(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
   async listSubscriptions(
     ctx: RunCtx,
     opts?: {
@@ -895,6 +954,86 @@ export class BetterStripe {
   }
 
   // ============================================================================
+  // REFUND METHODS
+  // ============================================================================
+
+  async createRefund(
+    ctx: RunCtx,
+    opts: {
+      stripePaymentIntentId?: string;
+      stripeChargeId?: string;
+      amount?: number;
+      reason?: "duplicate" | "fraudulent" | "requested_by_customer";
+      metadata?: Record<string, string>;
+      stripeAccountId?: string;
+    },
+  ): Promise<{ stripeRefundId: string }> {
+    return refundsImpl.createRefund(this.stripe(), ctx, opts);
+  }
+
+  async getRefundByStripeId(
+    ctx: RunCtx,
+    opts: { stripeRefundId: string },
+  ): Promise<StripeComponentRefund | null> {
+    return refundsImpl.getRefundByStripeId(this.component, ctx, opts);
+  }
+
+  async listRefunds(
+    ctx: RunCtx,
+    opts?: {
+      stripeAccountId?: string;
+      stripePaymentIntentId?: string;
+      status?: RefundStatus;
+      limit?: number;
+    },
+  ): Promise<StripeComponentRefund[]> {
+    return refundsImpl.listRefunds(this.component, ctx, opts);
+  }
+
+  // ============================================================================
+  // DISPUTE METHODS
+  // ============================================================================
+
+  async getDisputeByStripeId(
+    ctx: RunCtx,
+    opts: { stripeDisputeId: string },
+  ): Promise<StripeComponentDispute | null> {
+    return disputesImpl.getDisputeByStripeId(this.component, ctx, opts);
+  }
+
+  async listDisputes(
+    ctx: RunCtx,
+    opts?: {
+      stripeAccountId?: string;
+      stripePaymentIntentId?: string;
+      status?: DisputeStatus;
+      limit?: number;
+    },
+  ): Promise<StripeComponentDispute[]> {
+    return disputesImpl.listDisputes(this.component, ctx, opts);
+  }
+
+  async updateDispute(
+    ctx: RunCtx,
+    opts: {
+      stripeDisputeId: string;
+      evidence?: Stripe.DisputeUpdateParams.Evidence;
+      metadata?: Record<string, string>;
+      submit?: boolean;
+      stripeAccountId?: string;
+    },
+  ): Promise<{ success: true }> {
+    return disputesImpl.updateDispute(this.stripe(), ctx, opts);
+  }
+
+  async closeDispute(
+    ctx: RunCtx,
+    opts: { stripeDisputeId: string; stripeAccountId?: string },
+  ): Promise<{ success: true }> {
+    return disputesImpl.closeDispute(this.stripe(), ctx, opts);
+  }
+
+  // ============================================================================
   // WEBHOOK ENDPOINT MANAGEMENT
   // ============================================================================
 
@@ -988,35 +1127,34 @@ export class BetterStripe {
   }
 
   // ============================================================================
-  // TRIGGER API EXPORT (BetterAuth-style)
+  // WEBHOOK HANDLER EXPORT (BetterAuth-style)
   // ============================================================================
 
   /**
-   * Build the trigger/hook function definitions for the app to export from a
-   * Convex module, e.g. in `convex/stripe.ts`:
+   * Build the two webhook handler function definitions for the app to export
+   * from a Convex module, e.g. in `convex/stripe.ts`:
    *
    * ```ts
-   * export const {
-   *   accountUpserted, productUpserted, priceUpserted,
-   *   subscriptionUpserted, subscriptionDeleted, checkoutSessionUpserted,
-   *   invoiceUpserted, paymentUpserted, payoutUpserted,
-   *   afterAccountUpdated, afterCheckoutCompleted, afterSubscriptionUpdated,
-   *   afterSubscriptionCanceled, afterTrialEnding, afterInvoicePaid,
-   *   afterPaymentSucceeded, afterPaymentFailed, afterPayoutCompleted,
-   * } = stripe.triggersApi();
+   * export const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();
    * ```
    *
    * then pass the module to `registerRoutes` as
-   * `triggers: internal.stripe` (no cast needed).
+   * `webhooks: internal.stripe` (no cast needed).
    *
    * Contract:
-   * - The `*Upserted`/`*Deleted` dispatchers are internal mutations that
-   *   perform the component table upsert AND the configured sync trigger in
+   * - `syncWebhook` is an internal mutation that routes by `dispatcher` and
+   *   performs the component table upsert AND the configured sync trigger in
    *   the SAME transaction. A trigger that throws rolls back the upsert.
-   * - The `after*` wrappers are internal actions scheduled by the webhook
-   *   handler AFTER the upsert transaction commits (best-effort side effects).
+   * - `asyncWebhook` is an internal action, scheduled by the webhook handler
+   *   AFTER the upsert transaction commits, that routes by `hook` and runs the
+   *   configured async hook (best-effort side effects).
    */
-  triggersApi() {
+  // NOTE: no explicit return annotation — the inferred type preserves the
+  // `RegisteredMutation`/`RegisteredAction` brands so Convex codegen registers
+  // the app's re-exported `syncWebhook`/`asyncWebhook` (annotating the return as
+  // `WebhookHandlerRefs` would erase them to `FunctionReference` and drop the
+  // functions from the generated `internal.<module>` API).
+  webhookHandlers() {
     const component = this.component;
     const triggers = this._triggers;
     const hooks = this._hooks;
@@ -1032,67 +1170,67 @@ export class BetterStripe {
       upsert: string;
     };
 
+    /** Runs `dispatch` with the post-upsert doc (and pre-upsert doc, if any). */
+    type Dispatch<T> = (
+      ctx: SyncTriggerCtx,
+      newDoc: T,
+      oldDoc: T | null,
+    ) => Promise<void>;
+
     /**
-     * Build an internal mutation that upserts a component doc and then runs
-     * `dispatch` with the post-upsert doc (and the pre-upsert doc, if any).
-     * When no `dispatch` is configured the before/after doc reads are skipped
-     * and only the upsert runs.
+     * Upsert a component doc and then run `dispatch` with the post-upsert doc
+     * (and the pre-upsert doc, if any). When no `dispatch` is configured the
+     * before/after doc reads are skipped and only the upsert runs.
+     *
+     * This is the extracted body of every old `triggersApi()` dispatcher,
+     * keyed by name so a single `syncWebhook` mutation can run them all.
      */
-    const createUpsertDispatcher = <T>(
+    const runUpsertAndTrigger = async <T>(
+      ctx: SyncTriggerCtx,
       name: string,
       spec: DispatcherSpec,
-      dispatch?: (
-        ctx: SyncTriggerCtx,
-        newDoc: T,
-        oldDoc: T | null,
-      ) => Promise<void>,
-    ) =>
-      internalMutationGeneric({
-        args: { data: v.any() },
-        returns: v.null(),
-        handler: async (ctx, { data }) => {
-          const record = data as Record<string, unknown>;
-          const id = record[spec.idField];
-          if (typeof id !== "string") {
-            throw new Error(
-              `[better-stripe] ${name}: missing ${spec.idField} in data`,
-            );
-          }
-          if (!dispatch) {
-            // No trigger configured — upsert only, skip the doc reads.
-            await ctx.runMutation(componentRef(component, spec.upsert), record);
-            return null;
-          }
-          const lookup = { [spec.idArg]: id };
-          const oldDoc = (await ctx.runQuery(
-            componentRef(component, spec.getter),
-            lookup,
-          )) as T | null;
-          await ctx.runMutation(componentRef(component, spec.upsert), record);
-          const newDoc = (await ctx.runQuery(
-            componentRef(component, spec.getter),
-            lookup,
-          )) as T | null;
-          if (newDoc === null) {
-            // Mutations read their own writes, so this cannot happen;
-            // fail loudly if it ever does.
-            throw new Error(
-              `[better-stripe] ${name}: doc not found after upsert ` +
-                `(${spec.idField}=${id})`,
-            );
-          }
-          await dispatch(ctx as unknown as SyncTriggerCtx, newDoc, oldDoc);
-          return null;
-        },
-      });
+      dispatch: Dispatch<T> | undefined,
+      record: Record<string, unknown>,
+    ): Promise<void> => {
+      const id = record[spec.idField];
+      if (typeof id !== "string") {
+        throw new Error(
+          `[better-stripe] ${name}: missing ${spec.idField} in data`,
+        );
+      }
+      if (!dispatch) {
+        // No trigger configured — upsert only, skip the doc reads.
+        await ctx.runMutation(componentRef(component, spec.upsert), record);
+        return;
+      }
+      const lookup = { [spec.idArg]: id };
+      const oldDoc = (await ctx.runQuery(
+        componentRef(component, spec.getter),
+        lookup,
+      )) as T | null;
+      await ctx.runMutation(componentRef(component, spec.upsert), record);
+      const newDoc = (await ctx.runQuery(
+        componentRef(component, spec.getter),
+        lookup,
+      )) as T | null;
+      if (newDoc === null) {
+        // Mutations read their own writes, so this cannot happen;
+        // fail loudly if it ever does.
+        throw new Error(
+          `[better-stripe] ${name}: doc not found after upsert ` +
+            `(${spec.idField}=${id})`,
+        );
+      }
+      await dispatch(ctx, newDoc, oldDoc);
+    };
 
     /** Standard create/update split used by most dispatchers. */
     const splitCreateUpdate = <T>(
       onCreate?: (ctx: SyncTriggerCtx, doc: T) => Promise<void>,
       onUpdate?: (ctx: SyncTriggerCtx, newDoc: T, oldDoc: T) => Promise<void>,
-    ) =>
+    ): Dispatch<T> | undefined =>
       onCreate || onUpdate
-        ? async (ctx: SyncTriggerCtx, newDoc: T, oldDoc: T | null) => {
+        ? async (ctx, newDoc, oldDoc) => {
             if (oldDoc === null) {
               await onCreate?.(ctx, newDoc);
             } else {
@@ -1101,114 +1239,113 @@ export class BetterStripe {
           }
         : undefined;
 
-    const createAsyncHook = <T>(
-      handler?: (ctx: AsyncHookCtx, doc: T) => Promise<void>,
-    ) =>
-      internalActionGeneric({
-        args: { doc: v.any() },
-        returns: v.null(),
-        handler: async (ctx, args) => {
-          await handler?.(ctx as unknown as AsyncHookCtx, args.doc as T);
-          return null;
-        },
-      });
-
     const onCheckoutCompleted = triggers?.checkoutSession?.onCompleted;
     const onSubscriptionDeleted = triggers?.subscription?.onDelete;
 
-    return {
-      // --- Sync dispatchers: component upsert + trigger, one transaction ---
-      accountUpserted: createUpsertDispatcher<StripeComponentAccount>(
-        "accountUpserted",
-        {
-          getter: "core/queries/getAccountByStripeId",
-          idArg: "stripeAccountId",
-          idField: "stripeAccountId",
-          upsert: DISPATCHER_UPSERT_PATHS.accountUpserted,
-        },
-        splitCreateUpdate(
-          triggers?.account?.onCreate,
-          triggers?.account?.onUpdate,
+    /**
+     * One routing entry per dispatcher. `run` closes over the same spec +
+     * dispatch wiring the old per-dispatcher mutations used, so `syncWebhook`
+     * is a mechanical collapse — not a behavior change.
+     */
+    const SYNC: Record<
+      TriggerDispatcherName,
+      (ctx: SyncTriggerCtx, record: Record<string, unknown>) => Promise<void>
+    > = {
+      accountUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentAccount>(
+          ctx,
+          "accountUpserted",
+          {
+            getter: "core/queries/getAccountByStripeId",
+            idArg: "stripeAccountId",
+            idField: "stripeAccountId",
+            upsert: DISPATCHER_UPSERT_PATHS.accountUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.account?.onCreate,
+            triggers?.account?.onUpdate,
+          ),
+          record,
         ),
-      ),
-      productUpserted: createUpsertDispatcher<StripeComponentProduct>(
-        "productUpserted",
-        {
-          getter: "products/queries/getProductByStripeId",
-          idArg: "stripeProductId",
-          idField: "stripeProductId",
-          upsert: DISPATCHER_UPSERT_PATHS.productUpserted,
-        },
-        splitCreateUpdate(
-          triggers?.product?.onCreate,
-          triggers?.product?.onUpdate,
+      productUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentProduct>(
+          ctx,
+          "productUpserted",
+          {
+            getter: "products/queries/getProductByStripeId",
+            idArg: "stripeProductId",
+            idField: "stripeProductId",
+            upsert: DISPATCHER_UPSERT_PATHS.productUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.product?.onCreate,
+            triggers?.product?.onUpdate,
+          ),
+          record,
         ),
-      ),
-      priceUpserted: createUpsertDispatcher<StripeComponentPrice>(
-        "priceUpserted",
-        {
-          getter: "products/queries/getPriceByStripeId",
-          idArg: "stripePriceId",
-          idField: "stripePriceId",
-          upsert: DISPATCHER_UPSERT_PATHS.priceUpserted,
-        },
-        splitCreateUpdate(triggers?.price?.onCreate, triggers?.price?.onUpdate),
-      ),
-      subscriptionUpserted: createUpsertDispatcher<StripeComponentSubscription>(
-        "subscriptionUpserted",
-        {
-          getter: "billing/queries/getSubscriptionByStripeId",
-          idArg: "stripeSubscriptionId",
-          idField: "stripeSubscriptionId",
-          upsert: DISPATCHER_UPSERT_PATHS.subscriptionUpserted,
-        },
-        splitCreateUpdate(
-          triggers?.subscription?.onCreate,
-          triggers?.subscription?.onUpdate,
+      priceUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentPrice>(
+          ctx,
+          "priceUpserted",
+          {
+            getter: "products/queries/getPriceByStripeId",
+            idArg: "stripePriceId",
+            idField: "stripePriceId",
+            upsert: DISPATCHER_UPSERT_PATHS.priceUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.price?.onCreate,
+            triggers?.price?.onUpdate,
+          ),
+          record,
         ),
-      ),
+      subscriptionUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentSubscription>(
+          ctx,
+          "subscriptionUpserted",
+          {
+            getter: "billing/queries/getSubscriptionByStripeId",
+            idArg: "stripeSubscriptionId",
+            idField: "stripeSubscriptionId",
+            upsert: DISPATCHER_UPSERT_PATHS.subscriptionUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.subscription?.onCreate,
+            triggers?.subscription?.onUpdate,
+          ),
+          record,
+        ),
       // Special case: marks the subscription canceled via upsert, then fires
       // onDelete with the resulting doc. No pre-upsert read is needed.
-      subscriptionDeleted: internalMutationGeneric({
-        args: { data: v.any() },
-        returns: v.null(),
-        handler: async (ctx, { data }) => {
-          const record = data as Record<string, unknown>;
-          const id = record.stripeSubscriptionId;
-          if (typeof id !== "string") {
-            throw new Error(
-              "[better-stripe] subscriptionDeleted: missing stripeSubscriptionId in data",
-            );
-          }
-          await ctx.runMutation(
-            componentRef(
-              component,
-              DISPATCHER_UPSERT_PATHS.subscriptionDeleted,
-            ),
-            record,
+      subscriptionDeleted: async (ctx, record) => {
+        const id = record.stripeSubscriptionId;
+        if (typeof id !== "string") {
+          throw new Error(
+            "[better-stripe] subscriptionDeleted: missing stripeSubscriptionId in data",
           );
-          if (!onSubscriptionDeleted) return null;
-          const doc = (await ctx.runQuery(
-            componentRef(
-              component,
-              "billing/queries/getSubscriptionByStripeId",
-            ),
-            { stripeSubscriptionId: id },
-          )) as StripeComponentSubscription | null;
-          if (doc === null) {
-            // Mutations read their own writes, so this cannot happen;
-            // fail loudly if it ever does.
-            throw new Error(
-              "[better-stripe] subscriptionDeleted: doc not found after " +
-                `upsert (stripeSubscriptionId=${id})`,
-            );
-          }
-          await onSubscriptionDeleted(ctx as unknown as SyncTriggerCtx, doc);
-          return null;
-        },
-      }),
-      checkoutSessionUpserted:
-        createUpsertDispatcher<StripeComponentCheckoutSession>(
+        }
+        await ctx.runMutation(
+          componentRef(component, DISPATCHER_UPSERT_PATHS.subscriptionDeleted),
+          record,
+        );
+        if (!onSubscriptionDeleted) return;
+        const doc = (await ctx.runQuery(
+          componentRef(component, "billing/queries/getSubscriptionByStripeId"),
+          { stripeSubscriptionId: id },
+        )) as StripeComponentSubscription | null;
+        if (doc === null) {
+          // Mutations read their own writes, so this cannot happen;
+          // fail loudly if it ever does.
+          throw new Error(
+            "[better-stripe] subscriptionDeleted: doc not found after " +
+              `upsert (stripeSubscriptionId=${id})`,
+          );
+        }
+        await onSubscriptionDeleted(ctx, doc);
+      },
+      checkoutSessionUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentCheckoutSession>(
+          ctx,
           "checkoutSessionUpserted",
           {
             getter: "billing/queries/getCheckoutSessionByStripeId",
@@ -1217,66 +1354,170 @@ export class BetterStripe {
             upsert: DISPATCHER_UPSERT_PATHS.checkoutSessionUpserted,
           },
           onCheckoutCompleted
-            ? async (ctx, newDoc, oldDoc) => {
+            ? async (innerCtx, newDoc, oldDoc) => {
                 // Fire onCompleted exactly once: on the transition into
                 // "complete".
                 if (
                   newDoc.status === "complete" &&
                   oldDoc?.status !== "complete"
                 ) {
-                  await onCheckoutCompleted(ctx, newDoc);
+                  await onCheckoutCompleted(innerCtx, newDoc);
                 }
               }
             : undefined,
+          record,
         ),
-      invoiceUpserted: createUpsertDispatcher<StripeComponentInvoice>(
-        "invoiceUpserted",
-        {
-          getter: "billing/queries/getInvoiceByStripeId",
-          idArg: "stripeInvoiceId",
-          idField: "stripeInvoiceId",
-          upsert: DISPATCHER_UPSERT_PATHS.invoiceUpserted,
-        },
-        splitCreateUpdate(
-          triggers?.invoice?.onCreate,
-          triggers?.invoice?.onUpdate,
+      invoiceUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentInvoice>(
+          ctx,
+          "invoiceUpserted",
+          {
+            getter: "billing/queries/getInvoiceByStripeId",
+            idArg: "stripeInvoiceId",
+            idField: "stripeInvoiceId",
+            upsert: DISPATCHER_UPSERT_PATHS.invoiceUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.invoice?.onCreate,
+            triggers?.invoice?.onUpdate,
+          ),
+          record,
         ),
-      ),
-      paymentUpserted: createUpsertDispatcher<StripeComponentPayment>(
-        "paymentUpserted",
-        {
-          getter: "connect/queries/getPaymentByStripeId",
-          idArg: "stripePaymentIntentId",
-          idField: "stripePaymentIntentId",
-          upsert: DISPATCHER_UPSERT_PATHS.paymentUpserted,
-        },
-        // SyncTriggers.payment has no onUpdate
-        splitCreateUpdate(triggers?.payment?.onCreate, undefined),
-      ),
-      payoutUpserted: createUpsertDispatcher<StripeComponentPayout>(
-        "payoutUpserted",
-        {
-          getter: "connect/queries/getPayoutByStripeId",
-          idArg: "stripePayoutId",
-          idField: "stripePayoutId",
-          upsert: DISPATCHER_UPSERT_PATHS.payoutUpserted,
-        },
-        splitCreateUpdate(
-          triggers?.payout?.onCreate,
-          triggers?.payout?.onUpdate,
+      paymentUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentPayment>(
+          ctx,
+          "paymentUpserted",
+          {
+            getter: "connect/queries/getPaymentByStripeId",
+            idArg: "stripePaymentIntentId",
+            idField: "stripePaymentIntentId",
+            upsert: DISPATCHER_UPSERT_PATHS.paymentUpserted,
+          },
+          // SyncTriggers.payment has no onUpdate
+          splitCreateUpdate(triggers?.payment?.onCreate, undefined),
+          record,
         ),
-      ),
-
-      // --- Async hook wrappers (scheduled by the webhook handler) ---
-      afterAccountUpdated: createAsyncHook(hooks?.onAccountUpdated),
-      afterCheckoutCompleted: createAsyncHook(hooks?.onCheckoutCompleted),
-      afterSubscriptionUpdated: createAsyncHook(hooks?.onSubscriptionUpdated),
-      afterSubscriptionCanceled: createAsyncHook(hooks?.onSubscriptionCanceled),
-      afterTrialEnding: createAsyncHook(hooks?.onTrialEnding),
-      afterInvoicePaid: createAsyncHook(hooks?.onInvoicePaid),
-      afterPaymentSucceeded: createAsyncHook(hooks?.onPaymentSucceeded),
-      afterPaymentFailed: createAsyncHook(hooks?.onPaymentFailed),
-      afterPayoutCompleted: createAsyncHook(hooks?.onPayoutCompleted),
+      payoutUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentPayout>(
+          ctx,
+          "payoutUpserted",
+          {
+            getter: "connect/queries/getPayoutByStripeId",
+            idArg: "stripePayoutId",
+            idField: "stripePayoutId",
+            upsert: DISPATCHER_UPSERT_PATHS.payoutUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.payout?.onCreate,
+            triggers?.payout?.onUpdate,
+          ),
+          record,
+        ),
+      refundUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentRefund>(
+          ctx,
+          "refundUpserted",
+          {
+            getter: "connect/queries/getRefundByStripeId",
+            idArg: "stripeRefundId",
+            idField: "stripeRefundId",
+            upsert: DISPATCHER_UPSERT_PATHS.refundUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.refund?.onCreate,
+            triggers?.refund?.onUpdate,
+          ),
+          record,
+        ),
+      disputeUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentDispute>(
+          ctx,
+          "disputeUpserted",
+          {
+            getter: "connect/queries/getDisputeByStripeId",
+            idArg: "stripeDisputeId",
+            idField: "stripeDisputeId",
+            upsert: DISPATCHER_UPSERT_PATHS.disputeUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.dispute?.onCreate,
+            triggers?.dispute?.onUpdate,
+          ),
+          record,
+        ),
     };
+
+    /** One routing entry per async hook — identical mapping to the old API. */
+    const ASYNC: Record<
+      AsyncHookName,
+      ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined
+    > = {
+      afterAccountUpdated: hooks?.onAccountUpdated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterCheckoutCompleted: hooks?.onCheckoutCompleted as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterSubscriptionUpdated: hooks?.onSubscriptionUpdated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterSubscriptionCanceled: hooks?.onSubscriptionCanceled as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterTrialEnding: hooks?.onTrialEnding as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterInvoicePaid: hooks?.onInvoicePaid as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterPaymentSucceeded: hooks?.onPaymentSucceeded as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterPaymentFailed: hooks?.onPaymentFailed as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterPayoutCompleted: hooks?.onPayoutCompleted as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterRefundCreated: hooks?.onRefundCreated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterDisputeCreated: hooks?.onDisputeCreated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterDisputeClosed: hooks?.onDisputeClosed as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+    };
+
+    const syncWebhook = internalMutationGeneric({
+      args: { dispatcher: v.string(), data: v.any() },
+      returns: v.null(),
+      handler: async (ctx, { dispatcher, data }) => {
+        const run = SYNC[dispatcher as TriggerDispatcherName];
+        if (!run) {
+          throw new Error(`[better-stripe] unknown dispatcher: ${dispatcher}`);
+        }
+        await run(
+          ctx as unknown as SyncTriggerCtx,
+          data as Record<string, unknown>,
+        );
+        return null;
+      },
+    });
+
+    const asyncWebhook = internalActionGeneric({
+      args: { hook: v.string(), doc: v.any() },
+      returns: v.null(),
+      handler: async (ctx, { hook, doc }) => {
+        await ASYNC[hook as AsyncHookName]?.(
+          ctx as unknown as AsyncHookCtx,
+          doc,
+        );
+        return null;
+      },
+    });
+
+    return { syncWebhook, asyncWebhook };
   }
 }

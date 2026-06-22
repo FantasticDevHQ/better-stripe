@@ -12,7 +12,13 @@ Used in production by its authors. Webhook pipeline is covered by unit tests and
 
 ### Releasing
 
-Merging to `main` publishes automatically **when `package.json`'s version is new to npm**: bump the version and update `CHANGELOG.md` in the release PR; merges without a version bump are no-ops for the registry. CI publishes with provenance and creates the matching `vX.Y.Z` tag and GitHub release.
+Releases are automated with [Changesets](https://github.com/changesets/changesets). The version number and `CHANGELOG.md` are derived from changeset files — **do not bump the version or edit the changelog by hand.**
+
+1. **Every PR that changes published behavior** adds a changeset: run `pnpm changeset`, pick the bump (`patch`/`minor`/`major`), and write the user-facing note. Commit the generated `.changeset/*.md` file. (Docs-only or internal-only PRs need none.) Pre-1.0, breaking changes use `minor`.
+2. **On merge to `main`**, the `Release` workflow opens (or updates) a **"Version Packages" PR** that consumes the changesets, bumps `package.json`, and folds the notes into `CHANGELOG.md`.
+3. **Merging that PR** triggers the workflow again to publish to npm (only versions not already on the registry), create the git tag, and cut a GitHub release.
+
+The private `example` workspace is excluded from versioning/publishing. See `pnpm changeset:status` to preview the pending bump.
 
 ### Relation to `@convex-dev/stripe`
 

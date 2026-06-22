@@ -31,7 +31,5 @@ export type {
   SyncTriggerCtx,
   AsyncHooks,
   AsyncHookCtx,
-  TriggerApiRefs,
-  TriggerDispatchRef,
-  AsyncHookRef,
+  WebhookHandlerRefs,
 } from "./triggers.js";

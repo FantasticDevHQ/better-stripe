@@ -96,24 +96,8 @@ export const stripe = new BetterStripe(components.betterStripe, {
   },
 });
 
-// Export trigger dispatchers + async hooks; http.ts passes their refs to registerRoutes
-export const {
-  accountUpserted,
-  productUpserted,
-  priceUpserted,
-  subscriptionUpserted,
-  subscriptionDeleted,
-  checkoutSessionUpserted,
-  invoiceUpserted,
-  paymentUpserted,
-  payoutUpserted,
-  afterAccountUpdated,
-  afterCheckoutCompleted,
-  afterSubscriptionUpdated,
-  afterSubscriptionCanceled,
-  afterTrialEnding,
-  afterInvoicePaid,
-  afterPaymentSucceeded,
-  afterPaymentFailed,
-  afterPayoutCompleted,
-} = stripe.triggersApi();
+// Export the webhook handler pair; http.ts passes their refs to registerRoutes
+// via `webhooks: internal.stripe`. `syncWebhook` runs the configured sync
+// triggers in the same transaction as the component upsert; `asyncWebhook` runs
+// the async hooks after commit.
+export const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();

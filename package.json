@@ -1,6 +1,6 @@
 {
   "name": "@getdojo/better-stripe",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",

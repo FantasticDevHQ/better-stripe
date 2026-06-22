@@ -126,8 +126,8 @@ export async function scheduleAsyncHook(
     : HOOK_EVENT_MAP[eventType];
   if (!spec || !stripeObjectId) return;
 
-  const ref = whCtx.config?.triggers?.[spec.hook];
-  if (!ref) return;
+  const refs = whCtx.config?.webhooks;
+  if (!refs) return;
 
   const scheduler = whCtx.ctx.scheduler;
   if (!scheduler) {
@@ -143,7 +143,7 @@ export async function scheduleAsyncHook(
       { [spec.idArg]: stripeObjectId },
     )) as Record<string, unknown> | null;
     if (doc) {
-      await scheduler.runAfter(0, ref, { doc });
+      await scheduler.runAfter(0, refs.asyncWebhook, { hook: spec.hook, doc });
     }
   } catch (error) {
     console.error(

@@ -78,7 +78,11 @@
     "prepublishOnly": "npm run clean && npm run build && npm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "changeset": "changeset",
+    "changeset:status": "changeset status --verbose",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.6.0",
@@ -86,11 +90,14 @@
     "stripe": "^22.2.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.0",
     "@convex-dev/eslint-plugin": "^2.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/parser": "^8.61.0",
+    "@vitest/coverage-v8": "4.1.8",
     "convex": "^1.41.0",
     "convex-test": "^0.0.53",
     "eslint": "^9.39.4",

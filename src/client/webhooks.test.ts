@@ -1051,8 +1051,13 @@ describe("webhooks", () => {
       return { [TO_REFERENCE_PATH]: path };
     }
 
-    function setupHandlerWithTriggers(
-      triggers: Record<string, unknown>,
+    // The two webhook handler refs the app exports from `webhookHandlers()`.
+    const syncWebhook = makeAppRef("app/stripe/syncWebhook");
+    const asyncWebhook = makeAppRef("app/stripe/asyncWebhook");
+    const webhookRefs = { syncWebhook, asyncWebhook };
+
+    function setupHandlerWithWebhooks(
+      webhooks: Record<string, unknown>,
     ): (ctx: WebhookActionCtx, request: Request) => Promise<Response> {
       let rawHandler: any;
       const fakeRouter = {
@@ -1062,7 +1067,7 @@ describe("webhooks", () => {
       };
       registerRoutes(fakeRouter as any, component, {
         ...makeBaseConfig(),
-        triggers: triggers as any,
+        webhooks: webhooks as any,
       });
       return rawHandler;
     }
@@ -1090,11 +1095,8 @@ describe("webhooks", () => {
       });
     }
 
-    it("routes subscription upsert through triggers.subscriptionUpserted", async () => {
-      const subscriptionUpserted = makeAppRef(
-        "app/stripe/subscriptionUpserted",
-      );
-      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+    it("routes subscription upsert through syncWebhook (dispatcher: subscriptionUpserted)", async () => {
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const event = makeSubscriptionEvent("customer.subscription.updated");
       mockConstructEventAsync.mockResolvedValue(event);
@@ -1105,7 +1107,8 @@ describe("webhooks", () => {
       );
       expect(response.status).toBe(200);
 
-      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionUpserted, {
+      expect(ctx.runMutation).toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "subscriptionUpserted",
         data: expect.objectContaining({
           stripeSubscriptionId: "sub_777",
           status: "active",
@@ -1119,7 +1122,7 @@ describe("webhooks", () => {
       );
     });
 
-    it("falls back to direct component mutation without triggers", async () => {
+    it("falls back to direct component mutation without webhooks", async () => {
       const event = makeSubscriptionEvent("customer.subscription.updated");
       mockConstructEventAsync.mockResolvedValue(event);
 
@@ -1138,15 +1141,8 @@ describe("webhooks", () => {
       );
     });
 
-    it("routes subscription deletion through triggers.subscriptionDeleted", async () => {
-      const subscriptionUpserted = makeAppRef(
-        "app/stripe/subscriptionUpserted",
-      );
-      const subscriptionDeleted = makeAppRef("app/stripe/subscriptionDeleted");
-      const triggerHandler = setupHandlerWithTriggers({
-        subscriptionUpserted,
-        subscriptionDeleted,
-      });
+    it("routes subscription deletion through syncWebhook (dispatcher: subscriptionDeleted)", async () => {
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const event = makeSubscriptionEvent("customer.subscription.deleted");
       mockConstructEventAsync.mockResolvedValue(event);
@@ -1157,22 +1153,22 @@ describe("webhooks", () => {
       );
       expect(response.status).toBe(200);
 
-      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionDeleted, {
+      expect(ctx.runMutation).toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "subscriptionDeleted",
         data: expect.objectContaining({ stripeSubscriptionId: "sub_777" }),
       });
-      expect(ctx.runMutation).not.toHaveBeenCalledWith(
-        subscriptionUpserted,
-        expect.anything(),
-      );
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "subscriptionUpserted",
+        data: expect.anything(),
+      });
       expect(ctx.runMutation).not.toHaveBeenCalledWith(
         component.billing.mutations.upsertSubscription,
         expect.anything(),
       );
     });
 
-    it("routes V2 account upsert through triggers.accountUpserted", async () => {
-      const accountUpserted = makeAppRef("app/stripe/accountUpserted");
-      const triggerHandler = setupHandlerWithTriggers({ accountUpserted });
+    it("routes V2 account upsert through syncWebhook (dispatcher: accountUpserted)", async () => {
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const thinEvent = makeV2ThinEvent();
       mockParseEventNotificationAsync.mockResolvedValue(thinEvent);
@@ -1191,7 +1187,8 @@ describe("webhooks", () => {
       const response = await triggerHandler(ctx, makeRequest(thinEvent));
       expect(response.status).toBe(200);
 
-      expect(ctx.runMutation).toHaveBeenCalledWith(accountUpserted, {
+      expect(ctx.runMutation).toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "accountUpserted",
         data: expect.objectContaining({
           stripeAccountId: "acct_test_123",
           userId: "user_123",
@@ -1204,11 +1201,8 @@ describe("webhooks", () => {
       );
     });
 
-    it("partial triggers: checkout falls back to direct component mutation", async () => {
-      const subscriptionUpserted = makeAppRef(
-        "app/stripe/subscriptionUpserted",
-      );
-      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+    it("routes checkout upsert through syncWebhook (dispatcher: checkoutSessionUpserted)", async () => {
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const event = makeV1Event("checkout.session.completed", {
         id: "cs_999",
@@ -1226,31 +1220,28 @@ describe("webhooks", () => {
       );
       expect(response.status).toBe(200);
 
-      expect(ctx.runMutation).toHaveBeenCalledWith(
-        component.billing.mutations.upsertCheckoutSession,
-        expect.objectContaining({
+      expect(ctx.runMutation).toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "checkoutSessionUpserted",
+        data: expect.objectContaining({
           stripeSessionId: "cs_999",
           userId: "user_42",
         }),
-      );
+      });
       expect(ctx.runMutation).not.toHaveBeenCalledWith(
-        subscriptionUpserted,
+        component.billing.mutations.upsertCheckoutSession,
         expect.anything(),
       );
     });
 
-    it("dispatcher rejection returns 500 and marks the ledger row failed", async () => {
-      const subscriptionUpserted = makeAppRef(
-        "app/stripe/subscriptionUpserted",
-      );
-      const triggerHandler = setupHandlerWithTriggers({ subscriptionUpserted });
+    it("syncWebhook rejection returns 500 and marks the ledger row failed", async () => {
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const event = makeSubscriptionEvent("customer.subscription.updated");
       mockConstructEventAsync.mockResolvedValue(event);
 
       (ctx.runMutation as Mock)
         .mockResolvedValueOnce("inserted") // insertWebhookEvent
-        .mockRejectedValueOnce(new Error("sync trigger threw")) // dispatcher
+        .mockRejectedValueOnce(new Error("sync trigger threw")) // syncWebhook
         .mockResolvedValueOnce(undefined); // markWebhookEventFailed
 
       const response = await triggerHandler(
@@ -1259,7 +1250,8 @@ describe("webhooks", () => {
       );
       expect(response.status).toBe(500);
 
-      expect(ctx.runMutation).toHaveBeenCalledWith(subscriptionUpserted, {
+      expect(ctx.runMutation).toHaveBeenCalledWith(syncWebhook, {
+        dispatcher: "subscriptionUpserted",
         data: expect.objectContaining({ stripeSubscriptionId: "sub_777" }),
       });
       expect(ctx.runMutation).toHaveBeenCalledWith(
@@ -1282,8 +1274,13 @@ describe("webhooks", () => {
       return { [TO_REFERENCE_PATH]: path };
     }
 
-    function setupHandlerWithTriggers(
-      triggers: Record<string, unknown>,
+    // The two webhook handler refs the app exports from `webhookHandlers()`.
+    const syncWebhook = makeAppRef("app/stripe/syncWebhook");
+    const asyncWebhook = makeAppRef("app/stripe/asyncWebhook");
+    const webhookRefs = { syncWebhook, asyncWebhook };
+
+    function setupHandlerWithWebhooks(
+      webhooks: Record<string, unknown> | undefined,
     ): (ctx: WebhookActionCtx, request: Request) => Promise<Response> {
       let rawHandler: any;
       const fakeRouter = {
@@ -1293,7 +1290,7 @@ describe("webhooks", () => {
       };
       registerRoutes(fakeRouter as any, component, {
         ...makeBaseConfig(),
-        triggers: triggers as any,
+        webhooks: webhooks as any,
       });
       return rawHandler;
     }
@@ -1332,10 +1329,7 @@ describe("webhooks", () => {
       });
     }
 
-    it("checkout.session.completed schedules afterCheckoutCompleted with the committed doc", async () => {
-      const afterCheckoutCompleted = makeAppRef(
-        "app/stripe/afterCheckoutCompleted",
-      );
+    it("checkout.session.completed schedules asyncWebhook (hook: afterCheckoutCompleted) with the committed doc", async () => {
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
 
@@ -1346,9 +1340,7 @@ describe("webhooks", () => {
       };
       (schedCtx.runQuery as Mock).mockResolvedValue(sessionDoc);
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterCheckoutCompleted,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(
@@ -1361,15 +1353,13 @@ describe("webhooks", () => {
         component.billing.queries.getCheckoutSessionByStripeId,
         { stripeSessionId: "cs_hook_123" },
       );
-      expect(runAfter).toHaveBeenCalledWith(0, afterCheckoutCompleted, {
+      expect(runAfter).toHaveBeenCalledWith(0, asyncWebhook, {
+        hook: "afterCheckoutCompleted",
         doc: sessionDoc,
       });
     });
 
     it("schedules the hook only after the ledger row is marked processed", async () => {
-      const afterCheckoutCompleted = makeAppRef(
-        "app/stripe/afterCheckoutCompleted",
-      );
       const callOrder: string[] = [];
       const runAfter = vi.fn().mockImplementation(async () => {
         callOrder.push("runAfter");
@@ -1390,9 +1380,7 @@ describe("webhooks", () => {
         return "inserted";
       });
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterCheckoutCompleted,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(
@@ -1404,22 +1392,13 @@ describe("webhooks", () => {
     });
 
     it("customer.subscription.deleted schedules afterSubscriptionCanceled, not afterSubscriptionUpdated", async () => {
-      const afterSubscriptionUpdated = makeAppRef(
-        "app/stripe/afterSubscriptionUpdated",
-      );
-      const afterSubscriptionCanceled = makeAppRef(
-        "app/stripe/afterSubscriptionCanceled",
-      );
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
 
       const subDoc = { _id: "doc_sub_1", stripeSubscriptionId: "sub_hook_777" };
       (schedCtx.runQuery as Mock).mockResolvedValue(subDoc);
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterSubscriptionUpdated,
-        afterSubscriptionCanceled,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(
         makeSubscriptionEvent("customer.subscription.deleted"),
       );
@@ -1434,18 +1413,18 @@ describe("webhooks", () => {
         component.billing.queries.getSubscriptionByStripeId,
         { stripeSubscriptionId: "sub_hook_777" },
       );
-      expect(runAfter).toHaveBeenCalledWith(0, afterSubscriptionCanceled, {
+      expect(runAfter).toHaveBeenCalledWith(0, asyncWebhook, {
+        hook: "afterSubscriptionCanceled",
         doc: subDoc,
       });
       expect(runAfter).not.toHaveBeenCalledWith(
         0,
-        afterSubscriptionUpdated,
-        expect.anything(),
+        asyncWebhook,
+        expect.objectContaining({ hook: "afterSubscriptionUpdated" }),
       );
     });
 
     it("customer.subscription.trial_will_end schedules afterTrialEnding with the subscription doc", async () => {
-      const afterTrialEnding = makeAppRef("app/stripe/afterTrialEnding");
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
 
@@ -1456,7 +1435,7 @@ describe("webhooks", () => {
       };
       (schedCtx.runQuery as Mock).mockResolvedValue(subDoc);
 
-      const triggerHandler = setupHandlerWithTriggers({ afterTrialEnding });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(
         makeSubscriptionEvent("customer.subscription.trial_will_end"),
       );
@@ -1471,15 +1450,13 @@ describe("webhooks", () => {
         component.billing.queries.getSubscriptionByStripeId,
         { stripeSubscriptionId: "sub_hook_777" },
       );
-      expect(runAfter).toHaveBeenCalledWith(0, afterTrialEnding, {
+      expect(runAfter).toHaveBeenCalledWith(0, asyncWebhook, {
+        hook: "afterTrialEnding",
         doc: subDoc,
       });
     });
 
     it("no scheduler on ctx: warns, does not throw, still returns 200", async () => {
-      const afterCheckoutCompleted = makeAppRef(
-        "app/stripe/afterCheckoutCompleted",
-      );
       const plainCtx = createMockCtx(); // no scheduler
       (plainCtx.runQuery as Mock).mockResolvedValue({
         stripeSessionId: "cs_hook_123",
@@ -1487,9 +1464,7 @@ describe("webhooks", () => {
 
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterCheckoutCompleted,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(
@@ -1505,19 +1480,15 @@ describe("webhooks", () => {
       warnSpy.mockRestore();
     });
 
-    it("no matching hook ref in config.triggers: does not schedule, returns 200", async () => {
+    it("no webhooks configured: does not schedule, returns 200", async () => {
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
       (schedCtx.runQuery as Mock).mockResolvedValue({
         stripeSessionId: "cs_hook_123",
       });
 
-      // Triggers configured, but no afterCheckoutCompleted ref
-      const triggerHandler = setupHandlerWithTriggers({
-        afterSubscriptionUpdated: makeAppRef(
-          "app/stripe/afterSubscriptionUpdated",
-        ),
-      });
+      // No webhooks pair -> async hooks are skipped entirely.
+      const triggerHandler = setupHandlerWithWebhooks(undefined);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(
@@ -1529,16 +1500,11 @@ describe("webhooks", () => {
     });
 
     it("doc fetch returns null: no runAfter call, no throw", async () => {
-      const afterCheckoutCompleted = makeAppRef(
-        "app/stripe/afterCheckoutCompleted",
-      );
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
       // Default runQuery resolves null — doc not found
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterCheckoutCompleted,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(
@@ -1550,7 +1516,6 @@ describe("webhooks", () => {
     });
 
     it("V2 account event schedules afterAccountUpdated with the account doc", async () => {
-      const afterAccountUpdated = makeAppRef("app/stripe/afterAccountUpdated");
       const runAfter = vi.fn().mockResolvedValue(undefined);
       const schedCtx = createMockCtx({ scheduler: { runAfter } });
 
@@ -1575,7 +1540,7 @@ describe("webhooks", () => {
         configuration: { customer: { applied: true } },
       });
 
-      const triggerHandler = setupHandlerWithTriggers({ afterAccountUpdated });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
 
       const request = new Request("https://example.com/stripe/webhook", {
         method: "POST",
@@ -1592,15 +1557,13 @@ describe("webhooks", () => {
         component.core.queries.getAccountByStripeId,
         { stripeAccountId: "acct_test_123" },
       );
-      expect(runAfter).toHaveBeenCalledWith(0, afterAccountUpdated, {
+      expect(runAfter).toHaveBeenCalledWith(0, asyncWebhook, {
+        hook: "afterAccountUpdated",
         doc: accountDoc,
       });
     });
 
     it("runAfter rejection is logged and the webhook still returns 200", async () => {
-      const afterCheckoutCompleted = makeAppRef(
-        "app/stripe/afterCheckoutCompleted",
-      );
       const runAfter = vi
         .fn()
         .mockRejectedValue(new Error("scheduler exploded"));
@@ -1613,9 +1576,7 @@ describe("webhooks", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      const triggerHandler = setupHandlerWithTriggers({
-        afterCheckoutCompleted,
-      });
+      const triggerHandler = setupHandlerWithWebhooks(webhookRefs);
       mockConstructEventAsync.mockResolvedValue(makeCheckoutEvent());
 
       const response = await triggerHandler(

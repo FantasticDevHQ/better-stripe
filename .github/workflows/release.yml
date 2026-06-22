@@ -1,0 +1,66 @@
+name: Release
+
+# Changesets-driven release. On every push to main this either:
+#   1. opens/updates a "Version Packages" PR (when unreleased changeset files
+#      exist) that bumps the version and folds the changeset notes into
+#      CHANGELOG.md, or
+#   2. when that PR has been merged (no changesets left, version bumped),
+#      publishes to npm, creates the git tag, and cuts a GitHub release.
+# `changeset publish` only publishes versions not already on the registry, so
+# it is idempotent — it replaces the old hand-rolled "is this version already
+# on npm?" gate in the former publish.yml.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # manual escape hatch / re-run
+
+concurrency:
+  group: release
+  cancel-in-progress: false # never kill a publish mid-flight
+
+permissions:
+  contents: write # push the version-bump commit + tags, create the GH release
+  pull-requests: write # open/update the "Version Packages" PR
+  # id-token omitted — npm provenance requires a public repo (this one is
+  # private). Re-add `id-token: write` + `NPM_CONFIG_PROVENANCE: true` if it
+  # goes public.
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # changesets needs full history + tags
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build + verify before either versioning or publishing. (npm's
+      # prepublishOnly also runs clean+build+typecheck at publish time; this
+      # is the early fail-fast and ensures the version step sees a green tree.)
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+      - name: Create Release PR or publish to npm
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset:version
+          publish: pnpm changeset:publish
+          title: "chore: version packages"
+          commit: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The committed root .npmrc reads ${NPM_TOKEN}; setup-node's npmrc
+          # reads NODE_AUTH_TOKEN. Provide both so auth resolves either way.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

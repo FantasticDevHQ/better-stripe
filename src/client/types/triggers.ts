@@ -182,18 +182,10 @@ export type AsyncHookCtx = {
 };
 
 // ---------------------------------------------------------------------------
-// Trigger API function references (passed to registerRoutes by the app)
+// Webhook handler function references (passed to registerRoutes by the app)
 // ---------------------------------------------------------------------------
 
-/** Internal mutation that upserts a component doc and runs the sync trigger. */
-export type TriggerDispatchRef = FunctionReference<
-  "mutation",
-  "internal",
-  { data: Record<string, unknown> },
-  null
->;
-
-/** Names of the upsert dispatcher refs in {@link TriggerApiRefs}. */
+/** Names of the upsert dispatchers routed through {@link WebhookHandlerRefs}. */
 export type TriggerDispatcherName =
   | "accountUpserted"
   | "productUpserted"
@@ -205,7 +197,7 @@ export type TriggerDispatcherName =
   | "paymentUpserted"
   | "payoutUpserted";
 
-/** Names of the async hook refs in {@link TriggerApiRefs}. */
+/** Names of the async hooks routed through {@link WebhookHandlerRefs}. */
 export type AsyncHookName =
   | "afterAccountUpdated"
   | "afterCheckoutCompleted"
@@ -217,38 +209,32 @@ export type AsyncHookName =
   | "afterPaymentFailed"
   | "afterPayoutCompleted";
 
-/** Internal action that runs an async hook with the committed doc. */
-export type AsyncHookRef = FunctionReference<
-  "action",
-  "internal",
-  { doc: Record<string, unknown> },
-  null
->;
-
 /**
- * Function references to the wrappers returned by `triggersApi()`.
- * The app exports them from a Convex module and passes that module here:
- * `triggers: internal.stripe` (no cast needed).
- * All fields optional — the handler falls back to direct component
- * upserts for any dispatcher that is missing.
+ * The two function refs produced by `stripe.webhookHandlers()`.
+ *
+ * The app exports the pair from a Convex module and passes that module to
+ * `registerRoutes` as `webhooks: internal.stripe` (no cast needed). The
+ * webhook handler routes every component upsert through `syncWebhook` (so the
+ * configured sync trigger runs in the same transaction) and schedules every
+ * async hook through `asyncWebhook` after commit. Each routes internally by a
+ * discriminator arg (`dispatcher` / `hook`).
  */
-export type TriggerApiRefs = Partial<{
-  accountUpserted: TriggerDispatchRef;
-  productUpserted: TriggerDispatchRef;
-  priceUpserted: TriggerDispatchRef;
-  subscriptionUpserted: TriggerDispatchRef;
-  subscriptionDeleted: TriggerDispatchRef;
-  checkoutSessionUpserted: TriggerDispatchRef;
-  invoiceUpserted: TriggerDispatchRef;
-  paymentUpserted: TriggerDispatchRef;
-  payoutUpserted: TriggerDispatchRef;
-  afterAccountUpdated: AsyncHookRef;
-  afterCheckoutCompleted: AsyncHookRef;
-  afterSubscriptionUpdated: AsyncHookRef;
-  afterSubscriptionCanceled: AsyncHookRef;
-  afterTrialEnding: AsyncHookRef;
-  afterInvoicePaid: AsyncHookRef;
-  afterPaymentSucceeded: AsyncHookRef;
-  afterPaymentFailed: AsyncHookRef;
-  afterPayoutCompleted: AsyncHookRef;
-}>;
+export type WebhookHandlerRefs = {
+  // Discriminators are typed `string` (not the narrower name unions) to match
+  // what Convex codegen produces from `v.string()` args — so the app can pass
+  // `webhooks: internal.stripe` without a cast. The library always passes a
+  // valid TriggerDispatcherName/AsyncHookName at the call sites; the routing
+  // tables throw on an unknown discriminator at runtime.
+  syncWebhook: FunctionReference<
+    "mutation",
+    "internal",
+    { dispatcher: string; data: Record<string, unknown> },
+    null
+  >;
+  asyncWebhook: FunctionReference<
+    "action",
+    "internal",
+    { hook: string; doc: Record<string, unknown> },
+    null
+  >;
+};

@@ -19,8 +19,12 @@ import type {
   SubscriptionStatus,
 } from "../../component/billing/validators.js";
 import type {
+  DisputeStatus,
+  PaymentRefundStatus,
   PaymentStatus,
   PayoutStatus,
+  RefundReason,
+  RefundStatus,
 } from "../../component/connect/validators.js";
 import type {
   AppliedConfiguration,
@@ -57,6 +61,39 @@ export type StripeComponentPayment = {
   amount: number;
   currency: string;
   status: PaymentStatus;
+  refundedAmount?: number;
+  refundStatus?: PaymentRefundStatus;
+  metadata?: Record<string, unknown>;
+};
+
+export type StripeComponentRefund = {
+  _id: string;
+  _creationTime: number;
+  stripeRefundId: string;
+  stripePaymentIntentId?: string;
+  stripeChargeId?: string;
+  accountId?: string;
+  amount: number;
+  currency: string;
+  status: RefundStatus;
+  reason?: RefundReason;
+  failureReason?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type StripeComponentDispute = {
+  _id: string;
+  _creationTime: number;
+  stripeDisputeId: string;
+  stripePaymentIntentId?: string;
+  stripeChargeId?: string;
+  accountId?: string;
+  amount: number;
+  currency: string;
+  status: DisputeStatus;
+  reason: string;
+  isChargeRefundable: boolean;
+  lastEvent?: string;
   metadata?: Record<string, unknown>;
 };
 

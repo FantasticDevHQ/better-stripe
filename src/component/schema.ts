@@ -5,7 +5,12 @@ import {
   invoicesTable,
   subscriptionsTable,
 } from "./billing/schema";
-import { paymentsTable, payoutsTable } from "./connect/schema";
+import {
+  disputesTable,
+  paymentsTable,
+  payoutsTable,
+  refundsTable,
+} from "./connect/schema";
 import { accountsTable } from "./core/schema";
 import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
@@ -26,6 +31,8 @@ export default defineSchema({
   // Connect
   payments: paymentsTable,
   payouts: payoutsTable,
+  refunds: refundsTable,
+  disputes: disputesTable,
 
   // Webhooks
   webhookEvents: webhookEventsTable,

@@ -7,11 +7,13 @@ import type {
 import type {
   StripeComponentAccount,
   StripeComponentCheckoutSession,
+  StripeComponentDispute,
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
+  StripeComponentRefund,
   StripeComponentSubscription,
 } from "./documents.js";
 
@@ -102,6 +104,28 @@ export interface SyncTriggers {
       oldDoc: StripeComponentPayout,
     ) => Promise<void>;
   };
+  refund?: {
+    onCreate?: (
+      ctx: SyncTriggerCtx,
+      doc: StripeComponentRefund,
+    ) => Promise<void>;
+    onUpdate?: (
+      ctx: SyncTriggerCtx,
+      newDoc: StripeComponentRefund,
+      oldDoc: StripeComponentRefund,
+    ) => Promise<void>;
+  };
+  dispute?: {
+    onCreate?: (
+      ctx: SyncTriggerCtx,
+      doc: StripeComponentDispute,
+    ) => Promise<void>;
+    onUpdate?: (
+      ctx: SyncTriggerCtx,
+      newDoc: StripeComponentDispute,
+      oldDoc: StripeComponentDispute,
+    ) => Promise<void>;
+  };
 }
 
 /** Context passed to sync triggers — mutation-compatible (DB reads/writes only) */
@@ -159,6 +183,18 @@ export interface AsyncHooks {
     ctx: AsyncHookCtx,
     payout: StripeComponentPayout,
   ) => Promise<void>;
+  onRefundCreated?: (
+    ctx: AsyncHookCtx,
+    refund: StripeComponentRefund,
+  ) => Promise<void>;
+  onDisputeCreated?: (
+    ctx: AsyncHookCtx,
+    dispute: StripeComponentDispute,
+  ) => Promise<void>;
+  onDisputeClosed?: (
+    ctx: AsyncHookCtx,
+    dispute: StripeComponentDispute,
+  ) => Promise<void>;
 }
 
 /** Context passed to async hooks — action-compatible (external API calls OK) */
@@ -195,7 +231,9 @@ export type TriggerDispatcherName =
   | "checkoutSessionUpserted"
   | "invoiceUpserted"
   | "paymentUpserted"
-  | "payoutUpserted";
+  | "payoutUpserted"
+  | "refundUpserted"
+  | "disputeUpserted";
 
 /** Names of the async hooks routed through {@link WebhookHandlerRefs}. */
 export type AsyncHookName =
@@ -207,7 +245,10 @@ export type AsyncHookName =
   | "afterInvoicePaid"
   | "afterPaymentSucceeded"
   | "afterPaymentFailed"
-  | "afterPayoutCompleted";
+  | "afterPayoutCompleted"
+  | "afterRefundCreated"
+  | "afterDisputeCreated"
+  | "afterDisputeClosed";
 
 /**
  * The two function refs produced by `stripe.webhookHandlers()`.

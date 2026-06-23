@@ -58,6 +58,12 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   listPayouts: "connect/queries/listPayouts",
   upsertPayment: "connect/mutations/upsertPayment",
   upsertPayout: "connect/mutations/upsertPayout",
+  getRefundByStripeId: "connect/queries/getRefundByStripeId",
+  listRefunds: "connect/queries/listRefunds",
+  upsertRefund: "connect/mutations/upsertRefund",
+  getDisputeByStripeId: "connect/queries/getDisputeByStripeId",
+  listDisputes: "connect/queries/listDisputes",
+  upsertDispute: "connect/mutations/upsertDispute",
   // Webhooks
   getWebhookEvent: "webhooks/queries/getWebhookEvent",
   insertWebhookEvent: "webhooks/mutations/insertWebhookEvent",
@@ -211,6 +217,8 @@ export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
   invoiceUpserted: "billing/mutations/upsertInvoice",
   paymentUpserted: "connect/mutations/upsertPayment",
   payoutUpserted: "connect/mutations/upsertPayout",
+  refundUpserted: "connect/mutations/upsertRefund",
+  disputeUpserted: "connect/mutations/upsertDispute",
 };
 
 /**

@@ -44,6 +44,13 @@ const mockStripeInstance = {
   subscriptionItems: {
     update: vi.fn(),
   },
+  refunds: {
+    create: vi.fn(),
+  },
+  disputes: {
+    update: vi.fn(),
+    close: vi.fn(),
+  },
   paymentMethods: {
     list: vi.fn(),
     attach: vi.fn(),
@@ -921,6 +928,158 @@ describe("BetterStripe", () => {
   });
 
   // =========================================================================
+  // Refund methods
+  // =========================================================================
+
+  describe("createRefund", () => {
+    it("creates a refund for a payment intent and returns the refund id", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_1" });
+
+      const result = await bs.createRefund(mockCtx, {
+        stripePaymentIntentId: "pi_1",
+        amount: 250,
+        reason: "requested_by_customer",
+      });
+
+      expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith(
+        {
+          payment_intent: "pi_1",
+          amount: 250,
+          reason: "requested_by_customer",
+        },
+        undefined,
+      );
+      expect(result).toEqual({ stripeRefundId: "re_1" });
+    });
+
+    it("routes to a connected account when stripeAccountId is given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_2" });
+
+      await bs.createRefund(mockCtx, {
+        stripeChargeId: "ch_1",
+        stripeAccountId: "acct_1",
+      });
+
+      expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith(
+        { charge: "ch_1" },
+        { stripeAccount: "acct_1" },
+      );
+    });
+
+    it("rejects with REFUND_CREATE_FAILED when neither PI nor charge is given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      await expect(bs.createRefund(mockCtx, {})).rejects.toMatchObject({
+        data: { code: "REFUND_CREATE_FAILED" },
+      });
+      expect(mockStripeInstance.refunds.create).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a STRIPE API failure as REFUND_CREATE_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.refunds.create.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        bs.createRefund(mockCtx, { stripePaymentIntentId: "pi_1" }),
+      ).rejects.toMatchObject({ data: { code: "REFUND_CREATE_FAILED" } });
+    });
+  });
+
+  describe("listRefunds / getRefundByStripeId", () => {
+    it("forwards reads to the component, mapping stripeAccountId to accountId", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue([]);
+
+      await bs.listRefunds(mockCtx, {
+        stripeAccountId: "acct_1",
+        status: "succeeded",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+        accountId: "acct_1",
+        status: "succeeded",
+      });
+    });
+  });
+
+  // =========================================================================
+  // Dispute methods
+  // =========================================================================
+
+  describe("updateDispute", () => {
+    it("submits evidence with the submit flag", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.update.mockResolvedValue({});
+
+      const result = await bs.updateDispute(mockCtx, {
+        stripeDisputeId: "dp_1",
+        evidence: { product_description: "A widget" },
+        submit: true,
+      });
+
+      expect(mockStripeInstance.disputes.update).toHaveBeenCalledWith(
+        "dp_1",
+        { evidence: { product_description: "A widget" }, submit: true },
+        undefined,
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("surfaces a STRIPE API failure as DISPUTE_UPDATE_FAILED", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.update.mockRejectedValue(new Error("boom"));
+
+      await expect(
+        bs.updateDispute(mockCtx, { stripeDisputeId: "dp_1", submit: true }),
+      ).rejects.toMatchObject({ data: { code: "DISPUTE_UPDATE_FAILED" } });
+    });
+  });
+
+  describe("closeDispute", () => {
+    it("closes the dispute, passing routing options in the third arg", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.disputes.close.mockResolvedValue({});
+
+      const result = await bs.closeDispute(mockCtx, {
+        stripeDisputeId: "dp_1",
+        stripeAccountId: "acct_1",
+      });
+
+      expect(mockStripeInstance.disputes.close).toHaveBeenCalledWith(
+        "dp_1",
+        {},
+        { stripeAccount: "acct_1" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  // =========================================================================
   // Payment method: listPaymentMethods
   // =========================================================================
 
@@ -1102,15 +1261,53 @@ describe("BetterStripe", () => {
       });
 
       mockStripeInstance.products.list.mockReturnValue(
-        asyncIter([{ id: "prod_1", name: "Product 1", active: true, description: null, metadata: {} }]),
+        asyncIter([
+          {
+            id: "prod_1",
+            name: "Product 1",
+            active: true,
+            description: null,
+            metadata: {},
+          },
+        ]),
       );
 
       // Three prices all belonging to the same product
       mockStripeInstance.prices.list.mockReturnValue(
         asyncIter([
-          { id: "price_1", product: "prod_1", active: true, currency: "usd", unit_amount: 1000, type: "one_time", recurring: null, nickname: null, metadata: {} },
-          { id: "price_2", product: "prod_1", active: true, currency: "usd", unit_amount: 2000, type: "one_time", recurring: null, nickname: null, metadata: {} },
-          { id: "price_3", product: "prod_1", active: true, currency: "usd", unit_amount: 3000, type: "one_time", recurring: null, nickname: null, metadata: {} },
+          {
+            id: "price_1",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 1000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
+          {
+            id: "price_2",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 2000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
+          {
+            id: "price_3",
+            product: "prod_1",
+            active: true,
+            currency: "usd",
+            unit_amount: 3000,
+            type: "one_time",
+            recurring: null,
+            nickname: null,
+            metadata: {},
+          },
         ]),
       );
 
@@ -1264,7 +1461,10 @@ describe("BetterStripe", () => {
         applied_configurations: [],
         configuration: {},
         metadata: {},
-        requirements: { entries: [], summary: { minimum_deadline: { status: "no_requirements" } } },
+        requirements: {
+          entries: [],
+          summary: { minimum_deadline: { status: "no_requirements" } },
+        },
       };
       mockStripeInstance.v2.core.accounts.create.mockResolvedValue(fakeAccount);
       mockStripeInstance.v2.core.accounts.update.mockRejectedValue({
@@ -1288,9 +1488,12 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("ACCOUNT_CREATE_FAILED");
-      expect(data.message).toContain("Failed to apply account configuration after create");
+      expect(data.message).toContain(
+        "Failed to apply account configuration after create",
+      );
     });
 
     it("updateSubscriptionQuantity throws BetterStripeError SUBSCRIPTION_UPDATE_FAILED when sub has no items", async () => {
@@ -1315,7 +1518,8 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("SUBSCRIPTION_UPDATE_FAILED");
       expect(data.message).toBe("Subscription has no items");
     });
@@ -1350,7 +1554,8 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("PRODUCT_NOT_FOUND");
       expect(data.message).toContain("prod_missing");
     });
@@ -1372,9 +1577,12 @@ describe("BetterStripe", () => {
       }
 
       expect(isBetterStripeError(caught)).toBe(true);
-      const data = (caught as ConvexError<{ code: string; message: string }>).data;
+      const data = (caught as ConvexError<{ code: string; message: string }>)
+        .data;
       expect(data.code).toBe("PAYMENT_METHOD_FAILED");
-      expect(data.message).toContain("setDefaultPaymentMethod is not yet implemented");
+      expect(data.message).toContain(
+        "setDefaultPaymentMethod is not yet implemented",
+      );
     });
   });
 });

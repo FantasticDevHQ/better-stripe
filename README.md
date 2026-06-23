@@ -33,6 +33,8 @@ This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first
 - **Invoices** -- Invoice syncing and querying with metadata propagation from subscriptions
 - **Payments** -- Payment intent tracking and status management
 - **Payouts** -- Payout tracking for Connect/marketplace flows
+- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment
+- **Disputes** -- Chargeback/dispute tracking with evidence submission and close helpers
 - **Webhook handling** -- Single-endpoint processing with ledger-based deduplication and replay protection
 - **Trigger system** -- BetterAuth-style sync triggers (same transaction) and async hooks (scheduled action) for app-layer extensibility
 - **React hooks** -- Read hooks and flow hooks for all billing domains
@@ -215,6 +217,20 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `getPayout(ctx, { payoutId })`                                                       | Get payout by component document ID                                                        |
 | `listPayouts(ctx, { stripeAccountId?, status?, limit? })`                            | List payouts with optional filters                                                         |
 
+### Refund and Dispute
+
+| Method                                                                                                          | Description                                                                      |
+| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId? })` | Issue a refund (provide a payment intent or charge); synced via `refund.created` |
+| `getRefundByStripeId(ctx, { stripeRefundId })`                                                                  | Get a refund by Stripe refund ID                                                 |
+| `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                               | List refunds with optional filters                                               |
+| `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                | Get a dispute by Stripe dispute ID                                               |
+| `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                              | List disputes with optional filters                                              |
+| `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                      | Submit/stage dispute evidence (`submit: true` finalizes the response)            |
+| `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                      | Accept a dispute (concede the chargeback) — irreversible                         |
+
+Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
+
 ### Operational
 
 | Method                                                                                    | Description                                                                     |
@@ -340,6 +356,8 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `invoice.created`, `.finalized`, `.paid`, `.payment_failed`
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
 - `payout.created`, `.updated`, `.paid`, `.failed`
+- `refund.created`, `.updated`, `.failed`
+- `charge.dispute.created`, `.updated`, `.closed`, `.funds_withdrawn`, `.funds_reinstated`
 - `product.created`, `.updated`
 - `price.created`, `.updated`
 
@@ -386,6 +404,14 @@ interface SyncTriggers {
     onCreate?: (ctx, doc) => Promise<void>;
     onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
   };
+  refund?: {
+    onCreate?: (ctx, doc) => Promise<void>;
+    onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
+  };
+  dispute?: {
+    onCreate?: (ctx, doc) => Promise<void>;
+    onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
+  };
 }
 ```
 
@@ -404,6 +430,9 @@ interface AsyncHooks {
   onPaymentSucceeded?: (ctx, payment) => Promise<void>;
   onPaymentFailed?: (ctx, payment) => Promise<void>;
   onPayoutCompleted?: (ctx, payout) => Promise<void>;
+  onRefundCreated?: (ctx, refund) => Promise<void>;
+  onDisputeCreated?: (ctx, dispute) => Promise<void>;
+  onDisputeClosed?: (ctx, dispute) => Promise<void>;
 }
 ```
 

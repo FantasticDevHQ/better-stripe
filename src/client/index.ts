@@ -618,6 +618,57 @@ export class BetterStripe {
     );
   }
 
+  async pauseSubscription(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      behavior?: "keep_as_draft" | "mark_uncollectible" | "void";
+      resumesAt?: number;
+    },
+  ) {
+    return subscriptionsImpl.pauseSubscription(this.stripe(), ctx, opts);
+  }
+
+  async resumeSubscription(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string },
+  ) {
+    return subscriptionsImpl.resumeSubscription(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionPrice(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      stripePriceId: string;
+      prorationBehavior?: "always_invoice" | "create_prorations" | "none";
+    },
+  ) {
+    return subscriptionsImpl.updateSubscriptionPrice(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionMetadata(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; metadata: Record<string, string> },
+  ) {
+    return subscriptionsImpl.updateSubscriptionMetadata(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
+  async updateSubscriptionTrialEnd(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; trialEnd: "now" | number },
+  ) {
+    return subscriptionsImpl.updateSubscriptionTrialEnd(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
   async listSubscriptions(
     ctx: RunCtx,
     opts?: {

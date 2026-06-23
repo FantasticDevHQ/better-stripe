@@ -441,6 +441,269 @@ describe("BetterStripe", () => {
         mockStripeInstance.subscriptionItems.update,
       ).not.toHaveBeenCalled();
     });
+
+    it("surfaces a STRIPE_API_ERROR when the retrieve call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.updateSubscriptionQuantity(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          quantity: 3,
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("cancelSubscription error handling", () => {
+    it("surfaces a STRIPE_API_ERROR when the Stripe call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.cancelSubscription(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          cancelAtPeriodEnd: true,
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("pauseSubscription", () => {
+    it("defaults behavior to keep_as_draft when omitted", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.pauseSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: { behavior: "keep_as_draft" } },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes resumes_at and behavior when provided", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.pauseSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        behavior: "void",
+        resumesAt: 1893456000,
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: { behavior: "void", resumes_at: 1893456000 } },
+      );
+    });
+
+    it("surfaces a STRIPE_API_ERROR when the Stripe call throws", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.pauseSubscription(mockCtx, { stripeSubscriptionId: "sub_123" }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("resumeSubscription", () => {
+    it("clears pause_collection with the empty-string sentinel", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.resumeSubscription(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { pause_collection: "" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSubscriptionPrice", () => {
+    it("retrieves the item id and defaults proration_behavior to none", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionPrice(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_new",
+      });
+
+      expect(mockStripeInstance.subscriptions.retrieve).toHaveBeenCalledWith(
+        "sub_123",
+      );
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        {
+          items: [{ id: "si_1", price: "price_new" }],
+          proration_behavior: "none",
+        },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes through a caller-provided prorationBehavior", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.updateSubscriptionPrice(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        stripePriceId: "price_new",
+        prorationBehavior: "always_invoice",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        {
+          items: [{ id: "si_1", price: "price_new" }],
+          proration_behavior: "always_invoice",
+        },
+      );
+    });
+
+    it("rejects when the subscription has no items and does not call update", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [] },
+      });
+
+      await expect(
+        bs.updateSubscriptionPrice(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          stripePriceId: "price_new",
+        }),
+      ).rejects.toThrow("Subscription has no items");
+
+      expect(mockStripeInstance.subscriptions.update).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a STRIPE_API_ERROR when the update call throws after a successful retrieve", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValue({
+        items: { data: [{ id: "si_1" }] },
+      });
+      mockStripeInstance.subscriptions.update.mockRejectedValue(
+        new Error("boom"),
+      );
+
+      await expect(
+        bs.updateSubscriptionPrice(mockCtx, {
+          stripeSubscriptionId: "sub_123",
+          stripePriceId: "price_new",
+        }),
+      ).rejects.toMatchObject({ data: { code: "STRIPE_API_ERROR" } });
+    });
+  });
+
+  describe("updateSubscriptionMetadata", () => {
+    it("calls update with the provided metadata", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionMetadata(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        metadata: { plan: "pro" },
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { metadata: { plan: "pro" } },
+      );
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSubscriptionTrialEnd", () => {
+    it("ends the trial immediately with 'now'", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      const result = await bs.updateSubscriptionTrialEnd(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        trialEnd: "now",
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { trial_end: "now" },
+      );
+      expect(result).toEqual({ success: true });
+    });
+
+    it("passes a numeric timestamp through unchanged", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockStripeInstance.subscriptions.update.mockResolvedValue({});
+
+      await bs.updateSubscriptionTrialEnd(mockCtx, {
+        stripeSubscriptionId: "sub_123",
+        trialEnd: 1893456000,
+      });
+
+      expect(mockStripeInstance.subscriptions.update).toHaveBeenCalledWith(
+        "sub_123",
+        { trial_end: 1893456000 },
+      );
+    });
   });
 
   // =========================================================================

@@ -463,8 +463,11 @@ Exactly one hook (at most) is scheduled per event:
 | `payment_intent.succeeded`                        | `afterPaymentSucceeded`     |
 | `payment_intent.payment_failed`                   | `afterPaymentFailed`        |
 | `payout.paid`                                     | `afterPayoutCompleted`      |
+| `refund.created`                                  | `afterRefundCreated`        |
+| `charge.dispute.created`                          | `afterDisputeCreated`       |
+| `charge.dispute.closed`                           | `afterDisputeClosed`        |
 
-All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `invoice.created`) update the component tables but schedule no hook.
+All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `invoice.created`, `refund.updated`, `charge.dispute.funds_withdrawn`) update the component tables but schedule no hook.
 
 > **Note:** async hooks should be idempotent. Duplicate delivery is possible in rare ledger-failure cases (e.g. the event is processed and the hook scheduled, but the ledger update fails and Stripe redelivers).
 

@@ -111,9 +111,9 @@ export const getRefundByStripeId = query({
 });
 
 /**
- * List refunds. A `status` filter is only honored alongside `accountId` or
- * `stripePaymentIntentId` (the indexed combinations); a lone `status` falls
- * through to an unfiltered scan rather than a filter-after-take (Plan 002).
+ * List refunds. Every filter is index-backed (Plan 002 — never filter-after-take):
+ * `accountId`+`status`, `stripePaymentIntentId`+`status`, `accountId`,
+ * `stripePaymentIntentId`, or a lone `status`.
  */
 export const listRefunds = query({
   args: {
@@ -163,6 +163,14 @@ export const listRefunds = query({
         .withIndex("by_stripe_payment_intent_id", (q) =>
           q.eq("stripePaymentIntentId", stripePaymentIntentId),
         )
+        .take(limit);
+    }
+
+    if (args.status !== undefined) {
+      const status = args.status;
+      return await ctx.db
+        .query("refunds")
+        .withIndex("by_status", (q) => q.eq("status", status))
         .take(limit);
     }
 
@@ -238,6 +246,14 @@ export const listDisputes = query({
         .withIndex("by_stripe_payment_intent_id", (q) =>
           q.eq("stripePaymentIntentId", stripePaymentIntentId),
         )
+        .take(limit);
+    }
+
+    if (args.status !== undefined) {
+      const status = args.status;
+      return await ctx.db
+        .query("disputes")
+        .withIndex("by_status", (q) => q.eq("status", status))
         .take(limit);
     }
 

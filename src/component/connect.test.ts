@@ -168,6 +168,31 @@ describe("connect — refunds", () => {
     expect(succeeded).toHaveLength(1);
     expect(succeeded[0].stripeRefundId).toBe("re_a");
   });
+
+  it("listRefunds: honors a status-only filter via the by_status index", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertRefund, {
+      stripeRefundId: "re_s1",
+      stripePaymentIntentId: "pi_x",
+      amount: 100,
+      currency: "usd",
+      status: "failed",
+    });
+    await t.mutation(api.connect.mutations.upsertRefund, {
+      stripeRefundId: "re_s2",
+      stripePaymentIntentId: "pi_y",
+      amount: 200,
+      currency: "usd",
+      status: "succeeded",
+    });
+
+    const failed = await t.query(api.connect.queries.listRefunds, {
+      status: "failed",
+    });
+    expect(failed).toHaveLength(1);
+    expect(failed[0].stripeRefundId).toBe("re_s1");
+  });
 });
 
 describe("connect — disputes", () => {
@@ -254,5 +279,11 @@ describe("connect — disputes", () => {
     });
     expect(lost).toHaveLength(1);
     expect(lost[0].stripeDisputeId).toBe("dp_a");
+
+    const lostAnyAccount = await t.query(api.connect.queries.listDisputes, {
+      status: "lost",
+    });
+    expect(lostAnyAccount).toHaveLength(1);
+    expect(lostAnyAccount[0].stripeDisputeId).toBe("dp_a");
   });
 });

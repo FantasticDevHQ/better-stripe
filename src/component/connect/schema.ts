@@ -32,6 +32,7 @@ export const refundsTable = defineTable(refundFields)
   .index("by_stripe_refund_id", ["stripeRefundId"])
   .index("by_stripe_payment_intent_id", ["stripePaymentIntentId"])
   .index("by_account_id", ["accountId"])
+  .index("by_status", ["status"])
   .index("by_account_id_and_status", ["accountId", "status"])
   .index("by_payment_intent_id_and_status", [
     "stripePaymentIntentId",
@@ -45,6 +46,7 @@ export const disputesTable = defineTable(disputeFields)
   .index("by_stripe_dispute_id", ["stripeDisputeId"])
   .index("by_stripe_payment_intent_id", ["stripePaymentIntentId"])
   .index("by_account_id", ["accountId"])
+  .index("by_status", ["status"])
   .index("by_account_id_and_status", ["accountId", "status"])
   .index("by_payment_intent_id_and_status", [
     "stripePaymentIntentId",

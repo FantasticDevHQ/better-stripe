@@ -985,6 +985,20 @@ describe("BetterStripe", () => {
       expect(mockStripeInstance.refunds.create).not.toHaveBeenCalled();
     });
 
+    it("rejects with REFUND_CREATE_FAILED when both PI and charge are given", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      await expect(
+        bs.createRefund(mockCtx, {
+          stripePaymentIntentId: "pi_1",
+          stripeChargeId: "ch_1",
+        }),
+      ).rejects.toMatchObject({ data: { code: "REFUND_CREATE_FAILED" } });
+      expect(mockStripeInstance.refunds.create).not.toHaveBeenCalled();
+    });
+
     it("surfaces a STRIPE API failure as REFUND_CREATE_FAILED", async () => {
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",

@@ -34,6 +34,12 @@ export async function createRefund(
       "createRefund requires stripePaymentIntentId or stripeChargeId",
     );
   }
+  if (opts.stripePaymentIntentId && opts.stripeChargeId) {
+    throwStripeError(
+      "REFUND_CREATE_FAILED",
+      "createRefund accepts stripePaymentIntentId or stripeChargeId, not both",
+    );
+  }
 
   try {
     const refund = await stripe.refunds.create(

@@ -1572,6 +1572,12 @@ describe("BetterStripe", () => {
         .data;
       expect(data.code).toBe("PRODUCT_NOT_FOUND");
       expect(data.message).toContain("prod_missing");
+
+      // Validate-first: the product is missing, so we must throw BEFORE any
+      // Stripe write. Calling prices.create here would orphan a price in
+      // Stripe with no corresponding component record (BTS-2).
+      expect(mockStripeInstance.prices.create).not.toHaveBeenCalled();
+      expect(mockCtx.runMutation).not.toHaveBeenCalled();
     });
 
     it("setDefaultPaymentMethod throws BetterStripeError PAYMENT_METHOD_FAILED", async () => {

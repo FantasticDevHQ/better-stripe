@@ -25,6 +25,17 @@ export async function createPrice(
     metadata?: Record<string, string>;
   },
 ) {
+  // Validate the product exists in the component DB *before* writing to Stripe.
+  // Creating the price first and throwing afterwards would orphan a price in
+  // Stripe with no corresponding component record (BTS-2).
+  const internalProduct = await ctx.runQuery(
+    componentRef(component, "products/queries/getProductByStripeId"),
+    { stripeProductId: opts.stripeProductId },
+  );
+  if (!internalProduct) {
+    throwStripeError("PRODUCT_NOT_FOUND", `Product ${opts.stripeProductId} not found in component DB when creating price`);
+  }
+
   const priceParams: Stripe.PriceCreateParams = {
     product: opts.stripeProductId,
     unit_amount: opts.unitAmount,
@@ -41,14 +52,6 @@ export async function createPrice(
   }
 
   const price = await stripe.prices.create(priceParams);
-
-  const internalProduct = await ctx.runQuery(
-    componentRef(component, "products/queries/getProductByStripeId"),
-    { stripeProductId: opts.stripeProductId },
-  );
-  if (!internalProduct) {
-    throwStripeError("PRODUCT_NOT_FOUND", `Product ${opts.stripeProductId} not found in component DB when creating price`);
-  }
 
   await runMutationOrThrow(
     ctx,

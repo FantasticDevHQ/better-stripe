@@ -85,6 +85,7 @@ export async function createCheckoutSession(
       status: (session.status ?? "open") as "open" | "complete" | "expired",
       clientSecret: session.client_secret ?? undefined,
       url: session.url ?? undefined,
+      priceId: opts.stripePriceId,
       metadata,
     },
   );

@@ -403,6 +403,24 @@ describe("createCheckoutSession", () => {
     expect(result.clientSecret).toBeUndefined();
   });
 
+  it("persists the price id on the upserted checkout-session row", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(
+      sessionResponse({ id: "cs_priced" }),
+    );
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "user_1",
+      stripePriceId: "price_pro_monthly",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+    });
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.priceId).toBe("price_pro_monthly");
+  });
+
   it("targets the upsertCheckoutSession component ref", async () => {
     const stripe = makeStripe();
     stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());

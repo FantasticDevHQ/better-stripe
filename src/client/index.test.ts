@@ -16,6 +16,7 @@ const mockStripeInstance = {
       accounts: {
         create: vi.fn(),
         update: vi.fn(),
+        retrieve: vi.fn(),
         list: vi.fn(),
       },
     },
@@ -170,6 +171,41 @@ describe("BetterStripe", () => {
       expect(result).toEqual({
         accountId: "internal_id_1",
         stripeAccountId: "acct_123",
+      });
+    });
+  });
+
+  describe("addCustomerConfiguration", () => {
+    it("applies the customer configuration and records applied configs", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runQuery.mockResolvedValue({ userId: "user_1" });
+      mockStripeInstance.v2.core.accounts.update.mockResolvedValue({});
+      mockStripeInstance.v2.core.accounts.retrieve.mockResolvedValue({
+        applied_configurations: ["customer"],
+      });
+
+      const result = await bs.addCustomerConfiguration(mockCtx, {
+        stripeAccountId: "acct_123",
+      });
+
+      expect(mockStripeInstance.v2.core.accounts.update).toHaveBeenCalledWith(
+        "acct_123",
+        { configuration: { customer: {} } },
+      );
+      expect(mockCtx.runMutation).toHaveBeenCalledWith(
+        components.betterStripe.core.mutations.upsertAccount,
+        expect.objectContaining({
+          stripeAccountId: "acct_123",
+          userId: "user_1",
+          appliedConfigurations: ["customer"],
+        }),
+      );
+      expect(result).toEqual({
+        success: true,
+        appliedConfigurations: ["customer"],
       });
     });
   });

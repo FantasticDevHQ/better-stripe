@@ -11,4 +11,4 @@ dist/
 .claude/worktrees/
 
 # Test coverage reports
-coverage/
+/coverage

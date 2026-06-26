@@ -98,6 +98,21 @@ const HOOK_EVENT_MAP: Record<string, HookSpec> = {
     getter: "connect/queries/getPayoutByStripeId",
     idArg: "stripePayoutId",
   },
+  "refund.created": {
+    hook: "afterRefundCreated",
+    getter: "connect/queries/getRefundByStripeId",
+    idArg: "stripeRefundId",
+  },
+  "charge.dispute.created": {
+    hook: "afterDisputeCreated",
+    getter: "connect/queries/getDisputeByStripeId",
+    idArg: "stripeDisputeId",
+  },
+  "charge.dispute.closed": {
+    hook: "afterDisputeClosed",
+    getter: "connect/queries/getDisputeByStripeId",
+    idArg: "stripeDisputeId",
+  },
 };
 
 /**

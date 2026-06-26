@@ -14,6 +14,8 @@ export type {
   StripeComponentAccount,
   StripeComponentPayment,
   StripeComponentPayout,
+  StripeComponentRefund,
+  StripeComponentDispute,
   StripeComponentWebhookEvent,
   StripeComponentProduct,
   StripeComponentPrice,

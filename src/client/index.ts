@@ -7,12 +7,18 @@ import type {
   InvoiceStatus,
   SubscriptionStatus,
 } from "../component/billing/validators.js";
-import type { PayoutStatus } from "../component/connect/validators.js";
+import type {
+  DisputeStatus,
+  PayoutStatus,
+  RefundStatus,
+} from "../component/connect/validators.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
+import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
+import * as refundsImpl from "./connect/refunds.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
@@ -32,11 +38,13 @@ import type {
   BetterStripeOptions,
   StripeComponentAccount,
   StripeComponentCheckoutSession,
+  StripeComponentDispute,
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
+  StripeComponentRefund,
   StripeComponentSubscription,
   SyncTriggerCtx,
   SyncTriggers,
@@ -86,11 +94,13 @@ export type {
   PaymentMethodLike,
   StripeComponentAccount,
   StripeComponentCheckoutSession,
+  StripeComponentDispute,
   StripeComponentInvoice,
   StripeComponentPayment,
   StripeComponentPayout,
   StripeComponentPrice,
   StripeComponentProduct,
+  StripeComponentRefund,
   StripeComponentSubscription,
   StripeCountrySpecs,
   StripeEventHandler,
@@ -618,6 +628,57 @@ export class BetterStripe {
     );
   }
 
+  async pauseSubscription(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      behavior?: "keep_as_draft" | "mark_uncollectible" | "void";
+      resumesAt?: number;
+    },
+  ) {
+    return subscriptionsImpl.pauseSubscription(this.stripe(), ctx, opts);
+  }
+
+  async resumeSubscription(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string },
+  ) {
+    return subscriptionsImpl.resumeSubscription(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionPrice(
+    ctx: RunCtx,
+    opts: {
+      stripeSubscriptionId: string;
+      stripePriceId: string;
+      prorationBehavior?: "always_invoice" | "create_prorations" | "none";
+    },
+  ) {
+    return subscriptionsImpl.updateSubscriptionPrice(this.stripe(), ctx, opts);
+  }
+
+  async updateSubscriptionMetadata(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; metadata: Record<string, string> },
+  ) {
+    return subscriptionsImpl.updateSubscriptionMetadata(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
+  async updateSubscriptionTrialEnd(
+    ctx: RunCtx,
+    opts: { stripeSubscriptionId: string; trialEnd: "now" | number },
+  ) {
+    return subscriptionsImpl.updateSubscriptionTrialEnd(
+      this.stripe(),
+      ctx,
+      opts,
+    );
+  }
+
   async listSubscriptions(
     ctx: RunCtx,
     opts?: {
@@ -890,6 +951,86 @@ export class BetterStripe {
     opts?: { stripeAccountId?: string; status?: PayoutStatus; limit?: number },
   ) {
     return payoutsImpl.listPayouts(this.component, ctx, opts);
+  }
+
+  // ============================================================================
+  // REFUND METHODS
+  // ============================================================================
+
+  async createRefund(
+    ctx: RunCtx,
+    opts: {
+      stripePaymentIntentId?: string;
+      stripeChargeId?: string;
+      amount?: number;
+      reason?: "duplicate" | "fraudulent" | "requested_by_customer";
+      metadata?: Record<string, string>;
+      stripeAccountId?: string;
+    },
+  ): Promise<{ stripeRefundId: string }> {
+    return refundsImpl.createRefund(this.stripe(), ctx, opts);
+  }
+
+  async getRefundByStripeId(
+    ctx: RunCtx,
+    opts: { stripeRefundId: string },
+  ): Promise<StripeComponentRefund | null> {
+    return refundsImpl.getRefundByStripeId(this.component, ctx, opts);
+  }
+
+  async listRefunds(
+    ctx: RunCtx,
+    opts?: {
+      stripeAccountId?: string;
+      stripePaymentIntentId?: string;
+      status?: RefundStatus;
+      limit?: number;
+    },
+  ): Promise<StripeComponentRefund[]> {
+    return refundsImpl.listRefunds(this.component, ctx, opts);
+  }
+
+  // ============================================================================
+  // DISPUTE METHODS
+  // ============================================================================
+
+  async getDisputeByStripeId(
+    ctx: RunCtx,
+    opts: { stripeDisputeId: string },
+  ): Promise<StripeComponentDispute | null> {
+    return disputesImpl.getDisputeByStripeId(this.component, ctx, opts);
+  }
+
+  async listDisputes(
+    ctx: RunCtx,
+    opts?: {
+      stripeAccountId?: string;
+      stripePaymentIntentId?: string;
+      status?: DisputeStatus;
+      limit?: number;
+    },
+  ): Promise<StripeComponentDispute[]> {
+    return disputesImpl.listDisputes(this.component, ctx, opts);
+  }
+
+  async updateDispute(
+    ctx: RunCtx,
+    opts: {
+      stripeDisputeId: string;
+      evidence?: Stripe.DisputeUpdateParams.Evidence;
+      metadata?: Record<string, string>;
+      submit?: boolean;
+      stripeAccountId?: string;
+    },
+  ): Promise<{ success: true }> {
+    return disputesImpl.updateDispute(this.stripe(), ctx, opts);
+  }
+
+  async closeDispute(
+    ctx: RunCtx,
+    opts: { stripeDisputeId: string; stripeAccountId?: string },
+  ): Promise<{ success: true }> {
+    return disputesImpl.closeDispute(this.stripe(), ctx, opts);
   }
 
   // ============================================================================
@@ -1272,6 +1413,38 @@ export class BetterStripe {
           ),
           record,
         ),
+      refundUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentRefund>(
+          ctx,
+          "refundUpserted",
+          {
+            getter: "connect/queries/getRefundByStripeId",
+            idArg: "stripeRefundId",
+            idField: "stripeRefundId",
+            upsert: DISPATCHER_UPSERT_PATHS.refundUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.refund?.onCreate,
+            triggers?.refund?.onUpdate,
+          ),
+          record,
+        ),
+      disputeUpserted: (ctx, record) =>
+        runUpsertAndTrigger<StripeComponentDispute>(
+          ctx,
+          "disputeUpserted",
+          {
+            getter: "connect/queries/getDisputeByStripeId",
+            idArg: "stripeDisputeId",
+            idField: "stripeDisputeId",
+            upsert: DISPATCHER_UPSERT_PATHS.disputeUpserted,
+          },
+          splitCreateUpdate(
+            triggers?.dispute?.onCreate,
+            triggers?.dispute?.onUpdate,
+          ),
+          record,
+        ),
     };
 
     /** One routing entry per async hook — identical mapping to the old API. */
@@ -1304,6 +1477,15 @@ export class BetterStripe {
         | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
         | undefined,
       afterPayoutCompleted: hooks?.onPayoutCompleted as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterRefundCreated: hooks?.onRefundCreated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterDisputeCreated: hooks?.onDisputeCreated as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
+      afterDisputeClosed: hooks?.onDisputeClosed as
         | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
         | undefined,
     };

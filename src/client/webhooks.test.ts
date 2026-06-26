@@ -107,9 +107,15 @@ function createMockComponent(): any {
       },
     },
     connect: {
+      queries: {
+        getRefundByStripeId: makeRef("connect/queries/getRefundByStripeId"),
+        getDisputeByStripeId: makeRef("connect/queries/getDisputeByStripeId"),
+      },
       mutations: {
         upsertPayment: makeRef("connect/mutations/upsertPayment"),
         upsertPayout: makeRef("connect/mutations/upsertPayout"),
+        upsertRefund: makeRef("connect/mutations/upsertRefund"),
+        upsertDispute: makeRef("connect/mutations/upsertDispute"),
       },
     },
     webhooks: {
@@ -1020,6 +1026,94 @@ describe("webhooks", () => {
           trialStart: new Date(trialStart * 1000).toISOString(),
           trialEnd: new Date(trialEnd * 1000).toISOString(),
           userId: "user_42",
+        }),
+      );
+    });
+
+    it("refund events: upserts refund with payment intent + charge link", async () => {
+      const event = makeV1Event("refund.created", {
+        id: "re_123",
+        payment_intent: "pi_abc",
+        charge: "ch_xyz",
+        amount: 500,
+        currency: "usd",
+        status: "succeeded",
+        reason: "requested_by_customer",
+        metadata: { note: "partial" },
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const request = makeRequest({ type: "refund.created" });
+      const response = await handler(ctx, request);
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.connect.mutations.upsertRefund,
+        expect.objectContaining({
+          stripeRefundId: "re_123",
+          stripePaymentIntentId: "pi_abc",
+          stripeChargeId: "ch_xyz",
+          amount: 500,
+          currency: "usd",
+          status: "succeeded",
+          reason: "requested_by_customer",
+        }),
+      );
+    });
+
+    it("refund events: clamps an unknown status to pending and drops unknown reason", async () => {
+      const event = makeV1Event("refund.updated", {
+        id: "re_456",
+        payment_intent: "pi_abc",
+        charge: "ch_xyz",
+        amount: 500,
+        currency: "usd",
+        status: "weird_status",
+        reason: "not_a_real_reason",
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const request = makeRequest({ type: "refund.updated" });
+      await handler(ctx, request);
+
+      const call = (ctx.runMutation as Mock).mock.calls.find(
+        ([ref]) =>
+          ref?.[TO_REFERENCE_PATH] ===
+          component.connect.mutations.upsertRefund[TO_REFERENCE_PATH],
+      );
+      expect(call?.[1]).toMatchObject({ status: "pending" });
+      expect(call?.[1].reason).toBeUndefined();
+    });
+
+    it("dispute events: upserts dispute and records the originating event suffix", async () => {
+      const event = makeV1Event("charge.dispute.funds_withdrawn", {
+        id: "dp_123",
+        payment_intent: "pi_abc",
+        charge: "ch_xyz",
+        amount: 2000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        metadata: {},
+      });
+      mockConstructEventAsync.mockResolvedValue(event);
+
+      const request = makeRequest({ type: "charge.dispute.funds_withdrawn" });
+      const response = await handler(ctx, request);
+      expect(response.status).toBe(200);
+
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.connect.mutations.upsertDispute,
+        expect.objectContaining({
+          stripeDisputeId: "dp_123",
+          stripePaymentIntentId: "pi_abc",
+          stripeChargeId: "ch_xyz",
+          amount: 2000,
+          status: "needs_response",
+          reason: "fraudulent",
+          isChargeRefundable: true,
+          lastEvent: "funds_withdrawn",
         }),
       );
     });

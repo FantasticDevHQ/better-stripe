@@ -173,13 +173,11 @@ describe("createPrice", () => {
       }),
     ).rejects.toMatchObject({ data: { code: "PRODUCT_NOT_FOUND" } });
 
-    // KNOWN SMELL (characterized, not endorsed): createPrice writes to Stripe
-    // BEFORE validating the product exists, so a missing product leaves an
-    // ORPHANED Stripe price — the create already happened, only the component
-    // upsert is skipped. This assertion pins that current behavior; if the
-    // ordering is ever fixed (validate first, then create), this test should
-    // flip to expect `stripe.prices.create` NOT to have been called.
-    expect(stripe.prices.create).toHaveBeenCalled();
+    // Validate-first (BTS-2): the product is missing, so createPrice must throw
+    // BEFORE any Stripe write. Calling prices.create here would orphan a price
+    // in Stripe with no corresponding component record. The component upsert is
+    // likewise never reached.
+    expect(stripe.prices.create).not.toHaveBeenCalled();
     expect(ctx.runMutation).not.toHaveBeenCalled();
   });
 });

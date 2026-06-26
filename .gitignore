@@ -9,3 +9,6 @@ dist/
 .docs
 .DS_Store
 .claude/worktrees/
+
+# Test coverage reports
+coverage/

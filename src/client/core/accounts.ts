@@ -423,6 +423,65 @@ export async function restartAccountOnboarding(
   return closeAccount(stripe, component, ctx, opts);
 }
 
+/**
+ * Default V2 customer configuration. Applying the customer configuration is
+ * what makes a V2 Account billable — the customer-facing payment/billing flows
+ * (subscriptions, invoices, billing portal). In the V2 Accounts API a single
+ * Account with this configuration replaces the legacy V1 Customer object, so
+ * `customer_account: acct_…` is what you pass to subscriptions, setup intents,
+ * and billing-portal sessions. No capabilities are requested by default;
+ * request `customer.capabilities.automatic_indirect_tax` separately if you need
+ * automatic tax on this account's invoices/subscriptions.
+ */
+export const DEFAULT_CUSTOMER_CONFIGURATION: Record<string, unknown> = {
+  customer: {},
+};
+
+/**
+ * Apply the customer configuration to an existing V2 Account, making it
+ * billable, and record the resulting applied configurations on the component
+ * account. The account must already exist in the component DB (e.g. created via
+ * `createAccount`); its owning `userId` is recovered from that record.
+ */
+export async function addCustomerConfiguration(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeAccountId: string },
+): Promise<{ success: true; appliedConfigurations: string[] }> {
+  const existing = (await ctx.runQuery(
+    componentRef(component, "core/queries/getAccountByStripeId"),
+    { stripeAccountId: opts.stripeAccountId },
+  )) as StripeComponentAccount | null;
+
+  if (!existing) {
+    throwStripeError(
+      "ACCOUNT_NOT_FOUND",
+      `No component account found for ${opts.stripeAccountId}; create it before applying the customer configuration`,
+    );
+  }
+
+  await stripe.v2.core.accounts.update(opts.stripeAccountId, {
+    configuration: DEFAULT_CUSTOMER_CONFIGURATION,
+  } as V2AccountUpdateParams);
+
+  // Re-fetch to record the configurations Stripe actually applied
+  const updated = await stripe.v2.core.accounts.retrieve(opts.stripeAccountId);
+  const appliedConfigurations = updated.applied_configurations ?? [];
+
+  await runMutationOrThrow(
+    ctx,
+    componentRef(component, "core/mutations/upsertAccount"),
+    {
+      stripeAccountId: opts.stripeAccountId,
+      userId: existing.userId,
+      appliedConfigurations,
+    },
+  );
+
+  return { success: true, appliedConfigurations };
+}
+
 export async function addRecipientConfiguration(
   stripe: Stripe,
   _ctx: RunCtx,

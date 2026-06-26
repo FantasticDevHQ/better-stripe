@@ -15,6 +15,8 @@ import type { Component, RunCtx } from "../helpers.js";
 import {
   DEFAULT_ACCOUNT_CONFIGURATION,
   DEFAULT_ACCOUNT_DEFAULTS,
+  DEFAULT_CUSTOMER_CONFIGURATION,
+  addCustomerConfiguration,
   addRecipientConfiguration,
   closeAccount,
   createAccount,
@@ -932,5 +934,99 @@ describe("syncAllAccounts", () => {
 
     expect(result).toEqual({ synced: 0, errors: [], errorCount: 0 });
     expect(stripe.v2.core.accounts.list).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("addCustomerConfiguration", () => {
+  it("DEFAULT_CUSTOMER_CONFIGURATION requests the customer configuration", () => {
+    expect(DEFAULT_CUSTOMER_CONFIGURATION).toEqual({ customer: {} });
+  });
+
+  it("applies the customer configuration to the Stripe account", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await addCustomerConfiguration(asStripe(stripe), makeComponent(), ctx, {
+      stripeAccountId: "acct_1",
+    });
+
+    expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_1", {
+      configuration: { customer: {} },
+    });
+  });
+
+  it("records the Stripe-reported applied configurations on the component account", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await addCustomerConfiguration(asStripe(stripe), makeComponent(), ctx, {
+      stripeAccountId: "acct_1",
+    });
+
+    // Read-back keyed by the Stripe id to recover the owning userId
+    expect(runQuery).toHaveBeenCalledWith(
+      refFor("core/queries/getAccountByStripeId"),
+      { stripeAccountId: "acct_1" },
+    );
+    // Applied configs come from the re-fetched Stripe account (source of truth)
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("core/mutations/upsertAccount"),
+      {
+        stripeAccountId: "acct_1",
+        userId: "user_1",
+        appliedConfigurations: ["customer"],
+      },
+    );
+  });
+
+  it("returns success with the applied configurations", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer", "merchant"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    const result = await addCustomerConfiguration(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      { stripeAccountId: "acct_1" },
+    );
+
+    expect(result).toEqual({
+      success: true,
+      appliedConfigurations: ["customer", "merchant"],
+    });
+  });
+
+  it("throws ACCOUNT_NOT_FOUND and never touches Stripe when the account is not in the component DB", async () => {
+    const stripe = makeStripe();
+    const runQuery = vi.fn().mockResolvedValue(null);
+    const runMutation = vi.fn();
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await expect(
+      addCustomerConfiguration(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_missing",
+      }),
+    ).rejects.toMatchObject({ data: { code: "ACCOUNT_NOT_FOUND" } });
+
+    expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
+    expect(runMutation).not.toHaveBeenCalled();
   });
 });

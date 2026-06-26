@@ -153,6 +153,8 @@ export class BetterStripe {
   static DEFAULT_ACCOUNT_CONFIGURATION =
     accountsImpl.DEFAULT_ACCOUNT_CONFIGURATION;
   static DEFAULT_ACCOUNT_DEFAULTS = accountsImpl.DEFAULT_ACCOUNT_DEFAULTS;
+  static DEFAULT_CUSTOMER_CONFIGURATION =
+    accountsImpl.DEFAULT_CUSTOMER_CONFIGURATION;
 
   // ============================================================================
   // ACCOUNT METHODS
@@ -330,6 +332,24 @@ export class BetterStripe {
     opts: { stripeAccountId: string },
   ) {
     return accountsImpl.addRecipientConfiguration(this.stripe(), ctx, opts);
+  }
+
+  /**
+   * Apply the V2 customer configuration to an existing account, making it
+   * billable (subscriptions, invoices, billing portal via `customer_account`),
+   * and record the applied configurations on the component account. The account
+   * must already exist in the component DB (e.g. from {@link createAccount}).
+   */
+  async addCustomerConfiguration(
+    ctx: RunCtx,
+    opts: { stripeAccountId: string },
+  ) {
+    return accountsImpl.addCustomerConfiguration(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   // ============================================================================

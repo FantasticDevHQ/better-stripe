@@ -7,6 +7,10 @@ import {
   useState,
 } from "react";
 
+import { useQuery } from "convex/react";
+
+import { api } from "../../convex/_generated/api";
+
 export type Role = "customer" | "seller" | "admin";
 
 export interface MockUser {
@@ -14,28 +18,9 @@ export interface MockUser {
   name: string;
   email: string;
   role: Role;
+  /** V2 Stripe account (acct_…) linked to this persona, if seeded. */
+  stripeAccountId?: string;
 }
-
-const MOCK_USERS: Record<Role, MockUser> = {
-  customer: {
-    id: "user_learner_1",
-    name: "Alex Customer",
-    email: "alex@example.com",
-    role: "customer",
-  },
-  seller: {
-    id: "user_creator_1",
-    name: "Jordan Seller",
-    email: "jordan@example.com",
-    role: "seller",
-  },
-  admin: {
-    id: "user_admin_1",
-    name: "Sam Admin",
-    email: "sam@example.com",
-    role: "admin",
-  },
-};
 
 interface RoleContextValue {
   currentUser: MockUser;
@@ -65,14 +50,42 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, role);
   }, [role]);
 
+  // Resolve the active persona from the seeded Convex users so `currentUser.id`
+  // is the real `_id` that `getAccountByUserId` resolves, and carries the
+  // linked `stripeAccountId`.
+  const users = useQuery(api.users.list);
+
+  // Query still pending — hold rendering so consumers never see a null user.
+  if (users === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
+  // Query resolved, but no seeded user for the active role. Fail loudly rather
+  // than spin forever — the seed hasn't run (or the users table is empty).
+  const match = users.find((u) => u.role === role);
+  if (!match) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        No seeded “{role}” user found. Run the example seed
+        (`pnpm --filter ./example run setup`) to create the demo personas.
+      </div>
+    );
+  }
+
+  const currentUser: MockUser = {
+    id: match._id,
+    name: match.name,
+    email: match.email,
+    role: match.role,
+    stripeAccountId: match.stripeAccountId,
+  };
+
   return (
-    <RoleContext.Provider
-      value={{
-        currentUser: MOCK_USERS[role],
-        currentRole: role,
-        setRole,
-      }}
-    >
+    <RoleContext.Provider value={{ currentUser, currentRole: role, setRole }}>
       {children}
     </RoleContext.Provider>
   );

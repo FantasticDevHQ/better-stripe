@@ -243,10 +243,7 @@ async function handleCheckoutEvent(
     stripeSessionId: session.id,
     userId,
     orgId,
-    accountId:
-      typeof session.customer === "string"
-        ? session.customer
-        : (session.customer?.id ?? undefined),
+    accountId: resolveOwnerAccount(session) ?? undefined,
     mode: (session.mode ?? "payment") as "payment" | "subscription" | "setup",
     status: (session.status ?? "open") as "open" | "complete" | "expired",
     clientSecret: session.client_secret ?? undefined,
@@ -272,10 +269,7 @@ async function upsertInvoiceFromStripe(
     stripeInvoiceId: invoice.id!,
     userId,
     orgId,
-    accountId:
-      typeof invoice.customer === "string"
-        ? invoice.customer
-        : (invoice.customer?.id ?? undefined),
+    accountId: resolveOwnerAccount(invoice) ?? undefined,
     subscriptionId,
     status: invoice.status ?? "draft",
     currency: invoice.currency!,
@@ -317,10 +311,7 @@ async function upsertPaymentFromStripe(
     stripePaymentIntentId: paymentIntent.id,
     userId,
     orgId,
-    accountId:
-      typeof paymentIntent.customer === "string"
-        ? paymentIntent.customer
-        : (paymentIntent.customer?.id ?? undefined),
+    accountId: resolveOwnerAccount(paymentIntent) ?? undefined,
     amount: paymentIntent.amount,
     currency: paymentIntent.currency,
     status,

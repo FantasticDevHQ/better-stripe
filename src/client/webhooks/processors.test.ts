@@ -416,6 +416,24 @@ describe("processEvent — checkout", () => {
     const upsert = calls[calls.length - 1];
     expect(upsert[1].metadata).toEqual({ userId: "user_1", new: "fromEvent" });
   });
+
+  it("prefers the V2 customer_account over the legacy customer id", async () => {
+    const ctx = makeCtx({ queryThrows: true });
+    const whCtx = makeWhCtx({ ctx });
+
+    await processEvent(
+      whCtx,
+      event("checkout.session.completed", {
+        ...session,
+        customer: "cus_legacy",
+        customer_account: "acct_v2",
+      }),
+    );
+
+    const calls = ctx.runMutation.mock.calls;
+    const upsert = calls[calls.length - 1];
+    expect(upsert[1].accountId).toBe("acct_v2");
+  });
 });
 
 describe("processEvent — invoices", () => {
@@ -472,6 +490,26 @@ describe("processEvent — invoices", () => {
     expect(data.accountId).toBe("acct_obj_i");
     expect(data.subscriptionId).toBeUndefined();
   });
+
+  it("prefers the V2 customer_account over the legacy customer id", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_3",
+        customer: "cus_legacy",
+        customer_account: "acct_v2",
+        currency: "usd",
+        amount_due: 0,
+        amount_paid: 0,
+        status: "paid",
+        period_start: null,
+        period_end: null,
+        metadata: {},
+      }),
+    );
+    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_v2");
+  });
 });
 
 describe("processEvent — payments (status collapse)", () => {
@@ -512,6 +550,20 @@ describe("processEvent — payments (status collapse)", () => {
     const { path, data } = dispatchedPayload(whCtx.ctx);
     expect(path).toBe("betterStripe/connect/mutations/upsertPayment");
     expect(data.status).toBe("failed");
+  });
+
+  it("prefers the V2 customer_account over the legacy customer id", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        ...base,
+        customer: "cus_legacy",
+        customer_account: "acct_v2",
+        status: "succeeded",
+      }),
+    );
+    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_v2");
   });
 });
 

@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useRole } from "@/providers/role-context";
 import { useQuery } from "convex/react";
 import { ExternalLink } from "lucide-react";
 
@@ -42,7 +43,12 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 export function Invoices() {
-  const invoices = useQuery(api.queries.listInvoices);
+  const { currentUser } = useRole();
+  // Scope invoices to the signed-in persona — a user (incl. the account-less
+  // visitor) must never see another account's invoices.
+  const invoices = useQuery(api.queries.listInvoicesByUser, {
+    userId: currentUser.id,
+  });
 
   if (invoices === undefined) {
     return (

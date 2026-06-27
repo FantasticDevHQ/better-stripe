@@ -121,7 +121,7 @@ describe("users — getByRole", () => {
 // =============================================================================
 
 describe("seed — seedDb", () => {
-  it("creates 3 users on first run", async () => {
+  it("creates 4 users on first run", async () => {
     const t = convexTest(schema, modules);
 
     const result = await t.mutation(internal.seed.seedDb, {});
@@ -129,10 +129,10 @@ describe("seed — seedDb", () => {
     expect(result.alreadySeeded).toBe(false);
 
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(3);
+    expect(users).toHaveLength(4);
 
     const roles = users.map((u: { role: string }) => u.role).sort();
-    expect(roles).toEqual(["admin", "customer", "seller"]);
+    expect(roles).toEqual(["admin", "customer", "seller", "visitor"]);
   });
 
   it("skips seeding when users already exist", async () => {
@@ -167,12 +167,12 @@ describe("reset — clearAppDb", () => {
     // Seed first
     await t.mutation(internal.seed.seedDb, {});
     const beforeClear = await t.query(api.users.list, {});
-    expect(beforeClear).toHaveLength(3);
+    expect(beforeClear).toHaveLength(4);
 
     // Clear
     const result = await t.mutation(internal.reset.clearAppDb, {});
 
-    expect(result.cleared).toBe(3);
+    expect(result.cleared).toBe(4);
 
     const afterClear = await t.query(api.users.list, {});
     expect(afterClear).toEqual([]);
@@ -207,6 +207,6 @@ describe("queries — getSeedStatus", () => {
 
     const status = await t.query(api.queries.getSeedStatus, {});
 
-    expect(status.userCount).toBe(3);
+    expect(status.userCount).toBe(4);
   });
 });

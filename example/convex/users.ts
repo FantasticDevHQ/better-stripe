@@ -15,15 +15,13 @@ export const getByRole = query({
       v.literal("customer"),
       v.literal("seller"),
       v.literal("admin"),
+      v.literal("visitor"),
     ),
   },
   handler: async (ctx, args) => {
-    // Mock example app with a tiny seeded users table (3 rows).
-    /* eslint-disable @convex-dev/no-filter-in-query */
     return await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("role"), args.role))
+      .withIndex("by_role", (q) => q.eq("role", args.role))
       .first();
-    /* eslint-enable @convex-dev/no-filter-in-query */
   },
 });

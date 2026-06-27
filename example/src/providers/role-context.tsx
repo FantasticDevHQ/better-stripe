@@ -11,7 +11,7 @@ import { useQuery } from "convex/react";
 
 import { api } from "../../convex/_generated/api";
 
-export type Role = "customer" | "seller" | "admin";
+export type Role = "customer" | "seller" | "admin" | "visitor";
 
 export interface MockUser {
   id: string;
@@ -35,7 +35,12 @@ const STORAGE_KEY = "betterlearn-role";
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "customer" || stored === "seller" || stored === "admin") {
+    if (
+      stored === "customer" ||
+      stored === "seller" ||
+      stored === "admin" ||
+      stored === "visitor"
+    ) {
       return stored;
     }
     return "customer";

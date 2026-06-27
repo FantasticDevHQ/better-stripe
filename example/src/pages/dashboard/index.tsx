@@ -15,9 +15,12 @@ function formatDate(dateStr: string | undefined) {
 
 export function Dashboard() {
   const { currentUser } = useRole();
-  const subscriptions = useQuery(api.queries.listSubscriptions);
+  // Scope to the signed-in persona — never surface another account's
+  // subscription (the account-less visitor sees their own empty state).
+  const subscriptions = useQuery(api.queries.listSubscriptionsByUser, {
+    userId: currentUser.id,
+  });
 
-  // Find the current user's active subscription (match by userId pattern)
   const userSubscription = subscriptions?.find(
     (s) => s.status === "active" || s.status === "trialing",
   );

@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type Role, useRole } from "@/providers/role-context";
-import { Palette, Settings, User } from "lucide-react";
+import { Eye, Palette, Settings, User } from "lucide-react";
 
 const roles: { value: Role; label: string; icon: typeof User }[] = [
   { value: "customer", label: "Customer", icon: User },
   { value: "seller", label: "Seller", icon: Palette },
   { value: "admin", label: "Admin", icon: Settings },
+  { value: "visitor", label: "Visitor", icon: Eye },
 ];
 
 export function RoleSwitcher() {

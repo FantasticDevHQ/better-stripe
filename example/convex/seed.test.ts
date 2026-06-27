@@ -4,7 +4,7 @@
  * Tests for the example app's seed functions (`seed.ts`).
  *
  * `seed.ts` has three exports:
- *  - `seedDb`     — a pure mutation that inserts the three demo users, but only
+ *  - `seedDb`     — a pure mutation that inserts the four demo users, but only
  *                   when the table is empty (idempotent).
  *  - `seedStripe` — an action that creates demo products/prices in Stripe, but
  *                   first short-circuits if the component already has products.
@@ -38,11 +38,11 @@ function withComponent() {
 }
 
 // =============================================================================
-// seedDb — inserts the three demo users, idempotently
+// seedDb — inserts the four demo users, idempotently
 // =============================================================================
 
 describe("seed — seedDb", () => {
-  it("inserts exactly the three demo users with the documented roles/emails", async () => {
+  it("inserts exactly the four demo users with the documented roles/emails", async () => {
     const t = convexTest(schema, modules);
 
     const result = await t.mutation(internal.seed.seedDb, {});
@@ -50,10 +50,13 @@ describe("seed — seedDb", () => {
 
     const users = await t.query(api.users.list, {});
     const byEmail = Object.fromEntries(
-      users.map((u: { email: string }) => [u.email, u]),
+      users.map((u: { email: string; stripeAccountId?: string }) => [
+        u.email,
+        u,
+      ]),
     );
 
-    expect(users).toHaveLength(3);
+    expect(users).toHaveLength(4);
     expect(byEmail["alex@example.com"]).toMatchObject({
       name: "Alex Customer",
       role: "customer",
@@ -66,6 +69,12 @@ describe("seed — seedDb", () => {
       name: "Sam Admin",
       role: "admin",
     });
+    // Visitor persona: no Stripe account yet (pre-onboarding state).
+    expect(byEmail["riley@example.com"]).toMatchObject({
+      name: "Riley Visitor",
+      role: "visitor",
+    });
+    expect(byEmail["riley@example.com"].stripeAccountId).toBeUndefined();
   });
 
   it("is idempotent: a second run inserts nothing and reports alreadySeeded", async () => {
@@ -77,9 +86,9 @@ describe("seed — seedDb", () => {
     const second = await t.mutation(internal.seed.seedDb, {});
     expect(second).toEqual({ alreadySeeded: true });
 
-    // Still exactly three — the second call did not duplicate.
+    // Still exactly four — the second call did not duplicate.
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(3);
+    expect(users).toHaveLength(4);
   });
 
   it("skips seeding when ANY user already exists, regardless of role", async () => {
@@ -240,9 +249,9 @@ describe("seed — run", () => {
 
     await t.action(internal.seed.run, {});
 
-    // DB half ran: three demo users.
+    // DB half ran: four demo users.
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(3);
+    expect(users).toHaveLength(4);
 
     // Stripe half short-circuited: still just the pre-seeded product.
     const products = await t.query(

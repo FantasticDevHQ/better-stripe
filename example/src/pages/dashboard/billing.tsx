@@ -9,6 +9,7 @@ import { useRole } from "@/providers/role-context";
 import { BillingPortalLink } from "@getdojo/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { Clock, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
 
@@ -48,6 +49,30 @@ export function Billing() {
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-4 w-64" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Visitor / no linked Stripe account: show an onboarding CTA and hide every
+  // billing action (portal, cancel) rather than leaving disabled dead-ends.
+  if (account === null) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold">Billing</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your subscription and billing details.
+          </p>
+        </div>
+        <Card>
+          <CardContent className="space-y-4 py-8 text-center">
+            <p className="text-muted-foreground">
+              You don&apos;t have a billing account yet. Pick a plan to get
+              started.
+            </p>
+            <Button render={<Link to="/" />}>Create account to subscribe</Button>
           </CardContent>
         </Card>
       </div>

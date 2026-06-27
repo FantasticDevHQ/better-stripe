@@ -32,6 +32,14 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Testing", to: "/admin/testing" },
     { label: "Setup", to: "/admin/setup" },
   ],
+  // Visitor has no Stripe account yet — they see the customer surface, which
+  // renders pre-onboarding empty-states and CTAs rather than billing data.
+  visitor: [
+    { label: "Dashboard", to: "/dashboard", end: true },
+    { label: "Billing", to: "/dashboard/billing" },
+    { label: "Invoices", to: "/dashboard/invoices" },
+    { label: "Payment Methods", to: "/dashboard/payment-methods" },
+  ],
 };
 
 export function NavSidebar() {
@@ -55,6 +63,7 @@ export function NavSidebar() {
         {currentRole === "customer" && "Customer"}
         {currentRole === "seller" && "Seller"}
         {currentRole === "admin" && "Admin"}
+        {currentRole === "visitor" && "Visitor"}
       </div>
       <ul className="space-y-1">
         {items.map((item) => (

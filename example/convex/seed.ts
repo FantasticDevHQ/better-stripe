@@ -46,8 +46,17 @@ export const seedDb = internalMutation({
       role: "admin",
     });
 
+    // Visitor: a user with no Stripe account yet — `seedAccounts` deliberately
+    // leaves this persona unlinked so the app can demonstrate the pre-onboarding
+    // (gated, no-billing-data) state.
+    await ctx.db.insert("users", {
+      name: "Riley Visitor",
+      email: "riley@example.com",
+      role: "visitor",
+    });
+
     console.log(
-      `[seed] DB seeded: 3 users (customer=${customerId}, seller=${sellerId})`,
+      `[seed] DB seeded: 4 users (customer=${customerId}, seller=${sellerId})`,
     );
     return { alreadySeeded: false };
   },

@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import { resolveOwnerAccount } from "../utils/owner.js";
 import {
   type WebhookContext,
   componentRef,
@@ -186,10 +187,9 @@ async function upsertSubscriptionFromStripe(
   const periodStart = firstItem?.current_period_start ?? undefined;
   const periodEnd = firstItem?.current_period_end ?? undefined;
 
-  const accountId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : (subscription.customer?.id ?? undefined);
+  // Prefer the V2 `customer_account` (acct_…) over the legacy `customer`
+  // (cus_…) so V2 customer-configured accounts are attributed correctly.
+  const accountId = resolveOwnerAccount(subscription) ?? undefined;
 
   await dispatchUpsert(whCtx, dispatcherName, {
     stripeSubscriptionId: subscription.id,

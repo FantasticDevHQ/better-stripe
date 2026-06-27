@@ -316,6 +316,19 @@ describe("processEvent — subscriptions", () => {
     expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_obj");
   });
 
+  it("prefers the V2 customer_account over the legacy customer id", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("customer.subscription.created", {
+        ...baseSub,
+        customer: "cus_legacy",
+        customer_account: "acct_v2",
+      }),
+    );
+    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_v2");
+  });
+
   it("falls back to the empty-string userId sentinel when metadata is absent", async () => {
     const whCtx = makeWhCtx();
     await processEvent(

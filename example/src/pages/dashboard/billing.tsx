@@ -20,8 +20,14 @@ function formatDate(dateStr: string | undefined) {
 export function Billing() {
   const [isCancelling, setIsCancelling] = useState(false);
   const { currentUser } = useRole();
-  const subscriptions = useQuery(api.queries.listSubscriptions);
-  const invoices = useQuery(api.queries.listInvoices);
+  // Scope billing data to the signed-in persona — never surface (or allow
+  // cancelling) another account's subscription or invoices.
+  const subscriptions = useQuery(api.queries.listSubscriptionsByUser, {
+    userId: currentUser.id,
+  });
+  const invoices = useQuery(api.queries.listInvoicesByUser, {
+    userId: currentUser.id,
+  });
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
   });

@@ -12,6 +12,10 @@ export default defineSchema({
       v.literal("admin"),
     ),
     avatarUrl: v.optional(v.string()),
+    // V2 Stripe account (acct_…) linked to this persona, written back by the
+    // seed once the account is created. Undefined for personas with no account
+    // (e.g. admin) or before seeding has linked them.
+    stripeAccountId: v.optional(v.string()),
   }),
 
   // E2E observability: every sync trigger / async hook invocation records a

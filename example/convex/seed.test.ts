@@ -23,6 +23,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
 import { api, components, internal } from "./_generated/api";
+import { type Id } from "./_generated/dataModel";
 import schema from "./schema";
 // The installed component, loaded from the built output the example resolves.
 import componentSchema from "../../dist/component/schema.js";
@@ -100,6 +101,89 @@ describe("seed — seedDb", () => {
     const users = await t.query(api.users.list, {});
     expect(users).toHaveLength(1);
     expect(users[0]).toMatchObject({ email: "pre@example.com" });
+  });
+});
+
+// =============================================================================
+// linkUserAccount — writes a created account id back onto the user row
+// =============================================================================
+
+describe("seed — linkUserAccount", () => {
+  it("patches the target user's stripeAccountId", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.seedDb, {});
+
+    const users = await t.query(api.users.list, {});
+    const customer = users.find(
+      (u: { role: string }) => u.role === "customer",
+    ) as { _id: Id<"users"> };
+
+    await t.mutation(internal.seed.linkUserAccount, {
+      userId: customer._id,
+      stripeAccountId: "acct_test_123",
+    });
+
+    const updated = await t.query(api.users.list, {});
+    const linked = updated.find(
+      (u: { _id: string }) => u._id === customer._id,
+    ) as { stripeAccountId?: string };
+    expect(linked.stripeAccountId).toBe("acct_test_123");
+  });
+});
+
+// =============================================================================
+// seedAccounts — idempotency guard reads only the users table, no Stripe needed
+// =============================================================================
+
+describe("seed — seedAccounts (already-linked guard)", () => {
+  it("short-circuits only once BOTH personas are linked (no Stripe call)", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.seedDb, {});
+
+    const users = await t.query(api.users.list, {});
+    const customer = users.find(
+      (u: { role: string }) => u.role === "customer",
+    ) as { _id: Id<"users"> };
+    const seller = users.find(
+      (u: { role: string }) => u.role === "seller",
+    ) as { _id: Id<"users"> };
+    await t.mutation(internal.seed.linkUserAccount, {
+      userId: customer._id,
+      stripeAccountId: "acct_customer_existing",
+    });
+    await t.mutation(internal.seed.linkUserAccount, {
+      userId: seller._id,
+      stripeAccountId: "acct_seller_existing",
+    });
+
+    const result = await t.action(internal.seed.seedAccounts, {});
+    expect(result).toEqual({ alreadySeeded: true });
+  });
+
+  it("does NOT short-circuit when only one persona is linked (partial state is resumable)", async () => {
+    // Without a Stripe key the un-linked persona can't be created, so the action
+    // reports linked:0 rather than treating the partial state as fully seeded.
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.seedDb, {});
+
+    const users = await t.query(api.users.list, {});
+    const customer = users.find(
+      (u: { role: string }) => u.role === "customer",
+    ) as { _id: Id<"users"> };
+    await t.mutation(internal.seed.linkUserAccount, {
+      userId: customer._id,
+      stripeAccountId: "acct_customer_existing",
+    });
+
+    const result = await t.action(internal.seed.seedAccounts, {});
+    expect(result).toEqual({ alreadySeeded: false, linked: 0 });
+  });
+
+  it("reports not-seeded and links nothing when the users table is empty", async () => {
+    const t = convexTest(schema, modules);
+
+    const result = await t.action(internal.seed.seedAccounts, {});
+    expect(result).toEqual({ alreadySeeded: false, linked: 0 });
   });
 });
 

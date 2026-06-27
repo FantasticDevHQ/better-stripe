@@ -1,0 +1,108 @@
+// @vitest-environment edge-runtime
+/// <reference types="vite/client" />
+/**
+ * Tests for the example app's per-user data scoping (`queries.ts`).
+ *
+ * BTS-5: the billing page must only ever surface the signed-in persona's own
+ * subscriptions and invoices — never another account's. The component is what
+ * actually filters by `userId`; these tests register it (from the built output
+ * the example resolves) and seed two users' rows, then assert each example
+ * query (`listSubscriptionsByUser`, `listInvoicesByUser`) returns only the
+ * requested user's data. This is the testable encoding of the acceptance
+ * criteria; the React wiring in `billing.tsx` is covered by inspection per the
+ * project's no-RTL testing strategy.
+ */
+import { convexTest } from "convex-test";
+import { describe, expect, it } from "vitest";
+
+import { api, components } from "./_generated/api";
+import schema from "./schema";
+// The installed component, loaded from the built output the example resolves.
+import componentSchema from "../../dist/component/schema.js";
+
+const modules = import.meta.glob("./**/*.*s");
+const componentModules = import.meta.glob("../../dist/component/**/*.js");
+
+function withComponent() {
+  const t = convexTest(schema, modules);
+  t.registerComponent("betterStripe", componentSchema, componentModules);
+  return t;
+}
+
+describe("queries — listSubscriptionsByUser scopes to the owner", () => {
+  it("returns only the requested user's subscriptions, not another account's", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_alex",
+      userId: "user_alex",
+      accountId: "acct_alex",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_jordan",
+      userId: "user_jordan",
+      accountId: "acct_jordan",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const alex = await t.query(api.queries.listSubscriptionsByUser, {
+      userId: "user_alex",
+    });
+    expect(alex.map((s) => s.stripeSubscriptionId)).toEqual(["sub_alex"]);
+
+    const jordan = await t.query(api.queries.listSubscriptionsByUser, {
+      userId: "user_jordan",
+    });
+    expect(jordan.map((s) => s.stripeSubscriptionId)).toEqual(["sub_jordan"]);
+  });
+
+  it("returns an empty array for a user with no subscriptions (no leakage)", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
+      stripeSubscriptionId: "sub_jordan",
+      userId: "user_jordan",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    });
+
+    const visitor = await t.query(api.queries.listSubscriptionsByUser, {
+      userId: "user_visitor",
+    });
+    expect(visitor).toEqual([]);
+  });
+});
+
+describe("queries — listInvoicesByUser scopes to the owner", () => {
+  it("returns only the requested user's invoices", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "in_alex",
+      userId: "user_alex",
+      status: "paid",
+      currency: "usd",
+      amountDue: 1900,
+      amountPaid: 1900,
+    });
+    await t.mutation(components.betterStripe.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "in_jordan",
+      userId: "user_jordan",
+      status: "paid",
+      currency: "usd",
+      amountDue: 2900,
+      amountPaid: 2900,
+    });
+
+    const alex = await t.query(api.queries.listInvoicesByUser, {
+      userId: "user_alex",
+    });
+    expect(alex.map((i) => i.stripeInvoiceId)).toEqual(["in_alex"]);
+  });
+});

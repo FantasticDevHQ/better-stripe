@@ -130,6 +130,27 @@ describe("BetterStripe", () => {
       const bs = new BetterStripe(components.betterStripe);
       expect(() => bs.apiKey).toThrow("STRIPE_SECRET_KEY is not set");
     });
+
+    it("validates platformFee at construction and exposes it", () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        platformFee: { percent: 10, fixed: 30 },
+      });
+      expect(bs.platformFee).toEqual({ percent: 10, fixed: 30 });
+    });
+
+    it("throws on an invalid platformFee config", () => {
+      expect(
+        () =>
+          new BetterStripe(components.betterStripe, {
+            platformFee: { percent: 150 },
+          }),
+      ).toThrow(/platformFee/);
+    });
+
+    it("platformFee is undefined when not configured", () => {
+      const bs = new BetterStripe(components.betterStripe);
+      expect(bs.platformFee).toBeUndefined();
+    });
   });
 
   // =========================================================================

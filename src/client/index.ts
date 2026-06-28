@@ -22,6 +22,7 @@ import * as refundsImpl from "./connect/refunds.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
+import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -36,6 +37,8 @@ import type {
   AsyncHookCtx,
   AsyncHooks,
   BetterStripeOptions,
+  FeeOverride,
+  PlatformFeeConfig,
   StripeComponentAccount,
   StripeComponentCheckoutSession,
   StripeComponentDispute,
@@ -81,7 +84,13 @@ export type {
 } from "./utils/webhookEndpoints.js";
 
 // Re-export types for consumers
-export type { BetterStripeOptions, RegisterRoutesConfig } from "./types.js";
+export type {
+  BetterStripeOptions,
+  FeeOverride,
+  FeeTier,
+  PlatformFeeConfig,
+  RegisterRoutesConfig,
+} from "./types.js";
 export type {
   StripeDashboardResourceType,
   StripeMode,
@@ -124,12 +133,30 @@ export class BetterStripe {
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
   private _hooks?: AsyncHooks;
+  private _platformFee?: PlatformFeeConfig;
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
     this.component = component;
     this._apiKey = options?.STRIPE_SECRET_KEY;
     this._triggers = options?.triggers;
     this._hooks = options?.hooks;
+    if (options?.platformFee !== undefined) {
+      validatePlatformFee(options.platformFee);
+      this._platformFee = options.platformFee;
+    }
+  }
+
+  /** The configured default platform fee (the platform's take), if any. */
+  get platformFee(): PlatformFeeConfig | undefined {
+    return this._platformFee;
+  }
+
+  /**
+   * Resolve the effective fee config for a charge: per-call override → global
+   * default. The fee math itself is applied at charge time (M2).
+   */
+  resolveFee(override?: FeeOverride): PlatformFeeConfig | undefined {
+    return resolveFeeConfig(this._platformFee, override);
   }
 
   get apiKey(): string {

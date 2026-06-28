@@ -77,4 +77,42 @@ describe("per-store subscription scoping (BTS-19)", () => {
     );
     expect(res).toEqual([]);
   });
+
+  it("getActiveSubscription can be scoped to a store", async () => {
+    const t = convexTest(schema, modules);
+    const base = {
+      userId: "buyer_1",
+      status: "active" as const,
+      cancelAtPeriodEnd: false,
+      isTrialing: false,
+    };
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      ...base,
+      stripeSubscriptionId: "sub_a",
+      destinationAccountId: "acct_store_a",
+    });
+    await t.mutation(api.billing.mutations.upsertSubscription, {
+      ...base,
+      stripeSubscriptionId: "sub_b",
+      destinationAccountId: "acct_store_b",
+    });
+
+    const a = await t.query(api.billing.queries.getActiveSubscription, {
+      userId: "buyer_1",
+      destinationAccountId: "acct_store_a",
+    });
+    expect(a?.stripeSubscriptionId).toBe("sub_a");
+
+    const b = await t.query(api.billing.queries.getActiveSubscription, {
+      userId: "buyer_1",
+      destinationAccountId: "acct_store_b",
+    });
+    expect(b?.stripeSubscriptionId).toBe("sub_b");
+
+    // No store filter → first active (store-agnostic, unchanged behavior).
+    const any = await t.query(api.billing.queries.getActiveSubscription, {
+      userId: "buyer_1",
+    });
+    expect(any).not.toBeNull();
+  });
 });

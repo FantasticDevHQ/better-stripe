@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 
 import { computeFee, isPercentOnlyFee } from "../core/fees.js";
+import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
@@ -55,6 +56,36 @@ function deriveFeeRow(params: CheckoutSessionCreateParams): {
   return {};
 }
 
+/**
+ * Destination charges require the price to live on the PLATFORM account, not a
+ * connected account. Best-effort guard: if the price is in the component catalog
+ * and its product belongs to a connected account, throw a clear error before
+ * hitting Stripe. A price absent from the catalog is left to Stripe to validate.
+ */
+async function assertPlatformPrice(
+  component: Component,
+  ctx: RunCtx,
+  stripePriceId: string,
+): Promise<void> {
+  const price = (await ctx.runQuery(
+    componentRef(component, "products/queries/getPriceByStripeId"),
+    { stripePriceId },
+  )) as { stripeProductId?: string } | null;
+  if (!price?.stripeProductId) return;
+
+  const product = (await ctx.runQuery(
+    componentRef(component, "products/queries/getProductByStripeId"),
+    { stripeProductId: price.stripeProductId },
+  )) as { accountId?: string } | null;
+
+  if (product?.accountId) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      `Price ${stripePriceId} belongs to connected account ${product.accountId}; destination charges require a platform-owned price.`,
+    );
+  }
+}
+
 // =============================================================================
 // Checkout methods
 // =============================================================================
@@ -92,6 +123,11 @@ export async function createCheckoutSession(
   },
 ) {
   const uiMode = opts.uiMode ?? "embedded";
+
+  // Destination charges must use a platform-owned price.
+  if (opts.destinationAccountId) {
+    await assertPlatformPrice(component, ctx, opts.stripePriceId);
+  }
 
   const metadata = {
     ...(opts.metadata ?? {}),

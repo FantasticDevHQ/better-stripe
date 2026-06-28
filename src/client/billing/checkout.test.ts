@@ -39,7 +39,28 @@ function makeComponent(): Component {
         upsertCheckoutSession: ref("billing/mutations/upsertCheckoutSession"),
       },
     },
+    products: {
+      queries: {
+        getPriceByStripeId: ref("products/queries/getPriceByStripeId"),
+        getProductByStripeId: ref("products/queries/getProductByStripeId"),
+      },
+    },
   } as unknown as Component;
+}
+
+/** Build a ctx whose runQuery routes by component ref path (for price validation). */
+function routedCtx(routes: Record<string, unknown>) {
+  const runQuery = vi.fn(async (refObj: Record<symbol, string>) => {
+    const path = refObj[TO_REF].replace(/^betterStripe\//, "");
+    return routes[path] ?? null;
+  });
+  return {
+    runQuery,
+    runMutation: vi.fn().mockResolvedValue(undefined),
+  } as unknown as RunCtx & {
+    runQuery: ReturnType<typeof vi.fn>;
+    runMutation: ReturnType<typeof vi.fn>;
+  };
 }
 
 function makeCtx(queryResult?: unknown) {
@@ -644,6 +665,78 @@ describe("createCheckoutSession — destination + fee (BTS-16, one-time payment)
     expect(createArg.payment_intent_data).toEqual({
       metadata: { userId: "user_1" },
     });
+  });
+});
+
+describe("createCheckoutSession — price-on-platform validation (BTS-15)", () => {
+  it("rejects a destination charge whose price belongs to a connected account", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "products/queries/getPriceByStripeId": {
+        stripePriceId: "price_1",
+        stripeProductId: "prod_1",
+      },
+      "products/queries/getProductByStripeId": {
+        stripeProductId: "prod_1",
+        accountId: "acct_seller", // connected-account-owned → invalid
+      },
+    });
+
+    await expect(
+      createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        stripePriceId: "price_1",
+        mode: "subscription",
+        returnUrl: "https://app.test/return",
+        accountId: "acct_buyer",
+        destinationAccountId: "acct_store",
+        feeConfig: { percent: 10 },
+      }),
+    ).rejects.toThrow(/platform/i);
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it("allows a destination charge for a platform-owned price", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "products/queries/getPriceByStripeId": {
+        stripePriceId: "price_1",
+        stripeProductId: "prod_1",
+      },
+      "products/queries/getProductByStripeId": {
+        stripeProductId: "prod_1",
+        // no accountId → platform-owned
+      },
+    });
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10 },
+    });
+    expect(stripe.checkout.sessions.create).toHaveBeenCalled();
+  });
+
+  it("skips validation when there is no destination (plain checkout)", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "user_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+    });
+    // No price lookup performed for a non-destination checkout.
+    expect(ctx.runQuery).not.toHaveBeenCalled();
+    expect(stripe.checkout.sessions.create).toHaveBeenCalled();
   });
 });
 

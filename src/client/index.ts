@@ -846,7 +846,7 @@ export class BetterStripe {
 
   async getActiveSubscription(
     ctx: RunCtx,
-    opts: { userId: string; orgId?: string },
+    opts: { userId: string; orgId?: string; destinationAccountId?: string },
   ): Promise<StripeComponentSubscription | null> {
     return subscriptionsImpl.getActiveSubscription(this.component, ctx, opts);
   }

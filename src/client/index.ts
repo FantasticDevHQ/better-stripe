@@ -124,6 +124,14 @@ export type {
 
 export type BetterStripeComponent = ComponentApi;
 
+/** Deep-copy a platform fee config so stored/returned values can't be mutated. */
+function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
+  return {
+    ...config,
+    tiers: config.tiers?.map((tier) => ({ ...tier })),
+  };
+}
+
 // =============================================================================
 // BETTER STRIPE CLIENT
 // =============================================================================
@@ -142,13 +150,15 @@ export class BetterStripe {
     this._hooks = options?.hooks;
     if (options?.platformFee !== undefined) {
       validatePlatformFee(options.platformFee);
-      this._platformFee = options.platformFee;
+      // Store a defensive copy so later mutation of the caller's object can't
+      // silently bypass validation or change runtime behavior.
+      this._platformFee = clonePlatformFee(options.platformFee);
     }
   }
 
   /** The configured default platform fee (the platform's take), if any. */
   get platformFee(): PlatformFeeConfig | undefined {
-    return this._platformFee;
+    return this._platformFee && clonePlatformFee(this._platformFee);
   }
 
   /**
@@ -156,7 +166,8 @@ export class BetterStripe {
    * default. The fee math itself is applied at charge time (M2).
    */
   resolveFee(override?: FeeOverride): PlatformFeeConfig | undefined {
-    return resolveFeeConfig(this._platformFee, override);
+    const resolved = resolveFeeConfig(this._platformFee, override);
+    return resolved && clonePlatformFee(resolved);
   }
 
   get apiKey(): string {

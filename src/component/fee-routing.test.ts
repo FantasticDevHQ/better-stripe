@@ -80,6 +80,8 @@ describe("fee & fund-routing fields (BTS-11)", () => {
           { destinationAccountId: "acct_x", role: "platform", amount: 100 },
         ] as never,
       }),
-    ).rejects.toThrow();
+      // Convex's union error reports the rejected value, not the field path, so
+      // pin to the validator rejecting the bad role literal specifically.
+    ).rejects.toThrow(/Validator error.*platform/i);
   });
 });

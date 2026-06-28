@@ -68,6 +68,21 @@ describe("validatePlatformFee (BTS-13)", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects a fractional fixed amount (minor units must be whole)", () => {
+    expect(() => validatePlatformFee({ percent: 5, fixed: 0.5 })).toThrow(
+      /integer/i,
+    );
+  });
+
+  it("rejects a fractional tier upper bound", () => {
+    expect(() =>
+      validatePlatformFee({
+        percent: 2.9,
+        tiers: [{ upTo: 89900.25, percent: 2.9 }],
+      }),
+    ).toThrow(/integer/i);
+  });
 });
 
 describe("resolveFeeConfig precedence (BTS-13)", () => {
@@ -84,5 +99,11 @@ describe("resolveFeeConfig precedence (BTS-13)", () => {
 
   it("returns undefined when neither is set", () => {
     expect(resolveFeeConfig(undefined, undefined)).toBeUndefined();
+  });
+
+  it("validates the override config (override bypasses the constructor)", () => {
+    expect(() => resolveFeeConfig({ percent: 10 }, { percent: 150 })).toThrow(
+      /platformFee/,
+    );
   });
 });

@@ -176,6 +176,29 @@ export const upsertDispute = mutation({
 // TRANSFER MUTATIONS (ledger — BTS-12)
 // =============================================================================
 
+/**
+ * Derive reversal status + transfer status from a (transfer amount, cumulative
+ * reversed amount) pair. Shared by upsert and reversal so the three reversal
+ * fields can never drift.
+ */
+function deriveReversalState(
+  amount: number,
+  reversedAmount: number,
+  baseStatus: "pending" | "paid" | "failed" | "reversed",
+) {
+  const reversalStatus =
+    reversedAmount <= 0
+      ? undefined
+      : reversedAmount >= amount
+        ? ("fully_reversed" as const)
+        : ("partially_reversed" as const);
+  return {
+    reversedAmount: reversedAmount > 0 ? reversedAmount : undefined,
+    reversalStatus,
+    status: reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
+  };
+}
+
 export const upsertTransfer = mutation({
   args: transferFields,
   returns: v.null(),
@@ -188,9 +211,21 @@ export const upsertTransfer = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch("transfers", existing._id, args);
+      // Reversal state is monotonic: a re-delivered/stale base payload must not
+      // shrink reversedAmount or flip a fully-reversed row back to paid.
+      const reversedAmount = Math.max(
+        existing.reversedAmount ?? 0,
+        args.reversedAmount ?? 0,
+      );
+      const derived = deriveReversalState(args.amount, reversedAmount, args.status);
+      await ctx.db.patch("transfers", existing._id, { ...args, ...derived });
     } else {
-      await ctx.db.insert("transfers", args);
+      const derived = deriveReversalState(
+        args.amount,
+        args.reversedAmount ?? 0,
+        args.status,
+      );
+      await ctx.db.insert("transfers", { ...args, ...derived });
     }
 
     return null;
@@ -222,18 +257,20 @@ export const recordTransferReversal = mutation({
       );
     }
 
-    const reversalStatus =
-      args.reversedAmount <= 0
-        ? undefined
-        : args.reversedAmount >= transfer.amount
-          ? ("fully_reversed" as const)
-          : ("partially_reversed" as const);
+    // `reversedAmount` is a cumulative total (matches Stripe's
+    // `Transfer.amount_reversed`). Keep it monotonic so a stale/out-of-order
+    // event can't shrink it or undo a full reversal.
+    const reversedAmount = Math.max(
+      transfer.reversedAmount ?? 0,
+      args.reversedAmount,
+    );
+    const derived = deriveReversalState(
+      transfer.amount,
+      reversedAmount,
+      transfer.status,
+    );
 
-    await ctx.db.patch("transfers", transfer._id, {
-      reversedAmount: args.reversedAmount,
-      reversalStatus,
-      status: reversalStatus === "fully_reversed" ? "reversed" : transfer.status,
-    });
+    await ctx.db.patch("transfers", transfer._id, derived);
 
     return null;
   },

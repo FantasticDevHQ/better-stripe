@@ -19,8 +19,8 @@ function validatePercent(percent: number, ctx: string): void {
 function validateFixed(fixed: number | undefined, ctx: string): void {
   if (fixed !== undefined) {
     assert(
-      Number.isFinite(fixed) && fixed >= 0,
-      `${ctx} fixed must be a number ≥ 0 (got ${fixed})`,
+      Number.isInteger(fixed) && fixed >= 0,
+      `${ctx} fixed must be a non-negative integer in minor units (got ${fixed})`,
     );
   }
 }
@@ -49,8 +49,8 @@ export function validatePlatformFee(config: PlatformFeeConfig): void {
         );
       } else {
         assert(
-          Number.isFinite(tier.upTo) && tier.upTo > 0,
-          `tier ${i} upTo must be a positive number or null`,
+          Number.isInteger(tier.upTo) && tier.upTo > 0,
+          `tier ${i} upTo must be a positive integer in minor units or null`,
         );
         assert(
           tier.upTo > prevUpper,
@@ -71,5 +71,11 @@ export function resolveFeeConfig(
   defaultConfig?: PlatformFeeConfig,
   override?: FeeOverride,
 ): PlatformFeeConfig | undefined {
-  return override ?? defaultConfig;
+  const resolved = override ?? defaultConfig;
+  // A per-call override bypasses the constructor's validation, so re-validate
+  // the effective config here to enforce the same contract everywhere.
+  if (resolved !== undefined) {
+    validatePlatformFee(resolved);
+  }
+  return resolved;
 }

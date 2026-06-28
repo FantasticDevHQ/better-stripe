@@ -988,6 +988,9 @@ describe("addCustomerConfiguration", () => {
     const [, payload] = stripe.v2.core.accounts.update.mock.calls[0];
     expect(payload).not.toHaveProperty("dashboard");
     expect(payload).not.toHaveProperty("defaults");
+    // ...and not nested inside `configuration` either.
+    expect(payload.configuration).not.toHaveProperty("dashboard");
+    expect(payload.configuration).not.toHaveProperty("defaults");
   });
 
   it("records the Stripe-reported applied configurations on the component account", async () => {

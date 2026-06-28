@@ -104,11 +104,25 @@ describe("transfers ledger (BTS-12)", () => {
       role: "affiliate",
       status: "paid",
     });
+    // Control row from a different charge — must be excluded by both filters.
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_other",
+      sourceChargeId: "ch_other",
+      destinationAccountId: "acct_other",
+      amount: 500,
+      currency: "usd",
+      role: "other",
+      status: "paid",
+    });
 
     const byCharge = await t.query(api.connect.queries.listTransfersByCharge, {
       sourceChargeId: "ch_split",
     });
     expect(byCharge).toHaveLength(2);
+    expect(byCharge.map((tr) => tr.stripeTransferId).sort()).toEqual([
+      "tr_aff",
+      "tr_store",
+    ]);
 
     const byAccount = await t.query(
       api.connect.queries.listTransfersByAccount,
@@ -116,5 +130,47 @@ describe("transfers ledger (BTS-12)", () => {
     );
     expect(byAccount).toHaveLength(1);
     expect(byAccount[0].stripeTransferId).toBe("tr_store");
+  });
+
+  it("keeps reversal state monotonic across stale events and re-upserts", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_mono",
+      destinationAccountId: "acct_store",
+      amount: 8000,
+      currency: "usd",
+      status: "paid",
+    });
+
+    // Fully reverse.
+    await t.mutation(api.connect.mutations.recordTransferReversal, {
+      stripeTransferId: "tr_mono",
+      reversedAmount: 8000,
+    });
+    // A stale/out-of-order reversal event with a smaller total must not shrink it.
+    await t.mutation(api.connect.mutations.recordTransferReversal, {
+      stripeTransferId: "tr_mono",
+      reversedAmount: 4000,
+    });
+    let tr = await t.query(api.connect.queries.getTransferByStripeId, {
+      stripeTransferId: "tr_mono",
+    });
+    expect(tr!.reversedAmount).toBe(8000);
+    expect(tr!.reversalStatus).toBe("fully_reversed");
+    expect(tr!.status).toBe("reversed");
+
+    // A re-delivered base upsert (status "paid") must not flip it back.
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_mono",
+      destinationAccountId: "acct_store",
+      amount: 8000,
+      currency: "usd",
+      status: "paid",
+    });
+    tr = await t.query(api.connect.queries.getTransferByStripeId, {
+      stripeTransferId: "tr_mono",
+    });
+    expect(tr!.reversedAmount).toBe(8000);
+    expect(tr!.status).toBe("reversed");
   });
 });

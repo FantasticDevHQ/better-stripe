@@ -576,9 +576,14 @@ describe("addRecipientConfiguration", () => {
       { stripeAccountId: "acct_r" },
     );
     expect(result).toEqual({ success: true });
+    // V2 (API 2026-05-27.dahlia) requires the `capabilities` wrapper and an
+    // explicit `requested: true`; the bare `recipient.stripe_balance` shape is
+    // rejected with "Unknown field" (confirmed against the Stripe sandbox).
     expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_r", {
       configuration: {
-        recipient: { stripe_balance: { stripe_transfers: {} } },
+        recipient: {
+          capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
+        },
       },
     });
   });
@@ -959,6 +964,33 @@ describe("addCustomerConfiguration", () => {
     expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_1", {
       configuration: { customer: {} },
     });
+  });
+
+  it("never sends dashboard or defaults for a customer-only account", async () => {
+    // A customer-only V2 account rejects `dashboard` and
+    // `defaults.responsibilities` with `unsupported_field_for_configs`
+    // (confirmed against the Stripe sandbox). Account config must be
+    // configuration-aware: only recipient/merchant accounts set those.
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer"],
+    });
+    const ctx = {
+      runQuery: vi.fn().mockResolvedValue({ userId: "user_1" }),
+      runMutation: vi.fn().mockResolvedValue(undefined),
+    } as unknown as RunCtx;
+
+    await addCustomerConfiguration(asStripe(stripe), makeComponent(), ctx, {
+      stripeAccountId: "acct_1",
+    });
+
+    const [, payload] = stripe.v2.core.accounts.update.mock.calls[0];
+    expect(payload).not.toHaveProperty("dashboard");
+    expect(payload).not.toHaveProperty("defaults");
+    // ...and not nested inside `configuration` either.
+    expect(payload.configuration).not.toHaveProperty("dashboard");
+    expect(payload.configuration).not.toHaveProperty("defaults");
   });
 
   it("records the Stripe-reported applied configurations on the component account", async () => {

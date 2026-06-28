@@ -1,5 +1,11 @@
 // Barrel re-export — preserves the exact public API of the old types.ts
-export type { BetterStripeOptions, RegisterRoutesConfig } from "./options.js";
+export type {
+  BetterStripeOptions,
+  FeeOverride,
+  FeeTier,
+  PlatformFeeConfig,
+  RegisterRoutesConfig,
+} from "./options.js";
 
 export type {
   StripeWebhookEvent,

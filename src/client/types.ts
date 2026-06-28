@@ -2,6 +2,9 @@
 // Any file importing from './types' or './types.js' will continue to work.
 export type {
   BetterStripeOptions,
+  FeeOverride,
+  FeeTier,
+  PlatformFeeConfig,
   RegisterRoutesConfig,
   StripeWebhookEvent,
   StripeEventHandler,

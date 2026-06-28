@@ -130,6 +130,45 @@ describe("BetterStripe", () => {
       const bs = new BetterStripe(components.betterStripe);
       expect(() => bs.apiKey).toThrow("STRIPE_SECRET_KEY is not set");
     });
+
+    it("validates platformFee at construction and exposes it", () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        platformFee: { percent: 10, fixed: 30 },
+      });
+      expect(bs.platformFee).toEqual({ percent: 10, fixed: 30 });
+    });
+
+    it("throws on an invalid platformFee config", () => {
+      expect(
+        () =>
+          new BetterStripe(components.betterStripe, {
+            platformFee: { percent: 150 },
+          }),
+      ).toThrow(/platformFee/);
+    });
+
+    it("platformFee is undefined when not configured", () => {
+      const bs = new BetterStripe(components.betterStripe);
+      expect(bs.platformFee).toBeUndefined();
+    });
+
+    it("does not retain or re-expose the caller's mutable fee object", () => {
+      const input = { percent: 10, tiers: [{ upTo: null, percent: 10 }] };
+      const bs = new BetterStripe(components.betterStripe, {
+        platformFee: input,
+      });
+      // Mutating the original input must not change stored config.
+      input.percent = 999;
+      input.tiers[0].percent = 999;
+      expect(bs.platformFee).toEqual({
+        percent: 10,
+        tiers: [{ upTo: null, percent: 10 }],
+      });
+      // Mutating a returned copy must not change internal state either.
+      const returned = bs.platformFee!;
+      returned.percent = 42;
+      expect(bs.platformFee!.percent).toBe(10);
+    });
   });
 
   // =========================================================================

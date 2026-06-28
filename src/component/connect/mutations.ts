@@ -1,11 +1,13 @@
 import { v } from "convex/values";
 
 import { mutation } from "../_generated/server";
+import { feeRoutingFields } from "../lib/fees";
 import {
   disputeFields,
   paymentStatusValidator,
   payoutStatusValidator,
   refundFields,
+  transferFields,
 } from "./validators";
 
 // =============================================================================
@@ -21,6 +23,7 @@ export const upsertPayment = mutation({
     amount: v.number(),
     currency: v.string(),
     status: paymentStatusValidator,
+    ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },
   returns: v.null(),
@@ -164,6 +167,110 @@ export const upsertDispute = mutation({
     } else {
       await ctx.db.insert("disputes", args);
     }
+
+    return null;
+  },
+});
+
+// =============================================================================
+// TRANSFER MUTATIONS (ledger — BTS-12)
+// =============================================================================
+
+/**
+ * Derive reversal status + transfer status from a (transfer amount, cumulative
+ * reversed amount) pair. Shared by upsert and reversal so the three reversal
+ * fields can never drift.
+ */
+function deriveReversalState(
+  amount: number,
+  reversedAmount: number,
+  baseStatus: "pending" | "paid" | "failed" | "reversed",
+) {
+  const reversalStatus =
+    reversedAmount <= 0
+      ? undefined
+      : reversedAmount >= amount
+        ? ("fully_reversed" as const)
+        : ("partially_reversed" as const);
+  return {
+    reversedAmount: reversedAmount > 0 ? reversedAmount : undefined,
+    reversalStatus,
+    status: reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
+  };
+}
+
+export const upsertTransfer = mutation({
+  args: transferFields,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", args.stripeTransferId),
+      )
+      .first();
+
+    if (existing) {
+      // Reversal state is monotonic: a re-delivered/stale base payload must not
+      // shrink reversedAmount or flip a fully-reversed row back to paid.
+      const reversedAmount = Math.max(
+        existing.reversedAmount ?? 0,
+        args.reversedAmount ?? 0,
+      );
+      const derived = deriveReversalState(args.amount, reversedAmount, args.status);
+      await ctx.db.patch("transfers", existing._id, { ...args, ...derived });
+    } else {
+      const derived = deriveReversalState(
+        args.amount,
+        args.reversedAmount ?? 0,
+        args.status,
+      );
+      await ctx.db.insert("transfers", { ...args, ...derived });
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Record a (possibly partial) reversal against a transfer, denormalizing the
+ * cumulative `reversedAmount` and a derived `reversalStatus`. `reversedAmount`
+ * is the new cumulative total (matches Stripe's `Transfer.amount_reversed`).
+ */
+export const recordTransferReversal = mutation({
+  args: {
+    stripeTransferId: v.string(),
+    reversedAmount: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const transfer = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", args.stripeTransferId),
+      )
+      .first();
+
+    if (!transfer) {
+      throw new Error(
+        `Cannot record reversal: no transfer found for ${args.stripeTransferId}`,
+      );
+    }
+
+    // `reversedAmount` is a cumulative total (matches Stripe's
+    // `Transfer.amount_reversed`). Keep it monotonic so a stale/out-of-order
+    // event can't shrink it or undo a full reversal.
+    const reversedAmount = Math.max(
+      transfer.reversedAmount ?? 0,
+      args.reversedAmount,
+    );
+    const derived = deriveReversalState(
+      transfer.amount,
+      reversedAmount,
+      transfer.status,
+    );
+
+    await ctx.db.patch("transfers", transfer._id, derived);
 
     return null;
   },

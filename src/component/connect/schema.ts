@@ -5,6 +5,7 @@ import {
   paymentFields,
   payoutFields,
   refundFields,
+  transferFields,
 } from "./validators";
 
 /**
@@ -38,6 +39,15 @@ export const refundsTable = defineTable(refundFields)
     "stripePaymentIntentId",
     "status",
   ]);
+
+/**
+ * Transfers ledger (BTS-12). One row per Stripe `Transfer` for the separate
+ * charges & transfers (split) flow, so earnings/payout/reversal are one read.
+ */
+export const transfersTable = defineTable(transferFields)
+  .index("by_stripe_transfer_id", ["stripeTransferId"])
+  .index("by_destination_account_id", ["destinationAccountId"])
+  .index("by_source_charge_id", ["sourceChargeId"]);
 
 /**
  * Disputes (chargebacks). Same indexing strategy as refunds.

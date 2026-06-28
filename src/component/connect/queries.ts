@@ -9,6 +9,7 @@ import {
   payoutStatusValidator,
   refundDocValidator,
   refundStatusValidator,
+  transferDocValidator,
 } from "./validators";
 
 // =============================================================================
@@ -258,5 +259,50 @@ export const listDisputes = query({
     }
 
     return await ctx.db.query("disputes").take(limit);
+  },
+});
+
+// =============================================================================
+// TRANSFER QUERIES (ledger — BTS-12)
+// =============================================================================
+
+export const getTransferByStripeId = query({
+  args: { stripeTransferId: v.string() },
+  returns: v.union(transferDocValidator, v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", args.stripeTransferId),
+      )
+      .first();
+  },
+});
+
+/** All transfers funded from one charge (the legs of a split). */
+export const listTransfersByCharge = query({
+  args: { sourceChargeId: v.string(), limit: v.optional(v.number()) },
+  returns: v.array(transferDocValidator),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transfers")
+      .withIndex("by_source_charge_id", (q) =>
+        q.eq("sourceChargeId", args.sourceChargeId),
+      )
+      .take(args.limit ?? 50);
+  },
+});
+
+/** All transfers received by one connected account. */
+export const listTransfersByAccount = query({
+  args: { destinationAccountId: v.string(), limit: v.optional(v.number()) },
+  returns: v.array(transferDocValidator),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.destinationAccountId),
+      )
+      .take(args.limit ?? 50);
   },
 });

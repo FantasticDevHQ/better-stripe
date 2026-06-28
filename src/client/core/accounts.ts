@@ -490,8 +490,13 @@ export async function addRecipientConfiguration(
   await stripe.v2.core.accounts.update(opts.stripeAccountId, {
     configuration: {
       recipient: {
-        stripe_balance: {
-          stripe_transfers: {},
+        // V2 (API 2026-05-27.dahlia) requires the `capabilities` wrapper with an
+        // explicit `requested: true`. The bare `recipient.stripe_balance` shape
+        // is rejected with "Unknown field" (confirmed against the Stripe sandbox).
+        capabilities: {
+          stripe_balance: {
+            stripe_transfers: { requested: true },
+          },
         },
       },
     },

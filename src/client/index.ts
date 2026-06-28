@@ -392,6 +392,30 @@ export class BetterStripe {
     );
   }
 
+  /**
+   * Ensure a shopper has a V2 account with the `customer` configuration (create
+   * if needed), so they can be billed via `customer_account` and later add a
+   * merchant/recipient configuration on the same account. Idempotent.
+   */
+  async ensureCustomerAccount(
+    ctx: RunCtx,
+    opts: {
+      userId: string;
+      email?: string;
+      name?: string;
+      country?: string;
+      orgId?: string;
+      metadata?: Record<string, string>;
+    },
+  ) {
+    return accountsImpl.ensureCustomerAccount(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
   // ============================================================================
   // PRODUCT METHODS
   // ============================================================================

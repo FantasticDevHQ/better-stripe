@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 
-import { computeFee } from "../core/fees.js";
+import { computeFee, isPercentOnlyFee } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
@@ -9,11 +9,6 @@ import type {
   StripeComponentCheckoutSession,
 } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
-
-/** True when the fee is a flat percentage Stripe's `application_fee_percent` can express. */
-function isPercentOnlyFee(fee: PlatformFeeConfig): boolean {
-  return !fee.fixed && (!fee.tiers || fee.tiers.length === 0);
-}
 
 // =============================================================================
 // Checkout methods

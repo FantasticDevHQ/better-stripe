@@ -653,6 +653,31 @@ export class BetterStripe {
   // SUBSCRIPTION METHODS
   // ============================================================================
 
+  /**
+   * Create a subscription directly for a V2 buyer (`customer_account`), off the
+   * checkout flow. With a `destinationAccountId` it routes funds to the seller
+   * and takes the platform fee (override → configured default).
+   */
+  async createSubscription(
+    ctx: RunCtx,
+    opts: {
+      userId: string;
+      orgId?: string;
+      customerAccount: string;
+      stripePriceId: string;
+      destinationAccountId?: string;
+      fee?: FeeOverride;
+      trialDays?: number;
+      metadata?: Record<string, string>;
+    },
+  ) {
+    const { fee, ...rest } = opts;
+    return subscriptionsImpl.createSubscription(this.stripe(), this.component, ctx, {
+      ...rest,
+      feeConfig: opts.destinationAccountId ? this.resolveFee(fee) : undefined,
+    });
+  }
+
   async getSubscription(
     ctx: RunCtx,
     opts: { subscriptionId: string },

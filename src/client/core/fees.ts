@@ -81,6 +81,15 @@ export function resolveFeeConfig(
   return resolved;
 }
 
+/**
+ * True when a fee is a flat percentage that Stripe's `application_fee_percent`
+ * can express directly (no fixed surcharge, no tiers). Percent+fixed/tiered
+ * fees must be computed per charge/invoice instead.
+ */
+export function isPercentOnlyFee(config: PlatformFeeConfig): boolean {
+  return !config.fixed && (!config.tiers || config.tiers.length === 0);
+}
+
 /** The platform fee computed for a specific charge amount. */
 export type FeeBreakdown = {
   /** Fee in minor units (never greater than the charge amount). */

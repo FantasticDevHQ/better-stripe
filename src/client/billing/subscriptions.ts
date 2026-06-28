@@ -1,10 +1,11 @@
 import type Stripe from "stripe";
 
 import type { SubscriptionStatus } from "../../component/billing/validators.js";
+import { isPercentOnlyFee } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { epochToIso, runMutationOrThrow } from "../helpers.js";
 import { throwStripeError } from "../errors.js";
-import type { StripeComponentSubscription } from "../types.js";
+import type { PlatformFeeConfig, StripeComponentSubscription } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
@@ -23,6 +24,98 @@ async function callStripe<T>(message: string, fn: () => Promise<T>): Promise<T> 
   } catch (err) {
     throwStripeError("STRIPE_API_ERROR", message, err);
   }
+}
+
+/**
+ * Create a subscription directly (off-checkout) for a V2 buyer
+ * (`customer_account`). For a single recipient it routes funds to the seller
+ * via `transfer_data.destination` and takes the platform's cut — percent-only
+ * fees map to `application_fee_percent`; percent+fixed/tiered fees are flagged
+ * (`bsFeeMode=per_invoice`) for per-invoice computation by WEBHOOK_FEE. Persists
+ * the subscription + routing/fee fields to the component table.
+ */
+export async function createSubscription(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    userId: string;
+    orgId?: string;
+    customerAccount: string;
+    stripePriceId: string;
+    destinationAccountId?: string;
+    feeConfig?: PlatformFeeConfig;
+    trialDays?: number;
+    metadata?: Record<string, string>;
+  },
+): Promise<{ stripeSubscriptionId: string; status: SubscriptionStatus }> {
+  const metadata: Record<string, string> = {
+    ...(opts.metadata ?? {}),
+    userId: opts.userId,
+    ...(opts.orgId ? { orgId: opts.orgId } : {}),
+  };
+
+  const params: Stripe.SubscriptionCreateParams = {
+    customer_account: opts.customerAccount,
+    items: [{ price: opts.stripePriceId }],
+    metadata,
+  };
+  if (opts.trialDays) {
+    params.trial_period_days = opts.trialDays;
+  }
+
+  const feeRow: {
+    chargeType?: "destination";
+    destinationAccountId?: string;
+    applicationFeePercent?: number;
+  } = {};
+  if (opts.destinationAccountId) {
+    params.transfer_data = { destination: opts.destinationAccountId };
+    feeRow.chargeType = "destination";
+    feeRow.destinationAccountId = opts.destinationAccountId;
+    if (opts.feeConfig) {
+      if (isPercentOnlyFee(opts.feeConfig)) {
+        params.application_fee_percent = opts.feeConfig.percent;
+        feeRow.applicationFeePercent = opts.feeConfig.percent;
+      } else {
+        params.metadata = {
+          ...metadata,
+          bsFeeMode: "per_invoice",
+          bsFeeConfig: JSON.stringify(opts.feeConfig),
+        };
+      }
+    }
+  }
+
+  const sub = await callStripe("Failed to create subscription", () =>
+    stripe.subscriptions.create(params),
+  );
+
+  const firstItem = sub.items?.data?.[0];
+  await runMutationOrThrow(
+    ctx,
+    componentRef(component, "billing/mutations/upsertSubscription"),
+    {
+      stripeSubscriptionId: sub.id,
+      accountId: opts.customerAccount,
+      userId: opts.userId,
+      orgId: opts.orgId,
+      status: sub.status,
+      priceId: firstItem?.price?.id ?? opts.stripePriceId,
+      quantity: firstItem?.quantity ?? undefined,
+      currentPeriodStart: epochToIso(firstItem?.current_period_start ?? undefined),
+      currentPeriodEnd: epochToIso(firstItem?.current_period_end ?? undefined),
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      canceledAt: epochToIso(sub.canceled_at),
+      isTrialing: sub.status === "trialing",
+      trialStart: epochToIso(sub.trial_start),
+      trialEnd: epochToIso(sub.trial_end),
+      ...feeRow,
+      metadata: sub.metadata ?? undefined,
+    },
+  );
+
+  return { stripeSubscriptionId: sub.id, status: sub.status };
 }
 
 export async function getSubscription(

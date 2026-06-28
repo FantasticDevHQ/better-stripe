@@ -7,6 +7,7 @@ import {
   paymentStatusValidator,
   payoutStatusValidator,
   refundFields,
+  transferFields,
 } from "./validators";
 
 // =============================================================================
@@ -166,6 +167,73 @@ export const upsertDispute = mutation({
     } else {
       await ctx.db.insert("disputes", args);
     }
+
+    return null;
+  },
+});
+
+// =============================================================================
+// TRANSFER MUTATIONS (ledger — BTS-12)
+// =============================================================================
+
+export const upsertTransfer = mutation({
+  args: transferFields,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", args.stripeTransferId),
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch("transfers", existing._id, args);
+    } else {
+      await ctx.db.insert("transfers", args);
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Record a (possibly partial) reversal against a transfer, denormalizing the
+ * cumulative `reversedAmount` and a derived `reversalStatus`. `reversedAmount`
+ * is the new cumulative total (matches Stripe's `Transfer.amount_reversed`).
+ */
+export const recordTransferReversal = mutation({
+  args: {
+    stripeTransferId: v.string(),
+    reversedAmount: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const transfer = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", args.stripeTransferId),
+      )
+      .first();
+
+    if (!transfer) {
+      throw new Error(
+        `Cannot record reversal: no transfer found for ${args.stripeTransferId}`,
+      );
+    }
+
+    const reversalStatus =
+      args.reversedAmount <= 0
+        ? undefined
+        : args.reversedAmount >= transfer.amount
+          ? ("fully_reversed" as const)
+          : ("partially_reversed" as const);
+
+    await ctx.db.patch("transfers", transfer._id, {
+      reversedAmount: args.reversedAmount,
+      reversalStatus,
+      status: reversalStatus === "fully_reversed" ? "reversed" : transfer.status,
+    });
 
     return null;
   },

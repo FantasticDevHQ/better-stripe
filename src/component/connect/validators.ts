@@ -1,6 +1,6 @@
 import { type Infer, v } from "convex/values";
 
-import { feeRoutingFields } from "../lib/fees";
+import { feeRoutingFields, splitRecipientRoleValidator } from "../lib/fees";
 
 export const paymentStatusValidator = v.union(
   v.literal("succeeded"),
@@ -182,4 +182,59 @@ export const disputeDocValidator = v.object({
   _id: v.id("disputes"),
   _creationTime: v.number(),
   ...disputeFields,
+});
+
+// =============================================================================
+// TRANSFERS (ledger — BTS-12)
+// =============================================================================
+
+/**
+ * Lifecycle of a single `Transfer` (separate charges & transfers). Stripe
+ * transfers settle immediately, so the interesting state is reversal.
+ */
+export const transferStatusValidator = v.union(
+  v.literal("pending"),
+  v.literal("paid"),
+  v.literal("failed"),
+  v.literal("reversed"),
+);
+export type TransferStatus = Infer<typeof transferStatusValidator>;
+
+/** Denormalized reversal state, mirroring the payment refund-status pattern. */
+export const transferReversalStatusValidator = v.union(
+  v.literal("partially_reversed"),
+  v.literal("fully_reversed"),
+);
+export type TransferReversalStatus = Infer<
+  typeof transferReversalStatusValidator
+>;
+
+/**
+ * Field validators for the `transfers` ledger table. One row per Stripe
+ * `Transfer` so payout/earnings/reversal are a single read.
+ */
+export const transferFields = {
+  stripeTransferId: v.string(),
+  // The charge/invoice this transfer was funded from (`source_transaction`).
+  sourceChargeId: v.optional(v.string()),
+  sourceInvoiceId: v.optional(v.string()),
+  destinationAccountId: v.string(),
+  amount: v.number(),
+  currency: v.string(),
+  // store | affiliate | other — which leg of the split this is.
+  role: v.optional(splitRecipientRoleValidator),
+  status: transferStatusValidator,
+  // Cumulative reversed amount (minor units) and derived flag.
+  reversedAmount: v.optional(v.number()),
+  reversalStatus: v.optional(transferReversalStatusValidator),
+  // Link to the `payments` row that originated this transfer.
+  paymentId: v.optional(v.string()),
+  metadata: v.optional(v.any()),
+};
+
+/** Full `transfers` document, including system fields. */
+export const transferDocValidator = v.object({
+  _id: v.id("transfers"),
+  _creationTime: v.number(),
+  ...transferFields,
 });

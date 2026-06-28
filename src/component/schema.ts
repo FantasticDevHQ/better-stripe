@@ -10,6 +10,7 @@ import {
   paymentsTable,
   payoutsTable,
   refundsTable,
+  transfersTable,
 } from "./connect/schema";
 import { accountsTable } from "./core/schema";
 import { pricesTable, productsTable } from "./products/schema";
@@ -33,6 +34,7 @@ export default defineSchema({
   payouts: payoutsTable,
   refunds: refundsTable,
   disputes: disputesTable,
+  transfers: transfersTable,
 
   // Webhooks
   webhookEvents: webhookEventsTable,

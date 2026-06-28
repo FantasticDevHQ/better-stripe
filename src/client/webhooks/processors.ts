@@ -1,5 +1,7 @@
 import type Stripe from "stripe";
 
+import { computeFee } from "../core/fees.js";
+import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
 import {
   type WebhookContext,
@@ -50,6 +52,12 @@ export async function processEvent(
       await handleCheckoutEvent(whCtx, obj as Stripe.Checkout.Session);
       break;
     case "invoice.created":
+      // Apply a per-invoice fixed/tier platform fee before finalization, then
+      // record the invoice. Percent-only fees use application_fee_percent on the
+      // subscription and don't need this.
+      await applyPerInvoiceFee(whCtx, obj as Stripe.Invoice);
+      await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
+      break;
     case "invoice.finalized":
     case "invoice.paid":
     case "invoice.payment_failed":
@@ -274,6 +282,53 @@ function feeRoutingFromPaymentIntent(pi: Stripe.PaymentIntent): {
       ? { applicationFeeAmount: fee, feeCollectedAmount: fee }
       : {}),
   };
+}
+
+/**
+ * Apply a fixed/tier platform fee to a subscription invoice before it finalizes
+ * (BTS-51). Percent-only fees ride on the subscription's `application_fee_percent`
+ * and skip this; fixed/tier fees can't be expressed that way, so BTS-15/BTS-17
+ * flag the subscription with `bsFeeMode=per_invoice` + `bsFeeConfig`. Here we
+ * read that flag off the subscription, compute the exact fee from the invoice
+ * amount, and set `application_fee_amount` on the draft invoice. Idempotent via
+ * a `bsFeeApplied` invoice-metadata marker; failures never crash the webhook.
+ */
+async function applyPerInvoiceFee(
+  whCtx: WebhookContext,
+  invoice: Stripe.Invoice,
+): Promise<void> {
+  try {
+    if (!invoice.id) return;
+    if (invoice.metadata?.bsFeeApplied) return; // already applied
+
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subId =
+      typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+    if (!subId) return;
+
+    const sub = await whCtx.stripe.subscriptions.retrieve(subId);
+    const meta = (sub.metadata ?? {}) as Record<string, string>;
+    if (meta.bsFeeMode !== "per_invoice" || !meta.bsFeeConfig) return;
+
+    let config: PlatformFeeConfig;
+    try {
+      config = JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig;
+    } catch {
+      return; // malformed marker — nothing safe to apply
+    }
+
+    const fee = computeFee(invoice.amount_due, config).feeAmount;
+    if (fee <= 0) return;
+
+    await whCtx.stripe.invoices.update(invoice.id, {
+      application_fee_amount: fee,
+      metadata: { ...(invoice.metadata ?? {}), bsFeeApplied: "1" },
+    });
+  } catch (err) {
+    // Never let fee application break webhook processing; Stripe will retry the
+    // event, and a missed fixed-fee invoice can be reconciled out of band.
+    console.error("[better-stripe] applyPerInvoiceFee failed:", err);
+  }
 }
 
 async function upsertInvoiceFromStripe(

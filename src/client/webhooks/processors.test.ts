@@ -66,7 +66,11 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
 }
 
 function makeStripe() {
-  return { products: { retrieve: vi.fn() } };
+  return {
+    products: { retrieve: vi.fn() },
+    subscriptions: { retrieve: vi.fn() },
+    invoices: { update: vi.fn().mockResolvedValue({}) },
+  };
 }
 
 function makeWhCtx(overrides?: {
@@ -709,4 +713,74 @@ describe("processEvent — fee & transfer capture (BTS-20)", () => {
   // Note: the platform fee lives on the charge/PaymentIntent, not the typed
   // Stripe.Invoice, so fee denormalization is captured on the `payments` row
   // (above) rather than the invoice.
+});
+
+describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
+  const flaggedInvoice = (overrides: Record<string, unknown> = {}) => ({
+    id: "in_fee",
+    customer: "acct_buyer",
+    currency: "usd",
+    amount_due: 10000,
+    amount_paid: 0,
+    status: "draft",
+    metadata: {},
+    parent: { subscription_details: { subscription: "sub_1" } },
+    ...overrides,
+  });
+
+  it("applies a fixed/tier application_fee_amount on invoice.created for a flagged subscription", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", flaggedInvoice()));
+
+    // round(10000 * 0.029) + 30 = 320
+    expect(stripe.invoices.update).toHaveBeenCalledWith("in_fee", {
+      application_fee_amount: 320,
+      metadata: { bsFeeApplied: "1" },
+    });
+  });
+
+  it("does nothing for a subscription that is not flagged", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {},
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", flaggedInvoice()));
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent — skips invoices already marked bsFeeApplied", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.created", flaggedInvoice({ metadata: { bsFeeApplied: "1" } })),
+    );
+    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("does nothing for an invoice with no parent subscription", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.created", flaggedInvoice({ parent: null })),
+    );
+    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
 });

@@ -25,6 +25,7 @@ import * as configImpl from "./core/config.js";
 import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
 export { computeFee } from "./core/fees.js";
 export type { FeeBreakdown } from "./core/fees.js";
+export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -829,6 +830,18 @@ export class BetterStripe {
     opts: { orgId: string; status?: string },
   ): Promise<StripeComponentSubscription[]> {
     return subscriptionsImpl.listSubscriptionsByOrg(this.component, ctx, opts);
+  }
+
+  /** List a buyer's subscriptions scoped to one store (recipient account). */
+  async listSubscriptionsByUserAndStore(
+    ctx: RunCtx,
+    opts: { userId: string; destinationAccountId: string; status?: string },
+  ): Promise<StripeComponentSubscription[]> {
+    return subscriptionsImpl.listSubscriptionsByUserAndStore(
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   async getActiveSubscription(

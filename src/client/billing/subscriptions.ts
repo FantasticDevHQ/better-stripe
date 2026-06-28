@@ -368,6 +368,18 @@ export async function listSubscriptionsByOrg(
   )) as StripeComponentSubscription[];
 }
 
+/** List a buyer's subscriptions scoped to one store (recipient account). */
+export async function listSubscriptionsByUserAndStore(
+  component: Component,
+  ctx: RunCtx,
+  opts: { userId: string; destinationAccountId: string; status?: string },
+): Promise<StripeComponentSubscription[]> {
+  return (await ctx.runQuery(
+    componentRef(component, "billing/queries/listSubscriptionsByUserAndStore"),
+    opts,
+  )) as StripeComponentSubscription[];
+}
+
 export async function getActiveSubscription(
   component: Component,
   ctx: RunCtx,
@@ -486,4 +498,31 @@ export async function syncAllSubscriptions(
   }
 
   return { synced, errors, errorCount: errors.length };
+}
+
+/**
+ * Group a buyer's subscriptions by store (the recipient `destinationAccountId`),
+ * preserving first-seen order. Subscriptions with no destination (platform-direct)
+ * group under `storeAccountId: null`. The buyer's payment profile is shared across
+ * stores; this view separates what they're subscribed to per store (BTS-19).
+ */
+export function groupSubscriptionsByStore<
+  T extends { destinationAccountId?: string },
+>(subscriptions: T[]): { storeAccountId: string | null; subscriptions: T[] }[] {
+  const order: (string | null)[] = [];
+  const groups = new Map<string | null, T[]>();
+  for (const sub of subscriptions) {
+    const key = sub.destinationAccountId ?? null;
+    let bucket = groups.get(key);
+    if (!bucket) {
+      bucket = [];
+      groups.set(key, bucket);
+      order.push(key);
+    }
+    bucket.push(sub);
+  }
+  return order.map((storeAccountId) => ({
+    storeAccountId,
+    subscriptions: groups.get(storeAccountId)!,
+  }));
 }

@@ -14,6 +14,7 @@ import {
   cancelSubscription,
   createSubscription,
   getActiveSubscription,
+  groupSubscriptionsByStore,
   getSubscription,
   getSubscriptionByStripeId,
   getTrialStatus,
@@ -769,5 +770,38 @@ describe("createSubscription (BTS-17)", () => {
         stripePriceId: "price_1",
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe("groupSubscriptionsByStore (BTS-19)", () => {
+  it("groups a buyer's subscriptions by store, preserving first-seen order", () => {
+    const subs: { stripeSubscriptionId: string; destinationAccountId?: string }[] =
+      [
+        { stripeSubscriptionId: "s1", destinationAccountId: "store_a" },
+        { stripeSubscriptionId: "s2", destinationAccountId: "store_b" },
+        { stripeSubscriptionId: "s3", destinationAccountId: "store_a" },
+        { stripeSubscriptionId: "s4" }, // no store → platform-direct
+      ];
+
+    const grouped = groupSubscriptionsByStore(subs);
+
+    expect(grouped.map((g) => g.storeAccountId)).toEqual([
+      "store_a",
+      "store_b",
+      null,
+    ]);
+    expect(
+      grouped[0].subscriptions.map((s) => s.stripeSubscriptionId),
+    ).toEqual(["s1", "s3"]);
+    expect(grouped[1].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
+      "s2",
+    ]);
+    expect(grouped[2].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
+      "s4",
+    ]);
+  });
+
+  it("returns an empty array for no subscriptions", () => {
+    expect(groupSubscriptionsByStore([])).toEqual([]);
   });
 });

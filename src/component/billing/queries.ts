@@ -99,6 +99,38 @@ export const listSubscriptionsByUser = query({
   },
 });
 
+/**
+ * List a buyer's subscriptions scoped to one store (the recipient
+ * `destinationAccountId`). A buyer's saved payment profile lives on their
+ * `customer_account` and is reusable across every store, but each subscription
+ * belongs to a single store — this is the per-store view (BTS-19). A user has a
+ * bounded number of subscriptions, so this collect-then-filter mirrors
+ * listSubscriptionsByUser.
+ */
+export const listSubscriptionsByUserAndStore = query({
+  args: {
+    userId: v.string(),
+    destinationAccountId: v.string(),
+    status: v.optional(v.string()),
+  },
+  returns: v.array(subscriptionDocValidator),
+  handler: async (ctx, args) => {
+    if (args.userId === "") return [];
+
+    // eslint-disable-next-line @convex-dev/no-collect-in-query
+    const subs = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    return subs.filter(
+      (s) =>
+        s.destinationAccountId === args.destinationAccountId &&
+        (args.status ? s.status === args.status : true),
+    );
+  },
+});
+
 export const listSubscriptionsByOrg = query({
   args: {
     orgId: v.string(),

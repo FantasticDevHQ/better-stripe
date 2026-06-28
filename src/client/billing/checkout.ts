@@ -124,11 +124,6 @@ export async function createCheckoutSession(
 ) {
   const uiMode = opts.uiMode ?? "embedded";
 
-  // Destination charges must use a platform-owned price.
-  if (opts.destinationAccountId) {
-    await assertPlatformPrice(component, ctx, opts.stripePriceId);
-  }
-
   const metadata = {
     ...(opts.metadata ?? {}),
     userId: opts.userId,
@@ -221,6 +216,14 @@ export async function createCheckoutSession(
     ...(opts.sessionOverrides as Partial<CheckoutSessionCreateParams>),
   };
   const feeRow = deriveFeeRow(finalSessionParams);
+
+  // Destination charges must use a platform-owned price. Validate the FINAL
+  // request (post-overrides) so callers can't inject transfer_data or swap
+  // line_items via sessionOverrides to bypass the check.
+  const finalPriceId = finalSessionParams.line_items?.[0]?.price;
+  if (feeRow.chargeType === "destination" && typeof finalPriceId === "string") {
+    await assertPlatformPrice(component, ctx, finalPriceId);
+  }
 
   const session = await stripe.checkout.sessions.create(finalSessionParams);
 

@@ -695,6 +695,13 @@ describe("createCheckoutSession — price-on-platform validation (BTS-15)", () =
       }),
     ).rejects.toThrow(/platform/i);
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+    // The catalog lookups use the right ids (price → its product).
+    expect(ctx.runQuery).toHaveBeenNthCalledWith(1, expect.any(Object), {
+      stripePriceId: "price_1",
+    });
+    expect(ctx.runQuery).toHaveBeenNthCalledWith(2, expect.any(Object), {
+      stripeProductId: "prod_1",
+    });
   });
 
   it("allows a destination charge for a platform-owned price", async () => {
@@ -720,7 +727,43 @@ describe("createCheckoutSession — price-on-platform validation (BTS-15)", () =
       destinationAccountId: "acct_store",
       feeConfig: { percent: 10 },
     });
+    expect(ctx.runQuery).toHaveBeenNthCalledWith(1, expect.any(Object), {
+      stripePriceId: "price_1",
+    });
+    expect(ctx.runQuery).toHaveBeenNthCalledWith(2, expect.any(Object), {
+      stripeProductId: "prod_1",
+    });
     expect(stripe.checkout.sessions.create).toHaveBeenCalled();
+  });
+
+  it("validates the FINAL request — sessionOverrides can't inject a destination to bypass the check", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "products/queries/getPriceByStripeId": {
+        stripePriceId: "price_1",
+        stripeProductId: "prod_1",
+      },
+      "products/queries/getProductByStripeId": {
+        stripeProductId: "prod_1",
+        accountId: "acct_seller", // connected-account-owned → invalid
+      },
+    });
+
+    await expect(
+      createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        stripePriceId: "price_1",
+        mode: "subscription",
+        returnUrl: "https://app.test/return",
+        accountId: "acct_buyer",
+        // No destinationAccountId on opts — but overrides inject one.
+        sessionOverrides: {
+          subscription_data: { transfer_data: { destination: "acct_store" } },
+        },
+      }),
+    ).rejects.toThrow(/platform/i);
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   it("skips validation when there is no destination (plain checkout)", async () => {

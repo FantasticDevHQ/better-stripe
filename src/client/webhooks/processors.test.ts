@@ -684,6 +684,28 @@ describe("processEvent — fee & transfer capture (BTS-20)", () => {
     expect(data.applicationFeeAmount).toBeUndefined();
   });
 
+  it("does not denormalize fees for a non-succeeded payment intent", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("payment_intent.payment_failed", {
+        id: "pi_failed",
+        amount: 10000,
+        currency: "usd",
+        status: "requires_payment_method",
+        application_fee_amount: 1000,
+        transfer_data: { destination: "acct_store" },
+        metadata: {},
+      }),
+    );
+    const { data } = dispatchedPayload(whCtx.ctx);
+    expect(data.status).toBe("requires_action"); // requires_payment_method → requires_action
+    expect(data.feeCollectedAmount).toBeUndefined();
+    expect(data.applicationFeeAmount).toBeUndefined();
+    expect(data.destinationAccountId).toBeUndefined();
+    expect(data.chargeType).toBeUndefined();
+  });
+
   // Note: the platform fee lives on the charge/PaymentIntent, not the typed
   // Stripe.Invoice, so fee denormalization is captured on the `payments` row
   // (above) rather than the invoice.

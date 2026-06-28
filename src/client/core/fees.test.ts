@@ -191,6 +191,17 @@ describe("computeFee (BTS-14)", () => {
     expect(computeFee(100, { percent: 100, fixed: 50 }).feeAmount).toBe(100);
   });
 
+  it("caps fixedApplied consistently when the fee hits the amount cap", () => {
+    // percent already consumes the whole amount, so no fixed can be collected.
+    const r = computeFee(100, { percent: 100, fixed: 50 });
+    expect(r.feeAmount).toBe(100);
+    expect(r.fixedApplied).toBe(0);
+    // partial fixed: 90 (90%) + 50 fixed → capped at 100, so only 10 of fixed fits.
+    const r2 = computeFee(100, { percent: 90, fixed: 50 });
+    expect(r2.feeAmount).toBe(100);
+    expect(r2.fixedApplied).toBe(10);
+  });
+
   it("handles large amounts without float drift", () => {
     // $100,000.00 = 10,000,000 minor units; 3% = $3,000.00 = 300,000 minor units.
     expect(computeFee(100_000_00, { percent: 3 }).feeAmount).toBe(300_000);

@@ -10,6 +10,51 @@ import type {
 } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
+/**
+ * Derive the persisted fee/routing fields (BTS-11) from the FINAL Checkout
+ * Session request, reading the nested `subscription_data`/`payment_intent_data`
+ * that will actually be sent to Stripe. Deriving from the final request (rather
+ * than a pre-override draft) keeps the stored row consistent when callers pass
+ * `sessionOverrides` that replace those nested params.
+ */
+function deriveFeeRow(params: CheckoutSessionCreateParams): {
+  chargeType?: "destination";
+  destinationAccountId?: string;
+  applicationFeePercent?: number;
+  applicationFeeAmount?: number;
+} {
+  const dest = (d: unknown): string | undefined =>
+    typeof d === "string"
+      ? d
+      : ((d as { id?: string } | null | undefined)?.id ?? undefined);
+
+  if (params.mode === "subscription") {
+    const destination = dest(
+      params.subscription_data?.transfer_data?.destination,
+    );
+    if (!destination) return {};
+    const pct = params.subscription_data?.application_fee_percent;
+    return {
+      chargeType: "destination",
+      destinationAccountId: destination,
+      ...(pct !== undefined ? { applicationFeePercent: pct } : {}),
+    };
+  }
+  if (params.mode === "payment") {
+    const destination = dest(
+      params.payment_intent_data?.transfer_data?.destination,
+    );
+    if (!destination) return {};
+    const amt = params.payment_intent_data?.application_fee_amount;
+    return {
+      chargeType: "destination",
+      destinationAccountId: destination,
+      ...(amt !== undefined ? { applicationFeeAmount: amt } : {}),
+    };
+  }
+  return {};
+}
+
 // =============================================================================
 // Checkout methods
 // =============================================================================
@@ -60,14 +105,6 @@ export async function createCheckoutSession(
     metadata,
   };
 
-  // Fee/routing denormalized onto the component row (BTS-11 fields).
-  const feeRow: {
-    chargeType?: "destination";
-    destinationAccountId?: string;
-    applicationFeePercent?: number;
-    applicationFeeAmount?: number;
-  } = {};
-
   if (opts.mode === "subscription") {
     const subscriptionData: CheckoutSessionCreateParams["subscription_data"] = {
       metadata,
@@ -83,12 +120,9 @@ export async function createCheckoutSession(
       subscriptionData.transfer_data = {
         destination: opts.destinationAccountId,
       };
-      feeRow.chargeType = "destination";
-      feeRow.destinationAccountId = opts.destinationAccountId;
       if (opts.feeConfig) {
         if (isPercentOnlyFee(opts.feeConfig)) {
           subscriptionData.application_fee_percent = opts.feeConfig.percent;
-          feeRow.applicationFeePercent = opts.feeConfig.percent;
         } else {
           subscriptionData.metadata = {
             ...metadata,
@@ -111,13 +145,12 @@ export async function createCheckoutSession(
       paymentIntentData.transfer_data = {
         destination: opts.destinationAccountId,
       };
-      feeRow.chargeType = "destination";
-      feeRow.destinationAccountId = opts.destinationAccountId;
       if (opts.feeConfig) {
         if (opts.amount !== undefined) {
-          const feeAmount = computeFee(opts.amount, opts.feeConfig).feeAmount;
-          paymentIntentData.application_fee_amount = feeAmount;
-          feeRow.applicationFeeAmount = feeAmount;
+          paymentIntentData.application_fee_amount = computeFee(
+            opts.amount,
+            opts.feeConfig,
+          ).feeAmount;
         } else {
           paymentIntentData.metadata = {
             ...metadata,
@@ -144,10 +177,16 @@ export async function createCheckoutSession(
     sessionParams.customer_email = opts.customerEmail;
   }
 
-  const session = await stripe.checkout.sessions.create({
+  // Merge overrides, then derive the persisted fee/routing row from the FINAL
+  // request — sessionOverrides can replace subscription_data/payment_intent_data
+  // wholesale, so the row must reflect what was actually sent to Stripe.
+  const finalSessionParams: CheckoutSessionCreateParams = {
     ...sessionParams,
     ...(opts.sessionOverrides as Partial<CheckoutSessionCreateParams>),
-  });
+  };
+  const feeRow = deriveFeeRow(finalSessionParams);
+
+  const session = await stripe.checkout.sessions.create(finalSessionParams);
 
   await runMutationOrThrow(
     ctx,
@@ -157,7 +196,7 @@ export async function createCheckoutSession(
       userId: opts.userId,
       orgId: opts.orgId,
       accountId: opts.accountId,
-      mode: opts.mode,
+      mode: finalSessionParams.mode,
       status: (session.status ?? "open") as "open" | "complete" | "expired",
       clientSecret: session.client_secret ?? undefined,
       url: session.url ?? undefined,

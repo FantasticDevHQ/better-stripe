@@ -135,8 +135,11 @@ export function computeFee(
   }
 
   // Math.round is half-up for the non-negative values we deal with here.
-  const raw = Math.round((amount * percent) / 100) + fixed;
-  const feeAmount = Math.min(raw, amount);
+  const percentAmount = Math.round((amount * percent) / 100);
+  const feeAmount = Math.min(percentAmount + fixed, amount);
+  // When the fee hits the amount cap, only the portion of `fixed` that actually
+  // fits is collected, so report the capped surcharge for a consistent breakdown.
+  const fixedApplied = Math.max(0, feeAmount - percentAmount);
 
-  return { feeAmount, percentApplied: percent, fixedApplied: fixed, tier };
+  return { feeAmount, percentApplied: percent, fixedApplied, tier };
 }

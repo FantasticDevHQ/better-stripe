@@ -758,6 +758,21 @@ describe("createSubscription (BTS-17)", () => {
     expect(upsertArgs.chargeType).toBeUndefined();
   });
 
+  it("rejects feeConfig without a destinationAccountId", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx();
+
+    await expect(
+      createSubscription(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        customerAccount: "acct_buyer",
+        stripePriceId: "price_1",
+        feeConfig: { percent: 10 },
+      }),
+    ).rejects.toThrow(/destinationAccountId/);
+    expect(stripe.subscriptions.create).not.toHaveBeenCalled();
+  });
+
   it("surfaces Stripe failures as structured errors", async () => {
     const stripe = makeStripe();
     stripe.subscriptions.create.mockRejectedValue(new Error("card_declined"));

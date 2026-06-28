@@ -537,6 +537,32 @@ describe("createCheckoutSession — destination + fee (BTS-15, subscription)", (
     const [, upsertArgs] = ctx.runMutation.mock.calls[0];
     expect(upsertArgs.chargeType).toBeUndefined();
   });
+
+  it("derives the persisted fee row from the FINAL request when sessionOverrides replace subscription_data", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10 },
+      // Override wholesale-replaces subscription_data, dropping transfer_data/fee.
+      sessionOverrides: { subscription_data: { metadata: {} } },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toBeUndefined();
+    // Persisted row must reflect the actual request — no stale fee/routing.
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBeUndefined();
+    expect(upsertArgs.destinationAccountId).toBeUndefined();
+    expect(upsertArgs.applicationFeePercent).toBeUndefined();
+  });
 });
 
 describe("createCheckoutSession — destination + fee (BTS-16, one-time payment)", () => {

@@ -111,7 +111,7 @@ export const listSubscriptionsByUserAndStore = query({
   args: {
     userId: v.string(),
     destinationAccountId: v.string(),
-    status: v.optional(v.string()),
+    status: v.optional(subscriptionStatusValidator),
   },
   returns: v.array(subscriptionDocValidator),
   handler: async (ctx, args) => {

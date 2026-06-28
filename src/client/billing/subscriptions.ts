@@ -49,6 +49,15 @@ export async function createSubscription(
     metadata?: Record<string, string>;
   },
 ): Promise<{ stripeSubscriptionId: string; status: SubscriptionStatus }> {
+  // A fee only makes sense with a destination charge; reject the partial config
+  // loudly instead of silently creating a plain platform subscription.
+  if (opts.feeConfig && !opts.destinationAccountId) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "feeConfig requires destinationAccountId",
+    );
+  }
+
   const metadata: Record<string, string> = {
     ...(opts.metadata ?? {}),
     userId: opts.userId,

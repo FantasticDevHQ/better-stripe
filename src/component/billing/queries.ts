@@ -158,6 +158,8 @@ export const getActiveSubscription = query({
   args: {
     userId: v.string(),
     orgId: v.optional(v.string()),
+    // Optional store scope: only consider subscriptions routed to this recipient.
+    destinationAccountId: v.optional(v.string()),
   },
   returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
@@ -179,7 +181,12 @@ export const getActiveSubscription = query({
           .collect();
 
     return (
-      subs.find((s) => s.status === "active" || s.status === "trialing") ?? null
+      subs.find(
+        (s) =>
+          (s.status === "active" || s.status === "trialing") &&
+          (args.destinationAccountId === undefined ||
+            s.destinationAccountId === args.destinationAccountId),
+      ) ?? null
     );
   },
 });

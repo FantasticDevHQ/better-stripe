@@ -392,7 +392,7 @@ export async function listSubscriptionsByUserAndStore(
 export async function getActiveSubscription(
   component: Component,
   ctx: RunCtx,
-  opts: { userId: string; orgId?: string },
+  opts: { userId: string; orgId?: string; destinationAccountId?: string },
 ): Promise<StripeComponentSubscription | null> {
   return (await ctx.runQuery(
     componentRef(component, "billing/queries/getActiveSubscription"),

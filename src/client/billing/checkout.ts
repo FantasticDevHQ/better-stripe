@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 
 import { computeFee, isPercentOnlyFee } from "../core/fees.js";
+import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
@@ -53,6 +54,36 @@ function deriveFeeRow(params: CheckoutSessionCreateParams): {
     };
   }
   return {};
+}
+
+/**
+ * Destination charges require the price to live on the PLATFORM account, not a
+ * connected account. Best-effort guard: if the price is in the component catalog
+ * and its product belongs to a connected account, throw a clear error before
+ * hitting Stripe. A price absent from the catalog is left to Stripe to validate.
+ */
+async function assertPlatformPrice(
+  component: Component,
+  ctx: RunCtx,
+  stripePriceId: string,
+): Promise<void> {
+  const price = (await ctx.runQuery(
+    componentRef(component, "products/queries/getPriceByStripeId"),
+    { stripePriceId },
+  )) as { stripeProductId?: string } | null;
+  if (!price?.stripeProductId) return;
+
+  const product = (await ctx.runQuery(
+    componentRef(component, "products/queries/getProductByStripeId"),
+    { stripeProductId: price.stripeProductId },
+  )) as { accountId?: string } | null;
+
+  if (product?.accountId) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      `Price ${stripePriceId} belongs to connected account ${product.accountId}; destination charges require a platform-owned price.`,
+    );
+  }
 }
 
 // =============================================================================
@@ -185,6 +216,14 @@ export async function createCheckoutSession(
     ...(opts.sessionOverrides as Partial<CheckoutSessionCreateParams>),
   };
   const feeRow = deriveFeeRow(finalSessionParams);
+
+  // Destination charges must use a platform-owned price. Validate the FINAL
+  // request (post-overrides) so callers can't inject transfer_data or swap
+  // line_items via sessionOverrides to bypass the check.
+  const finalPriceId = finalSessionParams.line_items?.[0]?.price;
+  if (feeRow.chargeType === "destination" && typeof finalPriceId === "string") {
+    await assertPlatformPrice(component, ctx, finalPriceId);
+  }
 
   const session = await stripe.checkout.sessions.create(finalSessionParams);
 

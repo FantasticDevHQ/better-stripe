@@ -229,6 +229,60 @@ export async function getOrCreateAccount(
   return { ...result, isNew: true };
 }
 
+/**
+ * Ensure a shopper has a V2 account with the `customer` configuration applied,
+ * creating the account if needed (BTS-18). Idempotent: an account that already
+ * has the customer configuration is returned untouched, and other
+ * configurations (e.g. `merchant`) are preserved — embodying the "one V2
+ * account, configurations accrue" model. Returns the buyer's `stripeAccountId`
+ * to pass as `customer_account` on checkout/subscriptions.
+ */
+export async function ensureCustomerAccount(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    userId: string;
+    email?: string;
+    name?: string;
+    country?: string;
+    orgId?: string;
+    metadata?: Record<string, string>;
+  },
+): Promise<{
+  stripeAccountId: string;
+  accountId: string | null;
+  appliedConfigurations: string[];
+  isNew: boolean;
+}> {
+  const account = await getOrCreateAccount(stripe, component, ctx, opts);
+
+  // A freshly-created account has no applied configurations yet; an existing one
+  // may already have `customer` (and others). Only apply when missing.
+  let appliedConfigurations: string[] = [];
+  if (!account.isNew) {
+    const doc = (await ctx.runQuery(
+      componentRef(component, "core/queries/getAccountByStripeId"),
+      { stripeAccountId: account.stripeAccountId },
+    )) as StripeComponentAccount | null;
+    appliedConfigurations = doc?.appliedConfigurations ?? [];
+  }
+
+  if (!appliedConfigurations.includes("customer")) {
+    const res = await addCustomerConfiguration(stripe, component, ctx, {
+      stripeAccountId: account.stripeAccountId,
+    });
+    appliedConfigurations = res.appliedConfigurations;
+  }
+
+  return {
+    stripeAccountId: account.stripeAccountId,
+    accountId: account.accountId ?? null,
+    appliedConfigurations,
+    isNew: account.isNew,
+  };
+}
+
 export async function getAccountByUserId(
   component: Component,
   ctx: RunCtx,

@@ -1,5 +1,6 @@
 import type {
   FeeOverride,
+  FeeTier,
   PlatformFeeConfig,
 } from "../types/options.js";
 
@@ -78,4 +79,67 @@ export function resolveFeeConfig(
     validatePlatformFee(resolved);
   }
   return resolved;
+}
+
+/**
+ * True when a fee is a flat percentage that Stripe's `application_fee_percent`
+ * can express directly (no fixed surcharge, no tiers). Percent+fixed/tiered
+ * fees must be computed per charge/invoice instead.
+ */
+export function isPercentOnlyFee(config: PlatformFeeConfig): boolean {
+  return !config.fixed && (!config.tiers || config.tiers.length === 0);
+}
+
+/** The platform fee computed for a specific charge amount. */
+export type FeeBreakdown = {
+  /** Fee in minor units (never greater than the charge amount). */
+  feeAmount: number;
+  /** Percentage actually applied (from the matched tier, or the base). */
+  percentApplied: number;
+  /** Fixed surcharge actually applied, in minor units. */
+  fixedApplied: number;
+  /** The tier that matched, when a tiered schedule was used. */
+  tier?: FeeTier;
+};
+
+/**
+ * Compute the platform fee for a charge `amount` (minor units) under `config`.
+ *
+ * - Tiered: picks the first tier whose inclusive `upTo` covers the amount
+ *   (final `upTo: null` is the catch-all); otherwise uses the base percent/fixed.
+ * - `feeAmount = round(amount * percent / 100) + fixed`, **rounded half-up** to
+ *   whole minor units, and **capped at `amount`** (the fee can never exceed the
+ *   charge).
+ * - Returns a zero fee for non-positive amounts (e.g. a trial with no charge).
+ *
+ * Assumes `amount` and the config's minor-unit fields share one currency.
+ * Validate `config` (see {@link validatePlatformFee}) before calling.
+ */
+export function computeFee(
+  amount: number,
+  config: PlatformFeeConfig,
+): FeeBreakdown {
+  if (!(amount > 0)) {
+    return { feeAmount: 0, percentApplied: 0, fixedApplied: 0 };
+  }
+
+  let percent = config.percent;
+  let fixed = config.fixed ?? 0;
+  let tier: FeeTier | undefined;
+  if (config.tiers) {
+    tier = config.tiers.find((t) => t.upTo === null || amount <= t.upTo);
+    if (tier) {
+      percent = tier.percent;
+      fixed = tier.fixed ?? 0;
+    }
+  }
+
+  // Math.round is half-up for the non-negative values we deal with here.
+  const percentAmount = Math.round((amount * percent) / 100);
+  const feeAmount = Math.min(percentAmount + fixed, amount);
+  // When the fee hits the amount cap, only the portion of `fixed` that actually
+  // fits is collected, so report the capped surcharge for a consistent breakdown.
+  const fixedApplied = Math.max(0, feeAmount - percentAmount);
+
+  return { feeAmount, percentApplied: percent, fixedApplied, tier };
 }

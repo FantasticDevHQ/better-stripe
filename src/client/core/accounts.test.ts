@@ -18,6 +18,7 @@ import {
   DEFAULT_CUSTOMER_CONFIGURATION,
   addCustomerConfiguration,
   addRecipientConfiguration,
+  ensureCustomerAccount,
   closeAccount,
   createAccount,
   createAccountWithOnboarding,
@@ -1060,5 +1061,140 @@ describe("addCustomerConfiguration", () => {
 
     expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
     expect(runMutation).not.toHaveBeenCalled();
+  });
+});
+
+describe("ensureCustomerAccount (BTS-18)", () => {
+  /** Build a ctx whose runQuery routes by component ref path. */
+  function routedCtx(routes: Record<string, unknown>) {
+    const runQuery = vi.fn(async (ref: Record<symbol, string>) => {
+      const path = ref[TO_REF].replace(/^betterStripe\//, "");
+      return routes[path] ?? null;
+    });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    return { runQuery, runMutation } as unknown as RunCtx & {
+      runQuery: ReturnType<typeof vi.fn>;
+      runMutation: ReturnType<typeof vi.fn>;
+    };
+  }
+
+  it("provisions a new buyer with the customer configuration", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.create.mockResolvedValue({ id: "acct_new" });
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer"],
+    });
+    const ctx = routedCtx({
+      "core/queries/getAccountByUserId": null, // no existing account
+      "core/queries/getAccountByStripeId": {
+        _id: "doc1",
+        stripeAccountId: "acct_new",
+        userId: "u1",
+        appliedConfigurations: [],
+      },
+    });
+
+    const result = await ensureCustomerAccount(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      { userId: "u1", email: "buyer@test.com" },
+    );
+
+    expect(stripe.v2.core.accounts.create).toHaveBeenCalled();
+    // customer configuration applied
+    expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_new", {
+      configuration: { customer: {} },
+    });
+    expect(result.stripeAccountId).toBe("acct_new");
+    expect(result.isNew).toBe(true);
+    expect(result.appliedConfigurations).toContain("customer");
+  });
+
+  it("adds the customer configuration to an existing account that lacks it", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["customer"],
+    });
+    const ctx = routedCtx({
+      "core/queries/getAccountByUserId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+      },
+      "core/queries/getAccountByStripeId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+        userId: "u1",
+        appliedConfigurations: [],
+      },
+    });
+
+    const result = await ensureCustomerAccount(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      { userId: "u1" },
+    );
+
+    expect(stripe.v2.core.accounts.create).not.toHaveBeenCalled();
+    expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_x", {
+      configuration: { customer: {} },
+    });
+    expect(result.isNew).toBe(false);
+  });
+
+  it("is idempotent: does not re-provision an account that already has customer config", async () => {
+    const stripe = makeStripe();
+    const ctx = routedCtx({
+      "core/queries/getAccountByUserId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+      },
+      "core/queries/getAccountByStripeId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+        userId: "u1",
+        appliedConfigurations: ["customer"],
+      },
+    });
+
+    const result = await ensureCustomerAccount(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      { userId: "u1" },
+    );
+
+    expect(stripe.v2.core.accounts.create).not.toHaveBeenCalled();
+    expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
+    expect(result.appliedConfigurations).toEqual(["customer"]);
+  });
+
+  it("preserves other configs (customer + merchant) without re-provisioning", async () => {
+    const stripe = makeStripe();
+    const ctx = routedCtx({
+      "core/queries/getAccountByUserId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+      },
+      "core/queries/getAccountByStripeId": {
+        _id: "doc1",
+        stripeAccountId: "acct_x",
+        userId: "u1",
+        appliedConfigurations: ["customer", "merchant"],
+      },
+    });
+
+    const result = await ensureCustomerAccount(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      { userId: "u1" },
+    );
+
+    expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
+    expect(result.appliedConfigurations).toEqual(["customer", "merchant"]);
   });
 });

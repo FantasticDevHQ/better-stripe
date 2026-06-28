@@ -1,10 +1,59 @@
 import type Stripe from "stripe";
 
+import { computeFee, isPercentOnlyFee } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
-import type { StripeComponentCheckoutSession } from "../types.js";
+import type {
+  PlatformFeeConfig,
+  StripeComponentCheckoutSession,
+} from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
+
+/**
+ * Derive the persisted fee/routing fields (BTS-11) from the FINAL Checkout
+ * Session request, reading the nested `subscription_data`/`payment_intent_data`
+ * that will actually be sent to Stripe. Deriving from the final request (rather
+ * than a pre-override draft) keeps the stored row consistent when callers pass
+ * `sessionOverrides` that replace those nested params.
+ */
+function deriveFeeRow(params: CheckoutSessionCreateParams): {
+  chargeType?: "destination";
+  destinationAccountId?: string;
+  applicationFeePercent?: number;
+  applicationFeeAmount?: number;
+} {
+  const dest = (d: unknown): string | undefined =>
+    typeof d === "string"
+      ? d
+      : ((d as { id?: string } | null | undefined)?.id ?? undefined);
+
+  if (params.mode === "subscription") {
+    const destination = dest(
+      params.subscription_data?.transfer_data?.destination,
+    );
+    if (!destination) return {};
+    const pct = params.subscription_data?.application_fee_percent;
+    return {
+      chargeType: "destination",
+      destinationAccountId: destination,
+      ...(pct !== undefined ? { applicationFeePercent: pct } : {}),
+    };
+  }
+  if (params.mode === "payment") {
+    const destination = dest(
+      params.payment_intent_data?.transfer_data?.destination,
+    );
+    if (!destination) return {};
+    const amt = params.payment_intent_data?.application_fee_amount;
+    return {
+      chargeType: "destination",
+      destinationAccountId: destination,
+      ...(amt !== undefined ? { applicationFeeAmount: amt } : {}),
+    };
+  }
+  return {};
+}
 
 // =============================================================================
 // Checkout methods
@@ -25,6 +74,19 @@ export async function createCheckoutSession(
     trialDays?: number;
     accountId?: string;
     customerEmail?: string;
+    /**
+     * The seller/recipient connected account funds are routed to (destination
+     * charge). Fees only apply when this is set.
+     */
+    destinationAccountId?: string;
+    /** Resolved platform fee config (the caller resolves override → default). */
+    feeConfig?: PlatformFeeConfig;
+    /**
+     * Charge total in minor units (one-time payment mode). When known, the
+     * fixed `application_fee_amount` is computed up front; otherwise the fee is
+     * deferred to the webhook.
+     */
+    amount?: number;
     metadata?: Record<string, string>;
     sessionOverrides?: Record<string, unknown>;
   },
@@ -44,14 +106,61 @@ export async function createCheckoutSession(
   };
 
   if (opts.mode === "subscription") {
-    sessionParams.subscription_data = { metadata };
+    const subscriptionData: CheckoutSessionCreateParams["subscription_data"] = {
+      metadata,
+    };
     if (opts.trialDays) {
-      sessionParams.subscription_data.trial_period_days = opts.trialDays;
+      subscriptionData.trial_period_days = opts.trialDays;
     }
+    // Single-recipient destination charge: route funds to the seller and take
+    // the platform's cut. Percent-only fees map to `application_fee_percent`;
+    // percent+fixed/tiered fees can't be expressed that way, so flag the
+    // subscription for per-invoice fee computation (handled by WEBHOOK_FEE).
+    if (opts.destinationAccountId) {
+      subscriptionData.transfer_data = {
+        destination: opts.destinationAccountId,
+      };
+      if (opts.feeConfig) {
+        if (isPercentOnlyFee(opts.feeConfig)) {
+          subscriptionData.application_fee_percent = opts.feeConfig.percent;
+        } else {
+          subscriptionData.metadata = {
+            ...metadata,
+            bsFeeMode: "per_invoice",
+            bsFeeConfig: JSON.stringify(opts.feeConfig),
+          };
+        }
+      }
+    }
+    sessionParams.subscription_data = subscriptionData;
   }
 
   if (opts.mode === "payment") {
-    sessionParams.payment_intent_data = { metadata };
+    const paymentIntentData: CheckoutSessionCreateParams["payment_intent_data"] =
+      { metadata };
+    // Single-recipient destination charge for a one-time purchase. The platform
+    // fee is a fixed `application_fee_amount`: compute it when the amount is
+    // known, otherwise defer to the webhook (amount is known at charge time).
+    if (opts.destinationAccountId) {
+      paymentIntentData.transfer_data = {
+        destination: opts.destinationAccountId,
+      };
+      if (opts.feeConfig) {
+        if (opts.amount !== undefined) {
+          paymentIntentData.application_fee_amount = computeFee(
+            opts.amount,
+            opts.feeConfig,
+          ).feeAmount;
+        } else {
+          paymentIntentData.metadata = {
+            ...metadata,
+            bsFeeMode: "per_charge",
+            bsFeeConfig: JSON.stringify(opts.feeConfig),
+          };
+        }
+      }
+    }
+    sessionParams.payment_intent_data = paymentIntentData;
   }
 
   if (uiMode === "embedded") {
@@ -68,10 +177,16 @@ export async function createCheckoutSession(
     sessionParams.customer_email = opts.customerEmail;
   }
 
-  const session = await stripe.checkout.sessions.create({
+  // Merge overrides, then derive the persisted fee/routing row from the FINAL
+  // request — sessionOverrides can replace subscription_data/payment_intent_data
+  // wholesale, so the row must reflect what was actually sent to Stripe.
+  const finalSessionParams: CheckoutSessionCreateParams = {
     ...sessionParams,
     ...(opts.sessionOverrides as Partial<CheckoutSessionCreateParams>),
-  });
+  };
+  const feeRow = deriveFeeRow(finalSessionParams);
+
+  const session = await stripe.checkout.sessions.create(finalSessionParams);
 
   await runMutationOrThrow(
     ctx,
@@ -81,11 +196,12 @@ export async function createCheckoutSession(
       userId: opts.userId,
       orgId: opts.orgId,
       accountId: opts.accountId,
-      mode: opts.mode,
+      mode: finalSessionParams.mode,
       status: (session.status ?? "open") as "open" | "complete" | "expired",
       clientSecret: session.client_secret ?? undefined,
       url: session.url ?? undefined,
       priceId: opts.stripePriceId,
+      ...feeRow,
       metadata,
     },
   );

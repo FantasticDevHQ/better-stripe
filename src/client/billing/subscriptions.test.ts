@@ -12,7 +12,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { Component, RunCtx } from "../helpers.js";
 import {
   cancelSubscription,
+  createSubscription,
   getActiveSubscription,
+  groupSubscriptionsByStore,
   getSubscription,
   getSubscriptionByStripeId,
   getTrialStatus,
@@ -64,6 +66,7 @@ function makeCtx(queryResult?: unknown) {
 function makeStripe() {
   return {
     subscriptions: {
+      create: vi.fn(),
       update: vi.fn(),
       cancel: vi.fn(),
       retrieve: vi.fn(),
@@ -661,5 +664,159 @@ describe("syncAllSubscriptions", () => {
 
     expect(result).toEqual({ synced: 0, errors: [], errorCount: 0 });
     expect(ctx.runMutation).not.toHaveBeenCalled();
+  });
+});
+
+describe("createSubscription (BTS-17)", () => {
+  function createdSub(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "sub_new",
+      status: "active",
+      cancel_at_period_end: false,
+      items: {
+        data: [
+          {
+            price: { id: "price_1" },
+            quantity: 1,
+            current_period_start: 1000,
+            current_period_end: 2000,
+          },
+        ],
+      },
+      metadata: { userId: "buyer_1" },
+      ...overrides,
+    };
+  }
+
+  it("creates a single-recipient subscription with destination + percent fee", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    const result = await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.subscriptions.create.mock.calls[0][0];
+    expect(createArg.customer_account).toBe("acct_buyer");
+    expect(createArg.items).toEqual([{ price: "price_1" }]);
+    expect(createArg.transfer_data).toEqual({ destination: "acct_store" });
+    expect(createArg.application_fee_percent).toBe(10);
+    expect(createArg.payment_method_types).toBeUndefined();
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs).toMatchObject({
+      stripeSubscriptionId: "sub_new",
+      accountId: "acct_buyer",
+      userId: "buyer_1",
+      status: "active",
+      chargeType: "destination",
+      destinationAccountId: "acct_store",
+      applicationFeePercent: 10,
+    });
+    expect(result).toEqual({ stripeSubscriptionId: "sub_new", status: "active" });
+  });
+
+  it("flags percent+fixed fees for per-invoice computation", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 2.9, fixed: 30 },
+    });
+
+    const createArg = stripe.subscriptions.create.mock.calls[0][0];
+    expect(createArg.transfer_data).toEqual({ destination: "acct_store" });
+    expect(createArg.application_fee_percent).toBeUndefined();
+    expect(createArg.metadata.bsFeeMode).toBe("per_invoice");
+  });
+
+  it("creates a plain subscription without destination/fee", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+    });
+
+    const createArg = stripe.subscriptions.create.mock.calls[0][0];
+    expect(createArg.transfer_data).toBeUndefined();
+    expect(createArg.application_fee_percent).toBeUndefined();
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBeUndefined();
+  });
+
+  it("rejects feeConfig without a destinationAccountId", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx();
+
+    await expect(
+      createSubscription(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        customerAccount: "acct_buyer",
+        stripePriceId: "price_1",
+        feeConfig: { percent: 10 },
+      }),
+    ).rejects.toThrow(/destinationAccountId/);
+    expect(stripe.subscriptions.create).not.toHaveBeenCalled();
+  });
+
+  it("surfaces Stripe failures as structured errors", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockRejectedValue(new Error("card_declined"));
+    const ctx = makeCtx();
+
+    await expect(
+      createSubscription(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        customerAccount: "acct_buyer",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("groupSubscriptionsByStore (BTS-19)", () => {
+  it("groups a buyer's subscriptions by store, preserving first-seen order", () => {
+    const subs: { stripeSubscriptionId: string; destinationAccountId?: string }[] =
+      [
+        { stripeSubscriptionId: "s1", destinationAccountId: "store_a" },
+        { stripeSubscriptionId: "s2", destinationAccountId: "store_b" },
+        { stripeSubscriptionId: "s3", destinationAccountId: "store_a" },
+        { stripeSubscriptionId: "s4" }, // no store → platform-direct
+      ];
+
+    const grouped = groupSubscriptionsByStore(subs);
+
+    expect(grouped.map((g) => g.storeAccountId)).toEqual([
+      "store_a",
+      "store_b",
+      null,
+    ]);
+    expect(
+      grouped[0].subscriptions.map((s) => s.stripeSubscriptionId),
+    ).toEqual(["s1", "s3"]);
+    expect(grouped[1].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
+      "s2",
+    ]);
+    expect(grouped[2].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
+      "s4",
+    ]);
+  });
+
+  it("returns an empty array for no subscriptions", () => {
+    expect(groupSubscriptionsByStore([])).toEqual([]);
   });
 });

@@ -23,6 +23,9 @@ import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
 import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
+export { computeFee } from "./core/fees.js";
+export type { FeeBreakdown } from "./core/fees.js";
+export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -390,6 +393,30 @@ export class BetterStripe {
     );
   }
 
+  /**
+   * Ensure a shopper has a V2 account with the `customer` configuration (create
+   * if needed), so they can be billed via `customer_account` and later add a
+   * merchant/recipient configuration on the same account. Idempotent.
+   */
+  async ensureCustomerAccount(
+    ctx: RunCtx,
+    opts: {
+      userId: string;
+      email?: string;
+      name?: string;
+      country?: string;
+      orgId?: string;
+      metadata?: Record<string, string>;
+    },
+  ) {
+    return accountsImpl.ensureCustomerAccount(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
   // ============================================================================
   // PRODUCT METHODS
   // ============================================================================
@@ -578,16 +605,24 @@ export class BetterStripe {
       trialDays?: number;
       accountId?: string;
       customerEmail?: string;
+      /** Seller/recipient connected account to route funds to (destination charge). */
+      destinationAccountId?: string;
+      /** Per-call platform fee override; falls back to the configured default. */
+      fee?: FeeOverride;
+      /** Charge total (minor units) for one-time payment fee computation. */
+      amount?: number;
       metadata?: Record<string, string>;
       sessionOverrides?: Record<string, unknown>;
     },
   ) {
-    return checkoutImpl.createCheckoutSession(
-      this.stripe(),
-      this.component,
-      ctx,
-      opts,
-    );
+    const { fee, ...rest } = opts;
+    return checkoutImpl.createCheckoutSession(this.stripe(), this.component, ctx, {
+      ...rest,
+      // Fees only apply to destination charges; resolve override → default.
+      feeConfig: opts.destinationAccountId
+        ? this.resolveFee(fee)
+        : undefined,
+    });
   }
 
   async getCheckoutSession(
@@ -642,6 +677,31 @@ export class BetterStripe {
   // ============================================================================
   // SUBSCRIPTION METHODS
   // ============================================================================
+
+  /**
+   * Create a subscription directly for a V2 buyer (`customer_account`), off the
+   * checkout flow. With a `destinationAccountId` it routes funds to the seller
+   * and takes the platform fee (override → configured default).
+   */
+  async createSubscription(
+    ctx: RunCtx,
+    opts: {
+      userId: string;
+      orgId?: string;
+      customerAccount: string;
+      stripePriceId: string;
+      destinationAccountId?: string;
+      fee?: FeeOverride;
+      trialDays?: number;
+      metadata?: Record<string, string>;
+    },
+  ) {
+    const { fee, ...rest } = opts;
+    return subscriptionsImpl.createSubscription(this.stripe(), this.component, ctx, {
+      ...rest,
+      feeConfig: opts.destinationAccountId ? this.resolveFee(fee) : undefined,
+    });
+  }
 
   async getSubscription(
     ctx: RunCtx,
@@ -770,6 +830,18 @@ export class BetterStripe {
     opts: { orgId: string; status?: string },
   ): Promise<StripeComponentSubscription[]> {
     return subscriptionsImpl.listSubscriptionsByOrg(this.component, ctx, opts);
+  }
+
+  /** List a buyer's subscriptions scoped to one store (recipient account). */
+  async listSubscriptionsByUserAndStore(
+    ctx: RunCtx,
+    opts: { userId: string; destinationAccountId: string; status?: string },
+  ): Promise<StripeComponentSubscription[]> {
+    return subscriptionsImpl.listSubscriptionsByUserAndStore(
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   async getActiveSubscription(

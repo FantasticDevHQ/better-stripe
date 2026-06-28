@@ -584,6 +584,8 @@ export class BetterStripe {
       destinationAccountId?: string;
       /** Per-call platform fee override; falls back to the configured default. */
       fee?: FeeOverride;
+      /** Charge total (minor units) for one-time payment fee computation. */
+      amount?: number;
       metadata?: Record<string, string>;
       sessionOverrides?: Record<string, unknown>;
     },

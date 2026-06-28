@@ -539,6 +539,88 @@ describe("createCheckoutSession — destination + fee (BTS-15, subscription)", (
   });
 });
 
+describe("createCheckoutSession — destination + fee (BTS-16, one-time payment)", () => {
+  it("computes application_fee_amount when the amount is known", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(
+      sessionResponse({ id: "cs_pay_fee" }),
+    );
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10, fixed: 30 },
+      amount: 10000, // round(10000*0.10) + 30 = 1030
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.transfer_data).toEqual({
+      destination: "acct_store",
+    });
+    expect(createArg.payment_intent_data.application_fee_amount).toBe(1030);
+    expect(createArg.payment_intent_data.metadata.bsFeeMode).toBeUndefined();
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs).toMatchObject({
+      chargeType: "destination",
+      destinationAccountId: "acct_store",
+      applicationFeeAmount: 1030,
+    });
+  });
+
+  it("defers to the webhook when the amount is unknown", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(
+      sessionResponse({ id: "cs_pay_defer" }),
+    );
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.transfer_data).toEqual({
+      destination: "acct_store",
+    });
+    expect(
+      createArg.payment_intent_data.application_fee_amount,
+    ).toBeUndefined();
+    expect(createArg.payment_intent_data.metadata.bsFeeMode).toBe("per_charge");
+  });
+
+  it("adds no transfer_data or fees without a destinationAccountId", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "user_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      feeConfig: { percent: 10 },
+      amount: 10000,
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data).toEqual({
+      metadata: { userId: "user_1" },
+    });
+  });
+});
+
 describe("getCheckoutSession", () => {
   it("queries by internal session id and returns the row", async () => {
     const ctx = makeCtx({ stripeSessionId: "cs_1" });

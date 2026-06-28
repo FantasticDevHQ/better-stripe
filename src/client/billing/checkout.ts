@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import { computeFee } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
@@ -40,6 +41,12 @@ export async function createCheckoutSession(
     destinationAccountId?: string;
     /** Resolved platform fee config (the caller resolves override → default). */
     feeConfig?: PlatformFeeConfig;
+    /**
+     * Charge total in minor units (one-time payment mode). When known, the
+     * fixed `application_fee_amount` is computed up front; otherwise the fee is
+     * deferred to the webhook.
+     */
+    amount?: number;
     metadata?: Record<string, string>;
     sessionOverrides?: Record<string, unknown>;
   },
@@ -63,6 +70,7 @@ export async function createCheckoutSession(
     chargeType?: "destination";
     destinationAccountId?: string;
     applicationFeePercent?: number;
+    applicationFeeAmount?: number;
   } = {};
 
   if (opts.mode === "subscription") {
@@ -99,7 +107,32 @@ export async function createCheckoutSession(
   }
 
   if (opts.mode === "payment") {
-    sessionParams.payment_intent_data = { metadata };
+    const paymentIntentData: CheckoutSessionCreateParams["payment_intent_data"] =
+      { metadata };
+    // Single-recipient destination charge for a one-time purchase. The platform
+    // fee is a fixed `application_fee_amount`: compute it when the amount is
+    // known, otherwise defer to the webhook (amount is known at charge time).
+    if (opts.destinationAccountId) {
+      paymentIntentData.transfer_data = {
+        destination: opts.destinationAccountId,
+      };
+      feeRow.chargeType = "destination";
+      feeRow.destinationAccountId = opts.destinationAccountId;
+      if (opts.feeConfig) {
+        if (opts.amount !== undefined) {
+          const feeAmount = computeFee(opts.amount, opts.feeConfig).feeAmount;
+          paymentIntentData.application_fee_amount = feeAmount;
+          feeRow.applicationFeeAmount = feeAmount;
+        } else {
+          paymentIntentData.metadata = {
+            ...metadata,
+            bsFeeMode: "per_charge",
+            bsFeeConfig: JSON.stringify(opts.feeConfig),
+          };
+        }
+      }
+    }
+    sessionParams.payment_intent_data = paymentIntentData;
   }
 
   if (uiMode === "embedded") {

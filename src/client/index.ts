@@ -23,6 +23,8 @@ import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
 import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
+export { computeFee } from "./core/fees.js";
+export type { FeeBreakdown } from "./core/fees.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {

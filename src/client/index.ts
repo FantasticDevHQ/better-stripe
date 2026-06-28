@@ -580,16 +580,22 @@ export class BetterStripe {
       trialDays?: number;
       accountId?: string;
       customerEmail?: string;
+      /** Seller/recipient connected account to route funds to (destination charge). */
+      destinationAccountId?: string;
+      /** Per-call platform fee override; falls back to the configured default. */
+      fee?: FeeOverride;
       metadata?: Record<string, string>;
       sessionOverrides?: Record<string, unknown>;
     },
   ) {
-    return checkoutImpl.createCheckoutSession(
-      this.stripe(),
-      this.component,
-      ctx,
-      opts,
-    );
+    const { fee, ...rest } = opts;
+    return checkoutImpl.createCheckoutSession(this.stripe(), this.component, ctx, {
+      ...rest,
+      // Fees only apply to destination charges; resolve override → default.
+      feeConfig: opts.destinationAccountId
+        ? this.resolveFee(fee)
+        : undefined,
+    });
   }
 
   async getCheckoutSession(

@@ -3,8 +3,16 @@ import type Stripe from "stripe";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
-import type { StripeComponentCheckoutSession } from "../types.js";
+import type {
+  PlatformFeeConfig,
+  StripeComponentCheckoutSession,
+} from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
+
+/** True when the fee is a flat percentage Stripe's `application_fee_percent` can express. */
+function isPercentOnlyFee(fee: PlatformFeeConfig): boolean {
+  return !fee.fixed && (!fee.tiers || fee.tiers.length === 0);
+}
 
 // =============================================================================
 // Checkout methods
@@ -25,6 +33,13 @@ export async function createCheckoutSession(
     trialDays?: number;
     accountId?: string;
     customerEmail?: string;
+    /**
+     * The seller/recipient connected account funds are routed to (destination
+     * charge). Fees only apply when this is set.
+     */
+    destinationAccountId?: string;
+    /** Resolved platform fee config (the caller resolves override → default). */
+    feeConfig?: PlatformFeeConfig;
     metadata?: Record<string, string>;
     sessionOverrides?: Record<string, unknown>;
   },
@@ -43,11 +58,44 @@ export async function createCheckoutSession(
     metadata,
   };
 
+  // Fee/routing denormalized onto the component row (BTS-11 fields).
+  const feeRow: {
+    chargeType?: "destination";
+    destinationAccountId?: string;
+    applicationFeePercent?: number;
+  } = {};
+
   if (opts.mode === "subscription") {
-    sessionParams.subscription_data = { metadata };
+    const subscriptionData: CheckoutSessionCreateParams["subscription_data"] = {
+      metadata,
+    };
     if (opts.trialDays) {
-      sessionParams.subscription_data.trial_period_days = opts.trialDays;
+      subscriptionData.trial_period_days = opts.trialDays;
     }
+    // Single-recipient destination charge: route funds to the seller and take
+    // the platform's cut. Percent-only fees map to `application_fee_percent`;
+    // percent+fixed/tiered fees can't be expressed that way, so flag the
+    // subscription for per-invoice fee computation (handled by WEBHOOK_FEE).
+    if (opts.destinationAccountId) {
+      subscriptionData.transfer_data = {
+        destination: opts.destinationAccountId,
+      };
+      feeRow.chargeType = "destination";
+      feeRow.destinationAccountId = opts.destinationAccountId;
+      if (opts.feeConfig) {
+        if (isPercentOnlyFee(opts.feeConfig)) {
+          subscriptionData.application_fee_percent = opts.feeConfig.percent;
+          feeRow.applicationFeePercent = opts.feeConfig.percent;
+        } else {
+          subscriptionData.metadata = {
+            ...metadata,
+            bsFeeMode: "per_invoice",
+            bsFeeConfig: JSON.stringify(opts.feeConfig),
+          };
+        }
+      }
+    }
+    sessionParams.subscription_data = subscriptionData;
   }
 
   if (opts.mode === "payment") {
@@ -86,6 +134,7 @@ export async function createCheckoutSession(
       clientSecret: session.client_secret ?? undefined,
       url: session.url ?? undefined,
       priceId: opts.stripePriceId,
+      ...feeRow,
       metadata,
     },
   );

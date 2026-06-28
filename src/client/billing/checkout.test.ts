@@ -455,6 +455,90 @@ describe("createCheckoutSession", () => {
   });
 });
 
+describe("createCheckoutSession — destination + fee (BTS-15, subscription)", () => {
+  it("routes a percent-only fee via transfer_data + application_fee_percent", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(
+      sessionResponse({ id: "cs_dest" }),
+    );
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toEqual({
+      destination: "acct_store",
+    });
+    expect(createArg.subscription_data.application_fee_percent).toBe(10);
+    expect(createArg.subscription_data.metadata.bsFeeMode).toBeUndefined();
+    expect(createArg.payment_method_types).toBeUndefined();
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs).toMatchObject({
+      chargeType: "destination",
+      destinationAccountId: "acct_store",
+      applicationFeePercent: 10,
+    });
+  });
+
+  it("flags percent+fixed fees for per-invoice computation (no application_fee_percent)", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(
+      sessionResponse({ id: "cs_dest2" }),
+    );
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 2.9, fixed: 30 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toEqual({
+      destination: "acct_store",
+    });
+    expect(createArg.subscription_data.application_fee_percent).toBeUndefined();
+    expect(createArg.subscription_data.metadata.bsFeeMode).toBe("per_invoice");
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("destination");
+    expect(upsertArgs.destinationAccountId).toBe("acct_store");
+  });
+
+  it("adds no transfer_data or fees without a destinationAccountId", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "user_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toBeUndefined();
+    expect(createArg.subscription_data.application_fee_percent).toBeUndefined();
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBeUndefined();
+  });
+});
+
 describe("getCheckoutSession", () => {
   it("queries by internal session id and returns the row", async () => {
     const ctx = makeCtx({ stripeSessionId: "cs_1" });

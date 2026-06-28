@@ -623,3 +623,68 @@ describe("processEvent — unhandled", () => {
     );
   });
 });
+
+describe("processEvent — fee & transfer capture (BTS-20)", () => {
+  it("denormalizes application_fee + transfer destination onto a payment", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_fee",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        application_fee_amount: 1000,
+        transfer_data: { destination: "acct_store" },
+        metadata: {},
+      }),
+    );
+    expect(dispatchedPayload(whCtx.ctx).data).toMatchObject({
+      stripePaymentIntentId: "pi_fee",
+      chargeType: "destination",
+      destinationAccountId: "acct_store",
+      applicationFeeAmount: 1000,
+      feeCollectedAmount: 1000,
+    });
+  });
+
+  it("handles a transfer destination given as an expanded object", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_fee2",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        transfer_data: { destination: { id: "acct_store" } },
+        metadata: {},
+      }),
+    );
+    expect(dispatchedPayload(whCtx.ctx).data.destinationAccountId).toBe(
+      "acct_store",
+    );
+  });
+
+  it("leaves fee fields unset for a plain payment", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_plain",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        metadata: {},
+      }),
+    );
+    const { data } = dispatchedPayload(whCtx.ctx);
+    expect(data.chargeType).toBeUndefined();
+    expect(data.destinationAccountId).toBeUndefined();
+    expect(data.applicationFeeAmount).toBeUndefined();
+  });
+
+  // Note: the platform fee lives on the charge/PaymentIntent, not the typed
+  // Stripe.Invoice, so fee denormalization is captured on the `payments` row
+  // (above) rather than the invoice.
+});

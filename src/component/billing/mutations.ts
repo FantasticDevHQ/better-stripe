@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation } from "../_generated/server";
+import { feeRoutingFields } from "../lib/fees";
 import {
   checkoutSessionModeValidator,
   checkoutSessionStatusValidator,
@@ -28,6 +29,8 @@ export const upsertSubscription = mutation({
     isTrialing: v.boolean(),
     trialStart: v.optional(v.string()),
     trialEnd: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },
   returns: v.null(),
@@ -85,6 +88,8 @@ export const upsertCheckoutSession = mutation({
     clientSecret: v.optional(v.string()),
     url: v.optional(v.string()),
     priceId: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },
   returns: v.null(),
@@ -125,6 +130,7 @@ export const upsertInvoice = mutation({
     invoicePdf: v.optional(v.string()),
     periodStart: v.optional(v.string()),
     periodEnd: v.optional(v.string()),
+    ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },
   returns: v.null(),

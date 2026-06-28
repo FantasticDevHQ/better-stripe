@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { mutation } from "../_generated/server";
+import { feeRoutingFields } from "../lib/fees";
 import {
   disputeFields,
   paymentStatusValidator,
@@ -21,6 +22,7 @@ export const upsertPayment = mutation({
     amount: v.number(),
     currency: v.string(),
     status: paymentStatusValidator,
+    ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },
   returns: v.null(),

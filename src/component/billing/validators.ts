@@ -1,5 +1,7 @@
 import { type Infer, v } from "convex/values";
 
+import { feeRoutingFields } from "../lib/fees";
+
 export const subscriptionStatusValidator = v.union(
   v.literal("active"),
   v.literal("trialing"),
@@ -48,6 +50,8 @@ export const subscriptionFields = {
   isTrialing: v.boolean(),
   trialStart: v.optional(v.string()),
   trialEnd: v.optional(v.string()),
+  currency: v.optional(v.string()),
+  ...feeRoutingFields,
   metadata: v.optional(v.any()),
 };
 
@@ -73,6 +77,8 @@ export const checkoutSessionFields = {
   clientSecret: v.optional(v.string()),
   url: v.optional(v.string()),
   priceId: v.optional(v.string()),
+  currency: v.optional(v.string()),
+  ...feeRoutingFields,
   metadata: v.optional(v.any()),
 };
 
@@ -111,6 +117,7 @@ export const invoiceFields = {
   invoicePdf: v.optional(v.string()),
   periodStart: v.optional(v.string()),
   periodEnd: v.optional(v.string()),
+  ...feeRoutingFields,
   metadata: v.optional(v.any()),
 };
 

@@ -1,5 +1,7 @@
 import { type Infer, v } from "convex/values";
 
+import { feeRoutingFields } from "../lib/fees";
+
 export const paymentStatusValidator = v.union(
   v.literal("succeeded"),
   v.literal("failed"),
@@ -46,6 +48,7 @@ export const paymentFields = {
   refundedAmount: v.optional(v.number()),
   // Derived flag; undefined when nothing has been refunded.
   refundStatus: v.optional(paymentRefundStatusValidator),
+  ...feeRoutingFields,
   metadata: v.optional(v.any()),
 };
 

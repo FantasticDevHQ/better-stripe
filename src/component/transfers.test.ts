@@ -171,6 +171,7 @@ describe("transfers ledger (BTS-12)", () => {
       stripeTransferId: "tr_mono",
     });
     expect(tr!.reversedAmount).toBe(8000);
+    expect(tr!.reversalStatus).toBe("fully_reversed");
     expect(tr!.status).toBe("reversed");
   });
 });

@@ -1,5 +1,7 @@
 import type Stripe from "stripe";
 
+import type { SplitRecipient } from "../../component/lib/fees.js";
+import { createSplitTransfers } from "../connect/transfers.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -64,6 +66,10 @@ export async function processEvent(
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
     case "payment_intent.succeeded":
+      await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
+      // Fan funds out to split recipients for a separate-charges sale.
+      await handleSplitTransfers(whCtx, obj as Stripe.PaymentIntent);
+      break;
     case "payment_intent.payment_failed":
     case "payment_intent.canceled":
       await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
@@ -360,6 +366,48 @@ async function upsertInvoiceFromStripe(
     periodStart: epochToIso(invoice.period_start),
     periodEnd: epochToIso(invoice.period_end),
     metadata: invoice.metadata ?? undefined,
+  });
+}
+
+/**
+ * Drive the split transfer engine (BTS-22) for a separate-charges sale. When a
+ * PaymentIntent created with `bsChargeType=separate` succeeds, parse the split
+ * (and platform fee) from its metadata and fan funds out to each recipient via
+ * `source_transaction` on the resulting charge. Errors propagate so Stripe
+ * retries; the engine's idempotency keys make retries safe.
+ */
+async function handleSplitTransfers(
+  whCtx: WebhookContext,
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<void> {
+  if (paymentIntent.status !== "succeeded") return;
+  const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+  if (meta.bsChargeType !== "separate" || !meta.bsSplit) return;
+
+  const sourceChargeId =
+    typeof paymentIntent.latest_charge === "string"
+      ? paymentIntent.latest_charge
+      : (paymentIntent.latest_charge?.id ?? undefined);
+  if (!sourceChargeId) return;
+
+  let split: SplitRecipient[];
+  let feeConfig: PlatformFeeConfig | undefined;
+  try {
+    split = JSON.parse(meta.bsSplit) as SplitRecipient[];
+    feeConfig = meta.bsFeeConfig
+      ? (JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig)
+      : undefined;
+  } catch {
+    return; // malformed markers — nothing safe to transfer
+  }
+
+  await createSplitTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+    sourceChargeId,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    split,
+    feeConfig,
+    paymentId: paymentIntent.id,
   });
 }
 

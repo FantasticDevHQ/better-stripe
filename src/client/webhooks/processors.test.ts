@@ -65,11 +65,15 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
   };
 }
 
+let trCreateSeq = 0;
 function makeStripe() {
   return {
     products: { retrieve: vi.fn() },
     subscriptions: { retrieve: vi.fn() },
     invoices: { update: vi.fn().mockResolvedValue({}) },
+    transfers: {
+      create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
+    },
   };
 }
 
@@ -713,6 +717,61 @@ describe("processEvent — fee & transfer capture (BTS-20)", () => {
   // Note: the platform fee lives on the charge/PaymentIntent, not the typed
   // Stripe.Invoice, so fee denormalization is captured on the `payments` row
   // (above) rather than the invoice.
+});
+
+describe("processEvent — split transfer engine (BTS-22)", () => {
+  it("fans funds out to recipients on a separate-charges payment_intent.succeeded", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_split",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        latest_charge: "ch_split",
+        metadata: {
+          bsChargeType: "separate",
+          bsFeeConfig: JSON.stringify({ percent: 10 }),
+          bsSplit: JSON.stringify([
+            { destinationAccountId: "acct_store", role: "store", percent: 80 },
+            { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+          ]),
+        },
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create.mock.calls[0][0]).toMatchObject({
+      amount: 8000,
+      destination: "acct_store",
+      source_transaction: "ch_split",
+    });
+    expect(stripe.transfers.create.mock.calls[1][0]).toMatchObject({
+      amount: 500,
+      destination: "acct_aff",
+    });
+  });
+
+  it("does not create transfers for a normal (non-split) payment", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_plain",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        latest_charge: "ch_plain",
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
 });
 
 describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {

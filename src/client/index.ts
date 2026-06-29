@@ -28,6 +28,10 @@ import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
 export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
+export {
+  buildDisputeEvidence,
+  disputeEvidenceCountdown,
+} from "./connect/disputes.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {

@@ -99,3 +99,54 @@ export async function closeDispute(
     throwStripeError("DISPUTE_UPDATE_FAILED", "Failed to close dispute", err);
   }
 }
+
+/**
+ * Map Skool-style evidence categories to Stripe dispute evidence fields (BTS-31),
+ * so a seller's UI can collect plain-language fields. Unset categories are
+ * omitted. Pass the result as `evidence` to {@link updateDispute}.
+ */
+export function buildDisputeEvidence(input: {
+  /** What the buyer purchased (Stripe: product_description). */
+  productDescription?: string;
+  /** The buyer's usage/access record (Stripe: access_activity_log). */
+  accessActivity?: string;
+  /** Off-platform context / anything else (Stripe: uncategorized_text). */
+  additionalInfo?: string;
+  /** Communications with the buyer (Stripe: customer_communication). */
+  customerCommunication?: string;
+}): import("stripe").Stripe.DisputeUpdateParams.Evidence {
+  return {
+    ...(input.productDescription
+      ? { product_description: input.productDescription }
+      : {}),
+    ...(input.accessActivity
+      ? { access_activity_log: input.accessActivity }
+      : {}),
+    ...(input.additionalInfo
+      ? { uncategorized_text: input.additionalInfo }
+      : {}),
+    ...(input.customerCommunication
+      ? { customer_communication: input.customerCommunication }
+      : {}),
+  };
+}
+
+/**
+ * Compute the evidence-submission countdown for a dispute (BTS-31) from the
+ * stored `evidenceDueBy` (ISO). Returns whole days remaining (rounded up) and an
+ * overdue flag for the seller's UI. `daysRemaining` is undefined when there's no
+ * due date.
+ */
+export function disputeEvidenceCountdown(
+  evidenceDueBy: string | undefined,
+  now: Date = new Date(),
+): { dueBy?: string; daysRemaining?: number; isOverdue: boolean } {
+  if (!evidenceDueBy) return { dueBy: undefined, isOverdue: false };
+  const dueMs = new Date(evidenceDueBy).getTime();
+  const diffMs = dueMs - now.getTime();
+  return {
+    dueBy: evidenceDueBy,
+    daysRemaining: Math.ceil(diffMs / 86_400_000),
+    isOverdue: diffMs < 0,
+  };
+}

@@ -82,4 +82,16 @@ export type RegisterRoutesConfig = {
    * to direct component upserts and skips async hooks.
    */
   webhooks?: WebhookHandlerRefs;
+  /**
+   * Cancel a subscription when its charge is disputed (Skool model). Default
+   * `true`. The resulting `customer.subscription.updated`/`.deleted` webhook
+   * fires your subscription trigger so the app can revoke access.
+   */
+  autoCancelOnDispute?: boolean;
+  /**
+   * When auto-canceling a disputed subscription, cancel immediately instead of
+   * at period end. Default `false` (cancel at period end — access removed at the
+   * end of the cycle, matching Skool).
+   */
+  cancelDisputedSubscriptionImmediately?: boolean;
 };

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { Component, RunCtx } from "../helpers.js";
-import { createSplitTransfers, reverseTransfers } from "./transfers.js";
+import {
+  createSplitTransfers,
+  reinstateTransfers,
+  reverseTransfers,
+} from "./transfers.js";
 
 const TO_REF = Symbol.for("toReferencePath");
 
@@ -334,6 +338,65 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
       ],
     });
 
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("reinstateTransfers (BTS-29)", () => {
+  it("re-creates transfers for the reversed amounts (dispute won)", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000, currency: "usd", reversedAmount: 1000 },
+    ]);
+
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+      currency: "usd",
+    });
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 8000, currency: "usd", destination: "acct_store" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
+    );
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 1000, destination: "acct_aff" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_aff_affiliate" },
+    );
+    // Ledger rows are tagged reinstatement so they stay out of the charge's
+    // split-leg view and can't be re-reversed.
+    expect(ctx.runMutation.mock.calls[0][1]).toMatchObject({ reinstatement: true });
+  });
+
+  it("uses a legacy row's fallback currency from the dispute, not USD", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      // Legacy row with no stored currency.
+      { stripeTransferId: "tr_x", destinationAccountId: "acct_x", role: "store", amount: 5000, reversedAmount: 5000 },
+    ]);
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+      currency: "eur",
+    });
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ currency: "eur" }),
+      expect.anything(),
+    );
+  });
+
+  it("skips transfers that were never reversed", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd" },
+    ]);
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+      currency: "usd",
+    });
     expect(stripe.transfers.create).not.toHaveBeenCalled();
   });
 });

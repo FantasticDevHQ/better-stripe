@@ -132,6 +132,41 @@ describe("transfers ledger (BTS-12)", () => {
     expect(byAccount[0].stripeTransferId).toBe("tr_store");
   });
 
+  it("excludes reinstatement rows from listTransfersByCharge (BTS-29 audit-only)", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_orig",
+      sourceChargeId: "ch_d",
+      destinationAccountId: "acct_store",
+      amount: 8000,
+      currency: "usd",
+      role: "store",
+      status: "paid",
+    });
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_reinstate",
+      sourceChargeId: "ch_d",
+      destinationAccountId: "acct_store",
+      amount: 8000,
+      currency: "usd",
+      role: "store",
+      status: "paid",
+      reinstatement: true,
+    });
+
+    // The charge's split-leg view returns only the original transfer.
+    const byCharge = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_d",
+    });
+    expect(byCharge.map((tr) => tr.stripeTransferId)).toEqual(["tr_orig"]);
+    // But both are visible in the account's earnings view.
+    const byAccount = await t.query(
+      api.connect.queries.listTransfersByAccount,
+      { destinationAccountId: "acct_store" },
+    );
+    expect(byAccount).toHaveLength(2);
+  });
+
   it("keeps reversal state monotonic across stale events and re-upserts", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(api.connect.mutations.upsertTransfer, {

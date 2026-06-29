@@ -1,7 +1,11 @@
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
-import { createSplitTransfers } from "../connect/transfers.js";
+import {
+  createSplitTransfers,
+  reinstateTransfers,
+  reverseTransfers,
+} from "../connect/transfers.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -642,7 +646,81 @@ async function handleDisputeEvent(
     status: dispute.status,
     reason: dispute.reason,
     isChargeRefundable: dispute.is_charge_refundable,
+    evidenceDueBy: epochToIso(dispute.evidence_details?.due_by ?? undefined),
     lastEvent,
     metadata: dispute.metadata ?? undefined,
   });
+
+  // Clawback (BTS-27): when a dispute is first opened, reverse the transfers
+  // funded by the disputed charge pro-rata to the disputed amount, so recipients
+  // bear their share (losses_collector=application leaves the platform with the
+  // rest). Idempotent via the dispute id; reinstated by BTS-29 if the dispute is
+  // won. Only on `created` — other dispute events don't move funds here.
+  if (lastEvent === "created" && chargeId) {
+    await reverseTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+      sourceChargeId: chargeId,
+      amount: dispute.amount,
+      operationId: dispute.id,
+    });
+  }
+
+  // Reinstatement (BTS-29): when the dispute is won (or funds are explicitly
+  // reinstated), pay recipients back the amounts clawed back on `created`.
+  const isWon =
+    lastEvent === "funds_reinstated" ||
+    (lastEvent === "closed" && dispute.status === "won");
+  if (isWon && chargeId) {
+    await reinstateTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+      sourceChargeId: chargeId,
+      operationId: dispute.id,
+      currency: dispute.currency,
+    });
+  }
+
+  // Auto-cancel the disputed subscription (BTS-28, default on). Resolve the
+  // subscription from the dispute's PaymentIntent (invoice payment → invoice →
+  // subscription) and cancel it. The resulting subscription.updated/deleted
+  // webhook fires the app's subscription trigger to revoke access (Skool model:
+  // cancel now, remove at cycle end).
+  if (lastEvent === "created" && whCtx.config?.autoCancelOnDispute !== false) {
+    await cancelDisputedSubscription(whCtx, dispute);
+  }
+}
+
+async function cancelDisputedSubscription(
+  whCtx: WebhookContext,
+  dispute: Stripe.Dispute,
+): Promise<void> {
+  const piId =
+    typeof dispute.payment_intent === "string"
+      ? dispute.payment_intent
+      : (dispute.payment_intent?.id ?? undefined);
+  if (!piId) return;
+
+  const payments = await whCtx.stripe.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: piId },
+    limit: 1,
+  });
+  const invoiceRef = payments.data?.[0]?.invoice;
+  const invoiceId =
+    typeof invoiceRef === "string" ? invoiceRef : (invoiceRef?.id ?? undefined);
+  if (!invoiceId) return; // not a subscription invoice charge
+
+  const invoice = await whCtx.stripe.invoices.retrieve(invoiceId);
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subId =
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+  if (!subId) return;
+
+  // Stable idempotency key so a webhook retry can't double-write the cancel.
+  const idempotency = { idempotencyKey: `bs_dispute_cancel_${dispute.id}` };
+  if (whCtx.config?.cancelDisputedSubscriptionImmediately) {
+    await whCtx.stripe.subscriptions.cancel(subId, undefined, idempotency);
+  } else {
+    await whCtx.stripe.subscriptions.update(
+      subId,
+      { cancel_at_period_end: true },
+      idempotency,
+    );
+  }
 }

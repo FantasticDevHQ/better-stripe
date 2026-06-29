@@ -69,15 +69,25 @@ let trCreateSeq = 0;
 function makeStripe() {
   return {
     products: { retrieve: vi.fn() },
-    subscriptions: { retrieve: vi.fn() },
-    invoices: { update: vi.fn().mockResolvedValue({}) },
+    subscriptions: {
+      retrieve: vi.fn(),
+      update: vi.fn().mockResolvedValue({}),
+      cancel: vi.fn().mockResolvedValue({}),
+    },
+    invoices: {
+      update: vi.fn().mockResolvedValue({}),
+      retrieve: vi.fn(),
+    },
     transfers: {
       create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
+      createReversal: vi.fn(async (_id: unknown) => ({ id: "trr_x" })),
     },
     invoicePayments: {
-      list: vi.fn(async (_params: unknown) => ({
-        data: [{ payment: { charge: "ch_inv" } }],
-      })),
+      list: vi.fn(
+        async (_params: unknown): Promise<{ data: Record<string, unknown>[] }> => ({
+          data: [{ payment: { charge: "ch_inv" } }],
+        }),
+      ),
     },
     paymentIntents: { retrieve: vi.fn() },
   };
@@ -86,6 +96,7 @@ function makeStripe() {
 function makeWhCtx(overrides?: {
   ctx?: ReturnType<typeof makeCtx>;
   stripe?: ReturnType<typeof makeStripe>;
+  config?: Record<string, unknown>;
 }): WebhookContext & {
   ctx: ReturnType<typeof makeCtx>;
   stripe: ReturnType<typeof makeStripe>;
@@ -97,6 +108,7 @@ function makeWhCtx(overrides?: {
     component: makeComponent(),
     stripe,
     webhookSecret: "whsec_test",
+    ...(overrides?.config ? { config: overrides.config } : {}),
     // no `config.webhooks` → dispatchUpsert uses the direct component path
   } as unknown as WebhookContext & {
     ctx: ReturnType<typeof makeCtx>;
@@ -893,6 +905,249 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
       }),
     );
     expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-27] claws back the charge's transfers on charge.dispute.created", async () => {
+    const stripe = makeStripe();
+    // The charge funded a store + affiliate transfer.
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        amount: 9000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    // Both recipient transfers reversed, with the dispute id as the idempotency op.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 8000 },
+      { idempotencyKey: "bs_rev_dp_1_tr_store" },
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 1000 },
+      { idempotencyKey: "bs_rev_dp_1_tr_aff" },
+    );
+  });
+
+  it("does not claw back transfers on a dispute that isn't newly created", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.updated", {
+        id: "dp_2",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "under_review",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-29] reinstates transfers when a dispute closes as won", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.closed", {
+        id: "dp_1",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "won",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 8000, destination: "acct_store" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
+    );
+  });
+
+  it("[BTS-29] does not reinstate when a dispute closes as lost", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.closed", {
+        id: "dp_2",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "lost",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] cancels the disputed subscription at period end (default)", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith(
+      "sub_1",
+      { cancel_at_period_end: true },
+      { idempotencyKey: "bs_dispute_cancel_dp_1" },
+    );
+    expect(stripe.subscriptions.cancel).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] does not cancel when autoCancelOnDispute is off", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({ stripe, config: { autoCancelOnDispute: false } });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_2",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] cancels immediately when configured", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({
+      stripe,
+      config: { cancelDisputedSubscriptionImmediately: true },
+    });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_3",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.subscriptions.cancel).toHaveBeenCalledWith(
+      "sub_1",
+      undefined,
+      { idempotencyKey: "bs_dispute_cancel_dp_3" },
+    );
+  });
+
+  it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/connect/mutations/upsertDispute");
+    expect(data.evidenceDueBy).toBe(new Date(1700000000 * 1000).toISOString());
   });
 
   it("does not create transfers for a normal (non-split) payment", async () => {

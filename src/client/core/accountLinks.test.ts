@@ -13,6 +13,7 @@ import type { RunCtx } from "../helpers.js";
 import {
   createAccountLink,
   createAccountSession,
+  createDisputeSession,
   createBillingPortalSession,
   createLoginLink,
   createV2AccountLink,
@@ -355,3 +356,23 @@ describe("getAccountLinkWithStatus", () => {
     expect(arg.use_case.account_onboarding.configurations).toEqual([]);
   });
 });
+
+describe("createDisputeSession (BTS-30)", () => {
+  it("creates an account session with the disputes components for the seller", async () => {
+    const stripe = makeStripe();
+    stripe.accountSessions.create.mockResolvedValue({ client_secret: "acs_secret" });
+
+    const result = await createDisputeSession(asStripe(stripe), {} as RunCtx, {
+      stripeAccountId: "acct_seller",
+    });
+
+    expect(stripe.accountSessions.create).toHaveBeenCalledWith({
+      account: "acct_seller",
+      components: {
+        disputes_list: { enabled: true },
+        payment_disputes: { enabled: true },
+      },
+    });
+    expect(result).toEqual({ clientSecret: "acs_secret" });
+  });
+})

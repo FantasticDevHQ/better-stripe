@@ -28,6 +28,10 @@ import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
 export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
+export {
+  buildDisputeEvidence,
+  disputeEvidenceCountdown,
+} from "./connect/disputes.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -1034,6 +1038,14 @@ export class BetterStripe {
     },
   ) {
     return accountLinksImpl.createAccountSession(this.stripe(), ctx, opts);
+  }
+
+  /**
+   * Client secret for a seller's embedded disputes surface (disputes_list +
+   * payment_disputes), so they can view and respond to their own disputes.
+   */
+  async createDisputeSession(ctx: RunCtx, opts: { stripeAccountId: string }) {
+    return accountLinksImpl.createDisputeSession(this.stripe(), ctx, opts);
   }
 
   async createLoginLink(ctx: RunCtx, opts: { stripeAccountId: string }) {

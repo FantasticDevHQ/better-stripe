@@ -284,12 +284,15 @@ export const listTransfersByCharge = query({
   args: { sourceChargeId: v.string(), limit: v.optional(v.number()) },
   returns: v.array(transferDocValidator),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const rows = await ctx.db
       .query("transfers")
       .withIndex("by_source_charge_id", (q) =>
         q.eq("sourceChargeId", args.sourceChargeId),
       )
       .take(args.limit ?? 50);
+    // Exclude reinstatement payouts — this returns the original split legs the
+    // reverse/split engines act on (reinstatement rows are audit-only here).
+    return rows.filter((t) => !t.reinstatement);
   },
 });
 

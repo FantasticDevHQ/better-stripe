@@ -13,6 +13,7 @@ type LedgerTransfer = {
   reversedAmount?: number;
   destinationAccountId?: string;
   role?: string;
+  currency?: string;
 };
 
 /**
@@ -170,4 +171,62 @@ export async function createSplitTransfers(
   }
 
   return result;
+}
+
+/**
+ * Re-create transfers for amounts previously reversed by a dispute clawback,
+ * when the dispute is won (BTS-29). Stripe reversals are permanent, so winning
+ * means paying recipients again from the platform balance (Stripe has credited
+ * the disputed funds back). Idempotent via `operationId` (the dispute id) so a
+ * `closed`+`funds_reinstated` double-fire won't double-pay. Records each fresh
+ * transfer in the ledger.
+ */
+export async function reinstateTransfers(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: { sourceChargeId: string; operationId: string; currency: string },
+): Promise<{ reinstated: { destinationAccountId: string; amount: number }[] }> {
+  const transfers = ((await ctx.runQuery(
+    componentRef(component, "connect/queries/listTransfersByCharge"),
+    { sourceChargeId: opts.sourceChargeId },
+  )) ?? []) as LedgerTransfer[];
+
+  const reinstated: { destinationAccountId: string; amount: number }[] = [];
+  for (const t of transfers) {
+    const amount = t.reversedAmount ?? 0;
+    if (amount <= 0) continue; // nothing was clawed back from this leg
+    // Use the original leg's currency; fall back to the dispute currency for
+    // legacy rows that predate the stored currency — never assume USD.
+    const currency = t.currency ?? opts.currency;
+    const created = await stripe.transfers.create(
+      {
+        amount,
+        currency,
+        destination: t.destinationAccountId!,
+        metadata: { bsRole: t.role ?? "", bsReinstateOf: opts.sourceChargeId },
+      },
+      {
+        idempotencyKey: `bs_reinstate_${opts.operationId}_${t.destinationAccountId}_${t.role ?? ""}`,
+      },
+    );
+    await runMutationOrThrow(
+      ctx,
+      componentRef(component, "connect/mutations/upsertTransfer"),
+      {
+        stripeTransferId: created.id,
+        sourceChargeId: opts.sourceChargeId,
+        destinationAccountId: t.destinationAccountId!,
+        amount,
+        currency,
+        role: t.role as "store" | "affiliate" | "other" | undefined,
+        status: "paid" as const,
+        // Audit-only payout, not an original split leg (kept out of
+        // listTransfersByCharge so it can't be re-reversed).
+        reinstatement: true,
+      },
+    );
+    reinstated.push({ destinationAccountId: t.destinationAccountId!, amount });
+  }
+  return { reinstated };
 }

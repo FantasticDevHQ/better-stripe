@@ -1036,6 +1036,14 @@ export class BetterStripe {
     return accountLinksImpl.createAccountSession(this.stripe(), ctx, opts);
   }
 
+  /**
+   * Client secret for a seller's embedded disputes surface (disputes_list +
+   * payment_disputes), so they can view and respond to their own disputes.
+   */
+  async createDisputeSession(ctx: RunCtx, opts: { stripeAccountId: string }) {
+    return accountLinksImpl.createDisputeSession(this.stripe(), ctx, opts);
+  }
+
   async createLoginLink(ctx: RunCtx, opts: { stripeAccountId: string }) {
     return accountLinksImpl.createLoginLink(this.stripe(), ctx, opts);
   }

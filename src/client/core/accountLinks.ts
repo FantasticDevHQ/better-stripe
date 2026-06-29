@@ -79,6 +79,27 @@ export async function createV2AccountLink(
  * The returned client secret is consumed by Stripe Connect embedded
  * components on the frontend.
  */
+/**
+ * Create an embedded account session scoped to a seller's disputes (BTS-30), so
+ * each seller can view and respond to their own disputes even though the platform
+ * is merchant of record (Skool model). Returns the client secret to mount the
+ * embedded `disputes_list` / `payment_disputes` components. Requires the
+ * connected account to have an active charges/payments capability.
+ */
+export async function createDisputeSession(
+  stripe: Stripe,
+  ctx: RunCtx,
+  opts: { stripeAccountId: string },
+) {
+  return createAccountSession(stripe, ctx, {
+    stripeAccountId: opts.stripeAccountId,
+    components: {
+      disputes_list: { enabled: true },
+      payment_disputes: { enabled: true },
+    },
+  });
+}
+
 export async function createAccountSession(
   stripe: Stripe,
   _ctx: RunCtx,

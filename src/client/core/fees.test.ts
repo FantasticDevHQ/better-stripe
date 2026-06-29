@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { computeFee, resolveFeeConfig, validatePlatformFee } from "./fees.js";
+import {
+  computeFee,
+  computeSplit,
+  validateSplit,
+  resolveFeeConfig,
+  validatePlatformFee,
+} from "./fees.js";
 
 describe("validatePlatformFee (BTS-13)", () => {
   it("accepts a percent-only config", () => {
@@ -205,5 +211,167 @@ describe("computeFee (BTS-14)", () => {
   it("handles large amounts without float drift", () => {
     // $100,000.00 = 10,000,000 minor units; 3% = $3,000.00 = 300,000 minor units.
     expect(computeFee(100_000_00, { percent: 3 }).feeAmount).toBe(300_000);
+  });
+});
+
+describe("computeSplit (BTS-23)", () => {
+  const store = "acct_store";
+  const aff = "acct_aff";
+
+  it("splits with fixed recipient amounts; platform retains the rest", () => {
+    const r = computeSplit(
+      10000,
+      { percent: 10 },
+      [
+        { destinationAccountId: store, role: "store", amount: 8000 },
+        { destinationAccountId: aff, role: "affiliate", amount: 1000 },
+      ],
+    );
+    expect(r.transfers).toEqual([
+      { destinationAccountId: store, role: "store", amount: 8000 },
+      { destinationAccountId: aff, role: "affiliate", amount: 1000 },
+    ]);
+    expect(r.platformFee).toBe(1000); // 10% configured cut
+    expect(r.platformRetained).toBe(1000); // 10000 - 9000
+    // invariant: transfers + platform retention == gross
+    const sum = r.transfers.reduce((s, t) => s + t.amount, 0);
+    expect(sum + r.platformRetained).toBe(10000);
+  });
+
+  it("supports percent-of-gross recipients", () => {
+    const r = computeSplit(
+      10000,
+      { percent: 10 },
+      [
+        { destinationAccountId: store, role: "store", percent: 80 },
+        { destinationAccountId: aff, role: "affiliate", percent: 5 },
+      ],
+    );
+    expect(r.transfers.map((t) => t.amount)).toEqual([8000, 500]);
+    expect(r.platformRetained).toBe(1500); // 10000 - 8500
+  });
+
+  it("never emits an application fee (separate charges & transfers)", () => {
+    const r = computeSplit(10000, { percent: 10 }, [
+      { destinationAccountId: store, role: "store", amount: 9000 },
+    ]);
+    expect(r).not.toHaveProperty("applicationFeeAmount");
+    expect(r).not.toHaveProperty("applicationFeePercent");
+  });
+
+  it("rejects a split whose transfers + platform fee exceed the charge", () => {
+    expect(() =>
+      computeSplit(10000, { percent: 10 }, [
+        { destinationAccountId: store, role: "store", amount: 9500 }, // 9500 + 1000 fee > 10000
+      ]),
+    ).toThrow();
+  });
+
+  it("assigns the rounding remainder deterministically to the platform", () => {
+    // 33% + 33% + 33% of 100 → 33 + 33 + 33 = 99; platform keeps the 1 remainder.
+    const r = computeSplit(
+      100,
+      undefined,
+      [
+        { destinationAccountId: store, role: "store", percent: 33 },
+        { destinationAccountId: aff, role: "affiliate", percent: 33 },
+        { destinationAccountId: "acct_c", role: "other", percent: 33 },
+      ],
+    );
+    const sum = r.transfers.reduce((s, t) => s + t.amount, 0);
+    expect(sum).toBe(99);
+    expect(r.platformRetained).toBe(1);
+    expect(sum + r.platformRetained).toBe(100);
+  });
+
+  it("with no fee config the whole amount is distributable", () => {
+    const r = computeSplit(10000, undefined, [
+      { destinationAccountId: store, role: "store", amount: 10000 },
+    ]);
+    expect(r.platformFee).toBe(0);
+    expect(r.platformRetained).toBe(0);
+  });
+
+  it("returns zeros for a non-positive amount", () => {
+    const r = computeSplit(0, { percent: 10 }, [
+      { destinationAccountId: store, role: "store", amount: 100 },
+    ]);
+    expect(r.transfers).toEqual([]);
+    expect(r.platformFee).toBe(0);
+    expect(r.platformRetained).toBe(0);
+  });
+})
+
+describe("validateSplit (BTS-21)", () => {
+  const r = (over = {}) => ({
+    destinationAccountId: "acct_x",
+    role: "store" as const,
+    ...over,
+  });
+
+  it("accepts a valid 2-way split with fixed amounts", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 8000 },
+        { destinationAccountId: "b", role: "affiliate", amount: 1000 },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("accepts a valid 3-way split with percents summing <= 100", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", percent: 80 },
+        { destinationAccountId: "b", role: "affiliate", percent: 5 },
+        { destinationAccountId: "c", role: "other", percent: 5 },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("rejects an empty split", () => {
+    expect(() => validateSplit([])).toThrow();
+  });
+
+  it("rejects a recipient with neither amount nor percent", () => {
+    expect(() => validateSplit([r()])).toThrow();
+  });
+
+  it("rejects a recipient with both amount and percent", () => {
+    expect(() => validateSplit([r({ amount: 100, percent: 10 })])).toThrow();
+  });
+
+  it("rejects a percent over 100", () => {
+    expect(() => validateSplit([r({ percent: 150 })])).toThrow();
+  });
+
+  it("rejects percents summing over 100", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", percent: 70 },
+        { destinationAccountId: "b", role: "affiliate", percent: 40 },
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects an empty destinationAccountId", () => {
+    expect(() => validateSplit([r({ destinationAccountId: "", amount: 100 })])).toThrow();
+  });
+
+  it("rejects duplicate destination+role legs (idempotency-key collision)", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 100 },
+        { destinationAccountId: "a", role: "store", amount: 200 },
+      ]),
+    ).toThrow(/duplicate/i);
+  });
+
+  it("allows the same destination with different roles", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 100 },
+        { destinationAccountId: "a", role: "affiliate", amount: 50 },
+      ]),
+    ).not.toThrow();
   });
 });

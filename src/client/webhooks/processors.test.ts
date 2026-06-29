@@ -65,11 +65,21 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
   };
 }
 
+let trCreateSeq = 0;
 function makeStripe() {
   return {
     products: { retrieve: vi.fn() },
     subscriptions: { retrieve: vi.fn() },
     invoices: { update: vi.fn().mockResolvedValue({}) },
+    transfers: {
+      create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
+    },
+    invoicePayments: {
+      list: vi.fn(async (_params: unknown) => ({
+        data: [{ payment: { charge: "ch_inv" } }],
+      })),
+    },
+    paymentIntents: { retrieve: vi.fn() },
   };
 }
 
@@ -713,6 +723,195 @@ describe("processEvent — fee & transfer capture (BTS-20)", () => {
   // Note: the platform fee lives on the charge/PaymentIntent, not the typed
   // Stripe.Invoice, so fee denormalization is captured on the `payments` row
   // (above) rather than the invoice.
+});
+
+describe("processEvent — split transfer engine (BTS-22)", () => {
+  it("fans funds out to recipients on a separate-charges payment_intent.succeeded", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_split",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        latest_charge: "ch_split",
+        metadata: {
+          bsChargeType: "separate",
+          bsFeeConfig: JSON.stringify({ percent: 10 }),
+          bsSplit: JSON.stringify([
+            { destinationAccountId: "acct_store", role: "store", percent: 80 },
+            { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+          ]),
+        },
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create.mock.calls[0][0]).toMatchObject({
+      amount: 8000,
+      destination: "acct_store",
+      source_transaction: "ch_split",
+    });
+    expect(stripe.transfers.create.mock.calls[1][0]).toMatchObject({
+      amount: 500,
+      destination: "acct_aff",
+    });
+  });
+
+  it("throws (not silently skips) when a separate sale has no latest_charge", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("payment_intent.succeeded", {
+          id: "pi_nocharge",
+          amount: 10000,
+          currency: "usd",
+          status: "succeeded",
+          latest_charge: null,
+          metadata: {
+            bsChargeType: "separate",
+            bsSplit: JSON.stringify([
+              { destinationAccountId: "acct_store", role: "store", percent: 90 },
+            ]),
+          },
+        }),
+      ),
+    ).rejects.toThrow(/latest_charge|transfer/i);
+  });
+
+  it("throws when a separate sale has malformed bsSplit metadata", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("payment_intent.succeeded", {
+          id: "pi_badjson",
+          amount: 10000,
+          currency: "usd",
+          status: "succeeded",
+          latest_charge: "ch_x",
+          metadata: { bsChargeType: "separate", bsSplit: "{not-json" },
+        }),
+      ),
+    ).rejects.toThrow(/malformed/i);
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("splits a recurring subscription invoice on invoice.paid (BTS-52)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsChargeType: "separate",
+        bsFeeConfig: JSON.stringify({ percent: 10 }),
+        bsSplit: JSON.stringify([
+          { destinationAccountId: "acct_store", role: "store", percent: 80 },
+          { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+        ]),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_1",
+        currency: "usd",
+        amount_due: 10000,
+        amount_paid: 10000,
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create.mock.calls[0][0]).toMatchObject({
+      amount: 8000,
+      destination: "acct_store",
+      source_transaction: "ch_inv",
+    });
+    expect(stripe.transfers.create.mock.calls[1][0]).toMatchObject({
+      amount: 500,
+      destination: "acct_aff",
+    });
+  });
+
+  it("skips a zero-amount invoice without throwing (no charge to split)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsChargeType: "separate",
+        bsSplit: JSON.stringify([
+          { destinationAccountId: "acct_store", role: "store", percent: 80 },
+        ]),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_zero",
+        currency: "usd",
+        amount_due: 0,
+        amount_paid: 0, // 100%-off coupon / credit → no charge
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+    // No charge resolution, no transfers, no throw.
+    expect(stripe.invoicePayments.list).not.toHaveBeenCalled();
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("does not split a normal (non-separate) subscription invoice", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", metadata: {} });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_2",
+        currency: "usd",
+        amount_due: 10000,
+        amount_paid: 10000,
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("does not create transfers for a normal (non-split) payment", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", {
+        id: "pi_plain",
+        amount: 10000,
+        currency: "usd",
+        status: "succeeded",
+        latest_charge: "ch_plain",
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
 });
 
 describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {

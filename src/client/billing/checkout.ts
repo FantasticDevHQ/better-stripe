@@ -1,9 +1,10 @@
 import type Stripe from "stripe";
 
-import { computeFee, isPercentOnlyFee } from "../core/fees.js";
+import type { SplitRecipient } from "../../component/lib/fees.js";
+import { computeFee, isPercentOnlyFee, validateSplit } from "../core/fees.js";
 import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
-import { runMutationOrThrow } from "../helpers.js";
+import { runMutationOrThrow, stripReservedMetadata } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
 import type {
   PlatformFeeConfig,
@@ -110,6 +111,13 @@ export async function createCheckoutSession(
      * charge). Fees only apply when this is set.
      */
     destinationAccountId?: string;
+    /**
+     * Multiple recipients for one sale (store + affiliate[s]). With >1 recipient
+     * this routes via separate charges & transfers (no `application_fee`); the
+     * transfers are created by the webhook engine. A single-recipient split is
+     * treated as a destination charge. Takes precedence over `destinationAccountId`.
+     */
+    split?: SplitRecipient[];
     /** Resolved platform fee config (the caller resolves override → default). */
     feeConfig?: PlatformFeeConfig;
     /**
@@ -124,8 +132,47 @@ export async function createCheckoutSession(
 ) {
   const uiMode = opts.uiMode ?? "embedded";
 
+  // Setup-mode sessions create no charge, so routing/fees are meaningless and
+  // would persist an unfunded `chargeType` the webhook engine can't act on.
+  if (
+    opts.mode === "setup" &&
+    (opts.split?.length || opts.destinationAccountId || opts.feeConfig)
+  ) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "split/destinationAccountId/fee are not supported for setup-mode Checkout Sessions",
+    );
+  }
+
+  // Resolve the routing model. A `split` with >1 recipient uses separate charges
+  // & transfers (no application_fee; webhook engine creates the transfers); a
+  // single-recipient split is just a destination charge. `split` wins over
+  // `destinationAccountId`.
+  let isSeparate = false;
+  let destinationAccountId = opts.destinationAccountId;
+  if (opts.split && opts.split.length > 0) {
+    validateSplit(opts.split);
+    if (opts.split.length === 1) {
+      destinationAccountId = opts.split[0].destinationAccountId;
+    } else {
+      isSeparate = true;
+    }
+  }
+  // Metadata markers the webhook split engine reads to create the transfers.
+  // For subscriptions these live on the subscription and are consumed on each
+  // invoice.paid; for one-time payments they live on the PaymentIntent.
+  const separateMeta = isSeparate
+    ? {
+        bsChargeType: "separate",
+        bsSplit: JSON.stringify(opts.split),
+        ...(opts.feeConfig ? { bsFeeConfig: JSON.stringify(opts.feeConfig) } : {}),
+      }
+    : {};
+
+  // Strip the reserved `bs*` namespace from caller metadata so it can't forge
+  // webhook instructions (e.g. trigger split transfers without routing).
   const metadata = {
-    ...(opts.metadata ?? {}),
+    ...stripReservedMetadata(opts.metadata),
     userId: opts.userId,
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };
@@ -143,14 +190,16 @@ export async function createCheckoutSession(
     if (opts.trialDays) {
       subscriptionData.trial_period_days = opts.trialDays;
     }
-    // Single-recipient destination charge: route funds to the seller and take
-    // the platform's cut. Percent-only fees map to `application_fee_percent`;
-    // percent+fixed/tiered fees can't be expressed that way, so flag the
-    // subscription for per-invoice fee computation (handled by WEBHOOK_FEE).
-    if (opts.destinationAccountId) {
-      subscriptionData.transfer_data = {
-        destination: opts.destinationAccountId,
-      };
+    if (isSeparate) {
+      // Separate charges & transfers: NO transfer_data / application_fee. The
+      // split is carried in metadata for the webhook engine to execute.
+      subscriptionData.metadata = { ...metadata, ...separateMeta };
+    } else if (destinationAccountId) {
+      // Single-recipient destination charge: route funds to the seller and take
+      // the platform's cut. Percent-only fees map to `application_fee_percent`;
+      // percent+fixed/tiered fees can't be expressed that way, so flag the
+      // subscription for per-invoice fee computation (handled by WEBHOOK_FEE).
+      subscriptionData.transfer_data = { destination: destinationAccountId };
       if (opts.feeConfig) {
         if (isPercentOnlyFee(opts.feeConfig)) {
           subscriptionData.application_fee_percent = opts.feeConfig.percent;
@@ -169,12 +218,14 @@ export async function createCheckoutSession(
   if (opts.mode === "payment") {
     const paymentIntentData: CheckoutSessionCreateParams["payment_intent_data"] =
       { metadata };
-    // Single-recipient destination charge for a one-time purchase. The platform
-    // fee is a fixed `application_fee_amount`: compute it when the amount is
-    // known, otherwise defer to the webhook (amount is known at charge time).
-    if (opts.destinationAccountId) {
+    if (isSeparate) {
+      paymentIntentData.metadata = { ...metadata, ...separateMeta };
+    } else if (destinationAccountId) {
+      // Single-recipient destination charge for a one-time purchase. The platform
+      // fee is a fixed `application_fee_amount`: compute it when the amount is
+      // known, otherwise defer to the webhook (amount is known at charge time).
       paymentIntentData.transfer_data = {
-        destination: opts.destinationAccountId,
+        destination: destinationAccountId,
       };
       if (opts.feeConfig) {
         if (opts.amount !== undefined) {
@@ -215,13 +266,20 @@ export async function createCheckoutSession(
     ...sessionParams,
     ...(opts.sessionOverrides as Partial<CheckoutSessionCreateParams>),
   };
-  const feeRow = deriveFeeRow(finalSessionParams);
+  // Separate-charge sales persist the split + chargeType directly; single-recipient
+  // destination charges derive the row from the final transfer_data/fee.
+  const feeRow = isSeparate
+    ? { chargeType: "separate" as const, splitRecipients: opts.split }
+    : deriveFeeRow(finalSessionParams);
 
-  // Destination charges must use a platform-owned price. Validate the FINAL
-  // request (post-overrides) so callers can't inject transfer_data or swap
-  // line_items via sessionOverrides to bypass the check.
+  // Both destination and separate charges run on the platform account, so the
+  // price must be platform-owned. Validate the FINAL request (post-overrides) so
+  // callers can't inject transfer_data or swap line_items to bypass the check.
   const finalPriceId = finalSessionParams.line_items?.[0]?.price;
-  if (feeRow.chargeType === "destination" && typeof finalPriceId === "string") {
+  if (
+    (isSeparate || feeRow.chargeType === "destination") &&
+    typeof finalPriceId === "string"
+  ) {
     await assertPlatformPrice(component, ctx, finalPriceId);
   }
 

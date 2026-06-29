@@ -668,6 +668,175 @@ describe("createCheckoutSession — destination + fee (BTS-16, one-time payment)
   });
 });
 
+describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
+  it("routes a >1 split (payment mode) via separate charges (no transfer_data/application_fee)", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+    const split = [
+      { destinationAccountId: "acct_store", role: "store" as const, percent: 80 },
+      { destinationAccountId: "acct_aff", role: "affiliate" as const, percent: 5 },
+    ];
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      split,
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.transfer_data).toBeUndefined();
+    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe("separate");
+    expect(JSON.parse(createArg.payment_intent_data.metadata.bsSplit)).toHaveLength(2);
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("separate");
+    expect(upsertArgs.splitRecipients).toHaveLength(2);
+  });
+
+  it("routes a >1 split on a subscription via separate charges (markers on subscription_data)", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", percent: 80 },
+        { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+      ],
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toBeUndefined();
+    expect(createArg.subscription_data.application_fee_percent).toBeUndefined();
+    expect(createArg.subscription_data.metadata.bsChargeType).toBe("separate");
+    expect(JSON.parse(createArg.subscription_data.metadata.bsSplit)).toHaveLength(2);
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("separate");
+    expect(upsertArgs.splitRecipients).toHaveLength(2);
+  });
+
+  it("treats a single-recipient split as a destination charge", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      split: [{ destinationAccountId: "acct_store", role: "store", percent: 90 }],
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toEqual({
+      destination: "acct_store",
+    });
+    expect(createArg.subscription_data.application_fee_percent).toBe(10);
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("destination");
+  });
+
+  it("routes a >1 split in payment mode via separate charges", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        { destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      ],
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.transfer_data).toBeUndefined();
+    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe("separate");
+  });
+
+  it("rejects split/destination/fee in setup mode", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx();
+
+    await expect(
+      createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        stripePriceId: "price_1",
+        mode: "setup",
+        returnUrl: "https://app.test/return",
+        accountId: "acct_buyer",
+        split: [{ destinationAccountId: "acct_store", role: "store", amount: 100 }],
+      }),
+    ).rejects.toThrow(/setup/i);
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it("strips reserved bs* keys from caller metadata so they can't forge split instructions", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = makeCtx();
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      // A non-split caller trying to forge webhook instructions.
+      metadata: {
+        bsChargeType: "separate",
+        bsSplit: '[{"destinationAccountId":"acct_evil","role":"store","amount":9999}]',
+        plan: "pro",
+      },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.metadata.bsChargeType).toBeUndefined();
+    expect(createArg.metadata.bsSplit).toBeUndefined();
+    expect(createArg.metadata.plan).toBe("pro"); // legit keys kept
+    expect(createArg.payment_intent_data.metadata.bsChargeType).toBeUndefined();
+  });
+
+  it("rejects a split whose percents exceed 100", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx();
+
+    await expect(
+      createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        stripePriceId: "price_1",
+        mode: "subscription",
+        returnUrl: "https://app.test/return",
+        accountId: "acct_buyer",
+        split: [
+          { destinationAccountId: "acct_store", role: "store", percent: 70 },
+          { destinationAccountId: "acct_aff", role: "affiliate", percent: 40 },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("createCheckoutSession — price-on-platform validation (BTS-15)", () => {
   it("rejects a destination charge whose price belongs to a connected account", async () => {
     const stripe = makeStripe();

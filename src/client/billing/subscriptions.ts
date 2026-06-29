@@ -1,9 +1,14 @@
 import type Stripe from "stripe";
 
 import type { SubscriptionStatus } from "../../component/billing/validators.js";
-import { isPercentOnlyFee } from "../core/fees.js";
+import type { SplitRecipient } from "../../component/lib/fees.js";
+import { isPercentOnlyFee, validateSplit } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
-import { epochToIso, runMutationOrThrow } from "../helpers.js";
+import {
+  epochToIso,
+  runMutationOrThrow,
+  stripReservedMetadata,
+} from "../helpers.js";
 import { throwStripeError } from "../errors.js";
 import type { PlatformFeeConfig, StripeComponentSubscription } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
@@ -44,22 +49,38 @@ export async function createSubscription(
     customerAccount: string;
     stripePriceId: string;
     destinationAccountId?: string;
+    /** Multiple recipients; >1 routes via separate charges & transfers. Wins over destinationAccountId. */
+    split?: SplitRecipient[];
     feeConfig?: PlatformFeeConfig;
     trialDays?: number;
     metadata?: Record<string, string>;
   },
 ): Promise<{ stripeSubscriptionId: string; status: SubscriptionStatus }> {
-  // A fee only makes sense with a destination charge; reject the partial config
+  // Resolve routing: a >1 split is separate charges & transfers; a single-recipient
+  // split (or destinationAccountId) is a destination charge.
+  let isSeparate = false;
+  let destinationAccountId = opts.destinationAccountId;
+  if (opts.split && opts.split.length > 0) {
+    validateSplit(opts.split);
+    if (opts.split.length === 1) {
+      destinationAccountId = opts.split[0].destinationAccountId;
+    } else {
+      isSeparate = true;
+    }
+  }
+
+  // A fee only makes sense when funds are routed; reject the partial config
   // loudly instead of silently creating a plain platform subscription.
-  if (opts.feeConfig && !opts.destinationAccountId) {
+  if (opts.feeConfig && !destinationAccountId && !isSeparate) {
     throwStripeError(
       "INVALID_CONFIGURATION",
-      "feeConfig requires destinationAccountId",
+      "feeConfig requires destinationAccountId or split",
     );
   }
 
+  // Strip the reserved `bs*` namespace from caller metadata (see checkout.ts).
   const metadata: Record<string, string> = {
-    ...(opts.metadata ?? {}),
+    ...stripReservedMetadata(opts.metadata),
     userId: opts.userId,
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };
@@ -74,14 +95,26 @@ export async function createSubscription(
   }
 
   const feeRow: {
-    chargeType?: "destination";
+    chargeType?: "destination" | "separate";
     destinationAccountId?: string;
     applicationFeePercent?: number;
+    splitRecipients?: SplitRecipient[];
   } = {};
-  if (opts.destinationAccountId) {
-    params.transfer_data = { destination: opts.destinationAccountId };
+  if (isSeparate) {
+    // Separate charges & transfers: NO transfer_data/application_fee. The split
+    // is carried in metadata for the webhook engine to execute.
+    params.metadata = {
+      ...metadata,
+      bsChargeType: "separate",
+      bsSplit: JSON.stringify(opts.split),
+      ...(opts.feeConfig ? { bsFeeConfig: JSON.stringify(opts.feeConfig) } : {}),
+    };
+    feeRow.chargeType = "separate";
+    feeRow.splitRecipients = opts.split;
+  } else if (destinationAccountId) {
+    params.transfer_data = { destination: destinationAccountId };
     feeRow.chargeType = "destination";
-    feeRow.destinationAccountId = opts.destinationAccountId;
+    feeRow.destinationAccountId = destinationAccountId;
     if (opts.feeConfig) {
       if (isPercentOnlyFee(opts.feeConfig)) {
         params.application_fee_percent = opts.feeConfig.percent;

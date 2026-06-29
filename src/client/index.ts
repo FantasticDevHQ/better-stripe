@@ -12,6 +12,7 @@ import type {
   PayoutStatus,
   RefundStatus,
 } from "../component/connect/validators.js";
+import type { SplitRecipient } from "../component/lib/fees.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
@@ -19,12 +20,13 @@ import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import * as refundsImpl from "./connect/refunds.js";
+import * as transfersImpl from "./connect/transfers.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
 import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
-export { computeFee } from "./core/fees.js";
-export type { FeeBreakdown } from "./core/fees.js";
+export { computeFee, computeSplit } from "./core/fees.js";
+export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
@@ -607,6 +609,8 @@ export class BetterStripe {
       customerEmail?: string;
       /** Seller/recipient connected account to route funds to (destination charge). */
       destinationAccountId?: string;
+      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
+      split?: SplitRecipient[];
       /** Per-call platform fee override; falls back to the configured default. */
       fee?: FeeOverride;
       /** Charge total (minor units) for one-time payment fee computation. */
@@ -618,10 +622,11 @@ export class BetterStripe {
     const { fee, ...rest } = opts;
     return checkoutImpl.createCheckoutSession(this.stripe(), this.component, ctx, {
       ...rest,
-      // Fees only apply to destination charges; resolve override → default.
-      feeConfig: opts.destinationAccountId
-        ? this.resolveFee(fee)
-        : undefined,
+      // Fees apply to destination or split sales; resolve override → default.
+      feeConfig:
+        opts.destinationAccountId || opts.split?.length
+          ? this.resolveFee(fee)
+          : undefined,
     });
   }
 
@@ -691,6 +696,8 @@ export class BetterStripe {
       customerAccount: string;
       stripePriceId: string;
       destinationAccountId?: string;
+      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
+      split?: SplitRecipient[];
       fee?: FeeOverride;
       trialDays?: number;
       metadata?: Record<string, string>;
@@ -699,7 +706,10 @@ export class BetterStripe {
     const { fee, ...rest } = opts;
     return subscriptionsImpl.createSubscription(this.stripe(), this.component, ctx, {
       ...rest,
-      feeConfig: opts.destinationAccountId ? this.resolveFee(fee) : undefined,
+      feeConfig:
+        opts.destinationAccountId || opts.split?.length
+          ? this.resolveFee(fee)
+          : undefined,
     });
   }
 
@@ -1070,6 +1080,18 @@ export class BetterStripe {
     },
   ) {
     return payoutsImpl.createPayout(this.stripe(), ctx, opts);
+  }
+
+  /**
+   * Reverse the transfers funded by a charge (pro-rata by `percent`, a total
+   * `amount`, or in full). The reversal primitive behind dispute clawback and
+   * refunds; idempotent and ledger-tracked.
+   */
+  async reverseTransfers(
+    ctx: RunCtx,
+    opts: { sourceChargeId: string; percent?: number; amount?: number },
+  ) {
+    return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
   }
 
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {

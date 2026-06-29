@@ -1,4 +1,8 @@
 import type {
+  SplitRecipient,
+  SplitRecipientRole,
+} from "../../component/lib/fees.js";
+import type {
   FeeOverride,
   FeeTier,
   PlatformFeeConfig,
@@ -142,4 +146,123 @@ export function computeFee(
   const fixedApplied = Math.max(0, feeAmount - percentAmount);
 
   return { feeAmount, percentApplied: percent, fixedApplied, tier };
+}
+
+/** One leg of a computed split (a Stripe Transfer to create). */
+export type SplitTransfer = {
+  destinationAccountId: string;
+  role: SplitRecipientRole;
+  amount: number;
+};
+
+/** Result of splitting a charge across recipients via transfer math (BTS-23). */
+export type SplitResult = {
+  transfers: SplitTransfer[];
+  /** The platform's configured cut (via the fee resolver). */
+  platformFee: number;
+  /** What the platform actually keeps = amount − sum(transfers) (≥ platformFee). */
+  platformRetained: number;
+};
+
+/**
+ * Compute a multi-recipient split for the **separate charges & transfers** path.
+ *
+ * The platform's fee is computed via the resolver ({@link computeFee}); each
+ * recipient gets a fixed `amount` (minor units) or a `percent` of the gross
+ * `amount`; the platform keeps the remainder. This path **never** uses a Stripe
+ * `application_fee` — the cut is realized purely by transferring less than was
+ * charged (the result intentionally carries no `applicationFee*` field).
+ *
+ * Throws if the transfers plus the platform fee would exceed the charge, so the
+ * platform is always left with at least its configured cut. Any rounding
+ * remainder stays with the platform (deterministic): `sum(transfers) +
+ * platformRetained === amount`.
+ */
+export function computeSplit(
+  amount: number,
+  feeConfig: PlatformFeeConfig | undefined,
+  recipients: SplitRecipient[],
+): SplitResult {
+  if (!(amount > 0)) {
+    return { transfers: [], platformFee: 0, platformRetained: 0 };
+  }
+
+  const platformFee = feeConfig ? computeFee(amount, feeConfig).feeAmount : 0;
+
+  const transfers: SplitTransfer[] = recipients.map((r) => {
+    const amt =
+      r.amount !== undefined
+        ? r.amount
+        : r.percent !== undefined
+          ? Math.round((amount * r.percent) / 100)
+          : 0;
+    if (!Number.isFinite(amt) || amt < 0) {
+      throw new Error(
+        `Invalid split amount for ${r.destinationAccountId}: ${amt}`,
+      );
+    }
+    return { destinationAccountId: r.destinationAccountId, role: r.role, amount: amt };
+  });
+
+  const sumTransfers = transfers.reduce((s, t) => s + t.amount, 0);
+  if (sumTransfers + platformFee > amount) {
+    throw new Error(
+      `Split transfers (${sumTransfers}) + platform fee (${platformFee}) exceed the charge amount (${amount}).`,
+    );
+  }
+
+  return { transfers, platformFee, platformRetained: amount - sumTransfers };
+}
+
+/**
+ * Structural validation for a multi-recipient split (BTS-21), independent of the
+ * charge amount (which varies per invoice for subscriptions). Throws on: empty
+ * split, a recipient missing a destination, a recipient that sets neither or
+ * both of amount/percent, out-of-range values, or percents summing over 100.
+ * The amount-vs-charge check happens at execution time in {@link computeSplit}.
+ */
+export function validateSplit(recipients: SplitRecipient[]): void {
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    throw new Error("split must have at least one recipient");
+  }
+  let percentSum = 0;
+  const seenKeys = new Set<string>();
+  for (const r of recipients) {
+    if (!r.destinationAccountId) {
+      throw new Error("split recipient is missing destinationAccountId");
+    }
+    // (destinationAccountId, role) is the transfer idempotency key, so duplicate
+    // legs would collide/skip in the engine — reject them up front.
+    const key = `${r.destinationAccountId}:${r.role}`;
+    if (seenKeys.has(key)) {
+      throw new Error(
+        `duplicate split leg for ${r.destinationAccountId} (role ${r.role}); each destination+role must be unique`,
+      );
+    }
+    seenKeys.add(key);
+    const hasAmount = r.amount !== undefined;
+    const hasPercent = r.percent !== undefined;
+    if (hasAmount === hasPercent) {
+      throw new Error(
+        `split recipient ${r.destinationAccountId} must set exactly one of amount or percent`,
+      );
+    }
+    if (hasAmount && (!Number.isInteger(r.amount) || (r.amount as number) < 0)) {
+      throw new Error(
+        `split recipient ${r.destinationAccountId} amount must be a non-negative integer (minor units)`,
+      );
+    }
+    if (hasPercent) {
+      const p = r.percent as number;
+      if (!Number.isFinite(p) || p < 0 || p > 100) {
+        throw new Error(
+          `split recipient ${r.destinationAccountId} percent must be between 0 and 100`,
+        );
+      }
+      percentSum += p;
+    }
+  }
+  if (percentSum > 100) {
+    throw new Error(`split percents sum to ${percentSum}, which exceeds 100`);
+  }
 }

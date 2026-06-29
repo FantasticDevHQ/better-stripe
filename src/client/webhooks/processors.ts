@@ -1,5 +1,7 @@
 import type Stripe from "stripe";
 
+import type { SplitRecipient } from "../../component/lib/fees.js";
+import { createSplitTransfers } from "../connect/transfers.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -58,12 +60,21 @@ export async function processEvent(
       await applyPerInvoiceFee(whCtx, obj as Stripe.Invoice);
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
-    case "invoice.finalized":
     case "invoice.paid":
+      await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
+      // Fan funds to split recipients each billing cycle for a separate-charges
+      // subscription (BTS-52).
+      await handleInvoiceSplitTransfers(whCtx, obj as Stripe.Invoice);
+      break;
+    case "invoice.finalized":
     case "invoice.payment_failed":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
     case "payment_intent.succeeded":
+      await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
+      // Fan funds out to split recipients for a separate-charges sale.
+      await handleSplitTransfers(whCtx, obj as Stripe.PaymentIntent);
+      break;
     case "payment_intent.payment_failed":
     case "payment_intent.canceled":
       await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
@@ -360,6 +371,134 @@ async function upsertInvoiceFromStripe(
     periodStart: epochToIso(invoice.period_start),
     periodEnd: epochToIso(invoice.period_end),
     metadata: invoice.metadata ?? undefined,
+  });
+}
+
+/**
+ * Drive the split transfer engine (BTS-22) for a separate-charges sale. When a
+ * PaymentIntent created with `bsChargeType=separate` succeeds, parse the split
+ * (and platform fee) from its metadata and fan funds out to each recipient via
+ * `source_transaction` on the resulting charge. Errors propagate so Stripe
+ * retries; the engine's idempotency keys make retries safe.
+ */
+async function handleSplitTransfers(
+  whCtx: WebhookContext,
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<void> {
+  if (paymentIntent.status !== "succeeded") return;
+  const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+  // Not a split sale — nothing to do.
+  if (meta.bsChargeType !== "separate" || !meta.bsSplit) return;
+
+  // From here the PI IS a separate-charges sale, so a missing charge or
+  // malformed split is a real failure: throw so the webhook returns 500 and
+  // Stripe retries (visible + recoverable) rather than silently skipping payouts.
+  const sourceChargeId =
+    typeof paymentIntent.latest_charge === "string"
+      ? paymentIntent.latest_charge
+      : (paymentIntent.latest_charge?.id ?? undefined);
+  if (!sourceChargeId) {
+    throw new Error(
+      `Split-transfer sale ${paymentIntent.id} succeeded without a latest_charge; cannot create transfers`,
+    );
+  }
+
+  let split: SplitRecipient[];
+  let feeConfig: PlatformFeeConfig | undefined;
+  try {
+    split = JSON.parse(meta.bsSplit) as SplitRecipient[];
+    feeConfig = meta.bsFeeConfig
+      ? (JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig)
+      : undefined;
+  } catch (err) {
+    throw new Error(
+      `Split-transfer sale ${paymentIntent.id} has malformed bsSplit/bsFeeConfig metadata: ${String(err)}`,
+    );
+  }
+
+  await createSplitTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+    sourceChargeId,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    split,
+    feeConfig,
+    paymentId: paymentIntent.id,
+  });
+}
+
+/**
+ * Drive the split transfer engine for a **recurring** separate-charges sale
+ * (BTS-52). On each `invoice.paid` for a subscription flagged
+ * `bsChargeType=separate` (markers live on the subscription), resolve this
+ * invoice's charge and fan funds out to the recipients — so an affiliate-referred
+ * subscription splits every billing cycle. Each cycle has a distinct charge, so
+ * the ledger keys per-charge and cycles don't collide. Errors propagate so
+ * Stripe retries; the engine's idempotency keeps retries safe.
+ */
+async function handleInvoiceSplitTransfers(
+  whCtx: WebhookContext,
+  invoice: Stripe.Invoice,
+): Promise<void> {
+  // Nothing to split when no money was collected (e.g. 100%-off coupon, account
+  // credit, or proration). Skip before any charge resolution so a zero-amount
+  // invoice — which has no charge — can't throw and force endless retries.
+  if (!(invoice.amount_paid > 0)) return;
+
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subId =
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+  if (!subId) return; // not a subscription invoice
+
+  const sub = await whCtx.stripe.subscriptions.retrieve(subId);
+  const meta = (sub?.metadata ?? {}) as Record<string, string>;
+  if (meta.bsChargeType !== "separate" || !meta.bsSplit) return;
+
+  let split: SplitRecipient[];
+  let feeConfig: PlatformFeeConfig | undefined;
+  try {
+    split = JSON.parse(meta.bsSplit) as SplitRecipient[];
+    feeConfig = meta.bsFeeConfig
+      ? (JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig)
+      : undefined;
+  } catch (err) {
+    throw new Error(
+      `Subscription ${subId} has malformed bsSplit/bsFeeConfig metadata: ${String(err)}`,
+    );
+  }
+
+  // Resolve the charge that paid this invoice (source_transaction for transfers).
+  const payments = await whCtx.stripe.invoicePayments.list({
+    invoice: invoice.id!,
+    limit: 1,
+  });
+  const payment = payments.data?.[0]?.payment;
+  let chargeId: string | undefined;
+  if (payment?.charge) {
+    chargeId =
+      typeof payment.charge === "string" ? payment.charge : payment.charge.id;
+  } else if (payment?.payment_intent) {
+    const piId =
+      typeof payment.payment_intent === "string"
+        ? payment.payment_intent
+        : payment.payment_intent.id;
+    const pi = await whCtx.stripe.paymentIntents.retrieve(piId);
+    chargeId =
+      typeof pi.latest_charge === "string"
+        ? pi.latest_charge
+        : (pi.latest_charge?.id ?? undefined);
+  }
+  if (!chargeId) {
+    throw new Error(
+      `Paid invoice ${invoice.id} for split subscription ${subId} has no resolvable charge; cannot create transfers`,
+    );
+  }
+
+  await createSplitTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+    sourceChargeId: chargeId,
+    amount: invoice.amount_paid,
+    currency: invoice.currency,
+    split,
+    feeConfig,
   });
 }
 

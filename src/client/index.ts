@@ -12,6 +12,7 @@ import type {
   PayoutStatus,
   RefundStatus,
 } from "../component/connect/validators.js";
+import type { SplitRecipient } from "../component/lib/fees.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
@@ -607,6 +608,8 @@ export class BetterStripe {
       customerEmail?: string;
       /** Seller/recipient connected account to route funds to (destination charge). */
       destinationAccountId?: string;
+      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
+      split?: SplitRecipient[];
       /** Per-call platform fee override; falls back to the configured default. */
       fee?: FeeOverride;
       /** Charge total (minor units) for one-time payment fee computation. */
@@ -618,10 +621,11 @@ export class BetterStripe {
     const { fee, ...rest } = opts;
     return checkoutImpl.createCheckoutSession(this.stripe(), this.component, ctx, {
       ...rest,
-      // Fees only apply to destination charges; resolve override → default.
-      feeConfig: opts.destinationAccountId
-        ? this.resolveFee(fee)
-        : undefined,
+      // Fees apply to destination or split sales; resolve override → default.
+      feeConfig:
+        opts.destinationAccountId || opts.split?.length
+          ? this.resolveFee(fee)
+          : undefined,
     });
   }
 
@@ -691,6 +695,8 @@ export class BetterStripe {
       customerAccount: string;
       stripePriceId: string;
       destinationAccountId?: string;
+      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
+      split?: SplitRecipient[];
       fee?: FeeOverride;
       trialDays?: number;
       metadata?: Record<string, string>;
@@ -699,7 +705,10 @@ export class BetterStripe {
     const { fee, ...rest } = opts;
     return subscriptionsImpl.createSubscription(this.stripe(), this.component, ctx, {
       ...rest,
-      feeConfig: opts.destinationAccountId ? this.resolveFee(fee) : undefined,
+      feeConfig:
+        opts.destinationAccountId || opts.split?.length
+          ? this.resolveFee(fee)
+          : undefined,
     });
   }
 

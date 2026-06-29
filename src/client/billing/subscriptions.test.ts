@@ -758,6 +758,51 @@ describe("createSubscription (BTS-17)", () => {
     expect(upsertArgs.chargeType).toBeUndefined();
   });
 
+  it("routes a >1 split via separate charges (no transfer_data/application_fee)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", percent: 80 },
+        { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+      ],
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.subscriptions.create.mock.calls[0][0];
+    expect(createArg.transfer_data).toBeUndefined();
+    expect(createArg.application_fee_percent).toBeUndefined();
+    expect(createArg.metadata.bsChargeType).toBe("separate");
+    expect(JSON.parse(createArg.metadata.bsSplit)).toHaveLength(2);
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("separate");
+    expect(upsertArgs.splitRecipients).toHaveLength(2);
+  });
+
+  it("treats a single-recipient split as a destination charge", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      split: [{ destinationAccountId: "acct_store", role: "store", percent: 90 }],
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.subscriptions.create.mock.calls[0][0];
+    expect(createArg.transfer_data).toEqual({ destination: "acct_store" });
+    expect(createArg.application_fee_percent).toBe(10);
+  });
+
   it("rejects feeConfig without a destinationAccountId", async () => {
     const stripe = makeStripe();
     const ctx = makeCtx();

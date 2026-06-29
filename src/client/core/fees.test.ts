@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeFee,
   computeSplit,
+  validateSplit,
   resolveFeeConfig,
   validatePlatformFee,
 } from "./fees.js";
@@ -300,3 +301,59 @@ describe("computeSplit (BTS-23)", () => {
     expect(r.platformRetained).toBe(0);
   });
 })
+
+describe("validateSplit (BTS-21)", () => {
+  const r = (over = {}) => ({
+    destinationAccountId: "acct_x",
+    role: "store" as const,
+    ...over,
+  });
+
+  it("accepts a valid 2-way split with fixed amounts", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 8000 },
+        { destinationAccountId: "b", role: "affiliate", amount: 1000 },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("accepts a valid 3-way split with percents summing <= 100", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", percent: 80 },
+        { destinationAccountId: "b", role: "affiliate", percent: 5 },
+        { destinationAccountId: "c", role: "other", percent: 5 },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("rejects an empty split", () => {
+    expect(() => validateSplit([])).toThrow();
+  });
+
+  it("rejects a recipient with neither amount nor percent", () => {
+    expect(() => validateSplit([r()])).toThrow();
+  });
+
+  it("rejects a recipient with both amount and percent", () => {
+    expect(() => validateSplit([r({ amount: 100, percent: 10 })])).toThrow();
+  });
+
+  it("rejects a percent over 100", () => {
+    expect(() => validateSplit([r({ percent: 150 })])).toThrow();
+  });
+
+  it("rejects percents summing over 100", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", percent: 70 },
+        { destinationAccountId: "b", role: "affiliate", percent: 40 },
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects an empty destinationAccountId", () => {
+    expect(() => validateSplit([r({ destinationAccountId: "", amount: 100 })])).toThrow();
+  });
+});

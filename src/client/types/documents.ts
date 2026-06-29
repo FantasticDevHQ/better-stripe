@@ -94,6 +94,10 @@ export type StripeComponentDispute = {
   reason: string;
   isChargeRefundable: boolean;
   lastEvent?: string;
+  evidenceDueBy?: string;
+  evidence?: unknown;
+  statementDescriptor?: string;
+  linkedTransferIds?: string[];
   metadata?: Record<string, unknown>;
 };
 

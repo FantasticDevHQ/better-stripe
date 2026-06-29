@@ -1165,6 +1165,17 @@ export class BetterStripe {
     return disputesImpl.getDisputeByStripeId(this.component, ctx, opts);
   }
 
+  /**
+   * Read a dispute with its evidence-submission countdown (evidenceDueBy +
+   * days-remaining/overdue) — the seller UI's deadline surface (BTS-31).
+   */
+  async getDisputeWithCountdown(
+    ctx: RunCtx,
+    opts: { stripeDisputeId: string; now?: Date },
+  ) {
+    return disputesImpl.getDisputeWithCountdown(this.component, ctx, opts);
+  }
+
   async listDisputes(
     ctx: RunCtx,
     opts?: {

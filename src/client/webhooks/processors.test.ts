@@ -90,6 +90,7 @@ function makeStripe() {
       ),
     },
     paymentIntents: { retrieve: vi.fn() },
+    charges: { retrieve: vi.fn() },
   };
 }
 
@@ -1125,6 +1126,64 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
       "sub_1",
       undefined,
       { idempotencyKey: "bs_dispute_cancel_dp_3" },
+    );
+  });
+
+  it("[BTS-26] stores the charge's statement descriptor on the dispute", async () => {
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      calculated_statement_descriptor: "ACME STORE",
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_desc",
+        charge: "ch_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    const { data } = dispatchedPayload(whCtx.ctx);
+    expect(data.statementDescriptor).toBe("ACME STORE");
+  });
+
+  it("[BTS-27] claws back a single-recipient transfer on dispute", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_only", destinationAccountId: "acct_store", role: "store", amount: 9000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_single",
+        charge: "ch_1",
+        amount: 9000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(1);
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_only",
+      { amount: 9000 },
+      { idempotencyKey: "bs_rev_dp_single_tr_only" },
     );
   });
 

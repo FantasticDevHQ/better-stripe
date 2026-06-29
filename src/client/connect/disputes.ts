@@ -25,6 +25,31 @@ export async function getDisputeByStripeId(
   )) as StripeComponentDispute | null;
 }
 
+/**
+ * Read a dispute and attach its evidence-submission countdown (BTS-31) — the
+ * one-call surface a seller UI needs: `evidenceDueBy` plus days-remaining /
+ * overdue. Returns null if the dispute isn't found.
+ */
+export async function getDisputeWithCountdown(
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeDisputeId: string; now?: Date },
+): Promise<
+  | (StripeComponentDispute & {
+      countdown: ReturnType<typeof disputeEvidenceCountdown>;
+    })
+  | null
+> {
+  const dispute = await getDisputeByStripeId(component, ctx, {
+    stripeDisputeId: opts.stripeDisputeId,
+  });
+  if (!dispute) return null;
+  return {
+    ...dispute,
+    countdown: disputeEvidenceCountdown(dispute.evidenceDueBy, opts.now),
+  };
+}
+
 export async function listDisputes(
   component: Component,
   ctx: RunCtx,

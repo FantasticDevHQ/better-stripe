@@ -675,4 +675,47 @@ async function handleDisputeEvent(
       operationId: dispute.id,
     });
   }
+
+  // Auto-cancel the disputed subscription (BTS-28, default on). Resolve the
+  // subscription from the dispute's PaymentIntent (invoice payment → invoice →
+  // subscription) and cancel it. The resulting subscription.updated/deleted
+  // webhook fires the app's subscription trigger to revoke access (Skool model:
+  // cancel now, remove at cycle end).
+  if (lastEvent === "created" && whCtx.config?.autoCancelOnDispute !== false) {
+    await cancelDisputedSubscription(whCtx, dispute);
+  }
+}
+
+async function cancelDisputedSubscription(
+  whCtx: WebhookContext,
+  dispute: Stripe.Dispute,
+): Promise<void> {
+  const piId =
+    typeof dispute.payment_intent === "string"
+      ? dispute.payment_intent
+      : (dispute.payment_intent?.id ?? undefined);
+  if (!piId) return;
+
+  const payments = await whCtx.stripe.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: piId },
+    limit: 1,
+  });
+  const invoiceRef = payments.data?.[0]?.invoice;
+  const invoiceId =
+    typeof invoiceRef === "string" ? invoiceRef : (invoiceRef?.id ?? undefined);
+  if (!invoiceId) return; // not a subscription invoice charge
+
+  const invoice = await whCtx.stripe.invoices.retrieve(invoiceId);
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subId =
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+  if (!subId) return;
+
+  if (whCtx.config?.cancelDisputedSubscriptionImmediately) {
+    await whCtx.stripe.subscriptions.cancel(subId);
+  } else {
+    await whCtx.stripe.subscriptions.update(subId, {
+      cancel_at_period_end: true,
+    });
+  }
 }

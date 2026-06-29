@@ -69,16 +69,25 @@ let trCreateSeq = 0;
 function makeStripe() {
   return {
     products: { retrieve: vi.fn() },
-    subscriptions: { retrieve: vi.fn() },
-    invoices: { update: vi.fn().mockResolvedValue({}) },
+    subscriptions: {
+      retrieve: vi.fn(),
+      update: vi.fn().mockResolvedValue({}),
+      cancel: vi.fn().mockResolvedValue({}),
+    },
+    invoices: {
+      update: vi.fn().mockResolvedValue({}),
+      retrieve: vi.fn(),
+    },
     transfers: {
       create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
       createReversal: vi.fn(async (_id: unknown) => ({ id: "trr_x" })),
     },
     invoicePayments: {
-      list: vi.fn(async (_params: unknown) => ({
-        data: [{ payment: { charge: "ch_inv" } }],
-      })),
+      list: vi.fn(
+        async (_params: unknown): Promise<{ data: Record<string, unknown>[] }> => ({
+          data: [{ payment: { charge: "ch_inv" } }],
+        }),
+      ),
     },
     paymentIntents: { retrieve: vi.fn() },
   };
@@ -87,6 +96,7 @@ function makeStripe() {
 function makeWhCtx(overrides?: {
   ctx?: ReturnType<typeof makeCtx>;
   stripe?: ReturnType<typeof makeStripe>;
+  config?: Record<string, unknown>;
 }): WebhookContext & {
   ctx: ReturnType<typeof makeCtx>;
   stripe: ReturnType<typeof makeStripe>;
@@ -98,6 +108,7 @@ function makeWhCtx(overrides?: {
     component: makeComponent(),
     stripe,
     webhookSecret: "whsec_test",
+    ...(overrides?.config ? { config: overrides.config } : {}),
     // no `config.webhooks` → dispatchUpsert uses the direct component path
   } as unknown as WebhookContext & {
     ctx: ReturnType<typeof makeCtx>;
@@ -1015,6 +1026,100 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
       }),
     );
     expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] cancels the disputed subscription at period end (default)", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith("sub_1", {
+      cancel_at_period_end: true,
+    });
+    expect(stripe.subscriptions.cancel).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] does not cancel when autoCancelOnDispute is off", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({ stripe, config: { autoCancelOnDispute: false } });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_2",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-28] cancels immediately when configured", async () => {
+    const stripe = makeStripe();
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ invoice: "in_1", payment: { charge: "ch_1" } }],
+    });
+    stripe.invoices.retrieve.mockResolvedValue({
+      id: "in_1",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    });
+    const whCtx = makeWhCtx({
+      stripe,
+      config: { cancelDisputedSubscriptionImmediately: true },
+    });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_3",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.subscriptions.cancel).toHaveBeenCalledWith("sub_1");
   });
 
   it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {

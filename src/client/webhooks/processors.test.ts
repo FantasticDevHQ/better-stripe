@@ -1055,9 +1055,11 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
       }),
     );
 
-    expect(stripe.subscriptions.update).toHaveBeenCalledWith("sub_1", {
-      cancel_at_period_end: true,
-    });
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith(
+      "sub_1",
+      { cancel_at_period_end: true },
+      { idempotencyKey: "bs_dispute_cancel_dp_1" },
+    );
     expect(stripe.subscriptions.cancel).not.toHaveBeenCalled();
   });
 
@@ -1119,7 +1121,11 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
         metadata: {},
       }),
     );
-    expect(stripe.subscriptions.cancel).toHaveBeenCalledWith("sub_1");
+    expect(stripe.subscriptions.cancel).toHaveBeenCalledWith(
+      "sub_1",
+      undefined,
+      { idempotencyKey: "bs_dispute_cancel_dp_3" },
+    );
   });
 
   it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {

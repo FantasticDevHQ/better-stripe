@@ -353,16 +353,37 @@ describe("reinstateTransfers (BTS-29)", () => {
     await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
       sourceChargeId: "ch_1",
       operationId: "dp_1",
+      currency: "usd",
     });
 
     expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
     expect(stripe.transfers.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 8000, destination: "acct_store" }),
+      expect.objectContaining({ amount: 8000, currency: "usd", destination: "acct_store" }),
       { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
     );
     expect(stripe.transfers.create).toHaveBeenCalledWith(
       expect.objectContaining({ amount: 1000, destination: "acct_aff" }),
       { idempotencyKey: "bs_reinstate_dp_1_acct_aff_affiliate" },
+    );
+    // Ledger rows are tagged reinstatement so they stay out of the charge's
+    // split-leg view and can't be re-reversed.
+    expect(ctx.runMutation.mock.calls[0][1]).toMatchObject({ reinstatement: true });
+  });
+
+  it("uses a legacy row's fallback currency from the dispute, not USD", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      // Legacy row with no stored currency.
+      { stripeTransferId: "tr_x", destinationAccountId: "acct_x", role: "store", amount: 5000, reversedAmount: 5000 },
+    ]);
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+      currency: "eur",
+    });
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ currency: "eur" }),
+      expect.anything(),
     );
   });
 
@@ -374,6 +395,7 @@ describe("reinstateTransfers (BTS-29)", () => {
     await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
       sourceChargeId: "ch_1",
       operationId: "dp_1",
+      currency: "usd",
     });
     expect(stripe.transfers.create).not.toHaveBeenCalled();
   });

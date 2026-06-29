@@ -143,6 +143,8 @@ export function disputeEvidenceCountdown(
 ): { dueBy?: string; daysRemaining?: number; isOverdue: boolean } {
   if (!evidenceDueBy) return { dueBy: undefined, isOverdue: false };
   const dueMs = new Date(evidenceDueBy).getTime();
+  // A malformed/legacy value parses to NaN — fall back cleanly, not NaN days.
+  if (Number.isNaN(dueMs)) return { dueBy: undefined, isOverdue: false };
   const diffMs = dueMs - now.getTime();
   return {
     dueBy: evidenceDueBy,

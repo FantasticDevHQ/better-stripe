@@ -185,7 +185,7 @@ export async function reinstateTransfers(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: { sourceChargeId: string; operationId: string },
+  opts: { sourceChargeId: string; operationId: string; currency: string },
 ): Promise<{ reinstated: { destinationAccountId: string; amount: number }[] }> {
   const transfers = ((await ctx.runQuery(
     componentRef(component, "connect/queries/listTransfersByCharge"),
@@ -196,10 +196,13 @@ export async function reinstateTransfers(
   for (const t of transfers) {
     const amount = t.reversedAmount ?? 0;
     if (amount <= 0) continue; // nothing was clawed back from this leg
+    // Use the original leg's currency; fall back to the dispute currency for
+    // legacy rows that predate the stored currency — never assume USD.
+    const currency = t.currency ?? opts.currency;
     const created = await stripe.transfers.create(
       {
         amount,
-        currency: t.currency ?? "usd",
+        currency,
         destination: t.destinationAccountId!,
         metadata: { bsRole: t.role ?? "", bsReinstateOf: opts.sourceChargeId },
       },
@@ -215,9 +218,12 @@ export async function reinstateTransfers(
         sourceChargeId: opts.sourceChargeId,
         destinationAccountId: t.destinationAccountId!,
         amount,
-        currency: t.currency ?? "usd",
+        currency,
         role: t.role as "store" | "affiliate" | "other" | undefined,
         status: "paid" as const,
+        // Audit-only payout, not an original split leg (kept out of
+        // listTransfersByCharge so it can't be re-reversed).
+        reinstatement: true,
       },
     );
     reinstated.push({ destinationAccountId: t.destinationAccountId!, amount });

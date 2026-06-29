@@ -61,6 +61,12 @@ describe("disputeEvidenceCountdown (BTS-31)", () => {
     expect(r.daysRemaining).toBeUndefined();
     expect(r.isOverdue).toBe(false);
   });
+
+  it("falls back cleanly (no NaN) for a malformed due date", () => {
+    const r = disputeEvidenceCountdown("not-a-date", new Date());
+    expect(r.daysRemaining).toBeUndefined();
+    expect(r.isOverdue).toBe(false);
+  });
 });
 
 describe("updateDispute staged vs submit (BTS-31)", () => {

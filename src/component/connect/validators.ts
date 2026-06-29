@@ -237,6 +237,10 @@ export const transferFields = {
   reversalStatus: v.optional(transferReversalStatusValidator),
   // Link to the `payments` row that originated this transfer.
   paymentId: v.optional(v.string()),
+  // True for transfers created to re-pay recipients after a won dispute. These
+  // are audit/payout records, NOT original split legs — excluded from
+  // listTransfersByCharge so they're never re-reversed or counted as a split leg.
+  reinstatement: v.optional(v.boolean()),
   metadata: v.optional(v.any()),
 };
 

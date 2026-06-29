@@ -673,6 +673,7 @@ async function handleDisputeEvent(
     await reinstateTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
       sourceChargeId: chargeId,
       operationId: dispute.id,
+      currency: dispute.currency,
     });
   }
 
@@ -711,11 +712,15 @@ async function cancelDisputedSubscription(
     typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
   if (!subId) return;
 
+  // Stable idempotency key so a webhook retry can't double-write the cancel.
+  const idempotency = { idempotencyKey: `bs_dispute_cancel_${dispute.id}` };
   if (whCtx.config?.cancelDisputedSubscriptionImmediately) {
-    await whCtx.stripe.subscriptions.cancel(subId);
+    await whCtx.stripe.subscriptions.cancel(subId, undefined, idempotency);
   } else {
-    await whCtx.stripe.subscriptions.update(subId, {
-      cancel_at_period_end: true,
-    });
+    await whCtx.stripe.subscriptions.update(
+      subId,
+      { cancel_at_period_end: true },
+      idempotency,
+    );
   }
 }

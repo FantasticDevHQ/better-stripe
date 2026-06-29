@@ -222,6 +222,32 @@ describe("connect — disputes", () => {
     expect(dispute!.lastEvent).toBe("created");
   });
 
+  it("upsertDispute: round-trips the BTS-26 fields (evidence, due-by, descriptor, linked transfers)", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_fields",
+      stripeChargeId: "ch_x",
+      amount: 2000,
+      currency: "usd",
+      status: "needs_response",
+      reason: "fraudulent",
+      isChargeRefundable: true,
+      evidenceDueBy: "2026-07-01T00:00:00.000Z",
+      evidence: { productDescription: "Pro membership" },
+      statementDescriptor: "ACME STORE",
+      linkedTransferIds: ["tr_store", "tr_aff"],
+    });
+
+    const d = await t.query(api.connect.queries.getDisputeByStripeId, {
+      stripeDisputeId: "dp_fields",
+    });
+    expect(d!.evidenceDueBy).toBe("2026-07-01T00:00:00.000Z");
+    expect(d!.evidence).toEqual({ productDescription: "Pro membership" });
+    expect(d!.statementDescriptor).toBe("ACME STORE");
+    expect(d!.linkedTransferIds).toEqual(["tr_store", "tr_aff"]);
+  });
+
   it("upsertDispute: updates status and lastEvent on a subsequent event", async () => {
     const t = convexTest(schema, modules);
 

@@ -642,6 +642,7 @@ async function handleDisputeEvent(
     status: dispute.status,
     reason: dispute.reason,
     isChargeRefundable: dispute.is_charge_refundable,
+    evidenceDueBy: epochToIso(dispute.evidence_details?.due_by ?? undefined),
     lastEvent,
     metadata: dispute.metadata ?? undefined,
   });

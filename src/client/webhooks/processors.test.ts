@@ -895,6 +895,28 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     expect(stripe.transfers.create).not.toHaveBeenCalled();
   });
 
+  it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        payment_intent: "pi_1",
+        amount: 5000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/connect/mutations/upsertDispute");
+    expect(data.evidenceDueBy).toBe(new Date(1700000000 * 1000).toISOString());
+  });
+
   it("does not create transfers for a normal (non-split) payment", async () => {
     const stripe = makeStripe();
     const whCtx = makeWhCtx({ stripe });

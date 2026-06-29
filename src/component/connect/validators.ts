@@ -174,6 +174,14 @@ export const disputeFields = {
   // "funds_withdrawn", "funds_reinstated", "closed"). Lets apps react to the
   // specific financial event without inferring it from booleans.
   lastEvent: v.optional(v.string()),
+  // Deadline to submit evidence (ISO), from the Stripe dispute's evidence_details.
+  evidenceDueBy: v.optional(v.string()),
+  // Evidence staged/submitted for this dispute (set when the seller responds).
+  evidence: v.optional(v.any()),
+  // The per-store statement descriptor the buyer saw, for dispute context.
+  statementDescriptor: v.optional(v.string()),
+  // Transfers funded by this dispute's charge (clawed back on dispute, reinstated if won).
+  linkedTransferIds: v.optional(v.array(v.string())),
   metadata: v.optional(v.any()),
 };
 

@@ -220,3 +220,49 @@ describe("createSplitTransfers engine (BTS-22)", () => {
     expect(stripe.transfers.create).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("createSplitTransfers idempotency (BTS-24)", () => {
+  it("skips recipients already recorded in the ledger (partial-failure recovery)", async () => {
+    const stripe = makeStripe();
+    // The store transfer already exists from a prior (partial) run.
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+    ]);
+
+    await createSplitTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      amount: 10000,
+      currency: "usd",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        { destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      ],
+    });
+
+    // Only the affiliate transfer is created the second time.
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(1);
+    expect(stripe.transfers.create.mock.calls[0][0]).toMatchObject({
+      destination: "acct_aff",
+    });
+  });
+
+  it("creates nothing when all recipients are already in the ledger (full replay)", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+      { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+    ]);
+
+    await createSplitTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      amount: 10000,
+      currency: "usd",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        { destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      ],
+    });
+
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+});

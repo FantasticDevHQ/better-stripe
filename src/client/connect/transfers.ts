@@ -11,6 +11,8 @@ type LedgerTransfer = {
   stripeTransferId: string;
   amount: number;
   reversedAmount?: number;
+  destinationAccountId?: string;
+  role?: string;
 };
 
 /**
@@ -93,8 +95,20 @@ export async function createSplitTransfers(
 ): Promise<SplitResult> {
   const result = computeSplit(opts.amount, opts.feeConfig, opts.split);
 
+  // Ledger-level idempotency (BTS-24): skip any (charge, destination, role) leg
+  // already recorded, so a webhook retry — even after a partial run — never
+  // double-transfers. Complements the deterministic Stripe idempotency key.
+  const existing = ((await ctx.runQuery(
+    componentRef(component, "connect/queries/listTransfersByCharge"),
+    { sourceChargeId: opts.sourceChargeId },
+  )) ?? []) as LedgerTransfer[];
+  const done = new Set(
+    existing.map((t) => `${t.destinationAccountId}:${t.role ?? ""}`),
+  );
+
   for (const t of result.transfers) {
     if (t.amount <= 0) continue;
+    if (done.has(`${t.destinationAccountId}:${t.role}`)) continue;
     const transfer = await stripe.transfers.create(
       {
         amount: t.amount,

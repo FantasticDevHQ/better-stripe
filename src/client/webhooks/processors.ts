@@ -637,15 +637,20 @@ async function handleDisputeEvent(
       : (dispute.charge?.id ?? undefined);
 
   // Capture the statement descriptor the buyer saw (dispute context) from the
-  // charge — the Dispute object doesn't carry it. Only on `created` to avoid an
-  // extra fetch on every dispute event.
+  // charge — the Dispute object doesn't carry it. Only on `created`, and
+  // best-effort: this is optional metadata, so a transient charge-lookup failure
+  // must never abort the critical dispute side effects (upsert, clawback, cancel).
   let statementDescriptor: string | undefined;
   if (lastEvent === "created" && chargeId) {
-    const charge = await whCtx.stripe.charges.retrieve(chargeId);
-    statementDescriptor =
-      charge?.calculated_statement_descriptor ??
-      charge?.statement_descriptor ??
-      undefined;
+    try {
+      const charge = await whCtx.stripe.charges.retrieve(chargeId);
+      statementDescriptor =
+        charge?.calculated_statement_descriptor ??
+        charge?.statement_descriptor ??
+        undefined;
+    } catch {
+      // leave undefined; the descriptor is non-essential context
+    }
   }
 
   await dispatchUpsert(whCtx, "disputeUpserted", {

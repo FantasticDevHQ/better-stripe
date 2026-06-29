@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
-import { createSplitTransfers } from "../connect/transfers.js";
+import { createSplitTransfers, reverseTransfers } from "../connect/transfers.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -646,4 +646,17 @@ async function handleDisputeEvent(
     lastEvent,
     metadata: dispute.metadata ?? undefined,
   });
+
+  // Clawback (BTS-27): when a dispute is first opened, reverse the transfers
+  // funded by the disputed charge pro-rata to the disputed amount, so recipients
+  // bear their share (losses_collector=application leaves the platform with the
+  // rest). Idempotent via the dispute id; reinstated by BTS-29 if the dispute is
+  // won. Only on `created` — other dispute events don't move funds here.
+  if (lastEvent === "created" && chargeId) {
+    await reverseTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+      sourceChargeId: chargeId,
+      amount: dispute.amount,
+      operationId: dispute.id,
+    });
+  }
 }

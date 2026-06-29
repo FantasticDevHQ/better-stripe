@@ -73,6 +73,7 @@ function makeStripe() {
     invoices: { update: vi.fn().mockResolvedValue({}) },
     transfers: {
       create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
+      createReversal: vi.fn(async (_id: unknown) => ({ id: "trr_x" })),
     },
     invoicePayments: {
       list: vi.fn(async (_params: unknown) => ({
@@ -893,6 +894,71 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
       }),
     );
     expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("[BTS-27] claws back the charge's transfers on charge.dispute.created", async () => {
+    const stripe = makeStripe();
+    // The charge funded a store + affiliate transfer.
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.created", {
+        id: "dp_1",
+        charge: "ch_1",
+        amount: 9000,
+        currency: "usd",
+        status: "needs_response",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    // Both recipient transfers reversed, with the dispute id as the idempotency op.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 8000 },
+      { idempotencyKey: "bs_rev_dp_1_tr_store" },
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 1000 },
+      { idempotencyKey: "bs_rev_dp_1_tr_aff" },
+    );
+  });
+
+  it("does not claw back transfers on a dispute that isn't newly created", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.updated", {
+        id: "dp_2",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "under_review",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
 
   it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {

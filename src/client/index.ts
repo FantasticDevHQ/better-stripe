@@ -20,6 +20,7 @@ import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import * as refundsImpl from "./connect/refunds.js";
+import * as transfersImpl from "./connect/transfers.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
@@ -1079,6 +1080,18 @@ export class BetterStripe {
     },
   ) {
     return payoutsImpl.createPayout(this.stripe(), ctx, opts);
+  }
+
+  /**
+   * Reverse the transfers funded by a charge (pro-rata by `percent`, a total
+   * `amount`, or in full). The reversal primitive behind dispute clawback and
+   * refunds; idempotent and ledger-tracked.
+   */
+  async reverseTransfers(
+    ctx: RunCtx,
+    opts: { sourceChargeId: string; percent?: number; amount?: number },
+  ) {
+    return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
   }
 
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {

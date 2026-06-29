@@ -318,7 +318,9 @@ async function applyPerInvoiceFee(
     }
 
     const fee = computeFee(invoice.amount_due, config).feeAmount;
-    if (fee <= 0) return;
+    // A shape-invalid config (e.g. non-numeric percent) yields NaN; never send
+    // a non-finite application_fee_amount to Stripe.
+    if (!Number.isFinite(fee) || fee <= 0) return;
 
     await whCtx.stripe.invoices.update(invoice.id, {
       application_fee_amount: fee,

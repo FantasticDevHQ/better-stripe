@@ -772,6 +772,22 @@ describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
     expect(stripe.invoices.update).not.toHaveBeenCalled();
   });
 
+  it("does not send a non-finite fee from a shape-invalid config", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        // No `percent` → computeFee returns NaN; must not reach Stripe.
+        bsFeeConfig: JSON.stringify({ fixed: 30 }),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", flaggedInvoice()));
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
   it("does nothing for an invoice with no parent subscription", async () => {
     const stripe = makeStripe();
     const whCtx = makeWhCtx({ stripe });

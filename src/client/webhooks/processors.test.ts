@@ -755,6 +755,50 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     });
   });
 
+  it("throws (not silently skips) when a separate sale has no latest_charge", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("payment_intent.succeeded", {
+          id: "pi_nocharge",
+          amount: 10000,
+          currency: "usd",
+          status: "succeeded",
+          latest_charge: null,
+          metadata: {
+            bsChargeType: "separate",
+            bsSplit: JSON.stringify([
+              { destinationAccountId: "acct_store", role: "store", percent: 90 },
+            ]),
+          },
+        }),
+      ),
+    ).rejects.toThrow(/latest_charge|transfer/i);
+  });
+
+  it("throws when a separate sale has malformed bsSplit metadata", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("payment_intent.succeeded", {
+          id: "pi_badjson",
+          amount: 10000,
+          currency: "usd",
+          status: "succeeded",
+          latest_charge: "ch_x",
+          metadata: { bsChargeType: "separate", bsSplit: "{not-json" },
+        }),
+      ),
+    ).rejects.toThrow(/malformed/i);
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
   it("does not create transfers for a normal (non-split) payment", async () => {
     const stripe = makeStripe();
     const whCtx = makeWhCtx({ stripe });

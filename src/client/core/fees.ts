@@ -226,10 +226,20 @@ export function validateSplit(recipients: SplitRecipient[]): void {
     throw new Error("split must have at least one recipient");
   }
   let percentSum = 0;
+  const seenKeys = new Set<string>();
   for (const r of recipients) {
     if (!r.destinationAccountId) {
       throw new Error("split recipient is missing destinationAccountId");
     }
+    // (destinationAccountId, role) is the transfer idempotency key, so duplicate
+    // legs would collide/skip in the engine — reject them up front.
+    const key = `${r.destinationAccountId}:${r.role}`;
+    if (seenKeys.has(key)) {
+      throw new Error(
+        `duplicate split leg for ${r.destinationAccountId} (role ${r.role}); each destination+role must be unique`,
+      );
+    }
+    seenKeys.add(key);
     const hasAmount = r.amount !== undefined;
     const hasPercent = r.percent !== undefined;
     if (hasAmount === hasPercent) {

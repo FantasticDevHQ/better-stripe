@@ -70,12 +70,16 @@ describe("reverseTransfers (BTS-25)", () => {
       sourceChargeId: "ch_1",
     });
 
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_store", {
-      amount: 8000,
-    });
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_aff", {
-      amount: 1000,
-    });
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 8000 },
+      undefined,
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 1000 },
+      undefined,
+    );
     // ledger updated with cumulative reversed amounts
     const reversedAmounts = ctx.runMutation.mock.calls.map((c) => c[1].reversedAmount);
     expect(reversedAmounts).toEqual([8000, 1000]);
@@ -90,12 +94,16 @@ describe("reverseTransfers (BTS-25)", () => {
       percent: 50,
     });
 
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_store", {
-      amount: 4000,
-    });
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_aff", {
-      amount: 500,
-    });
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 4000 },
+      undefined,
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 500 },
+      undefined,
+    );
   });
 
   it("reverses a total amount pro-rata across recipients", async () => {
@@ -107,12 +115,16 @@ describe("reverseTransfers (BTS-25)", () => {
       amount: 4500, // of 9000 total → 4000 + 500
     });
 
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_store", {
-      amount: 4000,
-    });
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_aff", {
-      amount: 500,
-    });
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 4000 },
+      undefined,
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 500 },
+      undefined,
+    );
   });
 
   it("is idempotent — skips an already fully-reversed transfer", async () => {
@@ -126,12 +138,70 @@ describe("reverseTransfers (BTS-25)", () => {
       sourceChargeId: "ch_1",
     });
 
-    expect(stripe.transfers.createReversal).not.toHaveBeenCalledWith("tr_store", {
-      amount: 8000,
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 8000 },
+      undefined,
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_aff",
+      { amount: 1000 },
+      undefined,
+    );
+  });
+
+  it("rejects passing both percent and amount", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx(TWO);
+    await expect(
+      reverseTransfers(asStripe(stripe), makeComponent(), ctx, {
+        sourceChargeId: "ch_1",
+        percent: 50,
+        amount: 100,
+      }),
+    ).rejects.toThrow();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("rejects an out-of-range percent", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx(TWO);
+    await expect(
+      reverseTransfers(asStripe(stripe), makeComponent(), ctx, {
+        sourceChargeId: "ch_1",
+        percent: 150,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("never reverses more than the requested amount (rounding cap)", async () => {
+    const stripe = makeStripe();
+    // Two 1-cent transfers; reverse a total of 1 cent. Independent rounding would
+    // reverse 2; the remainder cap must keep the total at 1.
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_a", amount: 1 },
+      { stripeTransferId: "tr_b", amount: 1 },
+    ]);
+    const res = await reverseTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      amount: 1,
     });
-    expect(stripe.transfers.createReversal).toHaveBeenCalledWith("tr_aff", {
-      amount: 1000,
+    const total = res.reversals.reduce((s, r) => s + r.amount, 0);
+    expect(total).toBeLessThanOrEqual(1);
+  });
+
+  it("passes a stable idempotency key when operationId is given", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([{ stripeTransferId: "tr_store", amount: 8000 }]);
+    await reverseTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
     });
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_store",
+      { amount: 8000 },
+      { idempotencyKey: "bs_rev_dp_1_tr_store" },
+    );
   });
 });
 

@@ -45,6 +45,21 @@ export function epochToIso(
   return new Date(epoch * 1000).toISOString();
 }
 
+/**
+ * The `bs*` metadata namespace is reserved for better-stripe's internal webhook
+ * markers (e.g. `bsChargeType`, `bsSplit`, `bsFeeConfig`, `bsFeeMode`). Strip it
+ * from caller-supplied metadata so a caller can't forge instructions that the
+ * webhook engine would act on (e.g. trigger split transfers without routing).
+ */
+export function stripReservedMetadata(
+  metadata: Record<string, string> | undefined,
+): Record<string, string> {
+  if (!metadata) return {};
+  return Object.fromEntries(
+    Object.entries(metadata).filter(([k]) => !k.startsWith("bs")),
+  );
+}
+
 export async function runMutationOrThrow<
   Mutation extends FunctionReference<"mutation", "public" | "internal">,
 >(

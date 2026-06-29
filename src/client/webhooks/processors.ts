@@ -382,13 +382,21 @@ async function handleSplitTransfers(
 ): Promise<void> {
   if (paymentIntent.status !== "succeeded") return;
   const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+  // Not a split sale — nothing to do.
   if (meta.bsChargeType !== "separate" || !meta.bsSplit) return;
 
+  // From here the PI IS a separate-charges sale, so a missing charge or
+  // malformed split is a real failure: throw so the webhook returns 500 and
+  // Stripe retries (visible + recoverable) rather than silently skipping payouts.
   const sourceChargeId =
     typeof paymentIntent.latest_charge === "string"
       ? paymentIntent.latest_charge
       : (paymentIntent.latest_charge?.id ?? undefined);
-  if (!sourceChargeId) return;
+  if (!sourceChargeId) {
+    throw new Error(
+      `Split-transfer sale ${paymentIntent.id} succeeded without a latest_charge; cannot create transfers`,
+    );
+  }
 
   let split: SplitRecipient[];
   let feeConfig: PlatformFeeConfig | undefined;
@@ -397,8 +405,10 @@ async function handleSplitTransfers(
     feeConfig = meta.bsFeeConfig
       ? (JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig)
       : undefined;
-  } catch {
-    return; // malformed markers — nothing safe to transfer
+  } catch (err) {
+    throw new Error(
+      `Split-transfer sale ${paymentIntent.id} has malformed bsSplit/bsFeeConfig metadata: ${String(err)}`,
+    );
   }
 
   await createSplitTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {

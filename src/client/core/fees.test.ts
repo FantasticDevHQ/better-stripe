@@ -356,4 +356,22 @@ describe("validateSplit (BTS-21)", () => {
   it("rejects an empty destinationAccountId", () => {
     expect(() => validateSplit([r({ destinationAccountId: "", amount: 100 })])).toThrow();
   });
+
+  it("rejects duplicate destination+role legs (idempotency-key collision)", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 100 },
+        { destinationAccountId: "a", role: "store", amount: 200 },
+      ]),
+    ).toThrow(/duplicate/i);
+  });
+
+  it("allows the same destination with different roles", () => {
+    expect(() =>
+      validateSplit([
+        { destinationAccountId: "a", role: "store", amount: 100 },
+        { destinationAccountId: "a", role: "affiliate", amount: 50 },
+      ]),
+    ).not.toThrow();
+  });
 });

@@ -4,7 +4,7 @@ import type { SplitRecipient } from "../../component/lib/fees.js";
 import { computeFee, isPercentOnlyFee, validateSplit } from "../core/fees.js";
 import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
-import { runMutationOrThrow } from "../helpers.js";
+import { runMutationOrThrow, stripReservedMetadata } from "../helpers.js";
 import type { CheckoutSessionCreateParams } from "../stripe-types.js";
 import type {
   PlatformFeeConfig,
@@ -132,6 +132,18 @@ export async function createCheckoutSession(
 ) {
   const uiMode = opts.uiMode ?? "embedded";
 
+  // Setup-mode sessions create no charge, so routing/fees are meaningless and
+  // would persist an unfunded `chargeType` the webhook engine can't act on.
+  if (
+    opts.mode === "setup" &&
+    (opts.split?.length || opts.destinationAccountId || opts.feeConfig)
+  ) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "split/destinationAccountId/fee are not supported for setup-mode Checkout Sessions",
+    );
+  }
+
   // Resolve the routing model. A `split` with >1 recipient uses separate charges
   // & transfers (no application_fee; webhook engine creates the transfers); a
   // single-recipient split is just a destination charge. `split` wins over
@@ -146,6 +158,15 @@ export async function createCheckoutSession(
       isSeparate = true;
     }
   }
+  // Multi-recipient subscription splits aren't wired yet: their transfers fire
+  // from invoice.paid (tracked in BTS-52), which the engine doesn't handle, so
+  // reject rather than persist a separate sale that never pays out.
+  if (isSeparate && opts.mode === "subscription") {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "multi-recipient splits on subscriptions are not supported yet (tracked in BTS-52); use a single-recipient destination charge or a one-time payment",
+    );
+  }
   // Metadata markers the webhook split engine reads to create the transfers.
   const separateMeta = isSeparate
     ? {
@@ -155,8 +176,10 @@ export async function createCheckoutSession(
       }
     : {};
 
+  // Strip the reserved `bs*` namespace from caller metadata so it can't forge
+  // webhook instructions (e.g. trigger split transfers without routing).
   const metadata = {
-    ...(opts.metadata ?? {}),
+    ...stripReservedMetadata(opts.metadata),
     userId: opts.userId,
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };

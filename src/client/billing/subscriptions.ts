@@ -4,7 +4,11 @@ import type { SubscriptionStatus } from "../../component/billing/validators.js";
 import type { SplitRecipient } from "../../component/lib/fees.js";
 import { isPercentOnlyFee, validateSplit } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
-import { epochToIso, runMutationOrThrow } from "../helpers.js";
+import {
+  epochToIso,
+  runMutationOrThrow,
+  stripReservedMetadata,
+} from "../helpers.js";
 import { throwStripeError } from "../errors.js";
 import type { PlatformFeeConfig, StripeComponentSubscription } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
@@ -65,17 +69,28 @@ export async function createSubscription(
     }
   }
 
+  // Multi-recipient subscription splits transfer from invoice.paid (BTS-52),
+  // which the engine doesn't handle yet — reject rather than create a separate
+  // subscription that never pays out its recipients.
+  if (isSeparate) {
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "multi-recipient splits on subscriptions are not supported yet (tracked in BTS-52); use a single-recipient destination charge",
+    );
+  }
+
   // A fee only makes sense when funds are routed; reject the partial config
   // loudly instead of silently creating a plain platform subscription.
-  if (opts.feeConfig && !destinationAccountId && !isSeparate) {
+  if (opts.feeConfig && !destinationAccountId) {
     throwStripeError(
       "INVALID_CONFIGURATION",
       "feeConfig requires destinationAccountId or split",
     );
   }
 
+  // Strip the reserved `bs*` namespace from caller metadata (see checkout.ts).
   const metadata: Record<string, string> = {
-    ...(opts.metadata ?? {}),
+    ...stripReservedMetadata(opts.metadata),
     userId: opts.userId,
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };

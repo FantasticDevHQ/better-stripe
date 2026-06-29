@@ -19,27 +19,54 @@ type LedgerTransfer = {
  * Reverse the transfers funded by a charge (BTS-25), the primitive used by
  * dispute clawback (M4) and refunds (M5).
  *
- * Reversal sizing, per transfer:
+ * Reversal sizing, per transfer (exactly one of `percent`/`amount`, or neither):
  *  - `percent`  — reverse that percentage of each transfer's original amount.
- *  - `amount`   — reverse this total across all transfers, pro-rata by size.
+ *  - `amount`   — reverse this total across all transfers, pro-rata by size,
+ *                 with a remainder pass so the sum never exceeds `amount`.
  *  - neither    — full reversal.
  *
- * Always capped at each transfer's un-reversed remainder, so it's idempotent:
- * a transfer already fully reversed is skipped. The ledger's cumulative
- * `reversedAmount`/`reversalStatus` is updated via `recordTransferReversal`.
+ * Always capped at each transfer's un-reversed remainder, so a fully-reversed
+ * transfer is skipped. Pass `operationId` (e.g. a dispute/refund id) so the
+ * Stripe reversal carries a stable idempotency key — a retry after a partial
+ * run won't double-reverse. The ledger's cumulative `reversedAmount`/
+ * `reversalStatus` is updated via `recordTransferReversal`.
  */
 export async function reverseTransfers(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: { sourceChargeId: string; percent?: number; amount?: number },
+  opts: {
+    sourceChargeId: string;
+    percent?: number;
+    amount?: number;
+    operationId?: string;
+  },
 ): Promise<{ reversals: { stripeTransferId: string; amount: number }[] }> {
-  const transfers = (await ctx.runQuery(
+  if (opts.percent !== undefined && opts.amount !== undefined) {
+    throw new Error("reverseTransfers: pass at most one of percent or amount");
+  }
+  if (
+    opts.percent !== undefined &&
+    (!Number.isFinite(opts.percent) || opts.percent < 0 || opts.percent > 100)
+  ) {
+    throw new Error("reverseTransfers: percent must be between 0 and 100");
+  }
+  if (
+    opts.amount !== undefined &&
+    (!Number.isInteger(opts.amount) || opts.amount < 0)
+  ) {
+    throw new Error("reverseTransfers: amount must be a non-negative integer");
+  }
+
+  const transfers = ((await ctx.runQuery(
     componentRef(component, "connect/queries/listTransfersByCharge"),
     { sourceChargeId: opts.sourceChargeId },
-  )) as LedgerTransfer[];
+  )) ?? []) as LedgerTransfer[];
 
   const total = transfers.reduce((s, t) => s + t.amount, 0);
+  // For the `amount` mode, track the remaining budget so rounding can never
+  // reverse more than the caller asked for.
+  let amountBudget = opts.amount;
   const reversals: { stripeTransferId: string; amount: number }[] = [];
 
   for (const t of transfers) {
@@ -50,17 +77,23 @@ export async function reverseTransfers(
     let reversalAmt: number;
     if (opts.percent !== undefined) {
       reversalAmt = Math.round((t.amount * opts.percent) / 100);
-    } else if (opts.amount !== undefined) {
-      reversalAmt = total > 0 ? Math.round((opts.amount * t.amount) / total) : 0;
+    } else if (amountBudget !== undefined) {
+      const prorata = total > 0 ? Math.round((opts.amount! * t.amount) / total) : 0;
+      reversalAmt = Math.min(prorata, amountBudget);
     } else {
       reversalAmt = remaining; // full reversal
     }
     reversalAmt = Math.min(reversalAmt, remaining);
     if (reversalAmt <= 0) continue;
+    if (amountBudget !== undefined) amountBudget -= reversalAmt;
 
-    await stripe.transfers.createReversal(t.stripeTransferId, {
-      amount: reversalAmt,
-    });
+    await stripe.transfers.createReversal(
+      t.stripeTransferId,
+      { amount: reversalAmt },
+      opts.operationId
+        ? { idempotencyKey: `bs_rev_${opts.operationId}_${t.stripeTransferId}` }
+        : undefined,
+    );
     await runMutationOrThrow(
       ctx,
       componentRef(component, "connect/mutations/recordTransferReversal"),

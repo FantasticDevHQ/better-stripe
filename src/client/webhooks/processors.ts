@@ -636,6 +636,23 @@ async function handleDisputeEvent(
       ? dispute.charge
       : (dispute.charge?.id ?? undefined);
 
+  // Capture the statement descriptor the buyer saw (dispute context) from the
+  // charge — the Dispute object doesn't carry it. Only on `created`, and
+  // best-effort: this is optional metadata, so a transient charge-lookup failure
+  // must never abort the critical dispute side effects (upsert, clawback, cancel).
+  let statementDescriptor: string | undefined;
+  if (lastEvent === "created" && chargeId) {
+    try {
+      const charge = await whCtx.stripe.charges.retrieve(chargeId);
+      statementDescriptor =
+        charge?.calculated_statement_descriptor ??
+        charge?.statement_descriptor ??
+        undefined;
+    } catch {
+      // leave undefined; the descriptor is non-essential context
+    }
+  }
+
   await dispatchUpsert(whCtx, "disputeUpserted", {
     stripeDisputeId: dispute.id,
     stripePaymentIntentId: paymentIntentId,
@@ -647,6 +664,7 @@ async function handleDisputeEvent(
     reason: dispute.reason,
     isChargeRefundable: dispute.is_charge_refundable,
     evidenceDueBy: epochToIso(dispute.evidence_details?.due_by ?? undefined),
+    ...(statementDescriptor ? { statementDescriptor } : {}),
     lastEvent,
     metadata: dispute.metadata ?? undefined,
   });

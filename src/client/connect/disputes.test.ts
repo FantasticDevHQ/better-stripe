@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { RunCtx } from "../helpers.js";
+import type { Component, RunCtx } from "../helpers.js";
 import {
   buildDisputeEvidence,
   disputeEvidenceCountdown,
+  getDisputeWithCountdown,
   updateDispute,
 } from "./disputes.js";
 
@@ -66,6 +67,49 @@ describe("disputeEvidenceCountdown (BTS-31)", () => {
     const r = disputeEvidenceCountdown("not-a-date", new Date());
     expect(r.daysRemaining).toBeUndefined();
     expect(r.isOverdue).toBe(false);
+  });
+});
+
+describe("getDisputeWithCountdown (BTS-31)", () => {
+  const TO_REF = Symbol.for("toReferencePath");
+  const component = {
+    connect: {
+      queries: {
+        getDisputeByStripeId: {
+          [TO_REF]: "betterStripe/connect/queries/getDisputeByStripeId",
+        },
+      },
+    },
+  } as unknown as Component;
+
+  it("returns the dispute with its evidence-due countdown attached", async () => {
+    const runQuery = vi.fn().mockResolvedValue({
+      stripeDisputeId: "dp_1",
+      status: "needs_response",
+      evidenceDueBy: "2026-07-10T00:00:00.000Z",
+    });
+    const readCtx = { runQuery } as unknown as RunCtx;
+
+    const result = await getDisputeWithCountdown(component, readCtx, {
+      stripeDisputeId: "dp_1",
+      now: new Date("2026-07-01T00:00:00.000Z"),
+    });
+
+    expect(result?.evidenceDueBy).toBe("2026-07-10T00:00:00.000Z");
+    expect(result?.countdown).toEqual({
+      dueBy: "2026-07-10T00:00:00.000Z",
+      daysRemaining: 9,
+      isOverdue: false,
+    });
+  });
+
+  it("returns null when the dispute is not found", async () => {
+    const runQuery = vi.fn().mockResolvedValue(null);
+    const readCtx = { runQuery } as unknown as RunCtx;
+    const result = await getDisputeWithCountdown(component, readCtx, {
+      stripeDisputeId: "missing",
+    });
+    expect(result).toBeNull();
   });
 });
 

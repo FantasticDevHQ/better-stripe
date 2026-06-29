@@ -439,6 +439,11 @@ async function handleInvoiceSplitTransfers(
   whCtx: WebhookContext,
   invoice: Stripe.Invoice,
 ): Promise<void> {
+  // Nothing to split when no money was collected (e.g. 100%-off coupon, account
+  // credit, or proration). Skip before any charge resolution so a zero-amount
+  // invoice — which has no charge — can't throw and force endless retries.
+  if (!(invoice.amount_paid > 0)) return;
+
   const parentSub = invoice.parent?.subscription_details?.subscription;
   const subId =
     typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);

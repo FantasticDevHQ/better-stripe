@@ -187,7 +187,8 @@ describe("reverseTransfers (BTS-25)", () => {
       amount: 1,
     });
     const total = res.reversals.reduce((s, r) => s + r.amount, 0);
-    expect(total).toBeLessThanOrEqual(1);
+    // Exactly the requested 1 cent — never more (cap), never under-allocated to 0.
+    expect(total).toBe(1);
   });
 
   it("passes a stable idempotency key when operationId is given", async () => {

@@ -845,6 +845,36 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     });
   });
 
+  it("skips a zero-amount invoice without throwing (no charge to split)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsChargeType: "separate",
+        bsSplit: JSON.stringify([
+          { destinationAccountId: "acct_store", role: "store", percent: 80 },
+        ]),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_zero",
+        currency: "usd",
+        amount_due: 0,
+        amount_paid: 0, // 100%-off coupon / credit → no charge
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+    // No charge resolution, no transfers, no throw.
+    expect(stripe.invoicePayments.list).not.toHaveBeenCalled();
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
   it("does not split a normal (non-separate) subscription invoice", async () => {
     const stripe = makeStripe();
     stripe.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", metadata: {} });

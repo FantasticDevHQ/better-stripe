@@ -1,7 +1,11 @@
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
-import { createSplitTransfers, reverseTransfers } from "../connect/transfers.js";
+import {
+  createSplitTransfers,
+  reinstateTransfers,
+  reverseTransfers,
+} from "../connect/transfers.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -656,6 +660,18 @@ async function handleDisputeEvent(
     await reverseTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
       sourceChargeId: chargeId,
       amount: dispute.amount,
+      operationId: dispute.id,
+    });
+  }
+
+  // Reinstatement (BTS-29): when the dispute is won (or funds are explicitly
+  // reinstated), pay recipients back the amounts clawed back on `created`.
+  const isWon =
+    lastEvent === "funds_reinstated" ||
+    (lastEvent === "closed" && dispute.status === "won");
+  if (isWon && chargeId) {
+    await reinstateTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+      sourceChargeId: chargeId,
       operationId: dispute.id,
     });
   }

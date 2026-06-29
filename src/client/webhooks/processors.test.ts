@@ -961,6 +961,62 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
 
+  it("[BTS-29] reinstates transfers when a dispute closes as won", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.closed", {
+        id: "dp_1",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "won",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 8000, destination: "acct_store" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
+    );
+  });
+
+  it("[BTS-29] does not reinstate when a dispute closes as lost", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx({
+      query: [
+        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      ],
+    });
+    const whCtx = makeWhCtx({ stripe, ctx });
+
+    await processEvent(
+      whCtx,
+      event("charge.dispute.closed", {
+        id: "dp_2",
+        charge: "ch_1",
+        amount: 8000,
+        currency: "usd",
+        status: "lost",
+        reason: "fraudulent",
+        is_charge_refundable: true,
+        evidence_details: { due_by: 1700000000 },
+        metadata: {},
+      }),
+    );
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
   it("[BTS-26] populates evidenceDueBy from the dispute's evidence_details", async () => {
     const whCtx = makeWhCtx();
     await processEvent(

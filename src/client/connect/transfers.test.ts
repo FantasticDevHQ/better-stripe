@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { Component, RunCtx } from "../helpers.js";
-import { createSplitTransfers, reverseTransfers } from "./transfers.js";
+import {
+  createSplitTransfers,
+  reinstateTransfers,
+  reverseTransfers,
+} from "./transfers.js";
 
 const TO_REF = Symbol.for("toReferencePath");
 
@@ -334,6 +338,43 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
       ],
     });
 
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("reinstateTransfers (BTS-29)", () => {
+  it("re-creates transfers for the reversed amounts (dispute won)", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+      { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000, currency: "usd", reversedAmount: 1000 },
+    ]);
+
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+    });
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 8000, destination: "acct_store" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
+    );
+    expect(stripe.transfers.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 1000, destination: "acct_aff" }),
+      { idempotencyKey: "bs_reinstate_dp_1_acct_aff_affiliate" },
+    );
+  });
+
+  it("skips transfers that were never reversed", async () => {
+    const stripe = makeStripe();
+    const ctx = makeCtx([
+      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd" },
+    ]);
+    await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
+      sourceChargeId: "ch_1",
+      operationId: "dp_1",
+    });
     expect(stripe.transfers.create).not.toHaveBeenCalled();
   });
 });

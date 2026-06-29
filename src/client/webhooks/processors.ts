@@ -60,8 +60,13 @@ export async function processEvent(
       await applyPerInvoiceFee(whCtx, obj as Stripe.Invoice);
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
-    case "invoice.finalized":
     case "invoice.paid":
+      await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
+      // Fan funds to split recipients each billing cycle for a separate-charges
+      // subscription (BTS-52).
+      await handleInvoiceSplitTransfers(whCtx, obj as Stripe.Invoice);
+      break;
+    case "invoice.finalized":
     case "invoice.payment_failed":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
@@ -418,6 +423,77 @@ async function handleSplitTransfers(
     split,
     feeConfig,
     paymentId: paymentIntent.id,
+  });
+}
+
+/**
+ * Drive the split transfer engine for a **recurring** separate-charges sale
+ * (BTS-52). On each `invoice.paid` for a subscription flagged
+ * `bsChargeType=separate` (markers live on the subscription), resolve this
+ * invoice's charge and fan funds out to the recipients — so an affiliate-referred
+ * subscription splits every billing cycle. Each cycle has a distinct charge, so
+ * the ledger keys per-charge and cycles don't collide. Errors propagate so
+ * Stripe retries; the engine's idempotency keeps retries safe.
+ */
+async function handleInvoiceSplitTransfers(
+  whCtx: WebhookContext,
+  invoice: Stripe.Invoice,
+): Promise<void> {
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subId =
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+  if (!subId) return; // not a subscription invoice
+
+  const sub = await whCtx.stripe.subscriptions.retrieve(subId);
+  const meta = (sub?.metadata ?? {}) as Record<string, string>;
+  if (meta.bsChargeType !== "separate" || !meta.bsSplit) return;
+
+  let split: SplitRecipient[];
+  let feeConfig: PlatformFeeConfig | undefined;
+  try {
+    split = JSON.parse(meta.bsSplit) as SplitRecipient[];
+    feeConfig = meta.bsFeeConfig
+      ? (JSON.parse(meta.bsFeeConfig) as PlatformFeeConfig)
+      : undefined;
+  } catch (err) {
+    throw new Error(
+      `Subscription ${subId} has malformed bsSplit/bsFeeConfig metadata: ${String(err)}`,
+    );
+  }
+
+  // Resolve the charge that paid this invoice (source_transaction for transfers).
+  const payments = await whCtx.stripe.invoicePayments.list({
+    invoice: invoice.id!,
+    limit: 1,
+  });
+  const payment = payments.data?.[0]?.payment;
+  let chargeId: string | undefined;
+  if (payment?.charge) {
+    chargeId =
+      typeof payment.charge === "string" ? payment.charge : payment.charge.id;
+  } else if (payment?.payment_intent) {
+    const piId =
+      typeof payment.payment_intent === "string"
+        ? payment.payment_intent
+        : payment.payment_intent.id;
+    const pi = await whCtx.stripe.paymentIntents.retrieve(piId);
+    chargeId =
+      typeof pi.latest_charge === "string"
+        ? pi.latest_charge
+        : (pi.latest_charge?.id ?? undefined);
+  }
+  if (!chargeId) {
+    throw new Error(
+      `Paid invoice ${invoice.id} for split subscription ${subId} has no resolvable charge; cannot create transfers`,
+    );
+  }
+
+  await createSplitTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
+    sourceChargeId: chargeId,
+    amount: invoice.amount_paid,
+    currency: invoice.currency,
+    split,
+    feeConfig,
   });
 }
 

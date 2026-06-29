@@ -74,6 +74,12 @@ function makeStripe() {
     transfers: {
       create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
     },
+    invoicePayments: {
+      list: vi.fn(async (_params: unknown) => ({
+        data: [{ payment: { charge: "ch_inv" } }],
+      })),
+    },
+    paymentIntents: { retrieve: vi.fn() },
   };
 }
 
@@ -796,6 +802,66 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
         }),
       ),
     ).rejects.toThrow(/malformed/i);
+    expect(stripe.transfers.create).not.toHaveBeenCalled();
+  });
+
+  it("splits a recurring subscription invoice on invoice.paid (BTS-52)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsChargeType: "separate",
+        bsFeeConfig: JSON.stringify({ percent: 10 }),
+        bsSplit: JSON.stringify([
+          { destinationAccountId: "acct_store", role: "store", percent: 80 },
+          { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+        ]),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_1",
+        currency: "usd",
+        amount_due: 10000,
+        amount_paid: 10000,
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+
+    expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.create.mock.calls[0][0]).toMatchObject({
+      amount: 8000,
+      destination: "acct_store",
+      source_transaction: "ch_inv",
+    });
+    expect(stripe.transfers.create.mock.calls[1][0]).toMatchObject({
+      amount: 500,
+      destination: "acct_aff",
+    });
+  });
+
+  it("does not split a normal (non-separate) subscription invoice", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", metadata: {} });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", {
+        id: "in_2",
+        currency: "usd",
+        amount_due: 10000,
+        amount_paid: 10000,
+        status: "paid",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
     expect(stripe.transfers.create).not.toHaveBeenCalled();
   });
 

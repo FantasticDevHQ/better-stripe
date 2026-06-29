@@ -698,25 +698,33 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
     expect(upsertArgs.splitRecipients).toHaveLength(2);
   });
 
-  it("rejects a multi-recipient split on a subscription (BTS-52 not yet supported)", async () => {
+  it("routes a >1 split on a subscription via separate charges (markers on subscription_data)", async () => {
     const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
     const ctx = makeCtx();
 
-    await expect(
-      createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
-        userId: "buyer_1",
-        stripePriceId: "price_1",
-        mode: "subscription",
-        returnUrl: "https://app.test/return",
-        accountId: "acct_buyer",
-        split: [
-          { destinationAccountId: "acct_store", role: "store", percent: 80 },
-          { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
-        ],
-        feeConfig: { percent: 10 },
-      }),
-    ).rejects.toThrow(/subscription/i);
-    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      accountId: "acct_buyer",
+      split: [
+        { destinationAccountId: "acct_store", role: "store", percent: 80 },
+        { destinationAccountId: "acct_aff", role: "affiliate", percent: 5 },
+      ],
+      feeConfig: { percent: 10 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.subscription_data.transfer_data).toBeUndefined();
+    expect(createArg.subscription_data.application_fee_percent).toBeUndefined();
+    expect(createArg.subscription_data.metadata.bsChargeType).toBe("separate");
+    expect(JSON.parse(createArg.subscription_data.metadata.bsSplit)).toHaveLength(2);
+
+    const [, upsertArgs] = ctx.runMutation.mock.calls[0];
+    expect(upsertArgs.chargeType).toBe("separate");
+    expect(upsertArgs.splitRecipients).toHaveLength(2);
   });
 
   it("treats a single-recipient split as a destination charge", async () => {

@@ -158,16 +158,9 @@ export async function createCheckoutSession(
       isSeparate = true;
     }
   }
-  // Multi-recipient subscription splits aren't wired yet: their transfers fire
-  // from invoice.paid (tracked in BTS-52), which the engine doesn't handle, so
-  // reject rather than persist a separate sale that never pays out.
-  if (isSeparate && opts.mode === "subscription") {
-    throwStripeError(
-      "INVALID_CONFIGURATION",
-      "multi-recipient splits on subscriptions are not supported yet (tracked in BTS-52); use a single-recipient destination charge or a one-time payment",
-    );
-  }
   // Metadata markers the webhook split engine reads to create the transfers.
+  // For subscriptions these live on the subscription and are consumed on each
+  // invoice.paid; for one-time payments they live on the PaymentIntent.
   const separateMeta = isSeparate
     ? {
         bsChargeType: "separate",

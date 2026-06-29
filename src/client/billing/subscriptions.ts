@@ -69,19 +69,9 @@ export async function createSubscription(
     }
   }
 
-  // Multi-recipient subscription splits transfer from invoice.paid (BTS-52),
-  // which the engine doesn't handle yet — reject rather than create a separate
-  // subscription that never pays out its recipients.
-  if (isSeparate) {
-    throwStripeError(
-      "INVALID_CONFIGURATION",
-      "multi-recipient splits on subscriptions are not supported yet (tracked in BTS-52); use a single-recipient destination charge",
-    );
-  }
-
   // A fee only makes sense when funds are routed; reject the partial config
   // loudly instead of silently creating a plain platform subscription.
-  if (opts.feeConfig && !destinationAccountId) {
+  if (opts.feeConfig && !destinationAccountId && !isSeparate) {
     throwStripeError(
       "INVALID_CONFIGURATION",
       "feeConfig requires destinationAccountId or split",

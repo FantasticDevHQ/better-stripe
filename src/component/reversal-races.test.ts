@@ -18,6 +18,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Component, RunCtx } from "../client/helpers.js";
 import {
+  listWedgedReversalClaims,
+  reclaimReversalClaim,
   reverseTransfers,
   reverseTransfersForRefund,
 } from "../client/connect/transfers.js";
@@ -411,5 +413,244 @@ describe("BTS-63 race 3 — a transiently-failed operation must not be leapfrogg
       sourceChargeId: "ch_lp2",
     });
     expect(rows[0]!.reversedAmount).toBe(stripe.total("tr_lp2"));
+  });
+});
+
+describe("BTS-74 — reclaim/expiry of dead reversal claims", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // A permanently-dead claim: an operation claims a slice, its Stripe call
+  // dies, and — unlike the transient case (race 3) — its webhook event is never
+  // redelivered (Stripe's ~72h retries exhaust). The claim frontier then sits
+  // ahead of the confirmed reversedAmount forever, and any successor operation
+  // that claimed behind the hole blocks on `predecessor claim unexecuted`.
+
+  it("re-executes a dead claim, filling the hole so a blocked successor can proceed", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_dead",
+      sourceChargeId: "ch_dead",
+      amount: 7000,
+    });
+
+    // D1 (dispute clawback, amount 2800) claims [0,2800); its Stripe call dies
+    // and the event is NEVER redelivered — a permanently-dead claim.
+    stripe.failNextCallFor("tr_dead");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_dead",
+        amount: 2800,
+        operationId: "dp_dead",
+      }),
+    ).rejects.toThrow(/network error/);
+    expect(stripe.total("tr_dead")).toBe(0);
+
+    // A refund (target 5600) claims [2800,5600) behind the hole and BLOCKS —
+    // its predecessor's claim is unexecuted.
+    await expect(
+      reverseTransfersForRefund(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_dead",
+        refundId: "re_after",
+        chargeAmount: 10000,
+        amountRefunded: 8000,
+      }),
+    ).rejects.toThrow(/predecessor claim unexecuted/);
+
+    // Ops reclaim: re-execute the dead claim (default remedy). It replays the
+    // recorded slice under the same idempotency key and actually moves the money.
+    const res = await reclaimReversalClaim(asStripe(stripe), component, ctx, {
+      operationId: "dp_dead",
+    });
+    expect(res.mode).toBe("reexecute");
+    expect(stripe.total("tr_dead")).toBe(2800);
+
+    // The successor refund now proceeds — the hole is filled.
+    await reverseTransfersForRefund(asStripe(stripe), component, ctx, {
+      sourceChargeId: "ch_dead",
+      refundId: "re_after",
+      chargeAmount: 10000,
+      amountRefunded: 8000,
+    });
+    expect(stripe.total("tr_dead")).toBe(5600);
+
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_dead",
+    });
+    expect(rows[0]!.reversedAmount).toBe(5600);
+    // No longer wedged.
+    const wedged = await listWedgedReversalClaims(component, ctx);
+    expect(wedged).toHaveLength(0);
+  });
+
+  it("lists a wedged leg (claimed > reversed) with its blocking op record", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_wedge",
+      sourceChargeId: "ch_wedge",
+      amount: 5000,
+    });
+
+    stripe.failNextCallFor("tr_wedge");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_wedge",
+        amount: 2000,
+        operationId: "dp_wedge",
+      }),
+    ).rejects.toThrow(/network error/);
+
+    const wedged = await listWedgedReversalClaims(component, ctx);
+    expect(wedged).toHaveLength(1);
+    expect(wedged[0]!.stripeTransferId).toBe("tr_wedge");
+    expect(wedged[0]!.reversedAmount).toBe(0);
+    expect(wedged[0]!.reversalClaimedAmount).toBe(2000);
+    expect(wedged[0]!.blockingOps).toEqual([
+      { operationId: "dp_wedge", from: 0, to: 2000 },
+    ]);
+  });
+
+  it("releases a dead frontier claim after the idempotency window once live Stripe confirms no money moved", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_rel",
+      sourceChargeId: "ch_rel",
+      amount: 6000,
+    });
+
+    stripe.failNextCallFor("tr_rel");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_rel",
+        amount: 3000,
+        operationId: "dp_rel",
+      }),
+    ).rejects.toThrow(/network error/);
+
+    // Release: past the >24h idempotency window, and live Stripe shows the
+    // transfer's amount_reversed is still 0 — the money never moved.
+    const res = await reclaimReversalClaim(asStripe(stripe), component, ctx, {
+      operationId: "dp_rel",
+      mode: "release",
+      minAgeMs: DAY,
+      now: Date.now() + 2 * DAY,
+    });
+    expect(res.mode).toBe("release");
+    if (res.mode === "release") expect(res.released).toBe(true);
+
+    // The op record is gone and the claim frontier rewound to the confirmed
+    // amount, so a fresh operation can claim the released capacity from 0.
+    const op = await t.query(api.connect.queries.getReversalOp, {
+      operationId: "dp_rel",
+    });
+    expect(op).toBeNull();
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_rel",
+    });
+    expect(rows[0]!.reversalClaimedAmount ?? 0).toBe(0);
+
+    const fresh = await reverseTransfers(asStripe(stripe), component, ctx, {
+      sourceChargeId: "ch_rel",
+      amount: 3000,
+      operationId: "dp_fresh",
+    });
+    expect(fresh.reversals[0]!.amount).toBe(3000);
+    expect(stripe.total("tr_rel")).toBe(3000);
+  });
+
+  it("refuses to release a still-live claim inside the idempotency window (money may be in flight)", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_live",
+      sourceChargeId: "ch_live",
+      amount: 6000,
+    });
+
+    stripe.failNextCallFor("tr_live");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_live",
+        amount: 3000,
+        operationId: "dp_live",
+      }),
+    ).rejects.toThrow(/network error/);
+
+    // Only ~1 minute old: still within the idempotency window, so a retry could
+    // still fire the reversal. Release must refuse.
+    await expect(
+      reclaimReversalClaim(asStripe(stripe), component, ctx, {
+        operationId: "dp_live",
+        mode: "release",
+        minAgeMs: DAY,
+        now: Date.now() + 60_000,
+      }),
+    ).rejects.toThrow(/idempotency window|too recent/i);
+
+    // The claim is untouched — still wedged, still recorded.
+    const wedged = await listWedgedReversalClaims(component, ctx);
+    expect(wedged).toHaveLength(1);
+    const op = await t.query(api.connect.queries.getReversalOp, {
+      operationId: "dp_live",
+    });
+    expect(op).not.toBeNull();
+  });
+
+  it("refuses to release when live Stripe shows the money already moved", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_moved",
+      sourceChargeId: "ch_moved",
+      amount: 6000,
+    });
+
+    // The claim's money DID move at Stripe, but the ledger confirm was lost
+    // (crash between createReversal and recordTransferReversal): the op row and
+    // the claim frontier exist, but amount_reversed already covers the slice.
+    stripe.failNextCallFor("tr_moved");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_moved",
+        amount: 3000,
+        operationId: "dp_moved",
+      }),
+    ).rejects.toThrow(/network error/);
+    // Simulate the money having actually moved out of band.
+    await stripe.transfers.createReversal(
+      "tr_moved",
+      { amount: 3000 },
+      { idempotencyKey: "out_of_band" },
+    );
+    expect(stripe.total("tr_moved")).toBe(3000);
+
+    // Release must refuse — releasing here would rewind a claim whose money is
+    // gone, permanently understating the ledger. Re-execution (which records
+    // the already-moved money) is the correct remedy.
+    await expect(
+      reclaimReversalClaim(asStripe(stripe), component, ctx, {
+        operationId: "dp_moved",
+        mode: "release",
+        minAgeMs: DAY,
+        now: Date.now() + 2 * DAY,
+      }),
+    ).rejects.toThrow(/already moved|money moved/i);
   });
 });

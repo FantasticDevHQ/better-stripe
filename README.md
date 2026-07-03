@@ -619,6 +619,45 @@ All components accept:
 | `AccountCloseButton`      | Close/restart action with status-aware labels |
 | `ConnectRequirements`     | Missing requirements checklist                |
 
+### Embedded Disputes (Stripe Connect)
+
+The Stripe-hosted alternative to the headless dispute components: each seller
+views and responds to their own disputes via Stripe's embedded `disputes_list`
+/ `payment_disputes` components, driven by the Account Session that
+`createDisputeSession` creates.
+
+| Component          | Description                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `ConnectProvider`  | Initializes ConnectJS with your publishable key + an account-session fetcher                    |
+| `EmbeddedDisputes` | Mounts the embedded `disputes_list` (or `payment_disputes` when scoped via `payment`) component |
+
+**Dependencies:** the wrapper uses [`@stripe/react-connect-js`](https://www.npmjs.com/package/@stripe/react-connect-js) and [`@stripe/connect-js`](https://www.npmjs.com/package/@stripe/connect-js), which ship as regular dependencies of this package (same convention as `@stripe/react-stripe-js` / `@stripe/stripe-js`) -- no extra install step. ConnectJS components are client-only iframes; render them in client components.
+
+```tsx
+// convex/stripe.ts — expose the account session (server side, BTS-30)
+export const createDisputeSession = action({
+  args: { stripeAccountId: v.string() },
+  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+});
+
+// Seller disputes page (client side)
+import { ConnectProvider, EmbeddedDisputes } from "@getdojo/better-stripe/react";
+
+function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
+  const createSession = useAction(api.stripe.createDisputeSession);
+  return (
+    <ConnectProvider
+      publishableKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
+      fetchClientSecret={async () =>
+        (await createSession({ stripeAccountId })).clientSecret
+      }
+    >
+      <EmbeddedDisputes />
+    </ConnectProvider>
+  );
+}
+```
+
 ## Testing Utilities
 
 Import from `@getdojo/better-stripe/testing`.

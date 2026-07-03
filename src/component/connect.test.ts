@@ -313,3 +313,44 @@ describe("connect — disputes", () => {
     expect(lostAnyAccount[0].stripeDisputeId).toBe("dp_a");
   });
 });
+
+describe("connect — recordPaymentFeeRefund (BTS-34)", () => {
+  it("patches absolute fee totals onto the linked payment", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertPayment, {
+      stripePaymentIntentId: "pi_fee",
+      userId: "user_1",
+      amount: 10000,
+      currency: "usd",
+      status: "succeeded",
+      feeCollectedAmount: 320,
+    });
+
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_fee",
+      feeCollectedAmount: 160,
+      feeRefundedAmount: 160,
+    });
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_fee",
+    });
+    expect(payment!.feeCollectedAmount).toBe(160);
+    expect(payment!.feeRefundedAmount).toBe(160);
+    // Untouched fields survive the patch.
+    expect(payment!.amount).toBe(10000);
+  });
+
+  it("is a no-op when no payment row exists for the payment intent", async () => {
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+        stripePaymentIntentId: "pi_missing",
+        feeCollectedAmount: 0,
+        feeRefundedAmount: 320,
+      }),
+    ).resolves.toBeNull();
+  });
+});

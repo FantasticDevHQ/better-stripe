@@ -30,11 +30,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
             clientSecret?: string;
+            currency?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             mode: "payment" | "subscription" | "setup";
             orgId?: string;
             priceId?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "open" | "complete" | "expired";
             stripeSessionId: string;
             url?: string;
@@ -50,13 +63,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId?: string;
             amountDue: number;
             amountPaid: number;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            attemptCount?: number;
+            chargeType?: "destination" | "separate";
             currency: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             hostedInvoiceUrl?: string;
             invoicePdf?: string;
             metadata?: any;
+            nextPaymentAttempt?: string;
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
@@ -70,15 +97,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -101,20 +141,33 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getActiveSubscription: FunctionReference<
           "query",
           "internal",
-          { orgId?: string; userId: string },
+          { destinationAccountId?: string; orgId?: string; userId: string },
           {
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -139,11 +192,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
             clientSecret?: string;
+            currency?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             mode: "payment" | "subscription" | "setup";
             orgId?: string;
             priceId?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "open" | "complete" | "expired";
             stripeSessionId: string;
             url?: string;
@@ -159,11 +225,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
             clientSecret?: string;
+            currency?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             mode: "payment" | "subscription" | "setup";
             orgId?: string;
             priceId?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "open" | "complete" | "expired";
             stripeSessionId: string;
             url?: string;
@@ -181,13 +260,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId?: string;
             amountDue: number;
             amountPaid: number;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            attemptCount?: number;
+            chargeType?: "destination" | "separate";
             currency: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             hostedInvoiceUrl?: string;
             invoicePdf?: string;
             metadata?: any;
+            nextPaymentAttempt?: string;
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
@@ -203,15 +296,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -236,15 +342,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -294,11 +413,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
             clientSecret?: string;
+            currency?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             mode: "payment" | "subscription" | "setup";
             orgId?: string;
             priceId?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "open" | "complete" | "expired";
             stripeSessionId: string;
             url?: string;
@@ -322,13 +454,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId?: string;
             amountDue: number;
             amountPaid: number;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            attemptCount?: number;
+            chargeType?: "destination" | "separate";
             currency: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             hostedInvoiceUrl?: string;
             invoicePdf?: string;
             metadata?: any;
+            nextPaymentAttempt?: string;
             orgId?: string;
             periodEnd?: string;
             periodStart?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status: "draft" | "open" | "paid" | "uncollectible" | "void";
             stripeInvoiceId: string;
             subscriptionId?: string;
@@ -356,15 +502,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -389,15 +548,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -422,15 +594,86 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
             cancelAtPeriodEnd: boolean;
             canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
             currentPeriodEnd?: string;
             currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
             priceId?: string;
             quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
+            status:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+            stripeSubscriptionId: string;
+            trialEnd?: string;
+            trialStart?: string;
+            userId: string;
+          }>,
+          Name
+        >;
+        listSubscriptionsByUserAndStore: FunctionReference<
+          "query",
+          "internal",
+          {
+            destinationAccountId: string;
+            status?:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+            userId: string;
+          },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            cancelAtPeriodEnd: boolean;
+            canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
+            currentPeriodEnd?: string;
+            currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
+            isTrialing: boolean;
+            metadata?: any;
+            orgId?: string;
+            priceId?: string;
+            quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "active"
               | "trialing"
@@ -451,15 +694,103 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     connect: {
       mutations: {
-        upsertPayment: FunctionReference<
+        claimReversalSlices: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            mode:
+              | { kind: "full" }
+              | { kind: "percent"; percent: number }
+              | { amount: number; kind: "amount" }
+              | {
+                  amountRefunded: number;
+                  chargeAmount: number;
+                  kind: "fraction";
+                };
+            operationId: string;
+            sourceChargeId: string;
+          },
+          {
+            replay: boolean;
+            slices: Array<{
+              confirmed: number;
+              from: number;
+              stripeTransferId: string;
+              to: number;
+            }>;
+          },
+          Name
+        >;
+        recordPaymentFeeRefund: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            feeCollectedAmount: number;
+            feeRefundedAmount: number;
+            stripePaymentIntentId: string;
+          },
+          null,
+          Name
+        >;
+        recordTransferReversal: FunctionReference<
+          "mutation",
+          "internal",
+          { reversedAmount: number; stripeTransferId: string },
+          null,
+          Name
+        >;
+        upsertDispute: FunctionReference<
           "mutation",
           "internal",
           {
             accountId?: string;
             amount: number;
             currency: string;
+            evidence?: any;
+            evidenceDueBy?: string;
+            isChargeRefundable: boolean;
+            lastEvent?: string;
+            linkedTransferIds?: Array<string>;
+            metadata?: any;
+            reason: string;
+            statementDescriptor?: string;
+            status:
+              | "warning_needs_response"
+              | "warning_under_review"
+              | "warning_closed"
+              | "needs_response"
+              | "under_review"
+              | "won"
+              | "lost"
+              | "prevented";
+            stripeChargeId?: string;
+            stripeDisputeId: string;
+            stripePaymentIntentId?: string;
+          },
+          null,
+          Name
+        >;
+        upsertPayment: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            amount: number;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
+            currency: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             orgId?: string;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "succeeded"
               | "failed"
@@ -488,8 +819,140 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           null,
           Name
         >;
+        upsertRefund: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            amount: number;
+            currency: string;
+            failureReason?: string;
+            metadata?: any;
+            reason?:
+              | "duplicate"
+              | "fraudulent"
+              | "requested_by_customer"
+              | "expired_uncaptured_charge";
+            status:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripeChargeId?: string;
+            stripePaymentIntentId?: string;
+            stripeRefundId: string;
+          },
+          null,
+          Name
+        >;
+        upsertTransfer: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            amount: number;
+            currency: string;
+            destinationAccountId: string;
+            metadata?: any;
+            paymentId?: string;
+            reinstatement?: boolean;
+            reversalStatus?: "partially_reversed" | "fully_reversed";
+            reversedAmount?: number;
+            role?: "store" | "affiliate" | "other";
+            sourceChargeId?: string;
+            sourceInvoiceId?: string;
+            status: "pending" | "paid" | "failed" | "reversed";
+            stripeTransferId: string;
+          },
+          null,
+          Name
+        >;
       };
       queries: {
+        getAccountEarnings: FunctionReference<
+          "query",
+          "internal",
+          { destinationAccountId: string; previewLimit?: number },
+          {
+            gross: number;
+            reversed: number;
+            transferCount: number;
+            transfers: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              currency: string;
+              destinationAccountId: string;
+              metadata?: any;
+              paymentId?: string;
+              reinstatement?: boolean;
+              reversalClaimedAmount?: number;
+              reversalStatus?: "partially_reversed" | "fully_reversed";
+              reversedAmount?: number;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              status: "pending" | "paid" | "failed" | "reversed";
+              stripeTransferId: string;
+            }>;
+          },
+          Name
+        >;
+        getAccountPayouts: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; previewLimit?: number },
+          {
+            paidOut: number;
+            payoutCount: number;
+            payouts: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              metadata?: any;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+            }>;
+          },
+          Name
+        >;
+        getDisputeByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeDisputeId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            amount: number;
+            currency: string;
+            evidence?: any;
+            evidenceDueBy?: string;
+            isChargeRefundable: boolean;
+            lastEvent?: string;
+            linkedTransferIds?: Array<string>;
+            metadata?: any;
+            reason: string;
+            statementDescriptor?: string;
+            status:
+              | "warning_needs_response"
+              | "warning_under_review"
+              | "warning_closed"
+              | "needs_response"
+              | "under_review"
+              | "won"
+              | "lost"
+              | "prevented";
+            stripeChargeId?: string;
+            stripeDisputeId: string;
+            stripePaymentIntentId?: string;
+          } | null,
+          Name
+        >;
         getPaymentByStripeId: FunctionReference<
           "query",
           "internal",
@@ -499,9 +962,23 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _id: string;
             accountId?: string;
             amount: number;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            chargeType?: "destination" | "separate";
             currency: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
             metadata?: any;
             orgId?: string;
+            refundStatus?: "partially_refunded" | "fully_refunded";
+            refundedAmount?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
             status:
               | "succeeded"
               | "failed"
@@ -549,6 +1026,105 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           } | null,
           Name
         >;
+        getRefundByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeRefundId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            amount: number;
+            currency: string;
+            failureReason?: string;
+            metadata?: any;
+            reason?:
+              | "duplicate"
+              | "fraudulent"
+              | "requested_by_customer"
+              | "expired_uncaptured_charge";
+            status:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripeChargeId?: string;
+            stripePaymentIntentId?: string;
+            stripeRefundId: string;
+          } | null,
+          Name
+        >;
+        getTransferByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeTransferId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            amount: number;
+            currency: string;
+            destinationAccountId: string;
+            metadata?: any;
+            paymentId?: string;
+            reinstatement?: boolean;
+            reversalClaimedAmount?: number;
+            reversalStatus?: "partially_reversed" | "fully_reversed";
+            reversedAmount?: number;
+            role?: "store" | "affiliate" | "other";
+            sourceChargeId?: string;
+            sourceInvoiceId?: string;
+            status: "pending" | "paid" | "failed" | "reversed";
+            stripeTransferId: string;
+          } | null,
+          Name
+        >;
+        listDisputes: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            limit?: number;
+            status?:
+              | "warning_needs_response"
+              | "warning_under_review"
+              | "warning_closed"
+              | "needs_response"
+              | "under_review"
+              | "won"
+              | "lost"
+              | "prevented";
+            stripePaymentIntentId?: string;
+          },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            amount: number;
+            currency: string;
+            evidence?: any;
+            evidenceDueBy?: string;
+            isChargeRefundable: boolean;
+            lastEvent?: string;
+            linkedTransferIds?: Array<string>;
+            metadata?: any;
+            reason: string;
+            statementDescriptor?: string;
+            status:
+              | "warning_needs_response"
+              | "warning_under_review"
+              | "warning_closed"
+              | "needs_response"
+              | "under_review"
+              | "won"
+              | "lost"
+              | "prevented";
+            stripeChargeId?: string;
+            stripeDisputeId: string;
+            stripePaymentIntentId?: string;
+          }>,
+          Name
+        >;
         listPayouts: FunctionReference<
           "query",
           "internal",
@@ -571,6 +1147,93 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           }>,
           Name
         >;
+        listRefunds: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            limit?: number;
+            status?:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripePaymentIntentId?: string;
+          },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            amount: number;
+            currency: string;
+            failureReason?: string;
+            metadata?: any;
+            reason?:
+              | "duplicate"
+              | "fraudulent"
+              | "requested_by_customer"
+              | "expired_uncaptured_charge";
+            status:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripeChargeId?: string;
+            stripePaymentIntentId?: string;
+            stripeRefundId: string;
+          }>,
+          Name
+        >;
+        listTransfersByAccount: FunctionReference<
+          "query",
+          "internal",
+          { destinationAccountId: string; limit?: number },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            amount: number;
+            currency: string;
+            destinationAccountId: string;
+            metadata?: any;
+            paymentId?: string;
+            reinstatement?: boolean;
+            reversalClaimedAmount?: number;
+            reversalStatus?: "partially_reversed" | "fully_reversed";
+            reversedAmount?: number;
+            role?: "store" | "affiliate" | "other";
+            sourceChargeId?: string;
+            sourceInvoiceId?: string;
+            status: "pending" | "paid" | "failed" | "reversed";
+            stripeTransferId: string;
+          }>,
+          Name
+        >;
+        listTransfersByCharge: FunctionReference<
+          "query",
+          "internal",
+          { limit?: number; sourceChargeId: string },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            amount: number;
+            currency: string;
+            destinationAccountId: string;
+            metadata?: any;
+            paymentId?: string;
+            reinstatement?: boolean;
+            reversalClaimedAmount?: number;
+            reversalStatus?: "partially_reversed" | "fully_reversed";
+            reversedAmount?: number;
+            role?: "store" | "affiliate" | "other";
+            sourceChargeId?: string;
+            sourceInvoiceId?: string;
+            status: "pending" | "paid" | "failed" | "reversed";
+            stripeTransferId: string;
+          }>,
+          Name
+        >;
       };
     };
     core: {
@@ -587,6 +1250,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           { stripeAccountId: string },
           boolean,
+          Name
+        >;
+        setStatementDescriptor: FunctionReference<
+          "mutation",
+          "internal",
+          { statementDescriptor: string | null; stripeAccountId: string },
+          null,
           Name
         >;
         upsertAccount: FunctionReference<
@@ -669,6 +1339,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "restricted";
             orgId?: string;
             requirements?: any;
+            statementDescriptor?: string;
             stripeAccountId: string;
             userId: string;
           } | null,
@@ -698,6 +1369,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "restricted";
             orgId?: string;
             requirements?: any;
+            statementDescriptor?: string;
             stripeAccountId: string;
             userId: string;
           } | null,
@@ -727,6 +1399,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "restricted";
             orgId?: string;
             requirements?: any;
+            statementDescriptor?: string;
             stripeAccountId: string;
             userId: string;
           } | null,
@@ -756,6 +1429,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "restricted";
             orgId?: string;
             requirements?: any;
+            statementDescriptor?: string;
             stripeAccountId: string;
             userId: string;
           } | null,

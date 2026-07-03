@@ -35,7 +35,7 @@ This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first
 - **Invoices** -- Invoice syncing and querying with metadata propagation from subscriptions
 - **Payments** -- Payment intent tracking and status management
 - **Payouts** -- Automatic rolling payouts for Connect/marketplace flows, with a recipient balance + cadence React surface
-- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment
+- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment, plus proportional platform-fee return and transfer reversal (destination charges via Stripe flags, split sales via webhook-driven ledger math)
 - **Disputes** -- Chargeback/dispute tracking with evidence submission and close helpers, plus automatic transfer clawback on open, reinstatement on a won dispute, and auto-cancel of the disputed subscription
 - **Per-store statement descriptors** -- Buyer-recognizable charge descriptors resolved per seller with a configurable platform fallback
 - **Webhook handling** -- Single-endpoint processing with ledger-based deduplication and replay protection
@@ -48,13 +48,12 @@ See [Roadmap / Known Gaps](#roadmap--known-gaps) for what's still in flight.
 
 ## Roadmap / Known Gaps
 
-The marketplace economics layer described above — platform fees, the split engine, rolling payouts, dispute clawback/reinstate, refund tracking, and per-store statement descriptors — is **implemented and merged**, tracked as issues on the `BTS` team in Linear. This section lists what's honestly still open, by ticket, rather than letting the feature list overstate the current state:
+The marketplace economics layer described above — platform fees, the split engine, rolling payouts, dispute clawback/reinstate, refund fee/transfer reversal, and per-store statement descriptors — is **implemented and merged**, tracked as issues on the `BTS` team in Linear. This section lists what's honestly still open, by ticket, rather than letting the feature list overstate the current state:
 
 - **[BTS-67](https://linear.app/dojoco/issue/BTS-67)** — the first charge of every destination-charge subscription carries no per-store statement descriptor. Direct `charge_automatically` subscriptions (and Checkout subscription mode) finalize and pay their first invoice synchronously at creation, before the `invoice.created` handler that sets the descriptor can run. Later invoices are unaffected. A product-level `statement_descriptor` fix (which would cover the first charge too) is proposed but not built.
 - **[BTS-68](https://linear.app/dojoco/issue/BTS-68)** — investigating whether the fixed/tiered per-invoice platform fee has the same first-invoice gap as BTS-67 (same `invoice.created` timing), which would be a fee-revenue miss rather than a cosmetic one. Not yet confirmed or fixed.
 - **[BTS-63](https://linear.app/dojoco/issue/BTS-63)** — dispute clawback (`reverseTransfers`) retrying after a partial success can hit Stripe idempotency-key conflicts on the legs that already succeeded.
 - **[BTS-64](https://linear.app/dojoco/issue/BTS-64)** — the earnings/split ledger queries backing `useEarnings` and `useSplitBreakdown` (`listTransfersByAccount`, `listTransfersByCharge`) silently cap at 50 rows, which can understate gross/net totals for high-volume accounts or heavily-split sales.
-- **BTS-34** ([PR #45](https://github.com/kellykampen/better-stripe/pull/45), open, not yet merged) — `createRefund` today issues a plain Stripe refund with no automatic proportional fee return or transfer reversal. Until it merges, refunding a split or destination-charge sale does not claw back the recipient's share or the platform's fee the way a dispute does; do that manually via `reverseTransfers` if needed.
 
 ## Installation
 
@@ -239,7 +238,7 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 | Method                                                                                                          | Description                                                                      |
 | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId? })` | Issue a refund (provide a payment intent or charge); synced via `refund.created` |
+| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId?, refundApplicationFee?, reverseTransfer? })` | Issue a refund (provide a payment intent or charge); returns/reverses the platform fee and destination transfer by default; synced via `refund.created`/`.updated` |
 | `getRefundByStripeId(ctx, { stripeRefundId })`                                                                  | Get a refund by Stripe refund ID                                                 |
 | `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                               | List refunds with optional filters                                               |
 | `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                | Get a dispute by Stripe dispute ID                                               |
@@ -377,6 +376,7 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
 - `payout.created`, `.updated`, `.paid`, `.failed`
 - `refund.created`, `.updated`, `.failed`
+- `application_fee.refunded` -- keeps `feeCollectedAmount`/`feeRefundedAmount` accurate on the linked payment
 - `charge.dispute.created`, `.updated`, `.closed`, `.funds_withdrawn`, `.funds_reinstated`
 - `product.created`, `.updated`
 - `price.created`, `.updated`
@@ -603,7 +603,12 @@ export const createDisputeSession = action({
 
 ### Refunds and Statement Descriptors
 
-`createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, ... })` issues a Stripe refund; the `refunds` table and the linked `payments` row update when the resulting `refund.created` webhook arrives. **Today this is a plain refund** — it does not automatically reverse the recipient's transfer share or return the platform's fee the way dispute clawback does. Proportional fee return + transfer reversal on refund is in flight ([BTS-34](#roadmap--known-gaps), PR #45, not yet merged); until then, pair a refund with a manual `reverseTransfers` call if the sale was split.
+`createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, refundApplicationFee?, reverseTransfer?, ... })` issues a Stripe refund with marketplace semantics, both defaulting **on**:
+
+- `refundApplicationFee` — return the platform's application fee pro-rata with the refund (destination charges only; Stripe pro-rates partial refunds automatically).
+- `reverseTransfer` — pull the refunded amount back from the destination account (destination charges only; also pro-rated for partials).
+
+Stripe hard-errors if either flag is sent for a charge that doesn't carry an application fee / destination transfer, so `createRefund` resolves the charge first and only sends each flag when the charge can honor it. **Split (separate-charges) sales carry neither** — those go through the same charge, so their clawback is webhook-driven: on `refund.created`/`.updated`, `reverseTransfersForRefund` reverses each recipient's ledger leg pro-rata to Stripe's cumulative `amount_refunded`, converging correctly across multiple partial refunds (and coexisting with a prior dispute clawback on the same charge). A separate `application_fee.refunded` handler keeps the linked payment's `feeCollectedAmount`/`feeRefundedAmount` in sync. The `refunds` table and the linked `payments` row update as the corresponding webhooks arrive; `createRefund` itself returns only the new refund id.
 
 Per-store statement descriptors make destination charges recognizable on a buyer's card statement (`PLATFORMPREFIX* SUFFIX`):
 

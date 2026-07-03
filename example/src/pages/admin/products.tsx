@@ -46,6 +46,8 @@ export function AdminProducts() {
   const products = useQuery(api.queries.listProductsWithPrices);
   const createProduct = useAction(api.actions.createProduct);
   const createPrice = useAction(api.actions.createPrice);
+  const updateProduct = useAction(api.actions.updateProduct);
+  const deactivateProduct = useAction(api.actions.deactivateProduct);
 
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -58,6 +60,14 @@ export function AdminProducts() {
   });
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isCreatingPrice, setIsCreatingPrice] = useState(false);
+  // Edit dialog state: which product is being edited (null = closed).
+  const [editingProduct, setEditingProduct] = useState<{
+    stripeProductId: string;
+    name: string;
+    description: string;
+  } | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
 
   const handleCreateProduct = async () => {
     setIsCreatingProduct(true);
@@ -100,6 +110,34 @@ export function AdminProducts() {
       console.error("Failed to create price:", err);
     } finally {
       setIsCreatingPrice(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingProduct) return;
+    setIsSavingEdit(true);
+    try {
+      await updateProduct({
+        stripeProductId: editingProduct.stripeProductId,
+        name: editingProduct.name,
+        description: editingProduct.description || undefined,
+      });
+      setEditingProduct(null);
+    } catch (err) {
+      console.error("Failed to update product:", err);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeactivate = async (stripeProductId: string) => {
+    setDeactivatingId(stripeProductId);
+    try {
+      await deactivateProduct({ stripeProductId });
+    } catch (err) {
+      console.error("Failed to deactivate product:", err);
+    } finally {
+      setDeactivatingId(null);
     }
   };
 
@@ -180,6 +218,60 @@ export function AdminProducts() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Dialog
+          open={editingProduct !== null}
+          onOpenChange={(open) => !open && setEditingProduct(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+              <DialogDescription>
+                Update the product in your Stripe catalog.
+              </DialogDescription>
+            </DialogHeader>
+            {editingProduct && (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-product-name">Name</Label>
+                  <Input
+                    id="edit-product-name"
+                    value={editingProduct.name}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-product-description">Description</Label>
+                  <Input
+                    id="edit-product-description"
+                    value={editingProduct.description}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingProduct(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit || !editingProduct?.name}
+              >
+                {isSavingEdit ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Products Table */}
@@ -234,12 +326,31 @@ export function AdminProducts() {
                       className="flex justify-end gap-2"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setEditingProduct({
+                            stripeProductId: product.stripeProductId,
+                            name: product.name,
+                            description: product.description ?? "",
+                          })
+                        }
+                      >
                         Edit
                       </Button>
                       {product.active && (
-                        <Button variant="destructive" size="sm">
-                          Deactivate
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deactivatingId === product.stripeProductId}
+                          onClick={() =>
+                            handleDeactivate(product.stripeProductId)
+                          }
+                        >
+                          {deactivatingId === product.stripeProductId
+                            ? "Deactivating..."
+                            : "Deactivate"}
                         </Button>
                       )}
                     </div>

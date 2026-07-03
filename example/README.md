@@ -259,6 +259,47 @@ Demo flows that need seeded data (checkout, disputes, admin actions) are covered
 by later specs against a seeded Convex + Stripe test environment — this harness
 is the foundation they build on.
 
+**Live-backend specs.** Some specs exercise flows the placeholder backend can't
+serve (they persist real changes and rely on webhook-driven sync). These skip by
+default and run only with the explicit opt-in `E2E_LIVE_BACKEND=1`, with
+`VITE_CONVEX_URL` pointing the harness at a real deployment:
+
+```bash
+E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=https://<your-dev-deployment>.convex.cloud \
+  pnpm --filter ./example e2e
+```
+
+Requirements: a linked Convex dev deployment with the current functions pushed
+(`npx convex dev --once`), `STRIPE_SECRET_KEY` set, demo data seeded, and webhook
+event destinations configured (via `/admin/setup`) so `product.updated` events
+sync back to the UI. Current live-backend specs:
+
+- `e2e/admin-products.spec.ts` — admin product Edit + Deactivate (BTS-59);
+  self-contained (creates, edits, then archives its own product).
+- `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
+  see below.
+
+#### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
+
+The one-time checkout demo (BTS-57) has two layers:
+
+- **Backend-independent** (runs everywhere, incl. CI): the payment-mode
+  checkout and success routes boot without page errors.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): landing → the seeded
+  one-time product (Ceramics Masterclass, from the marketplace seed) →
+  embedded Stripe checkout in `payment` mode → test card `4242…` → Stripe
+  redirects to `/checkout/status?session_id=cs_…` → "Payment successful!" with
+  the one-time purchase copy. Additional requirement on top of the list above:
+  webhook forwarding so the session status flips to `complete`:
+
+  ```bash
+  stripe listen --forward-to <your-site-url>/stripe/webhook
+  ```
+
+The session's mode is derived server-side in
+`convex/actions.ts#createCheckoutSession`: one-time prices get
+`mode: "payment"`, recurring prices `mode: "subscription"`.
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
@@ -313,7 +354,8 @@ example/
 │   ├── reset.ts                # Clear all data
 │   └── users.ts                # User queries
 ├── e2e/
-│   └── smoke.spec.ts           # Playwright smoke test (app boots + routes)
+│   ├── smoke.spec.ts           # Playwright smoke test (app boots + routes)
+│   └── one-time-checkout.spec.ts # One-time payment flow (live part gated)
 ├── scripts/
 │   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
 ├── playwright.config.ts        # Playwright harness (dev-server wiring)

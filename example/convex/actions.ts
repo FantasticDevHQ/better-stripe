@@ -139,6 +139,22 @@ export const createPrice = action({
   handler: async (ctx, args) => stripe.createPrice(ctx, args),
 });
 
+export const updateProduct = action({
+  args: {
+    stripeProductId: v.string(),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => stripe.updateProduct(ctx, args),
+});
+
+export const deactivateProduct = action({
+  args: { stripeProductId: v.string() },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => stripe.deactivateProduct(ctx, args),
+});
+
 export const createProductForAccount = action({
   args: {
     name: v.string(),
@@ -218,20 +234,37 @@ export const detachPaymentMethod = action({
 });
 
 // Checkout
+
+/**
+ * Checkout mode for a price (BTS-57): one-time prices check out in `payment`
+ * mode, recurring in `subscription` mode. Unknown prices (not yet synced into
+ * the component) keep the subscription default; Stripe validates the actual
+ * price/mode pairing when the session is created.
+ */
+export function checkoutModeForPrice(
+  price: { type: string } | null,
+): "payment" | "subscription" {
+  return price?.type === "one_time" ? "payment" : "subscription";
+}
+
 export const createCheckoutSession = action({
   args: {
     userId: v.string(),
     stripePriceId: v.string(),
     returnUrl: v.string(),
   },
-  handler: async (ctx, args) =>
-    stripe.createCheckoutSession(ctx, {
+  handler: async (ctx, args) => {
+    const price = await stripe.getPriceByStripeId(ctx, {
+      stripePriceId: args.stripePriceId,
+    });
+    return stripe.createCheckoutSession(ctx, {
       userId: args.userId,
       stripePriceId: args.stripePriceId,
-      mode: "subscription",
+      mode: checkoutModeForPrice(price),
       returnUrl: args.returnUrl,
       uiMode: "embedded",
-    }),
+    });
+  },
 });
 
 // Subscriptions

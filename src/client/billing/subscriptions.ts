@@ -53,6 +53,8 @@ export async function createSubscription(
     split?: SplitRecipient[];
     feeConfig?: PlatformFeeConfig;
     trialDays?: number;
+    /** Platform-default statement-descriptor suffix (BTS-32); see checkout.ts. */
+    defaultStatementDescriptorSuffix?: string;
     metadata?: Record<string, string>;
   },
 ): Promise<{ stripeSubscriptionId: string; status: SubscriptionStatus }> {
@@ -84,6 +86,20 @@ export async function createSubscription(
     userId: opts.userId,
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };
+
+  // Per-store statement descriptor (BTS-32): resolved from the destination
+  // account's record, falling back to the platform default. Subscriptions
+  // can't carry a suffix directly, so it's stashed as a metadata marker the
+  // invoice.created processor applies to each invoice.
+  let statementDescriptorSuffix: string | undefined;
+  if (destinationAccountId && !isSeparate) {
+    const account = (await ctx.runQuery(
+      componentRef(component, "core/queries/getAccountByStripeId"),
+      { stripeAccountId: destinationAccountId },
+    )) as { statementDescriptor?: string } | null;
+    statementDescriptorSuffix =
+      account?.statementDescriptor ?? opts.defaultStatementDescriptorSuffix;
+  }
 
   const params: Stripe.SubscriptionCreateParams = {
     customer_account: opts.customerAccount,
@@ -126,6 +142,12 @@ export async function createSubscription(
           bsFeeConfig: JSON.stringify(opts.feeConfig),
         };
       }
+    }
+    if (statementDescriptorSuffix) {
+      params.metadata = {
+        ...(params.metadata ?? metadata),
+        bsStatementDescriptor: statementDescriptorSuffix,
+      };
     }
   }
 

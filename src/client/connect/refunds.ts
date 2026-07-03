@@ -3,8 +3,11 @@ import type Stripe from "stripe";
 import type { RefundStatus } from "../../component/connect/validators.js";
 import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
-import type { StripeComponentRefund } from "../types.js";
+import type { StripeComponentPayment, StripeComponentRefund } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
+import { type RefundActor, isRefundAuthorized } from "./refundActor.js";
+
+export type { RefundActor } from "./refundActor.js";
 
 // =============================================================================
 // Refund methods
@@ -30,7 +33,8 @@ import { componentRef } from "../webhooks/helpers.js";
  */
 export async function createRefund(
   stripe: Stripe,
-  _ctx: RunCtx,
+  component: Component,
+  ctx: RunCtx,
   opts: {
     stripePaymentIntentId?: string;
     stripeChargeId?: string;
@@ -42,6 +46,15 @@ export async function createRefund(
     refundApplicationFee?: boolean;
     /** Reverse the destination transfer pro-rata. Default true. */
     reverseTransfer?: boolean;
+    /**
+     * Who is initiating the refund (BTS-35). The app authenticates the caller
+     * and passes the identity; the library enforces the scope. A platform admin
+     * (`{ type: "admin" }`) may refund any sale. A seller
+     * (`{ type: "seller", accountId }`) may refund only sales routed to their
+     * own connected account. Omit for platform-initiated refunds (unrestricted,
+     * back-compatible with BTS-34 callers).
+     */
+    actor?: RefundActor;
   },
 ): Promise<{ stripeRefundId: string }> {
   if (!opts.stripePaymentIntentId && !opts.stripeChargeId) {
@@ -56,6 +69,12 @@ export async function createRefund(
       "createRefund accepts stripePaymentIntentId or stripeChargeId, not both",
     );
   }
+
+  // Actor scoping (BTS-35): enforce BEFORE any Stripe call, so an unauthorized
+  // seller-initiated refund never moves money. Admins and the (omitted) legacy
+  // caller are unrestricted; a seller is checked against where the money was
+  // actually routed, read from the component's own payments ledger.
+  await assertRefundAuthorized(stripe, component, ctx, opts);
 
   try {
     const requestOpts = opts.stripeAccountId
@@ -101,6 +120,75 @@ export async function createRefund(
     return { stripeRefundId: refund.id };
   } catch (err) {
     throwStripeError("REFUND_CREATE_FAILED", "Failed to create refund", err);
+  }
+}
+
+/**
+ * Enforce refund actor scoping (BTS-35). Resolves the payment the refund
+ * targets from the component's `payments` ledger and rejects a seller-initiated
+ * refund whose money was not routed to that seller's account. Fails closed:
+ * if the target payment can't be resolved (no PaymentIntent, or no ledger row),
+ * a seller is denied rather than allowed. No-ops for admin / omitted actors.
+ */
+async function assertRefundAuthorized(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    stripeAccountId?: string;
+    actor?: RefundActor;
+  },
+): Promise<void> {
+  const { actor } = opts;
+  if (!actor || actor.type === "admin") return; // unrestricted
+
+  // Resolve the PaymentIntent id that keys the payments ledger. A charge-only
+  // refund resolves through the charge's `payment_intent`.
+  const requestOpts = opts.stripeAccountId
+    ? { stripeAccount: opts.stripeAccountId }
+    : undefined;
+  let piId = opts.stripePaymentIntentId;
+  if (!piId && opts.stripeChargeId) {
+    const charge = await stripe.charges.retrieve(
+      opts.stripeChargeId,
+      undefined,
+      requestOpts,
+    );
+    piId =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent?.id ?? undefined);
+  }
+  if (!piId) {
+    throwStripeError(
+      "REFUND_UNAUTHORIZED",
+      "Refund not authorized: cannot verify sale ownership for a charge with no PaymentIntent",
+    );
+  }
+
+  const payment = (await ctx.runQuery(
+    componentRef(component, "connect/queries/getPaymentByStripeId"),
+    { stripePaymentIntentId: piId },
+  )) as StripeComponentPayment | null;
+  if (!payment) {
+    throwStripeError(
+      "REFUND_UNAUTHORIZED",
+      `Refund not authorized: no payment found for ${piId} to verify sale ownership`,
+    );
+  }
+
+  if (
+    !isRefundAuthorized(actor, {
+      destinationAccountId: payment.destinationAccountId,
+      splitRecipients: payment.splitRecipients,
+    })
+  ) {
+    throwStripeError(
+      "REFUND_UNAUTHORIZED",
+      `Refund not authorized: seller ${actor.accountId} may not refund a sale routed to another account`,
+    );
   }
 }
 

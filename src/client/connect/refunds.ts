@@ -23,6 +23,14 @@ export type { RefundActor } from "./refundActor.js";
  * - `reverseTransfer` — pull the refunded amount back from the destination
  *   account of a destination charge (Stripe pro-rates partials).
  *
+ * If part of the transfer is ALREADY reversed — e.g. the BTS-60 per-charge fee
+ * collection (`bs_pcfee_<pi.id>`) — a full refund's proportional reversal
+ * would exceed what remains reversible. Live-verified (BTS-66, test mode,
+ * 2026-07-03): Stripe does NOT error; it CAPS the refund-driven reversal at
+ * the remaining reversible amount, so the transfer ends exactly fully
+ * reversed and the refund succeeds. No cap handling is needed here, and the
+ * e2e:webhooks money phase pins this behavior.
+ *
  * Stripe hard-errors when either flag is sent for a charge that doesn't carry
  * an application fee / a destination transfer, so the charge is resolved first
  * and each flag is only sent when the charge can honour it. Split
@@ -44,7 +52,12 @@ export async function createRefund(
     stripeAccountId?: string; // refund on a connected account
     /** Return the platform fee pro-rata with the refund. Default true. */
     refundApplicationFee?: boolean;
-    /** Reverse the destination transfer pro-rata. Default true. */
+    /**
+     * Reverse the destination transfer pro-rata. Default true. If the
+     * transfer is already partially reversed (BTS-60 fee collection), Stripe
+     * caps the reversal at the remainder instead of erroring (BTS-66,
+     * live-verified).
+     */
     reverseTransfer?: boolean;
     /**
      * Who is initiating the refund (BTS-35). The app authenticates the caller

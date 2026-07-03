@@ -1506,11 +1506,66 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
 
-  it("never crashes the webhook when the reversal fails — payment upsert still lands", async () => {
+  it("propagates a reversal failure so the event is marked failed and Stripe retries", async () => {
     const stripe = makeStripe();
     const pi = flaggedPi();
     wireHappyPath(stripe, pi);
     stripe.transfers.createReversal.mockRejectedValue(new Error("stripe down"));
+    const whCtx = makeWhCtx({ stripe });
+
+    // A swallowed failure would 200 → event ledger "processed" (terminal) →
+    // the fee is silently lost forever. Throwing marks the event "failed",
+    // Stripe retries, and the whole case re-runs idempotently.
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).rejects.toThrow("stripe down");
+
+    // The PI was never marked collected, so the retry collects the fee.
+    expect(stripe.paymentIntents.update).not.toHaveBeenCalled();
+    // Collection runs before the payment upsert, so nothing landed this
+    // delivery — the retry writes the row (with the fee) in one pass instead
+    // of leaving a partial row a second write would have to patch.
+    expect(whCtx.ctx.runMutation).not.toHaveBeenCalled();
+  });
+
+  it("rethrows a mark failure after a successful reversal; the replay converges on the same idempotency key", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    stripe.paymentIntents.update.mockRejectedValueOnce(new Error("mark failed"));
+    const whCtx = makeWhCtx({ stripe });
+
+    // Delivery 1: reversal succeeds, marking the PI fails → must throw (the
+    // event goes "failed" and retries) rather than end "processed" with an
+    // unmarked PI and no feeCollectedAmount on the payments row.
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).rejects.toThrow("mark failed");
+
+    // Delivery 2 (Stripe retry): the fresh PI is still unmarked, so the
+    // reversal is re-sent — with the IDENTICAL idempotency key and params
+    // (inputs are immutable post-success), so Stripe replays it without a
+    // second money movement. Then the mark and the payment upsert land.
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = stripe.transfers.createReversal.mock
+      .calls as unknown as [unknown, unknown, unknown][];
+    expect(secondCall).toEqual(firstCall);
+    expect(firstCall[2]).toEqual({ idempotencyKey: "bs_pcfee_pi_fee" });
+    expect(stripe.paymentIntents.update).toHaveBeenCalledTimes(2);
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/connect/mutations/upsertPayment");
+    expect(data.feeCollectedAmount).toBe(320);
+  });
+
+  it("skips (without throwing) when the charge has no destination transfer", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    // Anomalous config a retry can't fix — rethrowing would loop the event
+    // "failed" forever. Logged skip instead.
+    stripe.charges.retrieve.mockResolvedValue({ id: "ch_fee", transfer: null });
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const whCtx = makeWhCtx({ stripe });
 
@@ -1519,11 +1574,11 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
     ).resolves.toBeUndefined();
 
     expect(errSpy).toHaveBeenCalled();
-    // The PI was never marked collected, so a retry can collect the fee.
-    expect(stripe.paymentIntents.update).not.toHaveBeenCalled();
-    const { path, data } = dispatchedPayload(whCtx.ctx);
-    expect(path).toBe("betterStripe/connect/mutations/upsertPayment");
-    expect(data.feeCollectedAmount).toBeUndefined();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    // The payment row still lands (without a fee) — the sale itself is real.
+    expect(dispatchedPayload(whCtx.ctx).path).toBe(
+      "betterStripe/connect/mutations/upsertPayment",
+    );
   });
 
   it("[regression] the per_invoice path is untouched by the per-charge consumer", async () => {

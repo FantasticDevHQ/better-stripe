@@ -364,7 +364,25 @@ async function applyPerInvoiceFee(
  * actually charged (never the session's list amount). Idempotent via a
  * `bsFeeCollected` marker read off a freshly-retrieved PI (the event payload is
  * a stale snapshot on retries) plus a deterministic Stripe idempotency key.
- * Failures never crash the webhook (same contract as {@link applyPerInvoiceFee}).
+ *
+ * Failure contract: genuine collection failures (a retrieve/reversal/mark API
+ * error) PROPAGATE, so the handler marks the event `failed` and Stripe retries
+ * — a swallowed error would 200 and mark the event `processed` (terminal),
+ * silently losing the fee forever. Re-runs converge: the fresh-PI marker skips
+ * completed collections, the idempotency key replays an unmarked reversal
+ * without moving money twice (inputs are immutable post-success, so the params
+ * are identical), and the downstream payment upsert / split engine are
+ * idempotent. Benign skips a retry can't fix (unflagged PI, malformed config,
+ * zero fee, no destination transfer) return undefined without throwing.
+ *
+ * Documented limitations (both shared with the up-front and per_invoice
+ * paths): a fee config's `fixed`/tier bounds are minor units in the session's
+ * assumed currency — they are not converted if the charge settles in another
+ * currency; and an app that injects `transfer_data.amount` via
+ * `sessionOverrides` while relying on per_charge deferral could make the fee
+ * exceed the transfer's remainder, which fails the reversal (→ retry/alert)
+ * rather than over-reversing.
+ *
  * Returns the fee collected — now or on a prior delivery — so the caller can
  * denormalize `feeCollectedAmount` onto the payments row.
  */
@@ -372,65 +390,63 @@ async function applyPerChargeFee(
   whCtx: WebhookContext,
   paymentIntent: Stripe.PaymentIntent,
 ): Promise<number | undefined> {
+  if (paymentIntent.status !== "succeeded") return undefined;
+  const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+  if (meta.bsFeeMode !== "per_charge" || !meta.bsFeeConfig) return undefined;
+
+  const fresh = await whCtx.stripe.paymentIntents.retrieve(paymentIntent.id);
+  const freshMeta = (fresh.metadata ?? {}) as Record<string, string>;
+  if (freshMeta.bsFeeCollected) {
+    const prior = Number(freshMeta.bsFeeAmount);
+    return Number.isFinite(prior) && prior > 0 ? prior : undefined;
+  }
+
+  let config: PlatformFeeConfig;
   try {
-    if (paymentIntent.status !== "succeeded") return undefined;
-    const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
-    if (meta.bsFeeMode !== "per_charge" || !meta.bsFeeConfig) return undefined;
+    config = JSON.parse(
+      freshMeta.bsFeeConfig ?? meta.bsFeeConfig,
+    ) as PlatformFeeConfig;
+  } catch {
+    return undefined; // malformed marker — a retry can't fix it
+  }
 
-    const fresh = await whCtx.stripe.paymentIntents.retrieve(paymentIntent.id);
-    const freshMeta = (fresh.metadata ?? {}) as Record<string, string>;
-    if (freshMeta.bsFeeCollected) {
-      const prior = Number(freshMeta.bsFeeAmount);
-      return Number.isFinite(prior) && prior > 0 ? prior : undefined;
-    }
+  const amount = fresh.amount_received ?? paymentIntent.amount;
+  const fee = computeFee(amount, config).feeAmount;
+  // A shape-invalid config yields NaN; never send a non-finite reversal.
+  if (!Number.isFinite(fee) || fee <= 0) return undefined;
 
-    let config: PlatformFeeConfig;
-    try {
-      config = JSON.parse(
-        freshMeta.bsFeeConfig ?? meta.bsFeeConfig,
-      ) as PlatformFeeConfig;
-    } catch {
-      return undefined; // malformed marker — nothing safe to collect
-    }
-
-    const amount = fresh.amount_received ?? paymentIntent.amount;
-    const fee = computeFee(amount, config).feeAmount;
-    // A shape-invalid config yields NaN; never send a non-finite reversal.
-    if (!Number.isFinite(fee) || fee <= 0) return undefined;
-
-    // Resolve the automatic transfer `transfer_data` created on the charge.
-    const chargeId =
-      typeof fresh.latest_charge === "string"
-        ? fresh.latest_charge
-        : (fresh.latest_charge?.id ?? undefined);
-    if (!chargeId) return undefined;
-    const charge = await whCtx.stripe.charges.retrieve(chargeId);
-    const transferId =
-      typeof charge.transfer === "string"
-        ? charge.transfer
-        : (charge.transfer?.id ?? undefined);
-    if (!transferId) {
-      console.error(
-        `[better-stripe] applyPerChargeFee: per_charge PI ${paymentIntent.id} has no destination transfer to reverse`,
-      );
-      return undefined;
-    }
-
-    await whCtx.stripe.transfers.createReversal(
-      transferId,
-      { amount: fee, metadata: { bsFeeFor: paymentIntent.id } },
-      { idempotencyKey: `bs_pcfee_${paymentIntent.id}` },
+  // Resolve the automatic transfer `transfer_data` created on the charge.
+  const chargeId =
+    typeof fresh.latest_charge === "string"
+      ? fresh.latest_charge
+      : (fresh.latest_charge?.id ?? undefined);
+  if (!chargeId) return undefined;
+  const charge = await whCtx.stripe.charges.retrieve(chargeId);
+  const transferId =
+    typeof charge.transfer === "string"
+      ? charge.transfer
+      : (charge.transfer?.id ?? undefined);
+  if (!transferId) {
+    // Config anomaly, not a transient fault — rethrowing would loop the event
+    // `failed` forever. Log and record the sale without a fee.
+    console.error(
+      `[better-stripe] applyPerChargeFee: per_charge PI ${paymentIntent.id} has no destination transfer to reverse`,
     );
-    await whCtx.stripe.paymentIntents.update(paymentIntent.id, {
-      metadata: { ...freshMeta, bsFeeCollected: "1", bsFeeAmount: String(fee) },
-    });
-    return fee;
-  } catch (err) {
-    // Never let fee collection break webhook processing; the deterministic
-    // idempotency key keeps a Stripe redelivery safe to re-attempt.
-    console.error("[better-stripe] applyPerChargeFee failed:", err);
     return undefined;
   }
+
+  await whCtx.stripe.transfers.createReversal(
+    transferId,
+    { amount: fee, metadata: { bsFeeFor: paymentIntent.id } },
+    { idempotencyKey: `bs_pcfee_${paymentIntent.id}` },
+  );
+  // A mark failure after a successful reversal also propagates: the retry
+  // replays the reversal against the same idempotency key (no second money
+  // movement) and then completes the mark + payments-row denormalization.
+  await whCtx.stripe.paymentIntents.update(paymentIntent.id, {
+    metadata: { ...freshMeta, bsFeeCollected: "1", bsFeeAmount: String(fee) },
+  });
+  return fee;
 }
 
 async function upsertInvoiceFromStripe(

@@ -163,6 +163,14 @@ export type {
   EvidenceFormUpdateArgs,
 } from "./components/EvidenceForm.js";
 
+// Components — Payouts (BTS-38)
+export { PayoutSchedule } from "./components/PayoutSchedule.js";
+export type {
+  PayoutScheduleProps,
+  PayoutScheduleRenderProps,
+  RecipientBalance,
+} from "./components/PayoutSchedule.js";
+
 // Components — Connect / Merchant
 export { ConnectStatusBadge } from "./components/ConnectStatusBadge.js";
 export type {

@@ -12,6 +12,7 @@ import { StoreEarnings } from "@/pages/demo/store-earnings";
 import { SellerAccount } from "@/pages/seller/account";
 import { SellerHome } from "@/pages/seller/index";
 import { SellerDisputes } from "@/pages/seller/disputes";
+import { SellerMarketplaceAccount } from "@/pages/seller/marketplace-account";
 import { SellerOnboarding } from "@/pages/seller/onboarding";
 import { Payouts } from "@/pages/seller/payouts";
 import { SellerProducts } from "@/pages/seller/products";
@@ -56,6 +57,10 @@ export default function App() {
           <Route path="/seller/disputes" element={<SellerDisputes />} />
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/account" element={<SellerAccount />} />
+          <Route
+            path="/seller/marketplace-account"
+            element={<SellerMarketplaceAccount />}
+          />
 
           {/* Admin routes */}
           <Route path="/admin" element={<AdminOverview />} />

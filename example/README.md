@@ -178,6 +178,16 @@ await stripe.createAccountWithOnboarding(ctx, {
 
 Default configuration is exposed as `BetterStripe.DEFAULT_ACCOUNT_CONFIGURATION`.
 
+The marketplace account demo (BTS-46, `/seller/marketplace-account`) is the
+end-to-end version of the `recipient`-only override above: onboard as a
+recipient via hosted Express, then `addCustomerConfiguration()` to make the
+SAME account billable, then pass that `stripeAccountId` as `accountId` on
+`createCheckoutSession()` (→ `customer_account`) so the account can buy
+something as a customer. `addRecipientConfiguration()` and a direct
+`updateV2Account({ configuration: { merchant: {...} } })` call demonstrate
+adding configurations later, after the account already exists — see
+[Manual QA](#browser-e2e-tests-npm-run-e2e) above.
+
 ### React Components (from `better-stripe/react`)
 
 | Component                                   | Page                      |
@@ -302,6 +312,8 @@ sync back to the UI. Current live-backend specs:
 - `e2e/affiliate-split.spec.ts` — affiliate split breakdown demo (BTS-43);
   see below.
 - `e2e/seller-disputes.spec.ts` — seller disputes demo (BTS-44); see below.
+- `e2e/marketplace-account.spec.ts` — marketplace account lifecycle (BTS-46);
+  see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -467,6 +479,49 @@ Against a seeded dev deployment with `stripe listen` forwarding webhooks:
 Note: `charge.dispute.funds_withdrawn` / `funds_reinstated` cannot be reliably
 triggered in test mode, so the reversal ledger is best verified via the
 `charge.dispute.created` clawback path above.
+
+#### Marketplace account lifecycle (`e2e/marketplace-account.spec.ts`)
+
+The marketplace account demo (BTS-46) shows "one V2 account, configurations
+accrue": a single Stripe account is both a payouts recipient and a billable
+customer. Two layers:
+
+- **Backend-independent** (runs everywhere, incl. CI): `/seller/marketplace-account`
+  boots without page errors, both pre-onboarding and when returning from a
+  (placeholder) purchase session. The page is role-gated (`seller`), preset
+  via `localStorage` the same way the admin specs do.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): seller onboards via
+  hosted Stripe Express as a `recipient` → adds the `customer` configuration
+  to the SAME account → buys a seeded one-time platform price as that
+  account → lands back on the page with a "Purchase complete" confirmation.
+  Same webhook-forwarding requirement as the one-time checkout flow above.
+
+  > The hosted Express onboarding form's exact field selectors are not yet
+  > verified against a live test-mode session (no live Stripe access when
+  > this spec was written) — the live-flow test is structured and documented
+  > but its first phase needs a pass against a real deployment before it's
+  > reliable. See the `TODO(first live run)` comment in the spec.
+
+Manual QA (until the live-E2E spec is verified against a real deployment):
+
+1. As the `seller` role, visit `/seller/marketplace-account`. With no account
+   yet, pick a country and click **Onboard as recipient** — you're redirected
+   to hosted Stripe Express.
+2. Complete the Express onboarding form (test-mode identity + bank details).
+   Stripe redirects back to `/seller/marketplace-account`.
+3. Once **Applied Configurations** shows `Recipient (payouts)` and onboarding
+   is `complete`, click **Add customer configuration** — the badge list
+   should grow to include `Customer (billable)`.
+4. Pick a seeded one-time price from **Step 2 — Buy Something as This
+   Account** and click **Buy as this account**. Complete Stripe Checkout with
+   the test card `4242 4242 4242 4242`.
+5. After the redirect back, confirm the **Purchase complete** banner appears
+   — the same `stripeAccountId` that receives payouts (as `recipient`) was
+   just charged as a customer (`customer_account` on the Checkout Session).
+6. If the account was NOT recipient+merchant from the start, use **Step 3 —
+   Add More Configurations Later** to add whichever is missing and confirm
+   the badge list updates (demonstrates configurations accruing over time,
+   not just at creation).
 
 ### Webhook Processing
 

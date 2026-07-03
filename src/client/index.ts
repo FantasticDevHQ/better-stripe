@@ -35,6 +35,7 @@ export {
 } from "./connect/disputes.js";
 export type { RefundActor } from "./connect/refunds.js";
 import type { RefundActor } from "./connect/refunds.js";
+export type { AccountBalance } from "./connect/payouts.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -1163,6 +1164,16 @@ export class BetterStripe {
     opts: { destinationAccountId: string; limit?: number },
   ) {
     return transfersImpl.listTransfersByAccount(this.component, ctx, opts);
+  }
+
+  /**
+   * Retrieve a connected account's balance (BTS-65), scoped to that account via
+   * the `Stripe-Account` header. Returns one `AccountBalance`
+   * (`{ available, pending, currency }`, minor units) per currency — each entry
+   * feeds the headless `PayoutSchedule` component's `balance` prop directly.
+   */
+  async getAccountBalance(_ctx: RunCtx, opts: { stripeAccountId: string }) {
+    return payoutsImpl.getAccountBalance(this.stripe(), opts);
   }
 
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {

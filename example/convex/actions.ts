@@ -268,6 +268,13 @@ export const createCheckoutSession = action({
   },
 });
 
+// Payouts / balance (BTS-65)
+export const getAccountBalance = action({
+  args: { stripeAccountId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.getAccountBalance(ctx, { stripeAccountId: args.stripeAccountId }),
+});
+
 // Subscriptions
 export const cancelSubscription = action({
   args: { stripeSubscriptionId: v.string() },

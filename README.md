@@ -604,6 +604,50 @@ All components accept:
 | `DeletePaymentMethodDialog` | Remove payment method (app provides dialog chrome) |
 | `PaymentMethodActions`      | Per-method set-default/delete actions              |
 
+### Buyer Billing
+
+| Component          | Description                                                            |
+| ------------------ | --------------------------------------------------------------------- |
+| `BuyerBillingView` | Per-store buyer billing view: subscriptions grouped by store, reusable saved card, embedded card update |
+
+An embedded-only billing surface for buyers: their subscriptions are grouped by
+store (each store scoped via the `listSubscriptionsByUserAndStore` /
+`groupSubscriptionsByStore` per-store queries) with per-store cancel/reactivate,
+alongside the ONE saved payment method that is reusable across every store. The
+card is updated in place via an embedded `AddCardForm` slot — no redirect.
+
+```tsx
+import {
+  BuyerBillingView,
+  AddCardForm,
+  StripeProvider,
+} from "@getdojo/better-stripe/react";
+import { groupSubscriptionsByStore } from "@getdojo/better-stripe";
+
+function BuyerBilling({ userId, customerAccount }: Props) {
+  const subscriptions = useQuery(api.stripe.listSubscriptionsByUser, { userId });
+  const { defaultMethod } = usePaymentMethods(customerAccount);
+  const cancel = useMutation(api.stripe.cancelSubscription);
+  const reactivate = useMutation(api.stripe.reactivateSubscription);
+
+  return (
+    <BuyerBillingView
+      // groupSubscriptionsByStore reused, not recomputed
+      subscriptions={subscriptions?.map((s) => ({ ...s, id: s.stripeSubscriptionId }))}
+      paymentMethod={defaultMethod}
+      isLoading={subscriptions === undefined}
+      onCancel={(sub) => cancel({ stripeSubscriptionId: sub.id })}
+      onReactivate={(sub) => reactivate({ stripeSubscriptionId: sub.id })}
+      updateCardSlot={
+        <StripeProvider publishableKey={pk}>
+          <AddCardForm onSuccess={handleCardSaved} />
+        </StripeProvider>
+      }
+    />
+  );
+}
+```
+
 ### Connect and Marketplace
 
 | Component                 | Description                                   |

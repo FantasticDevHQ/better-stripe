@@ -143,6 +143,15 @@ export type {
 } from "./components/PaymentMethodsList.js";
 export { DeletePaymentMethodDialog } from "./components/DeletePaymentMethodDialog.js";
 
+// Components — Buyer Billing (BTS-39)
+export { BuyerBillingView } from "./components/BuyerBillingView.js";
+export type {
+  BuyerBillingViewProps,
+  BuyerBillingViewRenderProps,
+  BuyerBillingSubscription,
+  BuyerBillingStoreGroup,
+} from "./components/BuyerBillingView.js";
+
 // Components — Disputes
 export { ConnectProvider } from "./components/ConnectProvider.js";
 export type { ConnectProviderProps } from "./components/ConnectProvider.js";

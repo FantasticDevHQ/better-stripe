@@ -126,6 +126,12 @@ export async function createCheckoutSession(
      * deferred to the webhook.
      */
     amount?: number;
+    /**
+     * Platform-default statement-descriptor suffix (BTS-32), used when the
+     * destination account record carries no per-store suffix. The caller
+     * (BetterStripe) passes its validated configured default.
+     */
+    defaultStatementDescriptorSuffix?: string;
     metadata?: Record<string, string>;
     sessionOverrides?: Record<string, unknown>;
   },
@@ -177,6 +183,20 @@ export async function createCheckoutSession(
     ...(opts.orgId ? { orgId: opts.orgId } : {}),
   };
 
+  // Per-store statement descriptor (BTS-32). Destination charges are platform
+  // charges (platform = merchant of record), so buyer recognition is
+  // suffix-based: the store's stored suffix, else the configured platform
+  // default. Resolved from the component account record at session creation.
+  let statementDescriptorSuffix: string | undefined;
+  if (destinationAccountId && !isSeparate && opts.mode !== "setup") {
+    const account = (await ctx.runQuery(
+      componentRef(component, "core/queries/getAccountByStripeId"),
+      { stripeAccountId: destinationAccountId },
+    )) as { statementDescriptor?: string } | null;
+    statementDescriptorSuffix =
+      account?.statementDescriptor ?? opts.defaultStatementDescriptorSuffix;
+  }
+
   const sessionParams: CheckoutSessionCreateParams = {
     mode: opts.mode,
     line_items: [{ price: opts.stripePriceId, quantity: opts.quantity ?? 1 }],
@@ -211,6 +231,14 @@ export async function createCheckoutSession(
           };
         }
       }
+      if (statementDescriptorSuffix) {
+        // Subscriptions can't carry a suffix directly; the invoice.created
+        // processor reads this marker and sets it on each invoice.
+        subscriptionData.metadata = {
+          ...(subscriptionData.metadata ?? metadata),
+          bsStatementDescriptor: statementDescriptorSuffix,
+        };
+      }
     }
     sessionParams.subscription_data = subscriptionData;
   }
@@ -229,6 +257,10 @@ export async function createCheckoutSession(
       paymentIntentData.transfer_data = {
         destination: destinationAccountId,
       };
+      if (statementDescriptorSuffix) {
+        paymentIntentData.statement_descriptor_suffix =
+          statementDescriptorSuffix;
+      }
       if (opts.feeConfig) {
         if (opts.amount !== undefined) {
           paymentIntentData.application_fee_amount = computeFee(

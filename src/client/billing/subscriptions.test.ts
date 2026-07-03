@@ -865,3 +865,76 @@ describe("groupSubscriptionsByStore (BTS-19)", () => {
     expect(groupSubscriptionsByStore([])).toEqual([]);
   });
 });
+
+describe("createSubscription — per-store statement descriptor (BTS-32)", () => {
+  function createdSub() {
+    return {
+      id: "sub_sd",
+      status: "active",
+      cancel_at_period_end: false,
+      items: {
+        data: [
+          {
+            price: { id: "price_1" },
+            quantity: 1,
+            current_period_start: 1000,
+            current_period_end: 2000,
+          },
+        ],
+      },
+      metadata: { userId: "buyer_1" },
+    };
+  }
+
+  it("stashes bsStatementDescriptor from the store's account alongside per-invoice fee markers", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx({ statementDescriptor: "MAYAS FITNESS" });
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 2.9, fixed: 30 },
+    });
+
+    const params = stripe.subscriptions.create.mock.calls[0][0];
+    expect(params.metadata.bsStatementDescriptor).toBe("MAYAS FITNESS");
+    expect(params.metadata.bsFeeMode).toBe("per_invoice");
+  });
+
+  it("falls back to the provided platform default when the store has no suffix", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx({}); // account record without statementDescriptor
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      destinationAccountId: "acct_store",
+      defaultStatementDescriptorSuffix: "PLATFORM DEF",
+    });
+
+    const params = stripe.subscriptions.create.mock.calls[0][0];
+    expect(params.metadata.bsStatementDescriptor).toBe("PLATFORM DEF");
+  });
+
+  it("adds no marker and performs no account lookup without a destination", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      defaultStatementDescriptorSuffix: "PLATFORM DEF",
+    });
+
+    const params = stripe.subscriptions.create.mock.calls[0][0];
+    expect(params.metadata.bsStatementDescriptor).toBeUndefined();
+    expect(ctx.runQuery).not.toHaveBeenCalled();
+  });
+});

@@ -49,6 +49,8 @@ export type StripeComponentAccount = {
   onboardingStatus?: OnboardingStatus;
   missingRequirements?: string[];
   metadata?: Record<string, unknown>;
+  /** Per-store statement-descriptor suffix for destination charges (BTS-32). */
+  statementDescriptor?: string;
 };
 
 export type StripeComponentPayment = {

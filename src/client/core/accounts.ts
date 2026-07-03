@@ -12,6 +12,7 @@ import type {
 } from "../stripe-types.js";
 import type { StripeComponentAccount } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
+import { validateStatementDescriptorSuffix } from "./descriptors.js";
 import { deriveAccountStatus } from "./accountStatus.js";
 
 // =============================================================================
@@ -351,6 +352,29 @@ export async function upsertAccount(
     opts,
   );
   return null;
+}
+
+/**
+ * Store (or clear, with `null`) a per-store statement-descriptor suffix on the
+ * seller's component account record (BTS-32). Validated against Stripe's
+ * descriptor rules before writing; destination charges to this account then
+ * carry the suffix so buyers recognize the store on their card statement.
+ */
+export async function setAccountStatementDescriptor(
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeAccountId: string; statementDescriptor: string | null },
+) {
+  const statementDescriptor =
+    opts.statementDescriptor === null
+      ? null
+      : validateStatementDescriptorSuffix(opts.statementDescriptor);
+  await runMutationOrThrow(
+    ctx,
+    componentRef(component, "core/mutations/setStatementDescriptor"),
+    { stripeAccountId: opts.stripeAccountId, statementDescriptor },
+  );
+  return { success: true };
 }
 
 export async function updateAccount(

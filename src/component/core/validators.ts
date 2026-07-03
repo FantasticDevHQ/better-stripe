@@ -42,6 +42,9 @@ export const accountFields = {
   onboardingStatus: onboardingStatusValidator,
   missingRequirements: v.optional(v.array(v.string())),
   metadata: v.optional(v.any()),
+  // Per-store statement-descriptor suffix shown on buyers' card statements
+  // for destination charges to this account (BTS-32).
+  statementDescriptor: v.optional(v.string()),
 };
 
 /** Full `accounts` document, including system fields. */

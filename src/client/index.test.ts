@@ -153,6 +153,27 @@ describe("BetterStripe", () => {
       ).toThrow(/platformFee/);
     });
 
+    it("validates statementDescriptorSuffix at construction and exposes the trimmed value", () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        statementDescriptorSuffix: "  ACME STORE  ",
+      });
+      expect(bs.statementDescriptorSuffix).toBe("ACME STORE");
+    });
+
+    it("throws on an invalid statementDescriptorSuffix", () => {
+      expect(
+        () =>
+          new BetterStripe(components.betterStripe, {
+            statementDescriptorSuffix: "BAD*SUFFIX",
+          }),
+      ).toThrow(/statement descriptor/i);
+    });
+
+    it("statementDescriptorSuffix is undefined when not configured", () => {
+      const bs = new BetterStripe(components.betterStripe);
+      expect(bs.statementDescriptorSuffix).toBeUndefined();
+    });
+
     it("platformFee is undefined when not configured", () => {
       const bs = new BetterStripe(components.betterStripe);
       expect(bs.platformFee).toBeUndefined();
@@ -418,6 +439,37 @@ describe("BetterStripe", () => {
       );
       expect(result.url).toBe("https://checkout.stripe.com/pay/cs_456");
       expect(result.stripeSessionId).toBe("cs_456");
+    });
+
+    it("passes the configured default statement-descriptor suffix through to destination charges (BTS-32)", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+        statementDescriptorSuffix: "PLATFORM DEF",
+      });
+      // No component account record for the store → falls back to the default.
+      mockCtx.runQuery.mockResolvedValue(null);
+      mockStripeInstance.checkout.sessions.create.mockResolvedValue({
+        id: "cs_sd",
+        client_secret: "cs_secret_sd",
+        status: "open",
+        url: null,
+      });
+
+      await bs.createCheckoutSession(mockCtx, {
+        userId: "user_1",
+        stripePriceId: "price_123",
+        mode: "payment",
+        returnUrl: "https://example.com/return",
+        destinationAccountId: "acct_store",
+      });
+
+      expect(mockStripeInstance.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payment_intent_data: expect.objectContaining({
+            statement_descriptor_suffix: "PLATFORM DEF",
+          }),
+        }),
+      );
     });
   });
 

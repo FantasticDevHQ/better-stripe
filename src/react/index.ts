@@ -42,6 +42,18 @@ export type {
   DisputeWithCountdown,
   UseDisputeWithCountdownResult,
 } from "./hooks/useDisputeWithCountdown.js";
+// Hook factories — Earnings & splits (BTS-36)
+export { createUseEarnings } from "./hooks/useEarnings.js";
+export type {
+  EarningsTransfer,
+  UseEarningsResult,
+} from "./hooks/useEarnings.js";
+export { createUseSplitBreakdown } from "./hooks/useSplitBreakdown.js";
+export type {
+  SplitBreakdown,
+  SplitBreakdownLeg,
+  UseSplitBreakdownResult,
+} from "./hooks/useSplitBreakdown.js";
 export { createUseAccountOnboarding } from "./hooks/useAccountOnboarding.js";
 export { useStripePublishableKey } from "./hooks/useStripePublishableKey.js";
 export { useStripeMode } from "./hooks/useStripeMode.js";
@@ -138,6 +150,26 @@ export type {
   DisputesListRow,
   DisputesListRowContext,
 } from "./components/DisputesList.js";
+export { DisputeDetail } from "./components/DisputeDetail.js";
+export type {
+  DisputeDetailProps,
+  DisputeDetailRenderProps,
+} from "./components/DisputeDetail.js";
+export { EvidenceForm } from "./components/EvidenceForm.js";
+export type {
+  DisputeEvidenceFields,
+  EvidenceFormProps,
+  EvidenceFormRenderProps,
+  EvidenceFormUpdateArgs,
+} from "./components/EvidenceForm.js";
+
+// Components — Payouts (BTS-38)
+export { PayoutSchedule } from "./components/PayoutSchedule.js";
+export type {
+  PayoutScheduleProps,
+  PayoutScheduleRenderProps,
+  RecipientBalance,
+} from "./components/PayoutSchedule.js";
 
 // Components — Connect / Merchant
 export { ConnectStatusBadge } from "./components/ConnectStatusBadge.js";

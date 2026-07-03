@@ -25,6 +25,7 @@ import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
 import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
+import { validateStatementDescriptorSuffix } from "./core/descriptors.js";
 export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
@@ -151,6 +152,7 @@ export class BetterStripe {
   private _triggers?: SyncTriggers;
   private _hooks?: AsyncHooks;
   private _platformFee?: PlatformFeeConfig;
+  private _statementDescriptorSuffix?: string;
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
     this.component = component;
@@ -163,6 +165,19 @@ export class BetterStripe {
       // silently bypass validation or change runtime behavior.
       this._platformFee = clonePlatformFee(options.platformFee);
     }
+    if (options?.statementDescriptorSuffix !== undefined) {
+      this._statementDescriptorSuffix = validateStatementDescriptorSuffix(
+        options.statementDescriptorSuffix,
+      );
+    }
+  }
+
+  /**
+   * The configured default statement-descriptor suffix, if any — the fallback
+   * for destination charges to sellers without a per-store suffix (BTS-32).
+   */
+  get statementDescriptorSuffix(): string | undefined {
+    return this._statementDescriptorSuffix;
   }
 
   /** The configured default platform fee (the platform's take), if any. */
@@ -393,6 +408,24 @@ export class BetterStripe {
   ) {
     return accountsImpl.addCustomerConfiguration(
       this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  /**
+   * Store (or clear, with `null`) a per-store statement-descriptor suffix on a
+   * seller's account record (BTS-32). Destination charges to that account then
+   * show `PLATFORMPREFIX* SUFFIX` on the buyer's card statement. Validated
+   * against Stripe's descriptor rules (max 22 chars, at least one letter, no
+   * < > \\ ' " *).
+   */
+  async setAccountStatementDescriptor(
+    ctx: RunCtx,
+    opts: { stripeAccountId: string; statementDescriptor: string | null },
+  ) {
+    return accountsImpl.setAccountStatementDescriptor(
       this.component,
       ctx,
       opts,
@@ -631,6 +664,7 @@ export class BetterStripe {
         opts.destinationAccountId || opts.split?.length
           ? this.resolveFee(fee)
           : undefined,
+      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
     });
   }
 
@@ -714,6 +748,7 @@ export class BetterStripe {
         opts.destinationAccountId || opts.split?.length
           ? this.resolveFee(fee)
           : undefined,
+      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
     });
   }
 

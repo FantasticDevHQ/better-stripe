@@ -7,6 +7,7 @@ import {
   reverseTransfers,
   reverseTransfersForRefund,
 } from "../connect/transfers.js";
+import { validateStatementDescriptorSuffix } from "../core/descriptors.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -63,6 +64,9 @@ export async function processEvent(
       // record the invoice. Percent-only fees use application_fee_percent on the
       // subscription and don't need this.
       await applyPerInvoiceFee(whCtx, obj as Stripe.Invoice);
+      // Per-store statement descriptor for destination-charge subscriptions
+      // (BTS-32) — set before finalization so the charge carries it.
+      await applyStatementDescriptor(whCtx, obj as Stripe.Invoice);
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
     case "invoice.paid":
@@ -356,6 +360,69 @@ async function applyPerInvoiceFee(
     // Never let fee application break webhook processing; Stripe will retry the
     // event, and a missed fixed-fee invoice can be reconciled out of band.
     console.error("[better-stripe] applyPerInvoiceFee failed:", err);
+  }
+}
+
+/**
+ * Set the per-store statement descriptor on a subscription invoice before it
+ * finalizes (BTS-32). Destination-charge subscriptions can't carry a suffix
+ * directly, so BTS-15/BTS-17 stash the resolved suffix as a
+ * `bsStatementDescriptor` subscription-metadata marker; for card charges
+ * Stripe renders the invoice's `statement_descriptor` as the dynamic suffix
+ * after the platform's shortened descriptor. Idempotent: an invoice whose
+ * descriptor is already set (by us on a retry, or by the app) is left alone.
+ *
+ * KNOWN GAP — the first invoice is never covered. Direct `charge_automatically`
+ * subscriptions (and Checkout subscription mode) finalize and pay their FIRST
+ * invoice synchronously at creation, before this `invoice.created` handler can
+ * run — by the time we'd call `invoices.update`, invoice #1's charge already
+ * exists, so it carries no store descriptor. This is systematic, not
+ * transient: it happens on every destination-charge subscription's first
+ * charge, which is also the highest-dispute-risk one. "Self-heals next cycle"
+ * below refers only to LATER invoices (which do get the ~1hr pre-finalization
+ * draft window), never to the first. See BTS-32 follow-up ticket for a
+ * product-level `statement_descriptor` fix that would cover the first charge.
+ *
+ * Failure contract: descriptor application is cosmetic, so failures are
+ * swallowed (logged) rather than failing the event — a missed descriptor
+ * self-heals on the NEXT billing cycle's invoice and must never block fee
+ * application or invoice recording. This is honest: once the event ends
+ * `processed`, THIS invoice's descriptor is not retried.
+ */
+async function applyStatementDescriptor(
+  whCtx: WebhookContext,
+  invoice: Stripe.Invoice,
+): Promise<void> {
+  try {
+    if (!invoice.id) return;
+    if (invoice.statement_descriptor) return; // already set — never overwrite
+
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subId =
+      typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+    if (!subId) return;
+
+    const sub = await whCtx.stripe.subscriptions.retrieve(subId);
+    const marker = (sub.metadata ?? {})["bsStatementDescriptor"];
+    if (!marker) return;
+
+    // Defensive: the marker was validated when stored, but webhooks never
+    // trust round-tripped metadata enough to forward a rule-breaking value.
+    let suffix: string;
+    try {
+      suffix = validateStatementDescriptorSuffix(marker);
+    } catch {
+      console.error(
+        `[better-stripe] applyStatementDescriptor: invalid bsStatementDescriptor on ${subId}; skipping`,
+      );
+      return;
+    }
+
+    await whCtx.stripe.invoices.update(invoice.id, {
+      statement_descriptor: suffix,
+    });
+  } catch (err) {
+    console.error("[better-stripe] applyStatementDescriptor failed:", err);
   }
 }
 

@@ -41,6 +41,8 @@ export const BETTER_STRIPE_WEBHOOK_EVENTS = [
   "refund.created",
   "refund.updated",
   "refund.failed",
+  // Keeps feeCollectedAmount/feeRefundedAmount accurate on payments (BTS-34).
+  "application_fee.refunded",
   // Disputes
   "charge.dispute.created",
   "charge.dispute.updated",

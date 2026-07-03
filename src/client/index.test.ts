@@ -48,6 +48,12 @@ const mockStripeInstance = {
   refunds: {
     create: vi.fn(),
   },
+  paymentIntents: {
+    retrieve: vi.fn(),
+  },
+  charges: {
+    retrieve: vi.fn(),
+  },
   disputes: {
     update: vi.fn(),
     close: vi.fn(),
@@ -1065,6 +1071,16 @@ describe("BetterStripe", () => {
       });
 
       mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_1" });
+      // Plain (non-marketplace) charge: no fee/transfer → no flags sent.
+      mockStripeInstance.paymentIntents.retrieve.mockResolvedValue({
+        id: "pi_1",
+        latest_charge: "ch_1",
+      });
+      mockStripeInstance.charges.retrieve.mockResolvedValue({
+        id: "ch_1",
+        transfer: null,
+        application_fee: null,
+      });
 
       const result = await bs.createRefund(mockCtx, {
         stripePaymentIntentId: "pi_1",
@@ -1089,6 +1105,11 @@ describe("BetterStripe", () => {
       });
 
       mockStripeInstance.refunds.create.mockResolvedValue({ id: "re_2" });
+      mockStripeInstance.charges.retrieve.mockResolvedValue({
+        id: "ch_1",
+        transfer: null,
+        application_fee: null,
+      });
 
       await bs.createRefund(mockCtx, {
         stripeChargeId: "ch_1",

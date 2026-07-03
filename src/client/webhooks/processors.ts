@@ -5,6 +5,7 @@ import {
   createSplitTransfers,
   reinstateTransfers,
   reverseTransfers,
+  reverseTransfersForRefund,
 } from "../connect/transfers.js";
 import { validateStatementDescriptorSuffix } from "../core/descriptors.js";
 import { computeFee } from "../core/fees.js";
@@ -102,6 +103,11 @@ export async function processEvent(
     case "refund.updated":
     case "refund.failed":
       await handleRefundEvent(whCtx, obj as Stripe.Refund);
+      break;
+    case "application_fee.refunded":
+      // Keep feeCollectedAmount/feeRefundedAmount accurate on the linked
+      // payment (BTS-34, folded in from BTS-51).
+      await handleApplicationFeeRefunded(whCtx, obj as Stripe.ApplicationFee);
       break;
     case "charge.dispute.created":
     case "charge.dispute.updated":
@@ -792,6 +798,64 @@ async function handleRefundEvent(
     failureReason: refund.failure_reason ?? undefined,
     metadata: refund.metadata ?? undefined,
   });
+
+  // Split-sale clawback (BTS-34): when a separate-charges sale is refunded,
+  // pull the refunded share back from each recipient pro-rata. Only ledger
+  // legs identify a split sale — destination-charge auto-transfers are not in
+  // the ledger and are handled by Stripe-native `reverse_transfer` at refund
+  // creation. Runs on `refund.updated` too so a pending→succeeded refund
+  // (e.g. ACH) still claws back. Errors propagate → event `failed` → Stripe
+  // retries; `reverseTransfersForRefund`'s delta-to-target math makes the
+  // re-run converge without double-reversing.
+  if (status !== "succeeded" || !chargeId) return;
+  const legs = ((await whCtx.ctx.runQuery(
+    componentRef(whCtx.component, "connect/queries/listTransfersByCharge"),
+    { sourceChargeId: chargeId },
+  )) ?? []) as unknown[];
+  if (legs.length === 0) return; // not a split sale
+
+  // Fresh charge read for the authoritative cumulative amount_refunded.
+  const charge = await whCtx.stripe.charges.retrieve(chargeId);
+  await reverseTransfersForRefund(whCtx.stripe, whCtx.component, whCtx.ctx, {
+    sourceChargeId: chargeId,
+    refundId: refund.id,
+    chargeAmount: charge.amount,
+    amountRefunded: charge.amount_refunded ?? refund.amount,
+  });
+}
+
+/**
+ * Denormalize fee-refund state from `application_fee.refunded` (BTS-34, folded
+ * in from BTS-51): set the linked payment's `feeRefundedAmount` and correct
+ * `feeCollectedAmount` to the net fee kept. Values are Stripe's ABSOLUTE
+ * cumulative totals — this handler never increments, so event redeliveries and
+ * `createRefund(refundApplicationFee: true)`-triggered duplicates can't
+ * double-count. Benign skips (no charge, no payment intent, no payment row)
+ * return quietly; lookup/mutation failures propagate so the event retries.
+ */
+async function handleApplicationFeeRefunded(
+  whCtx: WebhookContext,
+  fee: Stripe.ApplicationFee,
+): Promise<void> {
+  const chargeId =
+    typeof fee.charge === "string" ? fee.charge : (fee.charge?.id ?? undefined);
+  if (!chargeId) return;
+
+  const charge = await whCtx.stripe.charges.retrieve(chargeId);
+  const paymentIntentId =
+    typeof charge.payment_intent === "string"
+      ? charge.payment_intent
+      : (charge.payment_intent?.id ?? undefined);
+  if (!paymentIntentId) return;
+
+  await whCtx.ctx.runMutation(
+    componentRef(whCtx.component, "connect/mutations/recordPaymentFeeRefund"),
+    {
+      stripePaymentIntentId: paymentIntentId,
+      feeCollectedAmount: Math.max(0, fee.amount - fee.amount_refunded),
+      feeRefundedAmount: fee.amount_refunded,
+    },
+  );
 }
 
 async function handleDisputeEvent(

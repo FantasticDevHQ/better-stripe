@@ -53,8 +53,10 @@ export const feeRoutingFields = {
   applicationFeeAmount: v.optional(v.number()),
   /** Percentage platform fee (subscriptions: Stripe `application_fee_percent`). */
   applicationFeePercent: v.optional(v.number()),
-  /** Fee actually collected, denormalized from webhooks. */
+  /** Fee actually collected (net of fee refunds), denormalized from webhooks. */
   feeCollectedAmount: v.optional(v.number()),
+  /** Cumulative fee refunded (application_fee.refunded), minor units. */
+  feeRefundedAmount: v.optional(v.number()),
   /** Which money mechanism produced this row. */
   chargeType: v.optional(chargeTypeValidator),
   /** Multi-recipient split (store + affiliate[s]) for separate charges & transfers. */

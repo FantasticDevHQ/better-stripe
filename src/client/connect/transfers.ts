@@ -107,6 +107,65 @@ export async function reverseTransfers(
 }
 
 /**
+ * Reverse a split sale's transfers pro-rata to the cumulatively refunded
+ * amount (BTS-34) — the refund counterpart of the dispute clawback. Every leg
+ * converges on a cumulative reversal TARGET, `round(leg × amountRefunded /
+ * chargeAmount)`, and only the delta above the ledger's recorded
+ * `reversedAmount` is reversed. Delta-to-target (rather than percent-of-
+ * original like {@link reverseTransfers}) is what makes at-least-once webhook
+ * delivery safe here: a redelivery whose reversals were recorded computes a
+ * zero delta and skips, while a retry after an unrecorded reversal re-sends
+ * the IDENTICAL params against the same `bs_rev_<refundId>_<transferId>`
+ * idempotency key, which Stripe replays without moving money twice. Multiple
+ * partial refunds each raise the target and reverse only their increment.
+ * Sales with no ledger legs (non-split) reverse nothing.
+ */
+export async function reverseTransfersForRefund(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    sourceChargeId: string;
+    refundId: string;
+    /** The original charge amount (minor units). */
+    chargeAmount: number;
+    /** Stripe's cumulative `charge.amount_refunded`, including this refund. */
+    amountRefunded: number;
+  },
+): Promise<{ reversals: { stripeTransferId: string; amount: number }[] }> {
+  const reversals: { stripeTransferId: string; amount: number }[] = [];
+  if (!(opts.chargeAmount > 0) || !(opts.amountRefunded > 0)) {
+    return { reversals };
+  }
+  const fraction = Math.min(1, opts.amountRefunded / opts.chargeAmount);
+
+  const transfers = ((await ctx.runQuery(
+    componentRef(component, "connect/queries/listTransfersByCharge"),
+    { sourceChargeId: opts.sourceChargeId },
+  )) ?? []) as LedgerTransfer[];
+
+  for (const t of transfers) {
+    const already = t.reversedAmount ?? 0;
+    const target = Math.round(t.amount * fraction);
+    const delta = Math.min(target, t.amount) - already;
+    if (delta <= 0) continue; // target met (or exceeded by a dispute clawback)
+
+    await stripe.transfers.createReversal(
+      t.stripeTransferId,
+      { amount: delta },
+      { idempotencyKey: `bs_rev_${opts.refundId}_${t.stripeTransferId}` },
+    );
+    await runMutationOrThrow(
+      ctx,
+      componentRef(component, "connect/mutations/recordTransferReversal"),
+      { stripeTransferId: t.stripeTransferId, reversedAmount: already + delta },
+    );
+    reversals.push({ stripeTransferId: t.stripeTransferId, amount: delta });
+  }
+  return { reversals };
+}
+
+/**
  * Webhook-driven split transfer engine (BTS-22). After a charge succeeds for a
  * separate-charges sale, fan funds out to each split recipient: compute the
  * amounts ({@link computeSplit}), create one Stripe `Transfer` per recipient

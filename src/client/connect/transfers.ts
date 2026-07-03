@@ -41,6 +41,17 @@ type ReversalClaim = { replay: boolean; slices: ClaimedSlice[] };
  * between the Stripe call and the ledger confirm), a replay first checks the
  * transfer's live `amount_reversed`: if the slice's money already moved, it
  * just confirms the ledger instead of re-sending the reversal.
+ *
+ * A slice only executes once every predecessor slice on its leg is confirmed
+ * (`confirmed ≥ from`). Without that gate, a sibling operation landing behind
+ * a transiently-failed claim would execute and confirm PAST the hole; the
+ * failed operation's retry would then see `confirmed ≥ to` and silently skip
+ * — its money would never move while the ledger says it did. Throwing instead
+ * fails this operation's webhook event, and at-least-once delivery retries
+ * both operations until the predecessor fills its hole and each claimed slice
+ * has actually moved. The ledger's `reversedAmount` therefore always covers a
+ * solid, hole-free prefix of the reversed axis — which is exactly what makes
+ * the `confirmed`/`amount_reversed` checks above sound.
  */
 async function executeClaimedSlices(
   stripe: Stripe,
@@ -52,6 +63,13 @@ async function executeClaimedSlices(
   const reversals: { stripeTransferId: string; amount: number }[] = [];
   for (const slice of claim.slices) {
     if (slice.confirmed >= slice.to) continue; // executed and recorded already
+
+    if (slice.confirmed < slice.from) {
+      throw new Error(
+        `reversal slice [${slice.from},${slice.to}) on ${slice.stripeTransferId} ` +
+          `blocked: predecessor claim unexecuted (confirmed=${slice.confirmed})`,
+      );
+    }
 
     if (claim.replay) {
       const transfer = await stripe.transfers.retrieve(slice.stripeTransferId);
@@ -89,7 +107,8 @@ async function executeClaimedSlices(
  * Reversal sizing, per transfer (exactly one of `percent`/`amount`, or neither):
  *  - `percent`  — reverse that percentage of each transfer's original amount.
  *  - `amount`   — reverse this total across all transfers, pro-rata by size,
- *                 with a remainder pass so the sum never exceeds `amount`.
+ *                 budget-capped so the sum never exceeds `amount` (rounding
+ *                 residue is dropped, not redistributed).
  *  - neither    — full reversal.
  *
  * Always capped at each transfer's un-reversed remainder, so a fully-reversed

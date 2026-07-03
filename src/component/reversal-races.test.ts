@@ -309,3 +309,107 @@ describe("BTS-63 race 2 — dispute path: retry after partial success must conve
     expect(stripe.total("tr_s2")).toBe(500);
   });
 });
+
+describe("BTS-63 race 3 — a transiently-failed operation must not be leapfrogged by a sibling", () => {
+  // The hole-leapfrog regression (independent PR #61 review, BLOCKER 1): an
+  // operation claims a slice, its Stripe call fails transiently, and a SIBLING
+  // operation claims the next slice and confirms past the hole. The failed
+  // operation's retry then sees `confirmed >= to` and silently skips — its
+  // money never moves, the ledger overstates the reversal, and the
+  // claimed>confirmed marker is erased. The executor must refuse to run a
+  // slice whose predecessor claim is unexecuted, so events retry until the
+  // hole is filled and every claimed slice eventually moves.
+
+  it("refund path: R1 fails once, R2 lands, R1 retries — every claimed slice still moves", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_leap",
+      sourceChargeId: "ch_leap",
+      amount: 7000,
+    });
+
+    // R1 (cumulative refunded 4000/10000 → target 2800) claims [0,2800) but
+    // its Stripe call dies on a transient network error → the event retries.
+    stripe.failNextCallFor("tr_leap");
+    const r1 = () =>
+      reverseTransfersForRefund(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_leap",
+        refundId: "re_A",
+        chargeAmount: 10000,
+        amountRefunded: 4000,
+      });
+    await expect(r1()).rejects.toThrow(/network error/);
+    expect(stripe.total("tr_leap")).toBe(0);
+
+    // R2 (cumulative refunded 8000 → target 5600) lands before R1's retry and
+    // claims [2800,5600). It must NOT execute past R1's unexecuted hole —
+    // pre-gate it did, confirming the ledger to 5600 with only 2800 moved.
+    const r2 = () =>
+      reverseTransfersForRefund(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_leap",
+        refundId: "re_B",
+        chargeAmount: 10000,
+        amountRefunded: 8000,
+      });
+    await r2().catch(() => {}); // blocked (fixed) or leapfrogs (the bug)
+
+    // At-least-once delivery: both events retry until they succeed.
+    await r1();
+    await r2();
+
+    // 80% of the 7000 leg = 5600 actually reversed at Stripe, and the ledger
+    // mirrors what actually moved — no silent lost clawback.
+    expect(stripe.total("tr_leap")).toBe(5600);
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_leap",
+    });
+    expect(rows[0]!.reversedAmount).toBe(stripe.total("tr_leap"));
+  });
+
+  it("dispute path: the clawback fails once, a refund confirms past it, the redelivery still claws back", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+
+    await seedLeg(t, {
+      stripeTransferId: "tr_lp2",
+      sourceChargeId: "ch_lp2",
+      amount: 8000,
+    });
+
+    // Dispute clawback (amount 4000) claims [0,4000); its Stripe call dies.
+    stripe.failNextCallFor("tr_lp2");
+    const clawback = () =>
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_lp2",
+        amount: 4000,
+        operationId: "dp_leap",
+      });
+    await expect(clawback()).rejects.toThrow(/network error/);
+
+    // A refund (6000/10000 → target 4800) claims [4000,4800) behind the hole.
+    const refund = () =>
+      reverseTransfersForRefund(asStripe(stripe), component, ctx, {
+        sourceChargeId: "ch_lp2",
+        refundId: "re_C",
+        chargeAmount: 10000,
+        amountRefunded: 6000,
+      });
+    await refund().catch(() => {});
+
+    // Both events retry until they succeed.
+    await clawback();
+    await refund();
+
+    expect(stripe.total("tr_lp2")).toBe(4800);
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_lp2",
+    });
+    expect(rows[0]!.reversedAmount).toBe(stripe.total("tr_lp2"));
+  });
+});

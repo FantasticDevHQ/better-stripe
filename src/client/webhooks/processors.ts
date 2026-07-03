@@ -375,16 +375,18 @@ async function applyPerInvoiceFee(
  * after the platform's shortened descriptor. Idempotent: an invoice whose
  * descriptor is already set (by us on a retry, or by the app) is left alone.
  *
- * KNOWN GAP — the first invoice is never covered. Direct `charge_automatically`
- * subscriptions (and Checkout subscription mode) finalize and pay their FIRST
- * invoice synchronously at creation, before this `invoice.created` handler can
- * run — by the time we'd call `invoices.update`, invoice #1's charge already
- * exists, so it carries no store descriptor. This is systematic, not
- * transient: it happens on every destination-charge subscription's first
- * charge, which is also the highest-dispute-risk one. "Self-heals next cycle"
- * below refers only to LATER invoices (which do get the ~1hr pre-finalization
- * draft window), never to the first. See BTS-32 follow-up ticket for a
- * product-level `statement_descriptor` fix that would cover the first charge.
+ * FIRST-INVOICE HANDOFF (BTS-67) — this invoice-time path can't reach the FIRST
+ * invoice: direct `charge_automatically` subscriptions (and Checkout
+ * subscription mode) finalize and pay invoice #1 synchronously at creation,
+ * before this `invoice.created` handler runs, so by the time we'd call
+ * `invoices.update` the charge already exists. That first charge is instead
+ * covered by the **product-level** `statement_descriptor` set at product
+ * create/update (BTS-67, `resolveProductStatementDescriptor`): per Stripe's
+ * precedence (Invoice → Product → default) the product descriptor applies to
+ * every cycle including the first. This per-invoice path still owns LATER
+ * invoices and the invoice-level override (which wins over the product), and
+ * remains the only mechanism for products created before a store set its
+ * descriptor. The two are complementary, not redundant.
  *
  * Failure contract: descriptor application is cosmetic, so failures are
  * swallowed (logged) rather than failing the event — a missed descriptor

@@ -278,6 +278,8 @@ sync back to the UI. Current live-backend specs:
   self-contained (creates, edits, then archives its own product).
 - `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
   see below.
+- `e2e/subscription-payout.spec.ts` — paid subscription + payout/balance
+  visibility flow (BTS-42); see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -299,6 +301,50 @@ The one-time checkout demo (BTS-57) has two layers:
 The session's mode is derived server-side in
 `convex/actions.ts#createCheckoutSession`: one-time prices get
 `mode: "payment"`, recurring prices `mode: "subscription"`.
+
+#### Paid subscription + payout flow (`e2e/subscription-payout.spec.ts`)
+
+A real paid subscription demo (BTS-42) that shows the marketplace money model
+end to end: a buyer subscribes to a seeded store's recurring plan as a
+**destination charge**, and the seller sees the money via balance + payouts while
+the platform keeps its fee. Backend in `convex/marketplace.ts`; pages under
+`/demo/*`.
+
+- **`/demo/subscribe`** — buyer (Billie) subscribes to Maya's Fitness Studio
+  monthly plan. `createStoreSubscriptionCheckout` opens an embedded checkout in
+  `subscription` mode routed to the store via `destinationAccountId`, with a
+  per-call `fee: { percent: 10 }`. No trial → the first invoice charges
+  immediately (a real charge). The percent-only override rides on Stripe's
+  `application_fee_percent`, which applies to every invoice (including the
+  first) and gives the demo a clean, deterministic 10% fee to display.
+- **`/demo/store-earnings`** — the store's balance + rolling payouts via the
+  merged `PayoutSchedule`, earnings via the merged `EarningsSummary` (derived
+  from the balance snapshot + payouts, since a destination charge leaves no
+  transfer-ledger row — that ledger, which `useEarnings` reads, is the
+  separate-charges split view), and the platform fee on the resulting invoice.
+
+Two layers, like the one-time flow: a backend-independent boot check (both routes
+render without page errors) and a live flow gated on `E2E_LIVE_BACKEND=1`
+(embedded checkout → test card → the store-earnings page shows the 10% platform
+fee). The live flow also needs webhook forwarding (`stripe listen`) so the
+charge/invoice/payout events sync.
+
+**Manual QA steps**
+
+1. Seed a live deployment: set `STRIPE_SECRET_KEY`, run
+   `pnpm --filter ./example run setup`, and configure webhook destinations via
+   `/admin/setup`. Start webhook forwarding:
+   `stripe listen --forward-to <your-site-url>/stripe/webhook`.
+2. Open `/demo/subscribe`. Confirm it resolves the store (Maya's Fitness Studio)
+   and its monthly price, and shows the 10% platform-fee line.
+3. Complete the embedded checkout with test card `4242 4242 4242 4242`, any
+   future expiry, any CVC. Confirm it's a real charge (no trial) and you're
+   redirected to `/demo/store-earnings`.
+4. On `/demo/store-earnings`, confirm: **Latest sale — platform fee** shows the
+   charge, the 10% platform fee, and the seller net; **Balance & payouts** shows
+   an available/pending balance reflecting the transfer (payouts appear once
+   Stripe's rolling schedule runs — the balance moves first); **Earnings** shows
+   gross/net/paid-out. (Webhook sync takes a few seconds; refresh if needed.)
 
 ### Webhook Processing
 

@@ -36,9 +36,15 @@ export default defineConfig({
     // exactly the backend-independent surface this harness verifies. Anything
     // already exported in the environment wins, so a developer with a real local
     // deployment can point the harness at it via VITE_CONVEX_URL.
+    //
+    // The host must parse to a valid deployment name (`<slug>.convex.cloud`);
+    // convex ≥1.41 raises a FATAL page error on an unparseable one (e.g. the
+    // earlier `e2e-harness`), which the boot tests assert against. This dummy
+    // slug parses cleanly and never resolves to a real deployment.
     env: {
       VITE_CONVEX_URL:
-        process.env.VITE_CONVEX_URL ?? "https://e2e-harness.convex.cloud",
+        process.env.VITE_CONVEX_URL ??
+        "https://placeholder-harness-1.convex.cloud",
     },
   },
 });

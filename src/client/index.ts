@@ -1293,9 +1293,10 @@ export class BetterStripe {
 
   /**
    * Submit or stage dispute evidence. Stripe's `submit` defaults to TRUE, so
-   * this method stages by default: evidence without an explicit `submit` is
-   * saved as a draft (`submit: false`). Pass `submit: true` to submit to the
-   * bank (one-shot, outcome-affecting). See {@link disputesImpl.updateDispute}.
+   * this method stages by default: EVERY call sends an explicit
+   * `submit: false` — evidence-bearing or metadata-only — unless you pass
+   * `submit: true` to submit to the bank (one-shot, outcome-affecting;
+   * BTS-61, BTS-72). See {@link disputesImpl.updateDispute}.
    */
   async updateDispute(
     ctx: RunCtx,

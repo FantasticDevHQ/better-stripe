@@ -429,7 +429,7 @@ Two layers:
    Avery's gross/net.
 
 Attribution and the split-leg math are unit-tested in
-`convex/affiliate-split.test.ts`; the split executes as separate transfers via
+`convex/affiliateSplit.test.ts`; the split executes as separate transfers via
 the webhook engine (see `stripe.ts` `platformFee` for the platform's cut).
 
 #### Seller disputes flow (`e2e/seller-disputes.spec.ts`)

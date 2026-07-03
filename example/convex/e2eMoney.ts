@@ -33,16 +33,7 @@ function rawStripe(): Stripe {
   return new Stripe(key, { apiVersion: STRIPE_API_VERSION });
 }
 
-/**
- * The library's component exposes transfer/payment queries, but the installed
- * `ComponentApi` type is generated from a codegen snapshot that predates them
- * (the same gap BTS-43 flagged), so they are not statically typed on
- * `components.betterStripe`. They exist at runtime. One localized cast reaches
- * them for these read-only assertions; regenerating the component codegen is a
- * tracked follow-up.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const connectQueries = (components.betterStripe as any).connect.queries;
+const connectQueries = components.betterStripe.connect.queries;
 
 // ─── Ledger reads (assertions target these) ──────────────────────────────
 

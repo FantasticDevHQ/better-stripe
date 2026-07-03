@@ -23,20 +23,6 @@ import {
 
 import { api } from "../../../convex/_generated/api";
 
-/**
- * `adminTesting.ts` postdates this app's checked-in `_generated/api.ts`
- * snapshot (same class of gap BTS-70 fixed for the component's own codegen),
- * so `api.adminTesting` isn't in the generated type. Regenerating normally
- * (`npx convex codegen`) is currently blocked on this deployment by an
- * unrelated pre-existing issue: `affiliate-split.ts`'s hyphenated filename is
- * rejected as an invalid Convex module path by the push step. One localized
- * cast reaches the new actions at runtime (Convex resolves function
- * references by path dynamically, so this works correctly) until both are
- * fixed as a tracked follow-up.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const adminTesting = (api as any).adminTesting;
-
 interface LogEntry {
   timestamp: string;
   action: string;
@@ -49,12 +35,14 @@ export function AdminTesting() {
   const [firing, setFiring] = useState<string | null>(null);
   const stripeMode = useQuery(api.queries.getStripeMode);
 
-  const fireAccountUpdated = useAction(adminTesting.fireAccountUpdated);
+  const fireAccountUpdated = useAction(api.adminTesting.fireAccountUpdated);
   const fireSubscriptionUpdated = useAction(
-    adminTesting.fireSubscriptionUpdated,
+    api.adminTesting.fireSubscriptionUpdated,
   );
-  const fireCheckoutCompleted = useAction(adminTesting.fireCheckoutCompleted);
-  const fireInvoicePaid = useAction(adminTesting.fireInvoicePaid);
+  const fireCheckoutCompleted = useAction(
+    api.adminTesting.fireCheckoutCompleted,
+  );
+  const fireInvoicePaid = useAction(api.adminTesting.fireInvoicePaid);
 
   const addLog = (
     action: string,

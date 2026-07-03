@@ -739,6 +739,22 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           null,
           Name
         >;
+        releaseReversalClaim: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            operationId: string;
+            verified: Array<{
+              amountReversed: number;
+              stripeTransferId: string;
+            }>;
+          },
+          {
+            released: boolean;
+            rewound: Array<{ stripeTransferId: string; to: number }>;
+          },
+          Name
+        >;
         upsertDispute: FunctionReference<
           "mutation",
           "internal",
@@ -1055,6 +1071,23 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           } | null,
           Name
         >;
+        getReversalOp: FunctionReference<
+          "query",
+          "internal",
+          { operationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            operationId: string;
+            slices: Array<{
+              from: number;
+              stripeTransferId: string;
+              to: number;
+            }>;
+            sourceChargeId: string;
+          } | null,
+          Name
+        >;
         getTransferByStripeId: FunctionReference<
           "query",
           "internal",
@@ -1230,6 +1263,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceChargeId?: string;
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
+            stripeTransferId: string;
+          }>,
+          Name
+        >;
+        listWedgedReversalClaims: FunctionReference<
+          "query",
+          "internal",
+          {},
+          Array<{
+            amount: number;
+            blockingOps: Array<{
+              from: number;
+              operationId: string;
+              to: number;
+            }>;
+            reversalClaimedAmount: number;
+            reversedAmount: number;
+            sourceChargeId?: string;
             stripeTransferId: string;
           }>,
           Name

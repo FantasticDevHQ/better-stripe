@@ -25,6 +25,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Payouts", to: "/seller/payouts" },
     { label: "Disputes", to: "/seller/disputes" },
     { label: "Account", to: "/seller/account" },
+    { label: "Marketplace Account", to: "/seller/marketplace-account" },
   ],
   admin: [
     { label: "Overview", to: "/admin", end: true },

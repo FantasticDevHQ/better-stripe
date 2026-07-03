@@ -144,6 +144,10 @@ export type {
 export { DeletePaymentMethodDialog } from "./components/DeletePaymentMethodDialog.js";
 
 // Components — Disputes
+export { ConnectProvider } from "./components/ConnectProvider.js";
+export type { ConnectProviderProps } from "./components/ConnectProvider.js";
+export { EmbeddedDisputes } from "./components/EmbeddedDisputes.js";
+export type { EmbeddedDisputesProps } from "./components/EmbeddedDisputes.js";
 export { DisputesList } from "./components/DisputesList.js";
 export type {
   DisputesListProps,

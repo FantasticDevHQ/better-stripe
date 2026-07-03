@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import {
   CheckCircle,
   FlaskConical,
@@ -18,9 +18,24 @@ import {
   ShieldCheck,
   Trash2,
   XCircle,
+  Zap,
 } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
+
+/**
+ * `adminTesting.ts` postdates this app's checked-in `_generated/api.ts`
+ * snapshot (same class of gap BTS-70 fixed for the component's own codegen),
+ * so `api.adminTesting` isn't in the generated type. Regenerating normally
+ * (`npx convex codegen`) is currently blocked on this deployment by an
+ * unrelated pre-existing issue: `affiliate-split.ts`'s hyphenated filename is
+ * rejected as an invalid Convex module path by the push step. One localized
+ * cast reaches the new actions at runtime (Convex resolves function
+ * references by path dynamically, so this works correctly) until both are
+ * fixed as a tracked follow-up.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const adminTesting = (api as any).adminTesting;
 
 interface LogEntry {
   timestamp: string;
@@ -31,7 +46,15 @@ interface LogEntry {
 
 export function AdminTesting() {
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [firing, setFiring] = useState<string | null>(null);
   const stripeMode = useQuery(api.queries.getStripeMode);
+
+  const fireAccountUpdated = useAction(adminTesting.fireAccountUpdated);
+  const fireSubscriptionUpdated = useAction(
+    adminTesting.fireSubscriptionUpdated,
+  );
+  const fireCheckoutCompleted = useAction(adminTesting.fireCheckoutCompleted);
+  const fireInvoicePaid = useAction(adminTesting.fireInvoicePaid);
 
   const addLog = (
     action: string,
@@ -47,6 +70,25 @@ export function AdminTesting() {
       },
       ...prev,
     ]);
+  };
+
+  const runTrigger = async (
+    action: string,
+    fn: () => Promise<Record<string, unknown>>,
+  ) => {
+    setFiring(action);
+    try {
+      const result = await fn();
+      addLog(action, JSON.stringify(result, null, 2));
+    } catch (err) {
+      addLog(
+        action,
+        err instanceof Error ? err.message : "Unknown error",
+        "error",
+      );
+    } finally {
+      setFiring(null);
+    }
   };
 
   return (
@@ -94,57 +136,74 @@ export function AdminTesting() {
         </CardContent>
       </Card>
 
-      {/* Mock Webhook Events */}
+      {/* Real Webhook Triggers */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5" />
-            Mock Webhook Events
+            <Zap className="h-5 w-5" />
+            Real Webhook Triggers
+            <Badge variant="destructive" className="ml-1">
+              test-mode only
+            </Badge>
           </CardTitle>
           <CardDescription>
-            Fire simulated Stripe webhook events to test your trigger and hook
-            handlers. Events appear in the Webhook Event Log.
+            Fires <strong>real</strong> test-mode Stripe API calls against the
+            seeded marketplace demo (run <code>npm run setup</code> first) —
+            not simulated events. Each button polls the component ledger for a
+            few seconds afterward and reports whether the row actually synced;
+            that only happens if{" "}
+            <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
+              stripe listen --forward-to &lt;site&gt;/stripe/webhook
+            </code>{" "}
+            is running locally (see README → &quot;Browser E2E
+            Tests&quot;). Confirmed events also appear in the Webhook Event
+            Log.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
-              onClick={() => {
-                addLog(
-                  "mockCheckoutCompleted()",
-                  "Checkout session completed event fired",
-                );
-              }}
+              disabled={firing !== null}
+              onClick={() =>
+                runTrigger("fireCheckoutCompleted()", fireCheckoutCompleted)
+              }
             >
-              Checkout Completed
+              {firing === "fireCheckoutCompleted()"
+                ? "Firing…"
+                : "Checkout Completed"}
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                addLog(
-                  "mockSubscriptionUpdated()",
-                  "Subscription updated event fired",
-                );
-              }}
+              disabled={firing !== null}
+              onClick={() =>
+                runTrigger(
+                  "fireSubscriptionUpdated()",
+                  fireSubscriptionUpdated,
+                )
+              }
             >
-              Subscription Updated
+              {firing === "fireSubscriptionUpdated()"
+                ? "Firing…"
+                : "Subscription Updated"}
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                addLog("mockAccountUpdated()", "Account updated event fired");
-              }}
+              disabled={firing !== null}
+              onClick={() =>
+                runTrigger("fireAccountUpdated()", fireAccountUpdated)
+              }
             >
-              Account Updated
+              {firing === "fireAccountUpdated()"
+                ? "Firing…"
+                : "Account Updated"}
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                addLog("mockInvoicePaid()", "Invoice paid event fired");
-              }}
+              disabled={firing !== null}
+              onClick={() => runTrigger("fireInvoicePaid()", fireInvoicePaid)}
             >
-              Invoice Paid
+              {firing === "fireInvoicePaid()" ? "Firing…" : "Invoice Paid"}
             </Button>
           </div>
         </CardContent>

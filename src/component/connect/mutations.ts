@@ -147,6 +147,46 @@ export const upsertRefund = mutation({
   },
 });
 
+/**
+ * Record fee-refund state on the linked payment (BTS-34). Values are ABSOLUTE
+ * cumulative totals from Stripe's `application_fee.refunded` event (never
+ * incremented here), so redeliveries and createRefund-triggered duplicates
+ * can't double-count. No-op when the payment row doesn't exist.
+ */
+export const recordPaymentFeeRefund = mutation({
+  args: {
+    stripePaymentIntentId: v.string(),
+    /** Net fee kept by the platform: fee amount − amount refunded. */
+    feeCollectedAmount: v.number(),
+    /** Cumulative fee refunded so far. */
+    feeRefundedAmount: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const payment = await ctx.db
+      .query("payments")
+      .withIndex("by_stripe_payment_intent_id", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+      )
+      .first();
+    if (payment) {
+      // `feeRefundedAmount` is a cumulative total. Keep it monotonic (mirroring
+      // `recordTransferReversal`) so an out-of-order/stale redelivery can't
+      // regress the refunded total or inflate the collected fee back up. The two
+      // fields move together (collected = fee − refunded), so the event with the
+      // larger refunded total wins both — apply nothing when the incoming event
+      // is stale.
+      if (args.feeRefundedAmount >= (payment.feeRefundedAmount ?? 0)) {
+        await ctx.db.patch("payments", payment._id, {
+          feeCollectedAmount: args.feeCollectedAmount,
+          feeRefundedAmount: args.feeRefundedAmount,
+        });
+      }
+    }
+    return null;
+  },
+});
+
 // =============================================================================
 // DISPUTE MUTATIONS
 // =============================================================================

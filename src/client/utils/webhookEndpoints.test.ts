@@ -58,6 +58,8 @@ describe("event constant exports", () => {
     ]);
     // sanity: includes a representative V1 and V2 event
     expect(ALL_BETTER_STRIPE_EVENTS).toContain("invoice.paid");
+    // Fee-refund denormalization (BTS-34) needs this event delivered.
+    expect(ALL_BETTER_STRIPE_EVENTS).toContain("application_fee.refunded");
     expect(ALL_BETTER_STRIPE_EVENTS).toContain("v2.core.account.updated");
   });
 });

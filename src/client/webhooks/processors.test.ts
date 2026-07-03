@@ -1736,3 +1736,238 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
     expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
   });
 });
+
+describe("processEvent — refunds: split clawback + fee-refund denormalization (BTS-34)", () => {
+  /** Two split-engine ledger legs for ch_1 (original amounts, minor units). */
+  const ledgerLegs = (
+    overrides: { reversedStore?: number; reversedAff?: number } = {},
+  ) => [
+    {
+      stripeTransferId: "tr_s",
+      amount: 7000,
+      destinationAccountId: "acct_store",
+      role: "store",
+      currency: "usd",
+      ...(overrides.reversedStore !== undefined
+        ? { reversedAmount: overrides.reversedStore }
+        : {}),
+    },
+    {
+      stripeTransferId: "tr_a",
+      amount: 1000,
+      destinationAccountId: "acct_aff",
+      role: "affiliate",
+      currency: "usd",
+      ...(overrides.reversedAff !== undefined
+        ? { reversedAmount: overrides.reversedAff }
+        : {}),
+    },
+  ];
+
+  const refundEvent = (overrides: Record<string, unknown> = {}) =>
+    event("refund.created", {
+      id: "re_1",
+      charge: "ch_1",
+      payment_intent: "pi_1",
+      amount: 5000,
+      currency: "usd",
+      status: "succeeded",
+      metadata: {},
+      ...overrides,
+    });
+
+  it("reverses split-sale transfers pro-rata on a succeeded partial refund", async () => {
+    const ctx = makeCtx({ query: ledgerLegs() });
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      amount: 10000,
+      amount_refunded: 5000,
+    });
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent());
+
+    // 50% refunded → each leg reversed to 50% of its original amount.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(2);
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_s",
+      { amount: 3500 },
+      { idempotencyKey: "bs_rev_re_1_tr_s" },
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_a",
+      { amount: 500 },
+      { idempotencyKey: "bs_rev_re_1_tr_a" },
+    );
+  });
+
+  it("reverses the full transfer amounts on a full refund", async () => {
+    const ctx = makeCtx({ query: ledgerLegs() });
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      amount: 10000,
+      amount_refunded: 10000,
+    });
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent({ amount: 10000 }));
+
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_s",
+      { amount: 7000 },
+      { idempotencyKey: "bs_rev_re_1_tr_s" },
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_a",
+      { amount: 1000 },
+      { idempotencyKey: "bs_rev_re_1_tr_a" },
+    );
+  });
+
+  it("a second partial refund reverses only the delta up to the new cumulative target", async () => {
+    // First refund (5000) already clawed back 3500/500 and was recorded.
+    const ctx = makeCtx({
+      query: ledgerLegs({ reversedStore: 3500, reversedAff: 500 }),
+    });
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      amount: 10000,
+      amount_refunded: 7000, // cumulative: 5000 + this refund's 2000
+    });
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent({ id: "re_2", amount: 2000 }));
+
+    // Target 70% of each leg minus what's already reversed: 4900-3500, 700-500.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_s",
+      { amount: 1400 },
+      { idempotencyKey: "bs_rev_re_2_tr_s" },
+    );
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_a",
+      { amount: 200 },
+      { idempotencyKey: "bs_rev_re_2_tr_a" },
+    );
+  });
+
+  it("is idempotent — a redelivered refund event whose reversals are recorded reverses nothing", async () => {
+    const ctx = makeCtx({
+      query: ledgerLegs({ reversedStore: 3500, reversedAff: 500 }),
+    });
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      amount: 10000,
+      amount_refunded: 5000,
+    });
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent());
+
+    // Cumulative target (50%) already met on both legs — no delta, no calls.
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("skips clawback quietly for a refund on a non-split sale", async () => {
+    const ctx = makeCtx({ query: [] });
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent());
+
+    // No ledger legs → not a split sale (Stripe-native reverse_transfer covers
+    // destination charges). No charge lookup, no reversals, no throw.
+    expect(stripe.charges.retrieve).not.toHaveBeenCalled();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("does not claw back for a pending refund", async () => {
+    const ctx = makeCtx({ query: ledgerLegs() });
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await processEvent(whCtx, refundEvent({ status: "pending" }));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("propagates a reversal failure so the event is marked failed and Stripe retries", async () => {
+    const ctx = makeCtx({ query: ledgerLegs() });
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      amount: 10000,
+      amount_refunded: 5000,
+    });
+    stripe.transfers.createReversal.mockRejectedValue(new Error("stripe down"));
+    const whCtx = makeWhCtx({ ctx, stripe });
+
+    await expect(processEvent(whCtx, refundEvent())).rejects.toThrow(
+      "stripe down",
+    );
+  });
+
+  it("application_fee.refunded sets absolute fee totals on the linked payment", async () => {
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      payment_intent: "pi_1",
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    const feeEvent = event("application_fee.refunded", {
+      id: "fee_1",
+      charge: "ch_1",
+      amount: 320,
+      amount_refunded: 160,
+      currency: "usd",
+    });
+    await processEvent(whCtx, feeEvent);
+
+    const calls = whCtx.ctx.runMutation.mock.calls;
+    const feeCall = calls.find(
+      (c) =>
+        c[0][TO_REF] === "betterStripe/connect/mutations/recordPaymentFeeRefund",
+    );
+    expect(feeCall).toBeDefined();
+    // Absolute cumulative values straight from Stripe — never incremented, so
+    // a redelivery (or a createRefund-triggered duplicate) can't double-count.
+    expect(feeCall![1]).toEqual({
+      stripePaymentIntentId: "pi_1",
+      feeCollectedAmount: 160,
+      feeRefundedAmount: 160,
+    });
+
+    // Redelivery writes the identical absolute state.
+    await processEvent(whCtx, feeEvent);
+    const feeCalls = whCtx.ctx.runMutation.mock.calls.filter(
+      (c) =>
+        c[0][TO_REF] === "betterStripe/connect/mutations/recordPaymentFeeRefund",
+    );
+    expect(feeCalls).toHaveLength(2);
+    expect(feeCalls[1][1]).toEqual(feeCalls[0][1]);
+  });
+
+  it("application_fee.refunded skips quietly when the charge has no payment intent", async () => {
+    const stripe = makeStripe();
+    stripe.charges.retrieve.mockResolvedValue({ id: "ch_1", payment_intent: null });
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("application_fee.refunded", {
+          id: "fee_1",
+          charge: "ch_1",
+          amount: 320,
+          amount_refunded: 320,
+        }),
+      ),
+    ).resolves.toBeUndefined();
+    expect(whCtx.ctx.runMutation).not.toHaveBeenCalled();
+  });
+});

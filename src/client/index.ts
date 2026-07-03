@@ -1156,6 +1156,13 @@ export class BetterStripe {
   // REFUND METHODS
   // ============================================================================
 
+  /**
+   * Issue a refund (BTS-34). `refundApplicationFee` and `reverseTransfer`
+   * default true: the platform fee is returned and the destination transfer
+   * reversed pro-rata (Stripe-native for partials) — each sent only when the
+   * charge actually carries a fee / transfer. Split sales are clawed back by
+   * the `refund.created` webhook's transfer math instead.
+   */
   async createRefund(
     ctx: RunCtx,
     opts: {
@@ -1165,6 +1172,8 @@ export class BetterStripe {
       reason?: "duplicate" | "fraudulent" | "requested_by_customer";
       metadata?: Record<string, string>;
       stripeAccountId?: string;
+      refundApplicationFee?: boolean;
+      reverseTransfer?: boolean;
     },
   ): Promise<{ stripeRefundId: string }> {
     return refundsImpl.createRefund(this.stripe(), ctx, opts);

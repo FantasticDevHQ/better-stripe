@@ -113,7 +113,7 @@ describe("getDisputeWithCountdown (BTS-31)", () => {
   });
 });
 
-describe("updateDispute staged vs submit (BTS-31, BTS-61)", () => {
+describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
   it("stages evidence safely by defaulting submit: false when submit is omitted", async () => {
     // BTS-61: Stripe's `submit` defaults to TRUE, so omitting it would submit
     // evidence to the bank (one-shot). Providing evidence without an explicit
@@ -159,9 +159,13 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61)", () => {
     );
   });
 
-  it("leaves a metadata-only update (no evidence) untouched — no submit forced", async () => {
-    // Without evidence there is nothing to submit to the bank, so the safe
-    // default must not inject submit: false onto a bare metadata/status update.
+  it("sends an explicit submit: false on a metadata-only update (BTS-72)", async () => {
+    // BTS-72: a request that omits `submit` leans on Stripe's server-side
+    // default — documented as TRUE on every update. Empirically (test mode,
+    // 2026-07-03) a metadata-only update does NOT submit staged evidence, but
+    // submission is one-shot and outcome-affecting, so the request must say
+    // what it means instead of relying on behavior that contradicts the
+    // documented default. No updateDispute call may ever implicitly submit.
     const stripe = makeStripe();
     await updateDispute(asStripe(stripe), ctx, {
       stripeDisputeId: "dp_1",
@@ -169,7 +173,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61)", () => {
     });
     expect(stripe.disputes.update).toHaveBeenCalledWith(
       "dp_1",
-      { metadata: { note: "internal" } },
+      { metadata: { note: "internal" }, submit: false },
       undefined,
     );
   });

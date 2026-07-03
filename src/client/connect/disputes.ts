@@ -73,14 +73,21 @@ export async function listDisputes(
 /**
  * Submit or stage dispute evidence.
  *
- * ⚠️ Stripe's dispute-update `submit` parameter DEFAULTS TO TRUE: staged
- * evidence is submitted to the bank unless you pass `submit: false`. Submission
- * is effectively one-shot and affects the dispute outcome. To avoid that trap,
- * this method treats **staging as the safe default**: when `evidence` is
- * provided without an explicit `submit`, it sends `submit: false` (a draft).
- * Pass `submit: true` to finalize and submit the response to the bank. A bare
- * metadata/status update (no `evidence`) is left untouched — no `submit` is
- * forced, so Stripe's own handling applies.
+ * ⚠️ Stripe's dispute-update `submit` parameter is documented as DEFAULTING TO
+ * TRUE, and submission is effectively one-shot and affects the dispute
+ * outcome. To avoid that trap, this method **never omits `submit`**: every
+ * call sends an explicit `submit: false` unless the caller passes
+ * `submit: true` to finalize and send the response to the bank (BTS-61,
+ * BTS-72). So no `updateDispute` call — evidence, metadata, or both — can
+ * ever implicitly submit staged evidence.
+ *
+ * Verified against the Stripe API (test mode, 2026-07-03): an update carrying
+ * `evidence` with no `submit` key IS submitted (the documented default), while
+ * a metadata-only update with no `submit` key does NOT submit previously
+ * staged evidence — and `submit: false` is accepted alongside any update,
+ * including on a dispute whose evidence was already submitted (no state
+ * change). We still send it explicitly rather than lean on the undocumented
+ * metadata-only leniency.
  */
 export async function updateDispute(
   stripe: Stripe,
@@ -93,18 +100,18 @@ export async function updateDispute(
     stripeAccountId?: string;
   },
 ): Promise<{ success: true }> {
-  // Stage-by-default: an omitted submit alongside evidence must NOT inherit
-  // Stripe's true default (which would submit to the bank). Only default when
-  // evidence is present; a bare metadata/status update forces nothing.
-  const submit =
-    opts.submit !== undefined ? opts.submit : opts.evidence ? false : undefined;
+  // Stage-by-default, on EVERY call: an omitted `submit` must never inherit
+  // Stripe's server-side default (documented true). BTS-61 covered the
+  // evidence path; BTS-72 extends it to metadata-only updates, so no request
+  // shape can implicitly submit staged evidence.
+  const submit = opts.submit ?? false;
   try {
     await stripe.disputes.update(
       opts.stripeDisputeId,
       {
         ...(opts.evidence ? { evidence: opts.evidence } : {}),
         ...(opts.metadata ? { metadata: opts.metadata } : {}),
-        ...(submit !== undefined ? { submit } : {}),
+        submit,
       },
       opts.stripeAccountId
         ? { stripeAccount: opts.stripeAccountId }

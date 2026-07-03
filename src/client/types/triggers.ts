@@ -171,6 +171,17 @@ export interface AsyncHooks {
     ctx: AsyncHookCtx,
     invoice: StripeComponentInvoice,
   ) => Promise<void>;
+  /**
+   * A subscription invoice's charge failed (BTS-33). Fires on
+   * `invoice.payment_failed` — the invoice-level (subscription-cycle) failure,
+   * distinct from {@link onPaymentFailed} which is the one-time PaymentIntent
+   * failure. The invoice carries `nextPaymentAttempt`/`attemptCount` so a
+   * dunning email can say when Stripe's smart retries will try again.
+   */
+  onInvoicePaymentFailed?: (
+    ctx: AsyncHookCtx,
+    invoice: StripeComponentInvoice,
+  ) => Promise<void>;
   onPaymentSucceeded?: (
     ctx: AsyncHookCtx,
     payment: StripeComponentPayment,
@@ -243,6 +254,7 @@ export type AsyncHookName =
   | "afterSubscriptionCanceled"
   | "afterTrialEnding"
   | "afterInvoicePaid"
+  | "afterInvoicePaymentFailed"
   | "afterPaymentSucceeded"
   | "afterPaymentFailed"
   | "afterPayoutCompleted"

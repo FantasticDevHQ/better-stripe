@@ -427,6 +427,7 @@ interface AsyncHooks {
   onSubscriptionCanceled?: (ctx, subscription) => Promise<void>;
   onTrialEnding?: (ctx, subscription) => Promise<void>;
   onInvoicePaid?: (ctx, invoice) => Promise<void>;
+  onInvoicePaymentFailed?: (ctx, invoice) => Promise<void>;
   onPaymentSucceeded?: (ctx, payment) => Promise<void>;
   onPaymentFailed?: (ctx, payment) => Promise<void>;
   onPayoutCompleted?: (ctx, payout) => Promise<void>;
@@ -460,6 +461,7 @@ Exactly one hook (at most) is scheduled per event:
 | `customer.subscription.deleted`                   | `afterSubscriptionCanceled` |
 | `customer.subscription.trial_will_end`            | `afterTrialEnding`          |
 | `invoice.paid`                                    | `afterInvoicePaid`          |
+| `invoice.payment_failed`                          | `afterInvoicePaymentFailed` |
 | `payment_intent.succeeded`                        | `afterPaymentSucceeded`     |
 | `payment_intent.payment_failed`                   | `afterPaymentFailed`        |
 | `payout.paid`                                     | `afterPayoutCompleted`      |
@@ -472,6 +474,25 @@ All other processed events (e.g. `payment_intent.canceled`, `payout.failed`, `in
 > **Note:** async hooks should be idempotent. Duplicate delivery is possible in rare ledger-failure cases (e.g. the event is processed and the hook scheduled, but the ledger update fails and Stripe redelivers).
 
 The raw callbacks you pass to `triggers` and `hooks` on the `BetterStripe` constructor are the source of truth for app behavior. The exported `syncWebhook`/`asyncWebhook` pair is the bridge that makes them callable from the Convex runtime — events whose triggers you did not configure simply run the upsert (no sync trigger) and schedule no hook.
+
+### Dunning & smart retries
+
+Failed recurring payments are recovered by **Stripe Smart Retries**, not by any retry loop in this library. The component never re-attempts a charge itself — it tracks the delinquency and fires hooks so your app can notify the customer. Retry _timing and count_ are owned entirely by Stripe.
+
+**Required Dashboard settings** (Stripe controls the schedule; enable these once):
+
+- **Subscriptions:** Dashboard → **Billing → Revenue recovery → Retries** — turn on **Smart Retries** (Stripe's recommended, ML-timed schedule). Also set what happens when retries are exhausted (leave `past_due`, mark `unpaid`, or cancel).
+- **One-time invoices:** Dashboard → **Settings → Billing → Invoices** — configure retry behavior for invoices not tied to a subscription.
+- Ensure the `invoice.payment_failed` and `customer.subscription.updated` events are delivered to your webhook endpoint.
+
+**What the component surfaces:**
+
+- The subscription row tracks Stripe's delinquency states — `past_due` (first failed charge) and `unpaid` (retries exhausted) — arriving via `customer.subscription.updated`, which fires **`onSubscriptionUpdated`**.
+- Each `invoice.payment_failed` fires **`onInvoicePaymentFailed`** with the committed invoice. Under Smart Retries the invoice carries `nextPaymentAttempt` (ISO time of Stripe's next retry) and `attemptCount`, so a dunning email can tell the buyer exactly when Stripe will try again. Both clear once the invoice is paid or retries stop.
+
+`onInvoicePaymentFailed` is the **invoice-level** (subscription-cycle) failure — distinct from `onPaymentFailed`, which fires on a one-time **PaymentIntent** failure (`payment_intent.payment_failed`) and receives a payment, not an invoice.
+
+> **Limitation:** `nextPaymentAttempt` is captured from the `invoice.payment_failed` payload, which is correct for Smart Retries. If you instead use a **custom retry _automation_**, Stripe sets `next_payment_attempt` on `invoice.updated` (not `invoice.payment_failed`); the component does not currently process `invoice.updated`, so the retry timestamp may lag until the next handled invoice event.
 
 ## React Hooks
 

@@ -400,6 +400,22 @@ describe("processEvent — subscriptions", () => {
     expect(data.isTrialing).toBe(true);
     expect(data.trialEnd).toBe(new Date(1700600000 * 1000).toISOString());
   });
+
+  // BTS-33: when a recurring charge fails, Stripe drives the subscription to
+  // `past_due` (then `unpaid` once retries are exhausted) via
+  // customer.subscription.updated. The raw delinquent status must reach the
+  // table unchanged so `onSubscriptionUpdated` consumers can act on it.
+  it.each(["past_due", "unpaid"] as const)(
+    "passes through the delinquent subscription status %s",
+    async (status) => {
+      const whCtx = makeWhCtx();
+      await processEvent(
+        whCtx,
+        event("customer.subscription.updated", { ...baseSub, status }),
+      );
+      expect(dispatchedPayload(whCtx.ctx).data.status).toBe(status);
+    },
+  );
 });
 
 describe("processEvent — checkout", () => {
@@ -539,6 +555,43 @@ describe("processEvent — invoices", () => {
       }),
     );
     expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_v2");
+  });
+
+  // BTS-33: a failed subscription charge transitions the invoice (Stripe leaves
+  // it `open` for retry) and carries the smart-retry schedule so a dunning hook
+  // can surface when Stripe will try again.
+  it("transitions state and surfaces retry metadata on invoice.payment_failed", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(
+      whCtx,
+      event("invoice.payment_failed", {
+        id: "in_failed",
+        customer: "acct_i",
+        currency: "usd",
+        amount_due: 5000,
+        amount_paid: 0,
+        status: "open",
+        attempt_count: 1,
+        next_payment_attempt: 1700003600,
+        period_start: null,
+        period_end: null,
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_delinquent" } },
+      }),
+    );
+
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/billing/mutations/upsertInvoice");
+    expect(data).toMatchObject({
+      stripeInvoiceId: "in_failed",
+      subscriptionId: "sub_delinquent",
+      status: "open",
+      amountPaid: 0,
+      attemptCount: 1,
+    });
+    expect(data.nextPaymentAttempt).toBe(
+      new Date(1700003600 * 1000).toISOString(),
+    );
   });
 });
 

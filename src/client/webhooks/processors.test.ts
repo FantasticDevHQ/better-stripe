@@ -98,6 +98,16 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
 }
 
 let trCreateSeq = 0;
+
+/** Minimal transfer-reversal shape the mocks record/return (BTS-69). */
+type MockReversal = {
+  id: string;
+  amount: number;
+  metadata: Record<string, string> | null;
+  /** Test-only join back to the reversed transfer id. */
+  _transfer?: string;
+};
+
 function makeStripe() {
   return {
     products: { retrieve: vi.fn() },
@@ -112,7 +122,20 @@ function makeStripe() {
     },
     transfers: {
       create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
-      createReversal: vi.fn(async (_id: unknown) => ({ id: "trr_x" })),
+      createReversal: vi.fn(
+        async (
+          _id: unknown,
+          _params?: unknown,
+          _opts?: unknown,
+        ): Promise<MockReversal> => ({ id: "trr_x", amount: 0, metadata: null }),
+      ),
+      // No prior reversals by default; the first-invoice-fee adoption guard
+      // (BTS-69) lists these before reversing.
+      listReversals: vi.fn(
+        async (_id: unknown, _opts?: unknown): Promise<{ data: MockReversal[] }> => ({
+          data: [],
+        }),
+      ),
     },
     invoicePayments: {
       list: vi.fn(
@@ -1793,6 +1816,76 @@ describe("processEvent — first-invoice fee correction (BTS-68)", () => {
     await expect(
       processEvent(whCtx, event("invoice.paid", paidFirstInvoice())),
     ).rejects.toThrow("stripe down");
+  });
+
+  it("[BTS-69] does NOT double-reverse when the marker write failed and bsFeeConfig was edited before a retry past the idempotency-key TTL", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe, { percent: 2.9, fixed: 30 }); // first-delivery fee F1 = 320
+    wireInvoiceCharge(stripe, paidFirstInvoice());
+
+    // Stateful reversal store: createReversal records, listReversals returns them
+    // — modelling that a reversal PERSISTS across webhook deliveries (Stripe's
+    // reversal ledger), independent of our bsFeeCollected invoice marker and of
+    // Stripe's ≤24h idempotency-key window.
+    const reversals: MockReversal[] = [];
+    stripe.transfers.createReversal.mockImplementation(
+      async (id: unknown, params: unknown) => {
+        const p = params as { amount: number; metadata?: Record<string, string> };
+        const rev: MockReversal = {
+          id: `trr_${reversals.length + 1}`,
+          amount: p.amount,
+          metadata: p.metadata ?? null,
+          _transfer: id as string,
+        };
+        reversals.push(rev);
+        return rev;
+      },
+    );
+    stripe.transfers.listReversals.mockImplementation(async (id: unknown) => ({
+      data: reversals.filter((r) => r._transfer === (id as string)),
+    }));
+
+    const whCtx = makeWhCtx({ stripe });
+
+    // ── Delivery 1: the reversal SUCCEEDS, then the bsFeeCollected marker write
+    // FAILS → the error propagates → the event is marked `failed`. So the money
+    // moved (F1=320 reversed) but the invoice was never marked collected.
+    stripe.invoices.update.mockRejectedValueOnce(new Error("marker write failed"));
+    await expect(
+      processEvent(whCtx, event("invoice.paid", paidFirstInvoice())),
+    ).rejects.toThrow("marker write failed");
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(1);
+    expect(reversals).toHaveLength(1);
+
+    // ── The platform edits bsFeeConfig before the retry, so a recompute would now
+    // produce a DIFFERENT fee (F2=900) — the config-drift that defeats Stripe's
+    // idempotency key once it expires.
+    wireSub(stripe, { percent: 8, fixed: 100 });
+    stripe.invoices.update.mockResolvedValue({}); // marker write now succeeds
+
+    // ── Delivery 2: retry AFTER the idempotency key expired (the mock doesn't
+    // enforce keys, so a second createReversal WOULD land a real second reversal).
+    // The invoice still carries NO bsFeeCollected marker (delivery 1's write
+    // failed), so the marker guard can't save us. Only adopting the existing
+    // bsFeeFor:in_first reversal prevents the double collection.
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    // THE INVARIANT: exactly ONE reversal across both deliveries — no double
+    // collection — and the recorded amount is the originally-reversed F1, not the
+    // drifted F2.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(1);
+    expect(reversals).toHaveLength(1);
+    expect(reversals[0].amount).toBe(320);
+    // The retry re-records the marker with the actually-reversed amount.
+    expect(stripe.invoices.update).toHaveBeenCalledWith(
+      "in_first",
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          bsFeeCollected: "1",
+          bsFeeAmount: "320",
+        }),
+      }),
+    );
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { computeReversalSlices } from "../../component/lib/reversals.js";
 import type { Component, RunCtx } from "../helpers.js";
 import {
   createSplitTransfers,
@@ -39,9 +40,40 @@ function makeCtx(transfers: unknown[]) {
     if (path === "connect/queries/listTransfersByCharge") return transfers;
     return null;
   });
+  // Fake claimReversalSlices' storage; the slice math is the real shared
+  // computeReversalSlices over this ctx's ledger rows (BTS-63).
+  const runMutation = vi.fn(
+    async (refObj: Record<symbol, string>, args: Record<string, unknown>) => {
+      const path = refObj[TO_REF].replace(/^betterStripe\//, "");
+      if (path !== "connect/mutations/claimReversalSlices") return undefined;
+      const legs = transfers as {
+        stripeTransferId: string;
+        amount: number;
+        reversedAmount?: number;
+        reversalClaimedAmount?: number;
+      }[];
+      const slices = computeReversalSlices(
+        legs.map((t) => ({
+          stripeTransferId: t.stripeTransferId,
+          amount: t.amount,
+          frontier: Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0),
+        })),
+        args.mode as Parameters<typeof computeReversalSlices>[1],
+      );
+      return {
+        replay: false,
+        slices: slices.map((s) => ({
+          ...s,
+          confirmed:
+            legs.find((t) => t.stripeTransferId === s.stripeTransferId)
+              ?.reversedAmount ?? 0,
+        })),
+      };
+    },
+  );
   return {
     runQuery,
-    runMutation: vi.fn().mockResolvedValue(undefined),
+    runMutation,
   } as unknown as RunCtx & {
     runQuery: ReturnType<typeof vi.fn>;
     runMutation: ReturnType<typeof vi.fn>;

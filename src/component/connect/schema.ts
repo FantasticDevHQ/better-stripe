@@ -6,6 +6,8 @@ import {
   payoutFields,
   refundFields,
   transferFields,
+  transferPersistedFields,
+  transferReversalOpFields,
 } from "./validators";
 
 /**
@@ -44,10 +46,23 @@ export const refundsTable = defineTable(refundFields)
  * Transfers ledger (BTS-12). One row per Stripe `Transfer` for the separate
  * charges & transfers (split) flow, so earnings/payout/reversal are one read.
  */
-export const transfersTable = defineTable(transferFields)
+export const transfersTable = defineTable({
+  ...transferFields,
+  ...transferPersistedFields,
+})
   .index("by_stripe_transfer_id", ["stripeTransferId"])
   .index("by_destination_account_id", ["destinationAccountId"])
   .index("by_source_charge_id", ["sourceChargeId"]);
+
+/**
+ * Reversal operation claims (BTS-63): one row per dispute/refund clawback
+ * operation, recording the exact slices it reserved so at-least-once webhook
+ * delivery replays byte-identical Stripe requests instead of recomputing
+ * amounts from mutable ledger state.
+ */
+export const transferReversalOpsTable = defineTable(
+  transferReversalOpFields,
+).index("by_operation_id", ["operationId"]);
 
 /**
  * Disputes (chargebacks). Same indexing strategy as refunds.

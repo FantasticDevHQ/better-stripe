@@ -85,3 +85,40 @@ describe("fee & fund-routing fields (BTS-11)", () => {
     ).rejects.toThrow(/Validator error.*platform/i);
   });
 });
+
+describe("fee-refund state vs payment_intent.succeeded redelivery (BTS-63)", () => {
+  it("upsertPayment does not resurrect a fee already reduced by a fee refund", async () => {
+    const t = convexTest(schema, modules);
+
+    // Original payment_intent.succeeded: gross fee 1000 collected.
+    const succeededPayload = {
+      stripePaymentIntentId: "pi_redeliver",
+      userId: "user_1",
+      amount: 10000,
+      currency: "usd",
+      status: "succeeded" as const,
+      chargeType: "destination" as const,
+      destinationAccountId: "acct_store",
+      applicationFeeAmount: 1000,
+      feeCollectedAmount: 1000,
+    };
+    await t.mutation(api.connect.mutations.upsertPayment, succeededPayload);
+
+    // application_fee.refunded: 400 of the fee is returned → 600 kept.
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_redeliver",
+      feeCollectedAmount: 600,
+      feeRefundedAmount: 400,
+    });
+
+    // Redelivered payment_intent.succeeded still carries the GROSS fee. It
+    // must not clobber the net fee back up past the monotonic refund guard.
+    await t.mutation(api.connect.mutations.upsertPayment, succeededPayload);
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_redeliver",
+    });
+    expect(payment!.feeRefundedAmount).toBe(400);
+    expect(payment!.feeCollectedAmount).toBe(600);
+  });
+});

@@ -31,6 +31,7 @@ import {
   getV2Account,
   listStripeAccounts,
   restartAccountOnboarding,
+  setAccountStatementDescriptor,
   syncAllAccounts,
   updateAccount,
   updateV2Account,
@@ -54,6 +55,7 @@ function makeComponent(): Component {
       mutations: {
         upsertAccount: ref("core/mutations/upsertAccount"),
         deleteAccountByStripeId: ref("core/mutations/deleteAccountByStripeId"),
+        setStatementDescriptor: ref("core/mutations/setStatementDescriptor"),
       },
     },
   } as unknown as Component;
@@ -1196,5 +1198,52 @@ describe("ensureCustomerAccount (BTS-18)", () => {
 
     expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
     expect(result.appliedConfigurations).toEqual(["customer", "merchant"]);
+  });
+});
+
+describe("setAccountStatementDescriptor (BTS-32)", () => {
+  it("validates, trims, and stores the per-store suffix on the account record", async () => {
+    const runMutation = vi.fn().mockResolvedValue(null);
+    const ctx = { runMutation } as unknown as RunCtx;
+
+    const result = await setAccountStatementDescriptor(makeComponent(), ctx, {
+      stripeAccountId: "acct_store",
+      statementDescriptor: "  MAYAS FITNESS  ",
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("core/mutations/setStatementDescriptor"),
+      { stripeAccountId: "acct_store", statementDescriptor: "MAYAS FITNESS" },
+    );
+  });
+
+  it("rejects an invalid suffix WITHOUT touching the component DB", async () => {
+    const runMutation = vi.fn();
+    const ctx = { runMutation } as unknown as RunCtx;
+
+    await expect(
+      setAccountStatementDescriptor(makeComponent(), ctx, {
+        stripeAccountId: "acct_store",
+        statementDescriptor: "BAD*NAME",
+      }),
+    ).rejects.toThrow(/character/i);
+    expect(runMutation).not.toHaveBeenCalled();
+  });
+
+  it("clears the suffix when passed null", async () => {
+    const runMutation = vi.fn().mockResolvedValue(null);
+    const ctx = { runMutation } as unknown as RunCtx;
+
+    const result = await setAccountStatementDescriptor(makeComponent(), ctx, {
+      stripeAccountId: "acct_store",
+      statementDescriptor: null,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("core/mutations/setStatementDescriptor"),
+      { stripeAccountId: "acct_store", statementDescriptor: null },
+    );
   });
 });

@@ -1263,6 +1263,122 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
   });
 });
 
+describe("processEvent — per-invoice statement descriptor (BTS-32)", () => {
+  const subInvoice = (overrides: Record<string, unknown> = {}) => ({
+    id: "in_sd",
+    customer: "acct_buyer",
+    currency: "usd",
+    amount_due: 10000,
+    amount_paid: 0,
+    status: "draft",
+    metadata: {},
+    parent: { subscription_details: { subscription: "sub_sd" } },
+    ...overrides,
+  });
+
+  it("sets the invoice statement_descriptor from the subscription's bsStatementDescriptor marker", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      metadata: { bsStatementDescriptor: "MAYAS FITNESS" },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", subInvoice()));
+
+    expect(stripe.invoices.update).toHaveBeenCalledWith("in_sd", {
+      statement_descriptor: "MAYAS FITNESS",
+    });
+  });
+
+  it("coexists with the per-invoice fee: both updates land on a doubly-flagged subscription", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+        bsStatementDescriptor: "MAYAS FITNESS",
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", subInvoice()));
+
+    expect(stripe.invoices.update).toHaveBeenCalledWith("in_sd", {
+      application_fee_amount: 320,
+      metadata: { bsFeeApplied: "1" },
+    });
+    expect(stripe.invoices.update).toHaveBeenCalledWith("in_sd", {
+      statement_descriptor: "MAYAS FITNESS",
+    });
+  });
+
+  it("does nothing when the subscription carries no descriptor marker", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      metadata: {},
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", subInvoice()));
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("never overwrites an already-set statement_descriptor (idempotent on retries)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      metadata: { bsStatementDescriptor: "MAYAS FITNESS" },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event(
+        "invoice.created",
+        subInvoice({ statement_descriptor: "APP SET THIS" }),
+      ),
+    );
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("skips a marker that fails defensive validation instead of sending it to Stripe", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      // Should be impossible (validated at set time) but webhooks are
+      // defensive: never forward a rule-breaking descriptor.
+      metadata: { bsStatementDescriptor: "BAD*NAME" },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.created", subInvoice()));
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("never breaks invoice processing when the descriptor update fails (cosmetic, reconciled next cycle)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_sd",
+      metadata: { bsStatementDescriptor: "MAYAS FITNESS" },
+    });
+    stripe.invoices.update.mockRejectedValue(new Error("stripe down"));
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(whCtx, event("invoice.created", subInvoice())),
+    ).resolves.toBeUndefined();
+
+    expect(errSpy).toHaveBeenCalled();
+    // The invoice row still lands in the component DB.
+    const paths = (whCtx.ctx.runMutation as ReturnType<typeof vi.fn>).mock.calls;
+    expect(paths.length).toBeGreaterThan(0);
+  });
+});
+
 describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
   const flaggedInvoice = (overrides: Record<string, unknown> = {}) => ({
     id: "in_fee",
@@ -1310,13 +1426,18 @@ describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
 
   it("is idempotent — skips invoices already marked bsFeeApplied", async () => {
     const stripe = makeStripe();
+    // The BTS-32 descriptor processor shares this event and may retrieve the
+    // subscription; give it an unflagged sub so only the fee path is observed.
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {},
+    });
     const whCtx = makeWhCtx({ stripe });
 
     await processEvent(
       whCtx,
       event("invoice.created", flaggedInvoice({ metadata: { bsFeeApplied: "1" } })),
     );
-    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
     expect(stripe.invoices.update).not.toHaveBeenCalled();
   });
 

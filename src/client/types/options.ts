@@ -58,6 +58,12 @@ export type BetterStripeOptions = {
   hooks?: AsyncHooks;
   /** Default platform fee (the platform's take). Validated at construction. */
   platformFee?: PlatformFeeConfig;
+  /**
+   * Default statement-descriptor suffix applied to destination charges when
+   * the seller account has no per-store suffix (BTS-32). Validated at
+   * construction against Stripe's descriptor rules.
+   */
+  statementDescriptorSuffix?: string;
 };
 
 // ---------------------------------------------------------------------------

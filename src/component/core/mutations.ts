@@ -53,6 +53,36 @@ export const upsertAccount = mutation({
 });
 
 /**
+ * Set (or clear, with `null`) the per-store statement-descriptor suffix on an
+ * account record (BTS-32). Validation happens in the client library before the
+ * mutation is called.
+ */
+export const setStatementDescriptor = mutation({
+  args: {
+    stripeAccountId: v.string(),
+    statementDescriptor: v.union(v.string(), v.null()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("accounts")
+      .withIndex("by_stripe_account_id", (q) =>
+        q.eq("stripeAccountId", args.stripeAccountId),
+      )
+      .first();
+    if (!existing) {
+      throw new Error(
+        `No account found for stripeAccountId ${args.stripeAccountId}`,
+      );
+    }
+    await ctx.db.patch("accounts", existing._id, {
+      statementDescriptor: args.statementDescriptor ?? undefined,
+    });
+    return null;
+  },
+});
+
+/**
  * Delete an account record from the component DB by Stripe account ID.
  * Does NOT close the account on Stripe — use BetterStripe.closeAccount() for that.
  */

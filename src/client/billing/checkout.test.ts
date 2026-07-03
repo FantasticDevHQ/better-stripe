@@ -45,6 +45,11 @@ function makeComponent(): Component {
         getProductByStripeId: ref("products/queries/getProductByStripeId"),
       },
     },
+    core: {
+      queries: {
+        getAccountByStripeId: ref("core/queries/getAccountByStripeId"),
+      },
+    },
   } as unknown as Component;
 }
 
@@ -865,10 +870,13 @@ describe("createCheckoutSession — price-on-platform validation (BTS-15)", () =
     ).rejects.toThrow(/platform/i);
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
     // The catalog lookups use the right ids (price → its product).
-    expect(ctx.runQuery).toHaveBeenNthCalledWith(1, expect.any(Object), {
+    // The catalog lookups use the right ids (price → its product). Positions
+    // are not asserted: the BTS-32 statement-descriptor account lookup also
+    // runs during session creation.
+    expect(ctx.runQuery).toHaveBeenCalledWith(expect.any(Object), {
       stripePriceId: "price_1",
     });
-    expect(ctx.runQuery).toHaveBeenNthCalledWith(2, expect.any(Object), {
+    expect(ctx.runQuery).toHaveBeenCalledWith(expect.any(Object), {
       stripeProductId: "prod_1",
     });
   });
@@ -896,10 +904,13 @@ describe("createCheckoutSession — price-on-platform validation (BTS-15)", () =
       destinationAccountId: "acct_store",
       feeConfig: { percent: 10 },
     });
-    expect(ctx.runQuery).toHaveBeenNthCalledWith(1, expect.any(Object), {
+    // The catalog lookups use the right ids (price → its product). Positions
+    // are not asserted: the BTS-32 statement-descriptor account lookup also
+    // runs during session creation.
+    expect(ctx.runQuery).toHaveBeenCalledWith(expect.any(Object), {
       stripePriceId: "price_1",
     });
-    expect(ctx.runQuery).toHaveBeenNthCalledWith(2, expect.any(Object), {
+    expect(ctx.runQuery).toHaveBeenCalledWith(expect.any(Object), {
       stripeProductId: "prod_1",
     });
     expect(stripe.checkout.sessions.create).toHaveBeenCalled();
@@ -1075,5 +1086,149 @@ describe("updateCheckoutSession", () => {
     expect(stripe.checkout.sessions.update).toHaveBeenCalledWith("cs_u2", {
       metadata: undefined,
     });
+  });
+});
+
+describe("createCheckoutSession — per-store statement descriptor (BTS-32)", () => {
+  const storeAccount = (statementDescriptor?: string) => ({
+    _id: "doc_acct",
+    stripeAccountId: "acct_store",
+    userId: "seller_1",
+    ...(statementDescriptor ? { statementDescriptor } : {}),
+  });
+
+  it("payment mode: sets statement_descriptor_suffix from the store's account record", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "core/queries/getAccountByStripeId": storeAccount("MAYAS FITNESS"),
+    });
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      destinationAccountId: "acct_store",
+      defaultStatementDescriptorSuffix: "PLATFORM DEF",
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.statement_descriptor_suffix).toBe(
+      "MAYAS FITNESS",
+    );
+  });
+
+  it("payment mode: falls back to the configured default when the store has no suffix", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "core/queries/getAccountByStripeId": storeAccount(undefined),
+    });
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      destinationAccountId: "acct_store",
+      defaultStatementDescriptorSuffix: "PLATFORM DEF",
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(createArg.payment_intent_data.statement_descriptor_suffix).toBe(
+      "PLATFORM DEF",
+    );
+  });
+
+  it("payment mode: omits the suffix when neither store nor default has one", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "core/queries/getAccountByStripeId": storeAccount(undefined),
+    });
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      destinationAccountId: "acct_store",
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(
+      "statement_descriptor_suffix" in createArg.payment_intent_data,
+    ).toBe(false);
+  });
+
+  it("subscription mode: stashes bsStatementDescriptor for the invoice.created processor without clobbering fee markers", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "core/queries/getAccountByStripeId": storeAccount("MAYAS FITNESS"),
+    });
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      destinationAccountId: "acct_store",
+      feeConfig: { percent: 2.9, fixed: 30 },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    // Both markers coexist: the per-invoice fee flag AND the descriptor stash.
+    expect(createArg.subscription_data.metadata.bsFeeMode).toBe("per_invoice");
+    expect(createArg.subscription_data.metadata.bsStatementDescriptor).toBe(
+      "MAYAS FITNESS",
+    );
+    // Not a session/PI-level field in subscription mode.
+    expect(createArg.payment_intent_data).toBeUndefined();
+  });
+
+  it("does not look up accounts or set a suffix for non-destination sales", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({});
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      defaultStatementDescriptorSuffix: "PLATFORM DEF",
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(
+      createArg.payment_intent_data.statement_descriptor_suffix,
+    ).toBeUndefined();
+    const accountLookups = ctx.runQuery.mock.calls.filter((call: unknown[]) =>
+      String((call[0] as Record<symbol, string>)[TO_REF]).includes(
+        "getAccountByStripeId",
+      ),
+    );
+    expect(accountLookups).toHaveLength(0);
+  });
+
+  it("callers cannot forge bsStatementDescriptor via metadata (reserved namespace stripped)", async () => {
+    const stripe = makeStripe();
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({});
+
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "subscription",
+      returnUrl: "https://app.test/return",
+      metadata: { bsStatementDescriptor: "FORGED" },
+    });
+
+    const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(
+      createArg.subscription_data.metadata.bsStatementDescriptor,
+    ).toBeUndefined();
   });
 });

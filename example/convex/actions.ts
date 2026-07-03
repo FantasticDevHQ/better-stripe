@@ -139,6 +139,22 @@ export const createPrice = action({
   handler: async (ctx, args) => stripe.createPrice(ctx, args),
 });
 
+export const updateProduct = action({
+  args: {
+    stripeProductId: v.string(),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => stripe.updateProduct(ctx, args),
+});
+
+export const deactivateProduct = action({
+  args: { stripeProductId: v.string() },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => stripe.deactivateProduct(ctx, args),
+});
+
 export const createProductForAccount = action({
   args: {
     name: v.string(),

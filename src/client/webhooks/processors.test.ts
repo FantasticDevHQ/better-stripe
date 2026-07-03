@@ -89,7 +89,10 @@ function makeStripe() {
         }),
       ),
     },
-    paymentIntents: { retrieve: vi.fn() },
+    paymentIntents: {
+      retrieve: vi.fn(),
+      update: vi.fn().mockResolvedValue({}),
+    },
     charges: { retrieve: vi.fn() },
   };
 }
@@ -1343,5 +1346,272 @@ describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
     );
     expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
     expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
+  /** A succeeded one-time destination-charge PI flagged for per-charge fee. */
+  const flaggedPi = (overrides: Record<string, unknown> = {}) => ({
+    id: "pi_fee",
+    amount: 10000,
+    currency: "usd",
+    status: "succeeded",
+    latest_charge: "ch_fee",
+    transfer_data: { destination: "acct_seller" },
+    metadata: {
+      bsFeeMode: "per_charge",
+      bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+    },
+    ...overrides,
+  });
+
+  /** Wire the retrieve mocks for the happy path: fresh PI + charge w/ transfer. */
+  function wireHappyPath(
+    stripe: ReturnType<typeof makeStripe>,
+    pi: Record<string, unknown>,
+    opts: { amountReceived?: number; freshMetadata?: Record<string, string> } = {},
+  ) {
+    stripe.paymentIntents.retrieve.mockResolvedValue({
+      ...pi,
+      amount_received: opts.amountReceived ?? (pi.amount as number),
+      ...(opts.freshMetadata ? { metadata: opts.freshMetadata } : {}),
+    });
+    stripe.charges.retrieve.mockResolvedValue({
+      id: pi.latest_charge,
+      transfer: "tr_auto",
+    });
+  }
+
+  it("collects a fixed fee by partially reversing the destination transfer", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    // round(10000 * 0.029) + 30 = 320, clawed back from the auto-transfer.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_auto",
+      expect.objectContaining({ amount: 320 }),
+      { idempotencyKey: "bs_pcfee_pi_fee" },
+    );
+    // Marked collected on the PI so retries beyond Stripe's idempotency window skip.
+    expect(stripe.paymentIntents.update).toHaveBeenCalledWith(
+      "pi_fee",
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          bsFeeCollected: "1",
+          bsFeeAmount: "320",
+        }),
+      }),
+    );
+    // Denormalized onto the payments row.
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/connect/mutations/upsertPayment");
+    expect(data.feeCollectedAmount).toBe(320);
+  });
+
+  it("collects a tiered fee (matching tier's percent + fixed)", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi({
+      metadata: {
+        bsFeeMode: "per_charge",
+        bsFeeConfig: JSON.stringify({
+          percent: 10,
+          tiers: [
+            { upTo: 5000, percent: 5 },
+            { upTo: null, percent: 8, fixed: 100 },
+          ],
+        }),
+      },
+    });
+    wireHappyPath(stripe, pi);
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    // amount 10000 → catch-all tier: round(10000 * 0.08) + 100 = 900
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_auto",
+      expect.objectContaining({ amount: 900 }),
+      { idempotencyKey: "bs_pcfee_pi_fee" },
+    );
+  });
+
+  it("computes the fee from the amount actually charged, not the list amount", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    // A Checkout promotion code discounted the final charge to 8000.
+    wireHappyPath(stripe, pi, { amountReceived: 8000 });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    // round(8000 * 0.029) + 30 = 262 — NOT 320 from the stale event amount.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_auto",
+      expect.objectContaining({ amount: 262 }),
+      expect.anything(),
+    );
+  });
+
+  it("is idempotent — a PI already marked bsFeeCollected is not reversed again", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    // The fresh PI (not the stale event snapshot) carries the marker.
+    wireHappyPath(stripe, pi, {
+      freshMetadata: {
+        bsFeeMode: "per_charge",
+        bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+        bsFeeCollected: "1",
+        bsFeeAmount: "320",
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(stripe.paymentIntents.update).not.toHaveBeenCalled();
+    // The payments row still reflects the previously collected fee.
+    expect(dispatchedPayload(whCtx.ctx).data.feeCollectedAmount).toBe(320);
+  });
+
+  it("does nothing for a PI without the per_charge marker", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("payment_intent.succeeded", flaggedPi({ metadata: {} })),
+    );
+
+    expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(dispatchedPayload(whCtx.ctx).data.feeCollectedAmount).toBeUndefined();
+  });
+
+  it("swallows malformed bsFeeConfig without reversing or crashing", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi({
+      metadata: { bsFeeMode: "per_charge", bsFeeConfig: "not json" },
+    });
+    wireHappyPath(stripe, pi);
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).resolves.toBeUndefined();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("propagates a reversal failure so the event is marked failed and Stripe retries", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    stripe.transfers.createReversal.mockRejectedValue(new Error("stripe down"));
+    const whCtx = makeWhCtx({ stripe });
+
+    // A swallowed failure would 200 → event ledger "processed" (terminal) →
+    // the fee is silently lost forever. Throwing marks the event "failed",
+    // Stripe retries, and the whole case re-runs idempotently.
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).rejects.toThrow("stripe down");
+
+    // The PI was never marked collected, so the retry collects the fee.
+    expect(stripe.paymentIntents.update).not.toHaveBeenCalled();
+    // Collection runs before the payment upsert, so nothing landed this
+    // delivery — the retry writes the row (with the fee) in one pass instead
+    // of leaving a partial row a second write would have to patch.
+    expect(whCtx.ctx.runMutation).not.toHaveBeenCalled();
+  });
+
+  it("rethrows a mark failure after a successful reversal; the replay converges on the same idempotency key", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    stripe.paymentIntents.update.mockRejectedValueOnce(new Error("mark failed"));
+    const whCtx = makeWhCtx({ stripe });
+
+    // Delivery 1: reversal succeeds, marking the PI fails → must throw (the
+    // event goes "failed" and retries) rather than end "processed" with an
+    // unmarked PI and no feeCollectedAmount on the payments row.
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).rejects.toThrow("mark failed");
+
+    // Delivery 2 (Stripe retry): the fresh PI is still unmarked, so the
+    // reversal is re-sent — with the IDENTICAL idempotency key and params
+    // (inputs are immutable post-success), so Stripe replays it without a
+    // second money movement. Then the mark and the payment upsert land.
+    await processEvent(whCtx, event("payment_intent.succeeded", pi));
+
+    expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = stripe.transfers.createReversal.mock
+      .calls as unknown as [unknown, unknown, unknown][];
+    expect(secondCall).toEqual(firstCall);
+    expect(firstCall[2]).toEqual({ idempotencyKey: "bs_pcfee_pi_fee" });
+    expect(stripe.paymentIntents.update).toHaveBeenCalledTimes(2);
+    const { path, data } = dispatchedPayload(whCtx.ctx);
+    expect(path).toBe("betterStripe/connect/mutations/upsertPayment");
+    expect(data.feeCollectedAmount).toBe(320);
+  });
+
+  it("skips (without throwing) when the charge has no destination transfer", async () => {
+    const stripe = makeStripe();
+    const pi = flaggedPi();
+    wireHappyPath(stripe, pi);
+    // Anomalous config a retry can't fix — rethrowing would loop the event
+    // "failed" forever. Logged skip instead.
+    stripe.charges.retrieve.mockResolvedValue({ id: "ch_fee", transfer: null });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(whCtx, event("payment_intent.succeeded", pi)),
+    ).resolves.toBeUndefined();
+
+    expect(errSpy).toHaveBeenCalled();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    // The payment row still lands (without a fee) — the sale itself is real.
+    expect(dispatchedPayload(whCtx.ctx).path).toBe(
+      "betterStripe/connect/mutations/upsertPayment",
+    );
+  });
+
+  it("[regression] the per_invoice path is untouched by the per-charge consumer", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+      },
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.created", {
+        id: "in_fee",
+        currency: "usd",
+        amount_due: 10000,
+        amount_paid: 0,
+        status: "draft",
+        metadata: {},
+        parent: { subscription_details: { subscription: "sub_1" } },
+      }),
+    );
+
+    // Still applied as an application_fee_amount on the draft invoice…
+    expect(stripe.invoices.update).toHaveBeenCalledWith("in_fee", {
+      application_fee_amount: 320,
+      metadata: { bsFeeApplied: "1" },
+    });
+    // …and never via the per-charge reversal machinery.
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
   });
 });

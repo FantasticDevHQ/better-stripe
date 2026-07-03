@@ -259,6 +259,26 @@ Demo flows that need seeded data (checkout, disputes, admin actions) are covered
 by later specs against a seeded Convex + Stripe test environment — this harness
 is the foundation they build on.
 
+**Live-backend specs.** Some specs exercise flows the placeholder backend can't
+serve (they persist real changes and rely on webhook-driven sync). These skip by
+default and run only with the explicit opt-in `E2E_LIVE_BACKEND=1`, with
+`VITE_CONVEX_URL` pointing the harness at a real deployment:
+
+```bash
+E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=https://<your-dev-deployment>.convex.cloud \
+  pnpm --filter ./example e2e
+```
+
+Requirements: a linked Convex dev deployment with the current functions pushed
+(`npx convex dev --once`), `STRIPE_SECRET_KEY` set, demo data seeded, and webhook
+event destinations configured (via `/admin/setup`) so `product.updated` events
+sync back to the UI. Current live-backend specs:
+
+- `e2e/admin-products.spec.ts` — admin product Edit + Deactivate (BTS-59);
+  self-contained (creates, edits, then archives its own product).
+- `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
+  see below.
+
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
 The one-time checkout demo (BTS-57) has two layers:
@@ -269,15 +289,11 @@ The one-time checkout demo (BTS-57) has two layers:
   one-time product (Ceramics Masterclass, from the marketplace seed) →
   embedded Stripe checkout in `payment` mode → test card `4242…` → Stripe
   redirects to `/checkout/status?session_id=cs_…` → "Payment successful!" with
-  the one-time purchase copy. Requirements:
+  the one-time purchase copy. Additional requirement on top of the list above:
+  webhook forwarding so the session status flips to `complete`:
 
   ```bash
-  # 1. A dev deployment with STRIPE_SECRET_KEY set, seeded, and with webhook
-  #    forwarding so the session status flips to `complete`:
-  npx convex dev                                               # terminal 1
-  stripe listen --forward-to <your-site-url>/stripe/webhook    # terminal 2
-  # 2. Run the gated flow:
-  E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=<your-deployment-url> pnpm --filter ./example e2e
+  stripe listen --forward-to <your-site-url>/stripe/webhook
   ```
 
 The session's mode is derived server-side in

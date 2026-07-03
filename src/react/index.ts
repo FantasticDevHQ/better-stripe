@@ -138,6 +138,18 @@ export type {
   DisputesListRow,
   DisputesListRowContext,
 } from "./components/DisputesList.js";
+export { DisputeDetail } from "./components/DisputeDetail.js";
+export type {
+  DisputeDetailProps,
+  DisputeDetailRenderProps,
+} from "./components/DisputeDetail.js";
+export { EvidenceForm } from "./components/EvidenceForm.js";
+export type {
+  DisputeEvidenceFields,
+  EvidenceFormProps,
+  EvidenceFormRenderProps,
+  EvidenceFormUpdateArgs,
+} from "./components/EvidenceForm.js";
 
 // Components — Connect / Merchant
 export { ConnectStatusBadge } from "./components/ConnectStatusBadge.js";

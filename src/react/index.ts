@@ -50,8 +50,8 @@ export type {
 } from "./hooks/useEarnings.js";
 export { createUseSplitBreakdown } from "./hooks/useSplitBreakdown.js";
 export type {
-  SplitBreakdown,
   SplitBreakdownLeg,
+  SplitBreakdownTotals,
   UseSplitBreakdownResult,
 } from "./hooks/useSplitBreakdown.js";
 export { createUseAccountOnboarding } from "./hooks/useAccountOnboarding.js";
@@ -219,6 +219,19 @@ export type {
   StructuredRequirements,
   EnrichedRequirement,
 } from "./components/ConnectRequirements.js";
+
+// Components — Earnings & splits (BTS-37)
+export { SplitBreakdown } from "./components/SplitBreakdown.js";
+export type {
+  SplitBreakdownLine,
+  SplitBreakdownProps,
+  SplitBreakdownRenderProps,
+} from "./components/SplitBreakdown.js";
+export { EarningsSummary } from "./components/EarningsSummary.js";
+export type {
+  EarningsSummaryProps,
+  EarningsSummaryRenderProps,
+} from "./components/EarningsSummary.js";
 
 // Utilities
 export {

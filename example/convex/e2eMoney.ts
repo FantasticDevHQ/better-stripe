@@ -126,9 +126,21 @@ export const provisionTestRecipient = action({
 
     // The V2 identity/attestations/recipient-capability params outrun the SDK's
     // static types on some versions; the shape follows the validated spike.
+    // `contact_email` and `defaults.responsibilities` are REQUIRED at create
+    // for a stripe_transfers recipient — verified live 2026-07-03 (BTS-66):
+    // creating without them fails with `invalid_fields`, which silently
+    // SKIPped the whole money phase.
     const createParams = {
       dashboard: "none",
+      contact_email: `e2e-${args.label}@example.com`,
+      display_name: `e2e ${args.label} recipient`,
       identity: { country: "US", entity_type: "individual" },
+      defaults: {
+        responsibilities: {
+          losses_collector: "application",
+          fees_collector: "application",
+        },
+      },
       configuration: {
         recipient: {
           capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
@@ -168,7 +180,32 @@ export const provisionTestRecipient = action({
     } as any;
     await raw.v2.core.accounts.update(account.id, updateParams);
 
-    return { stripeAccountId: account.id };
+    // The capability activates asynchronously after the attestation (observed
+    // live: ~seconds). A transfer sent before it flips fails with
+    // `insufficient_capabilities_for_transfer`, so wait for activation here —
+    // bounded; the harness SKIPs if it never lands.
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const fresh = (await raw.v2.core.accounts.retrieve(account.id, {
+        include: ["configuration.recipient"],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)) as unknown as {
+        configuration?: {
+          recipient?: {
+            capabilities?: {
+              stripe_balance?: { stripe_transfers?: { status?: string } };
+            };
+          };
+        };
+      };
+      const status =
+        fresh.configuration?.recipient?.capabilities?.stripe_balance
+          ?.stripe_transfers?.status;
+      if (status === "active") return { stripeAccountId: account.id };
+      await new Promise((resolve) => setTimeout(resolve, 3_000));
+    }
+    throw new Error(
+      `recipient ${account.id} stripe_transfers capability never activated`,
+    );
   },
 });
 
@@ -290,4 +327,111 @@ export const e2eRefundCharge = action({
       reverseTransfer: true,
       reason: "requested_by_customer",
     }),
+});
+
+// ─── BTS-66: per-charge-fee (BTS-60) sale + capped full-refund reversal ──
+
+/**
+ * The expected post-refund transfer state for a FULL refund (default
+ * `reverse_transfer: true`) of a destination charge whose transfer was already
+ * partially reversed by the BTS-60 fee collection (`bs_pcfee_<pi.id>`).
+ *
+ * Live-verified (BTS-66, Stripe test mode, 2026-07-03): Stripe does NOT error
+ * when the proportional reversal would exceed what remains reversible — it
+ * CAPS the refund-driven reversal at the remainder, leaving the transfer
+ * exactly fully reversed (fee reversal + capped refund reversal).
+ */
+export function fullRefundReversalPlan(
+  transferAmount: number,
+  alreadyReversed: number,
+): { refundReversal: number; totalReversed: number } {
+  return {
+    refundReversal: transferAmount - alreadyReversed,
+    totalReversed: transferAmount,
+  };
+}
+
+/**
+ * A BTS-60-shaped sale: a destination charge tagged `bsFeeMode=per_charge` +
+ * `bsFeeConfig`, so the REAL webhook path (`applyPerChargeFee` on
+ * `payment_intent.succeeded`) collects the platform fee by partially reversing
+ * the auto-created destination transfer under `bs_pcfee_<pi.id>`. This is the
+ * charge shape the checkout path mints for fixed/tier fees, and the exact
+ * precondition of the BTS-66 refund question. Returns the ids the harness
+ * asserts against.
+ */
+export const e2ePerChargeFeeSale = action({
+  args: {
+    storeAccountId: v.string(),
+    amount: v.number(),
+    /** Base fee percentage for the `bsFeeConfig` marker (e.g. 3.2 → 320 on $100). */
+    feePercent: v.number(),
+  },
+  returns: v.object({
+    stripePaymentIntentId: v.string(),
+    stripeChargeId: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, args) => {
+    void ctx;
+    const raw = rawStripe();
+    const pi = await raw.paymentIntents.create({
+      amount: args.amount,
+      currency: DEMO_CURRENCY,
+      confirm: true,
+      payment_method: "pm_card_visa",
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+      transfer_data: { destination: args.storeAccountId },
+      metadata: {
+        e2e: "per-charge-fee",
+        bsFeeMode: "per_charge",
+        bsFeeConfig: JSON.stringify({ percent: args.feePercent }),
+      },
+    });
+    return {
+      stripePaymentIntentId: pi.id,
+      stripeChargeId:
+        typeof pi.latest_charge === "string"
+          ? pi.latest_charge
+          : (pi.latest_charge?.id ?? null),
+    };
+  },
+});
+
+/**
+ * The live Stripe state of a charge's destination transfer (BTS-66). A
+ * destination charge's auto-transfer has no `transfers` ledger row (only split
+ * legs do), so the reversal-cap assertion reads Stripe directly: total
+ * `amount_reversed` plus each reversal's amount, which lets the harness pin
+ * BOTH the preserved fee reversal and the capped refund reversal.
+ */
+export const e2eTransferState = action({
+  args: { stripeChargeId: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      stripeTransferId: v.string(),
+      amount: v.number(),
+      amountReversed: v.number(),
+      reversalAmounts: v.array(v.number()),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    void ctx;
+    const raw = rawStripe();
+    const charge = await raw.charges.retrieve(args.stripeChargeId);
+    const transferId =
+      typeof charge.transfer === "string"
+        ? charge.transfer
+        : (charge.transfer?.id ?? null);
+    if (!transferId) return null;
+    const transfer = await raw.transfers.retrieve(transferId, {
+      expand: ["reversals"],
+    });
+    return {
+      stripeTransferId: transferId,
+      amount: transfer.amount,
+      amountReversed: transfer.amount_reversed ?? 0,
+      reversalAmounts: (transfer.reversals?.data ?? []).map((r) => r.amount),
+    };
+  },
 });

@@ -462,6 +462,14 @@ interface PaymentRow {
   applicationFeeAmount?: number;
   feeCollectedAmount?: number;
   destinationAccountId?: string;
+  refundedAmount?: number;
+  refundStatus?: string;
+}
+interface TransferState {
+  stripeTransferId: string;
+  amount: number;
+  amountReversed: number;
+  reversalAmounts: number[];
 }
 interface TransferRow {
   destinationAccountId: string;
@@ -475,6 +483,9 @@ interface DisputeRow {
 }
 
 const MONEY_POLL_TIMEOUT_MS = 120_000;
+
+/** Sentinel: the row already pushed its own Check row; skip the catch-all. */
+const SKIP_ROW_DONE = Symbol("row-done");
 
 /** Poll a producer until `done` is satisfied or the deadline passes. */
 async function pollFor<T>(
@@ -502,6 +513,8 @@ async function runMoneyAssertions(): Promise<Check[]> {
     fee: "money: destination fee (application_fee → payments row)",
     split: "money: split sale (N transfers in ledger)",
     refund: "money: refund reverses transfers",
+    perChargeRefund:
+      "money: full refund of a per-charge-fee sale caps the reversal (BTS-66)",
     dispute: "money: dispute reverses transfers",
   };
   const skipAll = (detail: string): Check[] =>
@@ -643,6 +656,110 @@ async function runMoneyAssertions(): Promise<Check[]> {
       status: "SKIP",
       detail: "split sale did not produce a charge to refund",
     });
+  }
+
+  // ── BTS-66: full refund of a BTS-60 per-charge-fee destination charge ──
+  // The transfer is already partially reversed by the fee collection
+  // (`bs_pcfee_<pi.id>`), so a full refund's `reverse_transfer: true` asks for
+  // more than remains reversible. Live-verified (2026-07-03): Stripe CAPS the
+  // refund-driven reversal at the remainder instead of erroring — the transfer
+  // ends exactly fully reversed with the fee reversal preserved. This row
+  // pins that behavior: a refund ERROR here is a FAIL (the ticket's feared
+  // regression), not a SKIP; only the sale drive itself failing SKIPs.
+  try {
+    console.log("  driving a $100 per-charge-fee sale (3.2% → $3.20 fee) …");
+    const sale = convexRun<{
+      stripePaymentIntentId: string;
+      stripeChargeId: string | null;
+    }>("e2eMoney:e2ePerChargeFeeSale", {
+      storeAccountId,
+      amount: 10_000,
+      feePercent: 3.2,
+    });
+    if (!sale.stripeChargeId) {
+      throw new Error("no charge id on the per-charge-fee PI");
+    }
+    const chargeId = sale.stripeChargeId;
+
+    // The BTS-60 webhook path must first collect the fee by partial reversal.
+    const fee = await pollFor<PaymentRow | null>(
+      () =>
+        convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+          stripePaymentIntentId: sale.stripePaymentIntentId,
+        }),
+      (row) => (row?.feeCollectedAmount ?? 0) > 0,
+    );
+    if (!fee.ok) {
+      checks.push({
+        name: names.perChargeRefund,
+        status: "SKIP",
+        detail: "per-charge fee was never collected (webhook did not land)",
+      });
+    } else if (fee.last?.feeCollectedAmount !== 320) {
+      checks.push({
+        name: names.perChargeRefund,
+        status: "FAIL",
+        detail: `wrong fee collected: ${fee.last?.feeCollectedAmount} (expected 320)`,
+      });
+    } else {
+      console.log("  full refund with default flags (reverse_transfer) …");
+      // A refund error here is the ticket's feared outcome — report it as a
+      // genuine FAIL, with the Stripe error in the detail.
+      try {
+        convexRun("e2eMoney:e2eRefundCharge", {
+          stripePaymentIntentId: sale.stripePaymentIntentId,
+        });
+      } catch (err) {
+        checks.push({
+          name: names.perChargeRefund,
+          status: "FAIL",
+          detail: `full refund ERRORED on the partially-reversed transfer: ${String(err)}`,
+        });
+        throw SKIP_ROW_DONE;
+      }
+
+      // Persisted ledger: the refund webhook must mark the payment fully
+      // refunded for the full charge amount.
+      const refunded = await pollFor<PaymentRow | null>(
+        () =>
+          convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+            stripePaymentIntentId: sale.stripePaymentIntentId,
+          }),
+        (row) => row?.refundStatus === "fully_refunded",
+      );
+
+      // Live Stripe: the refund reversal is CAPPED at amount − fee (the
+      // `fullRefundReversalPlan` expectation unit-tested in e2eMoney.test.ts):
+      // exactly two reversals — the preserved 320 fee + the capped 9680 — and
+      // the transfer exactly (never over-) reversed.
+      const state = convexRun<TransferState | null>("e2eMoney:e2eTransferState", {
+        stripeChargeId: chargeId,
+      });
+      const capOk =
+        !!state &&
+        state.amountReversed === state.amount &&
+        state.reversalAmounts.length === 2 &&
+        state.reversalAmounts.includes(320) &&
+        state.reversalAmounts.includes(state.amount - 320);
+      const ledgerOk =
+        refunded.ok && (refunded.last?.refundedAmount ?? 0) === 10_000;
+      checks.push({
+        name: names.perChargeRefund,
+        status: capOk && ledgerOk ? "PASS" : "FAIL",
+        detail:
+          capOk && ledgerOk
+            ? `refunded=${refunded.last?.refundedAmount} reversals=[${state.reversalAmounts.join(", ")}] amount_reversed=${state.amountReversed}/${state.amount}`
+            : `ledger fully_refunded=${refunded.ok} refundedAmount=${refunded.last?.refundedAmount}; transfer amount_reversed=${state?.amountReversed}/${state?.amount} reversals=[${state?.reversalAmounts.join(", ")}]`,
+      });
+    }
+  } catch (err) {
+    if (err !== SKIP_ROW_DONE) {
+      checks.push({
+        name: names.perChargeRefund,
+        status: "SKIP",
+        detail: `drive failed: ${String(err)}`,
+      });
+    }
   }
 
   // ── AC2b (real dispute): a disputed split → clawback reverses transfers ──

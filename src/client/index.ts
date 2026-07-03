@@ -1250,7 +1250,10 @@ export class BetterStripe {
    * default true: the platform fee is returned and the destination transfer
    * reversed pro-rata (Stripe-native for partials) — each sent only when the
    * charge actually carries a fee / transfer. Split sales are clawed back by
-   * the `refund.created` webhook's transfer math instead.
+   * the `refund.created` webhook's transfer math instead. A transfer already
+   * partially reversed by the BTS-60 fee collection is safe to fully refund:
+   * Stripe caps the reversal at the remainder instead of erroring (BTS-66,
+   * live-verified). See {@link refundsImpl.createRefund}.
    */
   async createRefund(
     ctx: RunCtx,

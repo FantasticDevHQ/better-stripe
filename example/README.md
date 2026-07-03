@@ -231,6 +231,25 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 `scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
+#### Money-layer assertions (BTS-49)
+
+**Pre-release only, not CI** — this needs a real (test-mode) Stripe account + a linked Convex dev deployment, so it can't run in CI. It is the release gate that proves the money actually _moves_, which mocks can't catch.
+
+After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by `convex/e2eMoney.ts`) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
+
+| Check | What it drives | What it asserts |
+| ----- | -------------- | --------------- |
+| `money: destination fee` | a $100 destination charge with a $10 `application_fee` | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes) |
+| `money: split sale` | a $100 separate-charges sale split $80 store / $10 affiliate | **2 `transfers`** ledger rows for the charge (one per recipient) |
+| `money: refund reverses transfers` | a refund of the split charge (`reverseTransfer`) | every transfer row has `reversedAmount > 0` (deterministic reversal) |
+| `money: dispute reverses transfers` | a disputed split (Stripe `tok_createDispute`) | the `charge.dispute.created` clawback reversed the transfers — **SKIP** (not FAIL) if the async dispute doesn't land in the poll window |
+
+**Test-recipient activation (BTS-9/10 recipe).** Transfers only succeed to an onboarded recipient (an un-activated destination fails `insufficient_capabilities_for_transfer`). `provisionTestRecipient` recreates the validated spike recipe: create a `dashboard: "none"` V2 account requesting the recipient's `stripe_transfers` capability (Express accounts can't accept ToS via the API, so recipients must be `dashboard: none`), then attest identity + ToS so the test SSN `000000000` auto-verifies — **note: the ToS acceptance `date` is an RFC3339 string, not unix**. If activation fails, the whole money phase reports SKIP (never a false PASS).
+
+Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. Any live-drive failure SKIPs the affected money rows with a reason; a genuine wrong outcome FAILs.
+
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure reconciliation helper (`e2eMoney.test.ts`), but the full live run (real Stripe + deployment) has **not** been executed yet — run it before a release and re-verify the V2 recipient-activation field paths against current Stripe docs.
+
 ### Browser E2E Tests (`npm run e2e`)
 
 A [Playwright](https://playwright.dev) harness lives in `e2e/` with its config in

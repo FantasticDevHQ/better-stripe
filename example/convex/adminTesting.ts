@@ -18,9 +18,10 @@
  */
 import Stripe from "stripe";
 import { makeFunctionReference } from "convex/server";
+import type { RegisteredQuery } from "convex/server";
 
-import { action, type ActionCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import { action, query, type ActionCtx } from "./_generated/server";
+import type { getMarketplaceDemoContext } from "./marketplace";
 import { stripe } from "./stripe";
 
 // Match the API version the BetterStripe client pins (see seed.ts, e2eMoney.ts).
@@ -38,21 +39,41 @@ function rawStripe(): Stripe {
 const POLL_ATTEMPTS = 5;
 const POLL_INTERVAL_MS = 2_000;
 
-type DemoAccounts = {
-  storeAccountId: string;
-  buyerUserId: Id<"users">;
-  buyerAccountId: string;
-} | null;
+// ─── Seeded demo persona lookup ────────────────────────────────────────────
 
-type MarketplaceDemoContext = {
-  price: { stripePriceId: string };
-} | null;
+/** Maya's store account + Billie the buyer's account, resolved from the BTS-41 marketplace seed. */
+export const getDemoAccounts = query({
+  args: {},
+  handler: async (ctx) => {
+    const store = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "maya@example.com"))
+      .first();
+    const buyer = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "billie@example.com"))
+      .first();
+    if (!store?.stripeAccountId || !buyer?.stripeAccountId) return null;
+    return {
+      storeAccountId: store.stripeAccountId,
+      buyerUserId: buyer._id,
+      buyerAccountId: buyer.stripeAccountId,
+    };
+  },
+});
 
-const getAdminTestingDemoAccountsRef = makeFunctionReference<
+type QueryReturn<Query> =
+  Query extends RegisteredQuery<"public" | "internal", Record<string, unknown>, infer Return>
+    ? Awaited<Return>
+    : never;
+type DemoAccounts = QueryReturn<typeof getDemoAccounts>;
+type MarketplaceDemoContext = QueryReturn<typeof getMarketplaceDemoContext>;
+
+const getDemoAccountsRef = makeFunctionReference<
   "query",
   Record<string, never>,
   DemoAccounts
->("queries:getAdminTestingDemoAccounts");
+>("adminTesting:getDemoAccounts");
 
 const getPaymentRowRef = makeFunctionReference<
   "query",
@@ -99,7 +120,7 @@ async function pollForLedgerRow<T>(
 }
 
 async function requireDemoAccounts(ctx: ActionCtx) {
-  const accounts = await ctx.runQuery(getAdminTestingDemoAccountsRef, {});
+  const accounts = await ctx.runQuery(getDemoAccountsRef, {});
   if (!accounts) {
     throw new Error(
       "Marketplace store/buyer not seeded — run `npm run setup` first.",

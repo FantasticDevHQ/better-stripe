@@ -10,6 +10,7 @@
 
 import type * as actions from "../actions.js";
 import type * as http from "../http.js";
+import type * as marketplace from "../marketplace.js";
 import type * as queries from "../queries.js";
 import type * as reset from "../reset.js";
 import type * as seed from "../seed.js";
@@ -28,6 +29,7 @@ import { anyApi, componentsGeneric } from "convex/server";
 const fullApi: ApiFromModules<{
   actions: typeof actions;
   http: typeof http;
+  marketplace: typeof marketplace;
   queries: typeof queries;
   reset: typeof reset;
   seed: typeof seed;

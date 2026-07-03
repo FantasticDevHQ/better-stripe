@@ -25,7 +25,12 @@ export default defineConfig({
       {
         test: {
           name: "example",
-          include: ["example/convex/**/*.test.{ts,js}"],
+          include: [
+            "example/convex/**/*.test.{ts,js}",
+            // Frontend helper unit tests (pure logic; no DOM) live under
+            // example/src/lib — cover them here so the gate runs them too.
+            "example/src/**/*.test.{ts,tsx}",
+          ],
           exclude: ["dist/**", "node_modules/**"],
           environment: "edge-runtime",
         },

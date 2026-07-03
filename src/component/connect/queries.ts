@@ -342,8 +342,9 @@ export const listTransfersByAccount = query({
 // more than 50 transfers/payouts. These aggregates paginate the account's
 // ledger to completion and return EXACT totals regardless of row count, plus a
 // bounded preview of rows for drill-down UIs. Exact up to Convex's per-query
-// read limit; beyond that the query throws (loud) rather than silently
-// truncating — strictly safer than a fixed cap for financial figures.
+// document-read limit (a single query may scan at most 16,384 documents);
+// beyond that the query throws (loud) rather than silently truncating —
+// strictly safer than a fixed cap for financial figures.
 
 /** Page size for the internal pagination loops. */
 const EARNINGS_PAGE_SIZE = 200;

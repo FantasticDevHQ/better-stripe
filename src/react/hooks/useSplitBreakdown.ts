@@ -50,6 +50,12 @@ export type UseSplitBreakdownResult = {
  *
  * Pass `sourceChargeId: undefined` to skip the query. The `useQuery` binding
  * must support Convex's `"skip"` sentinel.
+ *
+ * Note (BTS-64): the underlying `listTransfersByCharge` query is capped at 50
+ * rows. Unlike the per-account earnings totals this is safe in practice — a
+ * single sale has only a handful of split legs — but a sale split across more
+ * than 50 recipients would undercount here; pass a higher `limit` on that query
+ * if you ever do that.
  */
 export function createUseSplitBreakdown(
   useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,

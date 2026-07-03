@@ -202,6 +202,34 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 `scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
+### Browser E2E Tests (`npm run e2e`)
+
+A [Playwright](https://playwright.dev) harness lives in `e2e/` with its config in
+`playwright.config.ts`. It boots the app in a real Chromium browser and verifies
+the shell renders and routes without uncaught page errors.
+
+```bash
+# From the repo root (one-time: install the browser binary)
+pnpm --filter ./example exec playwright install chromium
+
+# Run the suite (starts the Vite dev server automatically)
+pnpm --filter ./example e2e
+
+# View the HTML report from the last run
+pnpm --filter ./example e2e:report
+```
+
+No backend or Stripe credentials are required: the harness serves the app with a
+placeholder `VITE_CONVEX_URL`, so data-backed areas stay in their loading state
+by design. To run against a real deployment instead, export `VITE_CONVEX_URL`
+before running the suite. `E2E_PORT` (default `5173`) and `E2E_BASE_URL` override
+where the dev server is started/expected; an already-running dev server on that
+port is reused outside CI.
+
+Demo flows that need seeded data (checkout, disputes, admin actions) are covered
+by later specs against a seeded Convex + Stripe test environment — this harness
+is the foundation they build on.
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
@@ -255,8 +283,11 @@ example/
 │   ├── seed.ts                 # Seed DB + Stripe products
 │   ├── reset.ts                # Clear all data
 │   └── users.ts                # User queries
+├── e2e/
+│   └── smoke.spec.ts           # Playwright smoke test (app boots + routes)
 ├── scripts/
 │   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
+├── playwright.config.ts        # Playwright harness (dev-server wiring)
 ├── src/
 │   ├── main.tsx                # BrowserRouter + ConvexProvider
 │   ├── App.tsx                 # Routes
@@ -285,6 +316,8 @@ example/
 | Command                    | Description                                 |
 | -------------------------- | ------------------------------------------- |
 | `npm run setup`            | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run e2e`              | Playwright browser E2E suite (see below)    |
+| `npm run e2e:report`       | Open the last Playwright HTML report        |
 | `npm run e2e:webhooks`     | Automated E2E webhook test (see below)      |
 | `npm run dev`              | Start Vite + Convex dev in parallel         |
 | `npm run typecheck`        | TypeScript check (frontend)                 |

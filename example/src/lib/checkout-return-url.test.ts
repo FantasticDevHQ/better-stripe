@@ -30,4 +30,17 @@ describe("buildCheckoutReturnUrl", () => {
       true,
     );
   });
+
+  it("embeds the placeholder for a custom path (BTS-58)", () => {
+    // A demo page that reads its own session_id param inline (rather than
+    // redirecting to the generic status page) needs the placeholder on its
+    // own path — same substitution contract, different destination.
+    const url = buildCheckoutReturnUrl(
+      "https://example.com",
+      "/demo/destination-charge",
+    );
+    expect(url).toBe(
+      "https://example.com/demo/destination-charge?session_id={CHECKOUT_SESSION_ID}",
+    );
+  });
 });

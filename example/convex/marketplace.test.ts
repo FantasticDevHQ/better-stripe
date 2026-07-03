@@ -13,7 +13,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { saleBreakdown, summarizeStripeBalance } from "./marketplace";
+import { reconciles, saleBreakdown, summarizeStripeBalance } from "./marketplace";
 
 describe("summarizeStripeBalance", () => {
   it("sums available/pending amounts and picks the currency", () => {
@@ -58,5 +58,31 @@ describe("saleBreakdown", () => {
 
   it("returns a zero fee for a zero-amount invoice", () => {
     expect(saleBreakdown(0, 10)).toEqual({ gross: 0, fee: 0, net: 0 });
+  });
+
+  it("splits Sasha's $129.00 one-time price into a 10% fee and net (BTS-58)", () => {
+    expect(saleBreakdown(12900, 10)).toEqual({
+      gross: 12900,
+      fee: 1290,
+      net: 11610,
+    });
+  });
+});
+
+describe("reconciles (BTS-58)", () => {
+  it("is true when fee + net reconstructs the gross exactly", () => {
+    expect(reconciles(saleBreakdown(12900, 10))).toBe(true);
+  });
+
+  it("holds across a spread of odd-cent amounts, not just round numbers", () => {
+    // Guards the AC's "fee + payout == charge" requirement against a
+    // computeFee rounding regression that only shows up on non-round cents.
+    for (const amount of [1, 3, 7, 99, 101, 12901, 999999]) {
+      expect(reconciles(saleBreakdown(amount, 10))).toBe(true);
+    }
+  });
+
+  it("is false when the breakdown doesn't add up", () => {
+    expect(reconciles({ gross: 12900, fee: 1290, net: 11000 })).toBe(false);
   });
 });

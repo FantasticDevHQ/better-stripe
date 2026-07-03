@@ -39,6 +39,35 @@ npm run setup               # Re-set the Stripe key
 
 Then visit `/admin/setup` again to re-seed and re-sync.
 
+The seed is **idempotent and resumable**: every step guards on what already
+exists (users by email, accounts by their linked `stripeAccountId`, catalogs by
+store-tagged products), so re-running `seed:run` — with or without a prior
+reset — never duplicates data and backfills only whatever is missing (e.g.
+after a partial failure).
+
+### Marketplace scenario
+
+Beyond the classic demo personas, the seed creates a real marketplace
+(Skool-style) scenario:
+
+- **Sellers** (`Maya Merchant`, `Sasha Studio`) -- V2 accounts carrying BOTH the
+  `recipient` configuration (they receive transfers) and the `customer`
+  configuration (they can be billed platform fees) on one account. In test
+  mode their `stripe_balance.stripe_transfers` capability is activated
+  entirely via API (test SSN + ToS attestation + business URL), so seeded
+  transfers succeed without hosted onboarding.
+- **Platform catalog** -- each store's products/prices are created on the
+  PLATFORM Stripe account and tagged to the store via the component's
+  `accountId` field plus `storeAccountId`/`storeName` metadata
+  (`stripe.listProducts({ accountId })` lists one store's catalog).
+- **Platform fee tiers** -- `convex/stripe.ts` configures the platform's take
+  as a tiered `platformFee` (2.9% + 30¢ up to $899, 3.9% + 30¢ above), applied
+  whenever a sale routes funds to a seller.
+- **Affiliate** (`Avery Affiliate`) -- a recipient-only account, activated the
+  same way, for referral-share transfers in split sales.
+- **Buyer** (`Billie Buyer`) -- a billable `customer_account` with a reusable
+  test card (`pm_card_visa`) attached, so purchases can charge off-session.
+
 ### Prerequisites
 
 - Node.js 18+
@@ -252,7 +281,7 @@ example/
 │   ├── queries.ts              # Query wrappers for component data
 │   ├── actions.ts              # Action wrappers for Stripe API calls + admin setup
 │   ├── setup.ts                # ensureWebhook action (legacy, used by setup script)
-│   ├── seed.ts                 # Seed DB + Stripe products
+│   ├── seed.ts                 # Seed DB + Stripe products + marketplace scenario
 │   ├── reset.ts                # Clear all data
 │   └── users.ts                # User queries
 ├── scripts/

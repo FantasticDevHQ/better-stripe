@@ -1,7 +1,11 @@
 import Stripe from "stripe";
 
 import { api, internal } from "./_generated/api";
-import { internalAction, internalMutation } from "./_generated/server";
+import {
+  type ActionCtx,
+  internalAction,
+  internalMutation,
+} from "./_generated/server";
 import { v } from "convex/values";
 
 import { stripe } from "./stripe";
@@ -59,6 +63,59 @@ export const seedDb = internalMutation({
       `[seed] DB seeded: 4 users (customer=${customerId}, seller=${sellerId})`,
     );
     return { alreadySeeded: false };
+  },
+});
+
+/**
+ * Marketplace personas (BTS-41). Two sellers who each own a store, an
+ * affiliate who earns referral transfers, and a buyer who purchases from the
+ * platform catalog. Emails double as the idempotency keys in
+ * `seedMarketplaceDb`.
+ */
+const MARKETPLACE_PERSONAS = [
+  {
+    name: "Maya Merchant",
+    email: "maya@example.com",
+    role: "seller",
+    storeName: "Maya's Fitness Studio",
+  },
+  {
+    name: "Sasha Studio",
+    email: "sasha@example.com",
+    role: "seller",
+    storeName: "Sasha's Ceramics",
+  },
+  { name: "Avery Affiliate", email: "avery@example.com", role: "affiliate" },
+  { name: "Billie Buyer", email: "billie@example.com", role: "buyer" },
+] as const;
+
+/**
+ * Seed the marketplace personas (sellers, affiliate, buyer). Mutation — no
+ * external calls. Idempotent per persona: each email is inserted only if
+ * missing, so a partial state backfills rather than duplicating.
+ */
+export const seedMarketplaceDb = internalMutation({
+  args: {},
+  returns: v.object({ inserted: v.number() }),
+  handler: async (ctx) => {
+    let inserted = 0;
+    for (const persona of MARKETPLACE_PERSONAS) {
+      const existing = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", persona.email))
+        .first();
+      if (existing) continue;
+      await ctx.db.insert("users", {
+        name: persona.name,
+        email: persona.email,
+        role: persona.role,
+        ...("storeName" in persona ? { storeName: persona.storeName } : {}),
+      });
+      inserted++;
+    }
+
+    console.log(`[seed] marketplace personas: inserted ${inserted}.`);
+    return { inserted };
   },
 });
 
@@ -253,10 +310,276 @@ export const seedStripe = internalAction({
   },
 });
 
+// =============================================================================
+// Marketplace scenario (BTS-41)
+// =============================================================================
+
+/**
+ * Activate a fresh test recipient's `stripe_balance.stripe_transfers`
+ * capability entirely via API, so seeded transfers/splits succeed without
+ * hosted onboarding. TEST MODE ONLY: the recipe (validated in the BTS-9/BTS-10
+ * spikes) is a `dashboard: none` account + test SSN `000000000` (auto-verifies
+ * in the sandbox) + an RFC3339 ToS attestation + a business URL. Express/full
+ * dashboard accounts reject API ToS acceptance and must onboard via Stripe.
+ */
+async function activateTestRecipient(
+  ctx: ActionCtx,
+  stripeAccountId: string,
+): Promise<void> {
+  await stripe.updateV2Account(ctx, {
+    stripeAccountId,
+    updateParams: {
+      identity: {
+        entity_type: "individual",
+        individual: {
+          id_numbers: [{ type: "us_ssn", value: "000000000" }],
+        },
+        attestations: {
+          terms_of_service: {
+            account: {
+              date: new Date().toISOString(),
+              ip: "127.0.0.1",
+            },
+          },
+        },
+      },
+      defaults: {
+        profile: { business_url: "https://better-stripe.example.com" },
+      },
+    },
+  });
+}
+
+/**
+ * Seed a real V2 Stripe account per marketplace persona and link it back:
+ *  - sellers   → recipient (receives transfers) + customer (billable for
+ *                platform fees) configurations on ONE account, then activated
+ *                via the test-recipient recipe.
+ *  - affiliate → recipient configuration only, activated the same way.
+ *  - buyer     → customer configuration + a reusable test card
+ *                (`pm_card_visa`) attached to the `customer_account`.
+ *
+ * Action — makes Stripe API calls. Idempotent and resumable per persona, like
+ * `seedAccounts`: only unlinked personas are created, so a partial failure can
+ * be retried without duplicating accounts. The Stripe-calling branch needs a
+ * live key + linked deployment (exercised via e2e, not unit tests); the guards
+ * are unit-tested.
+ */
+export const seedMarketplaceAccounts = internalAction({
+  args: {},
+  returns: v.object({
+    alreadySeeded: v.boolean(),
+    linked: v.optional(v.number()),
+  }),
+  // Explicit return type breaks the api → seed → api inference cycle.
+  handler: async (
+    ctx,
+  ): Promise<{ alreadySeeded: boolean; linked?: number }> => {
+    const users = await ctx.runQuery(api.users.list, {});
+    const personas = MARKETPLACE_PERSONAS.map((p) => ({
+      persona: p,
+      user: users.find((u) => u.email === p.email),
+    }));
+
+    if (personas.some(({ user }) => !user)) {
+      console.warn(
+        "[seed] marketplace personas missing; run seedMarketplaceDb first — linking nothing.",
+      );
+      return { alreadySeeded: false, linked: 0 };
+    }
+
+    const unlinked = personas.flatMap(({ persona, user }) =>
+      user && !user.stripeAccountId ? [{ persona, user }] : [],
+    );
+    if (unlinked.length === 0) {
+      console.log("[seed] marketplace accounts already linked — skipping.");
+      return { alreadySeeded: true };
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn(
+        "[seed] STRIPE_SECRET_KEY not set — skipping marketplace account linkage.",
+      );
+      return { alreadySeeded: false, linked: 0 };
+    }
+
+    let linked = 0;
+    for (const { persona, user } of unlinked) {
+      const account = await stripe.createAccount(ctx, {
+        userId: user._id,
+        email: user.email,
+        name: user.name,
+        country: "US",
+      });
+      const { stripeAccountId } = account;
+
+      if (persona.role === "seller") {
+        await stripe.addRecipientConfiguration(ctx, { stripeAccountId });
+        await stripe.addCustomerConfiguration(ctx, { stripeAccountId });
+        await activateTestRecipient(ctx, stripeAccountId);
+      } else if (persona.role === "affiliate") {
+        await stripe.addRecipientConfiguration(ctx, { stripeAccountId });
+        await activateTestRecipient(ctx, stripeAccountId);
+      } else {
+        // Buyer: billable customer_account with a reusable test card, so
+        // seeded purchases can charge off-session.
+        await stripe.addCustomerConfiguration(ctx, { stripeAccountId });
+        await stripe.attachPaymentMethod(ctx, {
+          paymentMethodId: "pm_card_visa",
+          stripeCustomerId: stripeAccountId,
+        });
+      }
+
+      await ctx.runMutation(internal.seed.linkUserAccount, {
+        userId: user._id,
+        stripeAccountId,
+      });
+      linked++;
+    }
+
+    console.log(`[seed] linked ${linked} marketplace account(s).`);
+    return { alreadySeeded: false, linked };
+  },
+});
+
+/** What each store sells. Keyed by the seller persona's email. */
+type StoreCatalog = {
+  product: { name: string; description: string };
+  prices: Array<{
+    unitAmount: number;
+    type: "one_time" | "recurring";
+    interval?: "month" | "year";
+    nickname?: string;
+  }>;
+};
+
+const STORE_CATALOGS: Record<string, StoreCatalog> = {
+  "maya@example.com": {
+    product: {
+      name: "Fitness Coaching Membership",
+      description: "Weekly group coaching and training plans from Maya",
+    },
+    prices: [
+      {
+        unitAmount: 4900,
+        type: "recurring",
+        interval: "month",
+        nickname: "Monthly",
+      },
+      {
+        unitAmount: 49900,
+        type: "recurring",
+        interval: "year",
+        nickname: "Yearly",
+      },
+    ],
+  },
+  "sasha@example.com": {
+    product: {
+      name: "Ceramics Masterclass",
+      description: "A self-paced wheel-throwing course by Sasha",
+    },
+    prices: [{ unitAmount: 12900, type: "one_time", nickname: "Lifetime" }],
+  },
+};
+
+/**
+ * Seed each store's catalog: products/prices created on the PLATFORM Stripe
+ * account (the marketplace owns the catalog), tagged to the store via the
+ * component's `accountId` field and `storeAccountId`/`storeName` metadata.
+ *
+ * Action — makes Stripe API calls. Idempotent per store: a store whose
+ * account id already has tagged products is skipped, so a reseed after a
+ * partial failure only fills the gaps. Requires `seedMarketplaceAccounts`
+ * to have linked the sellers first.
+ */
+export const seedMarketplaceCatalog = internalAction({
+  args: {},
+  returns: v.object({
+    alreadySeeded: v.boolean(),
+    storesSeeded: v.number(),
+  }),
+  // Explicit return type breaks the api → seed → api inference cycle.
+  handler: async (
+    ctx,
+  ): Promise<{ alreadySeeded: boolean; storesSeeded: number }> => {
+    const users = await ctx.runQuery(api.users.list, {});
+    const sellers = MARKETPLACE_PERSONAS.filter(
+      (p) => p.role === "seller",
+    ).flatMap((p) => {
+      const user = users.find((u) => u.email === p.email);
+      return user?.stripeAccountId
+        ? [{ ...user, stripeAccountId: user.stripeAccountId }]
+        : [];
+    });
+
+    if (sellers.length === 0) {
+      console.warn(
+        "[seed] no linked marketplace sellers; run seedMarketplaceAccounts first — seeding nothing.",
+      );
+      return { alreadySeeded: false, storesSeeded: 0 };
+    }
+
+    // Per-store resumability: only stores with no tagged products need work.
+    const pending = [];
+    for (const seller of sellers) {
+      const existing = await stripe.listProducts(ctx, {
+        accountId: seller.stripeAccountId,
+      });
+      if (existing.length === 0) pending.push(seller);
+    }
+    if (pending.length === 0) {
+      console.log("[seed] marketplace catalog already seeded — skipping.");
+      return { alreadySeeded: true, storesSeeded: 0 };
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn(
+        "[seed] STRIPE_SECRET_KEY not set — skipping marketplace catalog.",
+      );
+      return { alreadySeeded: false, storesSeeded: 0 };
+    }
+
+    for (const seller of pending) {
+      const catalog = STORE_CATALOGS[seller.email];
+      if (!catalog) continue;
+
+      const storeTag = {
+        storeAccountId: seller.stripeAccountId,
+        storeName: seller.storeName ?? seller.name,
+      };
+      const product = await stripe.createProduct(ctx, {
+        name: catalog.product.name,
+        description: catalog.product.description,
+        // Component-side tag: this platform-owned product belongs to the store.
+        accountId: seller.stripeAccountId,
+        metadata: storeTag,
+      });
+      for (const price of catalog.prices) {
+        await stripe.createPrice(ctx, {
+          stripeProductId: product.stripeProductId,
+          unitAmount: price.unitAmount,
+          currency: "usd",
+          type: price.type,
+          interval: price.interval,
+          nickname: price.nickname,
+          metadata: storeTag,
+        });
+      }
+      console.log(
+        `[seed] seeded catalog for ${storeTag.storeName} (${seller.stripeAccountId}).`,
+      );
+    }
+
+    return { alreadySeeded: false, storesSeeded: pending.length };
+  },
+});
+
 /**
  * Full seed: DB users → Stripe products/prices → linked persona accounts (+ the
- * customer's subscription, which needs the monthly price to exist first).
- * Called by the setup script.
+ * customer's subscription, which needs the monthly price to exist first), then
+ * the marketplace scenario: personas → recipient/customer accounts → per-store
+ * platform catalog. Called by the setup script.
  */
 export const run = internalAction({
   args: {},
@@ -265,6 +588,9 @@ export const run = internalAction({
     await ctx.runMutation(internal.seed.seedDb, {});
     await ctx.runAction(internal.seed.seedStripe, {});
     await ctx.runAction(internal.seed.seedAccounts, {});
+    await ctx.runMutation(internal.seed.seedMarketplaceDb, {});
+    await ctx.runAction(internal.seed.seedMarketplaceAccounts, {});
+    await ctx.runAction(internal.seed.seedMarketplaceCatalog, {});
     return null;
   },
 });

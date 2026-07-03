@@ -230,3 +230,16 @@ describe("stripe.ts — async hooks record to triggerLog", () => {
     ]);
   });
 });
+
+describe("stripe.ts — platform fee configuration", () => {
+  it("configures the tiered marketplace fee (Skool-style: 2.9% + 30¢ up to $899, 3.9% + 30¢ above)", () => {
+    expect(stripe.platformFee).toEqual({
+      percent: 2.9,
+      fixed: 30,
+      tiers: [
+        { upTo: 89_900, percent: 2.9, fixed: 30 },
+        { upTo: null, percent: 3.9, fixed: 30 },
+      ],
+    });
+  });
+});

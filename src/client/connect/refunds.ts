@@ -50,9 +50,12 @@ export async function createRefund(
      * Who is initiating the refund (BTS-35). The app authenticates the caller
      * and passes the identity; the library enforces the scope. A platform admin
      * (`{ type: "admin" }`) may refund any sale. A seller
-     * (`{ type: "seller", accountId }`) may refund only sales routed to their
-     * own connected account. Omit for platform-initiated refunds (unrestricted,
-     * back-compatible with BTS-34 callers).
+     * (`{ type: "seller", accountId }`) may refund only sales where they are the
+     * *merchant*: the destination of a destination charge, or the `store` leg of
+     * a split (`separate`-charge) sale. Minor split legs (`affiliate` / `other`
+     * commission recipients) are NOT authorized — a full-charge refund unwinds
+     * every recipient pro-rata, so those are admin-only. Omit for
+     * platform-initiated refunds (unrestricted, back-compatible with BTS-34).
      */
     actor?: RefundActor;
   },
@@ -126,9 +129,12 @@ export async function createRefund(
 /**
  * Enforce refund actor scoping (BTS-35). Resolves the payment the refund
  * targets from the component's `payments` ledger and rejects a seller-initiated
- * refund whose money was not routed to that seller's account. Fails closed:
- * if the target payment can't be resolved (no PaymentIntent, or no ledger row),
- * a seller is denied rather than allowed. No-ops for admin / omitted actors.
+ * refund unless that seller is the sale's merchant — the destination-charge
+ * seller or the split sale's `store` leg (the `role` is threaded through from
+ * the ledger's `splitRecipients`). Affiliate / `other` split legs are denied.
+ * Fails closed: if the target payment can't be resolved (no PaymentIntent, or
+ * no ledger row), a seller is denied rather than allowed. No-ops for admin /
+ * omitted actors.
  */
 async function assertRefundAuthorized(
   stripe: Stripe,

@@ -246,13 +246,13 @@ describe("createRefund — actor scoping (BTS-35)", () => {
     expect(stripe.refunds.create).not.toHaveBeenCalled();
   });
 
-  it("lets a seller refund a split sale they are a recipient of", async () => {
+  it("lets the store leg of a split sale refund it", async () => {
     const stripe = makeStripe({ transfer: null, application_fee: null });
     const ctx = makeCtx({
       stripePaymentIntentId: "pi_1",
       splitRecipients: [
-        { destinationAccountId: "acct_store" },
-        { destinationAccountId: "acct_affiliate" },
+        { destinationAccountId: "acct_store", role: "store" },
+        { destinationAccountId: "acct_affiliate", role: "affiliate" },
       ],
     });
 
@@ -262,6 +262,27 @@ describe("createRefund — actor scoping (BTS-35)", () => {
     });
 
     expect(stripe.refunds.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects an affiliate leg refunding the whole split sale (role threaded from the ledger)", async () => {
+    const stripe = makeStripe({ transfer: null, application_fee: null });
+    const ctx = makeCtx({
+      stripePaymentIntentId: "pi_1",
+      splitRecipients: [
+        { destinationAccountId: "acct_store", role: "store" },
+        { destinationAccountId: "acct_affiliate", role: "affiliate" },
+      ],
+    });
+
+    await expect(
+      createRefund(asStripe(stripe), makeComponent(), ctx, {
+        stripePaymentIntentId: "pi_1",
+        actor: { type: "seller", accountId: "acct_affiliate" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor/i);
+
+    // A minor split leg unwinding the whole charge never reaches Stripe.
+    expect(stripe.refunds.create).not.toHaveBeenCalled();
   });
 
   it("rejects a seller when no matching payment exists in the ledger (fail closed)", async () => {

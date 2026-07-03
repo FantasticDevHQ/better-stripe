@@ -2,7 +2,10 @@
  * Tests for the refund authorization helper (BTS-35). The app supplies the
  * actor identity; the library decides who may refund what. A platform admin is
  * unrestricted; a seller may refund only sales routed to their own connected
- * account — either as the destination-charge seller or as a split recipient.
+ * account — as the destination-charge seller, or as the `store` leg of a split
+ * (`separate`-charge) sale. Minor split legs (`affiliate` / `other`) are NOT
+ * authorized: they'd otherwise be able to refund the whole buyer charge and
+ * trigger pro-rata clawback from every recipient (the store included).
  */
 import { describe, expect, it } from "vitest";
 
@@ -40,14 +43,56 @@ describe("isRefundAuthorized (BTS-35)", () => {
     ).toBe(false);
   });
 
-  it("allows a seller who is one of a split sale's recipients", () => {
+  it("allows the store leg of a split sale to refund it", () => {
     expect(
       isRefundAuthorized(
         { type: "seller", accountId: "acct_store" },
         {
           splitRecipients: [
-            { destinationAccountId: "acct_store" },
-            { destinationAccountId: "acct_affiliate" },
+            { destinationAccountId: "acct_store", role: "store" },
+            { destinationAccountId: "acct_affiliate", role: "affiliate" },
+          ],
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects an affiliate leg refunding the whole split sale (admin-only)", () => {
+    expect(
+      isRefundAuthorized(
+        { type: "seller", accountId: "acct_affiliate" },
+        {
+          splitRecipients: [
+            { destinationAccountId: "acct_store", role: "store" },
+            { destinationAccountId: "acct_affiliate", role: "affiliate" },
+          ],
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects an `other` leg refunding the whole split sale (admin-only)", () => {
+    expect(
+      isRefundAuthorized(
+        { type: "seller", accountId: "acct_other" },
+        {
+          splitRecipients: [
+            { destinationAccountId: "acct_store", role: "store" },
+            { destinationAccountId: "acct_other", role: "other" },
+          ],
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it("lets an admin refund a split sale regardless of leg roles", () => {
+    expect(
+      isRefundAuthorized(
+        { type: "admin" },
+        {
+          splitRecipients: [
+            { destinationAccountId: "acct_store", role: "store" },
+            { destinationAccountId: "acct_affiliate", role: "affiliate" },
           ],
         },
       ),
@@ -60,8 +105,8 @@ describe("isRefundAuthorized (BTS-35)", () => {
         { type: "seller", accountId: "acct_outsider" },
         {
           splitRecipients: [
-            { destinationAccountId: "acct_store" },
-            { destinationAccountId: "acct_affiliate" },
+            { destinationAccountId: "acct_store", role: "store" },
+            { destinationAccountId: "acct_affiliate", role: "affiliate" },
           ],
         },
       ),

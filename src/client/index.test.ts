@@ -241,6 +241,49 @@ describe("BetterStripe", () => {
     });
   });
 
+  describe("listTransfersByCharge", () => {
+    it("reads a sale's split legs via the component query (passthrough)", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+      const rows = [
+        { stripeTransferId: "tr_store", role: "store", amount: 8000 },
+        { stripeTransferId: "tr_aff", role: "affiliate", amount: 2000 },
+      ];
+      mockCtx.runQuery.mockResolvedValue(rows);
+
+      const result = await bs.listTransfersByCharge(mockCtx, {
+        sourceChargeId: "ch_split",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledTimes(1);
+      expect(mockCtx.runQuery.mock.calls[0][1]).toEqual({
+        sourceChargeId: "ch_split",
+      });
+      expect(result).toBe(rows);
+    });
+  });
+
+  describe("listTransfersByAccount", () => {
+    it("reads a recipient's transfer ledger via the component query (passthrough)", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+      const rows = [{ stripeTransferId: "tr_aff", amount: 2000 }];
+      mockCtx.runQuery.mockResolvedValue(rows);
+
+      const result = await bs.listTransfersByAccount(mockCtx, {
+        destinationAccountId: "acct_avery",
+      });
+
+      expect(mockCtx.runQuery).toHaveBeenCalledTimes(1);
+      expect(mockCtx.runQuery.mock.calls[0][1]).toEqual({
+        destinationAccountId: "acct_avery",
+      });
+      expect(result).toBe(rows);
+    });
+  });
+
   describe("addCustomerConfiguration", () => {
     it("applies the customer configuration and records applied configs", async () => {
       const bs = new BetterStripe(components.betterStripe, {

@@ -1143,6 +1143,28 @@ export class BetterStripe {
     return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
   }
 
+  /**
+   * The original split legs of one sale (reinstatement rows excluded) — the
+   * read behind the `useSplitBreakdown` hook / per-sale breakdown UIs.
+   */
+  async listTransfersByCharge(
+    ctx: RunCtx,
+    opts: { sourceChargeId: string; limit?: number },
+  ) {
+    return transfersImpl.listTransfersByCharge(this.component, ctx, opts);
+  }
+
+  /**
+   * A recipient's transfer ledger (the earnings view — includes reinstatements)
+   * — the read behind the `useEarnings` hook.
+   */
+  async listTransfersByAccount(
+    ctx: RunCtx,
+    opts: { destinationAccountId: string; limit?: number },
+  ) {
+    return transfersImpl.listTransfersByAccount(this.component, ctx, opts);
+  }
+
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {
     return payoutsImpl.getPayout(this.component, ctx, opts);
   }

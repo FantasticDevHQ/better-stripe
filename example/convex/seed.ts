@@ -472,6 +472,13 @@ const STORE_CATALOGS: Record<string, StoreCatalog> = {
         interval: "year",
         nickname: "Yearly",
       },
+      // One-time $100 session — the sale visualized by the affiliate-split
+      // demo ($100 → store / affiliate / platform, BTS-43).
+      {
+        unitAmount: 10000,
+        type: "one_time",
+        nickname: "1:1 Session",
+      },
     ],
   },
   "sasha@example.com": {

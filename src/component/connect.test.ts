@@ -342,6 +342,40 @@ describe("connect — recordPaymentFeeRefund (BTS-34)", () => {
     expect(payment!.amount).toBe(10000);
   });
 
+  it("keeps fee totals monotonic when a stale event is redelivered out of order", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.connect.mutations.upsertPayment, {
+      stripePaymentIntentId: "pi_ooo",
+      userId: "user_1",
+      amount: 10000,
+      currency: "usd",
+      status: "succeeded",
+      feeCollectedAmount: 320,
+    });
+
+    // Two cumulative partial fee refunds delivered swapped: the newer event
+    // (cumulative 320) lands first, then a stale earlier one (cumulative 160).
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_ooo",
+      feeCollectedAmount: 0,
+      feeRefundedAmount: 320,
+    });
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_ooo",
+      feeCollectedAmount: 160,
+      feeRefundedAmount: 160,
+    });
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_ooo",
+    });
+    // The stale redelivery must not regress the refunded total or inflate
+    // the collected fee back up.
+    expect(payment!.feeRefundedAmount).toBe(320);
+    expect(payment!.feeCollectedAmount).toBe(0);
+  });
+
   it("is a no-op when no payment row exists for the payment intent", async () => {
     const t = convexTest(schema, modules);
 

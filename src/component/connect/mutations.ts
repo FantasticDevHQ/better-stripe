@@ -170,10 +170,18 @@ export const recordPaymentFeeRefund = mutation({
       )
       .first();
     if (payment) {
-      await ctx.db.patch("payments", payment._id, {
-        feeCollectedAmount: args.feeCollectedAmount,
-        feeRefundedAmount: args.feeRefundedAmount,
-      });
+      // `feeRefundedAmount` is a cumulative total. Keep it monotonic (mirroring
+      // `recordTransferReversal`) so an out-of-order/stale redelivery can't
+      // regress the refunded total or inflate the collected fee back up. The two
+      // fields move together (collected = fee − refunded), so the event with the
+      // larger refunded total wins both — apply nothing when the incoming event
+      // is stale.
+      if (args.feeRefundedAmount >= (payment.feeRefundedAmount ?? 0)) {
+        await ctx.db.patch("payments", payment._id, {
+          feeCollectedAmount: args.feeCollectedAmount,
+          feeRefundedAmount: args.feeRefundedAmount,
+        });
+      }
     }
     return null;
   },

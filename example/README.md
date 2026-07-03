@@ -278,6 +278,8 @@ sync back to the UI. Current live-backend specs:
   self-contained (creates, edits, then archives its own product).
 - `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
   see below.
+- `e2e/affiliate-split.spec.ts` — affiliate split breakdown demo (BTS-43);
+  see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -299,6 +301,46 @@ The one-time checkout demo (BTS-57) has two layers:
 The session's mode is derived server-side in
 `convex/actions.ts#createCheckoutSession`: one-time prices get
 `mode: "payment"`, recurring prices `mode: "subscription"`.
+
+#### Affiliate split flow (`e2e/affiliate-split.spec.ts`)
+
+The affiliate split breakdown demo (BTS-43) — the headline proof: **one $100
+sale, three destinations**. Route: `/marketplace/split` (also in the customer
+nav as "Affiliate Split"). An affiliate referral flows in via the `?ref=avery`
+query param; the sale routes store + affiliate, and the platform takes its
+configured tiered fee. The result is visualized with the headless
+`SplitBreakdown` (store / affiliate / platform) and `EarningsSummary`, driven by
+the `useSplitBreakdown` / `useEarnings` hooks.
+
+Two layers:
+
+- **Backend-independent** (runs everywhere, incl. CI): the demo route boots
+  without app page errors, plain and with `?ref=avery`. (The Convex client's
+  placeholder-URL connection fatal is filtered — that is the intended
+  backend-independent boundary.)
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): a referred purchase →
+  the webhook engine creates the store + affiliate transfers → the three-way
+  breakdown reconciles to the $100 charge.
+
+**Manual QA steps** (against a seeded, webhook-forwarded dev deployment):
+
+1. Seed the marketplace: `npm run setup` (creates Maya's store + Avery Affiliate
+   and Maya's one-time $100 "1:1 Session" price), and forward webhooks:
+   `stripe listen --forward-to <your-site-url>/stripe/webhook`.
+2. Visit `/marketplace/split?ref=avery`. Confirm the attribution badge reads
+   **"Referred by Avery Affiliate"** (visit without `?ref` → "No referral").
+3. Click **Buy with test card**; in the embedded Stripe form pay with
+   `4242 4242 4242 4242`, any future expiry, any CVC. You land on
+   `/checkout/status`.
+4. Return to `/marketplace/split?ref=avery`. Under **Latest sale — split
+   breakdown**, confirm three lines — **Store**, **Affiliate**, **Platform** —
+   and that Store + Affiliate + Platform **reconcile to $100.00** (the platform
+   line = charge − store − affiliate). The **Affiliate earnings** panel shows
+   Avery's gross/net.
+
+Attribution and the split-leg math are unit-tested in
+`convex/affiliate-split.test.ts`; the split executes as separate transfers via
+the webhook engine (see `stripe.ts` `platformFee` for the platform's cut).
 
 ### Webhook Processing
 

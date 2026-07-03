@@ -289,3 +289,34 @@ export async function reinstateTransfers(
   }
   return { reinstated };
 }
+
+/**
+ * The original split legs of one sale (`listTransfersByCharge` excludes
+ * reinstatement rows), for the `useSplitBreakdown` hook / per-sale breakdown
+ * UIs. Read-only passthrough to the component query.
+ */
+export async function listTransfersByCharge(
+  component: Component,
+  ctx: RunCtx,
+  opts: { sourceChargeId: string; limit?: number },
+) {
+  return ctx.runQuery(
+    componentRef(component, "connect/queries/listTransfersByCharge"),
+    opts,
+  );
+}
+
+/**
+ * A recipient's transfer ledger (the earnings view — includes reinstatements),
+ * for the `useEarnings` hook. Read-only passthrough to the component query.
+ */
+export async function listTransfersByAccount(
+  component: Component,
+  ctx: RunCtx,
+  opts: { destinationAccountId: string; limit?: number },
+) {
+  return ctx.runQuery(
+    componentRef(component, "connect/queries/listTransfersByAccount"),
+    opts,
+  );
+}

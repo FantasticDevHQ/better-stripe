@@ -17,6 +17,7 @@ import { Dashboard } from "@/pages/dashboard/index";
 import { Invoices } from "@/pages/dashboard/invoices";
 import { PaymentMethods } from "@/pages/dashboard/payment-methods";
 import { Landing } from "@/pages/landing";
+import { AffiliateSplitDemo } from "@/pages/marketplace/split";
 import { RoleProvider } from "@/providers/role-context";
 import { Route, Routes } from "react-router-dom";
 
@@ -28,6 +29,9 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/status" element={<CheckoutStatusPage />} />
+
+          {/* Marketplace demos */}
+          <Route path="/marketplace/split" element={<AffiliateSplitDemo />} />
 
           {/* Customer routes */}
           <Route path="/dashboard" element={<Dashboard />} />

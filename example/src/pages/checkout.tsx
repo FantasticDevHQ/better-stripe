@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { api } from "../../convex/_generated/api";
+import { buildCheckoutReturnUrl } from "../lib/checkout-return-url";
 
 function CheckoutForm({
   priceId,
@@ -33,9 +34,7 @@ function CheckoutForm({
       const session = await createCheckout({
         userId,
         stripePriceId: priceId,
-        returnUrl:
-          window.location.origin +
-          "/checkout/status?session_id={CHECKOUT_SESSION_ID}",
+        returnUrl: buildCheckoutReturnUrl(window.location.origin),
       });
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
@@ -81,13 +80,12 @@ function CheckoutForm({
     );
   }
 
+  // No onComplete handler: Stripe substitutes the real session id into
+  // return_url and redirects there itself (see buildCheckoutReturnUrl).
   return (
     <EmbeddedCheckout
       publishableKey={publishableKey}
       clientSecret={clientSecret}
-      onComplete={() => {
-        window.location.href = "/checkout/status?session_id=complete";
-      }}
     />
   );
 }

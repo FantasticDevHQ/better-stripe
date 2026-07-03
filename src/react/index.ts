@@ -22,6 +22,7 @@ export type {
   StripeComponentPrice,
   StripeComponentProduct,
   StripeComponentSubscription,
+  StripeComponentDispute,
 } from "./types.js";
 
 // Hook factories
@@ -33,6 +34,14 @@ export { createUseSubscriptions } from "./hooks/useSubscriptions.js";
 export { createUseCheckout } from "./hooks/useCheckout.js";
 export { createUsePaymentMethods } from "./hooks/usePaymentMethods.js";
 export { createUseInvoices } from "./hooks/useInvoices.js";
+export { createUseDisputes } from "./hooks/useDisputes.js";
+export type { UseDisputesResult } from "./hooks/useDisputes.js";
+export { createUseDisputeWithCountdown } from "./hooks/useDisputeWithCountdown.js";
+export type {
+  DisputeEvidenceCountdown,
+  DisputeWithCountdown,
+  UseDisputeWithCountdownResult,
+} from "./hooks/useDisputeWithCountdown.js";
 export { createUseAccountOnboarding } from "./hooks/useAccountOnboarding.js";
 export { useStripePublishableKey } from "./hooks/useStripePublishableKey.js";
 export { useStripeMode } from "./hooks/useStripeMode.js";

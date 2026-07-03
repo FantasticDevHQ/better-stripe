@@ -16,15 +16,19 @@ export type DisputeEvidenceFields = {
 export type EvidenceFormUpdateArgs = {
   stripeDisputeId: string;
   evidence: ReturnType<typeof buildDisputeEvidence>;
-  /** Present (true) only for the submit action; staged drafts omit it. */
-  submit?: boolean;
+  /**
+   * Always sent explicitly: `true` submits to the bank, `false` stages a
+   * draft. Stripe defaults `submit` to TRUE when the key is omitted, so a
+   * draft that dropped the key would be submitted — forward this as-is.
+   */
+  submit: boolean;
   stripeAccountId?: string;
 };
 
 export type EvidenceFormRenderProps = {
   fields: DisputeEvidenceFields;
   setField: (field: keyof DisputeEvidenceFields, value: string) => void;
-  /** Save the evidence as a draft (no `submit`). */
+  /** Save the evidence as a draft (`submit: false`). */
   stage: () => Promise<void>;
   /** Finalize the response (`submit: true`). */
   submit: () => Promise<void>;
@@ -74,7 +78,8 @@ const FIELD_ORDER = [
  * Headless dispute evidence form (BTS-54): collects the four plain-language
  * evidence fields, maps them through the core `buildDisputeEvidence`, and
  * hands the result to the app's `updateDispute` action — staged as a draft
- * via `stage()` or finalized via `submit()` (`submit: true`).
+ * via `stage()` (`submit: false`) or finalized via `submit()` (`submit:
+ * true`). The flag is always sent: Stripe submits by default when omitted.
  */
 export function EvidenceForm({
   stripeDisputeId,
@@ -111,7 +116,9 @@ export function EvidenceForm({
       await onUpdateDispute({
         stripeDisputeId,
         evidence: buildDisputeEvidence(fields),
-        ...(submit ? { submit: true } : {}),
+        // Explicit either way: Stripe treats an omitted `submit` as true, so
+        // staging MUST send `submit: false` or "save draft" would submit.
+        submit,
         ...(stripeAccountId ? { stripeAccountId } : {}),
       });
       if (submit) onSubmitted?.();

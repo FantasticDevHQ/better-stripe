@@ -7,7 +7,9 @@
  *   - assert the default markup renders the four labeled fields + both actions
  *   - capture the render-prop closures and drive `stage()` / `submit()`
  *     directly, asserting the callback receives `buildDisputeEvidence`-mapped
- *     evidence, the account scoping, and `submit: true` ONLY on submit
+ *     evidence, the account scoping, and an EXPLICIT `submit` flag — `false`
+ *     for stage, `true` for submit. Stripe defaults `submit` to true when the
+ *     key is omitted, so a draft must send `submit: false` on the wire
  *   - assert the error path surfaces a rejected callback via `onError`
  * No jsdom/RTL — state-transition re-renders (isProcessing flips) are out of
  * scope by project test strategy; the branch logic lives in the closures.
@@ -67,7 +69,7 @@ describe("EvidenceForm", () => {
     expect(html).toContain("Submit evidence");
   });
 
-  it("stage() maps the fields through buildDisputeEvidence and omits submit", async () => {
+  it("stage() maps the fields through buildDisputeEvidence and stages with submit: false", async () => {
     const onUpdateDispute = vi.fn().mockResolvedValue({ success: true });
     const rp = capture({
       stripeDisputeId: "dp_1",
@@ -86,7 +88,9 @@ describe("EvidenceForm", () => {
       uncategorized_text: allFields.additionalInfo,
       customer_communication: allFields.customerCommunication,
     });
-    expect("submit" in args).toBe(false);
+    // Stripe's dispute-update `submit` DEFAULTS TO TRUE when omitted, so a
+    // draft must send an explicit false — omission would submit to the bank.
+    expect(args.submit).toBe(false);
   });
 
   it("submit() passes submit: true alongside the mapped evidence", async () => {
@@ -119,6 +123,7 @@ describe("EvidenceForm", () => {
     expect(onUpdateDispute.mock.calls[0][0].evidence).toEqual({
       product_description: "Just the description",
     });
+    expect(onUpdateDispute.mock.calls[0][0].submit).toBe(false);
   });
 
   it("forwards stripeAccountId so the update is seller-account scoped", async () => {

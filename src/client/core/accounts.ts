@@ -560,11 +560,31 @@ export async function addCustomerConfiguration(
   return { success: true, appliedConfigurations };
 }
 
+/**
+ * Apply the V2 recipient configuration to an existing account, and record the
+ * resulting applied configurations on the component account. The account must
+ * already exist in the component DB (e.g. from {@link createAccount}); its
+ * owning `userId` is recovered from that record, matching
+ * {@link addCustomerConfiguration}.
+ */
 export async function addRecipientConfiguration(
   stripe: Stripe,
-  _ctx: RunCtx,
+  component: Component,
+  ctx: RunCtx,
   opts: { stripeAccountId: string },
-) {
+): Promise<{ success: true; appliedConfigurations: string[] }> {
+  const existing = (await ctx.runQuery(
+    componentRef(component, "core/queries/getAccountByStripeId"),
+    { stripeAccountId: opts.stripeAccountId },
+  )) as StripeComponentAccount | null;
+
+  if (!existing) {
+    throwStripeError(
+      "ACCOUNT_NOT_FOUND",
+      `No component account found for ${opts.stripeAccountId}; create it before applying the recipient configuration`,
+    );
+  }
+
   await stripe.v2.core.accounts.update(opts.stripeAccountId, {
     configuration: {
       recipient: {
@@ -579,7 +599,22 @@ export async function addRecipientConfiguration(
       },
     },
   } as V2AccountUpdateParams);
-  return { success: true };
+
+  // Re-fetch to record the configurations Stripe actually applied
+  const updated = await stripe.v2.core.accounts.retrieve(opts.stripeAccountId);
+  const appliedConfigurations = updated.applied_configurations ?? [];
+
+  await runMutationOrThrow(
+    ctx,
+    componentRef(component, "core/mutations/upsertAccount"),
+    {
+      stripeAccountId: opts.stripeAccountId,
+      userId: existing.userId,
+      appliedConfigurations,
+    },
+  );
+
+  return { success: true, appliedConfigurations };
 }
 
 // =============================================================================

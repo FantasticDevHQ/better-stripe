@@ -573,12 +573,23 @@ describe("addRecipientConfiguration", () => {
   it("requests the recipient configuration and returns success", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["recipient"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
     const result = await addRecipientConfiguration(
       asStripe(stripe),
-      {} as RunCtx,
+      makeComponent(),
+      ctx,
       { stripeAccountId: "acct_r" },
     );
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({
+      success: true,
+      appliedConfigurations: ["recipient"],
+    });
     // V2 (API 2026-05-27.dahlia) requires the `capabilities` wrapper and an
     // explicit `requested: true`; the bare `recipient.stripe_balance` shape is
     // rejected with "Unknown field" (confirmed against the Stripe sandbox).
@@ -589,6 +600,88 @@ describe("addRecipientConfiguration", () => {
         },
       },
     });
+  });
+
+  it("records the Stripe-reported applied configurations on the component account", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["recipient"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await addRecipientConfiguration(asStripe(stripe), makeComponent(), ctx, {
+      stripeAccountId: "acct_r",
+    });
+
+    // Read-back keyed by the Stripe id to recover the owning userId
+    expect(runQuery).toHaveBeenCalledWith(
+      refFor("core/queries/getAccountByStripeId"),
+      { stripeAccountId: "acct_r" },
+    );
+    // Applied configs come from the re-fetched Stripe account (source of truth)
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("core/mutations/upsertAccount"),
+      {
+        stripeAccountId: "acct_r",
+        userId: "user_1",
+        appliedConfigurations: ["recipient"],
+      },
+    );
+  });
+
+  it("throws ACCOUNT_NOT_FOUND and never touches Stripe when the account is not in the component DB", async () => {
+    const stripe = makeStripe();
+    const runQuery = vi.fn().mockResolvedValue(null);
+    const runMutation = vi.fn();
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await expect(
+      addRecipientConfiguration(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_missing",
+      }),
+    ).rejects.toMatchObject({ data: { code: "ACCOUNT_NOT_FOUND" } });
+
+    expect(stripe.v2.core.accounts.update).not.toHaveBeenCalled();
+    expect(runMutation).not.toHaveBeenCalled();
+  });
+
+  it("remains idempotent when syncAllAccounts runs afterward (no double-sync regression)", async () => {
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      applied_configurations: ["recipient"],
+    });
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await addRecipientConfiguration(asStripe(stripe), makeComponent(), ctx, {
+      stripeAccountId: "acct_r",
+    });
+
+    // A subsequent full sync re-derives the same account from Stripe's list
+    // endpoint and must upsert it again without conflicting with the row
+    // addRecipientConfiguration just wrote.
+    stripe.v2.core.accounts.list.mockResolvedValueOnce({
+      data: [
+        {
+          id: "acct_r",
+          configuration: { recipient: {} },
+          metadata: { userId: "user_1" },
+        },
+      ],
+      has_more: false,
+    });
+
+    await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("core/mutations/upsertAccount"),
+      expect.objectContaining({ stripeAccountId: "acct_r", userId: "user_1" }),
+    );
   });
 });
 

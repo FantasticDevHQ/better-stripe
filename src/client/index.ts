@@ -392,11 +392,21 @@ export class BetterStripe {
     );
   }
 
+  /**
+   * Apply the V2 recipient configuration to an existing account, and record
+   * the applied configurations on the component account. The account must
+   * already exist in the component DB (e.g. from {@link createAccount}).
+   */
   async addRecipientConfiguration(
     ctx: RunCtx,
     opts: { stripeAccountId: string },
   ) {
-    return accountsImpl.addRecipientConfiguration(this.stripe(), ctx, opts);
+    return accountsImpl.addRecipientConfiguration(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   /**

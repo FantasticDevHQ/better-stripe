@@ -83,6 +83,14 @@ const HOOK_EVENT_MAP: Record<string, HookSpec> = {
     getter: "billing/queries/getInvoiceByStripeId",
     idArg: "stripeInvoiceId",
   },
+  // BTS-33: a failed subscription-cycle charge. Distinct from the PI-level
+  // `payment_intent.payment_failed` (afterPaymentFailed) — this is the invoice
+  // that dunning acts on, carrying the smart-retry schedule on the doc.
+  "invoice.payment_failed": {
+    hook: "afterInvoicePaymentFailed",
+    getter: "billing/queries/getInvoiceByStripeId",
+    idArg: "stripeInvoiceId",
+  },
   "payment_intent.succeeded": {
     hook: "afterPaymentSucceeded",
     getter: "connect/queries/getPaymentByStripeId",

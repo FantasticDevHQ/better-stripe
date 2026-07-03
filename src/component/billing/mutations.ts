@@ -130,6 +130,8 @@ export const upsertInvoice = mutation({
     invoicePdf: v.optional(v.string()),
     periodStart: v.optional(v.string()),
     periodEnd: v.optional(v.string()),
+    nextPaymentAttempt: v.optional(v.string()),
+    attemptCount: v.optional(v.number()),
     ...feeRoutingFields,
     metadata: v.optional(v.any()),
   },

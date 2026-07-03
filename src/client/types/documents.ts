@@ -205,6 +205,10 @@ export type StripeComponentInvoice = {
   invoicePdf?: string;
   periodStart?: string;
   periodEnd?: string;
+  /** Smart-retry dunning (BTS-33): ISO time of Stripe's next retry, if any. */
+  nextPaymentAttempt?: string;
+  /** Number of charge attempts Stripe has made on this invoice. */
+  attemptCount?: number;
   metadata?: Record<string, unknown>;
 };
 

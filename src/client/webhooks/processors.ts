@@ -71,6 +71,9 @@ export async function processEvent(
       break;
     case "invoice.paid":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
+      // Collect the fixed/tier platform fee the per-invoice path (BTS-51) misses
+      // on a subscription's synchronously-finalized FIRST invoice (BTS-68).
+      await applyFirstInvoiceFee(whCtx, obj as Stripe.Invoice);
       // Fan funds to split recipients each billing cycle for a separate-charges
       // subscription (BTS-52).
       await handleInvoiceSplitTransfers(whCtx, obj as Stripe.Invoice);
@@ -427,6 +430,157 @@ async function applyStatementDescriptor(
 }
 
 /**
+ * Collect the fixed/tier platform fee that {@link applyPerInvoiceFee} (BTS-51)
+ * silently misses on a subscription's FIRST invoice (BTS-68).
+ *
+ * Stripe finalizes the first invoice of a `charge_automatically` subscription
+ * (and pays the first invoice of a Checkout subscription-mode session)
+ * synchronously at creation — it is already `open` by the time `invoice.created`
+ * is processed, so the `invoices.update({ application_fee_amount })` that the
+ * per-invoice path relies on is rejected (monetary values are uneditable once an
+ * invoice finalizes) and the fee is never collected. Renewal invoices are fine:
+ * they get Stripe's ~1h draft window, so the per-invoice path applies the fee
+ * there.
+ *
+ * Here — at `invoice.paid`, when the charge and its automatic transfer exist —
+ * we realize the missed fee the way Stripe settles application fees on
+ * destination charges (and the way BTS-60's per_charge path does): a partial
+ * reversal of the destination transfer, sized from the amount actually paid.
+ *
+ * No double-collection: an invoice whose fee the draft path already applied
+ * carries `application_fee_amount`/`bsFeeApplied`, and is skipped — so every
+ * renewal (and any invoice that did get its draft window) is untouched.
+ * Percent-only subscriptions never reach here (they use
+ * `application_fee_percent`); one-time per_charge charges have no invoice.
+ * Idempotent via a fresh-invoice `bsFeeCollected` marker plus a deterministic
+ * Stripe idempotency key.
+ *
+ * Failure contract (matching {@link applyPerChargeFee}, NOT the swallow-all of
+ * {@link applyPerInvoiceFee}): genuine collection failures (a retrieve/reversal/
+ * mark API error, or a paid invoice with no resolvable charge) PROPAGATE so the
+ * event is marked `failed` and Stripe retries — a swallowed error would 200 and
+ * lose the fee forever. Benign skips a retry can't fix (unflagged subscription,
+ * already collected, zero amount, malformed config, no destination transfer)
+ * return undefined without throwing.
+ *
+ * Documented limitation: the fee is recorded on the invoice (`bsFeeAmount`
+ * marker) and via the reversal, but — unlike the per_charge path — it is not
+ * denormalized onto the `payments` row for the first invoice's PaymentIntent.
+ */
+async function applyFirstInvoiceFee(
+  whCtx: WebhookContext,
+  invoice: Stripe.Invoice,
+): Promise<number | undefined> {
+  if (!invoice.id) return undefined;
+  // No money settled → no charge/transfer to reverse (trial, 100%-off, credit).
+  if (!(invoice.amount_paid > 0)) return undefined;
+
+  const parentSub = invoice.parent?.subscription_details?.subscription;
+  const subId =
+    typeof parentSub === "string" ? parentSub : (parentSub?.id ?? undefined);
+  if (!subId) return undefined; // not a subscription invoice
+
+  const sub = await whCtx.stripe.subscriptions.retrieve(subId);
+  const subMeta = (sub?.metadata ?? {}) as Record<string, string>;
+  if (subMeta.bsFeeMode !== "per_invoice" || !subMeta.bsFeeConfig) {
+    return undefined;
+  }
+
+  // The event payload is a stale snapshot on retries; read fresh so the
+  // already-collected guard and our idempotency marker are authoritative.
+  const fresh = await whCtx.stripe.invoices.retrieve(invoice.id);
+  const freshMeta = (fresh.metadata ?? {}) as Record<string, string>;
+
+  // The draft-window path already collected this invoice's fee (every renewal,
+  // plus any invoice that got its ~1h draft window): Stripe kept the
+  // application_fee_amount and marked bsFeeApplied — the two are set atomically,
+  // so either signal means "already collected". Checking Stripe's own field
+  // (not just our marker) is the authoritative double-collection guard; the SDK
+  // doesn't type it on the Invoice object, hence the narrow read.
+  const alreadyOnInvoice =
+    (fresh as { application_fee_amount?: number | null }).application_fee_amount;
+  if (freshMeta.bsFeeApplied || alreadyOnInvoice != null) {
+    return undefined;
+  }
+  // Our own reversal already ran on a prior delivery (idempotency across retries
+  // beyond Stripe's idempotency-key window).
+  if (freshMeta.bsFeeCollected) {
+    const prior = Number(freshMeta.bsFeeAmount);
+    return Number.isFinite(prior) && prior > 0 ? prior : undefined;
+  }
+
+  let config: PlatformFeeConfig;
+  try {
+    config = JSON.parse(subMeta.bsFeeConfig) as PlatformFeeConfig;
+  } catch {
+    return undefined; // malformed marker — a retry can't fix it
+  }
+
+  const fee = computeFee(fresh.amount_paid, config).feeAmount;
+  // A shape-invalid config yields NaN; never send a non-finite reversal.
+  if (!Number.isFinite(fee) || fee <= 0) return undefined;
+
+  // Resolve the charge that paid this invoice and its automatic destination
+  // transfer (same resolution as the recurring split path).
+  const payments = await whCtx.stripe.invoicePayments.list({
+    invoice: invoice.id,
+    limit: 1,
+  });
+  const payment = payments.data?.[0]?.payment;
+  let chargeId: string | undefined;
+  if (payment?.charge) {
+    chargeId =
+      typeof payment.charge === "string" ? payment.charge : payment.charge.id;
+  } else if (payment?.payment_intent) {
+    const piId =
+      typeof payment.payment_intent === "string"
+        ? payment.payment_intent
+        : payment.payment_intent.id;
+    const pi = await whCtx.stripe.paymentIntents.retrieve(piId);
+    chargeId =
+      typeof pi.latest_charge === "string"
+        ? pi.latest_charge
+        : (pi.latest_charge?.id ?? undefined);
+  }
+  if (!chargeId) {
+    // A paid invoice should have a charge; its absence may be propagation lag, so
+    // throw to retry rather than silently skip the fee.
+    throw new Error(
+      `First-invoice fee: paid invoice ${invoice.id} for per_invoice subscription ${subId} has no resolvable charge`,
+    );
+  }
+  const charge = await whCtx.stripe.charges.retrieve(chargeId);
+  const transferId =
+    typeof charge.transfer === "string"
+      ? charge.transfer
+      : (charge.transfer?.id ?? undefined);
+  if (!transferId) {
+    // A per_invoice sub is a destination charge, so the charge should carry an
+    // automatic transfer. Its absence is a config anomaly, not a transient
+    // fault — rethrowing would loop the event `failed` forever. Log and skip.
+    console.error(
+      `[better-stripe] applyFirstInvoiceFee: invoice ${invoice.id} charge ${chargeId} has no destination transfer to reverse`,
+    );
+    return undefined;
+  }
+
+  await whCtx.stripe.transfers.createReversal(
+    transferId,
+    { amount: fee, metadata: { bsFeeFor: invoice.id } },
+    { idempotencyKey: `bs_infee_${invoice.id}` },
+  );
+  // Invoice metadata is editable post-finalization (only monetary values lock),
+  // so the marker records that the missed fee is now collected. A mark failure
+  // after a successful reversal propagates: the retry replays the reversal
+  // against the same idempotency key (no second money movement) then completes
+  // the mark.
+  await whCtx.stripe.invoices.update(invoice.id, {
+    metadata: { ...freshMeta, bsFeeCollected: "1", bsFeeAmount: String(fee) },
+  });
+  return fee;
+}
+
+/**
  * Collect a deferred platform fee for a one-time destination charge (BTS-60).
  * When the final amount is unknowable at session creation (discounts, custom
  * amounts), checkout flags the PaymentIntent with `bsFeeMode=per_charge` +
@@ -548,6 +702,10 @@ async function upsertInvoiceFromStripe(
     invoicePdf: invoice.invoice_pdf ?? undefined,
     periodStart: epochToIso(invoice.period_start),
     periodEnd: epochToIso(invoice.period_end),
+    // Smart-retry dunning (BTS-33): surface Stripe's retry schedule so a
+    // dunning hook can tell the buyer when the next attempt lands.
+    nextPaymentAttempt: epochToIso(invoice.next_payment_attempt),
+    attemptCount: invoice.attempt_count ?? undefined,
     metadata: invoice.metadata ?? undefined,
   });
 }

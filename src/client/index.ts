@@ -1689,6 +1689,9 @@ export class BetterStripe {
       afterInvoicePaid: hooks?.onInvoicePaid as
         | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
         | undefined,
+      afterInvoicePaymentFailed: hooks?.onInvoicePaymentFailed as
+        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
+        | undefined,
       afterPaymentSucceeded: hooks?.onPaymentSucceeded as
         | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
         | undefined,

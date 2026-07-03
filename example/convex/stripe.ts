@@ -5,6 +5,19 @@ import { components, internal } from "./_generated/api";
 export const stripe = new BetterStripe(components.betterStripe, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 
+  // The platform's take on marketplace sales (BTS-41), Skool-style tiers:
+  // 2.9% + 30¢ on charges up to $899, 3.9% + 30¢ above. Applied whenever a
+  // checkout/subscription routes funds to a seller (destination or split);
+  // per-call `fee` overrides still win.
+  platformFee: {
+    percent: 2.9,
+    fixed: 30,
+    tiers: [
+      { upTo: 89_900, percent: 2.9, fixed: 30 },
+      { upTo: null, percent: 3.9, fixed: 30 },
+    ],
+  },
+
   triggers: {
     subscription: {
       onCreate: async (ctx, doc) => {

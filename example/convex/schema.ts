@@ -11,13 +11,22 @@ export default defineSchema({
       v.literal("seller"),
       v.literal("admin"),
       v.literal("visitor"),
+      // Marketplace personas (BTS-41): a buyer is a billable customer_account;
+      // an affiliate is a recipient-only account that earns referral transfers.
+      v.literal("buyer"),
+      v.literal("affiliate"),
     ),
     avatarUrl: v.optional(v.string()),
+    // Marketplace sellers own a store; platform-owned products are tagged to
+    // the seller's account id. Undefined for non-store personas.
+    storeName: v.optional(v.string()),
     // V2 Stripe account (acct_…) linked to this persona, written back by the
     // seed once the account is created. Undefined for personas with no account
     // (e.g. admin, visitor) or before seeding has linked them.
     stripeAccountId: v.optional(v.string()),
-  }).index("by_role", ["role"]),
+  })
+    .index("by_role", ["role"])
+    .index("by_email", ["email"]),
 
   // E2E observability: every sync trigger / async hook invocation records a
   // row here so the webhook E2E test can assert the trigger system ran.

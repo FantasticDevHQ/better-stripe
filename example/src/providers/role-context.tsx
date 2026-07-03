@@ -85,7 +85,11 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     id: match._id,
     name: match.name,
     email: match.email,
-    role: match.role,
+    // `match` was found by `u.role === role`, so the active switcher role IS
+    // the user's role — using the state value keeps `Role` narrowed to the
+    // switchable personas (marketplace-only roles like buyer/affiliate are
+    // seeded data, not switcher entries).
+    role,
     stripeAccountId: match.stripeAccountId,
   };
 

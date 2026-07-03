@@ -16,6 +16,8 @@ export const getByRole = query({
       v.literal("seller"),
       v.literal("admin"),
       v.literal("visitor"),
+      v.literal("buyer"),
+      v.literal("affiliate"),
     ),
   },
   handler: async (ctx, args) => {

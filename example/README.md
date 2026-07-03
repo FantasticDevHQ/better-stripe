@@ -259,6 +259,22 @@ Demo flows that need seeded data (checkout, disputes, admin actions) are covered
 by later specs against a seeded Convex + Stripe test environment — this harness
 is the foundation they build on.
 
+**Live-backend specs.** Some specs exercise flows the placeholder backend can't
+serve (they persist real changes and rely on webhook-driven sync). These skip by
+default and run only when the harness points at a real deployment:
+
+```bash
+VITE_CONVEX_URL=https://<your-dev-deployment>.convex.cloud pnpm --filter ./example e2e
+```
+
+Requirements: a linked Convex dev deployment with the current functions pushed
+(`npx convex dev --once`), `STRIPE_SECRET_KEY` set, demo data seeded, and webhook
+event destinations configured (via `/admin/setup`) so `product.updated` events
+sync back to the UI. Current live-backend specs:
+
+- `e2e/admin-products.spec.ts` — admin product Edit + Deactivate (BTS-59);
+  self-contained (creates, edits, then archives its own product).
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:

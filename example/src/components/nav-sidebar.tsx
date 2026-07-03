@@ -16,12 +16,14 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Billing", to: "/dashboard/billing" },
     { label: "Invoices", to: "/dashboard/invoices" },
     { label: "Payment Methods", to: "/dashboard/payment-methods" },
+    { label: "Affiliate Split", to: "/marketplace/split" },
   ],
   seller: [
     { label: "Earnings", to: "/seller", end: true },
     { label: "Products", to: "/seller/products" },
     { label: "Onboarding", to: "/seller/onboarding" },
     { label: "Payouts", to: "/seller/payouts" },
+    { label: "Disputes", to: "/seller/disputes" },
     { label: "Account", to: "/seller/account" },
   ],
   admin: [

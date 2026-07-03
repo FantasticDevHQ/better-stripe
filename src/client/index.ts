@@ -33,6 +33,8 @@ export {
   buildDisputeEvidence,
   disputeEvidenceCountdown,
 } from "./connect/disputes.js";
+export type { RefundActor } from "./connect/refunds.js";
+import type { RefundActor } from "./connect/refunds.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -1141,6 +1143,28 @@ export class BetterStripe {
     return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
   }
 
+  /**
+   * The original split legs of one sale (reinstatement rows excluded) — the
+   * read behind the `useSplitBreakdown` hook / per-sale breakdown UIs.
+   */
+  async listTransfersByCharge(
+    ctx: RunCtx,
+    opts: { sourceChargeId: string; limit?: number },
+  ) {
+    return transfersImpl.listTransfersByCharge(this.component, ctx, opts);
+  }
+
+  /**
+   * A recipient's transfer ledger (the earnings view — includes reinstatements)
+   * — the read behind the `useEarnings` hook.
+   */
+  async listTransfersByAccount(
+    ctx: RunCtx,
+    opts: { destinationAccountId: string; limit?: number },
+  ) {
+    return transfersImpl.listTransfersByAccount(this.component, ctx, opts);
+  }
+
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {
     return payoutsImpl.getPayout(this.component, ctx, opts);
   }
@@ -1174,9 +1198,15 @@ export class BetterStripe {
       stripeAccountId?: string;
       refundApplicationFee?: boolean;
       reverseTransfer?: boolean;
+      /**
+       * Who is initiating the refund (BTS-35). A platform admin may refund any
+       * sale; a seller may refund only sales routed to their own account. Omit
+       * for platform-initiated (unrestricted) refunds.
+       */
+      actor?: RefundActor;
     },
   ): Promise<{ stripeRefundId: string }> {
-    return refundsImpl.createRefund(this.stripe(), ctx, opts);
+    return refundsImpl.createRefund(this.stripe(), this.component, ctx, opts);
   }
 
   async getRefundByStripeId(
@@ -1232,6 +1262,12 @@ export class BetterStripe {
     return disputesImpl.listDisputes(this.component, ctx, opts);
   }
 
+  /**
+   * Submit or stage dispute evidence. Stripe's `submit` defaults to TRUE, so
+   * this method stages by default: evidence without an explicit `submit` is
+   * saved as a draft (`submit: false`). Pass `submit: true` to submit to the
+   * bank (one-shot, outcome-affecting). See {@link disputesImpl.updateDispute}.
+   */
   async updateDispute(
     ctx: RunCtx,
     opts: {

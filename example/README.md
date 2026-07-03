@@ -231,6 +231,25 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 `scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
+#### Money-layer assertions (BTS-49)
+
+**Pre-release only, not CI** — this needs a real (test-mode) Stripe account + a linked Convex dev deployment, so it can't run in CI. It is the release gate that proves the money actually _moves_, which mocks can't catch.
+
+After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by `convex/e2eMoney.ts`) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
+
+| Check | What it drives | What it asserts |
+| ----- | -------------- | --------------- |
+| `money: destination fee` | a $100 destination charge with a $10 `application_fee` | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes) |
+| `money: split sale` | a $100 separate-charges sale split $80 store / $10 affiliate | **2 `transfers`** ledger rows for the charge (one per recipient) |
+| `money: refund reverses transfers` | a refund of the split charge (`reverseTransfer`) | every transfer row has `reversedAmount > 0` (deterministic reversal) |
+| `money: dispute reverses transfers` | a disputed split (Stripe `tok_createDispute`) | the `charge.dispute.created` clawback reversed the transfers — **SKIP** (not FAIL) if the async dispute doesn't land in the poll window |
+
+**Test-recipient activation (BTS-9/10 recipe).** Transfers only succeed to an onboarded recipient (an un-activated destination fails `insufficient_capabilities_for_transfer`). `provisionTestRecipient` recreates the validated spike recipe: create a `dashboard: "none"` V2 account requesting the recipient's `stripe_transfers` capability (Express accounts can't accept ToS via the API, so recipients must be `dashboard: none`), then attest identity + ToS so the test SSN `000000000` auto-verifies — **note: the ToS acceptance `date` is an RFC3339 string, not unix**. If activation fails, the whole money phase reports SKIP (never a false PASS).
+
+Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. Any live-drive failure SKIPs the affected money rows with a reason; a genuine wrong outcome FAILs.
+
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure reconciliation helper (`e2eMoney.test.ts`), but the full live run (real Stripe + deployment) has **not** been executed yet — run it before a release and re-verify the V2 recipient-activation field paths against current Stripe docs.
+
 ### Browser E2E Tests (`npm run e2e`)
 
 A [Playwright](https://playwright.dev) harness lives in `e2e/` with its config in
@@ -280,6 +299,9 @@ sync back to the UI. Current live-backend specs:
   see below.
 - `e2e/subscription-payout.spec.ts` — paid subscription + payout/balance
   visibility flow (BTS-42); see below.
+- `e2e/affiliate-split.spec.ts` — affiliate split breakdown demo (BTS-43);
+  see below.
+- `e2e/seller-disputes.spec.ts` — seller disputes demo (BTS-44); see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -345,6 +367,106 @@ charge/invoice/payout events sync.
    an available/pending balance reflecting the transfer (payouts appear once
    Stripe's rolling schedule runs — the balance moves first); **Earnings** shows
    gross/net/paid-out. (Webhook sync takes a few seconds; refresh if needed.)
+
+#### Affiliate split flow (`e2e/affiliate-split.spec.ts`)
+
+The affiliate split breakdown demo (BTS-43) — the headline proof: **one $100
+sale, three destinations**. Route: `/marketplace/split` (also in the customer
+nav as "Affiliate Split"). An affiliate referral flows in via the `?ref=avery`
+query param; the sale routes store + affiliate, and the platform takes its
+configured tiered fee. The result is visualized with the headless
+`SplitBreakdown` (store / affiliate / platform) and `EarningsSummary`, driven by
+the `useSplitBreakdown` / `useEarnings` hooks.
+
+Two layers:
+
+- **Backend-independent** (runs everywhere, incl. CI): the demo route boots
+  without app page errors, plain and with `?ref=avery`. (The Convex client's
+  placeholder-URL connection fatal is filtered — that is the intended
+  backend-independent boundary.)
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): a referred purchase →
+  the webhook engine creates the store + affiliate transfers → the three-way
+  breakdown reconciles to the $100 charge.
+
+**Manual QA steps** (against a seeded, webhook-forwarded dev deployment):
+
+1. Seed the marketplace: `npm run setup` (creates Maya's store + Avery Affiliate
+   and Maya's one-time $100 "1:1 Session" price), and forward webhooks:
+   `stripe listen --forward-to <your-site-url>/stripe/webhook`.
+2. Visit `/marketplace/split?ref=avery`. Confirm the attribution badge reads
+   **"Referred by Avery Affiliate"** (visit without `?ref` → "No referral").
+3. Click **Buy with test card**; in the embedded Stripe form pay with
+   `4242 4242 4242 4242`, any future expiry, any CVC. You land on
+   `/checkout/status`.
+4. Return to `/marketplace/split?ref=avery`. Under **Latest sale — split
+   breakdown**, confirm three lines — **Store**, **Affiliate**, **Platform** —
+   and that Store + Affiliate + Platform **reconcile to $100.00** (the platform
+   line = charge − store − affiliate). The **Affiliate earnings** panel shows
+   Avery's gross/net.
+
+Attribution and the split-leg math are unit-tested in
+`convex/affiliate-split.test.ts`; the split executes as separate transfers via
+the webhook engine (see `stripe.ts` `platformFee` for the platform's cut).
+
+#### Seller disputes flow (`e2e/seller-disputes.spec.ts`)
+
+The seller disputes demo (BTS-44) is the culminating dispute demo: a
+seller-facing `/seller/disputes` page that exercises the whole merged dispute
+stack. It offers two surfaces via tabs:
+
+- **Headless components:** `useDisputes` → `DisputesList` (status + due-by
+  countdown), and on selecting a row `useDisputeWithCountdown` →
+  `DisputeDetail` + `EvidenceForm`. Submitting evidence calls the
+  `submitDisputeEvidence` action (`convex/actions.ts`), which forwards to
+  `stripe.updateDispute`.
+- **Embedded (Stripe Connect):** `ConnectProvider` + `EmbeddedDisputes`, fed by
+  the `createDisputeSession` action (`stripe.createDisputeSession`, BTS-30).
+
+Two layers, like the checkout demo:
+
+- **Backend-independent** (runs everywhere, incl. CI): the `/seller/disputes`
+  route boots without page errors.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): open the disputes page →
+  open a dispute → submit evidence → observe the transfer reversal +
+  subscription auto-cancel. Requires a seeded deployment, `STRIPE_SECRET_KEY`,
+  webhook forwarding, and a triggered test dispute (below). This spec's live
+  test stays skipped — and the ticket's live-E2E box unchecked — until the
+  first live run.
+
+##### Manual QA steps (dispute end-to-end)
+
+Against a seeded dev deployment with `stripe listen` forwarding webhooks:
+
+1. **Onboard a seller** and create a subscription for a buyer against that
+   seller's store (so there is a funded transfer + an active subscription to
+   claw back / cancel).
+2. **Trigger a test dispute** on the subscription's charge. Either use the
+   Stripe CLI:
+
+   ```bash
+   stripe trigger charge.dispute.created
+   ```
+
+   or create a charge with the disputed test card `4000000000000259` (dispute:
+   fraudulent) and let it settle. Stripe emits `charge.dispute.created`, which
+   the component records and (per BTS-27/28) claws back the funded transfer and
+   auto-cancels the buyer's subscription.
+3. **Open `/seller/disputes`** as the seller persona (role switcher). The
+   dispute appears in the headless list with its status and, if a deadline
+   exists, a due-by countdown badge.
+4. **Select the dispute** → the detail panel shows amount / reason / status /
+   evidence-due, and the evidence form renders.
+5. **Fill the four evidence fields and Submit.** The `submitDisputeEvidence`
+   action calls `stripe.updateDispute({ submit: true })`; the response is filed
+   with Stripe (no redirect — this is the embedded/headless flow).
+6. **Observe the side effects:** the seller's earnings/transfers reflect the
+   reversal, and the buyer's subscription shows canceled/`cancel_at_period_end`.
+7. **(Optional) Embedded tab:** switch to "Embedded (Connect)" to view the same
+   disputes via Stripe's hosted `disputes_list` component.
+
+Note: `charge.dispute.funds_withdrawn` / `funds_reinstated` cannot be reliably
+triggered in test mode, so the reversal ledger is best verified via the
+`charge.dispute.created` clawback path above.
 
 ### Webhook Processing
 

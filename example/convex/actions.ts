@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 
 import { action } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
+import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliate-split";
 
 // Webhook setup — creates both V1 (snapshot) and V2 (thin) event destinations
 export const setupWebhooks = action({
@@ -274,5 +275,91 @@ export const cancelSubscription = action({
     stripe.cancelSubscription(ctx, {
       stripeSubscriptionId: args.stripeSubscriptionId,
       cancelAtPeriodEnd: true,
+    }),
+});
+
+// Affiliate-split demo (BTS-43)
+
+/**
+ * Run the affiliate-referral split checkout: a one-time $100 payment for the
+ * store's product, routed store + affiliate when `referralCode` attributes it
+ * (else store-only). The platform's cut is the configured tiered fee (see
+ * stripe.ts); the store/affiliate legs are percent-of-net. The multi-recipient
+ * split executes as separate transfers via the webhook engine after the charge
+ * — those transfers (tagged by role) are what the demo's SplitBreakdown reads.
+ */
+export const createAffiliateSplitCheckout = action({
+  args: {
+    userId: v.string(),
+    stripePriceId: v.string(),
+    referralCode: v.optional(v.string()),
+    returnUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const personas = await ctx.runQuery(
+      api.queries.getMarketplacePersonas,
+      {},
+    );
+    if (!personas.store?.accountId) {
+      throw new Error(
+        "Marketplace store not seeded — run `npm run setup` first.",
+      );
+    }
+
+    const split = buildSplitRecipients({
+      store: {
+        accountId: personas.store.accountId,
+        name: personas.store.name,
+      },
+      affiliate: personas.affiliate?.accountId
+        ? {
+            accountId: personas.affiliate.accountId,
+            name: personas.affiliate.name,
+          }
+        : null,
+      referralCode: args.referralCode ?? null,
+    });
+
+    return stripe.createCheckoutSession(ctx, {
+      userId: args.userId,
+      stripePriceId: args.stripePriceId,
+      mode: "payment",
+      uiMode: "embedded",
+      amount: DEMO_SALE_AMOUNT,
+      split,
+      returnUrl: args.returnUrl,
+      // `bs*` keys are reserved and stripped by the component, so use a plain key.
+      metadata: { demoReferralCode: args.referralCode ?? "" },
+    });
+  },
+});
+
+// ===========================================================================
+// Disputes (BTS-44) — seller disputes page
+// ===========================================================================
+
+// Account Session client secret for the embedded disputes surface (BTS-30):
+// the ConnectProvider's fetchClientSecret calls this to mount EmbeddedDisputes.
+export const createDisputeSession = action({
+  args: { stripeAccountId: v.string() },
+  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+});
+
+// Submit (or stage) dispute evidence from the headless EvidenceForm. The form
+// hands us the shape of EvidenceFormUpdateArgs; `submit: true` finalizes the
+// response to the bank, `submit: false` saves a draft.
+export const submitDisputeEvidence = action({
+  args: {
+    stripeDisputeId: v.string(),
+    evidence: v.any(),
+    submit: v.boolean(),
+    stripeAccountId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.updateDispute(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+      evidence: args.evidence,
+      submit: args.submit,
+      stripeAccountId: args.stripeAccountId,
     }),
 });

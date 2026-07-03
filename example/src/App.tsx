@@ -11,6 +11,7 @@ import { StoreSubscribe } from "@/pages/demo/subscribe";
 import { StoreEarnings } from "@/pages/demo/store-earnings";
 import { SellerAccount } from "@/pages/seller/account";
 import { SellerHome } from "@/pages/seller/index";
+import { SellerDisputes } from "@/pages/seller/disputes";
 import { SellerOnboarding } from "@/pages/seller/onboarding";
 import { Payouts } from "@/pages/seller/payouts";
 import { SellerProducts } from "@/pages/seller/products";
@@ -19,6 +20,7 @@ import { Dashboard } from "@/pages/dashboard/index";
 import { Invoices } from "@/pages/dashboard/invoices";
 import { PaymentMethods } from "@/pages/dashboard/payment-methods";
 import { Landing } from "@/pages/landing";
+import { AffiliateSplitDemo } from "@/pages/marketplace/split";
 import { RoleProvider } from "@/providers/role-context";
 import { Route, Routes } from "react-router-dom";
 
@@ -35,6 +37,9 @@ export default function App() {
           <Route path="/demo/subscribe" element={<StoreSubscribe />} />
           <Route path="/demo/store-earnings" element={<StoreEarnings />} />
 
+          {/* Marketplace demos */}
+          <Route path="/marketplace/split" element={<AffiliateSplitDemo />} />
+
           {/* Customer routes */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/billing" element={<Billing />} />
@@ -48,6 +53,7 @@ export default function App() {
           <Route path="/seller" element={<SellerHome />} />
           <Route path="/seller/onboarding" element={<SellerOnboarding />} />
           <Route path="/seller/payouts" element={<Payouts />} />
+          <Route path="/seller/disputes" element={<SellerDisputes />} />
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/account" element={<SellerAccount />} />
 

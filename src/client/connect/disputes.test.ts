@@ -113,8 +113,11 @@ describe("getDisputeWithCountdown (BTS-31)", () => {
   });
 });
 
-describe("updateDispute staged vs submit (BTS-31)", () => {
-  it("stages evidence without submitting", async () => {
+describe("updateDispute staged vs submit (BTS-31, BTS-61)", () => {
+  it("stages evidence safely by defaulting submit: false when submit is omitted", async () => {
+    // BTS-61: Stripe's `submit` defaults to TRUE, so omitting it would submit
+    // evidence to the bank (one-shot). Providing evidence without an explicit
+    // submit must stage (submit: false), never silently submit.
     const stripe = makeStripe();
     await updateDispute(asStripe(stripe), ctx, {
       stripeDisputeId: "dp_1",
@@ -122,7 +125,21 @@ describe("updateDispute staged vs submit (BTS-31)", () => {
     });
     expect(stripe.disputes.update).toHaveBeenCalledWith(
       "dp_1",
-      { evidence: { product_description: "X" } },
+      { evidence: { product_description: "X" }, submit: false },
+      undefined,
+    );
+  });
+
+  it("passes an explicit submit: false through when staging", async () => {
+    const stripe = makeStripe();
+    await updateDispute(asStripe(stripe), ctx, {
+      stripeDisputeId: "dp_1",
+      evidence: { product_description: "X" },
+      submit: false,
+    });
+    expect(stripe.disputes.update).toHaveBeenCalledWith(
+      "dp_1",
+      { evidence: { product_description: "X" }, submit: false },
       undefined,
     );
   });
@@ -139,6 +156,35 @@ describe("updateDispute staged vs submit (BTS-31)", () => {
       "dp_1",
       { evidence: { product_description: "X" }, submit: true },
       { stripeAccount: "acct_seller" },
+    );
+  });
+
+  it("leaves a metadata-only update (no evidence) untouched — no submit forced", async () => {
+    // Without evidence there is nothing to submit to the bank, so the safe
+    // default must not inject submit: false onto a bare metadata/status update.
+    const stripe = makeStripe();
+    await updateDispute(asStripe(stripe), ctx, {
+      stripeDisputeId: "dp_1",
+      metadata: { note: "internal" },
+    });
+    expect(stripe.disputes.update).toHaveBeenCalledWith(
+      "dp_1",
+      { metadata: { note: "internal" } },
+      undefined,
+    );
+  });
+
+  it("honours an explicit submit even with no evidence", async () => {
+    const stripe = makeStripe();
+    await updateDispute(asStripe(stripe), ctx, {
+      stripeDisputeId: "dp_1",
+      metadata: { note: "internal" },
+      submit: true,
+    });
+    expect(stripe.disputes.update).toHaveBeenCalledWith(
+      "dp_1",
+      { metadata: { note: "internal" }, submit: true },
+      undefined,
     );
   });
 });

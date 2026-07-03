@@ -71,8 +71,16 @@ export async function listDisputes(
 }
 
 /**
- * Submit or stage dispute evidence. Set `submit: true` to finalize the
- * response (Stripe submits it for review); omit to save a draft.
+ * Submit or stage dispute evidence.
+ *
+ * ⚠️ Stripe's dispute-update `submit` parameter DEFAULTS TO TRUE: staged
+ * evidence is submitted to the bank unless you pass `submit: false`. Submission
+ * is effectively one-shot and affects the dispute outcome. To avoid that trap,
+ * this method treats **staging as the safe default**: when `evidence` is
+ * provided without an explicit `submit`, it sends `submit: false` (a draft).
+ * Pass `submit: true` to finalize and submit the response to the bank. A bare
+ * metadata/status update (no `evidence`) is left untouched — no `submit` is
+ * forced, so Stripe's own handling applies.
  */
 export async function updateDispute(
   stripe: Stripe,
@@ -85,13 +93,18 @@ export async function updateDispute(
     stripeAccountId?: string;
   },
 ): Promise<{ success: true }> {
+  // Stage-by-default: an omitted submit alongside evidence must NOT inherit
+  // Stripe's true default (which would submit to the bank). Only default when
+  // evidence is present; a bare metadata/status update forces nothing.
+  const submit =
+    opts.submit !== undefined ? opts.submit : opts.evidence ? false : undefined;
   try {
     await stripe.disputes.update(
       opts.stripeDisputeId,
       {
         ...(opts.evidence ? { evidence: opts.evidence } : {}),
         ...(opts.metadata ? { metadata: opts.metadata } : {}),
-        ...(opts.submit !== undefined ? { submit: opts.submit } : {}),
+        ...(submit !== undefined ? { submit } : {}),
       },
       opts.stripeAccountId
         ? { stripeAccount: opts.stripeAccountId }

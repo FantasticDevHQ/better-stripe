@@ -82,6 +82,27 @@ export const listPayouts = query({
   handler: async (ctx) => stripe.listPayouts(ctx),
 });
 
+// Disputes (BTS-44) — seller disputes page data contract.
+// `listDisputes` backs the `useDisputes` hook (its arg is `accountId`, mapped to
+// the library's `stripeAccountId` filter); `getDisputeWithCountdown` backs the
+// `useDisputeWithCountdown` hook that DisputeDetail / EvidenceForm consume.
+export const listDisputes = query({
+  args: { accountId: v.optional(v.string()) },
+  handler: async (ctx, args) =>
+    stripe.listDisputes(
+      ctx,
+      args.accountId ? { stripeAccountId: args.accountId } : {},
+    ),
+});
+
+export const getDisputeWithCountdown = query({
+  args: { stripeDisputeId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.getDisputeWithCountdown(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+    }),
+});
+
 // Checkout Sessions
 export const getCheckoutSessionByStripeId = query({
   args: { stripeSessionId: v.string() },
@@ -120,4 +141,71 @@ export const getSeedStatus = query({
     const users = await ctx.db.query("users").collect();
     return { userCount: users.length };
   },
+});
+
+// Marketplace / affiliate-split demo (BTS-43)
+
+/**
+ * Resolve the demo's store (Maya) and affiliate (Avery) personas by email —
+ * their `acct_…` ids are minted at seed time, so the split demo looks them up
+ * at query time rather than hard-coding. Either side is null until the seed has
+ * linked its Stripe account.
+ */
+export const getMarketplacePersonas = query({
+  args: {},
+  handler: async (ctx) => {
+    const byEmail = async (email: string) =>
+      ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", email))
+        .first();
+    const store = await byEmail("maya@example.com");
+    const affiliate = await byEmail("avery@example.com");
+    return {
+      store: store
+        ? {
+            userId: store._id,
+            accountId: store.stripeAccountId ?? null,
+            name: store.storeName ?? store.name,
+          }
+        : null,
+      affiliate: affiliate
+        ? {
+            userId: affiliate._id,
+            accountId: affiliate.stripeAccountId ?? null,
+            name: affiliate.name,
+          }
+        : null,
+    };
+  },
+});
+
+/**
+ * The original split legs of one sale (`listTransfersByCharge` excludes
+ * reinstatement rows), for the `useSplitBreakdown` hook. Wraps the component
+ * query.
+ */
+export const listTransfersByCharge = query({
+  args: { sourceChargeId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.listTransfersByCharge(ctx, { sourceChargeId: args.sourceChargeId }),
+});
+
+/**
+ * A recipient's transfer ledger (the earnings view — includes reinstatements),
+ * for the `useEarnings` hook. Wraps the component query.
+ */
+export const listTransfersByAccount = query({
+  args: { destinationAccountId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.listTransfersByAccount(ctx, {
+      destinationAccountId: args.destinationAccountId,
+    }),
+});
+
+/** A recipient's payouts, for the `useEarnings` hook (arg name `accountId`). */
+export const listPayoutsByAccount = query({
+  args: { accountId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.listPayouts(ctx, { stripeAccountId: args.accountId }),
 });

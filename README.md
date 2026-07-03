@@ -1,6 +1,6 @@
 # better-stripe
 
-A reusable [Convex component](https://docs.convex.dev/components) for the Stripe V2 Accounts API. Provides a complete billing backend with schema, queries, mutations, actions, webhook handling, React hooks, and headless UI components.
+A reusable [Convex component](https://docs.convex.dev/components) for the Stripe V2 Accounts API — a **Stripe V2 marketplace/Connect library**, not just a webhook wrapper. Provides a complete billing + marketplace-economics backend: schema, queries, mutations, actions, webhook handling, platform fees, multi-recipient splits, rolling payouts, dispute clawback, per-store statement descriptors, React hooks, and headless UI components.
 
 Built for Convex + Next.js applications. Follows the conventions established by [`@convex-dev/stripe`](https://github.com/get-convex/stripe) and [`@convex-dev/better-auth`](https://github.com/get-convex/better-auth).
 
@@ -30,16 +30,30 @@ This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first
 - **Products and Prices** -- Full CRUD with trial day management as a first-class feature
 - **Checkout** -- Both embedded (custom UI mode) and redirect checkout session creation
 - **Subscriptions** -- Lifecycle management including cancel, reactivate, quantity updates, and trial tracking
+- **Marketplace fees** -- Platform fee config (percent, fixed, tiered), resolved per-call or as a global default, applied via `application_fee_percent`/`application_fee_amount` or computed per invoice/charge
+- **Split engine** -- Single-recipient destination charges or multi-recipient separate-charges-and-transfers (store + affiliate(s)), computed and executed by the webhook engine
 - **Invoices** -- Invoice syncing and querying with metadata propagation from subscriptions
 - **Payments** -- Payment intent tracking and status management
-- **Payouts** -- Payout tracking for Connect/marketplace flows
-- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment
-- **Disputes** -- Chargeback/dispute tracking with evidence submission and close helpers
+- **Payouts** -- Automatic rolling payouts for Connect/marketplace flows, with a recipient balance + cadence React surface
+- **Refunds** -- Refund tracking with refunded-amount/status denormalized onto the linked payment, plus proportional platform-fee return and transfer reversal (destination charges via Stripe flags, split sales via webhook-driven ledger math)
+- **Disputes** -- Chargeback/dispute tracking with evidence submission and close helpers, plus automatic transfer clawback on open, reinstatement on a won dispute, and auto-cancel of the disputed subscription
+- **Per-store statement descriptors** -- Buyer-recognizable charge descriptors resolved per seller with a configurable platform fallback
 - **Webhook handling** -- Single-endpoint processing with ledger-based deduplication and replay protection
 - **Trigger system** -- BetterAuth-style sync triggers (same transaction) and async hooks (scheduled action) for app-layer extensibility
-- **React hooks** -- Read hooks and flow hooks for all billing domains
-- **Headless UI components** -- Checkout, subscription, payment method, and Connect components with render-prop customization
+- **React hooks** -- Read hooks and flow hooks for all billing and marketplace-economics domains (fees, splits, earnings, payouts, disputes)
+- **Headless UI components** -- Checkout, subscription, payment method, Connect, payout, split, and dispute components with render-prop customization
 - **Test utilities** -- Typed fixture factories, mock webhook events, and `assertTestEnvironment` guard
+
+See [Roadmap / Known Gaps](#roadmap--known-gaps) for what's still in flight.
+
+## Roadmap / Known Gaps
+
+The marketplace economics layer described above — platform fees, the split engine, rolling payouts, dispute clawback/reinstate, refund fee/transfer reversal, and per-store statement descriptors — is **implemented and merged**, tracked as issues on the `BTS` team in Linear. This section lists what's honestly still open, by ticket, rather than letting the feature list overstate the current state:
+
+- **[BTS-67](https://linear.app/dojoco/issue/BTS-67)** — the first charge of every destination-charge subscription carries no per-store statement descriptor. Direct `charge_automatically` subscriptions (and Checkout subscription mode) finalize and pay their first invoice synchronously at creation, before the `invoice.created` handler that sets the descriptor can run. Later invoices are unaffected. A product-level `statement_descriptor` fix (which would cover the first charge too) is proposed but not built.
+- **[BTS-68](https://linear.app/dojoco/issue/BTS-68)** — investigating whether the fixed/tiered per-invoice platform fee has the same first-invoice gap as BTS-67 (same `invoice.created` timing), which would be a fee-revenue miss rather than a cosmetic one. Not yet confirmed or fixed.
+- **[BTS-63](https://linear.app/dojoco/issue/BTS-63)** — dispute clawback (`reverseTransfers`) retrying after a partial success can hit Stripe idempotency-key conflicts on the legs that already succeeded.
+- **[BTS-64](https://linear.app/dojoco/issue/BTS-64)** — the earnings/split ledger queries backing `useEarnings` and `useSplitBreakdown` (`listTransfersByAccount`, `listTransfersByCharge`) silently cap at 50 rows, which can understate gross/net totals for high-volume accounts or heavily-split sales.
 
 ## Installation
 
@@ -163,6 +177,8 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `listStripeAccounts(ctx, { limit? })`                                             | List V2 accounts directly from Stripe                    |
 | `closeAccount(ctx, { stripeAccountId })`                                          | Close a V2 account; returns `{ closed: boolean }`        |
 | `restartAccountOnboarding(ctx, { stripeAccountId })`                              | Close the account so onboarding can restart fresh        |
+| `setAccountStatementDescriptor(ctx, { stripeAccountId, statementDescriptor })` | Set (or `null` to clear) the account's per-store statement-descriptor suffix |
+| `createDisputeSession(ctx, { stripeAccountId })` | Create an embedded Account Session scoped to the seller's disputes |
 
 ### Product and Price
 
@@ -185,9 +201,10 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 | Method                                                                                                                                                                     | Description                                                                                                       |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `createCheckoutSession(ctx, { userId, stripePriceId, mode, returnUrl, uiMode?, quantity?, trialDays?, accountId?, orgId?, customerEmail?, metadata?, sessionOverrides? })` | Create checkout session (embedded or redirect)                                                                    |
+| `createCheckoutSession(ctx, { userId, stripePriceId, mode, returnUrl, uiMode?, quantity?, trialDays?, accountId?, orgId?, customerEmail?, destinationAccountId?, split?, fee?, amount?, metadata?, sessionOverrides? })` | Create checkout session (embedded or redirect); `destinationAccountId`/`split` route funds, `fee` overrides the platform's configured default |
 | `getCheckoutSession(ctx, { sessionId })`                                                                                                                                   | Get checkout session by component document ID                                                                     |
 | `getCheckoutSessionByStripeId(ctx, { stripeSessionId })`                                                                                                                   | Get checkout session by Stripe session ID                                                                         |
+| `createSubscription(ctx, { userId, orgId?, customerAccount, stripePriceId, destinationAccountId?, split?, fee?, trialDays?, metadata? })` | Create a subscription directly for a V2 buyer (off the checkout flow), with the same routing/fee options as checkout |
 | `getSubscription(ctx, { subscriptionId })`                                                                                                                                 | Get subscription by component document ID                                                                         |
 | `getSubscriptionByStripeId(ctx, { stripeSubscriptionId })`                                                                                                                 | Get subscription by Stripe subscription ID                                                                        |
 | `listSubscriptions(ctx, { stripeAccountId?, status?, limit? })`                                                                                                            | List subscriptions, optionally scoped to a Connect account (use `listSubscriptionsByUser` for per-user filtering) |
@@ -221,13 +238,15 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 | Method                                                                                                          | Description                                                                      |
 | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId? })` | Issue a refund (provide a payment intent or charge); synced via `refund.created` |
+| `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId?, refundApplicationFee?, reverseTransfer? })` | Issue a refund (provide a payment intent or charge); returns/reverses the platform fee and destination transfer by default; synced via `refund.created`/`.updated` |
 | `getRefundByStripeId(ctx, { stripeRefundId })`                                                                  | Get a refund by Stripe refund ID                                                 |
 | `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                               | List refunds with optional filters                                               |
 | `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                | Get a dispute by Stripe dispute ID                                               |
+| `getDisputeWithCountdown(ctx, { stripeDisputeId })`                                                             | Get a dispute plus its evidence-due countdown (`daysRemaining`, `isOverdue`)      |
 | `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                              | List disputes with optional filters                                              |
 | `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                      | Submit/stage dispute evidence (`submit: true` finalizes the response)            |
 | `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                      | Accept a dispute (concede the chargeback) — irreversible                         |
+| `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                  | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually) |
 
 Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
 
@@ -357,6 +376,7 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
 - `payout.created`, `.updated`, `.paid`, `.failed`
 - `refund.created`, `.updated`, `.failed`
+- `application_fee.refunded` -- keeps `feeCollectedAmount`/`feeRefundedAmount` accurate on the linked payment
 - `charge.dispute.created`, `.updated`, `.closed`, `.funds_withdrawn`, `.funds_reinstated`
 - `product.created`, `.updated`
 - `price.created`, `.updated`
@@ -494,6 +514,134 @@ Failed recurring payments are recovered by **Stripe Smart Retries**, not by any 
 
 > **Limitation:** `nextPaymentAttempt` is captured from the `invoice.payment_failed` payload, which is correct for Smart Retries. If you instead use a **custom retry _automation_**, Stripe sets `next_payment_attempt` on `invoice.updated` (not `invoice.payment_failed`); the component does not currently process `invoice.updated`, so the retry timestamp may lag until the next handled invoice event.
 
+## Marketplace Economics
+
+The platform is always the merchant of record (Skool-style marketplace model): sellers are Connect recipients, not merchants. This section covers the fee, split, payout, dispute, and refund/descriptor primitives that implement that model. All amounts are minor units (cents).
+
+### Fee Model
+
+`PlatformFeeConfig` is the platform's take on a sale:
+
+```typescript
+type FeeTier = { upTo: number | null; percent: number; fixed?: number };
+type PlatformFeeConfig = {
+  percent: number; // base percentage (0–100)
+  fixed?: number; // optional fixed surcharge, minor units
+  tiers?: FeeTier[]; // optional; overrides the base by charge amount
+};
+```
+
+Configure a default at construction (`new BetterStripe(component, { platformFee: {...} })`), and/or pass a per-call `fee` override (type `FeeOverride`, same shape as `PlatformFeeConfig`) to `createCheckoutSession`/`createSubscription` — the override wins. `stripe.resolveFee(override?)` resolves the effective config the same way the client does internally, and `stripe.platformFee` reads the configured default back.
+
+```typescript
+import { computeFee } from "@getdojo/better-stripe";
+
+const { feeAmount, percentApplied, fixedApplied, tier } = computeFee(2999, {
+  percent: 10,
+  fixed: 30,
+});
+```
+
+`computeFee(amount, config)` picks the first tier whose `upTo` covers the amount (a final `upTo: null` is the catch-all), rounds half-up, and caps the fee at the charge amount. It's exported so an app can preview "platform keeps $X" client-side before checkout.
+
+**How the fee is charged** depends on shape and charge type:
+
+- **Percent-only** fees (`isPercentOnlyFee(config)` — no `fixed`, no `tiers`) map directly to Stripe's `application_fee_percent` on the subscription/PaymentIntent — no per-invoice computation needed.
+- **Fixed or tiered** fees can't be expressed as a flat Stripe percentage, so they're computed and applied per invoice (`applyPerInvoiceFee`, at `invoice.created`) or per one-time charge (`applyPerChargeFee`) in the webhook processor, via `application_fee_amount`.
+- This per-invoice path shares the same first-invoice timing gap as statement descriptors — see [BTS-68](#roadmap--known-gaps).
+
+Fees only apply to **destination charges** (`destinationAccountId` set, or a single-recipient `split`). The **separate-charges-and-transfers** path (multi-recipient `split`) never uses `application_fee` — the platform's cut is realized by transferring less than was charged (see Split Engine below).
+
+### Split Engine
+
+For a sale split across multiple recipients (store + affiliate(s)), pass `split` instead of `destinationAccountId` to `createCheckoutSession`/`createSubscription`:
+
+```typescript
+type SplitRecipient = {
+  destinationAccountId: string;
+  role: "store" | "affiliate" | "other";
+  amount?: number; // exactly one of amount/percent
+  percent?: number; // percent of the gross charge amount
+};
+
+await stripe.createCheckoutSession(ctx, {
+  userId,
+  stripePriceId,
+  mode: "payment",
+  returnUrl,
+  split: [
+    { destinationAccountId: storeAccountId, role: "store", percent: 80 },
+    { destinationAccountId: affiliateAccountId, role: "affiliate", percent: 10 },
+  ],
+  fee: { percent: 10 }, // per-call override; omit to use the configured default
+});
+```
+
+- **A single-recipient `split`** is treated as a plain destination charge (equivalent to `destinationAccountId`) — `application_fee_percent`/`application_fee_amount` applies as above.
+- **A multi-recipient `split`** routes via **separate charges & transfers**: the platform charges the full amount, then the webhook engine (`createSplitTransfers`, on `payment_intent.succeeded`/`invoice.paid`) creates one Stripe `Transfer` per recipient with `source_transaction` linkage. No `application_fee` is used on this path — the platform's cut is the remainder after transfers.
+- **Subscriptions** re-run the split on every billing cycle (each invoice re-reads the subscription's `split`/`feeConfig` markers), so per-cycle recipient amounts stay in sync with the config at charge time.
+
+The core math is exported for previewing splits client-side:
+
+```typescript
+import { computeSplit } from "@getdojo/better-stripe";
+
+const result = computeSplit(10000, { percent: 10 }, [
+  { destinationAccountId: "acct_store", role: "store", percent: 80 },
+  { destinationAccountId: "acct_affiliate", role: "affiliate", percent: 10 },
+]);
+// result.transfers: [{ destinationAccountId, role, amount }, ...]
+// result.platformFee: the resolver's cut; result.platformRetained: amount − sum(transfers)
+```
+
+`computeSplit` throws if the transfers plus the platform fee would exceed the charge amount — the platform is always left with at least its configured cut. Any rounding remainder stays with the platform.
+
+### Payouts
+
+Payouts are **automatic and rolling** (Stripe-managed schedule, via hosted Express onboarding) — there is no manual-withdrawal API. `listPayouts`/`createPayout` track/trigger payouts for a Connect account; `PayoutSchedule` (React) and `useEarnings` (React) surface the recipient's balance and next expected payout, with a link out to the hosted Express dashboard for details. See [React Hooks](#react-hooks) and [React Components](#react-components).
+
+### Disputes
+
+The platform is merchant of record, so a chargeback lands on the platform's Stripe account even for a seller's sale. The dispute pipeline (all webhook-driven, on `charge.dispute.*`):
+
+1. **Clawback** — when a dispute opens (`charge.dispute.created`), `reverseTransfers` reverses the split/destination transfers funded by the disputed charge, pro-rata to the disputed amount, so recipients bear their share of the loss. Idempotent via the dispute id.
+2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), `reinstateTransfers` re-creates transfers for the amounts clawed back, paying recipients back from the platform balance (Stripe's own reversal is permanent, so winning means paying again).
+3. **Auto-cancel** — on dispute open, the disputed subscription (resolved PaymentIntent → invoice → subscription) is canceled by default (`registerRoutes`'s `autoCancelOnDispute`, default `true`; pairs with `cancelDisputeAtPeriodEnd`, default `false` → cancel-at-period-end, matching the Skool model of "cancel now, remove access at cycle end").
+
+Sellers respond to their own disputes without platform staff involvement, via an embedded Stripe Connect session:
+
+```typescript
+// server: expose the account session
+export const createDisputeSession = action({
+  args: { stripeAccountId: v.string() },
+  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+});
+```
+
+`stripe.createDisputeSession(ctx, { stripeAccountId })` creates an Account Session scoped to `disputes_list`/`payment_disputes` — mount it with the `ConnectProvider`/`EmbeddedDisputes` React components (see [Embedded Disputes](#embedded-disputes-stripe-connect)), or build a custom UI on `updateDispute`/`closeDispute` plus the headless `DisputesList`/`DisputeDetail`/`EvidenceForm` components and `buildDisputeEvidence`/`disputeEvidenceCountdown` helpers (see [React Components](#react-components)).
+
+`stripe.reverseTransfers(ctx, { sourceChargeId, percent?, amount? })` is also exposed directly, for manual clawback outside the automatic dispute flow (e.g. a support-initiated partial reversal). The internal engine additionally accepts an `operationId` for a stable Stripe idempotency key (used by the automatic dispute flow); the public method doesn't expose it yet, so a manual call relies on Stripe's default request idempotency.
+
+### Refunds and Statement Descriptors
+
+`createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, refundApplicationFee?, reverseTransfer?, ... })` issues a Stripe refund with marketplace semantics, both defaulting **on**:
+
+- `refundApplicationFee` — return the platform's application fee pro-rata with the refund (destination charges only; Stripe pro-rates partial refunds automatically).
+- `reverseTransfer` — pull the refunded amount back from the destination account (destination charges only; also pro-rated for partials).
+
+Stripe hard-errors if either flag is sent for a charge that doesn't carry an application fee / destination transfer, so `createRefund` resolves the charge first and only sends each flag when the charge can honor it. **Split (separate-charges) sales carry neither** — those go through the same charge, so their clawback is webhook-driven: on `refund.created`/`.updated`, `reverseTransfersForRefund` reverses each recipient's ledger leg pro-rata to Stripe's cumulative `amount_refunded`, converging correctly across multiple partial refunds (and coexisting with a prior dispute clawback on the same charge). A separate `application_fee.refunded` handler keeps the linked payment's `feeCollectedAmount`/`feeRefundedAmount` in sync. The `refunds` table and the linked `payments` row update as the corresponding webhooks arrive; `createRefund` itself returns only the new refund id.
+
+Per-store statement descriptors make destination charges recognizable on a buyer's card statement (`PLATFORMPREFIX* SUFFIX`):
+
+```typescript
+await stripe.setAccountStatementDescriptor(ctx, {
+  stripeAccountId,
+  statementDescriptor: "ACME STORE", // or null to clear
+});
+```
+
+Validated against Stripe's rules (`validateStatementDescriptorSuffix`: 1–22 chars, at least one Latin letter, no `< > \ ' " *`, no non-Latin — rejects rather than truncates) before writing. Resolution order per charge: the store's stored suffix → the platform's configured `statementDescriptorSuffix` default (constructor option) → none. One-time payments set the suffix directly on the PaymentIntent at checkout; subscriptions set it on each invoice via the webhook processor — see [BTS-67](#roadmap--known-gaps) for the one gap in that mechanism (the first subscription charge).
+
 ## React Hooks
 
 Import from `@getdojo/better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
@@ -513,6 +661,10 @@ Read hooks are exported as factory functions that take the app's `useQuery` bind
 | `createUsePaymentMethods`    | `(accountId?)`                             | `{ methods, defaultMethod, isLoading }`                                                               |
 | `createUseInvoices`          | `({ userId?, subscriptionId?, status? }?)` | `{ invoices, isLoading }`                                                                             |
 | `createUseAccountOnboarding` | `(accountId?)`                             | `{ account, status, isReady, missingRequirements, isLoading }`                                        |
+| `createUseEarnings`          | `(accountId?)`                             | `{ gross, reversed, net, payouts, paidOut, transfers, isLoading }` — recipient balance/earnings (BTS-36) |
+| `createUseSplitBreakdown`    | `({ sourceChargeId?, saleAmount? })`       | `{ breakdown: { legs, store, affiliate, other, recipientsTotal, platform? } \| null, isLoading }` — per-sale split (BTS-36) |
+| `createUseDisputes`          | `({ accountId?, status? }?)`               | `{ disputes, isLoading }`                                                                              |
+| `createUseDisputeWithCountdown` | `(stripeDisputeId?)`                    | `{ dispute, countdown: { dueBy?, daysRemaining?, isOverdue } \| null, isLoading }`                      |
 
 ### Checkout Session Hooks
 
@@ -683,6 +835,24 @@ function BuyerBilling({ userId, customerAccount }: Props) {
 | `AccountCloseCard`        | Close/restart account card (status-aware)     |
 | `AccountCloseButton`      | Close/restart action with status-aware labels |
 | `ConnectRequirements`     | Missing requirements checklist                |
+
+### Payouts and Earnings
+
+| Component          | Description                                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `PayoutSchedule`    | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. Payouts are automatic/rolling — no manual-withdrawal action is offered. |
+| `EarningsSummary`   | Gross / reversals & adjustments / net + latest payout, fed by `useEarnings(accountId)`. Reversals cover both deferred fee collection and refund/dispute clawbacks — not a pure fees figure, hence the "Reversals & adjustments" label rather than "Fees". |
+| `SplitBreakdown`    | Per-sale store / affiliate / other / platform split lines, fed by `useSplitBreakdown`. The platform line reads "unknown" (not $0) when the hook wasn't given the sale amount. |
+
+### Disputes (headless)
+
+The app-owned alternative to [Embedded Disputes](#embedded-disputes-stripe-connect) below — build a custom dispute UI on the read hooks and these components instead of Stripe's hosted ConnectJS components.
+
+| Component        | Description                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `DisputesList`    | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`          |
+| `DisputeDetail`   | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown` |
+| `EvidenceForm`    | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
 
 ### Embedded Disputes (Stripe Connect)
 

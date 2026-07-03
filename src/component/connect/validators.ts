@@ -244,9 +244,45 @@ export const transferFields = {
   metadata: v.optional(v.any()),
 };
 
+/**
+ * Persisted-only transfer fields, deliberately NOT part of `transferFields`
+ * so `upsertTransfer` (fed by webhook payloads) can never write them: a
+ * redelivered base payload must not clobber an in-flight reversal claim.
+ */
+export const transferPersistedFields = {
+  /**
+   * Reversal claim frontier (BTS-63): the highest cumulative reversal amount
+   * reserved by `claimReversalSlices` before money moves. Always ≥
+   * `reversedAmount` while a claimed slice is unexecuted; equal once
+   * confirmed. Only the claim mutation writes it.
+   */
+  reversalClaimedAmount: v.optional(v.number()),
+};
+
 /** Full `transfers` document, including system fields. */
 export const transferDocValidator = v.object({
   _id: v.id("transfers"),
   _creationTime: v.number(),
   ...transferFields,
+  ...transferPersistedFields,
 });
+
+/** One claimed reversal slice: [from, to) on the cumulative reversed axis. */
+export const reversalSliceValidator = v.object({
+  stripeTransferId: v.string(),
+  from: v.number(),
+  to: v.number(),
+});
+
+/**
+ * A reversal operation's claim record (BTS-63): the slices a dispute/refund
+ * operation reserved, written atomically the first time it claims. Retries
+ * and redeliveries replay these exact slices — byte-identical Stripe params
+ * under the same idempotency keys — instead of recomputing from mutable
+ * ledger state.
+ */
+export const transferReversalOpFields = {
+  operationId: v.string(),
+  sourceChargeId: v.string(),
+  slices: v.array(reversalSliceValidator),
+};

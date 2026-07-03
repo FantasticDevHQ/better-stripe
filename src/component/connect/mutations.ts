@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { mutation } from "../_generated/server";
 import { feeRoutingFields } from "../lib/fees";
+import { computeReversalSlices } from "../lib/reversals";
 import {
   disputeFields,
   paymentStatusValidator,
@@ -36,7 +37,22 @@ export const upsertPayment = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch("payments", existing._id, args);
+      // A redelivered payment_intent.succeeded carries the GROSS fee. If a
+      // fee refund was already recorded (recordPaymentFeeRefund keeps
+      // `collected = fee − refunded`), re-derive the net amount instead of
+      // blanket-patching the refunded fee back up (BTS-63, path 3).
+      const priorFeeRefunded = existing.feeRefundedAmount ?? 0;
+      const patch =
+        priorFeeRefunded > 0 && args.feeCollectedAmount !== undefined
+          ? {
+              ...args,
+              feeCollectedAmount: Math.max(
+                0,
+                args.feeCollectedAmount - priorFeeRefunded,
+              ),
+            }
+          : args;
+      await ctx.db.patch("payments", existing._id, patch);
     } else {
       await ctx.db.insert("payments", args);
     }
@@ -313,5 +329,121 @@ export const recordTransferReversal = mutation({
     await ctx.db.patch("transfers", transfer._id, derived);
 
     return null;
+  },
+});
+
+/** How `claimReversalSlices` sizes each leg's slice. */
+const reversalModeValidator = v.union(
+  v.object({ kind: v.literal("full") }),
+  v.object({ kind: v.literal("percent"), percent: v.number() }),
+  v.object({ kind: v.literal("amount"), amount: v.number() }),
+  v.object({
+    kind: v.literal("fraction"),
+    chargeAmount: v.number(),
+    amountRefunded: v.number(),
+  }),
+);
+
+/**
+ * Atomically claim reversal slices for one operation (a dispute or refund
+ * clawback) BEFORE any money moves (BTS-63). Runs in a single transaction, so
+ * concurrent operations serialize here instead of racing between the ledger
+ * read and the Stripe call:
+ *
+ *  - First claim for an `operationId`: computes slices against each leg's
+ *    claim frontier (`max(reversedAmount, reversalClaimedAmount)`), advances
+ *    the frontier, and records the slices — atomically. A concurrent distinct
+ *    operation claiming the same target gets an EMPTY claim, not a duplicate.
+ *  - Any later call with the same `operationId` (webhook redelivery, retry
+ *    after a partial failure) replays the recorded slices verbatim, so the
+ *    caller re-sends byte-identical Stripe params under the same idempotency
+ *    keys no matter how the ledger moved in between.
+ *
+ * Each returned slice carries the leg's current CONFIRMED `reversedAmount` so
+ * the executor can skip slices whose money already moved and was recorded.
+ */
+export const claimReversalSlices = mutation({
+  args: {
+    operationId: v.string(),
+    sourceChargeId: v.string(),
+    mode: reversalModeValidator,
+  },
+  returns: v.object({
+    replay: v.boolean(),
+    slices: v.array(
+      v.object({
+        stripeTransferId: v.string(),
+        from: v.number(),
+        to: v.number(),
+        confirmed: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const confirmedFor = async (stripeTransferId: string) => {
+      const row = await ctx.db
+        .query("transfers")
+        .withIndex("by_stripe_transfer_id", (q) =>
+          q.eq("stripeTransferId", stripeTransferId),
+        )
+        .first();
+      return row?.reversedAmount ?? 0;
+    };
+
+    const existingOp = await ctx.db
+      .query("transferReversalOps")
+      .withIndex("by_operation_id", (q) =>
+        q.eq("operationId", args.operationId),
+      )
+      .first();
+    if (existingOp) {
+      const slices = [];
+      for (const s of existingOp.slices) {
+        slices.push({ ...s, confirmed: await confirmedFor(s.stripeTransferId) });
+      }
+      return { replay: true, slices };
+    }
+
+    // Original split legs only — reinstatement payouts are audit rows and
+    // must never be re-reversed (mirrors listTransfersByCharge).
+    const rows = (
+      await ctx.db
+        .query("transfers")
+        .withIndex("by_source_charge_id", (q) =>
+          q.eq("sourceChargeId", args.sourceChargeId),
+        )
+        .take(50)
+    ).filter((t) => !t.reinstatement);
+
+    const byId = new Map(rows.map((r) => [r.stripeTransferId, r]));
+    const slices = computeReversalSlices(
+      rows.map((t) => ({
+        stripeTransferId: t.stripeTransferId,
+        amount: t.amount,
+        frontier: Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0),
+      })),
+      args.mode,
+    );
+
+    for (const s of slices) {
+      await ctx.db.patch("transfers", byId.get(s.stripeTransferId)!._id, {
+        reversalClaimedAmount: s.to,
+      });
+    }
+    // Record the operation even when it claims nothing, so a redelivery is a
+    // deterministic no-op instead of a recomputation against newer state.
+    await ctx.db.insert("transferReversalOps", {
+      operationId: args.operationId,
+      sourceChargeId: args.sourceChargeId,
+      slices,
+    });
+
+    return {
+      replay: false,
+      slices: slices.map((s) => ({
+        ...s,
+        confirmed: byId.get(s.stripeTransferId)!.reversedAmount ?? 0,
+      })),
+    };
   },
 });

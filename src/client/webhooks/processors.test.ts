@@ -16,6 +16,7 @@
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { computeReversalSlices } from "../../component/lib/reversals.js";
 import type { WebhookContext } from "./helpers.js";
 import { processEvent } from "./processors.js";
 
@@ -59,10 +60,41 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
   const runQuery = vi.fn();
   if (opts?.queryThrows) runQuery.mockRejectedValue(new Error("not found"));
   else runQuery.mockResolvedValue(opts?.query ?? null);
-  return {
-    runQuery,
-    runMutation: vi.fn().mockResolvedValue(undefined),
-  };
+  // `claimReversalSlices` returns the slices the reversal engines execute
+  // (BTS-63). Fake only its storage: the slice math is the REAL shared
+  // computeReversalSlices, applied to this ctx's ledger legs.
+  const runMutation = vi.fn(
+    async (ref: Record<symbol, string>, args: Record<string, unknown>) => {
+      const path = ref?.[TO_REF] ?? "";
+      if (!String(path).endsWith("connect/mutations/claimReversalSlices")) {
+        return undefined;
+      }
+      const legs = (Array.isArray(opts?.query) ? opts.query : []) as {
+        stripeTransferId: string;
+        amount: number;
+        reversedAmount?: number;
+        reversalClaimedAmount?: number;
+      }[];
+      const slices = computeReversalSlices(
+        legs.map((t) => ({
+          stripeTransferId: t.stripeTransferId,
+          amount: t.amount,
+          frontier: Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0),
+        })),
+        args.mode as Parameters<typeof computeReversalSlices>[1],
+      );
+      return {
+        replay: false,
+        slices: slices.map((s) => ({
+          ...s,
+          confirmed:
+            legs.find((t) => t.stripeTransferId === s.stripeTransferId)
+              ?.reversedAmount ?? 0,
+        })),
+      };
+    },
+  );
+  return { runQuery, runMutation };
 }
 
 let trCreateSeq = 0;

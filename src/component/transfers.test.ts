@@ -210,3 +210,136 @@ describe("transfers ledger (BTS-12)", () => {
     expect(tr!.status).toBe("reversed");
   });
 });
+
+describe("claimReversalSlices (BTS-63)", () => {
+  const seed = async (
+    t: ReturnType<typeof convexTest>,
+    args: {
+      stripeTransferId: string;
+      amount: number;
+      reversedAmount?: number;
+      reinstatement?: boolean;
+    },
+  ) => {
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      sourceChargeId: "ch_claim",
+      destinationAccountId: "acct_x",
+      currency: "usd",
+      role: "store",
+      status: "paid",
+      ...args,
+    });
+  };
+
+  it("claims a fraction slice atomically and advances the claim frontier", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_c1", amount: 7000 });
+
+    const claim = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_1",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "fraction", chargeAmount: 10000, amountRefunded: 4000 },
+    });
+
+    expect(claim).toEqual({
+      replay: false,
+      slices: [{ stripeTransferId: "tr_c1", from: 0, to: 2800, confirmed: 0 }],
+    });
+
+    // A DIFFERENT operation claiming the same target before the first one
+    // confirms gets nothing — the frontier, not the confirmed amount, gates
+    // new claims (this is what closes the concurrent-distinct-refunds race).
+    const rival = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_2",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "fraction", chargeAmount: 10000, amountRefunded: 4000 },
+    });
+    expect(rival).toEqual({ replay: false, slices: [] });
+  });
+
+  it("replays an operation's recorded slices verbatim even after the ledger moves", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_c2", amount: 8000 });
+
+    const first = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_9",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "amount", amount: 4000 },
+    });
+    expect(first.slices).toEqual([
+      { stripeTransferId: "tr_c2", from: 0, to: 4000, confirmed: 0 },
+    ]);
+
+    // The ledger moves between deliveries (another operation confirms more).
+    await t.mutation(api.connect.mutations.recordTransferReversal, {
+      stripeTransferId: "tr_c2",
+      reversedAmount: 6000,
+    });
+
+    // The redelivery gets the ORIGINAL slice back (byte-identical replay),
+    // with the live confirmed amount so the executor can skip it.
+    const retry = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_9",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "amount", amount: 4000 },
+    });
+    expect(retry).toEqual({
+      replay: true,
+      slices: [{ stripeTransferId: "tr_c2", from: 0, to: 4000, confirmed: 6000 }],
+    });
+  });
+
+  it("records an empty claim so a redelivery stays a no-op as state changes", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_c3", amount: 5000, reversedAmount: 5000 });
+
+    const first = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_empty",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "full" },
+    });
+    expect(first).toEqual({ replay: false, slices: [] });
+
+    const retry = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_empty",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "full" },
+    });
+    expect(retry).toEqual({ replay: true, slices: [] });
+  });
+
+  it("never claims against reinstatement payout rows", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_c4", amount: 3000, reversedAmount: 3000 });
+    await seed(t, { stripeTransferId: "tr_c4_pay", amount: 3000, reinstatement: true });
+
+    const claim = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_reinst",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "full" },
+    });
+    expect(claim.slices).toEqual([]);
+  });
+
+  it("a redelivered base transfer payload cannot clobber the claim frontier", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_c5", amount: 7000 });
+
+    await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_5",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "fraction", chargeAmount: 10000, amountRefunded: 4000 },
+    });
+
+    // transfer.updated redelivery re-upserts the base payload.
+    await seed(t, { stripeTransferId: "tr_c5", amount: 7000 });
+
+    // A rival operation still sees the 2800 frontier.
+    const rival = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "re_6",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "fraction", chargeAmount: 10000, amountRefunded: 4000 },
+    });
+    expect(rival.slices).toEqual([]);
+  });
+});

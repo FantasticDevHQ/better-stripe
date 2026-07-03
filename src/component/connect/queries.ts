@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import type { Doc } from "../_generated/dataModel";
 import { query } from "../_generated/server";
 import {
   disputeDocValidator,
@@ -54,6 +55,14 @@ export const getPayoutByStripeId = query({
   },
 });
 
+/**
+ * List payout rows.
+ *
+ * ⚠️ CAPPED: returns at most `limit ?? 50` rows — a drill-down/list view, NOT a
+ * basis for financial totals. Summing the returned rows understates a busy
+ * account's paid-out total (BTS-64). For an exact `paidOut` total use
+ * {@link getAccountPayouts}, which sums the whole payout ledger server-side.
+ */
 export const listPayouts = query({
   args: {
     accountId: v.optional(v.string()),
@@ -279,7 +288,14 @@ export const getTransferByStripeId = query({
   },
 });
 
-/** All transfers funded from one charge (the legs of a split). */
+/**
+ * All transfers funded from one charge (the legs of a split).
+ *
+ * ⚠️ CAPPED at `limit ?? 50` rows. Unlike the per-account earnings view this is
+ * safe in practice — a single sale has a handful of split legs, far below the
+ * cap (BTS-64) — but pass a higher `limit` if you ever split across many
+ * recipients.
+ */
 export const listTransfersByCharge = query({
   args: { sourceChargeId: v.string(), limit: v.optional(v.number()) },
   returns: v.array(transferDocValidator),
@@ -296,7 +312,14 @@ export const listTransfersByCharge = query({
   },
 });
 
-/** All transfers received by one connected account. */
+/**
+ * All transfers received by one connected account.
+ *
+ * ⚠️ CAPPED: returns at most `limit ?? 50` rows — a drill-down/list view, NOT a
+ * basis for financial totals. Summing the returned rows understates a busy
+ * account's earnings (BTS-64). For exact gross/reversed totals use
+ * {@link getAccountEarnings}, which sums the whole ledger server-side.
+ */
 export const listTransfersByAccount = query({
   args: { destinationAccountId: v.string(), limit: v.optional(v.number()) },
   returns: v.array(transferDocValidator),
@@ -307,5 +330,105 @@ export const listTransfersByAccount = query({
         q.eq("destinationAccountId", args.destinationAccountId),
       )
       .take(args.limit ?? 50);
+  },
+});
+
+// =============================================================================
+// EARNINGS AGGREGATES (BTS-64)
+// =============================================================================
+//
+// The row-list queries above `.take(50)`, so summing their rows client-side
+// (as the earnings hooks did) silently understated totals for accounts with
+// more than 50 transfers/payouts. These aggregates paginate the account's
+// ledger to completion and return EXACT totals regardless of row count, plus a
+// bounded preview of rows for drill-down UIs. Exact up to Convex's per-query
+// read limit; beyond that the query throws (loud) rather than silently
+// truncating — strictly safer than a fixed cap for financial figures.
+
+/** Page size for the internal pagination loops. */
+const EARNINGS_PAGE_SIZE = 200;
+
+/**
+ * Exact earnings totals for one connected account (BTS-64): `gross` (sum of all
+ * transfer amounts, incl. reinstatements — the earnings view) and `reversed`
+ * (sum of all `reversedAmount`), paginated to completion so totals are never
+ * capped. `transfers` is a bounded preview (`previewLimit ?? 50` rows) for
+ * drill-down; use `gross`/`reversed`/`transferCount` for the money figures.
+ */
+export const getAccountEarnings = query({
+  args: {
+    destinationAccountId: v.string(),
+    previewLimit: v.optional(v.number()),
+  },
+  returns: v.object({
+    gross: v.number(),
+    reversed: v.number(),
+    transferCount: v.number(),
+    transfers: v.array(transferDocValidator),
+  }),
+  handler: async (ctx, args) => {
+    const previewLimit = args.previewLimit ?? 50;
+    let gross = 0;
+    let reversed = 0;
+    let transferCount = 0;
+    const transfers: Doc<"transfers">[] = [];
+
+    let cursor: string | null = null;
+    for (;;) {
+      const page = await ctx.db
+        .query("transfers")
+        .withIndex("by_destination_account_id", (q) =>
+          q.eq("destinationAccountId", args.destinationAccountId),
+        )
+        .paginate({ cursor, numItems: EARNINGS_PAGE_SIZE });
+      for (const tr of page.page) {
+        gross += tr.amount;
+        reversed += tr.reversedAmount ?? 0;
+        transferCount += 1;
+        if (transfers.length < previewLimit) transfers.push(tr);
+      }
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
+
+    return { gross, reversed, transferCount, transfers };
+  },
+});
+
+/**
+ * Exact payout totals for one connected account (BTS-64): `paidOut` (sum of all
+ * `paid` payout amounts), paginated to completion so it is never capped.
+ * `payouts` is a bounded preview (`previewLimit ?? 50` rows) for drill-down; use
+ * `paidOut`/`payoutCount` for the money figures.
+ */
+export const getAccountPayouts = query({
+  args: { accountId: v.string(), previewLimit: v.optional(v.number()) },
+  returns: v.object({
+    paidOut: v.number(),
+    payoutCount: v.number(),
+    payouts: v.array(payoutDocValidator),
+  }),
+  handler: async (ctx, args) => {
+    const previewLimit = args.previewLimit ?? 50;
+    let paidOut = 0;
+    let payoutCount = 0;
+    const payouts: Doc<"payouts">[] = [];
+
+    let cursor: string | null = null;
+    for (;;) {
+      const page = await ctx.db
+        .query("payouts")
+        .withIndex("by_account_id", (q) => q.eq("accountId", args.accountId))
+        .paginate({ cursor, numItems: EARNINGS_PAGE_SIZE });
+      for (const p of page.page) {
+        payoutCount += 1;
+        if (p.status === "paid") paidOut += p.amount;
+        if (payouts.length < previewLimit) payouts.push(p);
+      }
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
+
+    return { paidOut, payoutCount, payouts };
   },
 });

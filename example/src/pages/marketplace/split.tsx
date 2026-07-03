@@ -21,6 +21,7 @@ import {
   DEMO_SALE_AMOUNT,
   isAffiliateReferral,
 } from "../../../convex/affiliate-split";
+import { buildSplitCheckoutReturnUrl } from "../../lib/split-checkout-return-url";
 import { useEarnings, useSplitBreakdown } from "../../lib/stripe-hooks";
 
 /**
@@ -60,9 +61,7 @@ function SplitCheckoutForm({
         userId,
         stripePriceId: priceId,
         referralCode: referralCode ?? undefined,
-        returnUrl:
-          window.location.origin +
-          "/checkout/status?session_id={CHECKOUT_SESSION_ID}",
+        returnUrl: buildSplitCheckoutReturnUrl(window.location.origin),
       });
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
@@ -100,13 +99,12 @@ function SplitCheckoutForm({
     );
   }
 
+  // No onComplete handler: Stripe substitutes the real session id into
+  // return_url and redirects there itself (see buildCheckoutReturnUrl).
   return (
     <EmbeddedCheckout
       publishableKey={publishableKey}
       clientSecret={clientSecret}
-      onComplete={() => {
-        window.location.href = "/checkout/status?session_id=complete";
-      }}
     />
   );
 }

@@ -106,3 +106,57 @@ describe("queries — listInvoicesByUser scopes to the owner", () => {
     expect(alex.map((i) => i.stripeInvoiceId)).toEqual(["in_alex"]);
   });
 });
+
+describe("queries — listDisputes scopes to a seller's store (BTS-44)", () => {
+  it("returns only the requested account's disputes, not another store's", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_maya",
+      accountId: "acct_maya",
+      amount: 5000,
+      currency: "usd",
+      status: "needs_response",
+      reason: "product_not_received",
+      isChargeRefundable: false,
+    });
+    await t.mutation(components.betterStripe.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_sasha",
+      accountId: "acct_sasha",
+      amount: 9000,
+      currency: "usd",
+      status: "warning_needs_response",
+      reason: "fraudulent",
+      isChargeRefundable: true,
+    });
+
+    const maya = await t.query(api.queries.listDisputes, {
+      accountId: "acct_maya",
+    });
+    expect(maya.map((d) => d.stripeDisputeId)).toEqual(["dp_maya"]);
+
+    const sasha = await t.query(api.queries.listDisputes, {
+      accountId: "acct_sasha",
+    });
+    expect(sasha.map((d) => d.stripeDisputeId)).toEqual(["dp_sasha"]);
+  });
+
+  it("returns an empty array for a store with no disputes (no leakage)", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_maya",
+      accountId: "acct_maya",
+      amount: 5000,
+      currency: "usd",
+      status: "needs_response",
+      reason: "product_not_received",
+      isChargeRefundable: false,
+    });
+
+    const empty = await t.query(api.queries.listDisputes, {
+      accountId: "acct_unknown",
+    });
+    expect(empty).toEqual([]);
+  });
+});

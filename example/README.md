@@ -278,6 +278,7 @@ sync back to the UI. Current live-backend specs:
   self-contained (creates, edits, then archives its own product).
 - `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
   see below.
+- `e2e/seller-disputes.spec.ts` — seller disputes demo (BTS-44); see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -299,6 +300,66 @@ The one-time checkout demo (BTS-57) has two layers:
 The session's mode is derived server-side in
 `convex/actions.ts#createCheckoutSession`: one-time prices get
 `mode: "payment"`, recurring prices `mode: "subscription"`.
+
+#### Seller disputes flow (`e2e/seller-disputes.spec.ts`)
+
+The seller disputes demo (BTS-44) is the culminating dispute demo: a
+seller-facing `/seller/disputes` page that exercises the whole merged dispute
+stack. It offers two surfaces via tabs:
+
+- **Headless components:** `useDisputes` → `DisputesList` (status + due-by
+  countdown), and on selecting a row `useDisputeWithCountdown` →
+  `DisputeDetail` + `EvidenceForm`. Submitting evidence calls the
+  `submitDisputeEvidence` action (`convex/actions.ts`), which forwards to
+  `stripe.updateDispute`.
+- **Embedded (Stripe Connect):** `ConnectProvider` + `EmbeddedDisputes`, fed by
+  the `createDisputeSession` action (`stripe.createDisputeSession`, BTS-30).
+
+Two layers, like the checkout demo:
+
+- **Backend-independent** (runs everywhere, incl. CI): the `/seller/disputes`
+  route boots without page errors.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): open the disputes page →
+  open a dispute → submit evidence → observe the transfer reversal +
+  subscription auto-cancel. Requires a seeded deployment, `STRIPE_SECRET_KEY`,
+  webhook forwarding, and a triggered test dispute (below). This spec's live
+  test stays skipped — and the ticket's live-E2E box unchecked — until the
+  first live run.
+
+##### Manual QA steps (dispute end-to-end)
+
+Against a seeded dev deployment with `stripe listen` forwarding webhooks:
+
+1. **Onboard a seller** and create a subscription for a buyer against that
+   seller's store (so there is a funded transfer + an active subscription to
+   claw back / cancel).
+2. **Trigger a test dispute** on the subscription's charge. Either use the
+   Stripe CLI:
+
+   ```bash
+   stripe trigger charge.dispute.created
+   ```
+
+   or create a charge with the disputed test card `4000000000000259` (dispute:
+   fraudulent) and let it settle. Stripe emits `charge.dispute.created`, which
+   the component records and (per BTS-27/28) claws back the funded transfer and
+   auto-cancels the buyer's subscription.
+3. **Open `/seller/disputes`** as the seller persona (role switcher). The
+   dispute appears in the headless list with its status and, if a deadline
+   exists, a due-by countdown badge.
+4. **Select the dispute** → the detail panel shows amount / reason / status /
+   evidence-due, and the evidence form renders.
+5. **Fill the four evidence fields and Submit.** The `submitDisputeEvidence`
+   action calls `stripe.updateDispute({ submit: true })`; the response is filed
+   with Stripe (no redirect — this is the embedded/headless flow).
+6. **Observe the side effects:** the seller's earnings/transfers reflect the
+   reversal, and the buyer's subscription shows canceled/`cancel_at_period_end`.
+7. **(Optional) Embedded tab:** switch to "Embedded (Connect)" to view the same
+   disputes via Stripe's hosted `disputes_list` component.
+
+Note: `charge.dispute.funds_withdrawn` / `funds_reinstated` cannot be reliably
+triggered in test mode, so the reversal ledger is best verified via the
+`charge.dispute.created` clawback path above.
 
 ### Webhook Processing
 

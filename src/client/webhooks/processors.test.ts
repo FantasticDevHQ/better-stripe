@@ -1521,6 +1521,247 @@ describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
     expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
     expect(stripe.invoices.update).not.toHaveBeenCalled();
   });
+
+  // BTS-68: the first subscription invoice is finalized (`open`) synchronously at
+  // creation, so `invoice.created` fires with a NON-draft invoice and the
+  // `invoices.update` that applies the fee is rejected by Stripe (monetary values
+  // are uneditable once finalized). This characterizes the silent miss the fix
+  // must compensate for elsewhere — it must not crash the webhook.
+  it("silently no-ops (no crash) when the first invoice is already finalized at invoice.created", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        bsFeeConfig: JSON.stringify({ percent: 2.9, fixed: 30 }),
+      },
+    });
+    // Stripe rejects a monetary update on a finalized invoice.
+    stripe.invoices.update.mockRejectedValue(
+      new Error("This invoice is no longer a draft."),
+    );
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(
+        whCtx,
+        event("invoice.created", flaggedInvoice({ status: "open" })),
+      ),
+    ).resolves.toBeUndefined();
+    // The fee was NOT collected on the first invoice via the draft path.
+    expect(stripe.invoices.update).toHaveBeenCalled(); // attempted, rejected
+  });
+});
+
+describe("processEvent — first-invoice fee correction (BTS-68)", () => {
+  /** A paid first invoice for a per_invoice destination-charge subscription. */
+  const paidFirstInvoice = (overrides: Record<string, unknown> = {}) => ({
+    id: "in_first",
+    customer: "acct_buyer",
+    currency: "usd",
+    amount_due: 10000,
+    amount_paid: 10000,
+    status: "paid",
+    application_fee_amount: null,
+    metadata: {},
+    parent: { subscription_details: { subscription: "sub_1" } },
+    ...overrides,
+  });
+
+  /** Flag sub_1 as per_invoice with the given fee config. */
+  function wireSub(
+    stripe: ReturnType<typeof makeStripe>,
+    config: unknown = { percent: 2.9, fixed: 30 },
+  ) {
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {
+        bsFeeMode: "per_invoice",
+        bsFeeConfig: JSON.stringify(config),
+      },
+    });
+  }
+
+  /** Wire the fresh-invoice retrieve + charge → transfer resolution. */
+  function wireInvoiceCharge(
+    stripe: ReturnType<typeof makeStripe>,
+    fresh: Record<string, unknown>,
+  ) {
+    stripe.invoices.retrieve.mockResolvedValue(fresh);
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ payment: { charge: "ch_first" } }],
+    });
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_first",
+      transfer: "tr_first",
+    });
+  }
+
+  it("collects the first invoice's fixed/tier fee by reversing the destination transfer", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe);
+    wireInvoiceCharge(stripe, paidFirstInvoice());
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    // round(10000 * 0.029) + 30 = 320, clawed back from the auto-transfer.
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_first",
+      { amount: 320, metadata: { bsFeeFor: "in_first" } },
+      { idempotencyKey: "bs_infee_in_first" },
+    );
+    // Marked collected on the invoice (metadata is editable post-finalization).
+    expect(stripe.invoices.update).toHaveBeenCalledWith(
+      "in_first",
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          bsFeeCollected: "1",
+          bsFeeAmount: "320",
+        }),
+      }),
+    );
+  });
+
+  it("collects a tiered first-invoice fee (matching tier's percent + fixed)", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe, {
+      percent: 10,
+      tiers: [
+        { upTo: 5000, percent: 5 },
+        { upTo: null, percent: 8, fixed: 100 },
+      ],
+    });
+    wireInvoiceCharge(stripe, paidFirstInvoice());
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    // amount 10000 → catch-all tier: round(10000 * 0.08) + 100 = 900
+    expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
+      "tr_first",
+      expect.objectContaining({ amount: 900 }),
+      { idempotencyKey: "bs_infee_in_first" },
+    );
+  });
+
+  it("does NOT reverse a renewal invoice that already carries application_fee_amount", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe);
+    // Draft-window path already set the fee on this (renewal) invoice.
+    wireInvoiceCharge(
+      stripe,
+      paidFirstInvoice({ application_fee_amount: 320 }),
+    );
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("does NOT reverse a renewal invoice already marked bsFeeApplied", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe);
+    wireInvoiceCharge(
+      stripe,
+      paidFirstInvoice({ metadata: { bsFeeApplied: "1" } }),
+    );
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("does nothing for a subscription that is not flagged per_invoice (e.g. percent-only)", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {}, // percent-only fees ride application_fee_percent, not per_invoice
+    });
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    expect(stripe.invoices.retrieve).not.toHaveBeenCalled();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent — an invoice already marked bsFeeCollected is not reversed again", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe);
+    wireInvoiceCharge(
+      stripe,
+      paidFirstInvoice({
+        metadata: { bsFeeCollected: "1", bsFeeAmount: "320" },
+      }),
+    );
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(stripe.invoices.update).not.toHaveBeenCalled();
+  });
+
+  it("skips a zero-amount invoice (100%-off / trial) before touching the subscription", async () => {
+    const stripe = makeStripe();
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(
+      whCtx,
+      event("invoice.paid", paidFirstInvoice({ amount_paid: 0 })),
+    );
+
+    expect(stripe.subscriptions.retrieve).not.toHaveBeenCalled();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("does not send a non-finite fee from a shape-invalid config", async () => {
+    const stripe = makeStripe();
+    // No `percent` → computeFee returns NaN; must never reach a reversal.
+    wireSub(stripe, { fixed: 30 });
+    wireInvoiceCharge(stripe, paidFirstInvoice());
+    const whCtx = makeWhCtx({ stripe });
+
+    await processEvent(whCtx, event("invoice.paid", paidFirstInvoice()));
+
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+  });
+
+  it("logs and skips (no crash) when the charge has no destination transfer to reverse", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const stripe = makeStripe();
+    wireSub(stripe);
+    stripe.invoices.retrieve.mockResolvedValue(paidFirstInvoice());
+    stripe.invoicePayments.list.mockResolvedValue({
+      data: [{ payment: { charge: "ch_first" } }],
+    });
+    stripe.charges.retrieve.mockResolvedValue({ id: "ch_first" }); // no transfer
+    const whCtx = makeWhCtx({ stripe });
+
+    await expect(
+      processEvent(whCtx, event("invoice.paid", paidFirstInvoice())),
+    ).resolves.toBeUndefined();
+    expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
+    expect(err).toHaveBeenCalled();
+  });
+
+  it("propagates a reversal failure so the event is marked failed and Stripe retries", async () => {
+    const stripe = makeStripe();
+    wireSub(stripe);
+    wireInvoiceCharge(stripe, paidFirstInvoice());
+    stripe.transfers.createReversal.mockRejectedValue(new Error("stripe down"));
+    const whCtx = makeWhCtx({ stripe });
+
+    // A swallowed failure would 200 → event ledger "processed" (terminal) → the
+    // first-invoice fee is lost forever. It must throw so Stripe retries.
+    await expect(
+      processEvent(whCtx, event("invoice.paid", paidFirstInvoice())),
+    ).rejects.toThrow("stripe down");
+  });
 });
 
 describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {

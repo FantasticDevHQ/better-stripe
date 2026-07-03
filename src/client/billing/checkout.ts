@@ -223,7 +223,9 @@ export async function createCheckoutSession(
     } else if (destinationAccountId) {
       // Single-recipient destination charge for a one-time purchase. The platform
       // fee is a fixed `application_fee_amount`: compute it when the amount is
-      // known, otherwise defer to the webhook (amount is known at charge time).
+      // known; otherwise flag the PI with `bsFeeMode=per_charge` and the webhook
+      // collects it at payment_intent.succeeded via a partial reversal of the
+      // destination transfer, sized from the amount actually charged (BTS-60).
       paymentIntentData.transfer_data = {
         destination: destinationAccountId,
       };

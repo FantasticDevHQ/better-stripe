@@ -74,11 +74,16 @@ export async function processEvent(
     case "invoice.payment_failed":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
-    case "payment_intent.succeeded":
-      await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
+    case "payment_intent.succeeded": {
+      const pi = obj as Stripe.PaymentIntent;
+      // Collect a deferred fixed/tier fee first so the payments row can carry
+      // feeCollectedAmount in the same write (BTS-60).
+      const perChargeFee = await applyPerChargeFee(whCtx, pi);
+      await upsertPaymentFromStripe(whCtx, pi, perChargeFee);
       // Fan funds out to split recipients for a separate-charges sale.
-      await handleSplitTransfers(whCtx, obj as Stripe.PaymentIntent);
+      await handleSplitTransfers(whCtx, pi);
       break;
+    }
     case "payment_intent.payment_failed":
     case "payment_intent.canceled":
       await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
@@ -348,6 +353,86 @@ async function applyPerInvoiceFee(
   }
 }
 
+/**
+ * Collect a deferred platform fee for a one-time destination charge (BTS-60).
+ * When the final amount is unknowable at session creation (discounts, custom
+ * amounts), checkout flags the PaymentIntent with `bsFeeMode=per_charge` +
+ * `bsFeeConfig`. An `application_fee_amount` can't be attached after the PI
+ * succeeds, so the fee is realized the way Stripe itself settles application
+ * fees on destination charges — by pulling funds back from the connected
+ * account: a partial reversal of the automatic transfer, sized from the amount
+ * actually charged (never the session's list amount). Idempotent via a
+ * `bsFeeCollected` marker read off a freshly-retrieved PI (the event payload is
+ * a stale snapshot on retries) plus a deterministic Stripe idempotency key.
+ * Failures never crash the webhook (same contract as {@link applyPerInvoiceFee}).
+ * Returns the fee collected — now or on a prior delivery — so the caller can
+ * denormalize `feeCollectedAmount` onto the payments row.
+ */
+async function applyPerChargeFee(
+  whCtx: WebhookContext,
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<number | undefined> {
+  try {
+    if (paymentIntent.status !== "succeeded") return undefined;
+    const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+    if (meta.bsFeeMode !== "per_charge" || !meta.bsFeeConfig) return undefined;
+
+    const fresh = await whCtx.stripe.paymentIntents.retrieve(paymentIntent.id);
+    const freshMeta = (fresh.metadata ?? {}) as Record<string, string>;
+    if (freshMeta.bsFeeCollected) {
+      const prior = Number(freshMeta.bsFeeAmount);
+      return Number.isFinite(prior) && prior > 0 ? prior : undefined;
+    }
+
+    let config: PlatformFeeConfig;
+    try {
+      config = JSON.parse(
+        freshMeta.bsFeeConfig ?? meta.bsFeeConfig,
+      ) as PlatformFeeConfig;
+    } catch {
+      return undefined; // malformed marker — nothing safe to collect
+    }
+
+    const amount = fresh.amount_received ?? paymentIntent.amount;
+    const fee = computeFee(amount, config).feeAmount;
+    // A shape-invalid config yields NaN; never send a non-finite reversal.
+    if (!Number.isFinite(fee) || fee <= 0) return undefined;
+
+    // Resolve the automatic transfer `transfer_data` created on the charge.
+    const chargeId =
+      typeof fresh.latest_charge === "string"
+        ? fresh.latest_charge
+        : (fresh.latest_charge?.id ?? undefined);
+    if (!chargeId) return undefined;
+    const charge = await whCtx.stripe.charges.retrieve(chargeId);
+    const transferId =
+      typeof charge.transfer === "string"
+        ? charge.transfer
+        : (charge.transfer?.id ?? undefined);
+    if (!transferId) {
+      console.error(
+        `[better-stripe] applyPerChargeFee: per_charge PI ${paymentIntent.id} has no destination transfer to reverse`,
+      );
+      return undefined;
+    }
+
+    await whCtx.stripe.transfers.createReversal(
+      transferId,
+      { amount: fee, metadata: { bsFeeFor: paymentIntent.id } },
+      { idempotencyKey: `bs_pcfee_${paymentIntent.id}` },
+    );
+    await whCtx.stripe.paymentIntents.update(paymentIntent.id, {
+      metadata: { ...freshMeta, bsFeeCollected: "1", bsFeeAmount: String(fee) },
+    });
+    return fee;
+  } catch (err) {
+    // Never let fee collection break webhook processing; the deterministic
+    // idempotency key keeps a Stripe redelivery safe to re-attempt.
+    console.error("[better-stripe] applyPerChargeFee failed:", err);
+    return undefined;
+  }
+}
+
 async function upsertInvoiceFromStripe(
   whCtx: WebhookContext,
   invoice: Stripe.Invoice,
@@ -509,6 +594,7 @@ async function handleInvoiceSplitTransfers(
 async function upsertPaymentFromStripe(
   whCtx: WebhookContext,
   paymentIntent: Stripe.PaymentIntent,
+  perChargeFee?: number,
 ): Promise<void> {
   const { userId, orgId } = extractIdentifiers(
     paymentIntent.metadata as Record<string, string> | null,
@@ -544,6 +630,9 @@ async function upsertPaymentFromStripe(
     ...(paymentIntent.status === "succeeded"
       ? feeRoutingFromPaymentIntent(paymentIntent)
       : {}),
+    // A per-charge fee is collected via transfer reversal (BTS-60), so it never
+    // appears as application_fee_amount on the intent — merge it in directly.
+    ...(perChargeFee !== undefined ? { feeCollectedAmount: perChargeFee } : {}),
     metadata: paymentIntent.metadata ?? undefined,
   });
 }

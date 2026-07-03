@@ -236,6 +236,214 @@ describe("seed — seedStripe (already-seeded guard)", () => {
   });
 });
 
+// =============================================================================
+// seedMarketplaceDb — inserts the marketplace personas, idempotently per persona
+// =============================================================================
+
+describe("seed — seedMarketplaceDb", () => {
+  it("inserts the marketplace personas: two sellers with stores, an affiliate, and a buyer", async () => {
+    const t = convexTest(schema, modules);
+
+    const result = await t.mutation(internal.seed.seedMarketplaceDb, {});
+    expect(result).toEqual({ inserted: 4 });
+
+    const users = await t.query(api.users.list, {});
+    const byEmail = Object.fromEntries(
+      users.map(
+        (u: { email: string; role: string; storeName?: string }) => [
+          u.email,
+          u,
+        ],
+      ),
+    );
+
+    expect(users).toHaveLength(4);
+    // Sellers own a store; products get tagged to their account.
+    expect(byEmail["maya@example.com"]).toMatchObject({
+      name: "Maya Merchant",
+      role: "seller",
+      storeName: "Maya's Fitness Studio",
+    });
+    expect(byEmail["sasha@example.com"]).toMatchObject({
+      name: "Sasha Studio",
+      role: "seller",
+      storeName: "Sasha's Ceramics",
+    });
+    // Affiliate: recipient-only persona (earns referral transfers).
+    expect(byEmail["avery@example.com"]).toMatchObject({
+      name: "Avery Affiliate",
+      role: "affiliate",
+    });
+    // Buyer: billable customer_account persona.
+    expect(byEmail["billie@example.com"]).toMatchObject({
+      name: "Billie Buyer",
+      role: "buyer",
+    });
+  });
+
+  it("is idempotent: a second run inserts nothing", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+    const second = await t.mutation(internal.seed.seedMarketplaceDb, {});
+    expect(second).toEqual({ inserted: 0 });
+
+    const users = await t.query(api.users.list, {});
+    expect(users).toHaveLength(4);
+  });
+
+  it("backfills only the missing personas (per-persona guard, not all-or-nothing)", async () => {
+    const t = convexTest(schema, modules);
+
+    // Pre-existing buyer with the seed email: only the other three insert.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        name: "Pre-existing Buyer",
+        email: "billie@example.com",
+        role: "buyer",
+      });
+    });
+
+    const result = await t.mutation(internal.seed.seedMarketplaceDb, {});
+    expect(result).toEqual({ inserted: 3 });
+
+    const users = await t.query(api.users.list, {});
+    expect(users).toHaveLength(4);
+    // The pre-existing row was left alone, not duplicated or overwritten.
+    const billie = users.find(
+      (u: { email: string }) => u.email === "billie@example.com",
+    ) as { name: string };
+    expect(billie.name).toBe("Pre-existing Buyer");
+  });
+
+  it("coexists with the classic demo personas from seedDb", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(internal.seed.seedDb, {});
+    const result = await t.mutation(internal.seed.seedMarketplaceDb, {});
+    expect(result).toEqual({ inserted: 4 });
+
+    const users = await t.query(api.users.list, {});
+    expect(users).toHaveLength(8);
+  });
+});
+
+// =============================================================================
+// seedMarketplaceAccounts — idempotency guards, no Stripe needed
+// =============================================================================
+
+/** Link every marketplace persona to a fake acct so guards can be driven. */
+async function linkAllMarketplacePersonas(
+  t: ReturnType<typeof convexTest>,
+  emails: string[],
+) {
+  const users = await t.query(api.users.list, {});
+  for (const email of emails) {
+    const user = users.find((u: { email: string }) => u.email === email) as {
+      _id: Id<"users">;
+    };
+    await t.mutation(internal.seed.linkUserAccount, {
+      userId: user._id,
+      stripeAccountId: `acct_${email.split("@")[0]}`,
+    });
+  }
+}
+
+const MARKETPLACE_EMAILS = [
+  "maya@example.com",
+  "sasha@example.com",
+  "avery@example.com",
+  "billie@example.com",
+];
+
+describe("seed — seedMarketplaceAccounts (already-linked guard)", () => {
+  it("short-circuits once ALL marketplace personas are linked (no Stripe call)", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+    await linkAllMarketplacePersonas(t, MARKETPLACE_EMAILS);
+
+    const result = await t.action(internal.seed.seedMarketplaceAccounts, {});
+    expect(result).toEqual({ alreadySeeded: true });
+  });
+
+  it("does NOT short-circuit when only some personas are linked (resumable)", async () => {
+    // Without a Stripe key the unlinked personas can't be created, so the
+    // action reports linked:0 rather than treating partial state as seeded.
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+    await linkAllMarketplacePersonas(t, ["maya@example.com"]);
+
+    const result = await t.action(internal.seed.seedMarketplaceAccounts, {});
+    expect(result).toEqual({ alreadySeeded: false, linked: 0 });
+  });
+
+  it("reports not-seeded when the marketplace personas are absent", async () => {
+    const t = convexTest(schema, modules);
+
+    const result = await t.action(internal.seed.seedMarketplaceAccounts, {});
+    expect(result).toEqual({ alreadySeeded: false, linked: 0 });
+  });
+});
+
+// =============================================================================
+// seedMarketplaceCatalog — per-store guard reads the component, no Stripe needed
+// =============================================================================
+
+describe("seed — seedMarketplaceCatalog (per-store guard)", () => {
+  it("reports not-seeded when no marketplace seller is linked yet", async () => {
+    const t = withComponent();
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+
+    const result = await t.action(internal.seed.seedMarketplaceCatalog, {});
+    expect(result).toEqual({ alreadySeeded: false, storesSeeded: 0 });
+  });
+
+  it("short-circuits when every linked store already has tagged products", async () => {
+    const t = withComponent();
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+    await linkAllMarketplacePersonas(t, [
+      "maya@example.com",
+      "sasha@example.com",
+    ]);
+
+    // Each store already has a product tagged to its account id.
+    for (const acct of ["acct_maya", "acct_sasha"]) {
+      await t.mutation(
+        components.betterStripe.products.mutations.upsertProduct,
+        {
+          stripeProductId: `prod_${acct}`,
+          accountId: acct,
+          name: `Existing product for ${acct}`,
+          active: true,
+        },
+      );
+    }
+
+    const result = await t.action(internal.seed.seedMarketplaceCatalog, {});
+    expect(result).toEqual({ alreadySeeded: true, storesSeeded: 0 });
+  });
+
+  it("does NOT short-circuit while any linked store still lacks products", async () => {
+    // Maya's store is seeded, Sasha's isn't — without a Stripe key the pending
+    // store can't be seeded, so the action reports storesSeeded:0 (resumable).
+    const t = withComponent();
+    await t.mutation(internal.seed.seedMarketplaceDb, {});
+    await linkAllMarketplacePersonas(t, [
+      "maya@example.com",
+      "sasha@example.com",
+    ]);
+    await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+      stripeProductId: "prod_acct_maya",
+      accountId: "acct_maya",
+      name: "Existing product for acct_maya",
+      active: true,
+    });
+
+    const result = await t.action(internal.seed.seedMarketplaceCatalog, {});
+    expect(result).toEqual({ alreadySeeded: false, storesSeeded: 0 });
+  });
+});
+
 describe("seed — run", () => {
   it("seeds the app DB and then short-circuits Stripe seeding when products exist", async () => {
     const t = withComponent();
@@ -249,9 +457,9 @@ describe("seed — run", () => {
 
     await t.action(internal.seed.run, {});
 
-    // DB half ran: four demo users.
+    // DB half ran: four classic demo users plus four marketplace personas.
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(4);
+    expect(users).toHaveLength(8);
 
     // Stripe half short-circuited: still just the pre-seeded product.
     const products = await t.query(

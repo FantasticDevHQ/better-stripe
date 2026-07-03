@@ -39,6 +39,35 @@ npm run setup               # Re-set the Stripe key
 
 Then visit `/admin/setup` again to re-seed and re-sync.
 
+The seed is **idempotent and resumable**: every step guards on what already
+exists (users by email, accounts by their linked `stripeAccountId`, catalogs by
+store-tagged products), so re-running `seed:run` — with or without a prior
+reset — never duplicates data and backfills only whatever is missing (e.g.
+after a partial failure).
+
+### Marketplace scenario
+
+Beyond the classic demo personas, the seed creates a real marketplace
+(Skool-style) scenario:
+
+- **Sellers** (`Maya Merchant`, `Sasha Studio`) -- V2 accounts carrying BOTH the
+  `recipient` configuration (they receive transfers) and the `customer`
+  configuration (they can be billed platform fees) on one account. In test
+  mode their `stripe_balance.stripe_transfers` capability is activated
+  entirely via API (test SSN + ToS attestation + business URL), so seeded
+  transfers succeed without hosted onboarding.
+- **Platform catalog** -- each store's products/prices are created on the
+  PLATFORM Stripe account and tagged to the store via the component's
+  `accountId` field plus `storeAccountId`/`storeName` metadata
+  (`stripe.listProducts({ accountId })` lists one store's catalog).
+- **Platform fee tiers** -- `convex/stripe.ts` configures the platform's take
+  as a tiered `platformFee` (2.9% + 30¢ up to $899, 3.9% + 30¢ above), applied
+  whenever a sale routes funds to a seller.
+- **Affiliate** (`Avery Affiliate`) -- a recipient-only account, activated the
+  same way, for referral-share transfers in split sales.
+- **Buyer** (`Billie Buyer`) -- a billable `customer_account` with a reusable
+  test card (`pm_card_visa`) attached, so purchases can charge off-session.
+
 ### Prerequisites
 
 - Node.js 18+
@@ -202,6 +231,34 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 `scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
+### Browser E2E Tests (`npm run e2e`)
+
+A [Playwright](https://playwright.dev) harness lives in `e2e/` with its config in
+`playwright.config.ts`. It boots the app in a real Chromium browser and verifies
+the shell renders and routes without uncaught page errors.
+
+```bash
+# From the repo root (one-time: install the browser binary)
+pnpm --filter ./example exec playwright install chromium
+
+# Run the suite (starts the Vite dev server automatically)
+pnpm --filter ./example e2e
+
+# View the HTML report from the last run
+pnpm --filter ./example e2e:report
+```
+
+No backend or Stripe credentials are required: the harness serves the app with a
+placeholder `VITE_CONVEX_URL`, so data-backed areas stay in their loading state
+by design. To run against a real deployment instead, export `VITE_CONVEX_URL`
+before running the suite. `E2E_PORT` (default `5173`) and `E2E_BASE_URL` override
+where the dev server is started/expected; an already-running dev server on that
+port is reused outside CI.
+
+Demo flows that need seeded data (checkout, disputes, admin actions) are covered
+by later specs against a seeded Convex + Stripe test environment — this harness
+is the foundation they build on.
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
@@ -252,11 +309,14 @@ example/
 │   ├── queries.ts              # Query wrappers for component data
 │   ├── actions.ts              # Action wrappers for Stripe API calls + admin setup
 │   ├── setup.ts                # ensureWebhook action (legacy, used by setup script)
-│   ├── seed.ts                 # Seed DB + Stripe products
+│   ├── seed.ts                 # Seed DB + Stripe products + marketplace scenario
 │   ├── reset.ts                # Clear all data
 │   └── users.ts                # User queries
+├── e2e/
+│   └── smoke.spec.ts           # Playwright smoke test (app boots + routes)
 ├── scripts/
 │   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
+├── playwright.config.ts        # Playwright harness (dev-server wiring)
 ├── src/
 │   ├── main.tsx                # BrowserRouter + ConvexProvider
 │   ├── App.tsx                 # Routes
@@ -285,6 +345,8 @@ example/
 | Command                    | Description                                 |
 | -------------------------- | ------------------------------------------- |
 | `npm run setup`            | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run e2e`              | Playwright browser E2E suite (see below)    |
+| `npm run e2e:report`       | Open the last Playwright HTML report        |
 | `npm run e2e:webhooks`     | Automated E2E webhook test (see below)      |
 | `npm run dev`              | Start Vite + Convex dev in parallel         |
 | `npm run typecheck`        | TypeScript check (frontend)                 |

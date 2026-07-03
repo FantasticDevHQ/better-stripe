@@ -74,11 +74,16 @@ export async function processEvent(
     case "invoice.payment_failed":
       await upsertInvoiceFromStripe(whCtx, obj as Stripe.Invoice);
       break;
-    case "payment_intent.succeeded":
-      await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
+    case "payment_intent.succeeded": {
+      const pi = obj as Stripe.PaymentIntent;
+      // Collect a deferred fixed/tier fee first so the payments row can carry
+      // feeCollectedAmount in the same write (BTS-60).
+      const perChargeFee = await applyPerChargeFee(whCtx, pi);
+      await upsertPaymentFromStripe(whCtx, pi, perChargeFee);
       // Fan funds out to split recipients for a separate-charges sale.
-      await handleSplitTransfers(whCtx, obj as Stripe.PaymentIntent);
+      await handleSplitTransfers(whCtx, pi);
       break;
+    }
     case "payment_intent.payment_failed":
     case "payment_intent.canceled":
       await upsertPaymentFromStripe(whCtx, obj as Stripe.PaymentIntent);
@@ -348,6 +353,102 @@ async function applyPerInvoiceFee(
   }
 }
 
+/**
+ * Collect a deferred platform fee for a one-time destination charge (BTS-60).
+ * When the final amount is unknowable at session creation (discounts, custom
+ * amounts), checkout flags the PaymentIntent with `bsFeeMode=per_charge` +
+ * `bsFeeConfig`. An `application_fee_amount` can't be attached after the PI
+ * succeeds, so the fee is realized the way Stripe itself settles application
+ * fees on destination charges — by pulling funds back from the connected
+ * account: a partial reversal of the automatic transfer, sized from the amount
+ * actually charged (never the session's list amount). Idempotent via a
+ * `bsFeeCollected` marker read off a freshly-retrieved PI (the event payload is
+ * a stale snapshot on retries) plus a deterministic Stripe idempotency key.
+ *
+ * Failure contract: genuine collection failures (a retrieve/reversal/mark API
+ * error) PROPAGATE, so the handler marks the event `failed` and Stripe retries
+ * — a swallowed error would 200 and mark the event `processed` (terminal),
+ * silently losing the fee forever. Re-runs converge: the fresh-PI marker skips
+ * completed collections, the idempotency key replays an unmarked reversal
+ * without moving money twice (inputs are immutable post-success, so the params
+ * are identical), and the downstream payment upsert / split engine are
+ * idempotent. Benign skips a retry can't fix (unflagged PI, malformed config,
+ * zero fee, no destination transfer) return undefined without throwing.
+ *
+ * Documented limitations (both shared with the up-front and per_invoice
+ * paths): a fee config's `fixed`/tier bounds are minor units in the session's
+ * assumed currency — they are not converted if the charge settles in another
+ * currency; and an app that injects `transfer_data.amount` via
+ * `sessionOverrides` while relying on per_charge deferral could make the fee
+ * exceed the transfer's remainder, which fails the reversal (→ retry/alert)
+ * rather than over-reversing.
+ *
+ * Returns the fee collected — now or on a prior delivery — so the caller can
+ * denormalize `feeCollectedAmount` onto the payments row.
+ */
+async function applyPerChargeFee(
+  whCtx: WebhookContext,
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<number | undefined> {
+  if (paymentIntent.status !== "succeeded") return undefined;
+  const meta = (paymentIntent.metadata ?? {}) as Record<string, string>;
+  if (meta.bsFeeMode !== "per_charge" || !meta.bsFeeConfig) return undefined;
+
+  const fresh = await whCtx.stripe.paymentIntents.retrieve(paymentIntent.id);
+  const freshMeta = (fresh.metadata ?? {}) as Record<string, string>;
+  if (freshMeta.bsFeeCollected) {
+    const prior = Number(freshMeta.bsFeeAmount);
+    return Number.isFinite(prior) && prior > 0 ? prior : undefined;
+  }
+
+  let config: PlatformFeeConfig;
+  try {
+    config = JSON.parse(
+      freshMeta.bsFeeConfig ?? meta.bsFeeConfig,
+    ) as PlatformFeeConfig;
+  } catch {
+    return undefined; // malformed marker — a retry can't fix it
+  }
+
+  const amount = fresh.amount_received ?? paymentIntent.amount;
+  const fee = computeFee(amount, config).feeAmount;
+  // A shape-invalid config yields NaN; never send a non-finite reversal.
+  if (!Number.isFinite(fee) || fee <= 0) return undefined;
+
+  // Resolve the automatic transfer `transfer_data` created on the charge.
+  const chargeId =
+    typeof fresh.latest_charge === "string"
+      ? fresh.latest_charge
+      : (fresh.latest_charge?.id ?? undefined);
+  if (!chargeId) return undefined;
+  const charge = await whCtx.stripe.charges.retrieve(chargeId);
+  const transferId =
+    typeof charge.transfer === "string"
+      ? charge.transfer
+      : (charge.transfer?.id ?? undefined);
+  if (!transferId) {
+    // Config anomaly, not a transient fault — rethrowing would loop the event
+    // `failed` forever. Log and record the sale without a fee.
+    console.error(
+      `[better-stripe] applyPerChargeFee: per_charge PI ${paymentIntent.id} has no destination transfer to reverse`,
+    );
+    return undefined;
+  }
+
+  await whCtx.stripe.transfers.createReversal(
+    transferId,
+    { amount: fee, metadata: { bsFeeFor: paymentIntent.id } },
+    { idempotencyKey: `bs_pcfee_${paymentIntent.id}` },
+  );
+  // A mark failure after a successful reversal also propagates: the retry
+  // replays the reversal against the same idempotency key (no second money
+  // movement) and then completes the mark + payments-row denormalization.
+  await whCtx.stripe.paymentIntents.update(paymentIntent.id, {
+    metadata: { ...freshMeta, bsFeeCollected: "1", bsFeeAmount: String(fee) },
+  });
+  return fee;
+}
+
 async function upsertInvoiceFromStripe(
   whCtx: WebhookContext,
   invoice: Stripe.Invoice,
@@ -509,6 +610,7 @@ async function handleInvoiceSplitTransfers(
 async function upsertPaymentFromStripe(
   whCtx: WebhookContext,
   paymentIntent: Stripe.PaymentIntent,
+  perChargeFee?: number,
 ): Promise<void> {
   const { userId, orgId } = extractIdentifiers(
     paymentIntent.metadata as Record<string, string> | null,
@@ -544,6 +646,9 @@ async function upsertPaymentFromStripe(
     ...(paymentIntent.status === "succeeded"
       ? feeRoutingFromPaymentIntent(paymentIntent)
       : {}),
+    // A per-charge fee is collected via transfer reversal (BTS-60), so it never
+    // appears as application_fee_amount on the intent — merge it in directly.
+    ...(perChargeFee !== undefined ? { feeCollectedAmount: perChargeFee } : {}),
     metadata: paymentIntent.metadata ?? undefined,
   });
 }

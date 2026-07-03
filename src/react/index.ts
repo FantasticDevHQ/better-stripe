@@ -131,6 +131,14 @@ export type {
 } from "./components/PaymentMethodsList.js";
 export { DeletePaymentMethodDialog } from "./components/DeletePaymentMethodDialog.js";
 
+// Components — Disputes
+export { DisputesList } from "./components/DisputesList.js";
+export type {
+  DisputesListProps,
+  DisputesListRow,
+  DisputesListRowContext,
+} from "./components/DisputesList.js";
+
 // Components — Connect / Merchant
 export { ConnectStatusBadge } from "./components/ConnectStatusBadge.js";
 export type {

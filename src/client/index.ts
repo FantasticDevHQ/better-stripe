@@ -472,7 +472,12 @@ export class BetterStripe {
       metadata?: Record<string, string>;
     },
   ) {
-    return productsImpl.createProduct(this.stripe(), this.component, ctx, opts);
+    return productsImpl.createProduct(this.stripe(), this.component, ctx, {
+      ...opts,
+      // Stamp the per-store descriptor at create so it covers the first invoice
+      // charge (BTS-67); resolves the store's suffix, else this default.
+      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
+    });
   }
 
   async updateProduct(
@@ -486,7 +491,10 @@ export class BetterStripe {
       metadata?: Record<string, string>;
     },
   ) {
-    return productsImpl.updateProduct(this.stripe(), ctx, opts);
+    return productsImpl.updateProduct(this.stripe(), this.component, ctx, {
+      ...opts,
+      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
+    });
   }
 
   async deactivateProduct(ctx: RunCtx, opts: { stripeProductId: string }) {

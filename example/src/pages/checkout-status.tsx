@@ -53,8 +53,9 @@ export function CheckoutStatusPage() {
               <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
               <h1 className="text-2xl font-bold">Payment successful!</h1>
               <p className="text-muted-foreground">
-                Your subscription is now active. You can start learning right
-                away.
+                {session?.mode === "payment"
+                  ? "Your purchase is complete — thanks for your order!"
+                  : "Your subscription is now active. You can start learning right away."}
               </p>
               <Button render={<Link to="/dashboard" />}>Go to Dashboard</Button>
             </CardContent>

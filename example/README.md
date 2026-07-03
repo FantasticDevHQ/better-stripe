@@ -259,6 +259,31 @@ Demo flows that need seeded data (checkout, disputes, admin actions) are covered
 by later specs against a seeded Convex + Stripe test environment — this harness
 is the foundation they build on.
 
+#### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
+
+The one-time checkout demo (BTS-57) has two layers:
+
+- **Backend-independent** (runs everywhere, incl. CI): the payment-mode
+  checkout and success routes boot without page errors.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): landing → the seeded
+  one-time product (Ceramics Masterclass, from the marketplace seed) →
+  embedded Stripe checkout in `payment` mode → test card `4242…` → Stripe
+  redirects to `/checkout/status?session_id=cs_…` → "Payment successful!" with
+  the one-time purchase copy. Requirements:
+
+  ```bash
+  # 1. A dev deployment with STRIPE_SECRET_KEY set, seeded, and with webhook
+  #    forwarding so the session status flips to `complete`:
+  npx convex dev                                               # terminal 1
+  stripe listen --forward-to <your-site-url>/stripe/webhook    # terminal 2
+  # 2. Run the gated flow:
+  E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=<your-deployment-url> pnpm --filter ./example e2e
+  ```
+
+The session's mode is derived server-side in
+`convex/actions.ts#createCheckoutSession`: one-time prices get
+`mode: "payment"`, recurring prices `mode: "subscription"`.
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
@@ -313,7 +338,8 @@ example/
 │   ├── reset.ts                # Clear all data
 │   └── users.ts                # User queries
 ├── e2e/
-│   └── smoke.spec.ts           # Playwright smoke test (app boots + routes)
+│   ├── smoke.spec.ts           # Playwright smoke test (app boots + routes)
+│   └── one-time-checkout.spec.ts # One-time payment flow (live part gated)
 ├── scripts/
 │   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
 ├── playwright.config.ts        # Playwright harness (dev-server wiring)

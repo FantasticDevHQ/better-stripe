@@ -188,6 +188,20 @@ export type {
   EnrichedRequirement,
 } from "./components/ConnectRequirements.js";
 
+// Components — Disputes (BTS-54)
+export { DisputeDetail } from "./components/DisputeDetail.js";
+export type {
+  DisputeDetailProps,
+  DisputeDetailRenderProps,
+} from "./components/DisputeDetail.js";
+export { EvidenceForm } from "./components/EvidenceForm.js";
+export type {
+  DisputeEvidenceFields,
+  EvidenceFormProps,
+  EvidenceFormRenderProps,
+  EvidenceFormUpdateArgs,
+} from "./components/EvidenceForm.js";
+
 // Utilities
 export {
   formatPrice,

@@ -366,6 +366,17 @@ async function applyPerInvoiceFee(
  * after the platform's shortened descriptor. Idempotent: an invoice whose
  * descriptor is already set (by us on a retry, or by the app) is left alone.
  *
+ * KNOWN GAP — the first invoice is never covered. Direct `charge_automatically`
+ * subscriptions (and Checkout subscription mode) finalize and pay their FIRST
+ * invoice synchronously at creation, before this `invoice.created` handler can
+ * run — by the time we'd call `invoices.update`, invoice #1's charge already
+ * exists, so it carries no store descriptor. This is systematic, not
+ * transient: it happens on every destination-charge subscription's first
+ * charge, which is also the highest-dispute-risk one. "Self-heals next cycle"
+ * below refers only to LATER invoices (which do get the ~1hr pre-finalization
+ * draft window), never to the first. See BTS-32 follow-up ticket for a
+ * product-level `statement_descriptor` fix that would cover the first charge.
+ *
  * Failure contract: descriptor application is cosmetic, so failures are
  * swallowed (logged) rather than failing the event — a missed descriptor
  * self-heals on the NEXT billing cycle's invoice and must never block fee

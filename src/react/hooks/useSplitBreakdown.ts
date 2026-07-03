@@ -17,7 +17,7 @@ export type SplitBreakdownLeg = {
 };
 
 /** Per-sale split totals (minor units), shaped for a SplitBreakdown UI. */
-export type SplitBreakdown = {
+export type SplitBreakdownTotals = {
   legs: SplitBreakdownLeg[];
   /** Sum of original store-leg amounts. */
   store: number;
@@ -37,7 +37,7 @@ export type SplitBreakdown = {
 
 export type UseSplitBreakdownResult = {
   /** null until the ledger rows load (or while skipped). */
-  breakdown: SplitBreakdown | null;
+  breakdown: SplitBreakdownTotals | null;
   isLoading: boolean;
 };
 

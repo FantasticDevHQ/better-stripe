@@ -32,10 +32,12 @@ export type UseEarningsResult = {
   gross: number;
   /**
    * Total pulled back via transfer reversals (minor units) — deferred
-   * platform-fee collection plus refund/dispute clawbacks.
+   * platform-fee collection plus refund/dispute clawbacks (including
+   * clawbacks later reinstated). Not a pure platform-fees figure; a true
+   * fees number lives on the payments rows (`feeCollectedAmount`).
    */
-  fees: number;
-  /** What the recipient actually keeps: gross − fees. */
+  reversed: number;
+  /** What the recipient actually keeps: gross − reversed. */
   net: number;
   /** Payout rows for the account (money moving to their bank). */
   payouts: StripeComponentPayout[];
@@ -49,7 +51,7 @@ export type UseEarningsResult = {
 /**
  * Factory for a recipient-earnings hook (BTS-36): reads the account's transfer
  * ledger (`listTransfersByAccount` — the earnings view, which INCLUDES
- * reinstatement rows) and its payouts, and derives gross / fees / net in minor
+ * reinstatement rows) and its payouts, and derives gross / reversed / net in minor
  * units. Amount math assumes one currency per account (true for the seeded
  * demo); rows carry `currency` for consumers that need to segregate.
  *
@@ -77,7 +79,7 @@ export function createUseEarnings(
     const payoutRows: StripeComponentPayout[] = payouts ?? [];
 
     const gross = rows.reduce((sum, t) => sum + t.amount, 0);
-    const fees = rows.reduce((sum, t) => sum + (t.reversedAmount ?? 0), 0);
+    const reversed = rows.reduce((sum, t) => sum + (t.reversedAmount ?? 0), 0);
     const paidOut = payoutRows.reduce(
       (sum, p) => (p.status === "paid" ? sum + p.amount : sum),
       0,
@@ -85,8 +87,8 @@ export function createUseEarnings(
 
     return {
       gross,
-      fees,
-      net: gross - fees,
+      reversed,
+      net: gross - reversed,
       payouts: payoutRows,
       paidOut,
       transfers: rows,

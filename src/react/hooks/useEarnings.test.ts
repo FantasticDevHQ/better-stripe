@@ -2,7 +2,7 @@
  * Tests for createUseEarnings (BTS-36) — verifies the factory reads the
  * transfers ledger (listTransfersByAccount — the earnings view, which INCLUDES
  * reinstatement rows) and the payouts table for one recipient account, derives
- * { gross, fees, net, paidOut } in minor units, and skips both queries when
+ * { gross, reversed, net, paidOut } in minor units, and skips both queries when
  * the account id is undefined (Convex "skip" sentinel).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -58,7 +58,7 @@ describe("createUseEarnings", () => {
     vi.clearAllMocks();
   });
 
-  it("derives gross, fees, and net from the account's transfer ledger", () => {
+  it("derives gross, reversed, and net from the account's transfer ledger", () => {
     const mockUseQuery = useQueryFor(
       new Map<unknown, unknown>([
         [transfersRef, transfers],
@@ -71,8 +71,8 @@ describe("createUseEarnings", () => {
 
     // gross includes the reinstatement row (earnings view semantics).
     expect(result.gross).toBe(10500);
-    // fees = everything pulled back via reversals.
-    expect(result.fees).toBe(1000);
+    // reversed = everything pulled back via reversals (fees + clawbacks).
+    expect(result.reversed).toBe(1000);
     expect(result.net).toBe(9500);
     expect(result.transfers).toBe(transfers);
     expect(result.isLoading).toBe(false);
@@ -128,7 +128,7 @@ describe("createUseEarnings", () => {
     // A skipped query is not "loading" — there is nothing pending.
     expect(result.isLoading).toBe(false);
     expect(result.gross).toBe(0);
-    expect(result.fees).toBe(0);
+    expect(result.reversed).toBe(0);
     expect(result.net).toBe(0);
     expect(result.payouts).toEqual([]);
     expect(result.transfers).toEqual([]);

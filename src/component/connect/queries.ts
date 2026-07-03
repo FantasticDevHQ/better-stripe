@@ -11,6 +11,8 @@ import {
   refundDocValidator,
   refundStatusValidator,
   transferDocValidator,
+  transferReversalOpDocValidator,
+  wedgedReversalClaimValidator,
 } from "./validators";
 
 // =============================================================================
@@ -330,6 +332,106 @@ export const listTransfersByAccount = query({
         q.eq("destinationAccountId", args.destinationAccountId),
       )
       .take(args.limit ?? 50);
+  },
+});
+
+// =============================================================================
+// REVERSAL-CLAIM RECLAIM (BTS-74) — ops diagnostics for wedged legs
+// =============================================================================
+
+/** Page size for the wedged-claim scan. */
+const RECLAIM_PAGE_SIZE = 200;
+
+/**
+ * Fetch one reversal operation's claim record (BTS-63/74) by its id, or null.
+ * The `_creationTime` lets the reclaim path age-gate a release against Stripe's
+ * ~24h idempotency-key window.
+ */
+export const getReversalOp = query({
+  args: { operationId: v.string() },
+  returns: v.union(transferReversalOpDocValidator, v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transferReversalOps")
+      .withIndex("by_operation_id", (q) =>
+        q.eq("operationId", args.operationId),
+      )
+      .first();
+  },
+});
+
+/**
+ * List "wedged" legs (BTS-74): transfers whose reversal claim frontier
+ * (`reversalClaimedAmount`) sits ahead of the confirmed `reversedAmount`,
+ * because the operation that claimed the gap died permanently and blocks every
+ * successor. For each wedged leg, returns the recorded ops holding an
+ * unexecuted slice on it (the blockers ops must reclaim).
+ *
+ * An admin/ops diagnostic, not a hot path. It paginates the `transfers` and
+ * `transferReversalOps` tables to completion, so it is exact up to Convex's
+ * per-query document-read limit (16,384) — beyond which it throws (loud) rather
+ * than silently truncating, matching the BTS-64 aggregate convention.
+ */
+export const listWedgedReversalClaims = query({
+  args: {},
+  returns: v.array(wedgedReversalClaimValidator),
+  handler: async (ctx) => {
+    // Collect the wedged legs first.
+    const wedged: Doc<"transfers">[] = [];
+    let cursor: string | null = null;
+    for (;;) {
+      const page = await ctx.db
+        .query("transfers")
+        .paginate({ cursor, numItems: RECLAIM_PAGE_SIZE });
+      for (const tr of page.page) {
+        if ((tr.reversalClaimedAmount ?? 0) > (tr.reversedAmount ?? 0)) {
+          wedged.push(tr);
+        }
+      }
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
+    if (wedged.length === 0) return [];
+
+    const wedgedIds = new Set(wedged.map((t) => t.stripeTransferId));
+
+    // Index the ops that hold an unexecuted slice on a wedged leg. A slice is
+    // unexecuted when its `to` exceeds the leg's confirmed `reversedAmount`.
+    const confirmedById = new Map(
+      wedged.map((t) => [t.stripeTransferId, t.reversedAmount ?? 0]),
+    );
+    const blockersByLeg = new Map<
+      string,
+      { operationId: string; from: number; to: number }[]
+    >();
+    cursor = null;
+    for (;;) {
+      const page = await ctx.db
+        .query("transferReversalOps")
+        .paginate({ cursor, numItems: RECLAIM_PAGE_SIZE });
+      for (const op of page.page) {
+        for (const s of op.slices) {
+          if (!wedgedIds.has(s.stripeTransferId)) continue;
+          if (s.to <= (confirmedById.get(s.stripeTransferId) ?? 0)) continue;
+          const list = blockersByLeg.get(s.stripeTransferId) ?? [];
+          list.push({ operationId: op.operationId, from: s.from, to: s.to });
+          blockersByLeg.set(s.stripeTransferId, list);
+        }
+      }
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
+
+    return wedged.map((t) => ({
+      stripeTransferId: t.stripeTransferId,
+      sourceChargeId: t.sourceChargeId,
+      amount: t.amount,
+      reversedAmount: t.reversedAmount ?? 0,
+      reversalClaimedAmount: t.reversalClaimedAmount ?? 0,
+      blockingOps: (blockersByLeg.get(t.stripeTransferId) ?? []).sort(
+        (a, b) => a.from - b.from,
+      ),
+    }));
   },
 });
 

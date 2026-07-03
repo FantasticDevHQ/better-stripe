@@ -36,6 +36,7 @@ export {
 export type { RefundActor } from "./connect/refunds.js";
 import type { RefundActor } from "./connect/refunds.js";
 export type { AccountBalance } from "./connect/payouts.js";
+export type { WedgedReversalClaim } from "./connect/transfers.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
@@ -1150,6 +1151,41 @@ export class BetterStripe {
     opts: { sourceChargeId: string; percent?: number; amount?: number },
   ) {
     return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
+  }
+
+  /**
+   * List "wedged" reversal legs (BTS-74): legs whose reversal claim frontier is
+   * stuck ahead of the confirmed reversed amount because the claiming operation
+   * died permanently, blocking every successor on that leg. An ops diagnostic;
+   * feed a returned `operationId` into {@link reclaimReversalClaim} to resolve it.
+   */
+  async listWedgedReversalClaims(ctx: RunCtx) {
+    return transfersImpl.listWedgedReversalClaims(this.component, ctx);
+  }
+
+  /**
+   * Resolve a permanently-dead reversal claim (BTS-74). `mode: "reexecute"`
+   * (default) replays the recorded reversal under its original idempotency keys
+   * to fill the hole and unblock successors; `mode: "release"` abandons the
+   * claim after verifying (via the >24h idempotency window and live Stripe
+   * `amount_reversed`) that the money never moved. Re-execution is the safe
+   * default; release is for claims proven dead.
+   */
+  async reclaimReversalClaim(
+    ctx: RunCtx,
+    opts: {
+      operationId: string;
+      mode?: "reexecute" | "release";
+      minAgeMs?: number;
+      now?: number;
+    },
+  ) {
+    return transfersImpl.reclaimReversalClaim(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   /**

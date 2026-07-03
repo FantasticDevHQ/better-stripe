@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import type { Id } from "../_generated/dataModel";
 import { mutation } from "../_generated/server";
 import { feeRoutingFields } from "../lib/fees";
 import { computeReversalSlices } from "../lib/reversals";
@@ -445,5 +446,120 @@ export const claimReversalSlices = mutation({
         confirmed: byId.get(s.stripeTransferId)!.reversedAmount ?? 0,
       })),
     };
+  },
+});
+
+/**
+ * Release a permanently-dead reversal claim (BTS-74): rewind each of the
+ * operation's legs' claim frontier back to the pre-claim amount and delete the
+ * op record, so the released capacity is claimable again and successors unwedge.
+ *
+ * Money-safety is enforced atomically here, against caller-supplied LIVE Stripe
+ * `amount_reversed` per leg (the client reads Stripe; the mutation is the
+ * transaction that gates the rewind):
+ *
+ *  - **Frontier check** — a leg's `reversalClaimedAmount` must equal this op's
+ *    slice `to`. If a successor claimed BEYOND it, releasing would strand that
+ *    successor (its slice depends on this hole being filled); we refuse so the
+ *    caller re-executes instead.
+ *  - **Money-never-moved check** — the leg's live `amount_reversed` must be
+ *    `≤ slice.from`. If it already reached (or passed) `to`, the money moved and
+ *    a release would permanently understate the ledger — refuse (re-execution,
+ *    which records the moved money, is the remedy). A partial in `(from, to)` is
+ *    likewise refused as ambiguous.
+ *
+ * The caller is responsible for the ≥24h idempotency-window age gate before
+ * calling this — a release inside that window risks a cached retry re-moving
+ * money after the rewind.
+ */
+export const releaseReversalClaim = mutation({
+  args: {
+    operationId: v.string(),
+    verified: v.array(
+      v.object({
+        stripeTransferId: v.string(),
+        amountReversed: v.number(),
+      }),
+    ),
+  },
+  returns: v.object({
+    released: v.boolean(),
+    rewound: v.array(
+      v.object({ stripeTransferId: v.string(), to: v.number() }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const op = await ctx.db
+      .query("transferReversalOps")
+      .withIndex("by_operation_id", (q) =>
+        q.eq("operationId", args.operationId),
+      )
+      .first();
+    if (!op) {
+      throw new Error(
+        `releaseReversalClaim: no reversal op ${args.operationId} to release`,
+      );
+    }
+
+    const verifiedById = new Map(
+      args.verified.map((r) => [r.stripeTransferId, r.amountReversed]),
+    );
+
+    // Pre-validate every slice BEFORE mutating anything (all-or-nothing).
+    const plan: {
+      legId: Id<"transfers">;
+      stripeTransferId: string;
+      from: number;
+    }[] = [];
+    for (const s of op.slices) {
+      if (s.to <= s.from) continue; // empty slice — nothing claimed on this leg
+      const leg = await ctx.db
+        .query("transfers")
+        .withIndex("by_stripe_transfer_id", (q) =>
+          q.eq("stripeTransferId", s.stripeTransferId),
+        )
+        .first();
+      if (!leg) {
+        throw new Error(
+          `releaseReversalClaim: leg ${s.stripeTransferId} not found`,
+        );
+      }
+      if ((leg.reversalClaimedAmount ?? 0) !== s.to) {
+        throw new Error(
+          `releaseReversalClaim: leg ${s.stripeTransferId} claim frontier ` +
+            `(${leg.reversalClaimedAmount ?? 0}) moved past this op's slice ` +
+            `(to=${s.to}); a successor depends on it — re-execute instead`,
+        );
+      }
+      const live = verifiedById.get(s.stripeTransferId);
+      if (live === undefined) {
+        throw new Error(
+          `releaseReversalClaim: missing live amount_reversed for ${s.stripeTransferId}`,
+        );
+      }
+      if (live > s.from) {
+        throw new Error(
+          `releaseReversalClaim: money already moved on ${s.stripeTransferId} ` +
+            `(amount_reversed=${live} > from=${s.from}); re-execute to record it`,
+        );
+      }
+      plan.push({
+        legId: leg._id,
+        stripeTransferId: s.stripeTransferId,
+        from: s.from,
+      });
+    }
+
+    // Rewind each leg's claim frontier to the pre-claim amount, then drop the op.
+    const rewound: { stripeTransferId: string; to: number }[] = [];
+    for (const p of plan) {
+      await ctx.db.patch("transfers", p.legId, {
+        reversalClaimedAmount: p.from,
+      });
+      rewound.push({ stripeTransferId: p.stripeTransferId, to: p.from });
+    }
+    await ctx.db.delete("transferReversalOps", op._id);
+
+    return { released: true, rewound };
   },
 });

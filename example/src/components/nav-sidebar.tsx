@@ -17,6 +17,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Invoices", to: "/dashboard/invoices" },
     { label: "Payment Methods", to: "/dashboard/payment-methods" },
     { label: "Affiliate Split", to: "/marketplace/split" },
+    { label: "Destination Charge + Fee", to: "/demo/destination-charge" },
   ],
   seller: [
     { label: "Earnings", to: "/seller", end: true },

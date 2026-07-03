@@ -9,6 +9,7 @@ import { Checkout } from "@/pages/checkout";
 import { CheckoutStatusPage } from "@/pages/checkout-status";
 import { StoreSubscribe } from "@/pages/demo/subscribe";
 import { StoreEarnings } from "@/pages/demo/store-earnings";
+import { DestinationChargeDemo } from "@/pages/demo/destination-charge";
 import { SellerAccount } from "@/pages/seller/account";
 import { SellerHome } from "@/pages/seller/index";
 import { SellerDisputes } from "@/pages/seller/disputes";
@@ -40,6 +41,12 @@ export default function App() {
 
           {/* Marketplace demos */}
           <Route path="/marketplace/split" element={<AffiliateSplitDemo />} />
+
+          {/* BTS-58 destination-charge + platform-fee demo (single recipient) */}
+          <Route
+            path="/demo/destination-charge"
+            element={<DestinationChargeDemo />}
+          />
 
           {/* Customer routes */}
           <Route path="/dashboard" element={<Dashboard />} />

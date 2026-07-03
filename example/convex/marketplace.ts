@@ -81,6 +81,20 @@ export function saleBreakdown(
   return { gross: amountPaid, fee, net: amountPaid - fee };
 }
 
+/**
+ * BTS-58: verify a sale breakdown's fee + net reconstructs the gross exactly.
+ * Enforced before the destination-charge-with-fee demo displays its
+ * breakdown, so a `computeFee` rounding regression would show a visible
+ * warning instead of silently shipping a receipt that doesn't add up.
+ */
+export function reconciles(breakdown: {
+  gross: number;
+  fee: number;
+  net: number;
+}): boolean {
+  return breakdown.fee + breakdown.net === breakdown.gross;
+}
+
 // ===========================================================================
 // Queries — resolve the demo personas and the store's money surfaces
 // ===========================================================================
@@ -152,6 +166,89 @@ export const getMarketplaceDemoContext = query({
             interval: monthly.interval ?? undefined,
           },
           feePercent: DEMO_FEE_PERCENT,
+        };
+      }
+    }
+    return null;
+  },
+});
+
+const destinationChargeDemoContextValidator = v.union(
+  v.null(),
+  v.object({
+    buyer: v.object({ id: v.string(), name: v.string(), email: v.string() }),
+    store: v.object({
+      sellerId: v.string(),
+      name: v.string(),
+      storeName: v.string(),
+      stripeAccountId: v.string(),
+    }),
+    price: v.object({
+      stripePriceId: v.string(),
+      unitAmount: v.number(),
+      currency: v.string(),
+    }),
+    feePercent: v.number(),
+    breakdown: v.object({
+      gross: v.number(),
+      fee: v.number(),
+      net: v.number(),
+      reconciles: v.boolean(),
+    }),
+  }),
+);
+
+/**
+ * BTS-58 — resolve everything the single-recipient destination-charge +
+ * platform-fee demo needs from the BTS-41 seed: the buyer (Billie), the store
+ * seller (Sasha's Ceramics) with her connected account, and that store's
+ * one-time price. Unlike {@link getMarketplaceDemoContext} (BTS-42, Maya's
+ * recurring plan), this targets a *one-time* price so the sale is a plain
+ * `mode: "payment"` destination charge — the fee/payout split is computed up
+ * front from the known price (`saleBreakdown`), since a fixed one-time price
+ * has no proration to make the eventual charge amount uncertain. Returns
+ * `null` until the marketplace seed has linked accounts + catalog.
+ */
+export const getDestinationChargeDemoContext = query({
+  args: {},
+  returns: destinationChargeDemoContextValidator,
+  handler: async (ctx) => {
+    const buyer = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "billie@example.com"))
+      .first();
+    const seller = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "sasha@example.com"))
+      .first();
+    if (!buyer || !seller?.stripeAccountId) return null;
+
+    const products = await stripe.listProducts(ctx, {
+      accountId: seller.stripeAccountId,
+    });
+    for (const product of products) {
+      const prices = await stripe.listPricesByProduct(ctx, {
+        stripeProductId: product.stripeProductId,
+      });
+      const oneTime = prices.find((p) => p.type === "one_time");
+      if (oneTime) {
+        const unitAmount = oneTime.unitAmount ?? 0;
+        const breakdown = saleBreakdown(unitAmount, DEMO_FEE_PERCENT);
+        return {
+          buyer: { id: buyer._id, name: buyer.name, email: buyer.email },
+          store: {
+            sellerId: seller._id,
+            name: seller.name,
+            storeName: seller.storeName ?? seller.name,
+            stripeAccountId: seller.stripeAccountId,
+          },
+          price: {
+            stripePriceId: oneTime.stripePriceId,
+            unitAmount,
+            currency: oneTime.currency,
+          },
+          feePercent: DEMO_FEE_PERCENT,
+          breakdown: { ...breakdown, reconciles: reconciles(breakdown) },
         };
       }
     }
@@ -234,6 +331,41 @@ export const createStoreSubscriptionCheckout = action({
       destinationAccountId: args.destinationAccountId,
       // Percent-only override so the fee rides on `application_fee_percent` and
       // lands on the first invoice (see file header).
+      fee: { percent: DEMO_FEE_PERCENT },
+    }),
+});
+
+const checkoutSessionResultValidator = v.object({
+  stripeSessionId: v.string(),
+  clientSecret: v.optional(v.string()),
+  url: v.optional(v.string()),
+});
+
+/**
+ * BTS-58 — create an embedded checkout session for the buyer to purchase the
+ * store's one-time price as a destination charge, with the platform's 10%
+ * application fee. Passing `amount` (the known price) up front computes a
+ * fixed `application_fee_amount` at session-creation time — no per-charge
+ * webhook step needed, unlike the fixed/tiered default (BTS-60).
+ */
+export const createDestinationChargeCheckout = action({
+  args: {
+    userId: v.string(),
+    stripePriceId: v.string(),
+    destinationAccountId: v.string(),
+    amount: v.number(),
+    returnUrl: v.string(),
+  },
+  returns: checkoutSessionResultValidator,
+  handler: async (ctx, args) =>
+    stripe.createCheckoutSession(ctx, {
+      userId: args.userId,
+      stripePriceId: args.stripePriceId,
+      mode: "payment",
+      returnUrl: args.returnUrl,
+      uiMode: "embedded",
+      destinationAccountId: args.destinationAccountId,
+      amount: args.amount,
       fee: { percent: DEMO_FEE_PERCENT },
     }),
 });

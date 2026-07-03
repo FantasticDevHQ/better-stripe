@@ -324,6 +324,8 @@ sync back to the UI. Current live-backend specs:
 - `e2e/seller-disputes.spec.ts` — seller disputes demo (BTS-44); see below.
 - `e2e/marketplace-account.spec.ts` — marketplace account lifecycle (BTS-46);
   see below.
+- `e2e/destination-charge.spec.ts` — destination charge + platform fee demo,
+  single recipient (BTS-58); see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -532,6 +534,28 @@ Manual QA (until the live-E2E spec is verified against a real deployment):
    Add More Configurations Later** to add whichever is missing and confirm
    the badge list updates (demonstrates configurations accruing over time,
    not just at creation).
+
+#### Destination charge + platform fee flow (`e2e/destination-charge.spec.ts`)
+
+The destination-charge + platform-fee demo (BTS-58) — the simplest single-
+recipient case: one seller (Sasha's Ceramics), one one-time charge, no
+affiliate routing. Route: `/demo/destination-charge`. A buyer (Billie) buys
+Sasha's seeded $129 one-time price; funds route to Sasha's connected account
+as a destination charge, and the platform keeps its 10% application fee. The
+fee/payout breakdown is computed up front from the known price
+(`getDestinationChargeDemoContext`) and confirmed inline once Stripe redirects
+back with the real session id (reusing the BTS-62 `buildCheckoutReturnUrl`
+helper, generalized to point at this page instead of the generic
+`/checkout/status`).
+
+Two layers, like the other demos:
+
+- **Backend-independent** (runs everywhere, incl. CI): the demo route boots
+  without page errors, plain and with a `session_id` query param.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): a purchase → the
+  charge completes → the fee/payout breakdown reconciles exactly to the
+  charge amount (`fee + payout == charge`, asserted both by the pure
+  `reconciles()` helper's unit tests and by the live spec).
 
 ### Webhook Processing
 

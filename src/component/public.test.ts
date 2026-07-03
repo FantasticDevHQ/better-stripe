@@ -212,6 +212,29 @@ describe("billing — subscription mutations and queries", () => {
     expect(trialStatus!.daysRemaining).toBeGreaterThanOrEqual(6);
     expect(trialStatus!.status).toBe("trialing");
   });
+
+  // BTS-33: dunning tracks the delinquent subscription lifecycle. Stripe moves a
+  // subscription to `past_due` on the first failed recurring charge and to
+  // `unpaid` once smart retries are exhausted — both must round-trip the table.
+  it.each(["past_due", "unpaid"] as const)(
+    "persists the delinquent subscription status %s",
+    async (status) => {
+      const t = convexTest(schema, modules);
+
+      await t.mutation(api.billing.mutations.upsertSubscription, {
+        stripeSubscriptionId: `sub_${status}`,
+        userId: "user_dunning",
+        status,
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      });
+
+      const doc = await t.query(api.billing.queries.getSubscriptionByStripeId, {
+        stripeSubscriptionId: `sub_${status}`,
+      });
+      expect(doc!.status).toBe(status);
+    },
+  );
 });
 
 describe("billing — checkout session mutations and queries", () => {
@@ -303,6 +326,31 @@ describe("billing — invoice mutations and queries", () => {
     expect(invoice!.stripeInvoiceId).toBe("inv_by_stripe_001");
     expect(invoice!.userId).toBe("user_031");
     expect(invoice!.amountDue).toBe(1500);
+  });
+
+  // BTS-33: a failed subscription invoice carries the smart-retry schedule
+  // (`next_payment_attempt`) and attempt count so a dunning hook can tell the
+  // buyer when Stripe will retry. Both persist as optional invoice fields.
+  it("persists smart-retry metadata (nextPaymentAttempt + attemptCount)", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(api.billing.mutations.upsertInvoice, {
+      stripeInvoiceId: "inv_retry_001",
+      userId: "user_dunning",
+      status: "open",
+      currency: "usd",
+      amountDue: 5000,
+      amountPaid: 0,
+      nextPaymentAttempt: "2030-02-01T00:00:00.000Z",
+      attemptCount: 1,
+    });
+
+    const invoice = await t.query(api.billing.queries.getInvoiceByStripeId, {
+      stripeInvoiceId: "inv_retry_001",
+    });
+    expect(invoice!.status).toBe("open");
+    expect(invoice!.nextPaymentAttempt).toBe("2030-02-01T00:00:00.000Z");
+    expect(invoice!.attemptCount).toBe(1);
   });
 
   it("getInvoiceByStripeId: returns null for unknown id", async () => {

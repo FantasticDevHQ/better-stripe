@@ -548,6 +548,10 @@ async function upsertInvoiceFromStripe(
     invoicePdf: invoice.invoice_pdf ?? undefined,
     periodStart: epochToIso(invoice.period_start),
     periodEnd: epochToIso(invoice.period_end),
+    // Smart-retry dunning (BTS-33): surface Stripe's retry schedule so a
+    // dunning hook can tell the buyer when the next attempt lands.
+    nextPaymentAttempt: epochToIso(invoice.next_payment_attempt),
+    attemptCount: invoice.attempt_count ?? undefined,
     metadata: invoice.metadata ?? undefined,
   });
 }

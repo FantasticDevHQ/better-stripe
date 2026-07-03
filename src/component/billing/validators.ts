@@ -117,6 +117,14 @@ export const invoiceFields = {
   invoicePdf: v.optional(v.string()),
   periodStart: v.optional(v.string()),
   periodEnd: v.optional(v.string()),
+  /**
+   * Smart-retry dunning (BTS-33): when a subscription charge fails, Stripe's
+   * automatic retries schedule the next attempt. `nextPaymentAttempt` is that
+   * ISO timestamp (absent once the invoice is paid/void or retries are
+   * exhausted); `attemptCount` is how many charge attempts Stripe has made.
+   */
+  nextPaymentAttempt: v.optional(v.string()),
+  attemptCount: v.optional(v.number()),
   ...feeRoutingFields,
   metadata: v.optional(v.any()),
 };

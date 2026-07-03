@@ -143,6 +143,27 @@ export const getSeedStatus = query({
   },
 });
 
+/** Maya's store account + Billie the buyer's account, resolved from the BTS-41 marketplace seed. */
+export const getAdminTestingDemoAccounts = query({
+  args: {},
+  handler: async (ctx) => {
+    const store = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "maya@example.com"))
+      .first();
+    const buyer = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", "billie@example.com"))
+      .first();
+    if (!store?.stripeAccountId || !buyer?.stripeAccountId) return null;
+    return {
+      storeAccountId: store.stripeAccountId,
+      buyerUserId: buyer._id,
+      buyerAccountId: buyer.stripeAccountId,
+    };
+  },
+});
+
 // Marketplace / affiliate-split demo (BTS-43)
 
 /**

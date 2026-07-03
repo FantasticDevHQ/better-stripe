@@ -9,7 +9,11 @@
  */
 
 import type * as actions from "../actions.js";
+import type * as adminTesting from "../adminTesting.js";
+import type * as affiliateSplit from "../affiliateSplit.js";
+import type * as e2eMoney from "../e2eMoney.js";
 import type * as http from "../http.js";
+import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as marketplace from "../marketplace.js";
 import type * as queries from "../queries.js";
 import type * as reset from "../reset.js";
@@ -28,7 +32,11 @@ import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
   actions: typeof actions;
+  adminTesting: typeof adminTesting;
+  affiliateSplit: typeof affiliateSplit;
+  e2eMoney: typeof e2eMoney;
   http: typeof http;
+  "lib/marketplace": typeof lib_marketplace;
   marketplace: typeof marketplace;
   queries: typeof queries;
   reset: typeof reset;

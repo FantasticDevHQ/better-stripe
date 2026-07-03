@@ -6,7 +6,7 @@ import {
   STORE_SPLIT_PERCENT,
   buildSplitRecipients,
   isAffiliateReferral,
-} from "./affiliate-split";
+} from "./affiliateSplit";
 
 /**
  * The affiliate-split demo's attribution + split-leg logic (BTS-43) is pure and

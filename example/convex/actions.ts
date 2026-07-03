@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
-import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliate-split";
+import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliateSplit";
 
 // Webhook setup — creates both V1 (snapshot) and V2 (thin) event destinations
 export const setupWebhooks = action({

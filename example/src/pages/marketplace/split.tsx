@@ -20,7 +20,7 @@ import {
   AFFILIATE_REFERRAL_CODE,
   DEMO_SALE_AMOUNT,
   isAffiliateReferral,
-} from "../../../convex/affiliate-split";
+} from "../../../convex/affiliateSplit";
 import { useEarnings, useSplitBreakdown } from "../../lib/stripe-hooks";
 
 /**

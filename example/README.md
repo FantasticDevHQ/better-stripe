@@ -251,14 +251,23 @@ After the event-coverage phase, the harness runs a money phase (`runMoneyAsserti
 | ----- | -------------- | --------------- |
 | `money: destination fee` | a $100 destination charge with a $10 `application_fee` | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes) |
 | `money: split sale` | a $100 separate-charges sale split $80 store / $10 affiliate | **2 `transfers`** ledger rows for the charge (one per recipient) |
-| `money: refund reverses transfers` | a refund of the split charge (`reverseTransfer`) | every transfer row has `reversedAmount > 0` (deterministic reversal) |
-| `money: dispute reverses transfers` | a disputed split (Stripe `tok_createDispute`) | the `charge.dispute.created` clawback reversed the transfers — **SKIP** (not FAIL) if the async dispute doesn't land in the poll window |
+| `money: refund reverses transfers` | a refund of the split charge (`reverseTransfer`) | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (BTS-73: not merely `> 0`) |
+| `money: dispute reverses transfers` | a disputed split (Stripe `tok_createDispute`) | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`) |
+
+**Reversal amounts are asserted exactly (BTS-73).** The refund and dispute checks use `reversalsMatchExactly` (pure, unit-tested in `example/scripts/money-assertions.ts`) to require each leg's `reversedAmount` to equal its expected pro-rata value — a partial, missing, over-, or wrong-role reversal FAILs. A full refund / full-amount dispute of the $80/$10 split reverses each leg completely (verified against `computeReversalSlices`).
+
+**Dispute: FAIL vs SKIP (BTS-73).** The dispute check no longer SKIPs indiscriminately on timeout. It polls the `disputes` ledger for the disputed charge's PaymentIntent (`listDisputesForPaymentIntent`):
+
+- dispute row **never landed** in the window (async timing) → **SKIP** (the genuinely-couldn't-verify case), but
+- dispute row **landed** yet the transfers weren't reversed to the exact amounts (broken clawback wiring) → **FAIL**.
+
+So a real clawback regression can no longer pass the gate silently.
 
 **Test-recipient activation (BTS-9/10 recipe).** Transfers only succeed to an onboarded recipient (an un-activated destination fails `insufficient_capabilities_for_transfer`). `provisionTestRecipient` recreates the validated spike recipe: create a `dashboard: "none"` V2 account requesting the recipient's `stripe_transfers` capability (Express accounts can't accept ToS via the API, so recipients must be `dashboard: none`), then attest identity + ToS so the test SSN `000000000` auto-verifies — **note: the ToS acceptance `date` is an RFC3339 string, not unix**. If activation fails, the whole money phase reports SKIP (never a false PASS).
 
-Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. Any live-drive failure SKIPs the affected money rows with a reason; a genuine wrong outcome FAILs.
+Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. A legitimate live-drive failure (recipient provisioning, the dispute never landing) SKIPs the affected rows with a reason; a genuine wrong outcome — including a landed-but-not-reversed dispute — FAILs. **No false PASS, no false FAIL.**
 
-> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure reconciliation helper (`e2eMoney.test.ts`), but the full live run (real Stripe + deployment) has **not** been executed yet — run it before a release and re-verify the V2 recipient-activation field paths against current Stripe docs.
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation + exact-reversal matching), but the full live run (real Stripe + deployment) has **not** been executed yet — run it before a release and re-verify the V2 recipient-activation field paths against current Stripe docs.
 
 ### Browser E2E Tests (`npm run e2e`)
 

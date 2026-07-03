@@ -64,6 +64,20 @@ export const getPaymentRow = query({
     }),
 });
 
+/**
+ * The persisted dispute rows for a charge's PaymentIntent (BTS-73). Lets the
+ * harness tell "the dispute never landed" (async timing → legitimate SKIP) from
+ * "the dispute landed but the clawback didn't reverse the transfers" (broken
+ * wiring → hard FAIL).
+ */
+export const listDisputesForPaymentIntent = query({
+  args: { stripePaymentIntentId: v.string() },
+  handler: async (ctx, args) =>
+    ctx.runQuery(connectQueries.listDisputes, {
+      stripePaymentIntentId: args.stripePaymentIntentId,
+    }),
+});
+
 // ─── Pure reconciliation helper (unit-tested) ────────────────────────────
 
 /**
@@ -80,6 +94,9 @@ export function reconcilesToCharge(
   const platform = chargeAmount - recipientsTotal;
   return platform >= 0 && recipientsTotal >= 0 && recipientsTotal <= chargeAmount;
 }
+
+// `reversalsMatchExactly` (BTS-73) lives in `../scripts/money-assertions.ts` so
+// the live harness script can import it without pulling Convex runtime deps.
 
 // ─── Recipient activation (BTS-9/10 recipe) ──────────────────────────────
 

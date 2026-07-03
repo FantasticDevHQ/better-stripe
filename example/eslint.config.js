@@ -29,6 +29,16 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  // Playwright E2E harness — runs in Node (reads process.env, no React refresh).
+  {
+    files: ["playwright.config.ts", "e2e/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
   // Convex-specific rules for example/convex. The plugin's "recommended" preset
   // targets **/convex/**/*.ts which matches this directory automatically.
   ...convexPlugin.configs.recommended,

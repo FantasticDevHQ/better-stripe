@@ -566,6 +566,32 @@ async function applyFirstInvoiceFee(
     return undefined;
   }
 
+  // BTS-69: adopt an existing reversal we already created for THIS invoice as the
+  // idempotency source of truth, rather than trusting the live-recomputed amount.
+  // The `bsFeeCollected` marker write below can fail AFTER the reversal succeeds;
+  // if `bsFeeConfig` is then edited and a retry lands past Stripe's ≤24h
+  // idempotency-key window, a recomputed (drifted) amount would create a SECOND
+  // reversal — double collection. The reversal's own `bsFeeFor:<invoiceId>` tag
+  // survives both the marker-write failure and the key TTL, so finding it means
+  // "already collected": re-record the marker with the actually-reversed amount
+  // and return without reversing again.
+  const priorReversals = await whCtx.stripe.transfers.listReversals(transferId, {
+    limit: 100,
+  });
+  const adopted = priorReversals.data.find(
+    (r) => r.metadata?.bsFeeFor === invoice.id,
+  );
+  if (adopted) {
+    await whCtx.stripe.invoices.update(invoice.id, {
+      metadata: {
+        ...freshMeta,
+        bsFeeCollected: "1",
+        bsFeeAmount: String(adopted.amount),
+      },
+    });
+    return adopted.amount;
+  }
+
   await whCtx.stripe.transfers.createReversal(
     transferId,
     { amount: fee, metadata: { bsFeeFor: invoice.id } },

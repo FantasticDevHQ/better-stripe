@@ -100,6 +100,152 @@ async function executeClaimedSlices(
   return { reversals };
 }
 
+/** A wedged reversal claim surfaced by {@link listWedgedReversalClaims}. */
+export type WedgedReversalClaim = {
+  stripeTransferId: string;
+  sourceChargeId?: string;
+  amount: number;
+  reversedAmount: number;
+  reversalClaimedAmount: number;
+  blockingOps: { operationId: string; from: number; to: number }[];
+};
+
+type ReversalOpRecord = {
+  operationId: string;
+  sourceChargeId: string;
+  slices: { stripeTransferId: string; from: number; to: number }[];
+  _creationTime: number;
+};
+
+/** Stripe prunes idempotency keys after ~24h; a release must wait past this. */
+const REVERSAL_IDEMPOTENCY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * List "wedged" reversal legs (BTS-74): legs whose claim frontier
+ * (`reversalClaimedAmount`) is stuck ahead of the confirmed `reversedAmount`
+ * because the operation that claimed the gap died permanently (its webhook
+ * exhausted Stripe's retries and never confirmed). Each entry carries the ops
+ * holding the unexecuted slice that blocks every successor on that leg — feed an
+ * `operationId` into {@link reclaimReversalClaim} to resolve it.
+ *
+ * An ops/admin diagnostic: it scans the ledger (see the component query for the
+ * exactness/loudness contract), so treat it as a maintenance tool, not a hot path.
+ */
+export async function listWedgedReversalClaims(
+  component: Component,
+  ctx: RunCtx,
+): Promise<WedgedReversalClaim[]> {
+  return (await ctx.runQuery(
+    componentRef(component, "connect/queries/listWedgedReversalClaims"),
+    {},
+  )) as WedgedReversalClaim[];
+}
+
+/**
+ * Resolve a permanently-dead reversal claim (BTS-74) so it stops blocking
+ * successors on the same leg. Two remedies:
+ *
+ *  - **`reexecute`** (default, always safe): replay the op's recorded slices —
+ *    byte-identical Stripe params under the original `bs_rev_<opId>_<transferId>`
+ *    idempotency keys — moving any money that never moved and recording any that
+ *    moved-but-wasn't-confirmed. This FILLS the hole, so blocked successors
+ *    proceed. Prefer this: it can't double-reverse (same keys) and needs no
+ *    live-Stripe assumptions.
+ *  - **`release`**: abandon the claim entirely — rewind each leg's frontier to
+ *    the pre-claim amount and delete the op record, freeing the reserved
+ *    capacity. Only safe when the money truly never moved, so it is gated on
+ *    BOTH (a) the op being older than `minAgeMs` (default ~24h, past Stripe's
+ *    idempotency-key window, so no cached retry can still fire it) AND (b) live
+ *    Stripe `amount_reversed ≤ slice.from` on every leg. The component mutation
+ *    additionally refuses if a successor already claimed past this op's slice
+ *    (releasing would strand it — re-execute instead).
+ *
+ * `now` is injectable for testing the age gate; it defaults to `Date.now()`.
+ */
+export async function reclaimReversalClaim(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    operationId: string;
+    mode?: "reexecute" | "release";
+    minAgeMs?: number;
+    now?: number;
+  },
+): Promise<
+  | {
+      mode: "reexecute";
+      reversals: { stripeTransferId: string; amount: number }[];
+    }
+  | {
+      mode: "release";
+      released: boolean;
+      rewound: { stripeTransferId: string; to: number }[];
+    }
+> {
+  const op = (await ctx.runQuery(
+    componentRef(component, "connect/queries/getReversalOp"),
+    { operationId: opts.operationId },
+  )) as ReversalOpRecord | null;
+  if (!op) {
+    throw new Error(
+      `reclaimReversalClaim: no reversal op ${opts.operationId} to reclaim`,
+    );
+  }
+
+  if ((opts.mode ?? "reexecute") === "reexecute") {
+    // Build the replay claim DIRECTLY from the recorded op — never recompute.
+    // Annotate each recorded slice with its leg's CURRENT confirmed
+    // `reversedAmount`, then run executeClaimedSlices: it moves any money that
+    // never moved and records any that moved-but-wasn't-confirmed, all under the
+    // original `bs_rev_<opId>_<transferId>` keys (so it can't double-reverse).
+    // Reading the op straight from the record avoids the frontier-recompute path
+    // in claimReversalSlices, which would issue a fresh FULL claim if the op row
+    // were concurrently released.
+    const slices: ClaimedSlice[] = [];
+    for (const s of op.slices) {
+      const leg = (await ctx.runQuery(
+        componentRef(component, "connect/queries/getTransferByStripeId"),
+        { stripeTransferId: s.stripeTransferId },
+      )) as { reversedAmount?: number } | null;
+      slices.push({ ...s, confirmed: leg?.reversedAmount ?? 0 });
+    }
+    const { reversals } = await executeClaimedSlices(
+      stripe,
+      component,
+      ctx,
+      op.operationId,
+      { replay: true, slices },
+    );
+    return { mode: "reexecute", reversals };
+  }
+
+  // release: age-gate against the idempotency window, then verify live Stripe.
+  const minAgeMs = opts.minAgeMs ?? REVERSAL_IDEMPOTENCY_WINDOW_MS;
+  const now = opts.now ?? Date.now();
+  if (now - op._creationTime < minAgeMs) {
+    throw new Error(
+      `reclaimReversalClaim: op ${op.operationId} is too recent to release ` +
+        `(within the ~24h idempotency window); re-execute instead, or wait`,
+    );
+  }
+  const legIds = [...new Set(op.slices.map((s) => s.stripeTransferId))];
+  const verified: { stripeTransferId: string; amountReversed: number }[] = [];
+  for (const id of legIds) {
+    const transfer = await stripe.transfers.retrieve(id);
+    verified.push({
+      stripeTransferId: id,
+      amountReversed: transfer.amount_reversed ?? 0,
+    });
+  }
+  const res = (await runMutationOrThrow(
+    ctx,
+    componentRef(component, "connect/mutations/releaseReversalClaim"),
+    { operationId: op.operationId, verified },
+  )) as { released: boolean; rewound: { stripeTransferId: string; to: number }[] };
+  return { mode: "release", ...res };
+}
+
 /**
  * Reverse the transfers funded by a charge (BTS-25), the primitive used by
  * dispute clawback (M4) and refunds (M5).

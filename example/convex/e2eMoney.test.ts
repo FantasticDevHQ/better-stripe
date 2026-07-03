@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { reversalsMatchExactly } from "../scripts/money-assertions";
 import { fullRefundReversalPlan, reconcilesToCharge } from "./e2eMoney";
 
 /**
@@ -61,5 +62,91 @@ describe("fullRefundReversalPlan (BTS-66 cap expectation)", () => {
       refundReversal: 0,
       totalReversed: 10_000,
     });
+  });
+});
+
+/**
+ * BTS-73: the refund/dispute checks must assert the EXACT pro-rata reversed
+ * amount per recipient, not just `reversedAmount > 0`. A partial or missing
+ * reversal has to fail the gate, so this exact-match predicate is what turns a
+ * "landed but wrong" reversal into a hard FAIL.
+ */
+describe("reversalsMatchExactly (BTS-73 exact reversal assertion)", () => {
+  const EXPECTED = { store: 8_000, affiliate: 1_000 };
+
+  it("matches when every leg is reversed to exactly its expected amount", () => {
+    expect(
+      reversalsMatchExactly(
+        [
+          { role: "store", reversedAmount: 8_000 },
+          { role: "affiliate", reversedAmount: 1_000 },
+        ],
+        EXPECTED,
+      ),
+    ).toBe(true);
+  });
+
+  it("does NOT match a partial reversal (affiliate under-reversed)", () => {
+    expect(
+      reversalsMatchExactly(
+        [
+          { role: "store", reversedAmount: 8_000 },
+          { role: "affiliate", reversedAmount: 500 },
+        ],
+        EXPECTED,
+      ),
+    ).toBe(false);
+  });
+
+  it("does NOT match when a leg was not reversed at all (0)", () => {
+    expect(
+      reversalsMatchExactly(
+        [
+          { role: "store", reversedAmount: 8_000 },
+          { role: "affiliate", reversedAmount: 0 },
+        ],
+        EXPECTED,
+      ),
+    ).toBe(false);
+  });
+
+  it("does NOT match when a leg reversed MORE than expected", () => {
+    expect(
+      reversalsMatchExactly(
+        [
+          { role: "store", reversedAmount: 9_000 },
+          { role: "affiliate", reversedAmount: 1_000 },
+        ],
+        EXPECTED,
+      ),
+    ).toBe(false);
+  });
+
+  it("does NOT match a missing leg", () => {
+    expect(
+      reversalsMatchExactly([{ role: "store", reversedAmount: 8_000 }], EXPECTED),
+    ).toBe(false);
+  });
+
+  it("does NOT match an unexpected extra leg", () => {
+    expect(
+      reversalsMatchExactly(
+        [
+          { role: "store", reversedAmount: 8_000 },
+          { role: "affiliate", reversedAmount: 1_000 },
+          { role: "other", reversedAmount: 500 },
+        ],
+        EXPECTED,
+      ),
+    ).toBe(false);
+  });
+
+  it("treats a missing reversedAmount as 0 (not reversed)", () => {
+    expect(
+      reversalsMatchExactly(
+        [{ role: "store", reversedAmount: 8_000 }, { role: "affiliate" }],
+        EXPECTED,
+      ),
+    ).toBe(false);
   });
 });

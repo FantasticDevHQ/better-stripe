@@ -286,3 +286,32 @@ export const transferReversalOpFields = {
   sourceChargeId: v.string(),
   slices: v.array(reversalSliceValidator),
 };
+
+/** Full `transferReversalOps` document, including system fields. */
+export const transferReversalOpDocValidator = v.object({
+  _id: v.id("transferReversalOps"),
+  _creationTime: v.number(),
+  ...transferReversalOpFields,
+});
+
+/**
+ * A leg whose reversal claim is "wedged" (BTS-74): its claim frontier
+ * (`reversalClaimedAmount`) sits ahead of the confirmed `reversedAmount`
+ * because the operation that claimed the gap died permanently. Surfaced by the
+ * ops diagnostic so a wedged leg's remaining reversal capacity can be reclaimed.
+ */
+export const wedgedReversalClaimValidator = v.object({
+  stripeTransferId: v.string(),
+  sourceChargeId: v.optional(v.string()),
+  amount: v.number(),
+  reversedAmount: v.number(),
+  reversalClaimedAmount: v.number(),
+  /** The recorded ops with an unexecuted slice on this leg (the blockers). */
+  blockingOps: v.array(
+    v.object({
+      operationId: v.string(),
+      from: v.number(),
+      to: v.number(),
+    }),
+  ),
+});

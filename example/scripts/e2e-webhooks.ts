@@ -23,6 +23,8 @@ import { config } from "dotenv";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
 
+import { EXPECTED_REVERSED, reversalsMatchExactly } from "./money-assertions";
+
 const exampleDir = resolve(import.meta.dirname, "..");
 config({ path: resolve(exampleDir, ".env.local") });
 
@@ -475,6 +477,10 @@ interface TransferRow {
   amount: number;
   reversedAmount?: number;
 }
+interface DisputeRow {
+  stripeDisputeId: string;
+  status?: string;
+}
 
 const MONEY_POLL_TIMEOUT_MS = 120_000;
 
@@ -610,7 +616,10 @@ async function runMoneyAssertions(): Promise<Check[]> {
     });
   }
 
-  // ── AC2b (deterministic): refund reverses the split transfers ──
+  // ── AC2b (deterministic): refund reverses the split transfers to EXACT amounts ──
+  // BTS-73: assert the exact pro-rata reversed amount per recipient (store 8000
+  // / affiliate 1000 for a full refund of the $80/$10 split), not just `> 0`. A
+  // partial or wrong-amount reversal FAILs.
   if (splitChargeId && splitPiId) {
     try {
       console.log("  refunding the split charge (reverseTransfer) …");
@@ -623,15 +632,16 @@ async function runMoneyAssertions(): Promise<Check[]> {
           convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
             sourceChargeId: chargeId,
           }),
-        (rows) =>
-          rows.length > 0 && rows.every((t) => (t.reversedAmount ?? 0) > 0),
+        (rows) => reversalsMatchExactly(rows, EXPECTED_REVERSED),
       );
       checks.push({
         name: names.refund,
         status: ok ? "PASS" : "FAIL",
         detail: ok
-          ? `reversed: ${last.map((t) => `${t.role}=${t.reversedAmount}`).join(", ")}`
-          : "transfers were not reversed after the refund",
+          ? `reversed exactly: ${last.map((t) => `${t.role}=${t.reversedAmount}`).join(", ")}`
+          : `refund did not reverse transfers to the expected amounts ` +
+            `(want ${JSON.stringify(EXPECTED_REVERSED)}, got ` +
+            `${last.map((t) => `${t.role}=${t.reversedAmount ?? 0}`).join(", ") || "no rows"})`,
       });
     } catch (err) {
       checks.push({
@@ -754,38 +764,71 @@ async function runMoneyAssertions(): Promise<Check[]> {
 
   // ── AC2b (real dispute): a disputed split → clawback reverses transfers ──
   // Disputes are async; the charge auto-disputes via Stripe's test token, then
-  // charge.dispute.created claws back pro-rata. Gated: SKIP if it doesn't land.
+  // charge.dispute.created claws back pro-rata.
+  //
+  // BTS-73: distinguish two very different outcomes that both used to SKIP:
+  //   • the dispute row NEVER landed within the window (async timing) → SKIP
+  //   • the dispute row LANDED but the transfers weren't reversed to the exact
+  //     expected amounts (broken clawback wiring) → FAIL
+  // and assert the EXACT pro-rata reversed amount, not just `> 0`.
   try {
     console.log("  driving a disputed $100 split (test dispute token) …");
-    const sale = convexRun<{ stripeChargeId: string | null }>(
-      "e2eMoney:e2eSplitSale",
-      {
-        storeAccountId,
-        affiliateAccountId,
-        amount: 10_000,
-        storeAmount: 8_000,
-        affiliateAmount: 1_000,
-        dispute: true,
-      },
-    );
+    const sale = convexRun<{
+      stripePaymentIntentId: string;
+      stripeChargeId: string | null;
+    }>("e2eMoney:e2eSplitSale", {
+      storeAccountId,
+      affiliateAccountId,
+      amount: 10_000,
+      storeAmount: 8_000,
+      affiliateAmount: 1_000,
+      dispute: true,
+    });
     const chargeId = sale.stripeChargeId;
+    const piId = sale.stripePaymentIntentId;
     if (!chargeId) throw new Error("no charge id on the disputed PI");
+
     const { ok, last } = await pollFor<TransferRow[]>(
       () =>
         convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
           sourceChargeId: chargeId,
         }),
-      (rows) =>
-        rows.length >= 2 && rows.some((t) => (t.reversedAmount ?? 0) > 0),
+      (rows) => reversalsMatchExactly(rows, EXPECTED_REVERSED),
     );
-    checks.push({
-      name: names.dispute,
-      // Not landing in the window is a SKIP (dispute timing), not a FAIL.
-      status: ok ? "PASS" : "SKIP",
-      detail: ok
-        ? `clawback reversed: ${last.map((t) => `${t.role}=${t.reversedAmount}`).join(", ")}`
-        : "dispute/clawback did not land within the poll window",
-    });
+
+    if (ok) {
+      checks.push({
+        name: names.dispute,
+        status: "PASS",
+        detail: `clawback reversed exactly: ${last
+          .map((t) => `${t.role}=${t.reversedAmount}`)
+          .join(", ")}`,
+      });
+    } else {
+      // The clawback didn't reach the exact amounts in-window. Whether that's a
+      // FAIL or a legitimate SKIP depends on whether the dispute even landed.
+      const disputes = convexRun<DisputeRow[]>(
+        "e2eMoney:listDisputesForPaymentIntent",
+        { stripePaymentIntentId: piId },
+      );
+      if (disputes.length > 0) {
+        checks.push({
+          name: names.dispute,
+          status: "FAIL",
+          detail:
+            `dispute LANDED (status=${disputes[0].status ?? "?"}) but the ` +
+            `clawback did not reverse transfers to the expected amounts ` +
+            `(want ${JSON.stringify(EXPECTED_REVERSED)}, got ` +
+            `${last.map((t) => `${t.role}=${t.reversedAmount ?? 0}`).join(", ") || "no rows"})`,
+        });
+      } else {
+        checks.push({
+          name: names.dispute,
+          status: "SKIP",
+          detail: "dispute event never landed within the poll window",
+        });
+      }
+    }
   } catch (err) {
     checks.push({
       name: names.dispute,

@@ -30,6 +30,7 @@ import type {
   AppliedConfiguration,
   OnboardingStatus,
 } from "../../component/core/validators.js";
+import type { ChargeType, SplitRecipient } from "../../component/lib/fees.js";
 import type { PriceType } from "../../component/products/validators.js";
 import type { WebhookEventStatus } from "../../component/webhooks/validators.js";
 
@@ -65,6 +66,16 @@ export type StripeComponentPayment = {
   status: PaymentStatus;
   refundedAmount?: number;
   refundStatus?: PaymentRefundStatus;
+  // Fee/routing (spread from `feeRoutingFields` on the payments row). Mirrors
+  // the component schema so consumers can read where the money was routed —
+  // e.g. for refund actor scoping (BTS-35).
+  destinationAccountId?: string;
+  applicationFeeAmount?: number;
+  applicationFeePercent?: number;
+  feeCollectedAmount?: number;
+  feeRefundedAmount?: number;
+  chargeType?: ChargeType;
+  splitRecipients?: SplitRecipient[];
   metadata?: Record<string, unknown>;
 };
 

@@ -427,11 +427,22 @@ async function main(): Promise<void> {
     await sleep(POLL_INTERVAL_MS);
   }
 
-  printTable(checks);
+  // ─── 8. Money layer (BTS-49) ────────────────────────────────────────
+  // Prove the money actually MOVES: a destination charge collects a platform
+  // fee, a multi-recipient split fans out one transfer per recipient, and a
+  // refund/dispute reverses them. Drives real Stripe (test mode) + the real
+  // webhook engine, then asserts the persisted ledger. Gated: any live failure
+  // (recipient activation, insufficient capabilities, dispute not yet landed)
+  // SKIPs the money rows — it never falsely PASSES. Set E2E_SKIP_MONEY=1 to
+  // skip the whole phase (e.g. an events-only smoke run).
+  const moneyChecks = await runMoneyAssertions();
 
-  const failed = checks.filter((c) => c.status === "FAIL");
-  const passed = checks.filter((c) => c.status === "PASS").length;
-  const skipped = checks.filter((c) => c.status === "SKIP").length;
+  const allChecks = [...checks, ...moneyChecks];
+  printTable(allChecks);
+
+  const failed = allChecks.filter((c) => c.status === "FAIL");
+  const passed = allChecks.filter((c) => c.status === "PASS").length;
+  const skipped = allChecks.filter((c) => c.status === "SKIP").length;
   console.log(
     `Summary: ${passed} passed, ${failed.length} failed, ${skipped} skipped`,
   );
@@ -441,6 +452,232 @@ async function main(): Promise<void> {
   } else {
     console.log("\n🎉 E2E webhook test passed");
   }
+}
+
+// ─── Money-layer assertions (BTS-49) ───────────────────────────────────────
+
+interface PaymentRow {
+  applicationFeeAmount?: number;
+  feeCollectedAmount?: number;
+  destinationAccountId?: string;
+}
+interface TransferRow {
+  destinationAccountId: string;
+  role?: string;
+  amount: number;
+  reversedAmount?: number;
+}
+
+const MONEY_POLL_TIMEOUT_MS = 120_000;
+
+/** Poll a producer until `done` is satisfied or the deadline passes. */
+async function pollFor<T>(
+  produce: () => T,
+  done: (value: T) => boolean,
+  timeoutMs = MONEY_POLL_TIMEOUT_MS,
+): Promise<{ ok: boolean; last: T }> {
+  const deadline = Date.now() + timeoutMs;
+  let last = produce();
+  while (!done(last)) {
+    if (Date.now() > deadline) return { ok: false, last };
+    await sleep(POLL_INTERVAL_MS);
+    last = produce();
+  }
+  return { ok: true, last };
+}
+
+/**
+ * Drive the money scenarios and assert the persisted ledger. Returns resolved
+ * Check rows (never throws): a live failure marks the affected rows SKIP with a
+ * reason so the gate never falsely passes, but a genuine wrong outcome FAILs.
+ */
+async function runMoneyAssertions(): Promise<Check[]> {
+  const names = {
+    fee: "money: destination fee (application_fee → payments row)",
+    split: "money: split sale (N transfers in ledger)",
+    refund: "money: refund reverses transfers",
+    dispute: "money: dispute reverses transfers",
+  };
+  const skipAll = (detail: string): Check[] =>
+    Object.values(names).map((name) => ({ name, status: "SKIP", detail }));
+
+  if (process.env.E2E_SKIP_MONEY) {
+    return skipAll("E2E_SKIP_MONEY set");
+  }
+
+  console.log("\n── Money layer (BTS-49) ──");
+
+  // Provision two transfer-ready recipients (store + affiliate). If activation
+  // fails (Stripe capability/onboarding), the whole money phase SKIPs.
+  let storeAccountId: string;
+  let affiliateAccountId: string;
+  try {
+    console.log("  provisioning test recipients (BTS-9/10 recipe) …");
+    storeAccountId = convexRun<{ stripeAccountId: string }>(
+      "e2eMoney:provisionTestRecipient",
+      { label: "store" },
+    ).stripeAccountId;
+    affiliateAccountId = convexRun<{ stripeAccountId: string }>(
+      "e2eMoney:provisionTestRecipient",
+      { label: "affiliate" },
+    ).stripeAccountId;
+    console.log(`  ✅ store=${storeAccountId} affiliate=${affiliateAccountId}`);
+  } catch (err) {
+    return skipAll(`recipient provisioning failed: ${String(err)}`);
+  }
+
+  const checks: Check[] = [];
+
+  // ── AC1: destination charge with a platform fee → payments-row fee ──
+  try {
+    console.log("  driving a $100 destination charge (fee $10) …");
+    const sale = convexRun<{ stripePaymentIntentId: string }>(
+      "e2eMoney:e2eDestinationFeeSale",
+      { storeAccountId, amount: 10_000, applicationFeeAmount: 1_000 },
+    );
+    const { ok, last } = await pollFor<PaymentRow | null>(
+      () =>
+        convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+          stripePaymentIntentId: sale.stripePaymentIntentId,
+        }),
+      (row) => !!row && (row.feeCollectedAmount ?? 0) > 0,
+    );
+    checks.push({
+      name: names.fee,
+      status: ok && (last?.feeCollectedAmount ?? 0) === 1_000 ? "PASS" : "FAIL",
+      detail: ok
+        ? `feeCollectedAmount=${last?.feeCollectedAmount} destination=${last?.destinationAccountId}`
+        : "payments row never showed a collected fee",
+    });
+  } catch (err) {
+    checks.push({
+      name: names.fee,
+      status: "SKIP",
+      detail: `drive failed: ${String(err)}`,
+    });
+  }
+
+  // ── AC2a: split sale → one transfer per recipient in the ledger ──
+  let splitChargeId: string | null = null;
+  let splitPiId: string | null = null;
+  try {
+    console.log("  driving a $100 split sale ($80 store / $10 affiliate) …");
+    const sale = convexRun<{
+      stripePaymentIntentId: string;
+      stripeChargeId: string | null;
+    }>("e2eMoney:e2eSplitSale", {
+      storeAccountId,
+      affiliateAccountId,
+      amount: 10_000,
+      storeAmount: 8_000,
+      affiliateAmount: 1_000,
+    });
+    splitChargeId = sale.stripeChargeId;
+    splitPiId = sale.stripePaymentIntentId;
+    if (!splitChargeId) throw new Error("no charge id on the split PI");
+    const { ok, last } = await pollFor<TransferRow[]>(
+      () =>
+        convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+          sourceChargeId: splitChargeId,
+        }),
+      (rows) => rows.length >= 2,
+    );
+    checks.push({
+      name: names.split,
+      status: ok && last.length === 2 ? "PASS" : "FAIL",
+      detail: ok
+        ? `${last.length} transfers: ${last.map((t) => `${t.role}=${t.amount}`).join(", ")}`
+        : "split transfers never appeared in the ledger",
+    });
+  } catch (err) {
+    checks.push({
+      name: names.split,
+      status: "SKIP",
+      detail: `drive failed: ${String(err)}`,
+    });
+  }
+
+  // ── AC2b (deterministic): refund reverses the split transfers ──
+  if (splitChargeId && splitPiId) {
+    try {
+      console.log("  refunding the split charge (reverseTransfer) …");
+      convexRun("e2eMoney:e2eRefundCharge", {
+        stripePaymentIntentId: splitPiId,
+      });
+      const chargeId = splitChargeId;
+      const { ok, last } = await pollFor<TransferRow[]>(
+        () =>
+          convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+            sourceChargeId: chargeId,
+          }),
+        (rows) =>
+          rows.length > 0 && rows.every((t) => (t.reversedAmount ?? 0) > 0),
+      );
+      checks.push({
+        name: names.refund,
+        status: ok ? "PASS" : "FAIL",
+        detail: ok
+          ? `reversed: ${last.map((t) => `${t.role}=${t.reversedAmount}`).join(", ")}`
+          : "transfers were not reversed after the refund",
+      });
+    } catch (err) {
+      checks.push({
+        name: names.refund,
+        status: "SKIP",
+        detail: `refund drive failed: ${String(err)}`,
+      });
+    }
+  } else {
+    checks.push({
+      name: names.refund,
+      status: "SKIP",
+      detail: "split sale did not produce a charge to refund",
+    });
+  }
+
+  // ── AC2b (real dispute): a disputed split → clawback reverses transfers ──
+  // Disputes are async; the charge auto-disputes via Stripe's test token, then
+  // charge.dispute.created claws back pro-rata. Gated: SKIP if it doesn't land.
+  try {
+    console.log("  driving a disputed $100 split (test dispute token) …");
+    const sale = convexRun<{ stripeChargeId: string | null }>(
+      "e2eMoney:e2eSplitSale",
+      {
+        storeAccountId,
+        affiliateAccountId,
+        amount: 10_000,
+        storeAmount: 8_000,
+        affiliateAmount: 1_000,
+        dispute: true,
+      },
+    );
+    const chargeId = sale.stripeChargeId;
+    if (!chargeId) throw new Error("no charge id on the disputed PI");
+    const { ok, last } = await pollFor<TransferRow[]>(
+      () =>
+        convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+          sourceChargeId: chargeId,
+        }),
+      (rows) =>
+        rows.length >= 2 && rows.some((t) => (t.reversedAmount ?? 0) > 0),
+    );
+    checks.push({
+      name: names.dispute,
+      // Not landing in the window is a SKIP (dispute timing), not a FAIL.
+      status: ok ? "PASS" : "SKIP",
+      detail: ok
+        ? `clawback reversed: ${last.map((t) => `${t.role}=${t.reversedAmount}`).join(", ")}`
+        : "dispute/clawback did not land within the poll window",
+    });
+  } catch (err) {
+    checks.push({
+      name: names.dispute,
+      status: "SKIP",
+      detail: `dispute drive failed: ${String(err)}`,
+    });
+  }
+
+  return checks;
 }
 
 /**

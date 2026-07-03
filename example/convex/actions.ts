@@ -333,3 +333,33 @@ export const createAffiliateSplitCheckout = action({
     });
   },
 });
+
+// ===========================================================================
+// Disputes (BTS-44) — seller disputes page
+// ===========================================================================
+
+// Account Session client secret for the embedded disputes surface (BTS-30):
+// the ConnectProvider's fetchClientSecret calls this to mount EmbeddedDisputes.
+export const createDisputeSession = action({
+  args: { stripeAccountId: v.string() },
+  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+});
+
+// Submit (or stage) dispute evidence from the headless EvidenceForm. The form
+// hands us the shape of EvidenceFormUpdateArgs; `submit: true` finalizes the
+// response to the bank, `submit: false` saves a draft.
+export const submitDisputeEvidence = action({
+  args: {
+    stripeDisputeId: v.string(),
+    evidence: v.any(),
+    submit: v.boolean(),
+    stripeAccountId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.updateDispute(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+      evidence: args.evidence,
+      submit: args.submit,
+      stripeAccountId: args.stripeAccountId,
+    }),
+});

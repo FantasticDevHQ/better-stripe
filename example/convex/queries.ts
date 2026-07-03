@@ -82,6 +82,27 @@ export const listPayouts = query({
   handler: async (ctx) => stripe.listPayouts(ctx),
 });
 
+// Disputes (BTS-44) — seller disputes page data contract.
+// `listDisputes` backs the `useDisputes` hook (its arg is `accountId`, mapped to
+// the library's `stripeAccountId` filter); `getDisputeWithCountdown` backs the
+// `useDisputeWithCountdown` hook that DisputeDetail / EvidenceForm consume.
+export const listDisputes = query({
+  args: { accountId: v.optional(v.string()) },
+  handler: async (ctx, args) =>
+    stripe.listDisputes(
+      ctx,
+      args.accountId ? { stripeAccountId: args.accountId } : {},
+    ),
+});
+
+export const getDisputeWithCountdown = query({
+  args: { stripeDisputeId: v.string() },
+  handler: async (ctx, args) =>
+    stripe.getDisputeWithCountdown(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+    }),
+});
+
 // Checkout Sessions
 export const getCheckoutSessionByStripeId = query({
   args: { stripeSessionId: v.string() },

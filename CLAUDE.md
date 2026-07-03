@@ -21,6 +21,8 @@
 
 `pnpm --filter ./example run e2e:webhooks` — requires an authenticated Stripe CLI and a linked Convex dev deployment. Not CI-runnable. Run it before releases; it has caught real bugs that unit tests can't.
 
+It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2) the **money layer** (BTS-49) — drives real destination-charge/split/refund/dispute scenarios and asserts the persisted `payments`/`transfers` ledger (application_fee collected, N transfers per split, reversals). The money phase provisions test recipients via the BTS-9/10 activation recipe (`dashboard:none` + identity/ToS attestation; ToS date is RFC3339); it SKIPs (never falsely PASSes) if a live drive fails, and `E2E_SKIP_MONEY=1` runs the event phase only. See `example/README.md` → "Money-layer assertions".
+
 ## Branches
 
 - `develop` is the working branch; `main` is the release branch. PRs go to `main`.

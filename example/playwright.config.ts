@@ -36,9 +36,15 @@ export default defineConfig({
     // exactly the backend-independent surface this harness verifies. Anything
     // already exported in the environment wins, so a developer with a real local
     // deployment can point the harness at it via VITE_CONVEX_URL.
+    //
+    // NOTE: the deployment-name portion must match Convex's real
+    // `adjective-animal-number` format — convex-js ≥1.41 fatally rejects
+    // malformed names at client construction (surfaces as a page error and
+    // breaks the always-run boot layer), so a bare name like "e2e-harness" no
+    // longer works.
     env: {
       VITE_CONVEX_URL:
-        process.env.VITE_CONVEX_URL ?? "https://e2e-harness.convex.cloud",
+        process.env.VITE_CONVEX_URL ?? "https://placeholder-otter-123.convex.cloud",
     },
   },
 });

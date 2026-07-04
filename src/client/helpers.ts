@@ -29,13 +29,30 @@ export type RunCtx = {
   ) => Promise<FunctionReturnType<Mutation>>;
 };
 
+/**
+ * Keyed cache for Stripe SDK instances.
+ * Safe for tests and mixed environments — different keys get different clients.
+ *
+ * NOTE: This cache is unbounded and persists for the process lifetime.
+ * In practice, a BetterStripe instance typically uses 1 key.
+ * API key rotation requires a process restart to pick up new keys.
+ */
+const _clients = new Map<string, Stripe>();
+
 export function getStripeClient(
   secretKey: string,
   apiVersion?: string,
 ): Stripe {
-  return new Stripe(secretKey, {
-    apiVersion: (apiVersion as StripeApiVersion) || STRIPE_API_VERSION,
-  });
+  const version = (apiVersion as StripeApiVersion) || STRIPE_API_VERSION;
+  const cacheKey = `${secretKey}:${version}`;
+  let client = _clients.get(cacheKey);
+  if (!client) {
+    client = new Stripe(secretKey, {
+      apiVersion: version,
+    });
+    _clients.set(cacheKey, client);
+  }
+  return client;
 }
 
 export function epochToIso(

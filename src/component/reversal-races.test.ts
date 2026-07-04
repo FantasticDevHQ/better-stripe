@@ -654,3 +654,205 @@ describe("BTS-74 — reclaim/expiry of dead reversal claims", () => {
     ).rejects.toThrow(/already moved|money moved/i);
   });
 });
+
+describe("BTS-79 — releaseReversalClaim: multi-leg all-or-nothing atomicity", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  /**
+   * Seeds two legs under one charge and creates ONE dead reversal op whose
+   * plan spans both: with leg amounts 100/300 and a claim of `amount: 398`,
+   * `computeReversalSlices`'s pro-rata rounding claims leg A FULLY (100 of
+   * 100 — its prorata share rounds up to its cap) while leg B is left
+   * PARTIAL (298 of 300, capped by the remaining budget). Both legs'
+   * Stripe calls die (network error), so neither leg's money actually moves
+   * — the op is a permanently-dead claim, same shape as the BTS-74 tests
+   * above, but with two legs instead of one.
+   *
+   * This shared base state is valid-and-releasable for BOTH legs as-is; each
+   * test below invalidates leg B in exactly one way (one of the three throw
+   * branches in `releaseReversalClaim`, mutations.ts ~527-545) and asserts
+   * that the *entire* release is refused and *neither* leg's row nor the op
+   * row changed even one field — true all-or-nothing.
+   */
+  async function seedMixedOp(
+    stripe: ReturnType<typeof makeRacingStripe>,
+    t: ReturnType<typeof convexTest>,
+    ctx: RunCtx,
+    component: Component,
+    tag: string,
+  ) {
+    const chargeId = `ch_mix_${tag}`;
+    const legA = `tr_mixA_${tag}`;
+    const legB = `tr_mixB_${tag}`;
+    const operationId = `dp_mix_${tag}`;
+
+    await seedLeg(t, {
+      stripeTransferId: legA,
+      sourceChargeId: chargeId,
+      amount: 100,
+    });
+    await seedLeg(t, {
+      stripeTransferId: legB,
+      sourceChargeId: chargeId,
+      amount: 300,
+    });
+
+    // Only leg A's call needs to fail: it is processed first (rows come back
+    // in seed order), so its network error aborts the executor loop before
+    // leg B's Stripe call is ever attempted — leg B's `failNextCallFor` flag
+    // would otherwise sit unconsumed and misfire on a later, unrelated call.
+    stripe.failNextCallFor(legA);
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, {
+        sourceChargeId: chargeId,
+        amount: 398,
+        operationId,
+      }),
+    ).rejects.toThrow(/network error/);
+    expect(stripe.total(legA)).toBe(0);
+    expect(stripe.total(legB)).toBe(0);
+
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: chargeId,
+    });
+    const byId = new Map(rows.map((r) => [r.stripeTransferId, r]));
+    expect(byId.get(legA)!.reversalClaimedAmount).toBe(100);
+    expect(byId.get(legB)!.reversalClaimedAmount).toBe(298);
+
+    return { chargeId, legA, legB, operationId };
+  }
+
+  async function snapshot(
+    t: ReturnType<typeof convexTest>,
+    chargeId: string,
+    operationId: string,
+  ) {
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: chargeId,
+    });
+    const op = await t.query(api.connect.queries.getReversalOp, {
+      operationId,
+    });
+    return { rows, op };
+  }
+
+  it("leg A valid + leg B's claim frontier moved past this op's slice (mutations.ts ~527-533) — refuses, rewinds neither leg", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+    const { chargeId, legB, operationId } = await seedMixedOp(
+      stripe,
+      t,
+      ctx,
+      component,
+      "frontier",
+    );
+
+    // A successor operation claims further capacity on the same charge. Leg A
+    // is already fully claimed, so its take is capped at 0 by ANY mode
+    // (`leg.amount - from` = 0) — it is untouched. Leg B still has 2 left, so
+    // this advances its frontier from 298 to 299, past dp_mix_frontier's
+    // recorded slice.to=298 for leg B. This is a pure claim (no Stripe call),
+    // exactly what a real concurrent operation would do.
+    await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_successor_frontier",
+      sourceChargeId: chargeId,
+      mode: { kind: "amount", amount: 1 },
+    });
+    const afterSuccessor = await t.query(
+      api.connect.queries.listTransfersByCharge,
+      { sourceChargeId: chargeId },
+    );
+    expect(
+      afterSuccessor.find((r) => r.stripeTransferId === legB)!
+        .reversalClaimedAmount,
+    ).toBe(299);
+
+    const before = await snapshot(t, chargeId, operationId);
+
+    await expect(
+      reclaimReversalClaim(asStripe(stripe), component, ctx, {
+        operationId,
+        mode: "release",
+        minAgeMs: DAY,
+        now: Date.now() + 2 * DAY,
+      }),
+    ).rejects.toThrow(/claim frontier .* moved past/);
+
+    // Byte-for-byte unchanged from right before the release attempt — leg A's
+    // (valid) row was never patched either, proving the abort happens before
+    // ANY leg is written, not just before the invalid one.
+    const after = await snapshot(t, chargeId, operationId);
+    expect(after).toEqual(before);
+  });
+
+  it("leg A valid + leg B missing from `verified` (mutations.ts ~534-539) — refuses, rewinds neither leg", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+    const { chargeId, legA, operationId } = await seedMixedOp(
+      stripe,
+      t,
+      ctx,
+      component,
+      "missing",
+    );
+
+    const before = await snapshot(t, chargeId, operationId);
+
+    // Only reachable by calling the mutation directly: `reclaimReversalClaim`
+    // always fetches live Stripe state for every unique leg in the op, so a
+    // caller going through the public client can never omit one. Drive the
+    // component mutation straight to prove the mutation itself still refuses
+    // when handed an incomplete `verified` array (e.g. a buggy caller).
+    await expect(
+      t.mutation(api.connect.mutations.releaseReversalClaim, {
+        operationId,
+        verified: [{ stripeTransferId: legA, amountReversed: 0 }],
+      }),
+    ).rejects.toThrow(/missing live amount_reversed/);
+
+    const after = await snapshot(t, chargeId, operationId);
+    expect(after).toEqual(before);
+  });
+
+  it("leg A valid + leg B's money already moved (mutations.ts ~540-545) — refuses, rewinds neither leg", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+    const { chargeId, legB, operationId } = await seedMixedOp(
+      stripe,
+      t,
+      ctx,
+      component,
+      "moved",
+    );
+
+    // Leg B's money actually moved out of band (mirrors the single-leg
+    // BTS-74 "already moved" test above) — live amount_reversed now exceeds
+    // this op's slice.from for leg B, while leg A is untouched and valid.
+    await stripe.transfers.createReversal(
+      legB,
+      { amount: 50 },
+      { idempotencyKey: "oob_mix_moved" },
+    );
+    expect(stripe.total(legB)).toBe(50);
+
+    const before = await snapshot(t, chargeId, operationId);
+
+    await expect(
+      reclaimReversalClaim(asStripe(stripe), component, ctx, {
+        operationId,
+        mode: "release",
+        minAgeMs: DAY,
+        now: Date.now() + 2 * DAY,
+      }),
+    ).rejects.toThrow(/already moved/);
+
+    const after = await snapshot(t, chargeId, operationId);
+    expect(after).toEqual(before);
+  });
+});

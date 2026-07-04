@@ -285,13 +285,62 @@ describe("claimReversalSlices (BTS-63)", () => {
     });
     expect(retry).toEqual({
       replay: true,
-      slices: [{ stripeTransferId: "tr_c2", from: 0, to: 4000, confirmed: 6000 }],
+      slices: [
+        { stripeTransferId: "tr_c2", from: 0, to: 4000, confirmed: 6000 },
+      ],
+    });
+  });
+
+  it("claims percent slices across split legs and replays the recorded claim", async () => {
+    const t = convexTest(schema, modules);
+    await seed(t, { stripeTransferId: "tr_pct_store", amount: 7000 });
+    await seed(t, { stripeTransferId: "tr_pct_aff", amount: 3000 });
+
+    const first = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_percent",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "percent", percent: 33 },
+    });
+
+    expect(first).toEqual({
+      replay: false,
+      slices: [
+        { stripeTransferId: "tr_pct_store", from: 0, to: 2310, confirmed: 0 },
+        { stripeTransferId: "tr_pct_aff", from: 0, to: 990, confirmed: 0 },
+      ],
+    });
+
+    await t.mutation(api.connect.mutations.recordTransferReversal, {
+      stripeTransferId: "tr_pct_store",
+      reversedAmount: 2500,
+    });
+
+    const retry = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_percent",
+      sourceChargeId: "ch_claim",
+      mode: { kind: "percent", percent: 33 },
+    });
+    expect(retry).toEqual({
+      replay: true,
+      slices: [
+        {
+          stripeTransferId: "tr_pct_store",
+          from: 0,
+          to: 2310,
+          confirmed: 2500,
+        },
+        { stripeTransferId: "tr_pct_aff", from: 0, to: 990, confirmed: 0 },
+      ],
     });
   });
 
   it("records an empty claim so a redelivery stays a no-op as state changes", async () => {
     const t = convexTest(schema, modules);
-    await seed(t, { stripeTransferId: "tr_c3", amount: 5000, reversedAmount: 5000 });
+    await seed(t, {
+      stripeTransferId: "tr_c3",
+      amount: 5000,
+      reversedAmount: 5000,
+    });
 
     const first = await t.mutation(api.connect.mutations.claimReversalSlices, {
       operationId: "re_empty",
@@ -310,8 +359,16 @@ describe("claimReversalSlices (BTS-63)", () => {
 
   it("never claims against reinstatement payout rows", async () => {
     const t = convexTest(schema, modules);
-    await seed(t, { stripeTransferId: "tr_c4", amount: 3000, reversedAmount: 3000 });
-    await seed(t, { stripeTransferId: "tr_c4_pay", amount: 3000, reinstatement: true });
+    await seed(t, {
+      stripeTransferId: "tr_c4",
+      amount: 3000,
+      reversedAmount: 3000,
+    });
+    await seed(t, {
+      stripeTransferId: "tr_c4_pay",
+      amount: 3000,
+      reinstatement: true,
+    });
 
     const claim = await t.mutation(api.connect.mutations.claimReversalSlices, {
       operationId: "dp_reinst",

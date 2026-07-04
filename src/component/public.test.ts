@@ -469,9 +469,10 @@ describe("core — clearAllTables", () => {
     });
 
     const result = await t.mutation(api.core.mutations.clearAllTables, {});
+    const tableCount = Object.keys(schema.tables).length;
 
     expect(result.cleared).toBe(13);
-    expect(result.tables).toHaveLength(13);
+    expect(result.tables).toHaveLength(tableCount);
 
     for (const tableName of Object.keys(schema.tables) as TableNames[]) {
       const remaining = await t.run(async (ctx) =>

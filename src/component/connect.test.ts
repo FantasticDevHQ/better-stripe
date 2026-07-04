@@ -8,6 +8,27 @@ import schema from "./schema.js";
 const modules = import.meta.glob("./**/*.*s");
 
 describe("connect — refunds", () => {
+  const seedRefund = async (
+    t: ReturnType<typeof convexTest>,
+    args: {
+      stripeRefundId: string;
+      stripePaymentIntentId?: string;
+      accountId?: string;
+      status:
+        | "pending"
+        | "requires_action"
+        | "succeeded"
+        | "failed"
+        | "canceled";
+    },
+  ) => {
+    await t.mutation(api.connect.mutations.upsertRefund, {
+      amount: 100,
+      currency: "usd",
+      ...args,
+    });
+  };
+
   it("upsertRefund: inserts and getRefundByStripeId returns it", async () => {
     const t = convexTest(schema, modules);
 
@@ -169,6 +190,85 @@ describe("connect — refunds", () => {
     expect(succeeded[0].stripeRefundId).toBe("re_a");
   });
 
+  it("listRefunds: filters by account and status via compound index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedRefund(t, {
+      stripeRefundId: "re_acct_status_match",
+      stripePaymentIntentId: "pi_acct_status",
+      accountId: "acct_refunds",
+      status: "succeeded",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_acct_status_wrong_status",
+      stripePaymentIntentId: "pi_acct_status",
+      accountId: "acct_refunds",
+      status: "failed",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_acct_status_wrong_account",
+      stripePaymentIntentId: "pi_acct_status_other",
+      accountId: "acct_other",
+      status: "succeeded",
+    });
+
+    const refunds = await t.query(api.connect.queries.listRefunds, {
+      accountId: "acct_refunds",
+      status: "succeeded",
+    });
+    expect(refunds.map((refund) => refund.stripeRefundId)).toEqual([
+      "re_acct_status_match",
+    ]);
+  });
+
+  it("listRefunds: filters by account via the by_account_id index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedRefund(t, {
+      stripeRefundId: "re_account_match",
+      stripePaymentIntentId: "pi_account_match",
+      accountId: "acct_account_only",
+      status: "pending",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_account_control",
+      stripePaymentIntentId: "pi_account_control",
+      accountId: "acct_other",
+      status: "pending",
+    });
+
+    const refunds = await t.query(api.connect.queries.listRefunds, {
+      accountId: "acct_account_only",
+    });
+    expect(refunds.map((refund) => refund.stripeRefundId)).toEqual([
+      "re_account_match",
+    ]);
+  });
+
+  it("listRefunds: filters by payment intent via the by_stripe_payment_intent_id index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedRefund(t, {
+      stripeRefundId: "re_pi_match",
+      stripePaymentIntentId: "pi_refund_only",
+      accountId: "acct_pi",
+      status: "pending",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_pi_control",
+      stripePaymentIntentId: "pi_refund_other",
+      accountId: "acct_pi",
+      status: "pending",
+    });
+
+    const refunds = await t.query(api.connect.queries.listRefunds, {
+      stripePaymentIntentId: "pi_refund_only",
+    });
+    expect(refunds.map((refund) => refund.stripeRefundId)).toEqual([
+      "re_pi_match",
+    ]);
+  });
+
   it("listRefunds: honors a status-only filter via the by_status index", async () => {
     const t = convexTest(schema, modules);
 
@@ -193,9 +293,58 @@ describe("connect — refunds", () => {
     expect(failed).toHaveLength(1);
     expect(failed[0].stripeRefundId).toBe("re_s1");
   });
+
+  it("listRefunds: lists refunds without filters", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedRefund(t, {
+      stripeRefundId: "re_all_a",
+      stripePaymentIntentId: "pi_all_a",
+      accountId: "acct_all_a",
+      status: "succeeded",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_all_b",
+      stripePaymentIntentId: "pi_all_b",
+      accountId: "acct_all_b",
+      status: "failed",
+    });
+
+    const refunds = await t.query(api.connect.queries.listRefunds, {});
+    expect(refunds.map((refund) => refund.stripeRefundId).sort()).toEqual([
+      "re_all_a",
+      "re_all_b",
+    ]);
+  });
 });
 
 describe("connect — disputes", () => {
+  const seedDispute = async (
+    t: ReturnType<typeof convexTest>,
+    args: {
+      stripeDisputeId: string;
+      stripePaymentIntentId?: string;
+      accountId?: string;
+      status:
+        | "warning_needs_response"
+        | "warning_under_review"
+        | "warning_closed"
+        | "needs_response"
+        | "under_review"
+        | "won"
+        | "lost"
+        | "prevented";
+    },
+  ) => {
+    await t.mutation(api.connect.mutations.upsertDispute, {
+      amount: 100,
+      currency: "usd",
+      reason: "fraudulent",
+      isChargeRefundable: false,
+      ...args,
+    });
+  };
+
   it("upsertDispute: inserts and getDisputeByStripeId returns it", async () => {
     const t = convexTest(schema, modules);
 
@@ -298,6 +447,15 @@ describe("connect — disputes", () => {
       reason: "fraudulent",
       isChargeRefundable: false,
     });
+    await t.mutation(api.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_c",
+      accountId: "acct_2",
+      amount: 300,
+      currency: "usd",
+      status: "lost",
+      reason: "fraudulent",
+      isChargeRefundable: false,
+    });
 
     const lost = await t.query(api.connect.queries.listDisputes, {
       accountId: "acct_1",
@@ -309,8 +467,111 @@ describe("connect — disputes", () => {
     const lostAnyAccount = await t.query(api.connect.queries.listDisputes, {
       status: "lost",
     });
-    expect(lostAnyAccount).toHaveLength(1);
-    expect(lostAnyAccount[0].stripeDisputeId).toBe("dp_a");
+    expect(
+      lostAnyAccount.map((dispute) => dispute.stripeDisputeId).sort(),
+    ).toEqual(["dp_a", "dp_c"]);
+  });
+
+  it("listDisputes: filters by payment intent and status via compound index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedDispute(t, {
+      stripeDisputeId: "dp_pi_status_match",
+      stripePaymentIntentId: "pi_dispute_status",
+      accountId: "acct_dispute_pi",
+      status: "under_review",
+    });
+    await seedDispute(t, {
+      stripeDisputeId: "dp_pi_status_wrong_status",
+      stripePaymentIntentId: "pi_dispute_status",
+      accountId: "acct_dispute_pi",
+      status: "won",
+    });
+    await seedDispute(t, {
+      stripeDisputeId: "dp_pi_status_wrong_pi",
+      stripePaymentIntentId: "pi_dispute_other",
+      accountId: "acct_dispute_pi",
+      status: "under_review",
+    });
+
+    const disputes = await t.query(api.connect.queries.listDisputes, {
+      stripePaymentIntentId: "pi_dispute_status",
+      status: "under_review",
+    });
+    expect(disputes.map((dispute) => dispute.stripeDisputeId)).toEqual([
+      "dp_pi_status_match",
+    ]);
+  });
+
+  it("listDisputes: filters by account via the by_account_id index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedDispute(t, {
+      stripeDisputeId: "dp_account_match",
+      stripePaymentIntentId: "pi_dispute_account",
+      accountId: "acct_dispute_only",
+      status: "needs_response",
+    });
+    await seedDispute(t, {
+      stripeDisputeId: "dp_account_control",
+      stripePaymentIntentId: "pi_dispute_account_control",
+      accountId: "acct_other",
+      status: "needs_response",
+    });
+
+    const disputes = await t.query(api.connect.queries.listDisputes, {
+      accountId: "acct_dispute_only",
+    });
+    expect(disputes.map((dispute) => dispute.stripeDisputeId)).toEqual([
+      "dp_account_match",
+    ]);
+  });
+
+  it("listDisputes: filters by payment intent via the by_stripe_payment_intent_id index", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedDispute(t, {
+      stripeDisputeId: "dp_pi_match",
+      stripePaymentIntentId: "pi_dispute_only",
+      accountId: "acct_pi_dispute",
+      status: "warning_needs_response",
+    });
+    await seedDispute(t, {
+      stripeDisputeId: "dp_pi_control",
+      stripePaymentIntentId: "pi_dispute_other",
+      accountId: "acct_pi_dispute",
+      status: "warning_needs_response",
+    });
+
+    const disputes = await t.query(api.connect.queries.listDisputes, {
+      stripePaymentIntentId: "pi_dispute_only",
+    });
+    expect(disputes.map((dispute) => dispute.stripeDisputeId)).toEqual([
+      "dp_pi_match",
+    ]);
+  });
+
+  it("listDisputes: lists disputes without filters", async () => {
+    const t = convexTest(schema, modules);
+
+    await seedDispute(t, {
+      stripeDisputeId: "dp_all_a",
+      stripePaymentIntentId: "pi_dispute_all_a",
+      accountId: "acct_dispute_all_a",
+      status: "lost",
+    });
+    await seedDispute(t, {
+      stripeDisputeId: "dp_all_b",
+      stripePaymentIntentId: "pi_dispute_all_b",
+      accountId: "acct_dispute_all_b",
+      status: "won",
+    });
+
+    const disputes = await t.query(api.connect.queries.listDisputes, {});
+    expect(disputes.map((dispute) => dispute.stripeDisputeId).sort()).toEqual([
+      "dp_all_a",
+      "dp_all_b",
+    ]);
   });
 });
 

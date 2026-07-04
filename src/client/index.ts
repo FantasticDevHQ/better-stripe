@@ -761,6 +761,8 @@ export class BetterStripe {
       fee?: FeeOverride;
       trialDays?: number;
       metadata?: Record<string, string>;
+      /** Stripe idempotency key for retry-safe subscription creation. */
+      idempotencyKey?: string;
     },
   ) {
     const { fee, ...rest } = opts;
@@ -1146,6 +1148,8 @@ export class BetterStripe {
       amount: number;
       currency?: string;
       metadata?: Record<string, string>;
+      /** Stripe idempotency key for retry-safe payout creation. */
+      idempotencyKey?: string;
     },
   ) {
     return payoutsImpl.createPayout(this.stripe(), ctx, opts);
@@ -1266,6 +1270,8 @@ export class BetterStripe {
       stripeAccountId?: string;
       refundApplicationFee?: boolean;
       reverseTransfer?: boolean;
+      /** Stripe idempotency key for retry-safe refund creation. */
+      idempotencyKey?: string;
       /**
        * Who is initiating the refund (BTS-35). A platform admin may refund any
        * sale; a seller may refund only sales routed to their own account. Omit

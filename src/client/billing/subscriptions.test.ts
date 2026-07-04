@@ -784,6 +784,27 @@ describe("createSubscription (BTS-17)", () => {
     expect(upsertArgs.chargeType).toBeUndefined();
   });
 
+  it("passes the supplied idempotency key to the Stripe subscription create call", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(createdSub());
+    const ctx = makeCtx();
+
+    await createSubscription(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      customerAccount: "acct_buyer",
+      stripePriceId: "price_1",
+      idempotencyKey: "bs_sub_buyer_1_price_1",
+    });
+
+    expect(stripe.subscriptions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer_account: "acct_buyer",
+        items: [{ price: "price_1" }],
+      }),
+      { idempotencyKey: "bs_sub_buyer_1_price_1" },
+    );
+  });
+
   it("routes a >1 split via separate charges (markers on subscription metadata)", async () => {
     const stripe = makeStripe();
     stripe.subscriptions.create.mockResolvedValue(createdSub());

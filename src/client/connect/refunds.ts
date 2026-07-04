@@ -59,6 +59,8 @@ export async function createRefund(
      * live-verified).
      */
     reverseTransfer?: boolean;
+    /** Stripe idempotency key for retry-safe refund creation. */
+    idempotencyKey?: string;
     /**
      * Who is initiating the refund (BTS-35). The app authenticates the caller
      * and passes the identity; the library enforces the scope. A platform admin
@@ -93,9 +95,20 @@ export async function createRefund(
   await assertRefundAuthorized(stripe, component, ctx, opts);
 
   try {
-    const requestOpts = opts.stripeAccountId
+    const accountRequestOpts = opts.stripeAccountId
       ? { stripeAccount: opts.stripeAccountId }
       : undefined;
+    const createRequestOpts =
+      opts.stripeAccountId !== undefined || opts.idempotencyKey !== undefined
+        ? {
+            ...(opts.stripeAccountId !== undefined
+              ? { stripeAccount: opts.stripeAccountId }
+              : {}),
+            ...(opts.idempotencyKey !== undefined
+              ? { idempotencyKey: opts.idempotencyKey }
+              : {}),
+          }
+        : undefined;
 
     // Resolve the charge to gate the marketplace flags on what it can honour.
     let chargeId = opts.stripeChargeId;
@@ -103,7 +116,7 @@ export async function createRefund(
       const pi = await stripe.paymentIntents.retrieve(
         opts.stripePaymentIntentId,
         undefined,
-        requestOpts,
+        accountRequestOpts,
       );
       chargeId =
         typeof pi.latest_charge === "string"
@@ -111,7 +124,7 @@ export async function createRefund(
           : (pi.latest_charge?.id ?? undefined);
     }
     const charge = chargeId
-      ? await stripe.charges.retrieve(chargeId, undefined, requestOpts)
+      ? await stripe.charges.retrieve(chargeId, undefined, accountRequestOpts)
       : undefined;
 
     const refundApplicationFee =
@@ -131,7 +144,7 @@ export async function createRefund(
         ...(refundApplicationFee ? { refund_application_fee: true } : {}),
         ...(reverseTransfer ? { reverse_transfer: true } : {}),
       },
-      requestOpts,
+      createRequestOpts,
     );
     return { stripeRefundId: refund.id };
   } catch (err) {

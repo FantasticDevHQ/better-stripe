@@ -180,6 +180,27 @@ describe("createRefund — fee & transfer flags (BTS-34)", () => {
     );
   });
 
+  it("passes the supplied idempotency key to the Stripe refund create call", async () => {
+    const stripe = makeStripe({ transfer: null, application_fee: "fee_1" });
+
+    await createRefund(asStripe(stripe), makeComponent(), noCtx, {
+      stripeChargeId: "ch_1",
+      stripeAccountId: "acct_seller",
+      idempotencyKey: "bs_refund_ch_1_attempt_1",
+    });
+
+    expect(stripe.refunds.create).toHaveBeenCalledWith(
+      expect.objectContaining({ charge: "ch_1", refund_application_fee: true }),
+      {
+        stripeAccount: "acct_seller",
+        idempotencyKey: "bs_refund_ch_1_attempt_1",
+      },
+    );
+    expect(stripe.charges.retrieve).toHaveBeenCalledWith("ch_1", undefined, {
+      stripeAccount: "acct_seller",
+    });
+  });
+
   it("still rejects when neither or both charge identifiers are given", async () => {
     const stripe = makeStripe({});
     await expect(

@@ -56,6 +56,8 @@ export async function createSubscription(
     /** Platform-default statement-descriptor suffix (BTS-32); see checkout.ts. */
     defaultStatementDescriptorSuffix?: string;
     metadata?: Record<string, string>;
+    /** Stripe idempotency key for retry-safe subscription creation. */
+    idempotencyKey?: string;
   },
 ): Promise<{ stripeSubscriptionId: string; status: SubscriptionStatus }> {
   // Resolve routing: a >1 split is separate charges & transfers; a single-recipient
@@ -151,8 +153,13 @@ export async function createSubscription(
     }
   }
 
+  const requestOpts =
+    opts.idempotencyKey !== undefined
+      ? { idempotencyKey: opts.idempotencyKey }
+      : undefined;
+
   const sub = await callStripe("Failed to create subscription", () =>
-    stripe.subscriptions.create(params),
+    stripe.subscriptions.create(params, requestOpts),
   );
 
   const firstItem = sub.items?.data?.[0];

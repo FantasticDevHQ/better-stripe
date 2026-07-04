@@ -1542,54 +1542,47 @@ describe("BetterStripe", () => {
   // =========================================================================
 
   describe("syncAllAccounts", () => {
-    it("paginates through V2 accounts", async () => {
+    /** Helper: returns an async iterable from an array (matches Stripe's V2 auto-pagination API). */
+    async function* asyncIter<T>(items: T[]): AsyncIterable<T> {
+      for (const item of items) {
+        yield item;
+      }
+    }
+
+    it("drains every V2 account the SDK's auto-pagination iterator yields", async () => {
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",
       });
 
-      // First page: has_more = true
-      mockStripeInstance.v2.core.accounts.list
-        .mockResolvedValueOnce({
-          data: [
-            {
-              id: "acct_1",
-              metadata: { userId: "u1" },
-              configuration: { customer: { applied: true } },
-            },
-            {
-              id: "acct_2",
-              metadata: { userId: "u2" },
-              configuration: { customer: { applied: true } },
-            },
-          ],
-          has_more: true,
-        })
-        // Second page: has_more = false
-        .mockResolvedValueOnce({
-          data: [
-            {
-              id: "acct_3",
-              metadata: { userId: "u3" },
-              configuration: { customer: { applied: true } },
-            },
-          ],
-          has_more: false,
-        });
+      mockStripeInstance.v2.core.accounts.list.mockReturnValue(
+        asyncIter([
+          {
+            id: "acct_1",
+            metadata: { userId: "u1" },
+            configuration: { customer: { applied: true } },
+          },
+          {
+            id: "acct_2",
+            metadata: { userId: "u2" },
+            configuration: { customer: { applied: true } },
+          },
+          {
+            id: "acct_3",
+            metadata: { userId: "u3" },
+            configuration: { customer: { applied: true } },
+          },
+        ]),
+      );
 
       const result = await bs.syncAllAccounts(mockCtx);
 
       expect(result.synced).toBe(3);
       expect(result.errorCount).toBe(0);
 
-      // Verify pagination: second call should use starting_after
-      expect(mockStripeInstance.v2.core.accounts.list).toHaveBeenCalledTimes(2);
-      expect(mockStripeInstance.v2.core.accounts.list).toHaveBeenNthCalledWith(
-        2,
-        {
-          limit: 20,
-          starting_after: "acct_2",
-        },
-      );
+      expect(mockStripeInstance.v2.core.accounts.list).toHaveBeenCalledTimes(1);
+      expect(mockStripeInstance.v2.core.accounts.list).toHaveBeenCalledWith({
+        limit: 20,
+      });
 
       // Verify upsertAccount was called 3 times
       expect(mockCtx.runMutation).toHaveBeenCalledTimes(3);
@@ -1600,8 +1593,8 @@ describe("BetterStripe", () => {
         STRIPE_SECRET_KEY: "sk_test_xxx",
       });
 
-      mockStripeInstance.v2.core.accounts.list.mockResolvedValueOnce({
-        data: [
+      mockStripeInstance.v2.core.accounts.list.mockReturnValue(
+        asyncIter([
           {
             id: "acct_restricted",
             metadata: { userId: "u_restricted" },
@@ -1630,9 +1623,8 @@ describe("BetterStripe", () => {
             },
             configuration: {},
           },
-        ],
-        has_more: false,
-      });
+        ]),
+      );
 
       const result = await bs.syncAllAccounts(mockCtx);
 

@@ -7,7 +7,6 @@ import type {
   V2AccountCreateParams,
   V2AccountUpdateParams,
   V2AccountRetrieveInclude,
-  V2AccountListParams,
   V2CloseAppliedConfiguration,
 } from "../stripe-types.js";
 import type { StripeComponentAccount } from "../types.js";
@@ -427,22 +426,11 @@ export async function listStripeAccounts(
   opts?: { limit?: number },
 ): Promise<Stripe.V2.Core.Account[]> {
   const accounts: Stripe.V2.Core.Account[] = [];
-  let hasMore = true;
-  let startingAfter: string | undefined;
 
-  // TODO: Remove manual pagination when Stripe SDK adds starting_after to AccountListParams
-  while (hasMore) {
-    const listParams: V2AccountListParams & { starting_after?: string } = {
-      limit: opts?.limit ?? 100,
-    };
-    if (startingAfter) listParams.starting_after = startingAfter;
-
-    const page = await stripe.v2.core.accounts.list(listParams);
-    const data = page.data ?? [];
-    accounts.push(...data);
-    hasMore = page.has_more ?? false;
-    startingAfter = data.length > 0 ? data[data.length - 1]?.id : undefined;
-    if (data.length === 0) hasMore = false;
+  for await (const account of stripe.v2.core.accounts.list({
+    limit: opts?.limit ?? 100,
+  })) {
+    accounts.push(account);
   }
 
   return accounts;
@@ -628,70 +616,50 @@ export async function syncAllAccounts(
 ) {
   let synced = 0;
   const errors: string[] = [];
-  let hasMore = true;
-  let startingAfter: string | undefined;
 
-  while (hasMore) {
-    // TODO: Remove manual pagination when Stripe SDK adds starting_after to AccountListParams
-    const params: V2AccountListParams & { starting_after?: string } = {
-      limit: 20,
-    };
-    if (startingAfter) params.starting_after = startingAfter;
+  for await (const account of stripe.v2.core.accounts.list({ limit: 20 })) {
+    try {
+      const identity = account.identity;
+      const metadata = (account.metadata ?? {}) as Record<string, string>;
+      const userId = metadata.userId ?? metadata.user_id ?? account.id;
+      const orgId = metadata.orgId ?? metadata.org_id ?? undefined;
+      const { onboardingStatus, missingRequirements } =
+        deriveAccountStatus(account);
 
-    const page = await stripe.v2.core.accounts.list(params);
-    const data = page.data ?? [];
+      // V2 Account uses contact_email at account level, individual.email in identity
+      const email =
+        account.contact_email ?? identity?.individual?.email ?? undefined;
+      // V2 uses registered_name for business, given_name + surname for individual
+      const name =
+        identity?.business_details?.registered_name ??
+        (identity?.individual
+          ? [identity.individual.given_name, identity.individual.surname]
+              .filter(Boolean)
+              .join(" ") || undefined
+          : undefined);
 
-    for (const account of data) {
-      try {
-        const identity = account.identity;
-        const metadata = (account.metadata ?? {}) as Record<string, string>;
-        const userId = metadata.userId ?? metadata.user_id ?? account.id;
-        const orgId = metadata.orgId ?? metadata.org_id ?? undefined;
-        const { onboardingStatus, missingRequirements } =
-          deriveAccountStatus(account);
-
-        // V2 Account uses contact_email at account level, individual.email in identity
-        const email =
-          account.contact_email ?? identity?.individual?.email ?? undefined;
-        // V2 uses registered_name for business, given_name + surname for individual
-        const name =
-          identity?.business_details?.registered_name ??
-          (identity?.individual
-            ? [identity.individual.given_name, identity.individual.surname]
-                .filter(Boolean)
-                .join(" ") || undefined
-            : undefined);
-
-        await runMutationOrThrow(
-          ctx,
-          componentRef(component, "core/mutations/upsertAccount"),
-          {
-            stripeAccountId: account.id,
-            userId,
-            orgId,
-            email,
-            name,
-            country: identity?.country ?? undefined,
-            configuration: account.configuration ?? undefined,
-            requirements: account.requirements ?? undefined,
-            onboardingStatus,
-            missingRequirements,
-            metadata,
-          },
-        );
-        synced++;
-      } catch (error) {
-        errors.push(
-          `Account ${account.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-    }
-
-    hasMore = page.has_more ?? false;
-    if (data.length > 0) {
-      startingAfter = data[data.length - 1].id;
-    } else {
-      hasMore = false;
+      await runMutationOrThrow(
+        ctx,
+        componentRef(component, "core/mutations/upsertAccount"),
+        {
+          stripeAccountId: account.id,
+          userId,
+          orgId,
+          email,
+          name,
+          country: identity?.country ?? undefined,
+          configuration: account.configuration ?? undefined,
+          requirements: account.requirements ?? undefined,
+          onboardingStatus,
+          missingRequirements,
+          metadata,
+        },
+      );
+      synced++;
+    } catch (error) {
+      errors.push(
+        `Account ${account.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 

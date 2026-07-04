@@ -78,5 +78,36 @@ export function computeReversalSlices(
       slices.push({ stripeTransferId: leg.stripeTransferId, from, to });
     }
   }
+
+  // BTS-102: the per-leg `round` above sizes each leg's share independently, so
+  // a set whose shares all round DOWN (e.g. 33/33/34 of 10 → 3+3+3) leaves the
+  // leftover `budget` unspent — the residue is silently dropped and the clawback
+  // recovers less than requested. Hand that residue to legs that still have
+  // headroom so the slices sum to EXACTLY min(amount, total headroom). Each
+  // top-up is capped at the leg's remaining headroom and drawn from `budget`
+  // (which is `amount − Σtakes ≥ 0`), so the total can only rise toward the
+  // requested amount, never past it — the "sum exceeds requested" cap holds.
+  if (mode.kind === "amount" && budget > 0) {
+    const sliceByLeg = new Map(slices.map((s) => [s.stripeTransferId, s]));
+    for (const leg of legs) {
+      if (budget <= 0) break;
+      const existing = sliceByLeg.get(leg.stripeTransferId);
+      const from = Math.min(leg.frontier, leg.amount);
+      const currentTo = existing ? existing.to : from;
+      const add = Math.min(budget, leg.amount - currentTo);
+      if (add <= 0) continue;
+      budget -= add;
+      if (existing) {
+        existing.to = currentTo + add;
+      } else {
+        slices.push({
+          stripeTransferId: leg.stripeTransferId,
+          from,
+          to: from + add,
+        });
+      }
+    }
+  }
+
   return slices;
 }

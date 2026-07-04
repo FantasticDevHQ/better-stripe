@@ -253,8 +253,9 @@ export async function reclaimReversalClaim(
  * Reversal sizing, per transfer (exactly one of `percent`/`amount`, or neither):
  *  - `percent`  — reverse that percentage of each transfer's original amount.
  *  - `amount`   — reverse this total across all transfers, pro-rata by size,
- *                 budget-capped so the sum never exceeds `amount` (rounding
- *                 residue is dropped, not redistributed).
+ *                 budget-capped so the sum never exceeds `amount`. Rounding
+ *                 residue is redistributed to legs with headroom (BTS-102), so
+ *                 the reversed total is exactly `min(amount, total headroom)`.
  *  - neither    — full reversal.
  *
  * Always capped at each transfer's un-reversed remainder, so a fully-reversed

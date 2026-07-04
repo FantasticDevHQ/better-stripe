@@ -242,6 +242,64 @@ describe("reverseTransfers (BTS-25)", () => {
   });
 });
 
+describe("computeReversalSlices amount-mode exact total (BTS-102)", () => {
+  // All legs fresh (frontier 0). The audit finding: per-leg rounding drops
+  // residue when every leg's pro-rata share rounds down, so the reclaimed sum
+  // falls short of the requested amount. The fix must reclaim EXACTLY
+  // min(amount, total headroom) for any leg-count/amount combination — never
+  // more (the budget cap), never short (residue redistributed).
+  const asLegs = (amounts: number[]) =>
+    amounts.map((amount, i) => ({
+      stripeTransferId: `tr_${i}`,
+      amount,
+      frontier: 0,
+    }));
+  const reversed = (slices: { from: number; to: number }[]) =>
+    slices.reduce((s, sl) => s + (sl.to - sl.from), 0);
+
+  const cases: { split: number[]; amount: number }[] = [
+    { split: [33, 33, 34], amount: 10 }, // audit counter-example: rounds 3+3+3=9
+    { split: [33, 33, 34], amount: 100 }, // the whole charge
+    { split: [1, 1, 1], amount: 1 }, // every share rounds to 0
+    { split: [1, 1, 1], amount: 2 },
+    { split: [7000, 1000, 1000], amount: 3333 },
+    { split: [100, 300], amount: 398 }, // BTS-79 shape
+    { split: [1, 1_000_000], amount: 500_000 },
+    { split: [10, 10, 10, 10, 10, 10, 10], amount: 33 },
+    { split: [10, 10], amount: 100 }, // amount exceeds total headroom
+  ];
+
+  it.each(cases)(
+    "reverses exactly min(amount, total) for split $split, amount $amount",
+    ({ split, amount }) => {
+      const total = split.reduce((a, b) => a + b, 0);
+      const slices = computeReversalSlices(asLegs(split), {
+        kind: "amount",
+        amount,
+      });
+      // The full requested amount is clawed back (capped at total headroom):
+      // residue is redistributed, not dropped.
+      expect(reversed(slices)).toBe(Math.min(amount, total));
+      // ...and never MORE than requested — the "sum exceeds amount" cap holds.
+      expect(reversed(slices)).toBeLessThanOrEqual(amount);
+      // Every slice stays a real, in-bounds interval on its leg.
+      for (const sl of slices) {
+        const leg = split[Number(sl.stripeTransferId.slice(3))]!;
+        expect(sl.to).toBeGreaterThan(sl.from);
+        expect(sl.to).toBeLessThanOrEqual(leg);
+      }
+    },
+  );
+
+  it("the 33/33/34 → 10 counter-example is no longer short by a cent", () => {
+    const slices = computeReversalSlices(asLegs([33, 33, 34]), {
+      kind: "amount",
+      amount: 10,
+    });
+    expect(reversed(slices)).toBe(10);
+  });
+});
+
 describe("createSplitTransfers engine (BTS-22)", () => {
   it("creates a transfer per recipient with source_transaction + ledger row (2-way)", async () => {
     const stripe = makeStripe();

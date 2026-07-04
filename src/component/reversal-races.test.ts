@@ -172,6 +172,68 @@ async function seedLeg(
   });
 }
 
+describe("BTS-102 — amount-mode reclaims the full requested total, byte-identical on replay", () => {
+  type Slice = { stripeTransferId: string; from: number; to: number };
+  const reversed = (slices: { from: number; to: number }[]) =>
+    slices.reduce((s, sl) => s + (sl.to - sl.from), 0);
+  const geom = (slices: Slice[]): Slice[] =>
+    slices.map((s) => ({
+      stripeTransferId: s.stripeTransferId,
+      from: s.from,
+      to: s.to,
+    }));
+
+  it("a 33/33/34 clawback of 10 claims exactly 10 (no dropped residue), and a redelivery replays it byte-for-byte", async () => {
+    const t = convexTest(schema, modules);
+
+    // Three legs whose pro-rata shares of 10 each round DOWN (3.3/3.3/3.4):
+    // independent rounding claims 3+3+3=9 and the leftover cent is lost.
+    await seedLeg(t, {
+      stripeTransferId: "tr_t1",
+      sourceChargeId: "ch_thirds",
+      amount: 33,
+    });
+    await seedLeg(t, {
+      stripeTransferId: "tr_t2",
+      sourceChargeId: "ch_thirds",
+      amount: 33,
+    });
+    await seedLeg(t, {
+      stripeTransferId: "tr_t3",
+      sourceChargeId: "ch_thirds",
+      amount: 34,
+    });
+
+    // Fresh claim: the recorded plan must reclaim the full 10.
+    const fresh = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_thirds",
+      sourceChargeId: "ch_thirds",
+      mode: { kind: "amount", amount: 10 },
+    });
+    expect(fresh.replay).toBe(false);
+    expect(reversed(fresh.slices)).toBe(10);
+
+    // The stored op is the PERMANENT, replayed-forever record — it too must
+    // carry the full 10, not a short plan.
+    const op = await t.query(api.connect.queries.getReversalOp, {
+      operationId: "dp_thirds",
+    });
+    expect(op).not.toBeNull();
+    expect(reversed(op!.slices)).toBe(10);
+
+    // Redelivery under the same operationId replays the recorded slices verbatim
+    // — byte-identical geometry, still summing to 10.
+    const replay = await t.mutation(api.connect.mutations.claimReversalSlices, {
+      operationId: "dp_thirds",
+      sourceChargeId: "ch_thirds",
+      mode: { kind: "amount", amount: 10 },
+    });
+    expect(replay.replay).toBe(true);
+    expect(geom(replay.slices)).toEqual(geom(fresh.slices));
+    expect(reversed(replay.slices)).toBe(10);
+  });
+});
+
 describe("BTS-63 race 1 — refund path: concurrent DISTINCT refunds must not double-reverse", () => {
   it("two refunds computing the same target from the same pre-write state reverse it once", async () => {
     const t = convexTest(schema, modules);

@@ -267,3 +267,79 @@ describe("queries — getDisputeChargeback exposes clawback ledger (BTS-82)", ()
     ).resolves.toBeNull();
   });
 });
+
+describe("queries — getMarketplacePersonas resolves store/affiliate by email (BTS-91)", () => {
+  it("returns null for both personas before the marketplace seed has run", async () => {
+    const t = withComponent();
+
+    const result = await t.query(api.queries.getMarketplacePersonas, {});
+    expect(result).toEqual({ store: null, affiliate: null });
+  });
+
+  it("resolves store + affiliate with their linked account ids once seeded", async () => {
+    const t = withComponent();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        name: "Maya Merchant",
+        email: "maya@example.com",
+        role: "seller",
+        storeName: "Maya's Fitness Studio",
+        stripeAccountId: "acct_maya",
+      });
+      await ctx.db.insert("users", {
+        name: "Avery Affiliate",
+        email: "avery@example.com",
+        role: "affiliate",
+        stripeAccountId: "acct_avery",
+      });
+    });
+
+    const result = await t.query(api.queries.getMarketplacePersonas, {});
+    expect(result.store).toMatchObject({
+      accountId: "acct_maya",
+      name: "Maya's Fitness Studio",
+    });
+    expect(result.affiliate).toMatchObject({
+      accountId: "acct_avery",
+      name: "Avery Affiliate",
+    });
+  });
+
+  it("returns a null accountId for a persona that exists but isn't linked to Stripe yet", async () => {
+    const t = withComponent();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        name: "Maya Merchant",
+        email: "maya@example.com",
+        role: "seller",
+        storeName: "Maya's Fitness Studio",
+      });
+    });
+
+    const result = await t.query(api.queries.getMarketplacePersonas, {});
+    expect(result.store).toMatchObject({
+      accountId: null,
+      name: "Maya's Fitness Studio",
+    });
+    // The affiliate persona was never seeded at all.
+    expect(result.affiliate).toBeNull();
+  });
+
+  it("falls back to the user's name when the store has no storeName set", async () => {
+    const t = withComponent();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        name: "Maya Merchant",
+        email: "maya@example.com",
+        role: "seller",
+        stripeAccountId: "acct_maya",
+      });
+    });
+
+    const result = await t.query(api.queries.getMarketplacePersonas, {});
+    expect(result.store).toMatchObject({
+      accountId: "acct_maya",
+      name: "Maya Merchant",
+    });
+  });
+});

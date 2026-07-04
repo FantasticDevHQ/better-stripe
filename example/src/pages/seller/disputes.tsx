@@ -149,7 +149,7 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
   const { disputes, isLoading } = useDisputes({ accountId: stripeAccountId });
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [acceptStatus, setAcceptStatus] = useState<
-    "idle" | "submitting" | "accepted" | "error"
+    "idle" | "confirming" | "submitting" | "accepted" | "error"
   >("idle");
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const { dispute } = useDisputeWithCountdown(selectedId);
@@ -232,18 +232,49 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
                     Concede the dispute and keep the clawback in place.
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleAcceptDispute}
-                  disabled={acceptStatus === "submitting"}
-                  data-testid="accept-dispute-button"
-                >
-                  {acceptStatus === "submitting"
-                    ? "Accepting..."
-                    : "Accept dispute"}
-                </Button>
+                {acceptStatus !== "confirming" && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setAcceptStatus("confirming")}
+                    disabled={acceptStatus === "submitting"}
+                    data-testid="accept-dispute-button"
+                  >
+                    {acceptStatus === "submitting"
+                      ? "Accepting..."
+                      : "Accept dispute"}
+                  </Button>
+                )}
               </div>
+              {acceptStatus === "confirming" && (
+                <div
+                  className="mt-3 space-y-2 rounded-md border border-destructive bg-destructive/10 p-3"
+                  data-testid="accept-dispute-confirm-panel"
+                >
+                  <p className="text-sm font-medium">
+                    This cannot be undone. Accepting permanently closes the
+                    dispute and keeps the clawback in place.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleAcceptDispute}
+                      data-testid="accept-dispute-confirm-button"
+                    >
+                      Yes, accept dispute
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setAcceptStatus("idle")}
+                      data-testid="accept-dispute-cancel-button"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
               {acceptStatus === "accepted" && (
                 <p className="mt-2 text-sm" data-testid="accept-dispute-status">
                   Dispute accepted. The row will update after Stripe delivers

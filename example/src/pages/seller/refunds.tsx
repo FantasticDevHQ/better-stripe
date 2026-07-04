@@ -133,10 +133,10 @@ export function SellerRefunds() {
     setBusy("refund");
     try {
       const result = await issueRefund({
+        userId: currentUser.id,
         stripePaymentIntentId: cleanPaymentIntentId,
         amountCents: parsedAmountCents ?? undefined,
         reason: "requested_by_customer",
-        actorAccountId: stripeAccountId,
       });
       setRefundResult(result);
     } catch (err) {
@@ -164,6 +164,7 @@ export function SellerRefunds() {
     setBusy("reversal");
     try {
       const result = await reverseTransfers({
+        userId: currentUser.id,
         sourceChargeId: cleanSourceChargeId,
         amountCents: parsedAmountCents ?? undefined,
       });

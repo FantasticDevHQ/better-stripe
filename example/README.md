@@ -98,6 +98,40 @@ Use the role switcher in the header to explore different perspectives:
 - **Seller** -- Connect onboarding, view payouts & earnings, manage Stripe account
 - **Admin** -- Manage products/prices, view subscriptions, webhook event log, setup
 
+## Demo security model
+
+This app has **no real authentication**. The role switcher just picks a
+seeded persona and every Convex call passes that persona's `userId` as a
+plain argument -- nothing cryptographically proves the request came from
+that persona (see `userId: ""`, the app's sentinel for an unattributed
+record, used e.g. by webhook-synced rows with no known owner). Anyone
+calling an action directly (devtools, a script) can pass any `userId` they
+like.
+
+Given that, **ownership checks in this app are a binding, not
+authentication**: every state-changing action (subscription lifecycle,
+disputes, refunds, transfer reversals) loads its target resource
+server-side and verifies the resource's persisted owner -- a
+subscription's `userId`, or a payment/dispute/transfer's connected
+Stripe account -- matches the `userId` the caller claims, **before** any
+Stripe side effect runs. This stops a client from operating on someone
+else's subscription, dispute, or sale even though it can claim to be
+anyone; it does not stop a client from lying about which persona it is,
+because there is no session to check that against. The shared gate lives
+in `convex/authz.ts` (`assertOwnership` plus a per-resource
+`assert*Owner` wrapper for subscriptions, seller accounts, disputes,
+payments, and transfers) and replaces the narrower `assertSubscriptionOwner`
+check BTS-81 introduced just for subscriptions.
+
+Money-moving and dispute-closing actions (`issueRefund`,
+`reverseSaleTransfers`, `acceptDispute`) are also gated by
+`assertTestModeStripeKey` (`convex/authz.ts`, shared with the admin Testing
+page's BTS-77 guard) **before** any Stripe call: it fails closed unless
+`STRIPE_SECRET_KEY` is an unambiguous `sk_test_`/`rk_test_` key. **Never
+deploy this example with a live secret key** -- these actions make real
+Stripe API calls, and the whole app assumes test mode throughout (see the
+E2E money-layer notes below).
+
 ## What's Demonstrated
 
 ### BetterStripe Client Methods

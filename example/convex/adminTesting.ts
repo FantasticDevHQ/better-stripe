@@ -21,36 +21,20 @@ import { makeFunctionReference } from "convex/server";
 import type { RegisteredQuery } from "convex/server";
 
 import { action, query, type ActionCtx } from "./_generated/server";
+import { assertTestModeStripeKey } from "./authz";
 import type { getMarketplaceDemoContext } from "./marketplace";
 import { stripe } from "./stripe";
+
+// Re-exported for this file's own tests (adminTesting.test.ts) and any other
+// caller that imported the guard from here before it moved to `./authz`
+// (BTS-83, shared with issueRefund/reverseSaleTransfers/acceptDispute).
+export { assertTestModeStripeKey };
 
 // Match the API version the BetterStripe client pins (see seed.ts, e2eMoney.ts).
 type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
 >;
 const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
-
-/**
- * Fail-closed guard against firing these actions with a non-test-mode key
- * (BTS-77). Every action on this page makes a REAL Stripe API call — if
- * `STRIPE_SECRET_KEY` on the deployment were ever a live key, clicking a
- * "fire" button would create a genuine live charge/subscription. Test (and
- * restricted-test) secret keys are always prefixed `sk_test_`/`rk_test_`;
- * anything else — missing, live, or malformed — throws. Exported so the
- * guard itself is unit-tested independent of the actions that call it.
- */
-export function assertTestModeStripeKey(key: string | undefined): void {
-  if (!key) {
-    throw new Error("STRIPE_SECRET_KEY not set on the deployment");
-  }
-  if (!/^[rs]k_test_/.test(key)) {
-    throw new Error(
-      "Refusing to fire an admin test trigger: STRIPE_SECRET_KEY is not a " +
-        "test-mode key (expected an sk_test_/rk_test_ prefix). This page " +
-        "makes REAL Stripe API calls and must never run against a live key.",
-    );
-  }
-}
 
 function rawStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;

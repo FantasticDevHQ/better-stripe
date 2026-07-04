@@ -1,10 +1,18 @@
 import { v } from "convex/values";
 
-import { action, type ActionCtx } from "./_generated/server";
+import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
 import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliateSplit";
-import { lifecycleArgs, trialEndFromDateInput } from "./subscriptionLifecycle";
+import {
+  assertAccountOwner,
+  assertDisputeOwner,
+  assertPaymentOwner,
+  assertSubscriptionOwner,
+  assertTestModeStripeKey,
+  assertTransfersOwner,
+} from "./authz";
+import { trialEndFromDateInput } from "./subscriptionLifecycle";
 
 // Webhook setup — creates both V1 (snapshot) and V2 (thin) event destinations
 export const setupWebhooks = action({
@@ -303,6 +311,7 @@ export function summarizeReversalResult(result: {
 
 export const issueRefund = action({
   args: {
+    userId: v.string(),
     stripePaymentIntentId: v.string(),
     amountCents: v.optional(v.number()),
     reason: v.optional(
@@ -312,10 +321,11 @@ export const issueRefund = action({
         v.literal("requested_by_customer"),
       ),
     ),
-    stripeAccountId: v.optional(v.string()),
-    actorAccountId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    const account = await assertPaymentOwner(ctx, args);
+
     const amount =
       args.amountCents === undefined
         ? undefined
@@ -325,20 +335,22 @@ export const issueRefund = action({
       stripePaymentIntentId: args.stripePaymentIntentId,
       amount,
       reason: args.reason,
-      stripeAccountId: args.stripeAccountId,
-      actor: args.actorAccountId
-        ? { type: "seller", accountId: args.actorAccountId }
-        : { type: "admin" },
+      stripeAccountId: account.stripeAccountId,
+      actor: { type: "seller", accountId: account.stripeAccountId },
     });
   },
 });
 
 export const reverseSaleTransfers = action({
   args: {
+    userId: v.string(),
     sourceChargeId: v.string(),
     amountCents: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    await assertTransfersOwner(ctx, args);
+
     const amount =
       args.amountCents === undefined
         ? undefined
@@ -352,22 +364,6 @@ export const reverseSaleTransfers = action({
 });
 
 // Subscriptions
-async function assertSubscriptionOwner(
-  ctx: ActionCtx,
-  args: { userId: string; stripeSubscriptionId: string },
-) {
-  const identity = lifecycleArgs(args);
-  const subscription = await stripe.getSubscriptionByStripeId(ctx, {
-    stripeSubscriptionId: identity.stripeSubscriptionId,
-  });
-
-  if (!subscription || subscription.userId !== identity.userId) {
-    throw new Error("Subscription not found for this user");
-  }
-
-  return identity;
-}
-
 export const cancelSubscription = action({
   args: { userId: v.string(), stripeSubscriptionId: v.string() },
   handler: async (ctx, args) => {
@@ -534,43 +530,57 @@ export const createAffiliateSplitCheckout = action({
 
 // Account Session client secret for the embedded disputes surface (BTS-30):
 // the ConnectProvider's fetchClientSecret calls this to mount EmbeddedDisputes.
+// `userId` binds the caller to the requested `stripeAccountId` (BTS-83) — an
+// embedded session grants Stripe-hosted UI control over that account's
+// disputes, so a client can't just request a session for someone else's store.
 export const createDisputeSession = action({
-  args: { stripeAccountId: v.string() },
-  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+  args: { userId: v.string(), stripeAccountId: v.string() },
+  handler: async (ctx, args) => {
+    await assertAccountOwner(ctx, args);
+    return stripe.createDisputeSession(ctx, {
+      stripeAccountId: args.stripeAccountId,
+    });
+  },
 });
 
 // Submit (or stage) dispute evidence from the headless EvidenceForm. The form
 // hands us the shape of EvidenceFormUpdateArgs; `submit: true` finalizes the
-// response to the bank, `submit: false` saves a draft.
+// response to the bank, `submit: false` saves a draft. `userId` must own the
+// dispute's connected account (BTS-83); the verified account id — not a
+// client-supplied one — scopes the Stripe API call.
 export const submitDisputeEvidence = action({
   args: {
+    userId: v.string(),
     stripeDisputeId: v.string(),
     evidence: v.any(),
     submit: v.boolean(),
-    stripeAccountId: v.optional(v.string()),
   },
-  handler: async (ctx, args) =>
-    stripe.updateDispute(ctx, {
+  handler: async (ctx, args) => {
+    const dispute = await assertDisputeOwner(ctx, args);
+    return stripe.updateDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,
       evidence: args.evidence,
       submit: args.submit,
-      stripeAccountId: args.stripeAccountId,
-    }),
+      stripeAccountId: dispute.accountId,
+    });
+  },
 });
 
 // Accept/concede a dispute from the headless seller UI. Stripe closes the
 // dispute; the component row and transfer clawback figures refresh from the
-// charge.dispute.closed webhook.
+// charge.dispute.closed webhook. `userId` must own the dispute's connected
+// account (BTS-83), and this is real money movement (clawback stays final),
+// so it's also gated on the test-mode key guard.
 export const acceptDispute = action({
-  args: {
-    stripeDisputeId: v.string(),
-    stripeAccountId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) =>
-    stripe.closeDispute(ctx, {
+  args: { userId: v.string(), stripeDisputeId: v.string() },
+  handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    const dispute = await assertDisputeOwner(ctx, args);
+    return stripe.closeDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,
-      stripeAccountId: args.stripeAccountId,
-    }),
+      stripeAccountId: dispute.accountId,
+    });
+  },
 });
 
 // Marketplace account lifecycle (BTS-46) — "one V2 account, configurations

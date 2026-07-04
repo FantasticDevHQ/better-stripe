@@ -9,9 +9,13 @@
  *    `DisputeDetail` + `EvidenceForm` (submit evidence via the app's
  *    `submitDisputeEvidence` action, which forwards to `stripe.updateDispute`).
  *  - **Embedded** (Stripe Connect): `ConnectProvider` + `EmbeddedDisputes`,
- *    fed by a Convex action calling `createDisputeSession({ stripeAccountId })`.
+ *    fed by a Convex action calling
+ *    `createDisputeSession({ userId, stripeAccountId })`.
  *
  * Data is scoped to the signed-in seller persona's store account (BTS-41 seed).
+ * Every action call below also passes `userId` so the server can bind the
+ * claimed persona to the target dispute/account before touching Stripe
+ * (BTS-83 — see example/README.md → "Demo security model").
  */
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -145,7 +149,13 @@ function ChargebackLedger({
   );
 }
 
-function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
+function HeadlessDisputes({
+  stripeAccountId,
+  userId,
+}: {
+  stripeAccountId: string;
+  userId: string;
+}) {
   const { disputes, isLoading } = useDisputes({ accountId: stripeAccountId });
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [acceptStatus, setAcceptStatus] = useState<
@@ -166,8 +176,8 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
     setAcceptError(null);
     try {
       await acceptDispute({
+        userId,
         stripeDisputeId: selectedId,
-        stripeAccountId,
       });
       setAcceptStatus("accepted");
     } catch (err) {
@@ -261,10 +271,10 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
               stripeAccountId={stripeAccountId}
               onUpdateDispute={(args: EvidenceFormUpdateArgs) =>
                 submitEvidence({
+                  userId,
                   stripeDisputeId: args.stripeDisputeId,
                   evidence: args.evidence,
                   submit: args.submit,
-                  stripeAccountId: args.stripeAccountId,
                 })
               }
             />
@@ -287,8 +297,10 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
 
 function EmbeddedSellerDisputes({
   stripeAccountId,
+  userId,
 }: {
   stripeAccountId: string;
+  userId: string;
 }) {
   const publishableKey = useQuery(api.queries.getPublishableKey);
   const createSession = useAction(api.actions.createDisputeSession);
@@ -305,7 +317,7 @@ function EmbeddedSellerDisputes({
       <ConnectProvider
         publishableKey={publishableKey}
         fetchClientSecret={async () =>
-          (await createSession({ stripeAccountId })).clientSecret
+          (await createSession({ userId, stripeAccountId })).clientSecret
         }
       >
         <EmbeddedDisputes />
@@ -366,10 +378,16 @@ export function SellerDisputes() {
           <TabsTrigger value="embedded">Embedded (Connect)</TabsTrigger>
         </TabsList>
         <TabsContent value="headless" className="pt-4">
-          <HeadlessDisputes stripeAccountId={stripeAccountId} />
+          <HeadlessDisputes
+            stripeAccountId={stripeAccountId}
+            userId={currentUser.id}
+          />
         </TabsContent>
         <TabsContent value="embedded" className="pt-4">
-          <EmbeddedSellerDisputes stripeAccountId={stripeAccountId} />
+          <EmbeddedSellerDisputes
+            stripeAccountId={stripeAccountId}
+            userId={currentUser.id}
+          />
         </TabsContent>
       </Tabs>
     </div>

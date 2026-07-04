@@ -7,19 +7,19 @@
  * generated type at all — `testing.tsx` reached for a hand-maintained
  * `const adminTesting = (api as any).adminTesting;` shim to route around it
  * (see git history on `testing.tsx`, and BTS-70/BTS-76's codegen fix that
- * removed the shim). `testing.tsx` now calls `api.adminTesting.*` directly,
- * which only stays safe as long as `_generated/api.ts` keeps re-exporting the
- * real module's exact signatures.
+ * removed the shim). `testing.tsx` now calls `adminTestingActions.*`, a single
+ * page-facing binding that must stay backed by the real generated API
+ * references.
  *
  * This file has no runtime behavior and is never imported. Its only job is
  * to be part of `tsc -b` (via `example`'s `pnpm typecheck`, which walks every
- * file under `src`): if `_generated/api.ts` ever goes stale again — a module
- * not re-listed after codegen, or a hand-edit reintroducing an
- * `any`-typed override — the checks below stop typechecking and the gate
- * fails, the same way the pre-BTS-70 drift did.
+ * file under `src`): if the exported page binding is replaced by an
+ * `any`-typed shim or a manually maintained FunctionReference with stale
+ * args/returns, the checks below stop typechecking.
  */
 import type {
   FunctionArgs,
+  FunctionReference,
   FunctionReturnType,
   RegisteredAction,
   RegisteredQuery,
@@ -27,6 +27,7 @@ import type {
 
 import type { api } from "../../../convex/_generated/api";
 import type * as AdminTestingModule from "../../../convex/adminTesting";
+import type { adminTestingActions } from "./adminTestingActions";
 
 type Visibility = "public" | "internal";
 
@@ -76,10 +77,38 @@ type ApiArgs<Name extends keyof typeof api.adminTesting> = FunctionArgs<
 type ApiReturn<Name extends keyof typeof api.adminTesting> = FunctionReturnType<
   (typeof api.adminTesting)[Name]
 >;
+type PageActionName =
+  | "fireAccountUpdated"
+  | "fireSubscriptionUpdated"
+  | "fireCheckoutCompleted"
+  | "fireInvoicePaid";
+type PageActionBinding = typeof adminTestingActions;
+type PageActionRef<Name extends PageActionName> =
+  Name extends keyof PageActionBinding ? PageActionBinding[Name] : never;
+type RealActionRef<Name extends PageActionName> = FunctionReference<
+  "action",
+  "public",
+  RealArgs<Name>,
+  RealReturn<Name>
+>;
+type PageActionArgs<Name extends PageActionName> = FunctionArgs<
+  PageActionRef<Name>
+>;
+type PageActionReturn<Name extends PageActionName> = FunctionReturnType<
+  PageActionRef<Name>
+>;
+type RealActionArgs<Name extends PageActionName> = FunctionArgs<
+  RealActionRef<Name>
+>;
+type RealActionReturn<Name extends PageActionName> = FunctionReturnType<
+  RealActionRef<Name>
+>;
+type IsAny<T> = 0 extends 1 & T ? true : false;
+type NotAny<T> = IsAny<T> extends true ? false : true;
 
-// One pair of checks (args, return) per function `testing.tsx` calls through
-// `api.adminTesting`. If any of these stop compiling, `_generated/api.ts`
-// and the real `adminTesting.ts` exports have drifted.
+// One pair of generated-vs-real checks (args, return) per function exposed to
+// the page. If any of these stop compiling, `_generated/api.ts` and the real
+// `adminTesting.ts` exports have drifted.
 export type AdminTestingApiShapeCheck = [
   Expect<Equal<RealArgs<"getDemoAccounts">, ApiArgs<"getDemoAccounts">>>,
   Expect<Equal<RealReturn<"getDemoAccounts">, ApiReturn<"getDemoAccounts">>>,
@@ -107,4 +136,76 @@ export type AdminTestingApiShapeCheck = [
   >,
   Expect<Equal<RealArgs<"fireInvoicePaid">, ApiArgs<"fireInvoicePaid">>>,
   Expect<Equal<RealReturn<"fireInvoicePaid">, ApiReturn<"fireInvoicePaid">>>,
+];
+
+// Non-tautological guard for the value consumed by `testing.tsx`. This catches
+// the original regression class: reintroducing a hand-maintained
+// `(api as any).adminTesting` shim or stale `makeFunctionReference` signatures
+// in the page-facing binding.
+export type AdminTestingPageBindingShapeCheck = [
+  Expect<Equal<keyof PageActionBinding, PageActionName>>,
+  Expect<NotAny<PageActionRef<"fireAccountUpdated">>>,
+  Expect<
+    Equal<PageActionRef<"fireAccountUpdated">, RealActionRef<"fireAccountUpdated">>
+  >,
+  Expect<
+    Equal<
+      PageActionArgs<"fireAccountUpdated">,
+      RealActionArgs<"fireAccountUpdated">
+    >
+  >,
+  Expect<
+    Equal<
+      PageActionReturn<"fireAccountUpdated">,
+      RealActionReturn<"fireAccountUpdated">
+    >
+  >,
+  Expect<NotAny<PageActionRef<"fireSubscriptionUpdated">>>,
+  Expect<
+    Equal<
+      PageActionRef<"fireSubscriptionUpdated">,
+      RealActionRef<"fireSubscriptionUpdated">
+    >
+  >,
+  Expect<
+    Equal<
+      PageActionArgs<"fireSubscriptionUpdated">,
+      RealActionArgs<"fireSubscriptionUpdated">
+    >
+  >,
+  Expect<
+    Equal<
+      PageActionReturn<"fireSubscriptionUpdated">,
+      RealActionReturn<"fireSubscriptionUpdated">
+    >
+  >,
+  Expect<NotAny<PageActionRef<"fireCheckoutCompleted">>>,
+  Expect<
+    Equal<
+      PageActionRef<"fireCheckoutCompleted">,
+      RealActionRef<"fireCheckoutCompleted">
+    >
+  >,
+  Expect<
+    Equal<
+      PageActionArgs<"fireCheckoutCompleted">,
+      RealActionArgs<"fireCheckoutCompleted">
+    >
+  >,
+  Expect<
+    Equal<
+      PageActionReturn<"fireCheckoutCompleted">,
+      RealActionReturn<"fireCheckoutCompleted">
+    >
+  >,
+  Expect<NotAny<PageActionRef<"fireInvoicePaid">>>,
+  Expect<
+    Equal<PageActionRef<"fireInvoicePaid">, RealActionRef<"fireInvoicePaid">>
+  >,
+  Expect<
+    Equal<PageActionArgs<"fireInvoicePaid">, RealActionArgs<"fireInvoicePaid">>
+  >,
+  Expect<
+    Equal<PageActionReturn<"fireInvoicePaid">, RealActionReturn<"fireInvoicePaid">>
+  >,
 ];

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
+import { adminTestingActions } from "./adminTestingActions";
 
 interface LogEntry {
   timestamp: string;
@@ -35,14 +36,14 @@ export function AdminTesting() {
   const [firing, setFiring] = useState<string | null>(null);
   const stripeMode = useQuery(api.queries.getStripeMode);
 
-  const fireAccountUpdated = useAction(api.adminTesting.fireAccountUpdated);
+  const fireAccountUpdated = useAction(adminTestingActions.fireAccountUpdated);
   const fireSubscriptionUpdated = useAction(
-    api.adminTesting.fireSubscriptionUpdated,
+    adminTestingActions.fireSubscriptionUpdated,
   );
   const fireCheckoutCompleted = useAction(
-    api.adminTesting.fireCheckoutCompleted,
+    adminTestingActions.fireCheckoutCompleted,
   );
-  const fireInvoicePaid = useAction(api.adminTesting.fireInvoicePaid);
+  const fireInvoicePaid = useAction(adminTestingActions.fireInvoicePaid);
 
   const addLog = (
     action: string,

@@ -54,6 +54,7 @@ export function SellerProducts() {
   );
   const createProduct = useAction(api.actions.createProductForAccount);
   const createPrice = useAction(api.actions.createPrice);
+  const deactivatePrice = useAction(api.actions.deactivatePrice);
 
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -66,6 +67,9 @@ export function SellerProducts() {
   });
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isCreatingPrice, setIsCreatingPrice] = useState(false);
+  const [deactivatingPriceId, setDeactivatingPriceId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Loading state
@@ -167,6 +171,23 @@ export function SellerProducts() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsCreatingPrice(false);
+    }
+  };
+
+  // Archive a single price (BTS-88/BTS-94). The action binds the caller to the
+  // price's owning product's connected account, so it takes the active
+  // persona's id; here the seller always owns their own account-scoped
+  // prices, so this is the working path (unlike the admin god-view, whose
+  // persona has no connected account).
+  const handleDeactivatePrice = async (stripePriceId: string) => {
+    setDeactivatingPriceId(stripePriceId);
+    setError(null);
+    try {
+      await deactivatePrice({ userId: currentUser.id, stripePriceId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeactivatingPriceId(null);
     }
   };
 
@@ -483,6 +504,9 @@ export function SellerProducts() {
                                 <TableHead className="text-xs">
                                   Status
                                 </TableHead>
+                                <TableHead className="text-right text-xs">
+                                  Actions
+                                </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -510,6 +534,28 @@ export function SellerProducts() {
                                     >
                                       {price.active ? "Active" : "Archived"}
                                     </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {price.active && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        disabled={
+                                          deactivatingPriceId ===
+                                          price.stripePriceId
+                                        }
+                                        onClick={() =>
+                                          handleDeactivatePrice(
+                                            price.stripePriceId,
+                                          )
+                                        }
+                                      >
+                                        {deactivatingPriceId ===
+                                        price.stripePriceId
+                                          ? "Deactivating..."
+                                          : "Deactivate"}
+                                      </Button>
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}

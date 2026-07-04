@@ -153,9 +153,10 @@ export function AdminProducts() {
   };
 
   // Archive a single price (BTS-88). The action binds the caller to the price's
-  // owning product's connected account, so it takes the active persona's id;
-  // if the persona doesn't own the product (e.g. a platform-catalog price on
-  // this admin god-view), the rejection surfaces through the same <Alert>.
+  // owning product's connected account, so it takes the active persona's id.
+  // The row-level control is only shown when the persona owns the product
+  // (BTS-94); this stays as a defensive fallback surfaced via the same
+  // <Alert> in case it's ever invoked for an unowned price.
   const handleDeactivatePrice = async (stripePriceId: string) => {
     setDeactivatingPriceId(stripePriceId);
     setError(null);
@@ -595,26 +596,29 @@ export function AdminProducts() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {price.active && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      disabled={
-                                        deactivatingPriceId ===
+                                  {price.active &&
+                                    currentUser.stripeAccountId &&
+                                    product.accountId ===
+                                      currentUser.stripeAccountId && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        disabled={
+                                          deactivatingPriceId ===
+                                          price.stripePriceId
+                                        }
+                                        onClick={() =>
+                                          handleDeactivatePrice(
+                                            price.stripePriceId,
+                                          )
+                                        }
+                                      >
+                                        {deactivatingPriceId ===
                                         price.stripePriceId
-                                      }
-                                      onClick={() =>
-                                        handleDeactivatePrice(
-                                          price.stripePriceId,
-                                        )
-                                      }
-                                    >
-                                      {deactivatingPriceId ===
-                                      price.stripePriceId
-                                        ? "Deactivating..."
-                                        : "Deactivate"}
-                                    </Button>
-                                  )}
+                                          ? "Deactivating..."
+                                          : "Deactivate"}
+                                      </Button>
+                                    )}
                                 </TableCell>
                               </TableRow>
                             ))}

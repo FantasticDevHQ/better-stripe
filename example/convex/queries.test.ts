@@ -33,22 +33,28 @@ describe("queries — listSubscriptionsByUser scopes to the owner", () => {
   it("returns only the requested user's subscriptions, not another account's", async () => {
     const t = withComponent();
 
-    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
-      stripeSubscriptionId: "sub_alex",
-      userId: "user_alex",
-      accountId: "acct_alex",
-      status: "active",
-      cancelAtPeriodEnd: false,
-      isTrialing: false,
-    });
-    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
-      stripeSubscriptionId: "sub_jordan",
-      userId: "user_jordan",
-      accountId: "acct_jordan",
-      status: "active",
-      cancelAtPeriodEnd: false,
-      isTrialing: false,
-    });
+    await t.mutation(
+      components.betterStripe.billing.mutations.upsertSubscription,
+      {
+        stripeSubscriptionId: "sub_alex",
+        userId: "user_alex",
+        accountId: "acct_alex",
+        status: "active",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      },
+    );
+    await t.mutation(
+      components.betterStripe.billing.mutations.upsertSubscription,
+      {
+        stripeSubscriptionId: "sub_jordan",
+        userId: "user_jordan",
+        accountId: "acct_jordan",
+        status: "active",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      },
+    );
 
     const alex = await t.query(api.queries.listSubscriptionsByUser, {
       userId: "user_alex",
@@ -64,13 +70,16 @@ describe("queries — listSubscriptionsByUser scopes to the owner", () => {
   it("returns an empty array for a user with no subscriptions (no leakage)", async () => {
     const t = withComponent();
 
-    await t.mutation(components.betterStripe.billing.mutations.upsertSubscription, {
-      stripeSubscriptionId: "sub_jordan",
-      userId: "user_jordan",
-      status: "active",
-      cancelAtPeriodEnd: false,
-      isTrialing: false,
-    });
+    await t.mutation(
+      components.betterStripe.billing.mutations.upsertSubscription,
+      {
+        stripeSubscriptionId: "sub_jordan",
+        userId: "user_jordan",
+        status: "active",
+        cancelAtPeriodEnd: false,
+        isTrialing: false,
+      },
+    );
 
     const visitor = await t.query(api.queries.listSubscriptionsByUser, {
       userId: "user_visitor",
@@ -158,5 +167,65 @@ describe("queries — listDisputes scopes to a seller's store (BTS-44)", () => {
       accountId: "acct_unknown",
     });
     expect(empty).toEqual([]);
+  });
+});
+
+describe("queries — getDisputeChargeback exposes clawback ledger (BTS-82)", () => {
+  it("summarizes transfer reversals for the disputed charge", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.connect.mutations.upsertDispute, {
+      stripeDisputeId: "dp_chargeback",
+      stripeChargeId: "ch_chargeback",
+      accountId: "acct_maya",
+      amount: 9000,
+      currency: "usd",
+      status: "lost",
+      reason: "fraudulent",
+      isChargeRefundable: false,
+    });
+    await t.mutation(components.betterStripe.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_store",
+      sourceChargeId: "ch_chargeback",
+      destinationAccountId: "acct_maya",
+      amount: 8000,
+      currency: "usd",
+      role: "store",
+      status: "paid",
+      reversedAmount: 8000,
+    });
+    await t.mutation(components.betterStripe.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_affiliate",
+      sourceChargeId: "ch_chargeback",
+      destinationAccountId: "acct_affiliate",
+      amount: 1000,
+      currency: "usd",
+      role: "affiliate",
+      status: "paid",
+      reversedAmount: 500,
+    });
+
+    const result = await t.query(api.queries.getDisputeChargeback, {
+      stripeDisputeId: "dp_chargeback",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.gross).toBe(9000);
+    expect(result!.reversed).toBe(8500);
+    expect(result!.net).toBe(500);
+    expect(result!.transfers.map((t) => t.stripeTransferId).sort()).toEqual([
+      "tr_affiliate",
+      "tr_store",
+    ]);
+  });
+
+  it("returns null when the dispute is not found", async () => {
+    const t = withComponent();
+
+    await expect(
+      t.query(api.queries.getDisputeChargeback, {
+        stripeDisputeId: "dp_missing",
+      }),
+    ).resolves.toBeNull();
   });
 });

@@ -303,10 +303,7 @@ export const createAffiliateSplitCheckout = action({
     returnUrl: v.string(),
   },
   handler: async (ctx, args) => {
-    const personas = await ctx.runQuery(
-      api.queries.getMarketplacePersonas,
-      {},
-    );
+    const personas = await ctx.runQuery(api.queries.getMarketplacePersonas, {});
     if (!personas.store?.accountId) {
       throw new Error(
         "Marketplace store not seeded — run `npm run setup` first.",
@@ -367,6 +364,21 @@ export const submitDisputeEvidence = action({
       stripeDisputeId: args.stripeDisputeId,
       evidence: args.evidence,
       submit: args.submit,
+      stripeAccountId: args.stripeAccountId,
+    }),
+});
+
+// Accept/concede a dispute from the headless seller UI. Stripe closes the
+// dispute; the component row and transfer clawback figures refresh from the
+// charge.dispute.closed webhook.
+export const acceptDispute = action({
+  args: {
+    stripeDisputeId: v.string(),
+    stripeAccountId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.closeDispute(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
       stripeAccountId: args.stripeAccountId,
     }),
 });

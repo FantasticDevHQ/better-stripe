@@ -55,7 +55,36 @@ export const upsertPayment = mutation({
           : args;
       await ctx.db.patch("payments", existing._id, patch);
     } else {
-      await ctx.db.insert("payments", args);
+      // A fee refund may have been delivered before this row existed
+      // (BTS-103, out-of-order webhook delivery) — reconcile against the
+      // parked fact instead of inserting the stale gross fee.
+      const pending = await ctx.db
+        .query("pendingFeeRefunds")
+        .withIndex("by_stripe_payment_intent_id", (q) =>
+          q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+        )
+        .first();
+
+      const insertArgs = pending
+        ? {
+            ...args,
+            feeRefundedAmount: pending.feeRefundedAmount,
+            ...(args.feeCollectedAmount !== undefined
+              ? {
+                  feeCollectedAmount: Math.max(
+                    0,
+                    args.feeCollectedAmount - pending.feeRefundedAmount,
+                  ),
+                }
+              : {}),
+          }
+        : args;
+
+      await ctx.db.insert("payments", insertArgs);
+
+      if (pending) {
+        await ctx.db.delete("pendingFeeRefunds", pending._id);
+      }
     }
 
     return null;
@@ -168,7 +197,13 @@ export const upsertRefund = mutation({
  * Record fee-refund state on the linked payment (BTS-34). Values are ABSOLUTE
  * cumulative totals from Stripe's `application_fee.refunded` event (never
  * incremented here), so redeliveries and createRefund-triggered duplicates
- * can't double-count. No-op when the payment row doesn't exist.
+ * can't double-count.
+ *
+ * Stripe doesn't guarantee webhook delivery order, so this event can arrive
+ * before the `payment_intent.succeeded` that creates the `payments` row. When
+ * that happens the fact is durably parked in `pendingFeeRefunds` rather than
+ * discarded — `upsertPayment`'s insert branch reconciles against it and
+ * deletes the parked row once applied (BTS-103).
  */
 export const recordPaymentFeeRefund = mutation({
   args: {
@@ -186,6 +221,7 @@ export const recordPaymentFeeRefund = mutation({
         q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
       )
       .first();
+
     if (payment) {
       // `feeRefundedAmount` is a cumulative total. Keep it monotonic (mirroring
       // `recordTransferReversal`) so an out-of-order/stale redelivery can't
@@ -199,7 +235,30 @@ export const recordPaymentFeeRefund = mutation({
           feeRefundedAmount: args.feeRefundedAmount,
         });
       }
+      return null;
     }
+
+    // No payments row yet — park the fact so upsertPayment's insert branch
+    // can reconcile against it (BTS-103). Same monotonic guard as above,
+    // applied against the parked row instead of the payment row.
+    const pending = await ctx.db
+      .query("pendingFeeRefunds")
+      .withIndex("by_stripe_payment_intent_id", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+      )
+      .first();
+
+    if (pending) {
+      if (args.feeRefundedAmount >= pending.feeRefundedAmount) {
+        await ctx.db.patch("pendingFeeRefunds", pending._id, {
+          feeCollectedAmount: args.feeCollectedAmount,
+          feeRefundedAmount: args.feeRefundedAmount,
+        });
+      }
+    } else {
+      await ctx.db.insert("pendingFeeRefunds", args);
+    }
+
     return null;
   },
 });

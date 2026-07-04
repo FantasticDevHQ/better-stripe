@@ -3,6 +3,7 @@ import { defineTable } from "convex/server";
 import {
   disputeFields,
   paymentFields,
+  pendingFeeRefundFields,
   payoutFields,
   refundFields,
   transferFields,
@@ -26,6 +27,16 @@ export const payoutsTable = defineTable(payoutFields)
   .index("by_account_id", ["accountId"])
   .index("by_status", ["status"])
   .index("by_account_status", ["accountId", "status"]);
+
+/**
+ * Fee-refund facts parked when `application_fee.refunded` outruns the
+ * `payment_intent.succeeded` that creates the linked `payments` row
+ * (BTS-103). One row per payment intent; consumed and deleted by
+ * `upsertPayment`'s insert branch.
+ */
+export const pendingFeeRefundsTable = defineTable(
+  pendingFeeRefundFields,
+).index("by_stripe_payment_intent_id", ["stripePaymentIntentId"]);
 
 /**
  * Refunds. Compound status indexes follow Plan 002: filtered list queries

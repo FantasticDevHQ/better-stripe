@@ -376,7 +376,7 @@ describe("connect — recordPaymentFeeRefund (BTS-34)", () => {
     expect(payment!.feeCollectedAmount).toBe(0);
   });
 
-  it("is a no-op when no payment row exists for the payment intent", async () => {
+  it("parks the fact instead of creating a payments row when none exists yet", async () => {
     const t = convexTest(schema, modules);
 
     await expect(
@@ -386,5 +386,75 @@ describe("connect — recordPaymentFeeRefund (BTS-34)", () => {
         feeRefundedAmount: 320,
       }),
     ).resolves.toBeNull();
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_missing",
+    });
+    expect(payment).toBeNull();
+  });
+
+  it("reconciles a fee refund that arrives before the payments row (BTS-103, out-of-order delivery)", async () => {
+    const t = convexTest(schema, modules);
+
+    // application_fee.refunded arrives first — Stripe doesn't guarantee
+    // delivery order, so no payments row exists yet.
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_early_refund",
+      feeCollectedAmount: 0,
+      feeRefundedAmount: 320,
+    });
+
+    // payment_intent.succeeded arrives afterward, carrying the GROSS fee.
+    await t.mutation(api.connect.mutations.upsertPayment, {
+      stripePaymentIntentId: "pi_early_refund",
+      userId: "user_1",
+      amount: 10000,
+      currency: "usd",
+      status: "succeeded",
+      feeCollectedAmount: 320,
+    });
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_early_refund",
+    });
+    // The refund must not be lost: the row reflects the net fee from the
+    // parked fact, not the gross amount off the payment_intent payload.
+    expect(payment!.feeCollectedAmount).toBe(0);
+    expect(payment!.feeRefundedAmount).toBe(320);
+    expect(payment!.amount).toBe(10000);
+  });
+
+  it("keeps the parked fact monotonic across multiple pre-payment fee-refund deliveries", async () => {
+    const t = convexTest(schema, modules);
+
+    // Two cumulative partial fee refunds delivered swapped, both before the
+    // payments row exists: the newer event (cumulative 320) lands first, then
+    // a stale earlier one (cumulative 160).
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_early_ooo",
+      feeCollectedAmount: 0,
+      feeRefundedAmount: 320,
+    });
+    await t.mutation(api.connect.mutations.recordPaymentFeeRefund, {
+      stripePaymentIntentId: "pi_early_ooo",
+      feeCollectedAmount: 160,
+      feeRefundedAmount: 160,
+    });
+
+    await t.mutation(api.connect.mutations.upsertPayment, {
+      stripePaymentIntentId: "pi_early_ooo",
+      userId: "user_1",
+      amount: 10000,
+      currency: "usd",
+      status: "succeeded",
+      feeCollectedAmount: 320,
+    });
+
+    const payment = await t.query(api.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_early_ooo",
+    });
+    // The stale redelivery must not regress the parked refunded total.
+    expect(payment!.feeRefundedAmount).toBe(320);
+    expect(payment!.feeCollectedAmount).toBe(0);
   });
 });

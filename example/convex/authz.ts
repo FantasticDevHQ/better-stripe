@@ -221,6 +221,47 @@ export async function assertTransfersOwner(
 }
 
 // =============================================================================
+// Prices — a price has no owner of its own; ownership is the owning product's
+// connected account (BTS-88)
+// =============================================================================
+
+/**
+ * Verify `userId` owns the price's owning product. A `prices` row carries no
+ * owner field — only its `stripeProductId` — so ownership resolves one hop up:
+ * the price's product must carry an `accountId` equal to the caller's own
+ * connected account (`getAccountByUserId`). This mirrors `assertPaymentOwner`'s
+ * resolve-the-actor's-account-then-match shape. A missing price, a missing or
+ * orphaned product, a platform-catalog product (created with no `accountId`),
+ * or an account mismatch all collapse into the same rejection so a caller can't
+ * probe which price/product ids exist. Returns the verified account.
+ */
+export async function assertPriceOwner(
+  ctx: ActionCtx,
+  args: { userId: string; stripePriceId: string },
+) {
+  const userId = requireNonBlank(args.userId, "userId");
+  const stripePriceId = requireNonBlank(args.stripePriceId, "stripePriceId");
+
+  return assertOwnership(
+    ctx,
+    userId,
+    async (ctx, actorId) => {
+      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      if (!account?.stripeAccountId) return null;
+      const price = await stripe.getPriceByStripeId(ctx, { stripePriceId });
+      if (!price) return null;
+      const product = await stripe.getProductByStripeId(ctx, {
+        stripeProductId: price.stripeProductId,
+      });
+      return product && product.accountId === account.stripeAccountId
+        ? account
+        : null;
+    },
+    "Price not found for this account",
+  );
+}
+
+// =============================================================================
 // Test-mode money guard (BTS-77, shared here for BTS-83)
 // =============================================================================
 

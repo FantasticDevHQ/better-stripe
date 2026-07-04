@@ -36,6 +36,9 @@ vi.mock("./stripe", () => ({
     createRefund: vi.fn(),
     listTransfersByCharge: vi.fn(),
     reverseTransfers: vi.fn(),
+    getPriceByStripeId: vi.fn(),
+    getProductByStripeId: vi.fn(),
+    deactivatePrice: vi.fn(),
   },
 }));
 
@@ -66,6 +69,9 @@ type MockedStripe = {
   createRefund: Mock;
   listTransfersByCharge: Mock;
   reverseTransfers: Mock;
+  getPriceByStripeId: Mock;
+  getProductByStripeId: Mock;
+  deactivatePrice: Mock;
 };
 const mockedStripe = mockedStripeUntyped as unknown as MockedStripe;
 
@@ -537,6 +543,89 @@ describe("actions — reverseSaleTransfers wrong-owner rejection (BTS-83)", () =
 });
 
 // =============================================================================
+// Price deactivation — wrong-owner rejection + happy path (BTS-88)
+//
+// A `prices` row carries no owner of its own, so ownership resolves one hop up:
+// the price's product must belong to the caller's connected account. Because
+// `assertPriceOwner` reads price/product through the (mocked) `stripe` client
+// rather than component rows, these use plain `convexTest` — no installed
+// component needed (unlike `issueRefund`).
+// =============================================================================
+
+const OWNED_PRICE = { stripePriceId: "price_1", stripeProductId: "prod_1" };
+const OWNED_PRODUCT = { stripeProductId: "prod_1", accountId: "acct_owner" };
+
+describe("actions — deactivatePrice ownership rejection (BTS-88)", () => {
+  it("rejects a caller who doesn't own the price's owning product", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockImplementation(accountFor("owner_1"));
+    mockedStripe.getPriceByStripeId.mockResolvedValue(OWNED_PRICE);
+    mockedStripe.getProductByStripeId.mockResolvedValue(OWNED_PRODUCT);
+
+    await expect(
+      t.action(api.actions.deactivatePrice, {
+        userId: "not_the_owner",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrowError(/Price not found for this account/);
+    expect(mockedStripe.deactivatePrice).not.toHaveBeenCalled();
+  });
+
+  it("rejects a platform price whose product has no owning account", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockImplementation(accountFor("owner_1"));
+    mockedStripe.getPriceByStripeId.mockResolvedValue(OWNED_PRICE);
+    // Platform-catalog product (created without `accountId`) — owned by no
+    // connected account, so even the "owner_1" persona can't claim it.
+    mockedStripe.getProductByStripeId.mockResolvedValue({
+      stripeProductId: "prod_1",
+    });
+
+    await expect(
+      t.action(api.actions.deactivatePrice, {
+        userId: "owner_1",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrowError(/Price not found for this account/);
+    expect(mockedStripe.deactivatePrice).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the caller has no linked Stripe account at all", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockResolvedValue(null);
+    mockedStripe.getPriceByStripeId.mockResolvedValue(OWNED_PRICE);
+    mockedStripe.getProductByStripeId.mockResolvedValue(OWNED_PRODUCT);
+
+    await expect(
+      t.action(api.actions.deactivatePrice, {
+        userId: "no_account_user",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrowError(/Price not found for this account/);
+    expect(mockedStripe.deactivatePrice).not.toHaveBeenCalled();
+  });
+
+  it("succeeds for the price's true owning account", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockImplementation(accountFor("owner_1"));
+    mockedStripe.getPriceByStripeId.mockResolvedValue(OWNED_PRICE);
+    mockedStripe.getProductByStripeId.mockResolvedValue(OWNED_PRODUCT);
+    mockedStripe.deactivatePrice.mockResolvedValue({ success: true });
+
+    const result = await t.action(api.actions.deactivatePrice, {
+      userId: "owner_1",
+      stripePriceId: "price_1",
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockedStripe.deactivatePrice).toHaveBeenCalledWith(
+      expect.anything(),
+      { stripePriceId: "price_1" },
+    );
+  });
+});
+
+// =============================================================================
 // Money actions — test-mode key fail-closed guard (BTS-83, shares BTS-77's
 // `assertTestModeStripeKey`)
 // =============================================================================
@@ -583,6 +672,50 @@ describe("actions — refuse a live/misconfigured key before any Stripe call (BT
     ).rejects.toThrowError(/test-mode key/);
     expect(mockedStripe.getAccountByUserId).not.toHaveBeenCalled();
     expect(mockedStripe.closeDispute).not.toHaveBeenCalled();
+  });
+
+  it("submitDisputeEvidence throws before checking ownership or calling Stripe when the key is live (BTS-89)", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_live_should_never_run";
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.action(api.actions.submitDisputeEvidence, {
+        userId: "owner_1",
+        stripeDisputeId: "dp_1",
+        evidence: { product_description: "widget" },
+        submit: false,
+      }),
+    ).rejects.toThrowError(/test-mode key/);
+    expect(mockedStripe.getAccountByUserId).not.toHaveBeenCalled();
+    expect(mockedStripe.updateDispute).not.toHaveBeenCalled();
+  });
+
+  it("createDisputeSession throws before checking ownership or calling Stripe when the key is live (BTS-89)", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_live_should_never_run";
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.action(api.actions.createDisputeSession, {
+        userId: "owner_1",
+        stripeAccountId: "acct_owner",
+      }),
+    ).rejects.toThrowError(/test-mode key/);
+    expect(mockedStripe.getAccountByUserId).not.toHaveBeenCalled();
+    expect(mockedStripe.createDisputeSession).not.toHaveBeenCalled();
+  });
+
+  it("deactivatePrice throws before checking ownership or calling Stripe when the key is live (BTS-88)", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_live_should_never_run";
+    const t = convexTest(schema, modules);
+
+    await expect(
+      t.action(api.actions.deactivatePrice, {
+        userId: "owner_1",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrowError(/test-mode key/);
+    expect(mockedStripe.getAccountByUserId).not.toHaveBeenCalled();
+    expect(mockedStripe.deactivatePrice).not.toHaveBeenCalled();
   });
 
   it("issueRefund throws when STRIPE_SECRET_KEY is unset", async () => {

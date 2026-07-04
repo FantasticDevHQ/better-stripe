@@ -29,6 +29,27 @@ describe("getStripeClient", () => {
     expect(client).toBeDefined();
     expect(typeof client.checkout).toBe("object");
   });
+
+  it("caches instances by secret key and API version", () => {
+    // Same key and version should return the same cached instance
+    const client1 = getStripeClient("sk_test_abc");
+    const client2 = getStripeClient("sk_test_abc");
+    expect(client1).toBe(client2);
+  });
+
+  it("caches instances separately by API version", () => {
+    // Same key but different versions should return different instances
+    const client1 = getStripeClient("sk_test_def", "2026-05-27.dahlia");
+    const client2 = getStripeClient("sk_test_def", "2026-01-01.dahlia");
+    expect(client1).not.toBe(client2);
+  });
+
+  it("caches instances separately by secret key", () => {
+    // Different keys should return different instances
+    const client1 = getStripeClient("sk_test_key1");
+    const client2 = getStripeClient("sk_test_key2");
+    expect(client1).not.toBe(client2);
+  });
 });
 
 describe("runMutationOrThrow", () => {

@@ -68,9 +68,11 @@ export function AdminProducts() {
   } | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCreateProduct = async () => {
     setIsCreatingProduct(true);
+    setError(null);
     try {
       await createProduct({
         name: newProduct.name,
@@ -79,7 +81,7 @@ export function AdminProducts() {
       setNewProduct({ name: "", description: "" });
       setShowCreateDialog(false);
     } catch (err) {
-      console.error("Failed to create product:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsCreatingProduct(false);
     }
@@ -87,6 +89,7 @@ export function AdminProducts() {
 
   const handleAddPrice = async (stripeProductId: string) => {
     setIsCreatingPrice(true);
+    setError(null);
     try {
       const interval = newPrice.interval as
         | "month"
@@ -107,7 +110,7 @@ export function AdminProducts() {
       setNewPrice({ amount: "", currency: "usd", interval: "month" });
       setShowAddPriceFor(null);
     } catch (err) {
-      console.error("Failed to create price:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsCreatingPrice(false);
     }
@@ -116,6 +119,7 @@ export function AdminProducts() {
   const handleSaveEdit = async () => {
     if (!editingProduct) return;
     setIsSavingEdit(true);
+    setError(null);
     try {
       await updateProduct({
         stripeProductId: editingProduct.stripeProductId,
@@ -124,7 +128,7 @@ export function AdminProducts() {
       });
       setEditingProduct(null);
     } catch (err) {
-      console.error("Failed to update product:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsSavingEdit(false);
     }
@@ -132,10 +136,11 @@ export function AdminProducts() {
 
   const handleDeactivate = async (stripeProductId: string) => {
     setDeactivatingId(stripeProductId);
+    setError(null);
     try {
       await deactivateProduct({ stripeProductId });
     } catch (err) {
-      console.error("Failed to deactivate product:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setDeactivatingId(null);
     }
@@ -202,10 +207,18 @@ export function AdminProducts() {
                 />
               </div>
             </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setShowCreateDialog(false)}
+                onClick={() => {
+                  setShowCreateDialog(false);
+                  setError(null);
+                }}
               >
                 Cancel
               </Button>
@@ -220,7 +233,12 @@ export function AdminProducts() {
         </Dialog>
         <Dialog
           open={editingProduct !== null}
-          onOpenChange={(open) => !open && setEditingProduct(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingProduct(null);
+              setError(null);
+            }
+          }}
         >
           <DialogContent>
             <DialogHeader>
@@ -259,8 +277,19 @@ export function AdminProducts() {
                 </div>
               </div>
             )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingProduct(null)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingProduct(null);
+                  setError(null);
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -273,6 +302,12 @@ export function AdminProducts() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Products Table */}
       <Card>
@@ -291,11 +326,22 @@ export function AdminProducts() {
                 <TableRow
                   key={product._id}
                   className="cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedProduct === product._id}
                   onClick={() =>
                     setExpandedProduct(
                       expandedProduct === product._id ? null : product._id,
                     )
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setExpandedProduct(
+                        expandedProduct === product._id ? null : product._id,
+                      );
+                    }
+                  }}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -325,6 +371,7 @@ export function AdminProducts() {
                     <div
                       className="flex justify-end gap-2"
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
                     >
                       <Button
                         variant="outline"
@@ -387,10 +434,14 @@ export function AdminProducts() {
                           <Card>
                             <CardContent className="flex items-end gap-3 p-3">
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">
+                                <Label
+                                  htmlFor={`add-price-amount-${product._id}`}
+                                  className="text-xs"
+                                >
                                   Amount (cents)
                                 </Label>
                                 <Input
+                                  id={`add-price-amount-${product._id}`}
                                   type="number"
                                   value={newPrice.amount}
                                   onChange={(e) =>
@@ -404,7 +455,12 @@ export function AdminProducts() {
                                 />
                               </div>
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">Currency</Label>
+                                <Label
+                                  htmlFor={`add-price-currency-${product._id}`}
+                                  className="text-xs"
+                                >
+                                  Currency
+                                </Label>
                                 <Select
                                   value={newPrice.currency}
                                   onValueChange={(value: string | null) =>
@@ -415,7 +471,10 @@ export function AdminProducts() {
                                     })
                                   }
                                 >
-                                  <SelectTrigger className="w-24">
+                                  <SelectTrigger
+                                    id={`add-price-currency-${product._id}`}
+                                    className="w-24"
+                                  >
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -426,7 +485,12 @@ export function AdminProducts() {
                                 </Select>
                               </div>
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">Interval</Label>
+                                <Label
+                                  htmlFor={`add-price-interval-${product._id}`}
+                                  className="text-xs"
+                                >
+                                  Interval
+                                </Label>
                                 <Select
                                   value={newPrice.interval}
                                   onValueChange={(value: string | null) =>
@@ -437,7 +501,10 @@ export function AdminProducts() {
                                     })
                                   }
                                 >
-                                  <SelectTrigger className="w-28">
+                                  <SelectTrigger
+                                    id={`add-price-interval-${product._id}`}
+                                    className="w-28"
+                                  >
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -507,7 +574,19 @@ export function AdminProducts() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {price.active && (
-                                    <Button variant="destructive" size="sm">
+                                    // No Convex action deactivates a single price
+                                    // in this example app yet (only
+                                    // deactivateProduct exists, which archives
+                                    // the whole product) — disabled rather than
+                                    // silently doing nothing on click. Wiring
+                                    // this needs a new action in
+                                    // convex/actions.ts, out of scope here.
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      disabled
+                                      title="Price deactivation isn't available yet — no backend action exists for it in this example app."
+                                    >
                                       Deactivate
                                     </Button>
                                   )}

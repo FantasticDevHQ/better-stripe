@@ -167,27 +167,27 @@ describe("connect — refunds", () => {
   it("listRefunds: filters by payment intent and status via compound index", async () => {
     const t = convexTest(schema, modules);
 
-    await t.mutation(api.connect.mutations.upsertRefund, {
+    await seedRefund(t, {
       stripeRefundId: "re_a",
       stripePaymentIntentId: "pi_list",
-      amount: 100,
-      currency: "usd",
       status: "succeeded",
     });
-    await t.mutation(api.connect.mutations.upsertRefund, {
+    await seedRefund(t, {
       stripeRefundId: "re_b",
       stripePaymentIntentId: "pi_list",
-      amount: 200,
-      currency: "usd",
       status: "failed",
+    });
+    await seedRefund(t, {
+      stripeRefundId: "re_c",
+      stripePaymentIntentId: "pi_list_other",
+      status: "succeeded",
     });
 
     const succeeded = await t.query(api.connect.queries.listRefunds, {
       stripePaymentIntentId: "pi_list",
       status: "succeeded",
     });
-    expect(succeeded).toHaveLength(1);
-    expect(succeeded[0].stripeRefundId).toBe("re_a");
+    expect(succeeded.map((refund) => refund.stripeRefundId)).toEqual(["re_a"]);
   });
 
   it("listRefunds: filters by account and status via compound index", async () => {

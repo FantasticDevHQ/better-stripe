@@ -78,6 +78,10 @@ const mockStripeInstance = {
   payouts: {
     create: vi.fn(),
   },
+  transfers: {
+    createReversal: vi.fn(),
+    retrieve: vi.fn(),
+  },
 };
 
 vi.mock("stripe", () => ({
@@ -281,6 +285,59 @@ describe("BetterStripe", () => {
         destinationAccountId: "acct_avery",
       });
       expect(result).toBe(rows);
+    });
+  });
+
+  describe("reverseTransfers", () => {
+    it("takes the atomic claimReversalSlices path when operationId is provided", async () => {
+      const bs = new BetterStripe(components.betterStripe, {
+        STRIPE_SECRET_KEY: "sk_test_xxx",
+      });
+
+      mockCtx.runMutation.mockImplementation(async (ref: Record<symbol, string>) => {
+        const TO_REF = Symbol.for("toReferencePath");
+        const claimRef = components.betterStripe.connect.mutations
+          .claimReversalSlices as unknown as Record<symbol, string>;
+        if (ref[TO_REF] === claimRef[TO_REF]) {
+          return {
+            replay: false,
+            slices: [
+              {
+                stripeTransferId: "tr_store",
+                from: 0,
+                to: 8000,
+                confirmed: 0,
+              },
+            ],
+          };
+        }
+        return undefined;
+      });
+      mockStripeInstance.transfers.createReversal.mockResolvedValue({
+        id: "trr_1",
+      });
+
+      const result = await bs.reverseTransfers(mockCtx, {
+        sourceChargeId: "ch_1",
+        operationId: "dp_1",
+      });
+
+      expect(mockCtx.runMutation).toHaveBeenCalledWith(
+        components.betterStripe.connect.mutations.claimReversalSlices,
+        expect.objectContaining({
+          operationId: "dp_1",
+          sourceChargeId: "ch_1",
+          mode: { kind: "full" },
+        }),
+      );
+      expect(mockStripeInstance.transfers.createReversal).toHaveBeenCalledWith(
+        "tr_store",
+        { amount: 8000 },
+        { idempotencyKey: "bs_rev_dp_1_tr_store" },
+      );
+      expect(result).toEqual({
+        reversals: [{ stripeTransferId: "tr_store", amount: 8000 }],
+      });
     });
   });
 

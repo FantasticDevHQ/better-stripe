@@ -11,6 +11,7 @@
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
+import type * as authz from "../authz.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as http from "../http.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
@@ -20,6 +21,7 @@ import type * as reset from "../reset.js";
 import type * as seed from "../seed.js";
 import type * as setup from "../setup.js";
 import type * as stripe from "../stripe.js";
+import type * as subscriptionLifecycle from "../subscriptionLifecycle.js";
 import type * as triggerLogger from "../triggerLogger.js";
 import type * as users from "../users.js";
 
@@ -34,6 +36,7 @@ const fullApi: ApiFromModules<{
   actions: typeof actions;
   adminTesting: typeof adminTesting;
   affiliateSplit: typeof affiliateSplit;
+  authz: typeof authz;
   e2eMoney: typeof e2eMoney;
   http: typeof http;
   "lib/marketplace": typeof lib_marketplace;
@@ -43,6 +46,7 @@ const fullApi: ApiFromModules<{
   seed: typeof seed;
   setup: typeof setup;
   stripe: typeof stripe;
+  subscriptionLifecycle: typeof subscriptionLifecycle;
   triggerLogger: typeof triggerLogger;
   users: typeof users;
 }> = anyApi as any;

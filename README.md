@@ -34,9 +34,11 @@ pnpm codegen:example    # regen example/convex/_generated only
 
 All three require a configured dev deployment (`CONVEX_DEPLOYMENT` env var, normally set by a prior `npx convex dev`). They write only the local `_generated/` files — they don't push code or data to the deployment.
 
-**CI gate (BTS-104).** Two layers verify the committed files are not stale:
+**CI gate (BTS-104 / BTS-111).** Two layers verify the committed files are not stale:
 
-1. **Structural drift check** (`pnpm codegen:check`, always runs in CI): scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. Catches the most common drift case — "added a function, forgot to regen" — without needing a deployment. This is the [BTS-31](https://linear.app/dojoco/issue/BTS-31)/[BTS-50](https://linear.app/dojoco/issue/BTS-50) and [BTS-74](https://linear.app/dojoco/issue/BTS-74) incident class.
+1. **Structural drift check** (`pnpm codegen:check`, always runs in CI): two independent scans, neither needing a deployment:
+   - Library component — scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. This is the [BTS-31](https://linear.app/dojoco/issue/BTS-31)/[BTS-50](https://linear.app/dojoco/issue/BTS-50) and [BTS-74](https://linear.app/dojoco/issue/BTS-74) incident class.
+   - Example app — scans `example/convex/**/*.ts` and verifies every source module is imported and registered in `example/convex/_generated/api.ts`. Catches the common case of adding a new `example/convex/<module>.ts` (or nested file like `example/convex/lib/<module>.ts`) without regenerating (BTS-111).
 2. **Authoritative regen-and-diff** (runs in CI when `CONVEX_DEPLOYMENT` is configured): runs `pnpm codegen` against the configured dev deployment and fails if `git diff` shows changes. Catches every drift case, including validator-shape changes the structural check can't see. To enable on a fork, set the `CONVEX_DEPLOYMENT` repo secret to a dev deployment name and authorize the CI runner — see Convex's [GitHub Actions guide](https://docs.convex.dev/production/integration/deployments#github-actions).
 
 ### Relation to `@convex-dev/stripe`

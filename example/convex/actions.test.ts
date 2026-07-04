@@ -11,7 +11,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { checkoutModeForPrice } from "./actions";
+import {
+  amountForStripe,
+  checkoutModeForPrice,
+  summarizeReversalResult,
+} from "./actions";
 
 describe("actions — checkoutModeForPrice (BTS-57)", () => {
   it("returns payment mode for a one-time price", () => {
@@ -26,5 +30,35 @@ describe("actions — checkoutModeForPrice (BTS-57)", () => {
     // A price not yet synced into the component keeps the pre-BTS-57
     // behavior; Stripe validates the price/mode combination server-side.
     expect(checkoutModeForPrice(null)).toBe("subscription");
+  });
+});
+
+describe("actions — refunds/reversals helpers (BTS-80)", () => {
+  it("omits amount for a full refund or reversal", () => {
+    expect(amountForStripe({ kind: "full" })).toBeUndefined();
+  });
+
+  it("passes through a positive partial amount in cents", () => {
+    expect(amountForStripe({ kind: "partial", amountCents: 2500 })).toBe(2500);
+  });
+
+  it("rejects invalid partial cent amounts before calling Stripe", () => {
+    expect(() => amountForStripe({ kind: "partial", amountCents: 0 })).toThrow(
+      /positive integer/,
+    );
+    expect(() =>
+      amountForStripe({ kind: "partial", amountCents: 12.34 }),
+    ).toThrow(/positive integer/);
+  });
+
+  it("summarizes transfer reversal rows for the ops UI", () => {
+    expect(
+      summarizeReversalResult({
+        reversals: [
+          { stripeTransferId: "tr_1", amount: 1250 },
+          { stripeTransferId: "tr_2", amount: 750 },
+        ],
+      }),
+    ).toEqual({ reversalCount: 2, totalReversed: 2000 });
   });
 });

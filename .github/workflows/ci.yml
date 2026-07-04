@@ -21,3 +21,42 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+
+  # Stale-codegen gate (BTS-104). Two layers:
+  #   1. Structural drift check — always runs, needs no deployment. Catches the
+  #      BTS-31/50 and BTS-74 incident class ("added a function, didn't regen")
+  #      via `pnpm codegen:check` (scripts/check-codegen-drift.mjs).
+  #   2. Authoritative regen-and-diff — runs only when CONVEX_DEPLOYMENT is
+  #      configured in repo secrets. Runs `pnpm codegen` against the configured
+  #      dev deployment and fails if `git diff` shows changes. Catches every
+  #      drift case, including validator-shape changes the structural check
+  #      can't see. See README § "Regenerating codegen" to enable.
+  codegen:
+    runs-on: ubuntu-latest
+    env:
+      CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Structural drift check (always-on, no deployment needed)
+        run: pnpm codegen:check
+      - name: Regenerate _generated/ against dev deployment
+        if: ${{ env.CONVEX_DEPLOYMENT != '' }}
+        run: pnpm codegen
+      - name: Fail if regenerated output differs from what is committed
+        if: ${{ env.CONVEX_DEPLOYMENT != '' }}
+        run: |
+          if ! git diff --exit-code -- src/component/_generated example/convex/_generated; then
+            echo "::error::Stale _generated/ files. Run 'pnpm codegen' against your dev deployment and commit the result. See README § 'Regenerating codegen'."
+            exit 1
+          fi
+      - name: Notice when regen-and-diff layer is inactive
+        if: ${{ env.CONVEX_DEPLOYMENT == '' }}
+        run: |
+          echo "::notice::Authoritative codegen regen-and-diff is inactive (CONVEX_DEPLOYMENT secret not set). Structural drift check still ran."
+

@@ -1,8 +1,7 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
 
-import { STRIPE_API_VERSION } from "../constants.js";
 import type { Component } from "../helpers.js";
-import type { StripeApiVersion } from "../stripe-types.js";
+export { getStripeClient } from "../helpers.js";
 import type { WebhookActionCtx } from "../types.js";
 import type { TriggerDispatcherName } from "../types/triggers.js";
 
@@ -75,15 +74,6 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
 // =============================================================================
 // HELPERS
 // =============================================================================
-
-export function getStripeClient(
-  secretKey: string,
-  apiVersion?: string,
-): Stripe {
-  return new Stripe(secretKey, {
-    apiVersion: (apiVersion as StripeApiVersion) || STRIPE_API_VERSION,
-  });
-}
 
 export function epochToIso(
   epoch: number | null | undefined,

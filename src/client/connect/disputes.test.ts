@@ -3,17 +3,60 @@ import { describe, expect, it, vi } from "vitest";
 import type { Component, RunCtx } from "../helpers.js";
 import {
   buildDisputeEvidence,
+  closeDispute,
   disputeEvidenceCountdown,
   getDisputeWithCountdown,
   updateDispute,
 } from "./disputes.js";
 
 function makeStripe() {
-  return { disputes: { update: vi.fn().mockResolvedValue({}) } };
+  return {
+    disputes: {
+      update: vi.fn().mockResolvedValue({}),
+      close: vi.fn().mockResolvedValue({}),
+    },
+  };
 }
 const asStripe = (s: ReturnType<typeof makeStripe>) =>
   s as unknown as Parameters<typeof updateDispute>[0];
 const ctx = {} as RunCtx;
+
+const TO_REF = Symbol.for("toReferencePath");
+
+/**
+ * Component proxy exposing the two connect query refs the dispute-action
+ * authorization resolves: the dispute (by its Stripe id) and the payment that
+ * dispute is linked to (by PaymentIntent id).
+ */
+function makeAuthComponent(): Component {
+  const ref = (path: string) => ({ [TO_REF]: `betterStripe/${path}` });
+  return {
+    connect: {
+      queries: {
+        getDisputeByStripeId: ref("connect/queries/getDisputeByStripeId"),
+        getPaymentByStripeId: ref("connect/queries/getPaymentByStripeId"),
+      },
+    },
+  } as unknown as Component;
+}
+
+/**
+ * A ctx whose runQuery dispatches by the query args: a `stripeDisputeId` lookup
+ * resolves the dispute row; a `stripePaymentIntentId` lookup resolves the
+ * payment row. Either may be null to exercise the fail-closed paths.
+ */
+function makeAuthCtx(disputeRow?: unknown, paymentRow?: unknown) {
+  const runQuery = vi.fn().mockImplementation((_ref, args) => {
+    if (args && "stripeDisputeId" in args)
+      return Promise.resolve(disputeRow ?? null);
+    if (args && "stripePaymentIntentId" in args)
+      return Promise.resolve(paymentRow ?? null);
+    return Promise.resolve(null);
+  });
+  return { runQuery } as unknown as RunCtx & {
+    runQuery: ReturnType<typeof vi.fn>;
+  };
+}
 
 describe("buildDisputeEvidence (BTS-31)", () => {
   it("maps Skool-style categories to Stripe evidence fields", () => {
@@ -119,7 +162,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
     // evidence to the bank (one-shot). Providing evidence without an explicit
     // submit must stage (submit: false), never silently submit.
     const stripe = makeStripe();
-    await updateDispute(asStripe(stripe), ctx, {
+    await updateDispute(asStripe(stripe), makeAuthComponent(), ctx, {
       stripeDisputeId: "dp_1",
       evidence: { product_description: "X" },
     });
@@ -132,7 +175,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
 
   it("passes an explicit submit: false through when staging", async () => {
     const stripe = makeStripe();
-    await updateDispute(asStripe(stripe), ctx, {
+    await updateDispute(asStripe(stripe), makeAuthComponent(), ctx, {
       stripeDisputeId: "dp_1",
       evidence: { product_description: "X" },
       submit: false,
@@ -146,7 +189,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
 
   it("finalizes with submit: true and scopes to the seller account", async () => {
     const stripe = makeStripe();
-    await updateDispute(asStripe(stripe), ctx, {
+    await updateDispute(asStripe(stripe), makeAuthComponent(), ctx, {
       stripeDisputeId: "dp_1",
       evidence: { product_description: "X" },
       submit: true,
@@ -167,7 +210,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
     // what it means instead of relying on behavior that contradicts the
     // documented default. No updateDispute call may ever implicitly submit.
     const stripe = makeStripe();
-    await updateDispute(asStripe(stripe), ctx, {
+    await updateDispute(asStripe(stripe), makeAuthComponent(), ctx, {
       stripeDisputeId: "dp_1",
       metadata: { note: "internal" },
     });
@@ -180,7 +223,7 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
 
   it("honours an explicit submit even with no evidence", async () => {
     const stripe = makeStripe();
-    await updateDispute(asStripe(stripe), ctx, {
+    await updateDispute(asStripe(stripe), makeAuthComponent(), ctx, {
       stripeDisputeId: "dp_1",
       metadata: { note: "internal" },
       submit: true,
@@ -190,5 +233,255 @@ describe("updateDispute staged vs submit (BTS-31, BTS-61, BTS-72)", () => {
       { metadata: { note: "internal" }, submit: true },
       undefined,
     );
+  });
+});
+
+describe("updateDispute — actor scoping (BTS-107)", () => {
+  it("lets a platform admin update any dispute without a ledger lookup", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx();
+
+    await updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      evidence: { product_description: "X" },
+      actor: { type: "admin" },
+    });
+
+    // Admin short-circuits: no need to resolve the dispute's linked payment.
+    expect(authCtx.runQuery).not.toHaveBeenCalled();
+    expect(stripe.disputes.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a seller update a dispute for a sale routed to their own account", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      { stripePaymentIntentId: "pi_1", destinationAccountId: "acct_seller" },
+    );
+
+    await updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      evidence: { product_description: "X" },
+      actor: { type: "seller", accountId: "acct_seller" },
+    });
+
+    // Dispute is resolved from the ledger to find its linked PaymentIntent...
+    expect(authCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+      stripeDisputeId: "dp_1",
+    });
+    // ...then the payment is resolved to check where the money was routed.
+    expect(authCtx.runQuery).toHaveBeenCalledWith(expect.anything(), {
+      stripePaymentIntentId: "pi_1",
+    });
+    expect(stripe.disputes.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a seller updating a dispute for another seller's sale", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      { stripePaymentIntentId: "pi_1", destinationAccountId: "acct_other" },
+    );
+
+    await expect(
+      updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_1",
+        evidence: { product_description: "X" },
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor/i);
+
+    // The unauthorized update never reaches Stripe.
+    expect(stripe.disputes.update).not.toHaveBeenCalled();
+  });
+
+  it("lets the store leg of a split sale act on its dispute (role threaded from the ledger)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      {
+        stripePaymentIntentId: "pi_1",
+        splitRecipients: [
+          { destinationAccountId: "acct_store", role: "store" },
+          { destinationAccountId: "acct_affiliate", role: "affiliate" },
+        ],
+      },
+    );
+
+    await updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      evidence: { product_description: "X" },
+      actor: { type: "seller", accountId: "acct_store" },
+    });
+
+    expect(stripe.disputes.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects an affiliate leg acting on a split sale's dispute", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      {
+        stripePaymentIntentId: "pi_1",
+        splitRecipients: [
+          { destinationAccountId: "acct_store", role: "store" },
+          { destinationAccountId: "acct_affiliate", role: "affiliate" },
+        ],
+      },
+    );
+
+    await expect(
+      updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_1",
+        evidence: { product_description: "X" },
+        actor: { type: "seller", accountId: "acct_affiliate" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor/i);
+
+    expect(stripe.disputes.update).not.toHaveBeenCalled();
+  });
+
+  it("preserves unrestricted behavior when actor is omitted (non-breaking)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx();
+
+    await updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      evidence: { product_description: "X" },
+    });
+
+    // No actor → no ledger lookup, no gate: current behavior is preserved.
+    expect(authCtx.runQuery).not.toHaveBeenCalled();
+    expect(stripe.disputes.update).toHaveBeenCalledWith(
+      "dp_1",
+      { evidence: { product_description: "X" }, submit: false },
+      undefined,
+    );
+  });
+
+  it("rejects a seller when the dispute isn't in the ledger (fail closed)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(null, null);
+
+    await expect(
+      updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_missing",
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor|not found/i);
+
+    expect(stripe.disputes.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a seller when the dispute has no linked PaymentIntent (fail closed)", async () => {
+    const stripe = makeStripe();
+    // Dispute exists but carries no PaymentIntent (legacy charge-only): a seller
+    // can't be verified against the payments ledger, so deny.
+    const authCtx = makeAuthCtx({ stripeDisputeId: "dp_1" }, null);
+
+    await expect(
+      updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_1",
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor/i);
+
+    expect(stripe.disputes.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a seller when the linked payment is missing (fail closed)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      null,
+    );
+
+    await expect(
+      updateDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_1",
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor|not found/i);
+
+    expect(stripe.disputes.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("closeDispute — actor scoping (BTS-107)", () => {
+  it("lets a platform admin close any dispute without a ledger lookup", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx();
+
+    await closeDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      actor: { type: "admin" },
+    });
+
+    expect(authCtx.runQuery).not.toHaveBeenCalled();
+    expect(stripe.disputes.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a seller close a dispute for a sale routed to their own account", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      { stripePaymentIntentId: "pi_1", destinationAccountId: "acct_seller" },
+    );
+
+    await closeDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      actor: { type: "seller", accountId: "acct_seller" },
+    });
+
+    expect(stripe.disputes.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a seller closing a dispute for another seller's sale", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(
+      { stripeDisputeId: "dp_1", stripePaymentIntentId: "pi_1" },
+      { stripePaymentIntentId: "pi_1", destinationAccountId: "acct_other" },
+    );
+
+    await expect(
+      closeDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_1",
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor/i);
+
+    // Conceding another seller's chargeback never reaches Stripe.
+    expect(stripe.disputes.close).not.toHaveBeenCalled();
+  });
+
+  it("preserves unrestricted behavior when actor is omitted (non-breaking)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx();
+
+    await closeDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+      stripeDisputeId: "dp_1",
+      stripeAccountId: "acct_1",
+    });
+
+    expect(authCtx.runQuery).not.toHaveBeenCalled();
+    expect(stripe.disputes.close).toHaveBeenCalledWith(
+      "dp_1",
+      {},
+      { stripeAccount: "acct_1" },
+    );
+  });
+
+  it("rejects a seller when the dispute isn't in the ledger (fail closed)", async () => {
+    const stripe = makeStripe();
+    const authCtx = makeAuthCtx(null, null);
+
+    await expect(
+      closeDispute(asStripe(stripe), makeAuthComponent(), authCtx, {
+        stripeDisputeId: "dp_missing",
+        actor: { type: "seller", accountId: "acct_seller" },
+      }),
+    ).rejects.toThrow(/not authorized|unauthor|not found/i);
+
+    expect(stripe.disputes.close).not.toHaveBeenCalled();
   });
 });

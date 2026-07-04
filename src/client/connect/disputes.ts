@@ -3,8 +3,14 @@ import type Stripe from "stripe";
 import type { DisputeStatus } from "../../component/connect/validators.js";
 import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
-import type { StripeComponentDispute } from "../types.js";
+import type {
+  StripeComponentDispute,
+  StripeComponentPayment,
+} from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
+import { type RefundActor, isRefundAuthorized } from "./refundActor.js";
+
+export type { RefundActor } from "./refundActor.js";
 
 // =============================================================================
 // Dispute methods
@@ -88,18 +94,37 @@ export async function listDisputes(
  * including on a dispute whose evidence was already submitted (no state
  * change). We still send it explicitly rather than lean on the undocumented
  * metadata-only leniency.
+ *
+ * Actor scoping (BTS-107): pass `actor` to gate WHO may act on the dispute,
+ * mirroring {@link createRefund}. A platform admin may act on any dispute; a
+ * seller may act only on a dispute whose sale was routed to their own account.
+ * Enforced BEFORE the Stripe call, so an unauthorized submit never reaches the
+ * bank. Omit `actor` to preserve the pre-BTS-107 unrestricted behavior.
  */
 export async function updateDispute(
   stripe: Stripe,
-  _ctx: RunCtx,
+  component: Component,
+  ctx: RunCtx,
   opts: {
     stripeDisputeId: string;
     evidence?: Stripe.DisputeUpdateParams.Evidence;
     metadata?: Record<string, string>;
     submit?: boolean;
     stripeAccountId?: string;
+    /**
+     * Who is initiating the dispute action (BTS-107). Mirrors {@link RefundActor}:
+     * a platform admin (`{ type: "admin" }`) may act on any dispute; a seller
+     * (`{ type: "seller", accountId }`) may act only on a dispute for a sale
+     * routed to their own account (the destination-charge seller or the split
+     * sale's `store` leg). Omit for platform-initiated (unrestricted) actions.
+     */
+    actor?: RefundActor;
   },
 ): Promise<{ success: true }> {
+  // Actor scoping (BTS-107): enforce BEFORE the Stripe call, so an unauthorized
+  // seller can never submit evidence to the bank on another account's dispute.
+  await assertDisputeAuthorized(component, ctx, opts);
+
   // Stage-by-default, on EVERY call: an omitted `submit` must never inherit
   // Stripe's server-side default (documented true). BTS-61 covered the
   // evidence path; BTS-72 extends it to metadata-only updates, so no request
@@ -125,12 +150,27 @@ export async function updateDispute(
 
 /**
  * Accept a dispute (concede the chargeback). Irreversible.
+ *
+ * Actor scoping (BTS-107): pass `actor` to gate WHO may concede, mirroring
+ * {@link updateDispute} and {@link createRefund}. Enforced BEFORE the Stripe
+ * call — conceding is irreversible, so an unauthorized seller must never be
+ * able to concede another account's dispute. Omit `actor` for the pre-BTS-107
+ * unrestricted behavior.
  */
 export async function closeDispute(
   stripe: Stripe,
-  _ctx: RunCtx,
-  opts: { stripeDisputeId: string; stripeAccountId?: string },
+  component: Component,
+  ctx: RunCtx,
+  opts: {
+    stripeDisputeId: string;
+    stripeAccountId?: string;
+    /** See {@link updateDispute}'s `actor` (BTS-107). Omit for unrestricted. */
+    actor?: RefundActor;
+  },
 ): Promise<{ success: true }> {
+  // Actor scoping (BTS-107): enforce BEFORE the (irreversible) concede.
+  await assertDisputeAuthorized(component, ctx, opts);
+
   try {
     await stripe.disputes.close(
       opts.stripeDisputeId,
@@ -142,6 +182,69 @@ export async function closeDispute(
     return { success: true };
   } catch (err) {
     throwStripeError("DISPUTE_UPDATE_FAILED", "Failed to close dispute", err);
+  }
+}
+
+/**
+ * Enforce dispute-action actor scoping (BTS-107). Resolves the dispute from the
+ * component's `disputes` ledger, then the `payments` row it links to (via the
+ * dispute's `stripePaymentIntentId`), and rejects a seller-initiated action
+ * unless that seller is the sale's merchant — the destination-charge seller or
+ * the split sale's `store` leg. Reuses {@link isRefundAuthorized} so refunds
+ * and dispute actions can never drift on who owns a sale. Fails closed: a
+ * missing dispute, an unlinked dispute (no PaymentIntent), or a missing payment
+ * denies a seller rather than allowing them. No-ops for admin / omitted actors.
+ */
+async function assertDisputeAuthorized(
+  component: Component,
+  ctx: RunCtx,
+  opts: { stripeDisputeId: string; actor?: RefundActor },
+): Promise<void> {
+  const { actor } = opts;
+  if (!actor || actor.type === "admin") return; // unrestricted
+
+  const dispute = await getDisputeByStripeId(component, ctx, {
+    stripeDisputeId: opts.stripeDisputeId,
+  });
+  if (!dispute) {
+    throwStripeError(
+      "DISPUTE_UNAUTHORIZED",
+      `Dispute action not authorized: no dispute found for ${opts.stripeDisputeId} to verify sale ownership`,
+    );
+  }
+
+  // The dispute row is keyed to its sale by PaymentIntent — the same key that
+  // keys the payments ledger. A dispute with no linked PaymentIntent (legacy
+  // charge-only) can't be verified, so a seller is denied (fail closed).
+  const piId = dispute.stripePaymentIntentId;
+  if (!piId) {
+    throwStripeError(
+      "DISPUTE_UNAUTHORIZED",
+      `Dispute action not authorized: dispute ${opts.stripeDisputeId} has no linked PaymentIntent to verify sale ownership`,
+    );
+  }
+
+  const payment = (await ctx.runQuery(
+    componentRef(component, "connect/queries/getPaymentByStripeId"),
+    { stripePaymentIntentId: piId },
+  )) as StripeComponentPayment | null;
+  if (!payment) {
+    throwStripeError(
+      "DISPUTE_UNAUTHORIZED",
+      `Dispute action not authorized: no payment found for ${piId} to verify sale ownership`,
+    );
+  }
+
+  if (
+    !isRefundAuthorized(actor, {
+      destinationAccountId: payment.destinationAccountId,
+      splitRecipients: payment.splitRecipients,
+    })
+  ) {
+    throwStripeError(
+      "DISPUTE_UNAUTHORIZED",
+      `Dispute action not authorized: seller ${actor.accountId} may not act on a dispute for a sale routed to another account`,
+    );
   }
 }
 

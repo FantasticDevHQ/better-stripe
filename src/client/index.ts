@@ -1158,7 +1158,12 @@ export class BetterStripe {
    */
   async reverseTransfers(
     ctx: RunCtx,
-    opts: { sourceChargeId: string; percent?: number; amount?: number },
+    opts: {
+      sourceChargeId: string;
+      percent?: number;
+      amount?: number;
+      operationId?: string;
+    },
   ) {
     return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
   }

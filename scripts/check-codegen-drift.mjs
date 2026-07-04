@@ -28,17 +28,34 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Convex imports every TypeScript source module under convex/ into the
+// generated api.ts. Hand-authored .d.ts files are generated-type artifacts,
+// not source modules, and would never appear in api.ts. This repo's example/
+// workspace is all-.ts today; Convex also allows .js/.jsx/.tsx/.cjs/.mjs
+// modules, so extend isSourceModule if that ever changes.
+function isSourceModule(fileName) {
+  return fileName.endsWith(".ts") && !fileName.endsWith(".d.ts");
+}
+
 function walkTsFiles(dir) {
   const files = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...walkTsFiles(path));
-    } else if (entry.isFile() && entry.name.endsWith(".ts")) {
+    } else if (entry.isFile() && isSourceModule(entry.name)) {
       files.push(path);
     }
   }
   return files;
+}
+
+// Convex quotes the object key in `ApiFromModules<...>` whenever the module
+// path is not a valid bare JavaScript identifier (e.g. `lib/marketplace` or
+// `my-module`). A simple `.includes("/")` check is insufficient: a
+// hyphenated top-level name like `my-module` is also quoted.
+function isValidJsIdentifier(name) {
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
 }
 
 // Layer 1: library component codegen.
@@ -146,9 +163,9 @@ function checkExampleApp() {
       continue;
     }
 
-    const keyPattern = modulePath.includes("/")
-      ? `"${escapeRegExp(modulePath)}"`
-      : escapeRegExp(modulePath);
+    const keyPattern = isValidJsIdentifier(modulePath)
+      ? escapeRegExp(modulePath)
+      : `"${escapeRegExp(modulePath)}"`;
     const fullApiRegex = new RegExp(
       `^\\s*${keyPattern}:\\s*typeof\\s+${alias}\\s*[,;]`,
       "m",

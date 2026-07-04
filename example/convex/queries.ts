@@ -4,6 +4,11 @@ import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { stripe } from "./stripe";
 
+type TransferLedgerRow = {
+  amount: number;
+  reversedAmount?: number;
+};
+
 // Accounts
 export const getAccountByUserId = query({
   args: { userId: v.string() },
@@ -102,6 +107,43 @@ export const getDisputeWithCountdown = query({
     stripe.getDisputeWithCountdown(ctx, {
       stripeDisputeId: args.stripeDisputeId,
     }),
+});
+
+// Chargeback/clawback read model for the seller dispute detail. Disputes carry
+// the originating charge id, and the transfer ledger stores the reversal state
+// for every split leg funded by that charge.
+export const getDisputeChargeback = query({
+  args: { stripeDisputeId: v.string() },
+  returns: v.union(
+    v.object({
+      dispute: v.any(),
+      transfers: v.array(v.any()),
+      gross: v.number(),
+      reversed: v.number(),
+      net: v.number(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const dispute = await stripe.getDisputeWithCountdown(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+    });
+    if (!dispute) return null;
+
+    const sourceChargeId = dispute.stripeChargeId;
+    const transfers: TransferLedgerRow[] = sourceChargeId
+      ? ((await stripe.listTransfersByCharge(ctx, {
+          sourceChargeId,
+        })) as TransferLedgerRow[])
+      : [];
+    const gross = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+    const reversed = transfers.reduce(
+      (sum, transfer) => sum + (transfer.reversedAmount ?? 0),
+      0,
+    );
+
+    return { dispute, transfers, gross, reversed, net: gross - reversed };
+  },
 });
 
 // Checkout Sessions

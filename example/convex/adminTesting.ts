@@ -30,10 +30,32 @@ type StripeApiVersion = NonNullable<
 >;
 const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
 
+/**
+ * Fail-closed guard against firing these actions with a non-test-mode key
+ * (BTS-77). Every action on this page makes a REAL Stripe API call — if
+ * `STRIPE_SECRET_KEY` on the deployment were ever a live key, clicking a
+ * "fire" button would create a genuine live charge/subscription. Test (and
+ * restricted-test) secret keys are always prefixed `sk_test_`/`rk_test_`;
+ * anything else — missing, live, or malformed — throws. Exported so the
+ * guard itself is unit-tested independent of the actions that call it.
+ */
+export function assertTestModeStripeKey(key: string | undefined): void {
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY not set on the deployment");
+  }
+  if (!/^[rs]k_test_/.test(key)) {
+    throw new Error(
+      "Refusing to fire an admin test trigger: STRIPE_SECRET_KEY is not a " +
+        "test-mode key (expected an sk_test_/rk_test_ prefix). This page " +
+        "makes REAL Stripe API calls and must never run against a live key.",
+    );
+  }
+}
+
 function rawStripe(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY not set on the deployment");
-  return new Stripe(key, { apiVersion: STRIPE_API_VERSION });
+  assertTestModeStripeKey(key);
+  return new Stripe(key as string, { apiVersion: STRIPE_API_VERSION });
 }
 
 const POLL_ATTEMPTS = 5;
@@ -140,6 +162,7 @@ async function requireDemoAccounts(ctx: ActionCtx) {
 export const fireAccountUpdated = action({
   args: {},
   handler: async (ctx) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     const { storeAccountId } = await requireDemoAccounts(ctx);
     const pingedAt = new Date().toISOString();
 
@@ -172,6 +195,7 @@ export const fireAccountUpdated = action({
 export const fireSubscriptionUpdated = action({
   args: {},
   handler: async (ctx) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     const { storeAccountId, buyerUserId } = await requireDemoAccounts(ctx);
 
     const active = await stripe.getActiveSubscription(ctx, {
@@ -219,6 +243,7 @@ const ADMIN_TEST_PAYMENT_AMOUNT = 500; // $5.00 — small, fixed, test-mode only
 export const fireCheckoutCompleted = action({
   args: {},
   handler: async (ctx) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     const { storeAccountId } = await requireDemoAccounts(ctx);
     const raw = rawStripe();
 
@@ -261,6 +286,7 @@ export const fireCheckoutCompleted = action({
 export const fireInvoicePaid = action({
   args: {},
   handler: async (ctx) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     const { storeAccountId, buyerUserId, buyerAccountId } =
       await requireDemoAccounts(ctx);
 

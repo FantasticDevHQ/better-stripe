@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 
-import { action } from "./_generated/server";
+import { action, type ActionCtx } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
 import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliateSplit";
+import { lifecycleArgs, trialEndFromDateInput } from "./subscriptionLifecycle";
 
 // Webhook setup — creates both V1 (snapshot) and V2 (thin) event destinations
 export const setupWebhooks = action({
@@ -351,13 +352,127 @@ export const reverseSaleTransfers = action({
 });
 
 // Subscriptions
+async function assertSubscriptionOwner(
+  ctx: ActionCtx,
+  args: { userId: string; stripeSubscriptionId: string },
+) {
+  const identity = lifecycleArgs(args);
+  const subscription = await stripe.getSubscriptionByStripeId(ctx, {
+    stripeSubscriptionId: identity.stripeSubscriptionId,
+  });
+
+  if (!subscription || subscription.userId !== identity.userId) {
+    throw new Error("Subscription not found for this user");
+  }
+
+  return identity;
+}
+
 export const cancelSubscription = action({
-  args: { stripeSubscriptionId: v.string() },
-  handler: async (ctx, args) =>
-    stripe.cancelSubscription(ctx, {
-      stripeSubscriptionId: args.stripeSubscriptionId,
+  args: { userId: v.string(), stripeSubscriptionId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.cancelSubscription(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
       cancelAtPeriodEnd: true,
-    }),
+    });
+  },
+});
+
+export const reactivateSubscription = action({
+  args: { userId: v.string(), stripeSubscriptionId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.reactivateSubscription(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+    });
+  },
+});
+
+export const pauseSubscription = action({
+  args: {
+    userId: v.string(),
+    stripeSubscriptionId: v.string(),
+    behavior: v.optional(
+      v.union(
+        v.literal("keep_as_draft"),
+        v.literal("mark_uncollectible"),
+        v.literal("void"),
+      ),
+    ),
+    resumesAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.pauseSubscription(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+      behavior: args.behavior,
+      resumesAt: args.resumesAt,
+    });
+  },
+});
+
+export const resumeSubscription = action({
+  args: { userId: v.string(), stripeSubscriptionId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.resumeSubscription(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+    });
+  },
+});
+
+export const updateSubscriptionQuantity = action({
+  args: {
+    userId: v.string(),
+    stripeSubscriptionId: v.string(),
+    quantity: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.updateSubscriptionQuantity(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+      quantity: args.quantity,
+    });
+  },
+});
+
+export const updateSubscriptionPrice = action({
+  args: {
+    userId: v.string(),
+    stripeSubscriptionId: v.string(),
+    stripePriceId: v.string(),
+    prorationBehavior: v.optional(
+      v.union(
+        v.literal("always_invoice"),
+        v.literal("create_prorations"),
+        v.literal("none"),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.updateSubscriptionPrice(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+      stripePriceId: args.stripePriceId,
+      prorationBehavior: args.prorationBehavior,
+    });
+  },
+});
+
+export const updateSubscriptionTrialEnd = action({
+  args: {
+    userId: v.string(),
+    stripeSubscriptionId: v.string(),
+    trialEnd: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await assertSubscriptionOwner(ctx, args);
+    return stripe.updateSubscriptionTrialEnd(ctx, {
+      stripeSubscriptionId: identity.stripeSubscriptionId,
+      trialEnd: trialEndFromDateInput(args.trialEnd),
+    });
+  },
 });
 
 // Affiliate-split demo (BTS-43)
@@ -378,10 +493,7 @@ export const createAffiliateSplitCheckout = action({
     returnUrl: v.string(),
   },
   handler: async (ctx, args) => {
-    const personas = await ctx.runQuery(
-      api.queries.getMarketplacePersonas,
-      {},
-    );
+    const personas = await ctx.runQuery(api.queries.getMarketplacePersonas, {});
     if (!personas.store?.accountId) {
       throw new Error(
         "Marketplace store not seeded — run `npm run setup` first.",
@@ -442,6 +554,21 @@ export const submitDisputeEvidence = action({
       stripeDisputeId: args.stripeDisputeId,
       evidence: args.evidence,
       submit: args.submit,
+      stripeAccountId: args.stripeAccountId,
+    }),
+});
+
+// Accept/concede a dispute from the headless seller UI. Stripe closes the
+// dispute; the component row and transfer clawback figures refresh from the
+// charge.dispute.closed webhook.
+export const acceptDispute = action({
+  args: {
+    stripeDisputeId: v.string(),
+    stripeAccountId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.closeDispute(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
       stripeAccountId: args.stripeAccountId,
     }),
 });

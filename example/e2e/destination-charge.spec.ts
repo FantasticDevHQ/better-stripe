@@ -83,11 +83,22 @@ test.describe("live destination-charge flow", () => {
       timeout: 60_000,
     });
 
-    await expect(
-      page.getByTestId("charge-complete-badge"),
-    ).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("charge-complete-badge")).toBeVisible({
+      timeout: 60_000,
+    });
     await expect(
       page.getByText(/reconciles exactly to the charge amount/i),
     ).toBeVisible();
+
+    // AC4 (BTS-58 / BTS-78): assert the actual DISPLAYED $ figures, not just
+    // the "reconciles" banner — tying them to Sasha's seeded $129.00 one-time
+    // price and the demo's 10% platform fee (see marketplace.ts's
+    // DEMO_FEE_PERCENT / saleBreakdown): $129.00 charged, a $12.90 (10%)
+    // platform fee, and a $116.10 seller payout.
+    await expect(page.getByTestId("charged-amount")).toHaveText("$129.00");
+    await expect(page.getByTestId("platform-fee-amount")).toHaveText("$12.90");
+    await expect(page.getByTestId("seller-payout-amount")).toHaveText(
+      "$116.10",
+    );
   });
 });

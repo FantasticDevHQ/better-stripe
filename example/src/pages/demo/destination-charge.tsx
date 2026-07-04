@@ -19,13 +19,23 @@ function formatCurrency(cents: number, currency = "usd") {
   }).format(cents / 100);
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({
+  label,
+  value,
+  testId,
+}: {
+  label: string;
+  value: string;
+  testId?: string;
+}) {
   return (
     <div className="space-y-1">
       <div className="text-muted-foreground text-xs uppercase tracking-wide">
         {label}
       </div>
-      <div className="text-lg font-semibold">{value}</div>
+      <div className="text-lg font-semibold" data-testid={testId}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -70,7 +80,9 @@ function DestinationChargeCheckoutForm({
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
       } else {
-        setError("Failed to create checkout session. No client secret returned.");
+        setError(
+          "Failed to create checkout session. No client secret returned.",
+        );
       }
     } catch (err) {
       console.error("Destination charge checkout error:", err);
@@ -184,8 +196,8 @@ export function DestinationChargeDemo() {
         </h1>
         <p className="text-muted-foreground">
           {buyer.name} buys {store.storeName}'s one-time product as a real
-          destination charge — funds route to the seller and the platform
-          keeps its fee, in a single charge (no affiliate split).
+          destination charge — funds route to the seller and the platform keeps
+          its fee, in a single charge (no affiliate split).
         </p>
       </div>
 
@@ -246,14 +258,17 @@ export function DestinationChargeDemo() {
             <Figure
               label="Charged"
               value={formatCurrency(breakdown.gross, price.currency)}
+              testId="charged-amount"
             />
             <Figure
               label={`Platform fee (${feePercent}%)`}
               value={formatCurrency(breakdown.fee, price.currency)}
+              testId="platform-fee-amount"
             />
             <Figure
               label="Seller payout"
               value={formatCurrency(breakdown.net, price.currency)}
+              testId="seller-payout-amount"
             />
           </div>
           {breakdown.reconciles ? (

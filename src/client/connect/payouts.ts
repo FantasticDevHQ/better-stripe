@@ -61,6 +61,8 @@ export async function createPayout(
     amount: number;
     currency?: string;
     metadata?: Record<string, string>;
+    /** Stripe idempotency key for retry-safe payout creation. */
+    idempotencyKey?: string;
   },
 ) {
   const payout = await stripe.payouts.create(
@@ -69,7 +71,12 @@ export async function createPayout(
       currency: opts.currency ?? "usd",
       metadata: opts.metadata ?? undefined,
     },
-    { stripeAccount: opts.stripeAccountId },
+    {
+      stripeAccount: opts.stripeAccountId,
+      ...(opts.idempotencyKey !== undefined
+        ? { idempotencyKey: opts.idempotencyKey }
+        : {}),
+    },
   );
   return { stripePayoutId: payout.id };
 }

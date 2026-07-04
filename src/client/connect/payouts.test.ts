@@ -9,7 +9,8 @@
 import type Stripe from "stripe";
 import { describe, expect, it, vi } from "vitest";
 
-import { getAccountBalance } from "./payouts.js";
+import type { RunCtx } from "../helpers.js";
+import { createPayout, getAccountBalance } from "./payouts.js";
 
 /** A Stripe stub whose balance.retrieve resolves the given balance object. */
 function makeStripe(balance: {
@@ -20,9 +21,13 @@ function makeStripe(balance: {
     balance: {
       retrieve: vi.fn().mockResolvedValue({ object: "balance", ...balance }),
     },
+    payouts: {
+      create: vi.fn().mockResolvedValue({ id: "po_1" }),
+    },
   };
 }
 const asStripe = (s: ReturnType<typeof makeStripe>) => s as unknown as Stripe;
+const noCtx = {} as RunCtx;
 
 describe("getAccountBalance (BTS-65)", () => {
   it("scopes the balance read to the connected account via the Stripe-Account header", async () => {
@@ -102,5 +107,26 @@ describe("getAccountBalance (BTS-65)", () => {
     });
 
     expect(balances).toEqual([]);
+  });
+});
+
+describe("createPayout (BTS-100)", () => {
+  it("passes the supplied idempotency key to the Stripe payout create call", async () => {
+    const stripe = makeStripe({ available: [], pending: [] });
+
+    await createPayout(asStripe(stripe), noCtx, {
+      stripeAccountId: "acct_seller",
+      amount: 12500,
+      currency: "usd",
+      idempotencyKey: "bs_payout_run_1",
+    });
+
+    expect(stripe.payouts.create).toHaveBeenCalledWith(
+      { amount: 12500, currency: "usd", metadata: undefined },
+      {
+        stripeAccount: "acct_seller",
+        idempotencyKey: "bs_payout_run_1",
+      },
+    );
   });
 });

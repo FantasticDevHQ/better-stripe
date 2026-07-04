@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { stripe } from "./stripe";
 
@@ -151,6 +152,30 @@ export const getCheckoutSessionByStripeId = query({
   handler: async (ctx, args) =>
     stripe.getCheckoutSessionByStripeId(ctx, {
       stripeSessionId: args.stripeSessionId,
+    }),
+});
+
+// Refunds & reversals (BTS-80)
+const connectQueries = components.betterStripe.connect.queries;
+
+export const getPaymentByStripeId = query({
+  args: { stripePaymentIntentId: v.string() },
+  handler: async (ctx, args) =>
+    ctx.runQuery(connectQueries.getPaymentByStripeId, {
+      stripePaymentIntentId: args.stripePaymentIntentId,
+    }),
+});
+
+export const listRefunds = query({
+  args: {
+    accountId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) =>
+    stripe.listRefunds(ctx, {
+      stripeAccountId: args.accountId,
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      limit: 25,
     }),
 });
 

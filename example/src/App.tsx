@@ -17,6 +17,7 @@ import { SellerMarketplaceAccount } from "@/pages/seller/marketplace-account";
 import { SellerOnboarding } from "@/pages/seller/onboarding";
 import { Payouts } from "@/pages/seller/payouts";
 import { SellerProducts } from "@/pages/seller/products";
+import { SellerRefunds } from "@/pages/seller/refunds";
 import { Billing } from "@/pages/dashboard/billing";
 import { Dashboard } from "@/pages/dashboard/index";
 import { Invoices } from "@/pages/dashboard/invoices";
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/seller/onboarding" element={<SellerOnboarding />} />
           <Route path="/seller/payouts" element={<Payouts />} />
           <Route path="/seller/disputes" element={<SellerDisputes />} />
+          <Route path="/seller/refunds" element={<SellerRefunds />} />
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/account" element={<SellerAccount />} />
           <Route

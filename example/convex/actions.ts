@@ -276,6 +276,81 @@ export const getAccountBalance = action({
     stripe.getAccountBalance(ctx, { stripeAccountId: args.stripeAccountId }),
 });
 
+// Refunds & reversals (BTS-80)
+
+export type AmountSizing =
+  | { kind: "full" }
+  | { kind: "partial"; amountCents: number };
+
+export function amountForStripe(sizing: AmountSizing): number | undefined {
+  if (sizing.kind === "full") return undefined;
+  if (!Number.isInteger(sizing.amountCents) || sizing.amountCents <= 0) {
+    throw new Error(
+      "Partial amount must be a positive integer number of cents.",
+    );
+  }
+  return sizing.amountCents;
+}
+
+export function summarizeReversalResult(result: {
+  reversals: { stripeTransferId: string; amount: number }[];
+}) {
+  return {
+    reversalCount: result.reversals.length,
+    totalReversed: result.reversals.reduce((sum, row) => sum + row.amount, 0),
+  };
+}
+
+export const issueRefund = action({
+  args: {
+    stripePaymentIntentId: v.string(),
+    amountCents: v.optional(v.number()),
+    reason: v.optional(
+      v.union(
+        v.literal("duplicate"),
+        v.literal("fraudulent"),
+        v.literal("requested_by_customer"),
+      ),
+    ),
+    stripeAccountId: v.optional(v.string()),
+    actorAccountId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const amount =
+      args.amountCents === undefined
+        ? undefined
+        : amountForStripe({ kind: "partial", amountCents: args.amountCents });
+
+    return stripe.createRefund(ctx, {
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      amount,
+      reason: args.reason,
+      stripeAccountId: args.stripeAccountId,
+      actor: args.actorAccountId
+        ? { type: "seller", accountId: args.actorAccountId }
+        : { type: "admin" },
+    });
+  },
+});
+
+export const reverseSaleTransfers = action({
+  args: {
+    sourceChargeId: v.string(),
+    amountCents: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const amount =
+      args.amountCents === undefined
+        ? undefined
+        : amountForStripe({ kind: "partial", amountCents: args.amountCents });
+    const result = await stripe.reverseTransfers(ctx, {
+      sourceChargeId: args.sourceChargeId,
+      amount,
+    });
+    return { ...result, summary: summarizeReversalResult(result) };
+  },
+});
+
 // Subscriptions
 async function assertSubscriptionOwner(
   ctx: ActionCtx,

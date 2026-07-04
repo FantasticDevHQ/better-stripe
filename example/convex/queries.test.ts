@@ -170,6 +170,44 @@ describe("queries — listDisputes scopes to a seller's store (BTS-44)", () => {
   });
 });
 
+describe("queries — listRefunds supports the seller refund history UI (BTS-80)", () => {
+  it("returns webhook-shaped refunds when the UI scopes history by PaymentIntent", async () => {
+    const t = withComponent();
+
+    await t.mutation(components.betterStripe.connect.mutations.upsertRefund, {
+      stripeRefundId: "re_webhook_refund",
+      stripePaymentIntentId: "pi_refunded_sale",
+      stripeChargeId: "ch_refunded_sale",
+      amount: 2500,
+      currency: "usd",
+      status: "succeeded",
+      reason: "requested_by_customer",
+    });
+
+    const refundHistoryArgs = {
+      stripePaymentIntentId: "pi_refunded_sale",
+    };
+    const paymentScoped = await t.query(
+      api.queries.listRefunds,
+      refundHistoryArgs,
+    );
+
+    expect(paymentScoped.map((refund) => refund.stripeRefundId)).toEqual([
+      "re_webhook_refund",
+    ]);
+
+    const oldAccountScopedArgs = {
+      accountId: "acct_maya",
+      stripePaymentIntentId: "pi_refunded_sale",
+    };
+    const oldAccountScoped = await t.query(
+      api.queries.listRefunds,
+      oldAccountScopedArgs,
+    );
+    expect(oldAccountScoped).toEqual([]);
+  });
+});
+
 describe("queries — getDisputeChargeback exposes clawback ledger (BTS-82)", () => {
   it("summarizes transfer reversals for the disputed charge", async () => {
     const t = withComponent();

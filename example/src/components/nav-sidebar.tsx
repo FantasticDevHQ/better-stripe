@@ -25,6 +25,7 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Onboarding", to: "/seller/onboarding" },
     { label: "Payouts", to: "/seller/payouts" },
     { label: "Disputes", to: "/seller/disputes" },
+    { label: "Refunds & reversals", to: "/seller/refunds" },
     { label: "Account", to: "/seller/account" },
     { label: "Marketplace Account", to: "/seller/marketplace-account" },
   ],

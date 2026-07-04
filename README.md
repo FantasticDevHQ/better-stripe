@@ -20,6 +20,25 @@ Releases are automated with [Changesets](https://github.com/changesets/changeset
 
 The private `example` workspace is excluded from versioning/publishing. See `pnpm changeset:status` to preview the pending bump.
 
+### Regenerating codegen
+
+The component ships committed Convex codegen output at `src/component/_generated/{api,component,dataModel,server}.ts` — consumers reach the bindings via the `./_generated/component` subpath export. The example app also commits its own codegen at `example/convex/_generated/`. Running `pnpm dev` (which wraps `convex dev`) regenerates these automatically when the schema or function definitions change, but only against the live dev deployment and only while the dev server is watching.
+
+If you add, remove, or rename a query/mutation/action on a branch without the dev server watching — or after a rebase — regenerate explicitly before committing:
+
+```bash
+pnpm codegen            # regen the library component + example app
+pnpm codegen:lib        # regen src/component/_generated only
+pnpm codegen:example    # regen example/convex/_generated only
+```
+
+All three require a configured dev deployment (`CONVEX_DEPLOYMENT` env var, normally set by a prior `npx convex dev`). They write only the local `_generated/` files — they don't push code or data to the deployment.
+
+**CI gate (BTS-104).** Two layers verify the committed files are not stale:
+
+1. **Structural drift check** (`pnpm codegen:check`, always runs in CI): scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. Catches the most common drift case — "added a function, forgot to regen" — without needing a deployment. This is the [BTS-31](https://linear.app/dojoco/issue/BTS-31)/[BTS-50](https://linear.app/dojoco/issue/BTS-50) and [BTS-74](https://linear.app/dojoco/issue/BTS-74) incident class.
+2. **Authoritative regen-and-diff** (runs in CI when `CONVEX_DEPLOYMENT` is configured): runs `pnpm codegen` against the configured dev deployment and fails if `git diff` shows changes. Catches every drift case, including validator-shape changes the structural check can't see. To enable on a fork, set the `CONVEX_DEPLOYMENT` repo secret to a dev deployment name and authorize the CI runner — see Convex's [GitHub Actions guide](https://docs.convex.dev/production/integration/deployments#github-actions).
+
 ### Relation to `@convex-dev/stripe`
 
 This component targets the Stripe **V2 Accounts API** (Connect/marketplace-first) with a transactional trigger system. [`@convex-dev/stripe`](https://github.com/get-convex/stripe) targets the classic Customers/V1 API. They are different data models — there is no automated migration. Choose by which Stripe API generation your app uses.

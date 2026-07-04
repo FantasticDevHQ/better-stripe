@@ -95,6 +95,9 @@ export function SellerRefunds() {
   const stripeAccountId = account?.stripeAccountId ?? undefined;
   const cleanPaymentIntentId = paymentIntentId.trim();
   const cleanSourceChargeId = sourceChargeId.trim();
+  const refundHistoryArgs = cleanPaymentIntentId
+    ? { stripePaymentIntentId: cleanPaymentIntentId }
+    : {};
 
   const payment = useQuery(
     api.queries.getPaymentByStripeId,
@@ -104,12 +107,7 @@ export function SellerRefunds() {
   );
   const refunds = useQuery(
     api.queries.listRefunds,
-    account === undefined
-      ? "skip"
-      : {
-          accountId: stripeAccountId,
-          stripePaymentIntentId: cleanPaymentIntentId || undefined,
-        },
+    account === undefined ? "skip" : refundHistoryArgs,
   );
 
   const refundedTotal = useMemo(
@@ -342,7 +340,7 @@ export function SellerRefunds() {
             />
             <Figure
               label="Scope"
-              value={cleanPaymentIntentId ? "Payment" : "Seller account"}
+              value={cleanPaymentIntentId ? "Payment" : "All refunds"}
               testId="refund-history-scope"
             />
           </div>

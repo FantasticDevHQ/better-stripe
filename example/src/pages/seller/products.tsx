@@ -66,6 +66,7 @@ export function SellerProducts() {
   });
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isCreatingPrice, setIsCreatingPrice] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Loading state
   if (account === undefined) {
@@ -124,6 +125,7 @@ export function SellerProducts() {
 
   const handleCreateProduct = async () => {
     setIsCreatingProduct(true);
+    setError(null);
     try {
       await createProduct({
         name: newProduct.name,
@@ -133,7 +135,7 @@ export function SellerProducts() {
       setNewProduct({ name: "", description: "" });
       setShowCreateDialog(false);
     } catch (err) {
-      console.error("Failed to create product:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsCreatingProduct(false);
     }
@@ -141,6 +143,7 @@ export function SellerProducts() {
 
   const handleAddPrice = async (stripeProductId: string) => {
     setIsCreatingPrice(true);
+    setError(null);
     try {
       const interval = newPrice.interval as
         | "month"
@@ -161,7 +164,7 @@ export function SellerProducts() {
       setNewPrice({ amount: "", currency: "usd", interval: "month" });
       setShowAddPriceFor(null);
     } catch (err) {
-      console.error("Failed to create price:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsCreatingPrice(false);
     }
@@ -235,10 +238,18 @@ export function SellerProducts() {
                 />
               </div>
             </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setShowCreateDialog(false)}
+                onClick={() => {
+                  setShowCreateDialog(false);
+                  setError(null);
+                }}
               >
                 Cancel
               </Button>
@@ -252,6 +263,12 @@ export function SellerProducts() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Products Table */}
       <Card>
@@ -269,11 +286,22 @@ export function SellerProducts() {
               <Fragment key={product._id}>
                 <TableRow
                   className="cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedProduct === product._id}
                   onClick={() =>
                     setExpandedProduct(
                       expandedProduct === product._id ? null : product._id,
                     )
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setExpandedProduct(
+                        expandedProduct === product._id ? null : product._id,
+                      );
+                    }
+                  }}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -303,6 +331,7 @@ export function SellerProducts() {
                     <div
                       className="flex justify-end gap-2"
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
                     >
                       <Button
                         variant="outline"
@@ -338,10 +367,14 @@ export function SellerProducts() {
                           <Card>
                             <CardContent className="flex items-end gap-3 p-3">
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">
+                                <Label
+                                  htmlFor={`add-price-amount-${product._id}`}
+                                  className="text-xs"
+                                >
                                   Amount (cents)
                                 </Label>
                                 <Input
+                                  id={`add-price-amount-${product._id}`}
                                   type="number"
                                   value={newPrice.amount}
                                   onChange={(e) =>
@@ -355,7 +388,12 @@ export function SellerProducts() {
                                 />
                               </div>
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">Currency</Label>
+                                <Label
+                                  htmlFor={`add-price-currency-${product._id}`}
+                                  className="text-xs"
+                                >
+                                  Currency
+                                </Label>
                                 <Select
                                   value={newPrice.currency}
                                   onValueChange={(value: string | null) =>
@@ -366,7 +404,10 @@ export function SellerProducts() {
                                     })
                                   }
                                 >
-                                  <SelectTrigger className="w-24">
+                                  <SelectTrigger
+                                    id={`add-price-currency-${product._id}`}
+                                    className="w-24"
+                                  >
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -377,7 +418,12 @@ export function SellerProducts() {
                                 </Select>
                               </div>
                               <div className="grid gap-1.5">
-                                <Label className="text-xs">Interval</Label>
+                                <Label
+                                  htmlFor={`add-price-interval-${product._id}`}
+                                  className="text-xs"
+                                >
+                                  Interval
+                                </Label>
                                 <Select
                                   value={newPrice.interval}
                                   onValueChange={(value: string | null) =>
@@ -388,7 +434,10 @@ export function SellerProducts() {
                                     })
                                   }
                                 >
-                                  <SelectTrigger className="w-28">
+                                  <SelectTrigger
+                                    id={`add-price-interval-${product._id}`}
+                                    className="w-28"
+                                  >
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>

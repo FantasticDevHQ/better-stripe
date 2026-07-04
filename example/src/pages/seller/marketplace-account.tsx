@@ -91,6 +91,18 @@ export function SellerMarketplaceAccount() {
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   const [isAddingMerchant, setIsAddingMerchant] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [addCustomerError, setAddCustomerError] = useState<string | null>(
+    null,
+  );
+  const [addRecipientError, setAddRecipientError] = useState<string | null>(
+    null,
+  );
+  const [addMerchantError, setAddMerchantError] = useState<string | null>(
+    null,
+  );
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   if (account === undefined) {
     return (
@@ -145,6 +157,7 @@ export function SellerMarketplaceAccount() {
             <Button
               onClick={async () => {
                 setIsCreating(true);
+                setCreateError(null);
                 try {
                   const result = await createOnboarding({
                     userId: currentUser.id,
@@ -156,7 +169,7 @@ export function SellerMarketplaceAccount() {
                   });
                   window.location.href = result.onboardingUrl;
                 } catch (err) {
-                  console.error("Failed to create account:", err);
+                  setCreateError(err instanceof Error ? err.message : String(err));
                   setIsCreating(false);
                 }
               }}
@@ -174,6 +187,13 @@ export function SellerMarketplaceAccount() {
                 </>
               )}
             </Button>
+
+            {createError && (
+              <Alert variant="destructive">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -268,6 +288,7 @@ export function SellerMarketplaceAccount() {
             <Button
               onClick={async () => {
                 setIsLinking(true);
+                setLinkError(null);
                 try {
                   const result = await getAccountLink({
                     stripeAccountId: account.stripeAccountId,
@@ -277,7 +298,7 @@ export function SellerMarketplaceAccount() {
                   });
                   window.location.href = result.url;
                 } catch (err) {
-                  console.error("Failed to get onboarding link:", err);
+                  setLinkError(err instanceof Error ? err.message : String(err));
                   setIsLinking(false);
                 }
               }}
@@ -295,6 +316,13 @@ export function SellerMarketplaceAccount() {
                 </>
               )}
             </Button>
+
+            {linkError && (
+              <Alert variant="destructive">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{linkError}</AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       )}
@@ -335,14 +363,14 @@ export function SellerMarketplaceAccount() {
                 <Button
                   onClick={async () => {
                     setIsAddingCustomer(true);
+                    setAddCustomerError(null);
                     try {
                       await addCustomerConfig({
                         stripeAccountId: account.stripeAccountId,
                       });
                     } catch (err) {
-                      console.error(
-                        "Failed to add customer configuration:",
-                        err,
+                      setAddCustomerError(
+                        err instanceof Error ? err.message : String(err),
                       );
                     } finally {
                       setIsAddingCustomer(false);
@@ -359,6 +387,13 @@ export function SellerMarketplaceAccount() {
                     "Add customer configuration"
                   )}
                 </Button>
+
+                {addCustomerError && (
+                  <Alert variant="destructive">
+                    <AlertTitle>Action failed</AlertTitle>
+                    <AlertDescription>{addCustomerError}</AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           )}
@@ -416,6 +451,7 @@ export function SellerMarketplaceAccount() {
                       onClick={async () => {
                         if (!selectedPriceId) return;
                         setIsPurchasing(true);
+                        setPurchaseError(null);
                         try {
                           const result = await createSelfPurchase({
                             userId: currentUser.id,
@@ -429,7 +465,9 @@ export function SellerMarketplaceAccount() {
                             window.location.href = result.url;
                           }
                         } catch (err) {
-                          console.error("Failed to start purchase:", err);
+                          setPurchaseError(
+                            err instanceof Error ? err.message : String(err),
+                          );
                           setIsPurchasing(false);
                         }
                       }}
@@ -447,6 +485,13 @@ export function SellerMarketplaceAccount() {
                         </>
                       )}
                     </Button>
+
+                    {purchaseError && (
+                      <Alert variant="destructive">
+                        <AlertTitle>Action failed</AlertTitle>
+                        <AlertDescription>{purchaseError}</AlertDescription>
+                      </Alert>
+                    )}
                   </>
                 )}
               </CardContent>
@@ -470,14 +515,14 @@ export function SellerMarketplaceAccount() {
                     variant="outline"
                     onClick={async () => {
                       setIsAddingRecipient(true);
+                      setAddRecipientError(null);
                       try {
                         await addRecipientConfig({
                           stripeAccountId: account.stripeAccountId,
                         });
                       } catch (err) {
-                        console.error(
-                          "Failed to add recipient configuration:",
-                          err,
+                        setAddRecipientError(
+                          err instanceof Error ? err.message : String(err),
                         );
                       } finally {
                         setIsAddingRecipient(false);
@@ -500,14 +545,14 @@ export function SellerMarketplaceAccount() {
                     variant="outline"
                     onClick={async () => {
                       setIsAddingMerchant(true);
+                      setAddMerchantError(null);
                       try {
                         await addMerchantConfig({
                           stripeAccountId: account.stripeAccountId,
                         });
                       } catch (err) {
-                        console.error(
-                          "Failed to add merchant configuration:",
-                          err,
+                        setAddMerchantError(
+                          err instanceof Error ? err.message : String(err),
                         );
                       } finally {
                         setIsAddingMerchant(false);
@@ -524,6 +569,15 @@ export function SellerMarketplaceAccount() {
                       "Add merchant configuration"
                     )}
                   </Button>
+                )}
+
+                {(addRecipientError || addMerchantError) && (
+                  <Alert variant="destructive" className="w-full">
+                    <AlertTitle>Action failed</AlertTitle>
+                    <AlertDescription>
+                      {addRecipientError ?? addMerchantError}
+                    </AlertDescription>
+                  </Alert>
                 )}
               </CardContent>
             </Card>

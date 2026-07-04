@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,9 @@ export function SellerOnboarding() {
   const [isLinking, setIsLinking] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("US");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [restartError, setRestartError] = useState<string | null>(null);
 
   if (account === undefined) {
     return (
@@ -114,6 +118,7 @@ export function SellerOnboarding() {
             <Button
               onClick={async () => {
                 setIsCreating(true);
+                setCreateError(null);
                 try {
                   const result = await createAccountWithOnboarding({
                     userId: currentUser.id,
@@ -126,7 +131,7 @@ export function SellerOnboarding() {
                     window.location.href = result.onboardingUrl;
                   }
                 } catch (err) {
-                  console.error("Failed to create account:", err);
+                  setCreateError(err instanceof Error ? err.message : String(err));
                   setIsCreating(false);
                 }
               }}
@@ -144,6 +149,13 @@ export function SellerOnboarding() {
                 </>
               )}
             </Button>
+
+            {createError && (
+              <Alert variant="destructive">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -208,6 +220,7 @@ export function SellerOnboarding() {
             <Button
               onClick={async () => {
                 setIsLinking(true);
+                setLinkError(null);
                 try {
                   const result = await getAccountLink({
                     stripeAccountId: account.stripeAccountId,
@@ -218,7 +231,7 @@ export function SellerOnboarding() {
                     window.location.href = result.url;
                   }
                 } catch (err) {
-                  console.error("Failed to get onboarding link:", err);
+                  setLinkError(err instanceof Error ? err.message : String(err));
                   setIsLinking(false);
                 }
               }}
@@ -236,6 +249,13 @@ export function SellerOnboarding() {
                 </>
               )}
             </Button>
+          )}
+
+          {linkError && (
+            <Alert variant="destructive">
+              <AlertTitle>Action failed</AlertTitle>
+              <AlertDescription>{linkError}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
@@ -276,12 +296,13 @@ export function SellerOnboarding() {
         status={onboardingStatus}
         onClose={async () => {
           setIsRestarting(true);
+          setRestartError(null);
           try {
             await restartOnboarding({
               stripeAccountId: account.stripeAccountId,
             });
           } catch (err) {
-            console.error("Failed to restart onboarding:", err);
+            setRestartError(err instanceof Error ? err.message : String(err));
           } finally {
             setIsRestarting(false);
           }
@@ -320,6 +341,13 @@ export function SellerOnboarding() {
                   "Restart onboarding"
                 )}
               </Button>
+
+              {restartError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle>Action failed</AlertTitle>
+                  <AlertDescription>{restartError}</AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
         )}

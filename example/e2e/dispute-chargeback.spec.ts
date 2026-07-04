@@ -48,9 +48,15 @@ test.describe("live dispute chargeback lifecycle", () => {
     await expect(page.getByTestId("chargeback-ledger")).toBeVisible({
       timeout: 60_000,
     });
-    await expect(page.getByTestId("chargeback-reversed")).toContainText("-");
+    // The transfer reversal must have actually pulled back a nonzero amount —
+    // not just the hardcoded "-" prefix the UI always renders (BTS-84).
+    await expect(page.getByTestId("chargeback-reversed")).toContainText(
+      /-[^\d]*[1-9]/,
+    );
 
     await page.getByTestId("accept-dispute-button").click();
+    await expect(page.getByTestId("accept-dispute-confirm-panel")).toBeVisible();
+    await page.getByTestId("accept-dispute-confirm-button").click();
     await expect(page.getByTestId("accept-dispute-status")).toContainText(
       /accepted/i,
       { timeout: 60_000 },

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { currentSubscriptionFrom } from "@/lib/current-subscription";
 import { useRole } from "@/providers/role-context";
 import {
   BillingPortalLink,
@@ -56,24 +57,6 @@ function formatPriceLabel(price: {
   const interval =
     price.type === "recurring" ? ` / ${price.interval ?? "month"}` : "";
   return `${amount}${interval} (${price.stripePriceId})`;
-}
-
-function currentSubscriptionFrom<
-  T extends {
-    status: string;
-    cancelAtPeriodEnd: boolean;
-  },
->(subscriptions: T[]) {
-  return (
-    subscriptions.find((s) => s.cancelAtPeriodEnd) ??
-    subscriptions.find((s) =>
-      ["trialing", "active", "paused", "past_due", "unpaid"].includes(
-        s.status,
-      ),
-    ) ??
-    subscriptions[0] ??
-    null
-  );
 }
 
 export function Billing() {

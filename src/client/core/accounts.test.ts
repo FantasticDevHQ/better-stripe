@@ -6,8 +6,8 @@
  * `deriveAccountStatus` helper. The headline targets are the multi-step
  * orchestrators — `createAccount`, `createAccountWithOnboarding` (with its
  * rollback path), `getOrCreateAccount`, `closeAccount` (DB-vs-Stripe fallback),
- * `listStripeAccounts`, and `syncAllAccounts` (manual pagination + per-record
- * error accumulation). We assert the exact params handed to each boundary, the
+ * `listStripeAccounts`, and `syncAllAccounts` (SDK auto-pagination via
+ * `for await` + per-record error accumulation). We assert the exact params handed to each boundary, the
  * shapes returned, every branch, and the error/rollback paths.
  *
  * Most of the suite mocks `ctx`/the component entirely (fast, boundary-focused
@@ -99,6 +99,21 @@ function makeStripe() {
 type MockStripe = ReturnType<typeof makeStripe>;
 const asStripe = (s: MockStripe) =>
   s as unknown as Parameters<typeof createAccount>[0];
+
+/**
+ * Real V2 list responses (`stripe.v2.core.accounts.list(...)`) are an
+ * `AsyncIterableIterator` that follows `next_page_url` internally — they do
+ * NOT resolve to a plain `{ data, has_more }` object a caller can inspect.
+ * This mirrors that shape so `for await` consumes it the same way it would
+ * consume the real SDK response.
+ */
+function asyncIterable<T>(items: T[]) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const item of items) yield item;
+    },
+  };
+}
 
 // =============================================================================
 // Real convex-test store helpers (BTS-78) — used only by the
@@ -790,16 +805,15 @@ describe("addRecipientConfiguration (real convex-test store, BTS-78)", () => {
     // endpoint and must PATCH the same row, not create a duplicate — the
     // double-sync regression this test guards against would show up here as
     // more than one row for the same stripeAccountId.
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([
         {
           id: "acct_r",
           configuration: { recipient: {} },
           metadata: { userId: "user_1" },
         },
-      ],
-      has_more: false,
-    });
+      ]),
+    );
 
     await syncAllAccounts(asStripe(stripe), realComponent, ctx);
 
@@ -815,38 +829,23 @@ describe("addRecipientConfiguration (real convex-test store, BTS-78)", () => {
 });
 
 describe("listStripeAccounts", () => {
-  it("paginates across pages until has_more is false", async () => {
+  it("collects every account the SDK's auto-pagination iterator yields", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list
-      .mockResolvedValueOnce({
-        data: [{ id: "acct_a" }, { id: "acct_b" }],
-        has_more: true,
-      })
-      .mockResolvedValueOnce({
-        data: [{ id: "acct_c" }],
-        has_more: false,
-      });
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([{ id: "acct_a" }, { id: "acct_b" }, { id: "acct_c" }]),
+    );
 
     const result = await listStripeAccounts(asStripe(stripe), {} as RunCtx);
 
     expect(result.map((a) => a.id)).toEqual(["acct_a", "acct_b", "acct_c"]);
-    // default limit 100, first page no starting_after
     expect(stripe.v2.core.accounts.list.mock.calls[0][0]).toEqual({
       limit: 100,
     });
-    // second page carries starting_after = last id of page 1
-    expect(stripe.v2.core.accounts.list.mock.calls[1][0]).toEqual({
-      limit: 100,
-      starting_after: "acct_b",
-    });
   });
 
-  it("honours an explicit limit and stops on an empty page", async () => {
+  it("honours an explicit limit", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [],
-      has_more: true, // even though Stripe claims more, empty data must terminate
-    });
+    stripe.v2.core.accounts.list.mockReturnValue(asyncIterable([]));
 
     const result = await listStripeAccounts(asStripe(stripe), {} as RunCtx, {
       limit: 5,
@@ -857,11 +856,23 @@ describe("listStripeAccounts", () => {
     expect(stripe.v2.core.accounts.list.mock.calls[0][0]).toEqual({ limit: 5 });
   });
 
-  it("treats a missing data field as an empty page", async () => {
+  it("returns accounts beyond a single page (BTS-109 regression)", async () => {
+    // Real V2 list responses never populate `has_more` — a manual
+    // has_more/starting_after loop reads it as `undefined` and silently
+    // stops after page 1. The SDK's own async iterator (driven by
+    // `next_page_url`, not exposed here) is what actually walks every page,
+    // so draining a result set far larger than one page's `limit` proves
+    // the fix relies on that iterator rather than a `has_more` flag.
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({ has_more: false });
+    const manyAccounts = Array.from({ length: 250 }, (_, i) => ({
+      id: `acct_${i}`,
+    }));
+    stripe.v2.core.accounts.list.mockReturnValue(asyncIterable(manyAccounts));
+
     const result = await listStripeAccounts(asStripe(stripe), {} as RunCtx);
-    expect(result).toEqual([]);
+
+    expect(result).toHaveLength(250);
+    expect(result.map((a) => a.id)).toEqual(manyAccounts.map((a) => a.id));
   });
 });
 
@@ -977,8 +988,8 @@ describe("closeAccount / restartAccountOnboarding", () => {
 describe("syncAllAccounts", () => {
   it("maps a business V2 account into an upsert and counts it synced", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([
         {
           id: "acct_biz",
           contact_email: "biz@co.com",
@@ -990,9 +1001,8 @@ describe("syncAllAccounts", () => {
           configuration: { merchant: { applied: true } },
           requirements: { entries: [] },
         },
-      ],
-      has_more: false,
-    });
+      ]),
+    );
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
@@ -1024,8 +1034,8 @@ describe("syncAllAccounts", () => {
 
   it("derives an individual name, falls back to contact email, and accepts snake_case ids", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([
         {
           id: "acct_ind",
           metadata: { user_id: "u_snake", org_id: "o_snake" },
@@ -1038,9 +1048,8 @@ describe("syncAllAccounts", () => {
             },
           },
         },
-      ],
-      has_more: false,
-    });
+      ]),
+    );
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
@@ -1058,10 +1067,9 @@ describe("syncAllAccounts", () => {
 
   it("falls back to the account id as userId when metadata has none", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [{ id: "acct_noid" }],
-      has_more: false,
-    });
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([{ id: "acct_noid" }]),
+    );
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
@@ -1076,13 +1084,12 @@ describe("syncAllAccounts", () => {
 
   it("accumulates a per-account error instead of aborting the sync", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([
         { id: "acct_ok", metadata: { userId: "ok" } },
         { id: "acct_bad", metadata: { userId: "bad" } },
-      ],
-      has_more: false,
-    });
+      ]),
+    );
     const runMutation = vi
       .fn()
       .mockResolvedValueOnce(undefined) // acct_ok
@@ -1103,10 +1110,9 @@ describe("syncAllAccounts", () => {
 
   it("stringifies a non-Error thrown value as 'Unknown error'", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [{ id: "acct_weird", metadata: { userId: "u" } }],
-      has_more: false,
-    });
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([{ id: "acct_weird", metadata: { userId: "u" } }]),
+    );
     const runMutation = vi.fn().mockRejectedValueOnce("not-an-error-object");
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
@@ -1122,16 +1128,15 @@ describe("syncAllAccounts", () => {
 
   it("leaves name undefined for an individual with no given_name or surname", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [
+    stripe.v2.core.accounts.list.mockReturnValue(
+      asyncIterable([
         {
           id: "acct_blank",
           metadata: { userId: "u" },
           identity: { individual: { email: "only@email.com" } },
         },
-      ],
-      has_more: false,
-    });
+      ]),
+    );
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
@@ -1142,39 +1147,9 @@ describe("syncAllAccounts", () => {
     expect(upsertArg.email).toBe("only@email.com");
   });
 
-  it("paginates with starting_after across multiple pages", async () => {
+  it("handles an empty account list", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.list
-      .mockResolvedValueOnce({
-        data: [{ id: "acct_p1", metadata: { userId: "u1" } }],
-        has_more: true,
-      })
-      .mockResolvedValueOnce({
-        data: [{ id: "acct_p2", metadata: { userId: "u2" } }],
-        has_more: false,
-      });
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
-
-    const result = await syncAllAccounts(
-      asStripe(stripe),
-      makeComponent(),
-      ctx,
-    );
-
-    expect(result.synced).toBe(2);
-    expect(stripe.v2.core.accounts.list.mock.calls[1][0]).toEqual({
-      limit: 20,
-      starting_after: "acct_p1",
-    });
-  });
-
-  it("terminates on an empty first page", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.list.mockResolvedValueOnce({
-      data: [],
-      has_more: true,
-    });
+    stripe.v2.core.accounts.list.mockReturnValue(asyncIterable([]));
     const ctx = {
       runMutation: vi.fn(),
       runQuery: vi.fn(),
@@ -1188,6 +1163,32 @@ describe("syncAllAccounts", () => {
 
     expect(result).toEqual({ synced: 0, errors: [], errorCount: 0 });
     expect(stripe.v2.core.accounts.list).toHaveBeenCalledTimes(1);
+  });
+
+  it("syncs accounts beyond a single page (BTS-109 regression)", async () => {
+    // Same rationale as the listStripeAccounts regression test: real V2
+    // list responses never populate `has_more`, so a manual pagination loop
+    // silently stops after page 1 while reporting `errors: []` (looking
+    // fully synced). Draining a result set far larger than one page's
+    // `limit` proves syncAllAccounts relies on the SDK's async iterator
+    // instead.
+    const stripe = makeStripe();
+    const manyAccounts = Array.from({ length: 150 }, (_, i) => ({
+      id: `acct_${i}`,
+      metadata: { userId: `user_${i}` },
+    }));
+    stripe.v2.core.accounts.list.mockReturnValue(asyncIterable(manyAccounts));
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
+
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
+
+    expect(result).toEqual({ synced: 150, errors: [], errorCount: 0 });
+    expect(runMutation).toHaveBeenCalledTimes(150);
   });
 });
 

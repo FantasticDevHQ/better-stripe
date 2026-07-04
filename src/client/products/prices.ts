@@ -175,14 +175,19 @@ export async function listStripePrices(
   _ctx: RunCtx,
   opts?: { productId?: string; active?: boolean; limit?: number },
 ) {
+  const limit = opts?.limit ?? 100;
   const prices: Stripe.Price[] = [];
 
+  // `for await` drives the SDK's auto-pagination, which walks every page
+  // regardless of `limit` (that param only sets per-request page size) — break
+  // once we've collected `limit` so this genuinely caps the result count.
   for await (const price of stripe.prices.list({
-    limit: opts?.limit ?? 100,
+    limit,
     product: opts?.productId,
     active: opts?.active,
   } as Stripe.PriceListParams)) {
     prices.push(price);
+    if (prices.length >= limit) break;
   }
 
   return prices;

@@ -398,13 +398,18 @@ export async function listStripeSubscriptions(
     limit?: number;
   },
 ) {
+  const limit = opts?.limit ?? 100;
   const subscriptions: Stripe.Subscription[] = [];
 
+  // `for await` drives the SDK's auto-pagination, which walks every page
+  // regardless of `limit` (that param only sets per-request page size) — break
+  // once we've collected `limit` so this genuinely caps the result count.
   for await (const subscription of stripe.subscriptions.list({
     status: opts?.status ?? "all",
-    limit: opts?.limit ?? 100,
+    limit,
   })) {
     subscriptions.push(subscription);
+    if (subscriptions.length >= limit) break;
   }
 
   return subscriptions;

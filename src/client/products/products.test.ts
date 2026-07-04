@@ -345,6 +345,31 @@ describe("read delegators", () => {
     const result = await listStripeProducts(asStripe(stripe), {} as RunCtx);
     expect(result.map((p) => p.id)).toEqual(["prod_a", "prod_b"]);
   });
+
+  it("listStripeProducts stops at `limit` instead of draining every page (BTS-101)", async () => {
+    const stripe = makeStripe();
+    let yielded = 0;
+    stripe.products.list.mockReturnValue({
+      async *[Symbol.asyncIterator]() {
+        for (const item of [
+          { id: "prod_a" },
+          { id: "prod_b" },
+          { id: "prod_c" },
+          { id: "prod_d" },
+        ]) {
+          yielded++;
+          yield item;
+        }
+      },
+    });
+
+    const result = await listStripeProducts(asStripe(stripe), {} as RunCtx, {
+      limit: 2,
+    });
+
+    expect(result.map((p) => p.id)).toEqual(["prod_a", "prod_b"]);
+    expect(yielded).toBe(2);
+  });
 });
 
 describe("syncAllProducts", () => {

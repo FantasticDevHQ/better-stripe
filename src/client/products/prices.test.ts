@@ -318,4 +318,28 @@ describe("listStripePrices", () => {
       active: true,
     });
   });
+
+  it("stops at `limit` instead of draining every page (BTS-101)", async () => {
+    const stripe = makeStripe();
+    let yielded = 0;
+    stripe.prices.list.mockReturnValue({
+      async *[Symbol.asyncIterator]() {
+        for (const item of [
+          { id: "price_a" },
+          { id: "price_b" },
+          { id: "price_c" },
+          { id: "price_d" },
+        ]) {
+          yielded++;
+          yield item;
+        }
+      },
+    });
+    const ctx = makeCtx();
+
+    const result = await listStripePrices(asStripe(stripe), ctx, { limit: 2 });
+
+    expect(result.map((p) => p.id)).toEqual(["price_a", "price_b"]);
+    expect(yielded).toBe(2);
+  });
 });

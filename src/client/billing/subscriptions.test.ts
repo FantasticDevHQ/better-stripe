@@ -409,6 +409,32 @@ describe("listStripeSubscriptions", () => {
       limit: 25,
     });
   });
+
+  it("stops at `limit` instead of draining every page (BTS-101)", async () => {
+    const stripe = makeStripe();
+    let yielded = 0;
+    stripe.subscriptions.list.mockReturnValue({
+      async *[Symbol.asyncIterator]() {
+        for (const item of [
+          { id: "sub_a" },
+          { id: "sub_b" },
+          { id: "sub_c" },
+          { id: "sub_d" },
+        ]) {
+          yielded++;
+          yield item;
+        }
+      },
+    });
+    const ctx = makeCtx();
+
+    const result = await listStripeSubscriptions(asStripe(stripe), ctx, {
+      limit: 2,
+    });
+
+    expect(result.map((s) => s.id)).toEqual(["sub_a", "sub_b"]);
+    expect(yielded).toBe(2);
+  });
 });
 
 // =============================================================================

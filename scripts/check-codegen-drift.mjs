@@ -163,6 +163,11 @@ function checkExampleApp() {
       continue;
     }
 
+    // Convex path components can only contain alphanumeric chars, underscores,
+    // or periods, so a hyphenated top-level filename (e.g. my-module.ts) is
+    // structurally impossible and would be rejected at push time. We still use
+    // identifier validity here because it is the correct JS-grammar rule and
+    // safely covers nested slash paths like lib/marketplace as well.
     const keyPattern = isValidJsIdentifier(modulePath)
       ? escapeRegExp(modulePath)
       : `"${escapeRegExp(modulePath)}"`;

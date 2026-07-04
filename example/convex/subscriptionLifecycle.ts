@@ -1,18 +1,3 @@
-export type LifecycleIdentityArgs = {
-  userId: string;
-  stripeSubscriptionId: string;
-};
-
-export function lifecycleArgs(args: LifecycleIdentityArgs): LifecycleIdentityArgs {
-  if (!args.userId.trim()) {
-    throw new Error("userId is required");
-  }
-  if (!args.stripeSubscriptionId.trim()) {
-    throw new Error("stripeSubscriptionId is required");
-  }
-  return args;
-}
-
 export function trialEndFromDateInput(value: string): "now" | number {
   if (value === "now") return "now";
 

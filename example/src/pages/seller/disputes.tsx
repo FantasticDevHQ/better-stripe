@@ -15,7 +15,9 @@
  */
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDisputes, useDisputeWithCountdown } from "@/lib/dispute-hooks";
@@ -33,11 +35,148 @@ import { useState } from "react";
 
 import { api } from "../../../convex/_generated/api";
 
+function formatMoney(amount: number, currency: string = "usd") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amount / 100);
+}
+
+type ChargebackTransfer = {
+  stripeTransferId: string;
+  destinationAccountId: string;
+  amount: number;
+  currency: string;
+  role?: string;
+  reversedAmount?: number;
+  reversalStatus?: string;
+};
+
+type ChargebackSummary = {
+  dispute: { stripeChargeId?: string; currency: string; status: string };
+  transfers: ChargebackTransfer[];
+  gross: number;
+  reversed: number;
+  net: number;
+};
+
+function ChargebackLedger({
+  chargeback,
+}: {
+  chargeback: ChargebackSummary | null | undefined;
+}) {
+  if (chargeback === undefined) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (chargeback === null || !chargeback.dispute.stripeChargeId) {
+    return (
+      <Alert data-testid="chargeback-ledger-empty">
+        <AlertDescription>
+          No linked charge is available yet, so there are no transfer clawbacks
+          to display.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const currency = chargeback.dispute.currency;
+
+  return (
+    <div className="space-y-3" data-testid="chargeback-ledger">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border p-3">
+          <div className="text-xs text-muted-foreground">
+            Original transfers
+          </div>
+          <div className="text-lg font-semibold" data-testid="chargeback-gross">
+            {formatMoney(chargeback.gross, currency)}
+          </div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs text-muted-foreground">Funds pulled back</div>
+          <div
+            className="text-lg font-semibold text-destructive"
+            data-testid="chargeback-reversed"
+          >
+            -{formatMoney(chargeback.reversed, currency)}
+          </div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs text-muted-foreground">Seller net</div>
+          <div className="text-lg font-semibold" data-testid="chargeback-net">
+            {formatMoney(chargeback.net, currency)}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {chargeback.transfers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No transfer rows found for charge{" "}
+            {chargeback.dispute.stripeChargeId}.
+          </p>
+        ) : (
+          chargeback.transfers.map((transfer) => (
+            <div
+              key={transfer.stripeTransferId}
+              className="rounded-md border p-3 text-sm"
+              data-testid="chargeback-transfer-row"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-mono">{transfer.stripeTransferId}</span>
+                <Badge variant="secondary">
+                  {transfer.reversalStatus ?? "not_reversed"}
+                </Badge>
+              </div>
+              <div className="mt-2 grid gap-2 text-muted-foreground sm:grid-cols-3">
+                <span>{transfer.role ?? "transfer"}</span>
+                <span>{formatMoney(transfer.amount, transfer.currency)}</span>
+                <span data-testid="chargeback-transfer-reversed">
+                  clawback{" "}
+                  {formatMoney(transfer.reversedAmount ?? 0, transfer.currency)}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
   const { disputes, isLoading } = useDisputes({ accountId: stripeAccountId });
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const [acceptStatus, setAcceptStatus] = useState<
+    "idle" | "submitting" | "accepted" | "error"
+  >("idle");
+  const [acceptError, setAcceptError] = useState<string | null>(null);
   const { dispute } = useDisputeWithCountdown(selectedId);
+  const chargeback = useQuery(
+    api.queries.getDisputeChargeback,
+    selectedId ? { stripeDisputeId: selectedId } : "skip",
+  ) as ChargebackSummary | null | undefined;
   const submitEvidence = useAction(api.actions.submitDisputeEvidence);
+  const acceptDispute = useAction(api.actions.acceptDispute);
+
+  async function handleAcceptDispute() {
+    if (!selectedId) return;
+    setAcceptStatus("submitting");
+    setAcceptError(null);
+    try {
+      await acceptDispute({
+        stripeDisputeId: selectedId,
+        stripeAccountId,
+      });
+      setAcceptStatus("accepted");
+    } catch (err) {
+      setAcceptStatus("error");
+      setAcceptError(
+        err instanceof Error ? err.message : "Failed to accept dispute",
+      );
+    }
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -51,9 +190,14 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
             <button
               key={row.dispute.stripeDisputeId}
               type="button"
-              onClick={() => setSelectedId(row.dispute.stripeDisputeId)}
+              onClick={() => {
+                setSelectedId(row.dispute.stripeDisputeId);
+                setAcceptStatus("idle");
+                setAcceptError(null);
+              }}
               className="flex w-full items-center justify-between rounded-md border p-3 text-left hover:bg-muted"
               data-dispute-id={row.dispute.stripeDisputeId}
+              data-testid="dispute-row"
             >
               <span className="font-mono text-sm">
                 {row.dispute.stripeDisputeId}
@@ -80,6 +224,38 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
         ) : (
           <div className="space-y-4">
             <DisputeDetail dispute={dispute} />
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-medium">Accept chargeback</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Concede the dispute and keep the clawback in place.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleAcceptDispute}
+                  disabled={acceptStatus === "submitting"}
+                  data-testid="accept-dispute-button"
+                >
+                  {acceptStatus === "submitting"
+                    ? "Accepting..."
+                    : "Accept dispute"}
+                </Button>
+              </div>
+              {acceptStatus === "accepted" && (
+                <p className="mt-2 text-sm" data-testid="accept-dispute-status">
+                  Dispute accepted. The row will update after Stripe delivers
+                  the closed webhook.
+                </p>
+              )}
+              {acceptError && (
+                <p className="mt-2 text-sm text-destructive" role="alert">
+                  {acceptError}
+                </p>
+              )}
+            </div>
             <EvidenceForm
               stripeDisputeId={selectedId}
               stripeAccountId={stripeAccountId}
@@ -92,6 +268,16 @@ function HeadlessDisputes({ stripeAccountId }: { stripeAccountId: string }) {
                 })
               }
             />
+            <Separator />
+            <section className="space-y-3">
+              <div>
+                <h3 className="font-medium">Chargeback clawback</h3>
+                <p className="text-sm text-muted-foreground">
+                  Transfer reversals recorded for the disputed charge.
+                </p>
+              </div>
+              <ChargebackLedger chargeback={chargeback} />
+            </section>
           </div>
         )}
       </Card>

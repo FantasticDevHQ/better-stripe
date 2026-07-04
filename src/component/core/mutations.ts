@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 
+import type { TableNames } from "../_generated/dataModel";
 import { mutation } from "../_generated/server";
+import schema from "../schema";
 import {
   appliedConfigurationsValidator,
   onboardingStatusValidator,
@@ -153,28 +155,20 @@ export const clearAllTables = mutation({
     tables: v.array(v.string()),
   }),
   handler: async (ctx) => {
-    const tables = [
-      "accounts",
-      "products",
-      "prices",
-      "subscriptions",
-      "checkoutSessions",
-      "invoices",
-      "payments",
-      "payouts",
-      "webhookEvents",
-    ];
+    // Derive table names from the schema definition so the clear list can never
+    // drift out of sync when new tables are added.
+    const tables = Object.keys(schema.tables) as TableNames[];
     let totalCleared = 0;
 
     for (const tableName of tables) {
       // Dev/test reset utility: deliberately clears every row in every table.
       // eslint-disable-next-line @convex-dev/no-collect-in-query
-      const docs = await ctx.db.query(tableName as any).collect();
+      const docs = await ctx.db.query(tableName).collect();
 
       if (docs.length > 0) {
         await Promise.all(
           // eslint-disable-next-line @convex-dev/explicit-table-ids
-          docs.map((doc: any) => ctx.db.delete(doc._id)),
+          docs.map((doc) => ctx.db.delete(doc._id)),
         );
         totalCleared += docs.length;
       }

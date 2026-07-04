@@ -6,7 +6,7 @@ All data comes from Stripe via better-stripe -- no mock data.
 ## Quick Start
 
 ```bash
-cd packages/better-stripe/example
+cd example
 npm install
 ```
 
@@ -360,6 +360,8 @@ sync back to the UI. Current live-backend specs:
   see below.
 - `e2e/destination-charge.spec.ts` — destination charge + platform fee demo,
   single recipient (BTS-58); see below.
+- `e2e/refunds-reversals.spec.ts` — refunds & reversals seller ops page
+  (BTS-80); see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
@@ -591,6 +593,53 @@ Two layers, like the other demos:
   charge amount (`fee + payout == charge`, asserted both by the pure
   `reconciles()` helper's unit tests and by the live spec).
 
+#### Refunds & reversals (`e2e/refunds-reversals.spec.ts`)
+
+Seller ops page (BTS-80) at `/seller/refunds` for the two claw-back
+primitives the money layer needs: `issueRefund` (full or partial, by
+PaymentIntent id) and a standalone `reverseSaleTransfers` (full or partial,
+by source charge id) for when ops needs a manual transfer clawback outside
+of a refund. A payment-status panel and a refund-history table (scoped to
+one PaymentIntent or all refunds) read back what actually landed.
+
+Two layers, like the other demos:
+
+- **Backend-independent** (runs everywhere, incl. CI): the route boots
+  without page errors.
+- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): the refund and
+  reversal controls, payment-status figures, and refund-history table
+  render against a seeded deployment.
+
+#### Admin Testing utilities (`e2e/admin-testing.spec.ts`)
+
+`/admin/testing` demonstrates `better-stripe/testing` exports for
+development and test workflows: `assertTestEnvironment()` (an environment
+guard demo), buttons that fire **real** test-mode webhook triggers
+(`fireCheckoutCompleted`, `fireSubscriptionUpdated`, `fireAccountUpdated`,
+`fireInvoicePaid`) against the seeded marketplace scenario and poll the
+component ledger for the synced row, and fixture-factory buttons that log
+typed test-data shapes for account/product/price/subscription. Money-moving
+actions elsewhere in the app share this page's `assertTestModeStripeKey`
+test-mode guard (BTS-77; see "Demo security model" above).
+
+Backend-independent only (BTS-77): the route boots without page errors.
+Actually firing the webhook triggers against a real ledger is exercised
+manually, and by the `npm run e2e:webhooks` money-layer harness (see
+"Money-layer assertions" above), not this boot spec.
+
+#### Seller product catalog (`/seller/products`)
+
+The seller's own view of `stripe.listProducts()` / `listPricesByProduct()`
+scoped to their connected account (`accountId`): expand a product to see its
+prices, create a new product + price (`createProductForAccount`,
+`createPrice`), and deactivate a price (`deactivatePrice`, BTS-88/94) — the
+deactivate action binds the caller to the price's owning connected account,
+so a seller can only ever touch their own catalog.
+
+Covered by the seller-pages boot-check batch (`e2e/seller-pages.spec.ts`,
+BTS-87): the route boots without page errors alongside the other seller
+pages.
+
 ### Webhook Processing
 
 `registerRoutes()` in `http.ts` handles 31 Stripe events across two webhook types:
@@ -634,41 +683,71 @@ The setup flow creates:
 ```
 example/
 ├── convex/
-│   ├── convex.config.ts        # app.use(betterStripe)
-│   ├── schema.ts               # users table only
-│   ├── http.ts                 # registerRoutes() webhook endpoint (V1 + V2)
-│   ├── stripe.ts               # BetterStripe client + triggers + hooks
-│   ├── queries.ts              # Query wrappers for component data
-│   ├── actions.ts              # Action wrappers for Stripe API calls + admin setup
-│   ├── setup.ts                # ensureWebhook action (legacy, used by setup script)
-│   ├── seed.ts                 # Seed DB + Stripe products + marketplace scenario
-│   ├── reset.ts                # Clear all data
-│   └── users.ts                # User queries
-├── e2e/
-│   ├── smoke.spec.ts           # Playwright smoke test (app boots + routes)
-│   └── one-time-checkout.spec.ts # One-time payment flow (live part gated)
+│   ├── convex.config.ts          # app.use(betterStripe)
+│   ├── schema.ts                 # users table only
+│   ├── http.ts                   # registerRoutes() webhook endpoint (V1 + V2)
+│   ├── stripe.ts                 # BetterStripe client + triggers + hooks
+│   ├── queries.ts                # Query wrappers for component data
+│   ├── actions.ts                # Action wrappers for Stripe API calls + admin setup
+│   ├── authz.ts                  # assertOwnership + per-resource assert*Owner, assertTestModeStripeKey
+│   ├── setup.ts                  # ensureWebhook action (legacy, used by setup script)
+│   ├── seed.ts                   # Seed DB + Stripe products + marketplace scenario
+│   ├── reset.ts                  # Clear all data
+│   ├── users.ts                  # User queries
+│   ├── marketplace.ts            # Store subscription checkout + earnings/payout helpers (BTS-42)
+│   ├── affiliateSplit.ts         # Referral attribution + split-sale math (BTS-43)
+│   ├── subscriptionLifecycle.ts  # Buyer subscription cancel/resume lifecycle (BTS-81)
+│   ├── triggerLogger.ts          # triggerLog table writer for sync triggers + async hooks
+│   ├── e2eMoney.ts               # Money-layer assertions backend for e2e:webhooks (BTS-49)
+│   ├── lib/
+│   │   └── marketplace.ts        # Pure fee/catalog helpers shared by actions.ts + the frontend
+│   └── *.test.ts                 # Vitest unit tests colocated per module above
+├── e2e/                          # Playwright suite (see "Browser E2E Tests" below)
+│   ├── smoke.spec.ts             # App boots + routes (backend-independent)
+│   ├── admin-pages.spec.ts       # Admin pages boot-check (BTS-87)
+│   ├── admin-products.spec.ts    # Admin product Edit + Deactivate (BTS-59)
+│   ├── admin-testing.spec.ts     # Admin Testing page boot-check (BTS-77)
+│   ├── dashboard-pages.spec.ts   # Customer dashboard pages boot-check (BTS-87)
+│   ├── seller-pages.spec.ts      # Seller pages boot-check (BTS-87)
+│   ├── seller-onboarding.spec.ts # Seller onboarding flow boot-check
+│   ├── payment-methods.spec.ts   # Payment methods page boot-check
+│   ├── nav-demo-links.spec.ts    # Nav sidebar demo route links boot-check
+│   ├── one-time-checkout.spec.ts # One-time payment flow (BTS-57)
+│   ├── subscription-payout.spec.ts    # Paid subscription + payout flow (BTS-42)
+│   ├── affiliate-split.spec.ts        # Affiliate split breakdown demo (BTS-43)
+│   ├── seller-disputes.spec.ts        # Seller disputes demo (BTS-44)
+│   ├── dispute-chargeback.spec.ts     # Dispute + chargeback lifecycle (BTS-82)
+│   ├── marketplace-account.spec.ts    # Marketplace account lifecycle (BTS-46)
+│   ├── destination-charge.spec.ts     # Destination charge + platform fee demo (BTS-58)
+│   ├── refunds-reversals.spec.ts      # Refunds & reversals seller ops page (BTS-80)
+│   └── buyer-subscription-lifecycle.spec.ts  # Buyer subscription lifecycle (BTS-81)
 ├── scripts/
-│   └── setup.ts                # Sets STRIPE_SECRET_KEY in Convex env
-├── playwright.config.ts        # Playwright harness (dev-server wiring)
+│   ├── setup.ts                  # Sets STRIPE_SECRET_KEY in Convex env
+│   ├── e2e-webhooks.ts           # Automated webhook + money-layer E2E test (see below)
+│   └── money-assertions.ts       # Pure reversal/reconciliation helpers (unit-tested)
+├── playwright.config.ts          # Playwright harness (dev-server wiring)
 ├── src/
-│   ├── main.tsx                # BrowserRouter + ConvexProvider
-│   ├── App.tsx                 # Routes
-│   ├── components/ui/          # shadcn/ui components
+│   ├── main.tsx                  # BrowserRouter + ConvexProvider
+│   ├── App.tsx                   # Routes
+│   ├── components/ui/            # shadcn/ui components
 │   ├── components/
-│   │   ├── app-shell.tsx       # Layout: header + sidebar
-│   │   ├── role-switcher.tsx   # Role toggle
-│   │   └── nav-sidebar.tsx     # Role-aware navigation
+│   │   ├── app-shell.tsx         # Layout: header + sidebar
+│   │   ├── role-switcher.tsx     # Role toggle
+│   │   └── nav-sidebar.tsx       # Role-aware navigation
 │   ├── pages/
-│   │   ├── landing.tsx         # Pricing (real products from Stripe)
-│   │   ├── checkout.tsx        # EmbeddedCheckout
-│   │   ├── checkout-status.tsx # CheckoutStatus
-│   │   ├── dashboard/          # Customer: billing, invoices, payment methods
-│   │   ├── seller/             # Seller: onboarding, account, payouts, products
-│   │   └── admin/              # Admin: products, subscriptions, webhooks, setup
+│   │   ├── landing.tsx           # Pricing (real products from Stripe)
+│   │   ├── checkout.tsx          # EmbeddedCheckout
+│   │   ├── checkout-status.tsx   # CheckoutStatus
+│   │   ├── dashboard/            # Customer: billing, invoices, payment methods
+│   │   ├── seller/               # Seller: onboarding, account, payouts, products, refunds
+│   │   ├── admin/                # Admin: products, subscriptions, webhooks, setup, testing
+│   │   ├── demo/                 # Marketplace money-model demos: subscribe, store-earnings, destination-charge
+│   │   └── marketplace/          # Affiliate split breakdown demo (split.tsx)
 │   ├── providers/
-│   │   └── role-context.tsx    # Demo role switcher (mock auth)
-│   └── lib/
-│       └── utils.ts            # cn() utility
+│   │   └── role-context.tsx      # Demo role switcher (mock auth)
+│   └── lib/                      # Pure helpers shared by pages (checkout-return-url,
+│                                  # store-earnings, current-subscription, stripe-hooks,
+│                                  # dispute-hooks), each with a colocated *.test.ts
 ├── .env.local.example
 └── package.json
 ```

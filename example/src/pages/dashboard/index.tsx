@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import { useQuery } from "convex/react";
 import { Link } from "react-router-dom";
@@ -21,7 +22,23 @@ export function Dashboard() {
     userId: currentUser.id,
   });
 
-  const userSubscription = subscriptions?.find(
+  if (subscriptions === undefined) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="mt-2 h-4 w-80" />
+        </div>
+        <Card>
+          <div className="space-y-4 p-6">
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const userSubscription = subscriptions.find(
     (s) => s.status === "active" || s.status === "trialing",
   );
 

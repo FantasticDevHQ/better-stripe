@@ -9,6 +9,7 @@ import {
   disputesTable,
   paymentsTable,
   payoutsTable,
+  pendingFeeRefundsTable,
   refundsTable,
   transferReversalOpsTable,
   transfersTable,
@@ -33,6 +34,7 @@ export default defineSchema({
   // Connect
   payments: paymentsTable,
   payouts: payoutsTable,
+  pendingFeeRefunds: pendingFeeRefundsTable,
   refunds: refundsTable,
   disputes: disputesTable,
   transfers: transfersTable,

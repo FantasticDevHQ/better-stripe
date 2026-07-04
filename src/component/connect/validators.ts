@@ -83,6 +83,22 @@ export const payoutDocValidator = v.object({
 });
 
 // =============================================================================
+// PENDING FEE REFUNDS (BTS-103)
+// =============================================================================
+
+/**
+ * Fields for the `pendingFeeRefunds` table: a fee-refund fact parked when
+ * `application_fee.refunded` arrives before its `payments` row exists (Stripe
+ * doesn't guarantee webhook delivery order). Consumed and deleted by
+ * `upsertPayment`'s insert branch once the row is created.
+ */
+export const pendingFeeRefundFields = {
+  stripePaymentIntentId: v.string(),
+  feeCollectedAmount: v.number(),
+  feeRefundedAmount: v.number(),
+};
+
+// =============================================================================
 // REFUNDS
 // =============================================================================
 

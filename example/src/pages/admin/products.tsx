@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useRole } from "@/providers/role-context";
 import { useAction, useQuery } from "convex/react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
@@ -43,11 +44,13 @@ function formatAmount(amount: number, currency: string) {
 }
 
 export function AdminProducts() {
+  const { currentUser } = useRole();
   const products = useQuery(api.queries.listProductsWithPrices);
   const createProduct = useAction(api.actions.createProduct);
   const createPrice = useAction(api.actions.createPrice);
   const updateProduct = useAction(api.actions.updateProduct);
   const deactivateProduct = useAction(api.actions.deactivateProduct);
+  const deactivatePrice = useAction(api.actions.deactivatePrice);
 
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -68,6 +71,9 @@ export function AdminProducts() {
   } | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [deactivatingPriceId, setDeactivatingPriceId] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateProduct = async () => {
@@ -143,6 +149,22 @@ export function AdminProducts() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setDeactivatingId(null);
+    }
+  };
+
+  // Archive a single price (BTS-88). The action binds the caller to the price's
+  // owning product's connected account, so it takes the active persona's id;
+  // if the persona doesn't own the product (e.g. a platform-catalog price on
+  // this admin god-view), the rejection surfaces through the same <Alert>.
+  const handleDeactivatePrice = async (stripePriceId: string) => {
+    setDeactivatingPriceId(stripePriceId);
+    setError(null);
+    try {
+      await deactivatePrice({ userId: currentUser.id, stripePriceId });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeactivatingPriceId(null);
     }
   };
 
@@ -574,20 +596,23 @@ export function AdminProducts() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {price.active && (
-                                    // No Convex action deactivates a single price
-                                    // in this example app yet (only
-                                    // deactivateProduct exists, which archives
-                                    // the whole product) — disabled rather than
-                                    // silently doing nothing on click. Wiring
-                                    // this needs a new action in
-                                    // convex/actions.ts, out of scope here.
                                     <Button
                                       variant="destructive"
                                       size="sm"
-                                      disabled
-                                      title="Price deactivation isn't available yet — no backend action exists for it in this example app."
+                                      disabled={
+                                        deactivatingPriceId ===
+                                        price.stripePriceId
+                                      }
+                                      onClick={() =>
+                                        handleDeactivatePrice(
+                                          price.stripePriceId,
+                                        )
+                                      }
                                     >
-                                      Deactivate
+                                      {deactivatingPriceId ===
+                                      price.stripePriceId
+                                        ? "Deactivating..."
+                                        : "Deactivate"}
                                     </Button>
                                   )}
                                 </TableCell>

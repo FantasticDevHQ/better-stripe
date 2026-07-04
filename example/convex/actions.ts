@@ -8,6 +8,7 @@ import {
   assertAccountOwner,
   assertDisputeOwner,
   assertPaymentOwner,
+  assertPriceOwner,
   assertSubscriptionOwner,
   assertTestModeStripeKey,
   assertTransfersOwner,
@@ -163,6 +164,23 @@ export const deactivateProduct = action({
   args: { stripeProductId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => stripe.deactivateProduct(ctx, args),
+});
+
+// Archive a single price (BTS-88). Unlike `deactivateProduct` (a platform-admin
+// operation with no binding), this carries an ownership assert: a price has no
+// owner of its own, so `assertPriceOwner` verifies the caller owns the price's
+// owning product's connected account (see authz.ts). It also makes a REAL
+// Stripe API call, so it's gated on the test-mode key guard first — same
+// order as `issueRefund`, so a live/misconfigured key is refused before any
+// ownership lookup runs.
+export const deactivatePrice = action({
+  args: { userId: v.string(), stripePriceId: v.string() },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    await assertPriceOwner(ctx, args);
+    return stripe.deactivatePrice(ctx, { stripePriceId: args.stripePriceId });
+  },
 });
 
 export const createProductForAccount = action({
@@ -533,9 +551,13 @@ export const createAffiliateSplitCheckout = action({
 // `userId` binds the caller to the requested `stripeAccountId` (BTS-83) — an
 // embedded session grants Stripe-hosted UI control over that account's
 // disputes, so a client can't just request a session for someone else's store.
+// Mounting the session makes a REAL Stripe API call, so it's also gated on the
+// test-mode key guard first (BTS-89) — a live/misconfigured key is refused
+// before any ownership lookup, matching the money/dispute-closing actions.
 export const createDisputeSession = action({
   args: { userId: v.string(), stripeAccountId: v.string() },
   handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     await assertAccountOwner(ctx, args);
     return stripe.createDisputeSession(ctx, {
       stripeAccountId: args.stripeAccountId,
@@ -547,7 +569,10 @@ export const createDisputeSession = action({
 // hands us the shape of EvidenceFormUpdateArgs; `submit: true` finalizes the
 // response to the bank, `submit: false` saves a draft. `userId` must own the
 // dispute's connected account (BTS-83); the verified account id — not a
-// client-supplied one — scopes the Stripe API call.
+// client-supplied one — scopes the Stripe API call. Both submitting and
+// staging evidence make a REAL Stripe API call, so it's gated on the test-mode
+// key guard first (BTS-89) — refused before any ownership lookup on a
+// live/misconfigured key.
 export const submitDisputeEvidence = action({
   args: {
     userId: v.string(),
@@ -556,6 +581,7 @@ export const submitDisputeEvidence = action({
     submit: v.boolean(),
   },
   handler: async (ctx, args) => {
+    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
     const dispute = await assertDisputeOwner(ctx, args);
     return stripe.updateDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,

@@ -4,7 +4,11 @@ import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { stripe } from "./stripe";
 
+// `stripe.listTransfersByCharge` resolves through the untyped `componentRef`
+// helper (returns `Promise<any>`), so this narrows the shape actually
+// returned by the component's `transferDocValidator` for the fields used here.
 type TransferLedgerRow = {
+  stripeTransferId: string;
   amount: number;
   reversedAmount?: number;
 };

@@ -311,4 +311,20 @@ describe("getStripeClient", () => {
     expect(client).toBeInstanceOf(Stripe);
     expect((client as any)._api?.version).toBe("2020-08-27");
   });
+
+  it("reuses the cached client for the same secret and API version", () => {
+    const first = getStripeClient("sk_test_cached", "2020-08-27");
+    const second = getStripeClient("sk_test_cached", "2020-08-27");
+
+    expect(second).toBe(first);
+  });
+
+  it("keeps different secrets and API versions isolated", () => {
+    const defaultVersion = getStripeClient("sk_test_isolated");
+    const overrideVersion = getStripeClient("sk_test_isolated", "2020-08-27");
+    const differentSecret = getStripeClient("sk_test_isolated_other");
+
+    expect(overrideVersion).not.toBe(defaultVersion);
+    expect(differentSecret).not.toBe(defaultVersion);
+  });
 });

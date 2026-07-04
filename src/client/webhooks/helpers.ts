@@ -8,6 +8,15 @@ import type { TriggerDispatcherName } from "../types/triggers.js";
 
 const TO_REFERENCE_PATH = Symbol.for("toReferencePath");
 
+/**
+ * Keyed cache for Stripe SDK instances used by webhook processing.
+ *
+ * NOTE: This cache is unbounded and persists for the process lifetime.
+ * In practice, a BetterStripe webhook handler typically uses 1 key.
+ * API key rotation requires a process restart to pick up new keys.
+ */
+const _clients = new Map<string, Stripe>();
+
 // =============================================================================
 // COMPONENT FUNCTION MAP
 // =============================================================================
@@ -80,9 +89,16 @@ export function getStripeClient(
   secretKey: string,
   apiVersion?: string,
 ): Stripe {
-  return new Stripe(secretKey, {
-    apiVersion: (apiVersion as StripeApiVersion) || STRIPE_API_VERSION,
-  });
+  const version = (apiVersion as StripeApiVersion) || STRIPE_API_VERSION;
+  const cacheKey = `${secretKey}:${version}`;
+  let client = _clients.get(cacheKey);
+  if (!client) {
+    client = new Stripe(secretKey, {
+      apiVersion: version,
+    });
+    _clients.set(cacheKey, client);
+  }
+  return client;
 }
 
 export function epochToIso(

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -18,6 +18,7 @@ import {
 } from "@getdojo/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CreditCard } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
 
@@ -27,9 +28,13 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
   const detachMethod = useAction(api.actions.detachPaymentMethod);
   const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const result = await listMethods({ stripeCustomerId: stripeAccountId });
       setMethods(
@@ -48,7 +53,7 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
         })),
       );
     } catch (err) {
-      console.error("Failed to load payment methods:", err);
+      setLoadError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
@@ -71,16 +76,28 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
           </CardTitle>
           <CardDescription>Add a new card to your account.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <AddCardForm
             onSuccess={async (paymentMethodId) => {
-              await attachMethod({
-                paymentMethodId,
-                stripeCustomerId: stripeAccountId,
-              });
-              await reload();
+              setAttachError(null);
+              try {
+                await attachMethod({
+                  paymentMethodId,
+                  stripeCustomerId: stripeAccountId,
+                });
+                await reload();
+              } catch (err) {
+                setAttachError(err instanceof Error ? err.message : String(err));
+              }
             }}
           />
+
+          {attachError && (
+            <Alert variant="destructive">
+              <AlertTitle>Action failed</AlertTitle>
+              <AlertDescription>{attachError}</AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
@@ -88,13 +105,18 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
         <CardHeader>
           <CardTitle>Saved Payment Methods</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 2 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
+          ) : loadError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Failed to load payment methods</AlertTitle>
+              <AlertDescription>{loadError}</AlertDescription>
+            </Alert>
           ) : methods.length === 0 ? (
             <Alert>
               <AlertDescription>
@@ -105,10 +127,24 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
             <PaymentMethodsList
               methods={methods}
               onDelete={async (paymentMethodId: string) => {
-                await detachMethod({ paymentMethodId });
-                await reload();
+                setDeleteError(null);
+                try {
+                  await detachMethod({ paymentMethodId });
+                  await reload();
+                } catch (err) {
+                  setDeleteError(
+                    err instanceof Error ? err.message : String(err),
+                  );
+                }
               }}
             />
+          )}
+
+          {deleteError && (
+            <Alert variant="destructive">
+              <AlertTitle>Action failed</AlertTitle>
+              <AlertDescription>{deleteError}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
@@ -143,12 +179,12 @@ export function PaymentMethods() {
         </div>
         <Alert>
           <AlertDescription>
-            No Stripe account is linked to your profile. Complete a checkout to
-            create one, or visit the{" "}
-            <a href="/seller/onboarding" className="text-primary underline">
-              onboarding page
-            </a>
-            .
+            No Stripe account is linked to your profile yet — a checkout
+            creates one.{" "}
+            <Link to="/" className="text-primary underline">
+              Pick something to buy
+            </Link>{" "}
+            to get started.
           </AlertDescription>
         </Alert>
       </div>

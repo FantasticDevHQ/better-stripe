@@ -11,9 +11,14 @@
  * rows into the figures the merged `PayoutSchedule`/`EarningsSummary` components
  * render, and the per-sale platform-fee breakdown shown on the demo.
  */
+import { computeFee } from "@getdojo/better-stripe";
 import { describe, expect, it } from "vitest";
 
-import { reconciles, saleBreakdown, summarizeStripeBalance } from "./marketplace";
+import {
+  reconciles,
+  saleBreakdown,
+  summarizeStripeBalance,
+} from "./marketplace";
 
 describe("summarizeStripeBalance", () => {
   it("sums available/pending amounts and picks the currency", () => {
@@ -84,5 +89,49 @@ describe("reconciles (BTS-58)", () => {
 
   it("is false when the breakdown doesn't add up", () => {
     expect(reconciles({ gross: 12900, fee: 1290, net: 11000 })).toBe(false);
+  });
+
+  // BTS-78: the tests above never exercise the reconcile guard against a
+  // failure it could actually catch — `saleBreakdown` *defines*
+  // `net = gross - fee`, so any breakdown it produces reconciles by
+  // construction (the "spread of odd-cent amounts" test above is really
+  // testing computeFee's cap-at-amount/non-negativity, not the guard). The
+  // guard's actual job is to catch a *different* (and real) computeFee
+  // rounding pitfall: computing the fee and the net as two INDEPENDENT
+  // roundings of the gross (`round(gross*percent/100)` and
+  // `round(gross*(1-percent/100))`) instead of `net = gross - fee`. Each
+  // rounds correctly on its own but the pair can overshoot or undershoot the
+  // gross by a cent — exactly what `reconciles` exists to catch before a
+  // demo displays it.
+  it("catches a real double-rounding divergence (fee and net rounded independently) instead of only a hand-built mismatch", () => {
+    // ¥101 at 50% is zero-decimal-currency (JPY) safe — computeFee doesn't
+    // divide by 100 for minor units, so this is a real amount, not cents.
+    const gross = 101;
+    const percent = 50;
+
+    // The correct fee, from the actual library function (not hand-picked).
+    const fee = computeFee(gross, { percent }).feeAmount;
+    expect(fee).toBe(51); // Math.round(101 * 0.5) = 51 (round-half-up)
+
+    // The correct breakdown (net = gross - fee) always reconciles.
+    expect(reconciles(saleBreakdown(gross, percent))).toBe(true);
+
+    // The BUGGY alternative a naive implementation might use instead of
+    // `net = gross - fee`: round the seller's share directly from the gross.
+    // Both individual roundings are "correct" in isolation, but together
+    // they overshoot the charge by a cent (51 + 51 = 102 > 101) — the exact
+    // class of computeFee rounding regression `reconciles` guards against.
+    const naiveNet = Math.round(gross * (1 - percent / 100));
+    expect(naiveNet).toBe(51);
+    expect(reconciles({ gross, fee, net: naiveNet })).toBe(false);
+  });
+
+  it("reconciles a JPY (zero-decimal) computeFee rounding case correctly", () => {
+    // ¥1001 at 15% — a fractional percentAmount (150.15) that computeFee
+    // rounds half-up to a whole yen, exercised through the real gross/fee/net
+    // pipeline for a zero-decimal currency (no /100 minor-unit conversion).
+    const breakdown = saleBreakdown(1001, 15);
+    expect(breakdown).toEqual({ gross: 1001, fee: 150, net: 851 });
+    expect(reconciles(breakdown)).toBe(true);
   });
 });

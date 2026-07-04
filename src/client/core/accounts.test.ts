@@ -1,3 +1,4 @@
+// @vitest-environment edge-runtime
 /**
  * Tests for the core Account methods. These functions span three boundaries:
  * the Stripe V2 Accounts SDK (`stripe.v2.core.accounts.*` plus `accountLinks`),
@@ -8,10 +9,19 @@
  * `listStripeAccounts`, and `syncAllAccounts` (manual pagination + per-record
  * error accumulation). We assert the exact params handed to each boundary, the
  * shapes returned, every branch, and the error/rollback paths.
+ *
+ * Most of the suite mocks `ctx`/the component entirely (fast, boundary-focused
+ * unit tests). The `addRecipientConfiguration` idempotency test (BTS-78) is
+ * the exception: it runs against a REAL `convex-test` store — see the
+ * "addRecipientConfiguration (real convex-test store)" describe block below —
+ * because a genuine double-write/overwrite conflict needs a real row to
+ * conflict against; a fully-mocked `runMutation` can never fail that way.
  */
 import { describe, expect, it, vi } from "vitest";
 
 import type { Component, RunCtx } from "../helpers.js";
+import { components, initConvexTest } from "../setup.test.js";
+import schema from "../../component/schema.js";
 import {
   DEFAULT_ACCOUNT_CONFIGURATION,
   DEFAULT_ACCOUNT_DEFAULTS,
@@ -50,7 +60,9 @@ function makeComponent(): Component {
         getAccountByStripeId: ref("core/queries/getAccountByStripeId"),
         getAccountByUserId: ref("core/queries/getAccountByUserId"),
         getAccountByOrgId: ref("core/queries/getAccountByOrgId"),
-        getAccountOnboardingStatus: ref("core/queries/getAccountOnboardingStatus"),
+        getAccountOnboardingStatus: ref(
+          "core/queries/getAccountOnboardingStatus",
+        ),
       },
       mutations: {
         upsertAccount: ref("core/mutations/upsertAccount"),
@@ -87,6 +99,59 @@ function makeStripe() {
 type MockStripe = ReturnType<typeof makeStripe>;
 const asStripe = (s: MockStripe) =>
   s as unknown as Parameters<typeof createAccount>[0];
+
+// =============================================================================
+// Real convex-test store helpers (BTS-78) — used only by the
+// "addRecipientConfiguration (real convex-test store)" suite below. Registers
+// the component as an actual CHILD COMPONENT named "betterStripe" (mirroring
+// how an installing app wires it up in production, via
+// `app.use(betterStripe, ...)`), so `components.betterStripe.*` — the same
+// typed proxy `setup.test.ts` exports — resolves to REAL function references
+// that `t.query`/`t.mutation` execute against a genuine in-memory backend,
+// rather than a `vi.fn()`. (A flat `convexTest(componentSchema, componentModules)`
+// with the component's own generated `api` doesn't work here: `componentRef`
+// resolves via the childComponent `toReferencePath` symbol that only
+// `componentsGeneric()`-based refs like `components.betterStripe.*` carry.)
+// =============================================================================
+const componentModules = import.meta.glob(
+  "../../component/**/*.{ts,js,tsx,jsx}",
+);
+
+/** A real convex-test instance with the component registered as child "betterStripe". */
+function makeRealConvexTest() {
+  const t = initConvexTest();
+  t.registerComponent("betterStripe", schema, componentModules);
+  return t;
+}
+
+/** A `RunCtx` backed by a real convex-test instance. */
+function makeRealCtx(t: ReturnType<typeof makeRealConvexTest>): RunCtx {
+  return {
+    runQuery: (ref: any, args: any) => t.query(ref, args),
+    runMutation: (ref: any, args: any) => t.mutation(ref, args),
+  } as unknown as RunCtx;
+}
+
+const realComponent = components.betterStripe as unknown as Component;
+
+/**
+ * `runInComponent` (read/write the mock backend scoped to a registered child
+ * component) isn't part of convex-test's public `.d.ts` surface, only its
+ * runtime API — narrow the cast to just this one method instead of reaching
+ * for `any` on the whole test handle.
+ */
+type RunInComponent = (
+  componentPath: string,
+  handler: (ctx: {
+    db: {
+      query: (table: "accounts") => {
+        collect: () => Promise<
+          Array<{ stripeAccountId: string; userId: string }>
+        >;
+      };
+    };
+  }) => Promise<Array<{ stripeAccountId: string; userId: string }>>,
+) => Promise<Array<{ stripeAccountId: string; userId: string }>>;
 
 describe("createAccount", () => {
   it("creates the V2 account, upserts it, and returns the stored internal id", async () => {
@@ -229,7 +294,9 @@ describe("createAccountWithOnboarding", () => {
     });
 
     // second upsert records the applied configs + in_progress status
-    const secondUpsert = (ctx.runMutation as ReturnType<typeof vi.fn>).mock.calls.find(
+    const secondUpsert = (
+      ctx.runMutation as ReturnType<typeof vi.fn>
+    ).mock.calls.find(
       (c) =>
         c[1].onboardingStatus === "in_progress" &&
         c[1].stripeAccountId === "acct_ob",
@@ -290,9 +357,9 @@ describe("createAccountWithOnboarding", () => {
       returnUrl: "https://return",
     });
 
-    const inProgress = (ctx.runMutation as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c) => c[1].onboardingStatus === "in_progress",
-    );
+    const inProgress = (
+      ctx.runMutation as ReturnType<typeof vi.fn>
+    ).mock.calls.find((c) => c[1].onboardingStatus === "in_progress");
     expect(inProgress?.[1].appliedConfigurations).toEqual([]);
   });
 
@@ -596,7 +663,9 @@ describe("addRecipientConfiguration", () => {
     expect(stripe.v2.core.accounts.update).toHaveBeenCalledWith("acct_r", {
       configuration: {
         recipient: {
-          capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
+          capabilities: {
+            stripe_balance: { stripe_transfers: { requested: true } },
+          },
         },
       },
     });
@@ -648,23 +717,79 @@ describe("addRecipientConfiguration", () => {
     expect(runMutation).not.toHaveBeenCalled();
   });
 
-  it("remains idempotent when syncAllAccounts runs afterward (no double-sync regression)", async () => {
+  it("surfaces the error and never calls upsertAccount when update() succeeds but the re-fetch retrieve() throws (BTS-78)", async () => {
+    // Partial-failure path: Stripe IS mutated (update() resolves), but the
+    // re-fetch that reads back applied_configurations fails. The component
+    // row must NOT be silently left stale — the error must propagate and
+    // upsertAccount must never fire, so a caller can't mistake this for
+    // success and no stale/absent row masks the real Stripe state.
+    const stripe = makeStripe();
+    stripe.v2.core.accounts.update.mockResolvedValue({});
+    stripe.v2.core.accounts.retrieve.mockRejectedValue(
+      new Error("Stripe retrieve failed: connection reset"),
+    );
+    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
+    const runMutation = vi.fn().mockResolvedValue(undefined);
+    const ctx = { runQuery, runMutation } as unknown as RunCtx;
+
+    await expect(
+      addRecipientConfiguration(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_r",
+      }),
+    ).rejects.toThrow(/connection reset/);
+
+    // Stripe was mutated...
+    expect(stripe.v2.core.accounts.update).toHaveBeenCalledTimes(1);
+    // ...but the component row was never touched — no silent stale write.
+    expect(runMutation).not.toHaveBeenCalled();
+  });
+});
+
+describe("addRecipientConfiguration (real convex-test store, BTS-78)", () => {
+  it("persists exactly one account row reflecting the applied configuration — a real double-write/overwrite conflict would fail this", async () => {
+    const t = makeRealConvexTest();
+    const ctx = makeRealCtx(t);
+
+    // Seed the pre-existing component row addRecipientConfiguration requires.
+    await t.mutation(components.betterStripe.core.mutations.upsertAccount, {
+      stripeAccountId: "acct_r",
+      userId: "user_1",
+      appliedConfigurations: [],
+      onboardingStatus: "pending",
+    });
+
     const stripe = makeStripe();
     stripe.v2.core.accounts.update.mockResolvedValue({});
     stripe.v2.core.accounts.retrieve.mockResolvedValue({
       applied_configurations: ["recipient"],
     });
-    const runQuery = vi.fn().mockResolvedValue({ userId: "user_1" });
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = { runQuery, runMutation } as unknown as RunCtx;
 
-    await addRecipientConfiguration(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_r",
+    const result = await addRecipientConfiguration(
+      asStripe(stripe),
+      realComponent,
+      ctx,
+      { stripeAccountId: "acct_r" },
+    );
+    expect(result).toEqual({
+      success: true,
+      appliedConfigurations: ["recipient"],
     });
 
+    // The REAL persisted row (not a mock return value) reflects the applied
+    // configuration and preserves the owning userId.
+    const stored = await t.query(
+      components.betterStripe.core.queries.getAccountByStripeId,
+      {
+        stripeAccountId: "acct_r",
+      },
+    );
+    expect(stored?.appliedConfigurations).toEqual(["recipient"]);
+    expect(stored?.userId).toBe("user_1");
+
     // A subsequent full sync re-derives the same account from Stripe's list
-    // endpoint and must upsert it again without conflicting with the row
-    // addRecipientConfiguration just wrote.
+    // endpoint and must PATCH the same row, not create a duplicate — the
+    // double-sync regression this test guards against would show up here as
+    // more than one row for the same stripeAccountId.
     stripe.v2.core.accounts.list.mockResolvedValueOnce({
       data: [
         {
@@ -676,12 +801,16 @@ describe("addRecipientConfiguration", () => {
       has_more: false,
     });
 
-    await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    await syncAllAccounts(asStripe(stripe), realComponent, ctx);
 
-    expect(runMutation).toHaveBeenCalledWith(
-      refFor("core/mutations/upsertAccount"),
-      expect.objectContaining({ stripeAccountId: "acct_r", userId: "user_1" }),
+    const allRows = await (
+      t as unknown as { runInComponent: RunInComponent }
+    ).runInComponent("betterStripe", async (dbCtx) =>
+      dbCtx.db.query("accounts").collect(),
     );
+    expect(allRows).toHaveLength(1);
+    expect(allRows[0]?.stripeAccountId).toBe("acct_r");
+    expect(allRows[0]?.userId).toBe("user_1");
   });
 });
 
@@ -808,7 +937,9 @@ describe("closeAccount / restartAccountOnboarding", () => {
     stripe.v2.core.accounts.close.mockRejectedValue(new Error("close boom"));
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = {
-      runQuery: vi.fn().mockResolvedValue({ appliedConfigurations: ["merchant"] }),
+      runQuery: vi
+        .fn()
+        .mockResolvedValue({ appliedConfigurations: ["merchant"] }),
       runMutation,
     } as unknown as RunCtx;
 
@@ -865,7 +996,11 @@ describe("syncAllAccounts", () => {
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
-    const result = await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result).toEqual({ synced: 1, errors: [], errorCount: 0 });
 
@@ -882,7 +1017,9 @@ describe("syncAllAccounts", () => {
       metadata: { userId: "u_biz", orgId: "o_biz" },
     });
     // list called with limit 20
-    expect(stripe.v2.core.accounts.list.mock.calls[0][0]).toEqual({ limit: 20 });
+    expect(stripe.v2.core.accounts.list.mock.calls[0][0]).toEqual({
+      limit: 20,
+    });
   });
 
   it("derives an individual name, falls back to contact email, and accepts snake_case ids", async () => {
@@ -952,7 +1089,11 @@ describe("syncAllAccounts", () => {
       .mockRejectedValueOnce(new Error("db down")); // acct_bad
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
-    const result = await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result.synced).toBe(1);
     expect(result.errorCount).toBe(1);
@@ -969,7 +1110,11 @@ describe("syncAllAccounts", () => {
     const runMutation = vi.fn().mockRejectedValueOnce("not-an-error-object");
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
-    const result = await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result.errorCount).toBe(1);
     expect(result.errors[0]).toBe("Account acct_weird: Unknown error");
@@ -1011,7 +1156,11 @@ describe("syncAllAccounts", () => {
     const runMutation = vi.fn().mockResolvedValue(undefined);
     const ctx = { runMutation, runQuery: vi.fn() } as unknown as RunCtx;
 
-    const result = await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result.synced).toBe(2);
     expect(stripe.v2.core.accounts.list.mock.calls[1][0]).toEqual({
@@ -1031,7 +1180,11 @@ describe("syncAllAccounts", () => {
       runQuery: vi.fn(),
     } as unknown as RunCtx;
 
-    const result = await syncAllAccounts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllAccounts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result).toEqual({ synced: 0, errors: [], errorCount: 0 });
     expect(stripe.v2.core.accounts.list).toHaveBeenCalledTimes(1);

@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BetterStripe } from "./index.js";
 import { components as _components } from "./setup.test.js";
+import type { SyncTriggers, TriggerDispatcherName } from "./types/triggers.js";
 
 const components = _components;
 
@@ -60,6 +61,191 @@ describe("webhookHandlers()", () => {
   // =========================================================================
 
   describe("syncWebhook", () => {
+    // Standard upsert dispatchers: each maps to a component getter/upsert pair
+    // and supports the splitCreateUpdate create/update trigger split.
+    const standardUpsertDispatchers: Array<{
+      name: TriggerDispatcherName;
+      triggerKey: keyof SyncTriggers;
+      idField: string;
+      getterPath: RegExp;
+      upsertPath: RegExp;
+      hasUpdate: boolean;
+    }> = [
+      {
+        name: "accountUpserted",
+        triggerKey: "account",
+        idField: "stripeAccountId",
+        getterPath: /\/core\/queries\/getAccountByStripeId$/,
+        upsertPath: /\/core\/mutations\/upsertAccountInternal$/,
+        hasUpdate: true,
+      },
+      {
+        name: "productUpserted",
+        triggerKey: "product",
+        idField: "stripeProductId",
+        getterPath: /\/products\/queries\/getProductByStripeId$/,
+        upsertPath: /\/products\/mutations\/upsertProduct$/,
+        hasUpdate: true,
+      },
+      {
+        name: "priceUpserted",
+        triggerKey: "price",
+        idField: "stripePriceId",
+        getterPath: /\/products\/queries\/getPriceByStripeId$/,
+        upsertPath: /\/products\/mutations\/upsertPrice$/,
+        hasUpdate: true,
+      },
+      {
+        name: "subscriptionUpserted",
+        triggerKey: "subscription",
+        idField: "stripeSubscriptionId",
+        getterPath: /\/billing\/queries\/getSubscriptionByStripeId$/,
+        upsertPath: /\/billing\/mutations\/upsertSubscription$/,
+        hasUpdate: true,
+      },
+      {
+        name: "invoiceUpserted",
+        triggerKey: "invoice",
+        idField: "stripeInvoiceId",
+        getterPath: /\/billing\/queries\/getInvoiceByStripeId$/,
+        upsertPath: /\/billing\/mutations\/upsertInvoice$/,
+        hasUpdate: true,
+      },
+      {
+        name: "paymentUpserted",
+        triggerKey: "payment",
+        idField: "stripePaymentIntentId",
+        getterPath: /\/connect\/queries\/getPaymentByStripeId$/,
+        upsertPath: /\/connect\/mutations\/upsertPayment$/,
+        hasUpdate: false,
+      },
+      {
+        name: "payoutUpserted",
+        triggerKey: "payout",
+        idField: "stripePayoutId",
+        getterPath: /\/connect\/queries\/getPayoutByStripeId$/,
+        upsertPath: /\/connect\/mutations\/upsertPayout$/,
+        hasUpdate: true,
+      },
+      {
+        name: "refundUpserted",
+        triggerKey: "refund",
+        idField: "stripeRefundId",
+        getterPath: /\/connect\/queries\/getRefundByStripeId$/,
+        upsertPath: /\/connect\/mutations\/upsertRefund$/,
+        hasUpdate: true,
+      },
+      {
+        name: "disputeUpserted",
+        triggerKey: "dispute",
+        idField: "stripeDisputeId",
+        getterPath: /\/connect\/queries\/getDisputeByStripeId$/,
+        upsertPath: /\/connect\/mutations\/upsertDispute$/,
+        hasUpdate: true,
+      },
+    ];
+
+    describe("standard upsert dispatchers", () => {
+      it.each(standardUpsertDispatchers)(
+        "$name upserts and fires onCreate for a new doc, in one transaction",
+        async ({
+          name,
+          triggerKey,
+          idField,
+          getterPath,
+          upsertPath,
+          hasUpdate,
+        }) => {
+          const onCreate = vi.fn().mockResolvedValue(undefined);
+          const onUpdate = hasUpdate
+            ? vi.fn().mockResolvedValue(undefined)
+            : undefined;
+          const bs = new BetterStripe(components.betterStripe, {
+            STRIPE_SECRET_KEY: "sk_test_xxx",
+            triggers: { [triggerKey]: { onCreate, onUpdate } } as SyncTriggers,
+          });
+
+          const newDoc = { [idField]: "id_1", status: "active" };
+          mockCtx.runQuery
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce(newDoc);
+
+          const { syncWebhook } = bs.webhookHandlers();
+          await invokeHandler(syncWebhook, mockCtx, {
+            dispatcher: name,
+            data: newDoc,
+          });
+
+          expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+          const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
+          expect(refPath(upsertRef)).toMatch(upsertPath);
+          expect(upsertArgs).toEqual(newDoc);
+
+          expect(mockCtx.runQuery).toHaveBeenCalledTimes(2);
+          for (const [getterRef, getterArgs] of mockCtx.runQuery.mock.calls) {
+            expect(refPath(getterRef)).toMatch(getterPath);
+            expect(getterArgs).toEqual({ [idField]: "id_1" });
+          }
+
+          expect(onCreate).toHaveBeenCalledTimes(1);
+          expect(onCreate).toHaveBeenCalledWith(mockCtx, newDoc);
+          if (hasUpdate) {
+            expect(onUpdate).not.toHaveBeenCalled();
+          }
+        },
+      );
+
+      it.each(standardUpsertDispatchers)(
+        "$name fires the update trigger (not onCreate) for an existing doc",
+        async ({
+          name,
+          triggerKey,
+          idField,
+          getterPath,
+          upsertPath,
+          hasUpdate,
+        }) => {
+          const onCreate = vi.fn().mockResolvedValue(undefined);
+          const onUpdate = hasUpdate
+            ? vi.fn().mockResolvedValue(undefined)
+            : undefined;
+          const bs = new BetterStripe(components.betterStripe, {
+            STRIPE_SECRET_KEY: "sk_test_xxx",
+            triggers: { [triggerKey]: { onCreate, onUpdate } } as SyncTriggers,
+          });
+
+          const oldDoc = { [idField]: "id_1", status: "old" };
+          const newDoc = { [idField]: "id_1", status: "new" };
+          mockCtx.runQuery
+            .mockResolvedValueOnce(oldDoc)
+            .mockResolvedValueOnce(newDoc);
+
+          const { syncWebhook } = bs.webhookHandlers();
+          await invokeHandler(syncWebhook, mockCtx, {
+            dispatcher: name,
+            data: newDoc,
+          });
+
+          expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
+          const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
+          expect(refPath(upsertRef)).toMatch(upsertPath);
+          expect(upsertArgs).toEqual(newDoc);
+
+          expect(mockCtx.runQuery).toHaveBeenCalledTimes(2);
+          for (const [getterRef, getterArgs] of mockCtx.runQuery.mock.calls) {
+            expect(refPath(getterRef)).toMatch(getterPath);
+            expect(getterArgs).toEqual({ [idField]: "id_1" });
+          }
+
+          expect(onCreate).not.toHaveBeenCalled();
+          if (hasUpdate) {
+            expect(onUpdate).toHaveBeenCalledTimes(1);
+            expect(onUpdate).toHaveBeenCalledWith(mockCtx, newDoc, oldDoc);
+          }
+        },
+      );
+    });
+
     it("subscriptionUpserted upserts and fires onCreate for a new doc, in one transaction", async () => {
       const onCreate = vi.fn().mockResolvedValue(undefined);
       const onUpdate = vi.fn().mockResolvedValue(undefined);

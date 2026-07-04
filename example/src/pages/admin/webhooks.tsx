@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -132,15 +132,26 @@ export function AdminWebhooks() {
           </TableHeader>
           <TableBody>
             {events.map((event) => (
-              <>
+              <Fragment key={event._id}>
                 <TableRow
                   key={event._id}
                   className="cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedEvent === event._id}
                   onClick={() =>
                     setExpandedEvent(
                       expandedEvent === event._id ? null : event._id,
                     )
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setExpandedEvent(
+                        expandedEvent === event._id ? null : event._id,
+                      );
+                    }
+                  }}
                 >
                   <TableCell className="text-muted-foreground font-mono text-sm">
                     {formatTimestamp(event.processedAt)}
@@ -179,7 +190,7 @@ export function AdminWebhooks() {
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </Fragment>
             ))}
             {events.length === 0 && (
               <TableRow>

@@ -1356,16 +1356,27 @@ export class BetterStripe {
       metadata?: Record<string, string>;
       submit?: boolean;
       stripeAccountId?: string;
+      /**
+       * Who is acting on the dispute (BTS-107). A platform admin may act on any
+       * dispute; a seller may act only on a dispute for a sale routed to their
+       * own account. Omit for platform-initiated (unrestricted) actions.
+       */
+      actor?: RefundActor;
     },
   ): Promise<{ success: true }> {
-    return disputesImpl.updateDispute(this.stripe(), ctx, opts);
+    return disputesImpl.updateDispute(this.stripe(), this.component, ctx, opts);
   }
 
   async closeDispute(
     ctx: RunCtx,
-    opts: { stripeDisputeId: string; stripeAccountId?: string },
+    opts: {
+      stripeDisputeId: string;
+      stripeAccountId?: string;
+      /** See {@link updateDispute}'s `actor` (BTS-107). Omit for unrestricted. */
+      actor?: RefundActor;
+    },
   ): Promise<{ success: true }> {
-    return disputesImpl.closeDispute(this.stripe(), ctx, opts);
+    return disputesImpl.closeDispute(this.stripe(), this.component, ctx, opts);
   }
 
   // ============================================================================

@@ -23,7 +23,9 @@ const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
  * `seedDb` looks each one up by role and inserts only what's missing — a re-run
  * against a partially-seeded deployment (e.g. one first seeded before the
  * visitor persona existed, BTS-113) backfills the gap rather than silently
- * no-op'ing on the whole batch.
+ * no-op'ing on the whole batch. Keep this seed step before anything that may
+ * insert shared-role users (e.g. marketplace sellers): the `by_role` lookup
+ * below intentionally assumes these four core roles have not yet been claimed.
  */
 const CORE_PERSONAS = [
   { name: "Alex Customer", email: "alex@example.com", role: "customer" },

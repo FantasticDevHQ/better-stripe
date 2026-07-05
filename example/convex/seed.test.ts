@@ -4,8 +4,9 @@
  * Tests for the example app's seed functions (`seed.ts`).
  *
  * `seed.ts` has three exports:
- *  - `seedDb`     — a pure mutation that inserts the four demo users, but only
- *                   when the table is empty (idempotent).
+ *  - `seedDb`     — a pure mutation that inserts the four core demo users,
+ *                   idempotently per persona (looks each role up via `by_role`
+ *                   and only inserts what's missing — BTS-113).
  *  - `seedStripe` — an action that creates demo products/prices in Stripe, but
  *                   first short-circuits if the component already has products.
  *  - `run`        — orchestrates seedDb then seedStripe.
@@ -38,15 +39,15 @@ function withComponent() {
 }
 
 // =============================================================================
-// seedDb — inserts the four demo users, idempotently
+// seedDb — per-persona idempotent backfill of the four core demo users (BTS-113)
 // =============================================================================
 
 describe("seed — seedDb", () => {
-  it("inserts exactly the four demo users with the documented roles/emails", async () => {
+  it("inserts exactly the four demo users with the documented roles/emails on a fresh DB", async () => {
     const t = convexTest(schema, modules);
 
     const result = await t.mutation(internal.seed.seedDb, {});
-    expect(result).toEqual({ alreadySeeded: false });
+    expect(result).toEqual({ inserted: 4 });
 
     const users = await t.query(api.users.list, {});
     const byEmail = Object.fromEntries(
@@ -77,25 +78,60 @@ describe("seed — seedDb", () => {
     expect(byEmail["riley@example.com"].stripeAccountId).toBeUndefined();
   });
 
-  it("is idempotent: a second run inserts nothing and reports alreadySeeded", async () => {
+  it("is idempotent: a second run inserts nothing (fully-seeded DB)", async () => {
     const t = convexTest(schema, modules);
 
     const first = await t.mutation(internal.seed.seedDb, {});
-    expect(first).toEqual({ alreadySeeded: false });
+    expect(first).toEqual({ inserted: 4 });
 
     const second = await t.mutation(internal.seed.seedDb, {});
-    expect(second).toEqual({ alreadySeeded: true });
+    expect(second).toEqual({ inserted: 0 });
 
     // Still exactly four — the second call did not duplicate.
     const users = await t.query(api.users.list, {});
     expect(users).toHaveLength(4);
   });
 
-  it("skips seeding when ANY user already exists, regardless of role", async () => {
+  it("backfills only the missing persona (BTS-113 live-bug repro: 3-user deployment missing visitor)", async () => {
+    // Reproduce the live dev deployment's state at the time of BTS-113: seeded
+    // with the original 3 personas (customer/seller/admin) before the visitor
+    // was added to seedDb. The all-or-nothing guard used to skip the visitor
+    // forever; the per-persona guard must backfill exactly that gap.
     const t = convexTest(schema, modules);
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        name: "Alex Customer",
+        email: "alex@example.com",
+        role: "customer",
+      });
+      await ctx.db.insert("users", {
+        name: "Jordan Seller",
+        email: "jordan@example.com",
+        role: "seller",
+      });
+      await ctx.db.insert("users", {
+        name: "Sam Admin",
+        email: "sam@example.com",
+        role: "admin",
+      });
+    });
 
-    // A single pre-existing admin (not one of the seed users) is enough to
-    // trip the `existingUsers.length > 0` guard.
+    const result = await t.mutation(internal.seed.seedDb, {});
+    expect(result).toEqual({ inserted: 1 });
+
+    const users = await t.query(api.users.list, {});
+    expect(users).toHaveLength(4);
+    const riley = users.find(
+      (u: { email: string }) => u.email === "riley@example.com",
+    ) as { name: string; role: string };
+    expect(riley).toMatchObject({ name: "Riley Visitor", role: "visitor" });
+  });
+
+  it("backfills every missing role when seeded against a partial set (per-persona guard, not all-or-nothing)", async () => {
+    // A pre-existing admin (not one of the seed users) claims the admin role —
+    // the by_role guard treats admin as already-seeded and backfills the other
+    // three core personas instead of skipping the whole batch.
+    const t = convexTest(schema, modules);
     await t.run(async (ctx) => {
       await ctx.db.insert("users", {
         name: "Pre Existing",
@@ -105,11 +141,19 @@ describe("seed — seedDb", () => {
     });
 
     const result = await t.mutation(internal.seed.seedDb, {});
-    expect(result).toEqual({ alreadySeeded: true });
+    expect(result).toEqual({ inserted: 3 });
 
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(1);
-    expect(users[0]).toMatchObject({ email: "pre@example.com" });
+    expect(users).toHaveLength(4);
+    // The pre-existing row was left alone, not duplicated or overwritten.
+    const pre = users.find(
+      (u: { email: string }) => u.email === "pre@example.com",
+    ) as { name: string; role: string };
+    expect(pre).toMatchObject({ name: "Pre Existing", role: "admin" });
+    // Sam Admin was NOT inserted — the admin slot was already taken.
+    expect(
+      users.find((u: { email: string }) => u.email === "sam@example.com"),
+    ).toBeUndefined();
   });
 });
 

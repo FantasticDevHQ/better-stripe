@@ -71,12 +71,17 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   // Query resolved, but no seeded user for the active role. Fail loudly rather
   // than spin forever — the seed hasn't run (or the users table is empty).
+  // Point at the actual seed trigger (`/admin/setup` → "Seed Demo Data"), not
+  // the CLI `setup` script — that one only configures env vars (BTS-113).
   const match = users.find((u) => u.role === role);
   if (!match) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        No seeded “{role}” user found. Run the example seed
-        (`pnpm --filter ./example run setup`) to create the demo personas.
+        No seeded “{role}” user found. Open{" "}
+        <a href="/admin/setup" className="underline">
+          /admin/setup
+        </a>{" "}
+        and click “Seed Demo Data” to create the demo personas.
       </div>
     );
   }

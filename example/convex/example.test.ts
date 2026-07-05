@@ -117,7 +117,7 @@ describe("users — getByRole", () => {
 });
 
 // =============================================================================
-// SEED — seedDb idempotency
+// SEED — seedDb per-persona idempotency (BTS-113)
 // =============================================================================
 
 describe("seed — seedDb", () => {
@@ -126,7 +126,7 @@ describe("seed — seedDb", () => {
 
     const result = await t.mutation(internal.seed.seedDb, {});
 
-    expect(result.alreadySeeded).toBe(false);
+    expect(result.inserted).toBe(4);
 
     const users = await t.query(api.users.list, {});
     expect(users).toHaveLength(4);
@@ -135,7 +135,10 @@ describe("seed — seedDb", () => {
     expect(roles).toEqual(["admin", "customer", "seller", "visitor"]);
   });
 
-  it("skips seeding when users already exist", async () => {
+  it("backfills missing personas when a partial set already exists", async () => {
+    // Per-persona idempotency (BTS-113): a pre-existing customer claims the
+    // customer slot, so seedDb backfills seller/admin/visitor rather than
+    // skipping the whole batch on `existingUsers.length > 0`.
     const t = convexTest(schema, modules);
 
     await t.run(async (ctx) => {
@@ -148,11 +151,25 @@ describe("seed — seedDb", () => {
 
     const result = await t.mutation(internal.seed.seedDb, {});
 
-    expect(result.alreadySeeded).toBe(true);
+    expect(result.inserted).toBe(3);
 
-    // Should still only have the one pre-existing user
+    // Pre-existing customer + the 3 backfilled core personas.
     const users = await t.query(api.users.list, {});
-    expect(users).toHaveLength(1);
+    expect(users).toHaveLength(4);
+    const roles = users.map((u: { role: string }) => u.role).sort();
+    expect(roles).toEqual(["admin", "customer", "seller", "visitor"]);
+  });
+
+  it("inserts nothing when every core role is already present", async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(internal.seed.seedDb, {});
+    const result = await t.mutation(internal.seed.seedDb, {});
+
+    expect(result.inserted).toBe(0);
+
+    const users = await t.query(api.users.list, {});
+    expect(users).toHaveLength(4);
   });
 });
 

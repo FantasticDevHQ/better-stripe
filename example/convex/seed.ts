@@ -19,50 +19,57 @@ type StripeApiVersion = NonNullable<
 const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
 
 /**
- * Seed DB data (users). Mutation — no external calls.
- * Returns user IDs for logging. Skips if already seeded.
+ * Core demo personas (BTS-7 added the visitor). Each role is a singleton, so
+ * `seedDb` looks each one up by role and inserts only what's missing — a re-run
+ * against a partially-seeded deployment (e.g. one first seeded before the
+ * visitor persona existed, BTS-113) backfills the gap rather than silently
+ * no-op'ing on the whole batch. Keep this seed step before anything that may
+ * insert shared-role users (e.g. marketplace sellers): the `by_role` lookup
+ * below intentionally assumes these four core roles have not yet been claimed.
+ */
+const CORE_PERSONAS = [
+  { name: "Alex Customer", email: "alex@example.com", role: "customer" },
+  { name: "Jordan Seller", email: "jordan@example.com", role: "seller" },
+  { name: "Sam Admin", email: "sam@example.com", role: "admin" },
+  // Visitor: a user with no Stripe account yet — `seedAccounts` deliberately
+  // leaves this persona unlinked so the app can demonstrate the pre-onboarding
+  // (gated, no-billing-data) state.
+  { name: "Riley Visitor", email: "riley@example.com", role: "visitor" },
+] as const;
+
+/**
+ * Seed DB data (core demo users). Mutation — no external calls.
+ *
+ * Idempotent per persona (not all-or-nothing): each core persona is a singleton
+ * by role, so we look each role up and only insert what's missing. A re-run
+ * against a partially-seeded deployment backfills the gaps — fixing the
+ * BTS-113 bug where a deployment seeded before the visitor persona was added
+ * could never acquire it no matter how many times seed was re-triggered.
+ *
+ * Returns the count of inserted personas for observability/tests (mirrors
+ * `seedMarketplaceDb`'s `{ inserted: number }` shape).
  */
 export const seedDb = internalMutation({
   args: {},
-  returns: v.object({ alreadySeeded: v.boolean() }),
+  returns: v.object({ inserted: v.number() }),
   handler: async (ctx) => {
-    const existingUsers = await ctx.db.query("users").collect();
-    if (existingUsers.length > 0) {
-      console.log("[seed] DB already seeded — skipping.");
-      return { alreadySeeded: true };
+    let inserted = 0;
+    for (const persona of CORE_PERSONAS) {
+      const existing = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", persona.role))
+        .first();
+      if (existing) continue;
+      await ctx.db.insert("users", {
+        name: persona.name,
+        email: persona.email,
+        role: persona.role,
+      });
+      inserted++;
     }
 
-    const customerId = await ctx.db.insert("users", {
-      name: "Alex Customer",
-      email: "alex@example.com",
-      role: "customer",
-    });
-
-    const sellerId = await ctx.db.insert("users", {
-      name: "Jordan Seller",
-      email: "jordan@example.com",
-      role: "seller",
-    });
-
-    await ctx.db.insert("users", {
-      name: "Sam Admin",
-      email: "sam@example.com",
-      role: "admin",
-    });
-
-    // Visitor: a user with no Stripe account yet — `seedAccounts` deliberately
-    // leaves this persona unlinked so the app can demonstrate the pre-onboarding
-    // (gated, no-billing-data) state.
-    await ctx.db.insert("users", {
-      name: "Riley Visitor",
-      email: "riley@example.com",
-      role: "visitor",
-    });
-
-    console.log(
-      `[seed] DB seeded: 4 users (customer=${customerId}, seller=${sellerId})`,
-    );
-    return { alreadySeeded: false };
+    console.log(`[seed] core personas: inserted ${inserted}.`);
+    return { inserted };
   },
 });
 

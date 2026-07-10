@@ -18,7 +18,7 @@
 // Both were "added a function, didn't regen". A deployment-free structural
 // check catches that whole class of bug without needing Convex credentials in CI.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,8 +62,8 @@ function isValidJsIdentifier(name) {
 // Modules in `src/component/<module>/{queries,mutations,actions}.ts` map to
 // nested blocks in `src/component/_generated/component.ts`:
 //   `<module>: { queries: {...}, mutations: {...}, actions: {...} }`.
-function checkLibraryComponent() {
-  const componentDir = join(root, "src", "component");
+function checkLibraryComponent(componentRoot = root) {
+  const componentDir = join(componentRoot, "src", "component");
   const generatedPath = join(componentDir, "_generated", "component.ts");
   const generated = readFileSync(generatedPath, "utf8");
 
@@ -75,6 +75,7 @@ function checkLibraryComponent() {
   ];
 
   const missing = [];
+  const sourceNames = new Set();
 
   for (const moduleDir of MODULES) {
     for (const [kind, fileName, singular] of KINDS) {
@@ -86,7 +87,16 @@ function checkLibraryComponent() {
         continue;
       }
 
-      // `export const NAME = query(` / `mutation(` / `action(` at the start of a line.
+      // `export const NAME = query(` / `mutation(` / `action(` at the start of
+      // a line. This deliberately does NOT match wrapper patterns like
+      // `export const myQuery = customQuery(...)` (convex-helpers) or
+      // re-exports like `export { myQuery as NAME }`: this component has zero
+      // such exports today (verified across every queries/mutations/actions.ts
+      // — grep for `customQuery|customMutation|customAction|convex-helpers`
+      // turns up nothing, and there's no `convex-helpers` dependency), and its
+      // functions are exported directly with `query(...)`/`mutation(...)`/
+      // `action(...)`. If that changes, widen this regex (and the matching
+      // reverse-check below) rather than assuming it stays this way.
       const fnRegex = new RegExp(`^export const (\\w+) = ${singular}\\(`, "gm");
       const names = new Set();
       let match;
@@ -96,6 +106,7 @@ function checkLibraryComponent() {
       if (names.size === 0) continue;
 
       for (const name of names) {
+        sourceNames.add(name);
         // Generated form: `NAME: FunctionReference<` as a property key. All
         // function names are unique across the component's API surface (a
         // Convex requirement), so a global substring check can't false-negative
@@ -111,12 +122,42 @@ function checkLibraryComponent() {
     }
   }
 
-  if (missing.length > 0) {
+  // Reverse direction: every `NAME: FunctionReference<` entry in the
+  // generated file must correspond to a source export found above. Without
+  // this, deleting an exported query/mutation/action (without regenerating)
+  // leaves a stale entry in component.ts and goes undetected — the forward
+  // loop above only ever walks source -> generated, never the reverse.
+  const stale = [];
+  const generatedFnRegex = /^\s*(\w+):\s*FunctionReference/gm;
+  let generatedMatch;
+  while ((generatedMatch = generatedFnRegex.exec(generated)) !== null) {
+    const name = generatedMatch[1];
+    if (!sourceNames.has(name)) {
+      stale.push(name);
+    }
+  }
+
+  if (missing.length > 0 || stale.length > 0) {
+    const relativeGeneratedPath = generatedPath.replace(
+      componentRoot + sep,
+      "",
+    );
+    const sections = [];
+    if (missing.length > 0) {
+      sections.push(
+        `these source exports are missing from ${relativeGeneratedPath}:\n` +
+          missing.map((s) => `  - ${s}`).join("\n"),
+      );
+    }
+    if (stale.length > 0) {
+      sections.push(
+        `these entries in ${relativeGeneratedPath} have no matching source export (likely a deleted query/mutation/action):\n` +
+          stale.map((s) => `  - ${s}`).join("\n"),
+      );
+    }
     return {
       ok: false,
-      message:
-        `Stale Convex codegen detected — these source exports are missing from ${generatedPath.replace(root + "/", "")}:\n` +
-        missing.map((s) => `  - ${s}`).join("\n"),
+      message: `Stale Convex codegen detected — ${sections.join("\n\n")}`,
     };
   }
 
@@ -132,8 +173,8 @@ function checkLibraryComponent() {
 // under `example/convex/` and registers it in the `ApiFromModules<...>` type.
 // A common drift case is adding a new `example/convex/<module>.ts` (or a nested
 // file like `example/convex/lib/<module>.ts`) without regenerating.
-function checkExampleApp() {
-  const convexDir = join(root, "example", "convex");
+function checkExampleApp(exampleRoot = root) {
+  const convexDir = join(exampleRoot, "example", "convex");
   const generatedPath = join(convexDir, "_generated", "api.ts");
   const generated = readFileSync(generatedPath, "utf8");
 
@@ -182,12 +223,44 @@ function checkExampleApp() {
     }
   }
 
-  if (missing.length > 0) {
+  // Reverse direction: every module the generated file imports must still
+  // exist as a source file on disk. Without this, deleting an
+  // `example/convex/<module>.ts` (without regenerating) leaves a stale import
+  // + fullApi entry in api.ts and goes undetected — the forward loop above
+  // only ever walks source -> generated, never the reverse.
+  const stale = [];
+  const importRegex = /^import type \* as (\w+) from ["'](\.\.\/[^"']+)\.js["'];$/gm;
+  let importMatch;
+  while ((importMatch = importRegex.exec(generated)) !== null) {
+    const [, alias, importPath] = importMatch;
+    const modulePath = importPath.replace(/^\.\.\//, "");
+    const sourcePath = join(convexDir, `${modulePath}.ts`);
+    if (!existsSync(sourcePath)) {
+      stale.push(`${alias}: imports "${modulePath}.ts", which no longer exists`);
+    }
+  }
+
+  if (missing.length > 0 || stale.length > 0) {
+    const relativeGeneratedPath = generatedPath.replace(
+      exampleRoot + sep,
+      "",
+    );
+    const sections = [];
+    if (missing.length > 0) {
+      sections.push(
+        `these source modules are missing from ${relativeGeneratedPath}:\n` +
+          missing.map((s) => `  - ${s}`).join("\n"),
+      );
+    }
+    if (stale.length > 0) {
+      sections.push(
+        `these entries in ${relativeGeneratedPath} have no matching source module (likely a deleted file):\n` +
+          stale.map((s) => `  - ${s}`).join("\n"),
+      );
+    }
     return {
       ok: false,
-      message:
-        `Stale Convex codegen detected — these source modules are missing from ${generatedPath.replace(root + "/", "")}:\n` +
-        missing.map((s) => `  - ${s}`).join("\n"),
+      message: `Stale Convex codegen detected — ${sections.join("\n\n")}`,
     };
   }
 
@@ -198,16 +271,27 @@ function checkExampleApp() {
   };
 }
 
-const results = [checkLibraryComponent(), checkExampleApp()];
+function main() {
+  const results = [checkLibraryComponent(), checkExampleApp()];
 
-for (const result of results) {
-  if (result.ok) {
-    console.log(result.message);
-  } else {
-    console.error(
-      `${result.message}\n\nRegenerate with \`pnpm codegen\` against your dev deployment and commit the result.\n` +
-        `See README § "Regenerating codegen".`,
-    );
-    process.exit(1);
+  for (const result of results) {
+    if (result.ok) {
+      console.log(result.message);
+    } else {
+      console.error(
+        `${result.message}\n\nRegenerate with \`pnpm codegen\` against your dev deployment and commit the result.\n` +
+          `See README § "Regenerating codegen".`,
+      );
+      process.exit(1);
+    }
   }
 }
+
+// Guard so this module can be imported by tests (which call
+// checkLibraryComponent/checkExampleApp directly against fixture roots)
+// without also running the CLI's process.exit(1) side effect.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
+
+export { checkExampleApp, checkLibraryComponent };

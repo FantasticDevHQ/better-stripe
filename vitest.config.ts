@@ -7,6 +7,7 @@
  *  3. "client"    — src/client tests (BetterStripe client library)
  *  4. "react"     — src/react tests (React hooks and components)
  *  5. "testing"   — src/testing tests (test utility exports)
+ *  6. "scripts"   — scripts/ tests (repo tooling, e.g. codegen drift check)
  */
 import { defineConfig } from "vitest/config";
 
@@ -53,6 +54,13 @@ export default defineConfig({
         test: {
           name: "testing",
           include: ["src/testing/**/*.test.{ts,js}"],
+          exclude: ["dist/**", "node_modules/**"],
+        },
+      },
+      {
+        test: {
+          name: "scripts",
+          include: ["scripts/**/*.test.{ts,js,mjs}"],
           exclude: ["dist/**", "node_modules/**"],
         },
       },

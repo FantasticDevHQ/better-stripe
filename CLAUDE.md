@@ -25,7 +25,7 @@ It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2)
 
 ## Branches
 
-- `develop` is the working branch; `main` is the release branch. PRs go to `main`.
+- Trunk-based development: `main` is the only long-lived branch. Feature branches come off `main` and PR back to `main`. (`develop` was retired 2026-07-17.)
 - Never switch branches mid-session.
 
 ## Rules

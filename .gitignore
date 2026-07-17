@@ -8,7 +8,9 @@ dist/
 .turbo/
 .docs
 .DS_Store
-.claude/worktrees/
+.claude/
+.pi/
+.worktrees/
 
 # Test coverage reports
 /coverage

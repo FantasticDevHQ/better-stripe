@@ -192,7 +192,7 @@ export function AdminProducts() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Products & Prices</h1>
         <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus data-icon="inline-start" className="mr-2 h-4 w-4" />
           Create Product
         </Button>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -447,7 +447,10 @@ export function AdminProducts() {
                               )
                             }
                           >
-                            <Plus className="mr-1 h-3 w-3" />
+                            <Plus
+                              data-icon="inline-start"
+                              className="mr-1 h-3 w-3"
+                            />
                             Add Price
                           </Button>
                         </div>

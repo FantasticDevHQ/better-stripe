@@ -51,7 +51,9 @@ function StoreCheckoutForm({
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
       } else {
-        setError("Failed to create checkout session. No client secret returned.");
+        setError(
+          "Failed to create checkout session. No client secret returned.",
+        );
       }
     } catch (err) {
       console.error("Store subscription checkout error:", err);
@@ -147,8 +149,8 @@ export function StoreSubscribe() {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Subscribe to {store.storeName}</h1>
         <p className="text-muted-foreground">
-          {buyer.name} is subscribing to {store.storeName}'s recurring plan. This
-          is a real destination charge — funds route to the seller and the
+          {buyer.name} is subscribing to {store.storeName}'s recurring plan.
+          This is a real destination charge — funds route to the seller and the
           platform keeps its fee.
         </p>
       </div>
@@ -180,9 +182,15 @@ export function StoreSubscribe() {
         </CardContent>
       </Card>
 
-      <Button variant="ghost" size="sm" render={<Link to="/demo/store-earnings" />}>
+      <Button
+        variant="ghost"
+        size="sm"
+        render={
+          <Link to="/demo/store-earnings" aria-label="Skip to store earnings" />
+        }
+      >
         Skip to store earnings
-        <ArrowRight className="ml-1 h-3 w-3" />
+        <ArrowRight data-icon="inline-end" className="ml-1 h-3 w-3" />
       </Button>
     </div>
   );

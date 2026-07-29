@@ -82,12 +82,31 @@ export function AdminOverview() {
               {isLoading && typeof metric.value === "number" ? (
                 <Skeleton className="h-9 w-16" />
               ) : (
-                <p className="text-3xl font-bold">{metric.value}</p>
+                <p
+                  className="text-3xl font-bold"
+                  aria-live={
+                    metric.label === "Data Status" ? "polite" : undefined
+                  }
+                >
+                  {metric.value}
+                </p>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {!isLoading && totalProducts === 0 && totalSubscriptions === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>No catalog activity yet</CardTitle>
+            <CardDescription>
+              Create your first product or run a checkout to populate these
+              admin metrics.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* Quick Links */}
       <div>

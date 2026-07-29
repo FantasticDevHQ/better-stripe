@@ -136,8 +136,9 @@ export function AffiliateSplitDemo() {
   const earnings = useEarnings(affiliateAccountId);
   const latestChargeId = [...earnings.transfers]
     .filter((t) => t.sourceChargeId)
-    .sort((a, b) => (b._creationTime ?? 0) - (a._creationTime ?? 0))[0]
-    ?.sourceChargeId;
+    .sort(
+      (a, b) => (b._creationTime ?? 0) - (a._creationTime ?? 0),
+    )[0]?.sourceChargeId;
   const { breakdown, isLoading: splitLoading } = useSplitBreakdown({
     sourceChargeId: latestChargeId,
     saleAmount: DEMO_SALE_AMOUNT,
@@ -148,10 +149,12 @@ export function AffiliateSplitDemo() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Affiliate Split — one sale, three ways</h1>
+        <h1 className="text-2xl font-bold">
+          Affiliate Split — one sale, three ways
+        </h1>
         <p className="text-muted-foreground">
-          A $100 sale from {personas?.store?.name ?? "the store"} routed to store,
-          affiliate, and platform. The affiliate is attributed from the{" "}
+          A $100 sale from {personas?.store?.name ?? "the store"} routed to
+          store, affiliate, and platform. The affiliate is attributed from the{" "}
           <code className="bg-muted rounded px-1.5 py-0.5 text-sm">?ref</code>{" "}
           referral parameter.
         </p>
@@ -175,7 +178,13 @@ export function AffiliateSplitDemo() {
           {!attributed && (
             <p className="text-muted-foreground text-sm">
               Add an affiliate:{" "}
-              <Button variant="link" className="h-auto p-0" render={<Link to={referralLink} />}>
+              <Button
+                variant="link"
+                className="h-auto p-0"
+                render={
+                  <Link to={referralLink} aria-label="Open affiliate link" />
+                }
+              >
                 visit with ?ref={AFFILIATE_REFERRAL_CODE}
               </Button>
             </p>
@@ -223,7 +232,9 @@ export function AffiliateSplitDemo() {
       {/* The breakdown */}
       <Card>
         <CardContent className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold">Latest sale — split breakdown</h2>
+          <h2 className="text-lg font-semibold">
+            Latest sale — split breakdown
+          </h2>
           <SplitBreakdown
             breakdown={breakdown}
             isLoading={splitLoading}

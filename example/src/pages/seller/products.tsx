@@ -220,7 +220,7 @@ export function SellerProducts() {
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus data-icon="inline-start" className="mr-2 h-4 w-4" />
           Create Product
         </Button>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -365,7 +365,10 @@ export function SellerProducts() {
                           )
                         }
                       >
-                        <Plus className="mr-1 h-3 w-3" />
+                        <Plus
+                          data-icon="inline-start"
+                          className="mr-1 h-3 w-3"
+                        />
                         Add Price
                       </Button>
                     </div>

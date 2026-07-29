@@ -25,7 +25,10 @@ export function CheckoutStatusPage() {
           <AlertTitle>No session found</AlertTitle>
           <AlertDescription>Missing checkout session ID.</AlertDescription>
         </Alert>
-        <Button variant="link" render={<Link to="/" />}>
+        <Button
+          variant="link"
+          render={<Link to="/" aria-label="Back to pricing" />}
+        >
           Back to pricing
         </Button>
       </div>
@@ -57,7 +60,11 @@ export function CheckoutStatusPage() {
                   ? "Your purchase is complete — thanks for your order!"
                   : "Your subscription is now active. You can start learning right away."}
               </p>
-              <Button render={<Link to="/dashboard" />}>Go to Dashboard</Button>
+              <Button
+                render={<Link to="/dashboard" aria-label="Go to dashboard" />}
+              >
+                Go to Dashboard
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -69,7 +76,9 @@ export function CheckoutStatusPage() {
               <p className="text-muted-foreground">
                 This checkout session has expired. Please try again.
               </p>
-              <Button render={<Link to="/" />}>Back to pricing</Button>
+              <Button render={<Link to="/" aria-label="Back to pricing" />}>
+                Back to pricing
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -92,7 +101,9 @@ export function CheckoutStatusPage() {
             <p className="text-muted-foreground">
               We could not find this checkout session.
             </p>
-            <Button render={<Link to="/" />}>Back to pricing</Button>
+            <Button render={<Link to="/" aria-label="Back to pricing" />}>
+              Back to pricing
+            </Button>
           </CardContent>
         </Card>
       )}

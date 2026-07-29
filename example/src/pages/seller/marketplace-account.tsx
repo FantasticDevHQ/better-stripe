@@ -21,7 +21,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
-import { CheckoutStatus, ConnectStatusBadge } from "@getdojo/better-stripe/react";
+import {
+  CheckoutStatus,
+  ConnectStatusBadge,
+} from "@getdojo/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { ArrowRight, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -93,15 +96,11 @@ export function SellerMarketplaceAccount() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [addCustomerError, setAddCustomerError] = useState<string | null>(
-    null,
-  );
+  const [addCustomerError, setAddCustomerError] = useState<string | null>(null);
   const [addRecipientError, setAddRecipientError] = useState<string | null>(
     null,
   );
-  const [addMerchantError, setAddMerchantError] = useState<string | null>(
-    null,
-  );
+  const [addMerchantError, setAddMerchantError] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   if (account === undefined) {
@@ -121,8 +120,8 @@ export function SellerMarketplaceAccount() {
         <div>
           <h1 className="text-2xl font-bold">Marketplace Account</h1>
           <p className="text-muted-foreground mt-1">
-            One Stripe account can be a payouts recipient AND a paying
-            customer. This demo onboards you as a recipient first.
+            One Stripe account can be a payouts recipient AND a paying customer.
+            This demo onboards you as a recipient first.
           </p>
         </div>
 
@@ -136,12 +135,12 @@ export function SellerMarketplaceAccount() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label>Country</Label>
+              <Label htmlFor="marketplace-country">Country</Label>
               <Select
                 value={selectedCountry}
                 onValueChange={(v: string | null) => v && setSelectedCountry(v)}
               >
-                <SelectTrigger className="w-64">
+                <SelectTrigger id="marketplace-country" className="w-64">
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,7 +168,9 @@ export function SellerMarketplaceAccount() {
                   });
                   window.location.href = result.onboardingUrl;
                 } catch (err) {
-                  setCreateError(err instanceof Error ? err.message : String(err));
+                  setCreateError(
+                    err instanceof Error ? err.message : String(err),
+                  );
                   setIsCreating(false);
                 }
               }}
@@ -183,7 +184,7 @@ export function SellerMarketplaceAccount() {
               ) : (
                 <>
                   Onboard as recipient
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
@@ -298,7 +299,9 @@ export function SellerMarketplaceAccount() {
                   });
                   window.location.href = result.url;
                 } catch (err) {
-                  setLinkError(err instanceof Error ? err.message : String(err));
+                  setLinkError(
+                    err instanceof Error ? err.message : String(err),
+                  );
                   setIsLinking(false);
                 }
               }}
@@ -312,7 +315,7 @@ export function SellerMarketplaceAccount() {
               ) : (
                 <>
                   Continue setup on Stripe
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
@@ -402,9 +405,7 @@ export function SellerMarketplaceAccount() {
           {hasCustomerConfig && (
             <Card>
               <CardHeader>
-                <CardTitle>
-                  Step 2 — Buy Something as This Account
-                </CardTitle>
+                <CardTitle>Step 2 — Buy Something as This Account</CardTitle>
                 <CardDescription>
                   This account is now both a payouts recipient AND a billable
                   customer. Pick something to buy to prove it.
@@ -428,7 +429,10 @@ export function SellerMarketplaceAccount() {
                           v && setSelectedPriceId(v)
                         }
                       >
-                        <SelectTrigger className="w-72">
+                        <SelectTrigger
+                          className="w-72"
+                          aria-label="Product and price to buy"
+                        >
                           <SelectValue placeholder="Select something to buy" />
                         </SelectTrigger>
                         <SelectContent>
@@ -481,7 +485,10 @@ export function SellerMarketplaceAccount() {
                       ) : (
                         <>
                           Buy as this account
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight
+                            data-icon="inline-end"
+                            className="ml-2 h-4 w-4"
+                          />
                         </>
                       )}
                     </Button>
@@ -504,9 +511,9 @@ export function SellerMarketplaceAccount() {
               <CardHeader>
                 <CardTitle>Step 3 — Add More Configurations Later</CardTitle>
                 <CardDescription>
-                  Configurations accrue on one account — nothing stops you
-                  from adding recipient or merchant capabilities after the
-                  fact, if this account didn't start with them.
+                  Configurations accrue on one account — nothing stops you from
+                  adding recipient or merchant capabilities after the fact, if
+                  this account didn't start with them.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">

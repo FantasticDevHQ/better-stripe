@@ -164,7 +164,7 @@ export function Billing() {
         <Card>
           <CardContent className="space-y-4 py-8 text-center">
             <p className="text-muted-foreground">
-              You don&apos;t have a billing account yet. Pick a plan to get
+              No data yet. Create a billing account by picking a plan to get
               started.
             </p>
             <Button
@@ -209,7 +209,7 @@ export function Billing() {
       )}
 
       {message && (
-        <Alert>
+        <Alert role="status" aria-live="polite">
           <AlertDescription data-testid="buyer-subscription-action-message">
             {message}
           </AlertDescription>
@@ -256,7 +256,9 @@ export function Billing() {
       ) : (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">No subscription yet.</p>
+            <p className="text-muted-foreground">
+              No data yet. Choose a plan to start a subscription.
+            </p>
           </CardContent>
         </Card>
       )}

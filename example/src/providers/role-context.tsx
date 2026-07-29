@@ -77,7 +77,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   if (!match) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        No seeded “{role}” user found. Open{" "}
+        No data found for the seeded “{role}” user. Open{" "}
         <a href="/admin/setup" className="underline">
           /admin/setup
         </a>{" "}

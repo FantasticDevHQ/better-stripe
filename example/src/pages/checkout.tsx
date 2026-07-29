@@ -129,12 +129,20 @@ export function Checkout() {
 
       <Card>
         <CardContent className="p-6">
-          {!publishableKey ? (
+          {publishableKey === undefined ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-full" />
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : publishableKey === null || publishableKey.length === 0 ? (
+            <Alert variant="destructive">
+              <AlertTitle>Checkout is unavailable</AlertTitle>
+              <AlertDescription>
+                No data found for the Stripe publishable key. Configure it in
+                the admin setup page.
+              </AlertDescription>
+            </Alert>
           ) : (
             <CheckoutForm
               priceId={priceId}

@@ -154,7 +154,9 @@ export function SellerHome() {
             </div>
           ) : recentPayouts.length === 0 ? (
             <Alert>
-              <AlertDescription>No payouts yet.</AlertDescription>
+              <AlertDescription>
+                No data yet. Payouts will appear after earnings are released.
+              </AlertDescription>
             </Alert>
           ) : (
             <div className="space-y-1">

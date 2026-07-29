@@ -87,13 +87,15 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
                 });
                 await reload();
               } catch (err) {
-                setAttachError(err instanceof Error ? err.message : String(err));
+                setAttachError(
+                  err instanceof Error ? err.message : String(err),
+                );
               }
             }}
           />
 
           {attachError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" role="alert">
               <AlertTitle>Action failed</AlertTitle>
               <AlertDescription>{attachError}</AlertDescription>
             </Alert>
@@ -113,14 +115,14 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
               ))}
             </div>
           ) : loadError ? (
-            <Alert variant="destructive">
+            <Alert variant="destructive" role="alert">
               <AlertTitle>Failed to load payment methods</AlertTitle>
               <AlertDescription>{loadError}</AlertDescription>
             </Alert>
           ) : methods.length === 0 ? (
-            <Alert>
+            <Alert role="status" aria-live="polite">
               <AlertDescription>
-                No payment methods on file. Add one above.
+                No data found. Add a payment method above.
               </AlertDescription>
             </Alert>
           ) : (
@@ -141,7 +143,7 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
           )}
 
           {deleteError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" role="alert">
               <AlertTitle>Action failed</AlertTitle>
               <AlertDescription>{deleteError}</AlertDescription>
             </Alert>
@@ -179,8 +181,8 @@ export function PaymentMethods() {
         </div>
         <Alert>
           <AlertDescription>
-            No Stripe account is linked to your profile yet — a checkout
-            creates one.{" "}
+            No data yet. A checkout creates the Stripe account linked to your
+            profile.{" "}
             <Link to="/" className="text-primary underline">
               Pick something to buy
             </Link>{" "}

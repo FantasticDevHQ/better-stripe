@@ -165,7 +165,7 @@ export function Payouts() {
                 <TableCell colSpan={4} className="py-8">
                   <Alert>
                     <AlertDescription className="text-center">
-                      No payouts found.
+                      No data found. Payouts will appear when funds are sent.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

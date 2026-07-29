@@ -79,10 +79,10 @@ export function Dashboard() {
         <Card>
           <CardContent className="py-8 text-center">
             <Alert>
-              <AlertTitle>No Active Subscription</AlertTitle>
+              <AlertTitle>No active subscription</AlertTitle>
               <AlertDescription>
-                Browse our t-shirt collection and subscribe for exclusive
-                access.
+                No data yet for this account. Browse our t-shirt collection and
+                subscribe for exclusive access.
               </AlertDescription>
             </Alert>
             <Button

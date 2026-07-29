@@ -90,7 +90,7 @@ export function Landing() {
           <Alert>
             <Sparkles className="h-4 w-4" />
             <AlertDescription>
-              No prices available yet. Check back soon.
+              No data found for this billing interval. Check back soon.
             </AlertDescription>
           </Alert>
         ) : (

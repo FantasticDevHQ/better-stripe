@@ -197,7 +197,8 @@ export function AdminWebhooks() {
                 <TableCell colSpan={4} className="py-8">
                   <Alert>
                     <AlertDescription className="text-center">
-                      No webhook events match the current filters.
+                      No data found. No webhook events match the current
+                      filters.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

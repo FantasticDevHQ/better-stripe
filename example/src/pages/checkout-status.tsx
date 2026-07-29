@@ -99,7 +99,7 @@ export function CheckoutStatusPage() {
             <XCircle className="mx-auto h-12 w-12 text-red-500" />
             <h1 className="text-2xl font-bold">Session not found</h1>
             <p className="text-muted-foreground">
-              We could not find this checkout session.
+              No data found for this checkout session.
             </p>
             <Button render={<Link to="/" aria-label="Back to pricing" />}>
               Back to pricing

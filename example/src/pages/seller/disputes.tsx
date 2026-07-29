@@ -195,7 +195,7 @@ function HeadlessDisputes({
         <DisputesList
           disputes={disputes}
           isLoading={isLoading}
-          emptyLabel="No disputes — trigger a test dispute to see one here."
+          emptyLabel="No data yet — trigger a test dispute to see one here."
           renderRow={(row) => (
             <button
               key={row.dispute.stripeDisputeId}

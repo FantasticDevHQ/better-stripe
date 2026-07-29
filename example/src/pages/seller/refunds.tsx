@@ -252,7 +252,7 @@ export function SellerRefunds() {
                 disabled={busy !== null}
                 data-testid="refund-full-button"
               >
-                <Undo2 className="size-4" />
+                <Undo2 data-icon="inline-start" className="size-4" />
                 Full refund
               </Button>
               <Button
@@ -262,7 +262,7 @@ export function SellerRefunds() {
                 disabled={busy !== null}
                 data-testid="refund-partial-button"
               >
-                <Undo2 className="size-4" />
+                <Undo2 data-icon="inline-start" className="size-4" />
                 Partial refund
               </Button>
             </div>
@@ -350,10 +350,10 @@ export function SellerRefunds() {
             <Skeleton className="h-32 w-full" />
           ) : refunds.length === 0 ? (
             <Alert data-testid="refund-history-empty">
-              <AlertTitle>No refunds recorded</AlertTitle>
+              <AlertTitle>No data yet</AlertTitle>
               <AlertDescription>
-                Issue a refund or enter a PaymentIntent with refund webhooks to
-                see history here.
+                No refunds are recorded. Issue a refund or enter a PaymentIntent
+                with refund webhooks to see history here.
               </AlertDescription>
             </Alert>
           ) : (
@@ -425,7 +425,7 @@ export function SellerRefunds() {
               disabled={busy !== null}
               data-testid="reversal-full-button"
             >
-              <RotateCcw className="size-4" />
+              <RotateCcw data-icon="inline-start" className="size-4" />
               Full reversal
             </Button>
             <Button
@@ -435,7 +435,7 @@ export function SellerRefunds() {
               disabled={busy !== null}
               data-testid="reversal-partial-button"
             >
-              <RotateCcw className="size-4" />
+              <RotateCcw data-icon="inline-start" className="size-4" />
               Partial reversal
             </Button>
           </div>

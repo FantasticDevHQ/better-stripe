@@ -642,7 +642,7 @@ export function AdminProducts() {
                 <TableCell colSpan={4} className="py-8 text-center">
                   <Alert>
                     <AlertDescription>
-                      No products found. Create one to get started.
+                      No data found. Create a product to get started.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

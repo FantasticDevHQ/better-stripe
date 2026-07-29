@@ -137,7 +137,7 @@ export function AdminSubscriptions() {
                     <TableCell colSpan={5} className="py-8">
                       <Alert>
                         <AlertDescription className="text-center">
-                          No subscriptions found.
+                          No data found for the current subscription filters.
                         </AlertDescription>
                       </Alert>
                     </TableCell>

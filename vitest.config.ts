@@ -9,9 +9,16 @@
  *  5. "testing"   — src/testing tests (test utility exports)
  *  6. "scripts"   — scripts/ tests (repo tooling, e.g. codegen drift check)
  */
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./example/src", import.meta.url)),
+    },
+  },
   test: {
     silent: true,
     projects: [
@@ -30,10 +37,24 @@ export default defineConfig({
             "example/convex/**/*.test.{ts,js}",
             // Frontend helper unit tests (pure logic; no DOM) live under
             // example/src/lib — cover them here so the gate runs them too.
-            "example/src/**/*.test.{ts,tsx}",
+            "example/src/lib/**/*.test.{ts,tsx}",
           ],
           exclude: ["dist/**", "node_modules/**"],
           environment: "edge-runtime",
+        },
+      },
+      {
+        resolve: {
+          alias: {
+            "@": fileURLToPath(new URL("./example/src", import.meta.url)),
+          },
+        },
+        test: {
+          name: "example-ui",
+          include: ["example/src/components/**/*.test.tsx"],
+          exclude: ["dist/**", "node_modules/**"],
+          environment: "jsdom",
+          setupFiles: ["example/src/test/setup.ts"],
         },
       },
       {

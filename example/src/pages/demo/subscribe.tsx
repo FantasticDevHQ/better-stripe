@@ -128,10 +128,10 @@ export function StoreSubscribe() {
     return (
       <div className="mx-auto max-w-2xl py-16">
         <Alert>
-          <AlertTitle>Marketplace demo not seeded</AlertTitle>
+          <AlertTitle>No data found</AlertTitle>
           <AlertDescription>
-            Run the marketplace seed (with a live Stripe key) to create the
-            buyer, store, and catalog:{" "}
+            The marketplace demo is not seeded. Run the marketplace seed (with a
+            live Stripe key) to create the buyer, store, and catalog:{" "}
             <code className="bg-muted rounded px-1">
               pnpm --filter ./example run setup
             </code>

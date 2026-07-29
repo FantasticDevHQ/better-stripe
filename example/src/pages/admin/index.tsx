@@ -99,7 +99,7 @@ export function AdminOverview() {
       {!isLoading && totalProducts === 0 && totalSubscriptions === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>No catalog activity yet</CardTitle>
+            <CardTitle>No data yet</CardTitle>
             <CardDescription>
               Create your first product or run a checkout to populate these
               admin metrics.

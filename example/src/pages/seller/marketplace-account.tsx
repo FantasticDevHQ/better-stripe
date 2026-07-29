@@ -342,7 +342,9 @@ export function SellerMarketplaceAccount() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               {appliedConfigurations.length === 0 && (
-                <span className="text-muted-foreground text-sm">None yet</span>
+                <span className="text-muted-foreground text-sm">
+                  No data yet
+                </span>
               )}
               {appliedConfigurations.map((c) => (
                 <Badge key={c} variant="default">
@@ -415,8 +417,8 @@ export function SellerMarketplaceAccount() {
                 {purchasablePrices.length === 0 ? (
                   <Alert>
                     <AlertDescription>
-                      No one-time platform prices are available to purchase.
-                      Seed demo data first.
+                      No data found for one-time platform prices. Seed demo data
+                      first.
                     </AlertDescription>
                   </Alert>
                 ) : (

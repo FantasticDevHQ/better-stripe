@@ -200,10 +200,10 @@ export function AffiliateSplitDemo() {
             <Skeleton className="h-24 w-full" />
           ) : !storeAccountId || !oneTimePrice ? (
             <Alert>
-              <AlertTitle>Marketplace not seeded</AlertTitle>
+              <AlertTitle>No data found</AlertTitle>
               <AlertDescription>
-                Run <code>npm run setup</code> to seed the marketplace personas
-                and catalog, then reload.
+                The marketplace is not seeded. Run <code>npm run setup</code> to
+                seed the marketplace personas and catalog, then reload.
               </AlertDescription>
             </Alert>
           ) : !showCheckout ? (

@@ -12,7 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { earningsFromBalance, type BalanceSnapshot } from "@/lib/store-earnings";
+import {
+  earningsFromBalance,
+  type BalanceSnapshot,
+} from "@/lib/store-earnings";
 import {
   EarningsSummary,
   PayoutSchedule,
@@ -89,10 +92,10 @@ export function StoreEarnings() {
     return (
       <div className="mx-auto max-w-2xl py-16">
         <Alert>
-          <AlertTitle>Marketplace demo not seeded</AlertTitle>
+          <AlertTitle>No data found</AlertTitle>
           <AlertDescription>
-            Run the marketplace seed (with a live Stripe key) to create the
-            store and catalog:{" "}
+            The marketplace demo is not seeded. Run the marketplace seed (with a
+            live Stripe key) to create the store and catalog:{" "}
             <code className="bg-muted rounded px-1">
               pnpm --filter ./example run setup
             </code>
@@ -188,7 +191,10 @@ export function StoreEarnings() {
                     {payout.stripePayoutId}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {formatCurrency(payout.amount ?? 0, payout.currency || "usd")}
+                    {formatCurrency(
+                      payout.amount ?? 0,
+                      payout.currency || "usd",
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">

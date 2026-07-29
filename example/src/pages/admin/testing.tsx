@@ -275,6 +275,16 @@ export function AdminTesting() {
       </Card>
 
       {/* Activity Log */}
+      {log.length === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity Log</CardTitle>
+            <CardDescription>
+              No data yet. Run a testing utility to record its result here.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
       {log.length > 0 && (
         <Card>
           <CardHeader>

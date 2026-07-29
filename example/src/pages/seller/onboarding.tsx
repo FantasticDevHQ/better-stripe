@@ -83,7 +83,8 @@ export function SellerOnboarding() {
         <div>
           <h1 className="text-2xl font-bold">Seller Onboarding</h1>
           <p className="text-muted-foreground mt-1">
-            Create a Stripe Connect account to start receiving payouts.
+            No data yet. Create a Stripe Connect account to start receiving
+            payouts.
           </p>
         </div>
 

@@ -39,7 +39,7 @@ export function SellerAccount() {
         <h1 className="text-2xl font-bold">Account Settings</h1>
         <Alert>
           <AlertDescription>
-            No Stripe Connect account found. Visit the{" "}
+            No data found for a Stripe Connect account. Visit the{" "}
             <a href="/seller/onboarding" className="text-primary underline">
               onboarding page
             </a>{" "}

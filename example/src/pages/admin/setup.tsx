@@ -309,7 +309,11 @@ function WebhookSetupCard() {
       </div>
 
       {!isChecking && status && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          className="grid gap-3 sm:grid-cols-2"
+          role="status"
+          aria-live="polite"
+        >
           <div className="border-border rounded-md border p-3">
             <div className="mb-1 flex items-center gap-2">
               <span className="text-sm font-medium">V1 Snapshot</span>
@@ -359,13 +363,13 @@ function WebhookSetupCard() {
       )}
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" role="alert">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {result && (
-        <Alert>
+        <Alert role="status" aria-live="polite">
           <AlertDescription className="space-y-3">
             <p>
               Webhook destinations configured. Set these Convex environment
@@ -448,20 +452,36 @@ function SeedDataCard() {
         </div>
       </div>
 
+      {!isSeeding &&
+        !done &&
+        seedStatus !== undefined &&
+        products !== undefined &&
+        !hasData && (
+          <Alert role="status" aria-live="polite">
+            <AlertDescription>
+              No data found. Seed demo data to create users and products.
+            </AlertDescription>
+          </Alert>
+        )}
+
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" role="alert">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {done && !error && (
-        <Alert>
+        <Alert role="status" aria-live="polite">
           <AlertDescription>Demo data seeded successfully.</AlertDescription>
         </Alert>
       )}
 
       {hasData && !done && (
-        <p className="text-muted-foreground text-sm">
+        <p
+          className="text-muted-foreground text-sm"
+          role="status"
+          aria-live="polite"
+        >
           Data already exists. Clicking Seed Data will skip existing records.
         </p>
       )}

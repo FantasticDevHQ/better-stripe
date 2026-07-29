@@ -137,7 +137,7 @@ export function Invoices() {
                 <TableCell colSpan={4} className="py-8">
                   <Alert>
                     <AlertDescription className="text-center">
-                      No invoices found.
+                      No data found. Invoices will appear after billing begins.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

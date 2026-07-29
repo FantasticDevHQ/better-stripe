@@ -580,7 +580,7 @@ export function SellerProducts() {
                 <TableCell colSpan={4} className="py-8 text-center">
                   <Alert>
                     <AlertDescription>
-                      No products yet. Create one to start selling.
+                      No data yet. Create a product to start selling.
                     </AlertDescription>
                   </Alert>
                 </TableCell>

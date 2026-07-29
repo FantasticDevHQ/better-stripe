@@ -105,7 +105,10 @@ export function Checkout() {
             Please select a price from the pricing page to continue.
           </AlertDescription>
         </Alert>
-        <Button variant="link" render={<Link to="/" />}>
+        <Button
+          variant="link"
+          render={<Link to="/" aria-label="Back to pricing" />}
+        >
           Back to pricing
         </Button>
       </div>
@@ -142,8 +145,12 @@ export function Checkout() {
         </CardContent>
       </Card>
 
-      <Button variant="ghost" size="sm" render={<Link to="/" />}>
-        <ArrowLeft className="mr-1 h-3 w-3" />
+      <Button
+        variant="ghost"
+        size="sm"
+        render={<Link to="/" aria-label="Back to pricing" />}
+      >
+        <ArrowLeft data-icon="inline-start" className="mr-1 h-3 w-3" />
         Back to pricing
       </Button>
     </div>

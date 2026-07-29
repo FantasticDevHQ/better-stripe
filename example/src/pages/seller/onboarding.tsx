@@ -97,12 +97,12 @@ export function SellerOnboarding() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label>Country</Label>
+              <Label htmlFor="onboarding-country">Country</Label>
               <Select
                 value={selectedCountry}
                 onValueChange={(v: string | null) => v && setSelectedCountry(v)}
               >
-                <SelectTrigger className="w-64">
+                <SelectTrigger id="onboarding-country" className="w-64">
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,7 +131,9 @@ export function SellerOnboarding() {
                     window.location.href = result.onboardingUrl;
                   }
                 } catch (err) {
-                  setCreateError(err instanceof Error ? err.message : String(err));
+                  setCreateError(
+                    err instanceof Error ? err.message : String(err),
+                  );
                   setIsCreating(false);
                 }
               }}
@@ -145,7 +147,7 @@ export function SellerOnboarding() {
               ) : (
                 <>
                   Create account
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
@@ -231,7 +233,9 @@ export function SellerOnboarding() {
                     window.location.href = result.url;
                   }
                 } catch (err) {
-                  setLinkError(err instanceof Error ? err.message : String(err));
+                  setLinkError(
+                    err instanceof Error ? err.message : String(err),
+                  );
                   setIsLinking(false);
                 }
               }}
@@ -245,7 +249,7 @@ export function SellerOnboarding() {
               ) : (
                 <>
                   Continue setup on Stripe
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>

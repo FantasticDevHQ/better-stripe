@@ -85,7 +85,10 @@ export function Dashboard() {
                 access.
               </AlertDescription>
             </Alert>
-            <Button render={<Link to="/" />} className="mt-4">
+            <Button
+              render={<Link to="/" aria-label="Browse plans" />}
+              className="mt-4"
+            >
               View Plans
             </Button>
           </CardContent>

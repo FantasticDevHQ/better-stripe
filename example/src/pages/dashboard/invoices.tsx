@@ -114,10 +114,14 @@ export function Invoices() {
                           href={invoice.hostedInvoiceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          aria-label="View hosted invoice"
                         />
                       }
                     >
-                      <ExternalLink className="mr-1 h-3 w-3" />
+                      <ExternalLink
+                        data-icon="inline-start"
+                        className="mr-1 h-3 w-3"
+                      />
                       View
                     </Button>
                   ) : (

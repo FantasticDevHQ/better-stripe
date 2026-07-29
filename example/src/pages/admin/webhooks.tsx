@@ -82,12 +82,12 @@ export function AdminWebhooks() {
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="grid gap-1.5">
-          <Label>Event Type</Label>
+          <Label htmlFor="webhook-event-type">Event Type</Label>
           <Select
             value={typeFilter}
             onValueChange={(v: string | null) => v && setTypeFilter(v)}
           >
-            <SelectTrigger className="w-56">
+            <SelectTrigger id="webhook-event-type" className="w-56">
               <SelectValue placeholder="All Events" />
             </SelectTrigger>
             <SelectContent>
@@ -101,12 +101,12 @@ export function AdminWebhooks() {
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Status</Label>
+          <Label htmlFor="webhook-status">Status</Label>
           <Select
             value={statusFilter}
             onValueChange={(v: string | null) => v && setStatusFilter(v)}
           >
-            <SelectTrigger className="w-36">
+            <SelectTrigger id="webhook-status" className="w-36">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>

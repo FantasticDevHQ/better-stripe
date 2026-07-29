@@ -119,7 +119,7 @@ export function AdminTesting() {
               addLog("assertTestEnvironment()", "Test environment confirmed");
             }}
           >
-            <Play className="mr-2 h-4 w-4" />
+            <Play data-icon="inline-start" className="mr-2 h-4 w-4" />
             Assert Test Environment
           </Button>
         </CardContent>
@@ -137,16 +137,15 @@ export function AdminTesting() {
           </CardTitle>
           <CardDescription>
             Fires <strong>real</strong> test-mode Stripe API calls against the
-            seeded marketplace demo (run <code>npm run setup</code> first) —
-            not simulated events. Each button polls the component ledger for a
-            few seconds afterward and reports whether the row actually synced;
-            that only happens if{" "}
+            seeded marketplace demo (run <code>npm run setup</code> first) — not
+            simulated events. Each button polls the component ledger for a few
+            seconds afterward and reports whether the row actually synced; that
+            only happens if{" "}
             <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
               stripe listen --forward-to &lt;site&gt;/stripe/webhook
             </code>{" "}
-            is running locally (see README → &quot;Browser E2E
-            Tests&quot;). Confirmed events also appear in the Webhook Event
-            Log.
+            is running locally (see README → &quot;Browser E2E Tests&quot;).
+            Confirmed events also appear in the Webhook Event Log.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,10 +165,7 @@ export function AdminTesting() {
               variant="outline"
               disabled={firing !== null}
               onClick={() =>
-                runTrigger(
-                  "fireSubscriptionUpdated()",
-                  fireSubscriptionUpdated,
-                )
+                runTrigger("fireSubscriptionUpdated()", fireSubscriptionUpdated)
               }
             >
               {firing === "fireSubscriptionUpdated()"
@@ -285,7 +281,7 @@ export function AdminTesting() {
             <div className="flex items-center justify-between">
               <CardTitle>Activity Log</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setLog([])}>
-                <Trash2 className="mr-1 h-3 w-3" />
+                <Trash2 data-icon="inline-start" className="mr-1 h-3 w-3" />
                 Clear
               </Button>
             </div>

@@ -22,6 +22,18 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
+  shadscan:
+    name: Shadscan UI quality gate (40+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit example app
+        uses: TheOrcDev/shadscan@3215eec857c1da63fd319d7048bfd50cf15f786a # CLI v0.7.0 action
+        with:
+          path: example
+          version: 0.7.0
+          fail-under: "40"
+
   # Stale-codegen gate (BTS-104). Two layers:
   #   1. Structural drift check — always runs, needs no deployment. Catches the
   #      BTS-31/50 and BTS-74 incident class ("added a function, didn't regen")
@@ -59,4 +71,3 @@ jobs:
         if: ${{ env.CONVEX_DEPLOYMENT == '' }}
         run: |
           echo "::notice::Authoritative codegen regen-and-diff is inactive (CONVEX_DEPLOYMENT secret not set). Structural drift check still ran."
-

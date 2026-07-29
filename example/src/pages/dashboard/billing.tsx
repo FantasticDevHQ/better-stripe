@@ -76,7 +76,9 @@ export function Billing() {
   const reactivateSubscription = useAction(api.actions.reactivateSubscription);
   const pauseSubscription = useAction(api.actions.pauseSubscription);
   const resumeSubscription = useAction(api.actions.resumeSubscription);
-  const updateSubscriptionPrice = useAction(api.actions.updateSubscriptionPrice);
+  const updateSubscriptionPrice = useAction(
+    api.actions.updateSubscriptionPrice,
+  );
   const updateSubscriptionQuantity = useAction(
     api.actions.updateSubscriptionQuantity,
   );
@@ -109,7 +111,9 @@ export function Billing() {
   const [trialEnd, setTrialEnd] = useState("");
 
   const isLoading =
-    subscriptions === undefined || account === undefined || prices === undefined;
+    subscriptions === undefined ||
+    account === undefined ||
+    prices === undefined;
 
   const runLifecycleAction = async (
     actionName: string,
@@ -163,7 +167,11 @@ export function Billing() {
               You don&apos;t have a billing account yet. Pick a plan to get
               started.
             </p>
-            <Button render={<Link to="/" />}>Create account to subscribe</Button>
+            <Button
+              render={<Link to="/" aria-label="Create account to subscribe" />}
+            >
+              Create account to subscribe
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -190,7 +198,9 @@ export function Billing() {
       {isTrialing && subscription?.trialEnd && (
         <Alert>
           <Clock className="h-4 w-4" />
-          <AlertTitle>Trial ends {formatDate(subscription.trialEnd)}</AlertTitle>
+          <AlertTitle>
+            Trial ends {formatDate(subscription.trialEnd)}
+          </AlertTitle>
           <AlertDescription>
             End the trial immediately or choose a new date from the lifecycle
             controls below.
@@ -315,8 +325,13 @@ export function Billing() {
                     disabled={portalLoading}
                     data-testid="buyer-subscription-portal"
                   >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    {portalLoading ? "Opening portal..." : "Open Billing Portal"}
+                    <ExternalLink
+                      data-icon="inline-start"
+                      className="mr-2 h-4 w-4"
+                    />
+                    {portalLoading
+                      ? "Opening portal..."
+                      : "Open Billing Portal"}
                   </Button>
                 )}
               </BillingPortalLink>

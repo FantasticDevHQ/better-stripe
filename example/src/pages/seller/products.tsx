@@ -310,12 +310,20 @@ export function SellerProducts() {
                   role="button"
                   tabIndex={0}
                   aria-expanded={expandedProduct === product._id}
-                  onClick={() =>
+                  onClick={(event) => {
+                    if (
+                      (event.target as HTMLElement).closest(
+                        "button, a, input, select, textarea",
+                      )
+                    ) {
+                      return;
+                    }
                     setExpandedProduct(
                       expandedProduct === product._id ? null : product._id,
-                    )
-                  }
+                    );
+                  }}
                   onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       setExpandedProduct(
@@ -349,11 +357,7 @@ export function SellerProducts() {
                     {product.prices.length !== 1 ? "s" : ""}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div
-                      className="flex justify-end gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    >
+                    <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"

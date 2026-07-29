@@ -23,7 +23,7 @@ jobs:
       - run: pnpm test
 
   shadscan:
-    name: Shadscan UI quality gate (40+)
+    name: Shadscan UI quality gate (80+)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
         with:
           path: example
           version: 0.7.0
-          fail-under: "40"
+          fail-under: "80"
 
   # Stale-codegen gate (BTS-104). Two layers:
   #   1. Structural drift check — always runs, needs no deployment. Catches the

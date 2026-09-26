@@ -118,6 +118,8 @@ app.use(betterStripe, {
 export default app;
 ```
 
+> **TypeScript 6+:** `compilerOptions.types` now defaults to `[]`, so installed `@types/*` packages are no longer included automatically. If Convex's typecheck reports `Cannot find name 'process'` for the `process.env` reads below, add `"types": ["node"]` to `convex/tsconfig.json` and make sure `@types/node` is a devDependency.
+
 ### Step 2: Create a BetterStripe instance with triggers
 
 ```typescript

@@ -1325,10 +1325,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus?:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             stripeAccountId: string;
@@ -1352,10 +1349,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             stripeAccountId: string;
@@ -1384,10 +1378,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             statementDescriptor?: string;
@@ -1414,10 +1405,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             statementDescriptor?: string;
@@ -1444,10 +1432,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             statementDescriptor?: string;
@@ -1474,10 +1459,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             missingRequirements?: Array<string>;
             name?: string;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
             orgId?: string;
             requirements?: any;
             statementDescriptor?: string;
@@ -1495,10 +1477,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             isReady: boolean;
             missingRequirements: Array<string>;
             onboardingStatus:
-              | "pending"
-              | "in_progress"
-              | "complete"
-              | "restricted";
+              "pending" | "in_progress" | "complete" | "restricted";
           } | null,
           Name
         >;

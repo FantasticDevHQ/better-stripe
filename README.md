@@ -18,7 +18,7 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
    - `fix: …` makes a patch release.
    - `feat: …` makes a minor release.
    - `feat!: …` (or a `BREAKING CHANGE:` footer) makes a minor release while the package is pre-1.0.
-   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog without forcing a release.
+   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which you can leave open to collect more changes: nothing publishes until that PR is merged.
 
    Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
 2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`.

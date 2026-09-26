@@ -1,4 +1,4 @@
-import { registerRoutes } from "@getdojo/better-stripe";
+import { registerRoutes } from "@fantastic.dev/better-stripe";
 import { httpRouter } from "convex/server";
 
 import { components, internal } from "./_generated/api";

@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmbeddedCheckout } from "@getdojo/better-stripe/react";
+import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";

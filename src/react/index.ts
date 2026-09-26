@@ -2,7 +2,7 @@
  * better-stripe/react — React hooks and headless UI components
  *
  * Entry point for the React layer of the better-stripe Convex component.
- * Import from '@getdojo/better-stripe/react' to access hooks and components.
+ * Import from '@fantastic.dev/better-stripe/react' to access hooks and components.
  */
 
 // Types

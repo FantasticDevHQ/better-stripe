@@ -1,4 +1,4 @@
-import betterStripe from "@getdojo/better-stripe/convex.config";
+import betterStripe from "@fantastic.dev/better-stripe/convex.config";
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
 

@@ -1,4 +1,4 @@
-import { BetterStripe } from "@getdojo/better-stripe";
+import { BetterStripe } from "@fantastic.dev/better-stripe";
 
 import { components, internal } from "./_generated/api";
 

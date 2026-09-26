@@ -10,7 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IntervalSelector, PriceBadge } from "@getdojo/better-stripe/react";
+import {
+  IntervalSelector,
+  PriceBadge,
+} from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
 import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";

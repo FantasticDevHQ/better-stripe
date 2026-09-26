@@ -33,7 +33,7 @@ import {
   EmbeddedDisputes,
   EvidenceForm,
   type EvidenceFormUpdateArgs,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { useState } from "react";
 

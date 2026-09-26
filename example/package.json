@@ -21,7 +21,7 @@
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@fontsource-variable/geist": "^5.2.9",
-    "@getdojo/better-stripe": "workspace:*",
+    "@fantastic.dev/better-stripe": "workspace:*",
     "@stripe/react-stripe-js": "^6.6.0",
     "@stripe/stripe-js": "^9.8.0",
     "class-variance-authority": "^0.7.1",

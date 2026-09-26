@@ -6,19 +6,27 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 
 ## Status
 
-**Version**: `0.2.0` (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.4.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
 ### Releasing
 
-Releases are automated with [Changesets](https://github.com/changesets/changesets). The version number and `CHANGELOG.md` are derived from changeset files — **do not bump the version or edit the changelog by hand.**
+Releases are automated with [Release Please](https://github.com/googleapis/release-please-action) and published to npmjs.com as `@fantastic.dev/better-stripe`. **Don't bump the version or edit `CHANGELOG.md` by hand.**
 
-1. **Every PR that changes published behavior** adds a changeset: run `pnpm changeset`, pick the bump (`patch`/`minor`/`major`), and write the user-facing note. Commit the generated `.changeset/*.md` file. (Docs-only or internal-only PRs need none.) Pre-1.0, breaking changes use `minor`.
-2. **On merge to `main`**, the `Release` workflow opens (or updates) a **"Version Packages" PR** that consumes the changesets, bumps `package.json`, and folds the notes into `CHANGELOG.md`.
-3. **Merging that PR** triggers the workflow again to publish to npm (only versions not already on the registry), create the git tag, and cut a GitHub release.
+1. **Give every PR a Conventional Commit title** (it becomes the squash-merge commit):
+   - `fix: …` makes a patch release.
+   - `feat: …` makes a minor release.
+   - `feat!: …` (or a `BREAKING CHANGE:` footer) makes a minor release while the package is pre-1.0.
+   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which you can leave open to collect more changes: nothing publishes until that PR is merged.
 
-The private `example` workspace is excluded from versioning/publishing. See `pnpm changeset:status` to preview the pending bump.
+   Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
+2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`.
+3. **Merging the release PR** is the release decision. The same run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
+
+Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.
+
+The private `example` workspace isn't published.
 
 ### Regenerating codegen
 
@@ -79,7 +87,7 @@ The marketplace economics layer described above — platform fees, the split eng
 ## Installation
 
 ```bash
-npm install @getdojo/better-stripe
+npm install @fantastic.dev/better-stripe
 ```
 
 The package bundles `stripe`, `@stripe/stripe-js`, and `@stripe/react-stripe-js` as dependencies. You do not need to install Stripe packages separately.
@@ -94,7 +102,7 @@ The consumer contract has three steps:
 
 ```typescript
 // convex/convex.config.ts
-import betterStripe from "@getdojo/better-stripe/convex.config";
+import betterStripe from "@fantastic.dev/better-stripe/convex.config";
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
 
@@ -114,7 +122,7 @@ export default app;
 
 ```typescript
 // convex/stripe.ts
-import { BetterStripe } from "@getdojo/better-stripe";
+import { BetterStripe } from "@fantastic.dev/better-stripe";
 
 import { components } from "./_generated/api";
 
@@ -149,7 +157,7 @@ export const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();
 
 ```typescript
 // convex/http.ts
-import { registerRoutes } from "@getdojo/better-stripe";
+import { registerRoutes } from "@fantastic.dev/better-stripe";
 import { httpRouter } from "convex/server";
 
 import { components, internal } from "./_generated/api";
@@ -297,7 +305,7 @@ Refunds denormalize cumulative state onto the linked `payments` row (`refundedAm
 Register the webhook endpoint on your Convex HTTP router:
 
 ```typescript
-import { registerRoutes } from "@getdojo/better-stripe";
+import { registerRoutes } from "@fantastic.dev/better-stripe";
 
 registerRoutes(http, components.betterStripe, {
   webhookPath: "/stripe/webhook", // Default path
@@ -350,7 +358,7 @@ import {
   BETTER_STRIPE_WEBHOOK_EVENTS, // V1 snapshot events (20 events)
   BETTER_STRIPE_V2_WEBHOOK_EVENTS, // V2 thin events (12 events)
   ALL_BETTER_STRIPE_EVENTS, // Combined (32 events)
-} from "@getdojo/better-stripe";
+} from "@fantastic.dev/better-stripe";
 ```
 
 ### Event Processing
@@ -555,7 +563,7 @@ type PlatformFeeConfig = {
 Configure a default at construction (`new BetterStripe(component, { platformFee: {...} })`), and/or pass a per-call `fee` override (type `FeeOverride`, same shape as `PlatformFeeConfig`) to `createCheckoutSession`/`createSubscription` — the override wins. `stripe.resolveFee(override?)` resolves the effective config the same way the client does internally, and `stripe.platformFee` reads the configured default back.
 
 ```typescript
-import { computeFee } from "@getdojo/better-stripe";
+import { computeFee } from "@fantastic.dev/better-stripe";
 
 const { feeAmount, percentApplied, fixedApplied, tier } = computeFee(2999, {
   percent: 10,
@@ -605,7 +613,7 @@ await stripe.createCheckoutSession(ctx, {
 The core math is exported for previewing splits client-side:
 
 ```typescript
-import { computeSplit } from "@getdojo/better-stripe";
+import { computeSplit } from "@fantastic.dev/better-stripe";
 
 const result = computeSplit(10000, { percent: 10 }, [
   { destinationAccountId: "acct_store", role: "store", percent: 80 },
@@ -665,7 +673,7 @@ Validated against Stripe's rules (`validateStatementDescriptorSuffix`: 1–22 ch
 
 ## React Hooks
 
-Import from `@getdojo/better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
+Import from `@fantastic.dev/better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
 
 Read hooks are exported as factory functions that take the app's `useQuery` binding and a query function reference, allowing them to work with any component registration name. Hooks that take a single ID argument accept `undefined` and skip the query (via Convex's `"skip"` sentinel) until the ID is available.
 
@@ -701,7 +709,7 @@ import {
   CheckoutSessionProvider,
   PaymentElement,
   useCheckoutSession,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 
 <CheckoutSessionProvider publishableKey={pk} clientSecret={token}>
   <MyForm />
@@ -757,7 +765,7 @@ These are re-exported so apps never need to import from `@stripe/react-stripe-js
 
 ## React Components
 
-Import from `@getdojo/better-stripe/react`. All components are headless by default -- they provide behavior and minimal structure. Style them with Tailwind or any CSS approach.
+Import from `@fantastic.dev/better-stripe/react`. All components are headless by default -- they provide behavior and minimal structure. Style them with Tailwind or any CSS approach.
 
 All components accept:
 
@@ -815,8 +823,8 @@ import {
   BuyerBillingView,
   AddCardForm,
   StripeProvider,
-} from "@getdojo/better-stripe/react";
-import { groupSubscriptionsByStore } from "@getdojo/better-stripe";
+} from "@fantastic.dev/better-stripe/react";
+import { groupSubscriptionsByStore } from "@fantastic.dev/better-stripe";
 
 function BuyerBilling({ userId, customerAccount }: Props) {
   const subscriptions = useQuery(api.stripe.listSubscriptionsByUser, { userId });
@@ -897,7 +905,7 @@ export const createDisputeSession = action({
 });
 
 // Seller disputes page (client side)
-import { ConnectProvider, EmbeddedDisputes } from "@getdojo/better-stripe/react";
+import { ConnectProvider, EmbeddedDisputes } from "@fantastic.dev/better-stripe/react";
 
 function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
   const createSession = useAction(api.stripe.createDisputeSession);
@@ -916,14 +924,14 @@ function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
 
 ## Testing Utilities
 
-Import from `@getdojo/better-stripe/testing`.
+Import from `@fantastic.dev/better-stripe/testing`.
 
 ### assertTestEnvironment
 
 Guards against running test fixtures with live Stripe keys:
 
 ```typescript
-import { assertTestEnvironment } from "@getdojo/better-stripe/testing";
+import { assertTestEnvironment } from "@fantastic.dev/better-stripe/testing";
 
 assertTestEnvironment(); // Throws if STRIPE_SECRET_KEY does not start with sk_test_
 ```
@@ -938,7 +946,7 @@ import {
   createTestPrice,
   createTestProduct,
   createTestSubscription,
-} from "@getdojo/better-stripe/testing";
+} from "@fantastic.dev/better-stripe/testing";
 
 const account = await createTestAccount(stripe, { email: "test@example.com" });
 const product = await createTestProduct(stripe, { name: "Pro Plan" });
@@ -959,7 +967,7 @@ import {
   mockCheckoutCompleted,
   mockInvoicePaid,
   mockSubscriptionUpdated,
-} from "@getdojo/better-stripe/testing";
+} from "@fantastic.dev/better-stripe/testing";
 
 const event = mockCheckoutCompleted({
   stripeSessionId: "cs_test_123",
@@ -990,7 +998,7 @@ enough on its own — the installing app must provide it to the component via
 // convex/convex.config.ts
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
-import betterStripe from "@getdojo/better-stripe/convex.config";
+import betterStripe from "@fantastic.dev/better-stripe/convex.config";
 
 const app = defineApp({
   env: { STRIPE_SECRET_KEY: v.string() },
@@ -1071,10 +1079,10 @@ Async hook (scheduled action)          --> App calls external APIs
 
 | Entry Point                            | Contents                                                 |
 | -------------------------------------- | -------------------------------------------------------- |
-| `@getdojo/better-stripe`               | `BetterStripe` class, `registerRoutes`, TypeScript types |
-| `@getdojo/better-stripe/react`         | React hooks, headless UI components, formatting helpers  |
-| `@getdojo/better-stripe/testing`       | Test fixtures, mock webhooks, `assertTestEnvironment`    |
-| `@getdojo/better-stripe/convex.config` | Convex component registration                            |
+| `@fantastic.dev/better-stripe`               | `BetterStripe` class, `registerRoutes`, TypeScript types |
+| `@fantastic.dev/better-stripe/react`         | React hooks, headless UI components, formatting helpers  |
+| `@fantastic.dev/better-stripe/testing`       | Test fixtures, mock webhooks, `assertTestEnvironment`    |
+| `@fantastic.dev/better-stripe/convex.config` | Convex component registration                            |
 
 ### Error Handling
 

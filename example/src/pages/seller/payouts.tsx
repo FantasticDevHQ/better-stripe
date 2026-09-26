@@ -15,7 +15,7 @@ import {
   PayoutSchedule,
   type RecipientBalance,
   type StripeComponentPayout,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 

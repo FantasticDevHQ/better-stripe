@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
-import { EmbeddedCheckout } from "@getdojo/better-stripe/react";
+import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CheckCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";

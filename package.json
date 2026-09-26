@@ -1,19 +1,19 @@
 {
-  "name": "@getdojo/better-stripe",
-  "version": "0.3.0",
+  "name": "@fantastic.dev/better-stripe",
+  "version": "0.4.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
     "convex",
     "component"
   ],
-  "homepage": "https://github.com/kellykampen/better-stripe#readme",
+  "homepage": "https://github.com/FantasticDevHQ/better-stripe#readme",
   "bugs": {
-    "url": "https://github.com/kellykampen/better-stripe/issues"
+    "url": "https://github.com/FantasticDevHQ/better-stripe/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kellykampen/better-stripe.git"
+    "url": "git+https://github.com/FantasticDevHQ/better-stripe.git"
   },
   "license": "MIT",
   "author": "Kelly Kampen",
@@ -82,11 +82,7 @@
     "prepublishOnly": "npm run clean && npm run build && npm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "changeset": "changeset",
-    "changeset:status": "changeset status --verbose",
-    "changeset:version": "changeset version",
-    "changeset:publish": "changeset publish"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@stripe/connect-js": "^3.4.6",
@@ -96,8 +92,6 @@
     "stripe": "^22.2.0"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.7.0",
-    "@changesets/cli": "^2.31.0",
     "@convex-dev/eslint-plugin": "^2.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@testing-library/jest-dom": "^7.0.0",
@@ -128,7 +122,9 @@
     "node": ">=v18.18.0"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "provenance": true
   },
   "module": "./dist/client/index.js",
   "packageManager": "pnpm@10.32.1"

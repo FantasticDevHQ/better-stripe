@@ -2,7 +2,7 @@
 
 ## What this is
 
-`@getdojo/better-stripe` is a reusable Convex component for the Stripe V2 Accounts API.
+`@fantastic.dev/better-stripe` is a reusable Convex component for the Stripe V2 Accounts API.
 
 - Library in `src/`:
   - `src/client/` — app-facing `BetterStripe` class and method implementations
@@ -15,7 +15,7 @@
 
 - Library: `pnpm typecheck`, `pnpm lint`, `pnpm test` (vitest), `pnpm build`
 - Example app: `pnpm --filter ./example run build` (also `lint`, `typecheck`)
-- Note: the example resolves `@getdojo/better-stripe` from `dist/`, so run `pnpm build` once in a fresh checkout before building the example.
+- Note: the example resolves `@fantastic.dev/better-stripe` from `dist/`, so run `pnpm build` once in a fresh checkout before building the example.
 
 ## E2E webhooks
 

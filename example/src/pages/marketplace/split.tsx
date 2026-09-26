@@ -11,7 +11,7 @@ import {
   EmbeddedCheckout,
   EarningsSummary,
   SplitBreakdown,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { Link, useSearchParams } from "react-router-dom";
 

@@ -2,6 +2,10 @@
 
 ## 0.4.0
 
+**Renamed to `@fantastic.dev/better-stripe`.** This is the first release under the new name, published from `FantasticDevHQ/better-stripe` through npm trusted publishing with provenance. `@getdojo/better-stripe` is deprecated and gets no further releases. To migrate, replace `@getdojo/better-stripe` with `@fantastic.dev/better-stripe` in `package.json`, in imports and in `convex.config.ts`, then run `npx convex dev` to regenerate `_generated/`. The API is unchanged by the rename.
+
+`0.3.0` was versioned but never published, so this release also ships everything listed under `0.3.0` below, including its breaking webhook-wiring change.
+
 ### Minor Changes
 
 - [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `getAccountBalance` for per-account balance retrieval (BTS-65, [#62](https://github.com/kellykampen/better-stripe/issues/62)).

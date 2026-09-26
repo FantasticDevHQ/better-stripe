@@ -12,7 +12,7 @@ import { useRole } from "@/providers/role-context";
 import {
   AccountLoginCard,
   ConnectRequirements,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";

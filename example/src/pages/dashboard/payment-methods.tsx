@@ -15,7 +15,7 @@ import {
   type PaymentMethodItem,
   PaymentMethodsList,
   StripeProviderWithKey,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";

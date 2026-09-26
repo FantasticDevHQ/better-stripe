@@ -1,66 +1,117 @@
 name: Release
 
-# Changesets-driven release. On every push to main this either:
-#   1. opens/updates a "Version Packages" PR (when unreleased changeset files
-#      exist) that bumps the version and folds the changeset notes into
-#      CHANGELOG.md, or
-#   2. when that PR has been merged (no changesets left, version bumped),
-#      publishes to npm, creates the git tag, and cuts a GitHub release.
-# `changeset publish` only publishes versions not already on the registry, so
-# it is idempotent — it replaces the old hand-rolled "is this version already
-# on npm?" gate in the former publish.yml.
+# Release Please keeps a release PR open against main. It bumps package.json, CHANGELOG.md,
+# the README version line and .release-please-manifest.json from the Conventional Commit titles
+# merged since the last release. Merging that PR is the release decision: the `release-please`
+# job then tags the version and creates the GitHub release, and the `publish` job below publishes
+# it to npmjs.com in the same run. A tag pushed with GITHUB_TOKEN does not start another
+# workflow, so publishing cannot wait for one.
+#
+# A manually pushed `vX.Y.Z` tag still publishes through the `publish` job alone.
+#
+# Auth: npm trusted publishing. npmjs.com trusts this repository's `release.yml` (keep the
+# filename), and the job exchanges its OIDC token for a one-off publish credential, so no
+# long-lived npm token exists. The same OIDC token signs the provenance attestation that ties
+# the tarball to this run and commit (provenance needs the repository to be public).
+# Trusted publishing needs npm >= 11.5.1.
 
 on:
   push:
     branches: [main]
-  workflow_dispatch: # manual escape hatch / re-run
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false # never kill a publish mid-flight
 
-permissions:
-  contents: write # push the version-bump commit + tags, create the GH release
-  pull-requests: write # open/update the "Version Packages" PR
-  # id-token omitted — npm provenance requires a public repo (this one is
-  # private). Re-add `id-token: write` + `NPM_CONFIG_PROVENANCE: true` if it
-  # goes public.
-
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  release-please:
+    name: Release PR
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # tag and GitHub release
+      issues: write # release labels
+      pull-requests: write # the release PR
+      actions: write # dispatch CI for the release PR
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        id: release
         with:
-          fetch-depth: 0 # changesets needs full history + tags
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      # PRs opened with GITHUB_TOKEN do not trigger pull_request workflows.
+      - name: Run CI for the release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_PRS: ${{ steps.release.outputs.prs }}
+        run: |
+          set -euo pipefail
+          for number in $(jq -r '.[].number' <<< "$RELEASE_PRS"); do
+            branch="$(gh pr view "$number" --json headRefName --jq .headRefName)"
+            gh workflow run ci.yml --ref "$branch"
+          done
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+  publish:
+    name: Publish
+    needs: release-please
+    if: >-
+      always() && !cancelled() &&
+      (needs.release-please.outputs.release_created == 'true' ||
+       (startsWith(github.ref, 'refs/tags/v') && needs.release-please.result == 'skipped'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # create the GitHub release for a manual tag
+      id-token: write # trusted publishing + provenance
+    env:
+      RELEASE_TAG: ${{ needs.release-please.outputs.tag_name || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
-
+      - name: Require the tag to match package.json and CHANGELOG.md
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./package.json").version')"
+          test "v${version}" = "${RELEASE_TAG}" || { echo "tag ${RELEASE_TAG} != package.json v${version}" >&2; exit 1; }
+          node scripts/release-notes.mjs "${version}" > "${RUNNER_TEMP}/release-notes.md"
+      - name: Require npm with trusted publishing
+        run: |
+          set -euo pipefail
+          node -e 'const [a,b,c]=process.argv[1].split(".").map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)' "$(npm --version)" \
+            || { echo "npm $(npm --version) is older than 11.5.1, which trusted publishing needs" >&2; exit 1; }
       - run: pnpm install --frozen-lockfile
-
-      # Build + verify before either versioning or publishing. (npm's
-      # prepublishOnly also runs clean+build+typecheck at publish time; this
-      # is the early fail-fast and ensures the version step sees a green tree.)
+      # The same gates as CI's `ci` job, plus the codegen drift check.
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
-
-      - name: Create Release PR or publish to npm
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset:version
-          publish: pnpm changeset:publish
-          title: "chore: version packages"
-          commit: "chore: version packages"
+      - run: pnpm codegen:check
+      - name: Publish to npm
+        # The steps above built dist; skip lifecycle scripts so publish cannot rebuild a different
+        # tree. Registry, public access and provenance come from package.json `publishConfig`.
+        run: npm publish --ignore-scripts
+      # Release Please already created the GitHub release for its own tags.
+      - name: Create the GitHub release for a manual tag
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # The committed root .npmrc reads ${NPM_TOKEN}; setup-node's npmrc
-          # reads NODE_AUTH_TOKEN. Provide both so auth resolves either way.
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "${RUNNER_TEMP}/release-notes.md"

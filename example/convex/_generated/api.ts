@@ -78,5 +78,5 @@ export const internal: FilterApi<
 > = anyApi as any;
 
 export const components = componentsGeneric() as unknown as {
-  betterStripe: import("@getdojo/better-stripe/_generated/component.js").ComponentApi<"betterStripe">;
+  betterStripe: import("@fantastic.dev/better-stripe/_generated/component.js").ComponentApi<"betterStripe">;
 };

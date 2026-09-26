@@ -17,7 +17,7 @@
  * branches, which previously had zero test coverage.
  */
 import { convexTest } from "convex-test";
-import { computeFee } from "@getdojo/better-stripe";
+import { computeFee } from "@fantastic.dev/better-stripe";
 import { describe, expect, it } from "vitest";
 
 import { api, components } from "./_generated/api";

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { computeFee } from "@getdojo/better-stripe";
+import { computeFee } from "@fantastic.dev/better-stripe";
 import { v } from "convex/values";
 
 import { action, query } from "./_generated/server";

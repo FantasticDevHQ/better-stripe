@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  # The Release workflow dispatches this for release PRs, which GITHUB_TOKEN opens without CI.
+  workflow_dispatch:
 
 jobs:
   ci:

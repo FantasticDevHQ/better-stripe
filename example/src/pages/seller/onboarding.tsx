@@ -24,7 +24,7 @@ import { useRole } from "@/providers/role-context";
 import {
   AccountCloseCard,
   ConnectStatusBadge,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import {
   ArrowRight,

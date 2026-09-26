@@ -20,7 +20,7 @@ import {
   EarningsSummary,
   PayoutSchedule,
   type StripeComponentPayout,
-} from "@getdojo/better-stripe/react";
+} from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.4.0...v0.5.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* the package name changes to @fantastic.dev/better-stripe; @getdojo/better-stripe receives no further releases.
+
+### Features
+
+* publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing (BTS-114) ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
+
 ## 0.4.0
 
 **Renamed to `@fantastic.dev/better-stripe`.** This is the first release under the new name, published from `FantasticDevHQ/better-stripe` through npm trusted publishing with provenance. `@getdojo/better-stripe` is deprecated and gets no further releases. To migrate, replace `@getdojo/better-stripe` with `@fantastic.dev/better-stripe` in `package.json`, in imports and in `convex.config.ts`, then run `npx convex dev` to regenerate `_generated/`. The API is unchanged by the rename.

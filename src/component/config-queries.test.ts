@@ -7,10 +7,7 @@ import schema from "./schema.js";
 
 const modules = import.meta.glob("./**/*.*s");
 
-// These queries read the component's Stripe env vars. `STRIPE_SECRET_KEY` is
-// declared (required) in `convex.config.ts`; `STRIPE_PUBLISHABLE_KEY` is
-// intentionally NOT declared (it is a frontend-only value), so the component
-// never receives it and `getPublishableKey` always resolves to null.
+// Both keys are declared in the component environment and passed by the app.
 describe("core/queries — Stripe config from declared env", () => {
   const originalSecret = process.env.STRIPE_SECRET_KEY;
   const originalPublishable = process.env.STRIPE_PUBLISHABLE_KEY;
@@ -43,5 +40,12 @@ describe("core/queries — Stripe config from declared env", () => {
   it("getPublishableKey: returns null when the var is not provided to the component", async () => {
     const t = convexTest(schema, modules);
     expect(await t.query(api.core.queries.getPublishableKey, {})).toBeNull();
+  });
+  it("getPublishableKey: returns the configured test publishable key", async () => {
+    process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_abc123";
+    const t = convexTest(schema, modules);
+    expect(await t.query(api.core.queries.getPublishableKey, {})).toBe(
+      "pk_test_abc123",
+    );
   });
 });

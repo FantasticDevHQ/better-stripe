@@ -28,7 +28,7 @@ export type SplitRecipientRole = Infer<typeof splitRecipientRoleValidator>;
 
 /**
  * One destination in a multi-recipient split. The cut is expressed as either a
- * fixed `amount` (minor units) or a `percent` of the net; the resolver (BTS-14)
+ * fixed `amount` (minor units) or a `percent` of the gross charge; the resolver (BTS-14)
  * decides precedence. App-owned attribution (who the affiliate is) lives in app
  * tables — the component just records and executes the split.
  */

@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
 import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { ArrowRight } from "lucide-react";
@@ -44,9 +45,10 @@ function StoreCheckoutForm({
         userId,
         stripePriceId,
         destinationAccountId,
-        returnUrl:
-          window.location.origin +
-          "/checkout/status?session_id={CHECKOUT_SESSION_ID}",
+        returnUrl: buildCheckoutReturnUrl(
+          window.location.origin,
+          "/demo/store-earnings",
+        ),
       });
       if (session?.clientSecret) {
         setClientSecret(session.clientSecret);
@@ -95,9 +97,6 @@ function StoreCheckoutForm({
     <EmbeddedCheckout
       publishableKey={publishableKey}
       clientSecret={clientSecret}
-      onComplete={() => {
-        window.location.href = "/demo/store-earnings";
-      }}
     />
   );
 }

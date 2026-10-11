@@ -43,6 +43,10 @@ export default defineConfig([
   // targets **/convex/**/*.ts which matches this directory automatically.
   ...convexPlugin.configs.recommended,
   {
+    files: ["convex/**/*.test.ts"],
+    rules: { "@convex-dev/no-process-env": "off" },
+  },
+  {
     files: ["convex/**/*.ts"],
     ignores: ["convex/_generated/**", "convex/**/*.test.ts"],
     rules: {

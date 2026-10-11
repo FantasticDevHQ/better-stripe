@@ -180,8 +180,9 @@ export function Billing() {
 
   const isTrialing = subscription?.isTrialing ?? false;
   const canPause =
-    subscription?.status === "active" || subscription?.status === "trialing";
-  const canResume = subscription?.status === "paused";
+    !subscription?.isCollectionPaused &&
+    (subscription?.status === "active" || subscription?.status === "trialing");
+  const canResume = !!subscription?.isCollectionPaused;
   const canReactivate =
     !!subscription?.cancelAtPeriodEnd &&
     (subscription.status === "active" || subscription.status === "trialing");
@@ -239,7 +240,9 @@ export function Billing() {
               >
                 {subscription.cancelAtPeriodEnd
                   ? "Cancels at period end"
-                  : getSubscriptionStatusLabel(subscription.status)}
+                  : subscription.isCollectionPaused
+                    ? "Collection paused"
+                    : getSubscriptionStatusLabel(subscription.status)}
               </Badge>
             </div>
             <p className="text-muted-foreground text-sm">

@@ -58,9 +58,8 @@ test.describe("live one-time payment flow", () => {
     // Ceramics Masterclass) is listed alongside the subscriptions.
     await page.goto("/");
     const oneTimeCard = page
-      .locator("div")
-      .filter({ hasText: /^Ceramics Masterclass/ })
-      .last();
+      .locator('[data-slot="card"]')
+      .filter({ hasText: "Ceramics Masterclass" });
     await oneTimeCard.getByRole("button", { name: "Get Started" }).click();
 
     // Checkout page creates the session; the action derives payment mode
@@ -69,7 +68,7 @@ test.describe("live one-time payment flow", () => {
 
     // Embedded Stripe checkout renders in an iframe; pay with the standard
     // test card. Selectors follow Stripe's embedded checkout form.
-    const frame = page.frameLocator('iframe[src*="checkout.stripe.com"]');
+    const frame = page.frameLocator('iframe[src*="embedded-checkout-inner"]');
     await frame.locator("#email").fill("billie@example.com");
     await frame.locator("#cardNumber").fill("4242424242424242");
     await frame.locator("#cardExpiry").fill("12 / 34");

@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 /**
  * Money-scenario drivers + ledger reads for the e2e:webhooks release gate
  * (BTS-49).
@@ -25,10 +26,10 @@ import { stripe } from "./stripe";
 type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
 >;
-const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
+const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";
 
 function rawStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY not set on the deployment");
   return new Stripe(key, { apiVersion: STRIPE_API_VERSION });
 }
@@ -83,7 +84,9 @@ export function reconcilesToCharge(
 ): boolean {
   const recipientsTotal = recipientAmounts.reduce((sum, a) => sum + a, 0);
   const platform = chargeAmount - recipientsTotal;
-  return platform >= 0 && recipientsTotal >= 0 && recipientsTotal <= chargeAmount;
+  return (
+    platform >= 0 && recipientsTotal >= 0 && recipientsTotal <= chargeAmount
+  );
 }
 
 // `reversalsMatchExactly` (BTS-73) lives in `../scripts/money-assertions.ts` so
@@ -134,7 +137,9 @@ export const provisionTestRecipient = action({
       },
       configuration: {
         recipient: {
-          capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
+          capabilities: {
+            stripe_balance: { stripe_transfers: { requested: true } },
+          },
         },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

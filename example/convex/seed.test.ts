@@ -197,9 +197,9 @@ describe("seed — seedAccounts (already-linked guard)", () => {
     const customer = users.find(
       (u: { role: string }) => u.role === "customer",
     ) as { _id: Id<"users"> };
-    const seller = users.find(
-      (u: { role: string }) => u.role === "seller",
-    ) as { _id: Id<"users"> };
+    const seller = users.find((u: { role: string }) => u.role === "seller") as {
+      _id: Id<"users">;
+    };
     await t.mutation(internal.seed.linkUserAccount, {
       userId: customer._id,
       stripeAccountId: "acct_customer_existing",
@@ -293,12 +293,10 @@ describe("seed — seedMarketplaceDb", () => {
 
     const users = await t.query(api.users.list, {});
     const byEmail = Object.fromEntries(
-      users.map(
-        (u: { email: string; role: string; storeName?: string }) => [
-          u.email,
-          u,
-        ],
-      ),
+      users.map((u: { email: string; role: string; storeName?: string }) => [
+        u.email,
+        u,
+      ]),
     );
 
     expect(users).toHaveLength(4);
@@ -511,5 +509,28 @@ describe("seed — run", () => {
       {},
     );
     expect(products).toHaveLength(1);
+  });
+});
+
+// The Admin setup button must run the same complete seed as the CLI.
+describe("admin setup — full demo seed", () => {
+  it("backfills marketplace personas when basic products already exist", async () => {
+    const t = withComponent();
+    await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+      stripeProductId: "prod_existing",
+      name: "Existing Tee",
+      active: true,
+    });
+    await t.action(api.actions.seedDemoData, {});
+    const users = await t.query(api.users.list, {});
+    expect(users.map((user) => user.email)).toEqual(
+      expect.arrayContaining([
+        "maya@example.com",
+        "sasha@example.com",
+        "avery@example.com",
+        "billie@example.com",
+      ]),
+    );
+    expect(users).toHaveLength(8);
   });
 });

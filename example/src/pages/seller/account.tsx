@@ -13,12 +13,17 @@ import {
   AccountLoginCard,
   ConnectRequirements,
 } from "@fantastic.dev/better-stripe/react";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 import { api } from "../../../convex/_generated/api";
 
 export function SellerAccount() {
   const { currentUser } = useRole();
+  const createLoginLink = useAction(api.actions.createSellerLoginLink);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
@@ -62,13 +67,34 @@ export function SellerAccount() {
       </p>
 
       {/* Stripe Express dashboard link */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <AccountLoginCard
-        onLogin={() => {
-          window.open(
-            `https://dashboard.stripe.com/${account.stripeAccountId}`,
-            "_blank",
-          );
+        onLogin={async () => {
+          setPending(true);
+          setError(null);
+          try {
+            const { url } = await createLoginLink({
+              userId: currentUser.id,
+              stripeAccountId: account.stripeAccountId,
+            });
+            window.location.assign(url);
+          } catch {
+            setError(
+              "Stripe dashboard access is unavailable. Complete onboarding and ensure your account uses the Express dashboard.",
+            );
+          } finally {
+            setPending(false);
+          }
         }}
+        renderDashboardLink={({ onLogin }) => (
+          <Button onClick={onLogin} disabled={pending}>
+            {pending ? "Opening dashboard…" : "Open dashboard"}
+          </Button>
+        )}
       />
 
       {/* Account details */}

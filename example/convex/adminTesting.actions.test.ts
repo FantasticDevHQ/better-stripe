@@ -47,9 +47,15 @@ vi.mock("./stripe", () => ({
 // `fireCheckoutCompleted`. Mock the SDK's default export so that construction
 // never hits the network.
 const paymentIntentsCreate = vi.fn();
+const paymentMethodsCreate = vi.fn();
+const paymentMethodsAttach = vi.fn();
 vi.mock("stripe", () => ({
   default: class FakeStripe {
     paymentIntents = { create: paymentIntentsCreate };
+    paymentMethods = {
+      create: paymentMethodsCreate,
+      attach: paymentMethodsAttach,
+    };
   },
 }));
 
@@ -105,6 +111,8 @@ const TEST_KEY = "sk_test_mock_admin_testing";
 beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = TEST_KEY;
   vi.clearAllMocks();
+  paymentMethodsCreate.mockResolvedValue({ id: "pm_sandbox" });
+  paymentMethodsAttach.mockResolvedValue({ id: "pm_sandbox" });
 });
 
 afterEach(() => {
@@ -162,7 +170,14 @@ describe("adminTesting actions — pollForLedgerRow retry/timeout loop", () => {
       let calls = 0;
       mockedStripe.getAccountByStripeId.mockImplementation(async () => {
         calls += 1;
-        return calls < 3 ? null : { stripeAccountId: "acct_store_mock" };
+        return {
+          stripeAccountId: "acct_store_mock",
+          metadata:
+            calls < 3
+              ? { bsAdminTestPing: "old" }
+              : mockedStripe.updateV2Account.mock.calls[0][1].updateParams
+                  .metadata,
+        };
       });
 
       const resultPromise = t.action(api.adminTesting.fireAccountUpdated, {});
@@ -186,7 +201,10 @@ describe("adminTesting actions — pollForLedgerRow retry/timeout loop", () => {
       const t = convexTest(schema, modules);
       await seedDemoAccounts(t);
       mockedStripe.updateV2Account.mockResolvedValue(undefined);
-      mockedStripe.getAccountByStripeId.mockResolvedValue(null);
+      mockedStripe.getAccountByStripeId.mockResolvedValue({
+        stripeAccountId: "acct_store_mock",
+        metadata: { bsAdminTestPing: "stale" },
+      });
 
       const resultPromise = t.action(api.adminTesting.fireAccountUpdated, {});
       for (let i = 0; i < 4; i++) {
@@ -212,9 +230,11 @@ describe("adminTesting actions — fire* happy paths", () => {
     const t = convexTest(schema, modules);
     await seedDemoAccounts(t);
     mockedStripe.updateV2Account.mockResolvedValue(undefined);
-    mockedStripe.getAccountByStripeId.mockResolvedValue({
+    mockedStripe.getAccountByStripeId.mockImplementation(async () => ({
       stripeAccountId: "acct_store_mock",
-    });
+      metadata:
+        mockedStripe.updateV2Account.mock.calls[0][1].updateParams.metadata,
+    }));
 
     const result = await t.action(api.adminTesting.fireAccountUpdated, {});
 
@@ -231,7 +251,10 @@ describe("adminTesting actions — fire* happy paths", () => {
     expect(result.ledgerSync).toBe(
       "Synced to the component ledger after 1/5 poll.",
     );
-    expect(result.componentRow).toEqual({ stripeAccountId: "acct_store_mock" });
+    expect(result.componentRow).toMatchObject({
+      stripeAccountId: "acct_store_mock",
+      metadata: { bsAdminTestPing: result.pingedAt },
+    });
   });
 
   it("fireSubscriptionUpdated requires an active subscription first", async () => {
@@ -254,15 +277,14 @@ describe("adminTesting actions — fire* happy paths", () => {
     mockedStripe.updateSubscriptionMetadata.mockResolvedValue({
       success: true,
     });
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue({
+    mockedStripe.getSubscriptionByStripeId.mockImplementation(async () => ({
       stripeSubscriptionId: "sub_mock_1",
       status: "active",
-    });
+      metadata:
+        mockedStripe.updateSubscriptionMetadata.mock.calls[0][1].metadata,
+    }));
 
-    const result = await t.action(
-      api.adminTesting.fireSubscriptionUpdated,
-      {},
-    );
+    const result = await t.action(api.adminTesting.fireSubscriptionUpdated, {});
 
     expect(mockedStripe.updateSubscriptionMetadata).toHaveBeenCalledWith(
       expect.anything(),
@@ -342,10 +364,18 @@ describe("adminTesting actions — fire* happy paths", () => {
       expect.anything(),
       expect.objectContaining({
         customerAccount: "acct_buyer_mock",
+        defaultPaymentMethod: "pm_sandbox",
         destinationAccountId: "acct_store_mock",
         stripePriceId: "price_mock_1",
       }),
     );
+    expect(paymentMethodsCreate).toHaveBeenCalledWith({
+      type: "card",
+      card: { token: "tok_visa" },
+    });
+    expect(paymentMethodsAttach).toHaveBeenCalledWith("pm_sandbox", {
+      customer_account: "acct_buyer_mock",
+    });
     expect(result.stripeSubscriptionId).toBe("sub_invoice_mock_1");
     expect(result.ledgerSync).toBe(
       "Synced to the component ledger after 1/5 poll.",

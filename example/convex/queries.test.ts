@@ -343,3 +343,39 @@ describe("queries — getMarketplacePersonas resolves store/affiliate by email (
     });
   });
 });
+
+describe("earnings hook aggregate wiring", () => {
+  it("returns aggregate objects with transfer rows and excludes other accounts", async () => {
+    const t = withComponent();
+    for (const destination of ["acct_affiliate", "acct_other"]) {
+      await t.mutation(
+        components.betterStripe.connect.mutations.upsertTransfer,
+        {
+          stripeTransferId: `tr_${destination}`,
+          destinationAccountId: destination,
+          sourceChargeId: "ch_split",
+          role: "affiliate",
+          amount: 1936,
+          currency: "usd",
+          status: "paid",
+        },
+      );
+    }
+    const earnings = await t.query(api.queries.getAccountEarnings, {
+      destinationAccountId: "acct_affiliate",
+    });
+    expect(earnings).toMatchObject({
+      gross: 1936,
+      reversed: 0,
+      transferCount: 1,
+    });
+    expect(earnings.transfers.map((row) => row.stripeTransferId)).toEqual([
+      "tr_acct_affiliate",
+    ]);
+    expect(
+      await t.query(api.queries.getAccountPayouts, {
+        accountId: "acct_affiliate",
+      }),
+    ).toEqual({ paidOut: 0, payoutCount: 0, payouts: [] });
+  });
+});

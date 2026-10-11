@@ -12,4 +12,4 @@ import type { StripeApiVersion } from "./stripe-types.js";
  * component (it pins every Stripe client it creates), so it warrants a
  * component release and changelog entry.
  */
-export const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
+export const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";

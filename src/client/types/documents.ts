@@ -178,6 +178,7 @@ export type StripeComponentSubscription = {
   currentPeriodStart?: string;
   currentPeriodEnd?: string;
   cancelAtPeriodEnd: boolean;
+  isCollectionPaused?: boolean;
   canceledAt?: string;
   isTrialing: boolean;
   trialStart?: string;

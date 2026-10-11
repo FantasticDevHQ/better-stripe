@@ -62,7 +62,7 @@ test.describe("live paid subscription + payout visibility flow", () => {
 
     // Embedded Stripe checkout renders in an iframe; pay with the standard test
     // card. Subscription mode with no trial charges the first invoice now.
-    const frame = page.frameLocator('iframe[src*="checkout.stripe.com"]');
+    const frame = page.frameLocator('iframe[src*="embedded-checkout-inner"]');
     await frame.locator("#email").fill("billie@example.com");
     await frame.locator("#cardNumber").fill("4242424242424242");
     await frame.locator("#cardExpiry").fill("12 / 34");
@@ -70,13 +70,13 @@ test.describe("live paid subscription + payout visibility flow", () => {
     await frame.locator("#billingName").fill("Billie Buyer");
     await frame.locator('button[type="submit"]').click();
 
-    // onComplete routes the buyer to the store earnings view.
+    // Stripe return_url routes the buyer to earnings with the real session id.
     await page.waitForURL(/\/demo\/store-earnings/, { timeout: 90_000 });
 
     // Seller view: the store earnings header and the merged surfaces render.
-    await expect(
-      page.getByRole("heading", { name: /Earnings/ }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: /Earnings/ })).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(page.getByText("Balance & payouts")).toBeVisible();
 
     // The platform fee on the resulting invoice becomes visible once the
@@ -84,5 +84,8 @@ test.describe("live paid subscription + payout visibility flow", () => {
     await expect(page.getByText(/Platform fee \(10%\)/)).toBeVisible({
       timeout: 90_000,
     });
+    await expect(page.getByText("$49.00", { exact: true })).toBeVisible();
+    await expect(page.getByText("$4.90", { exact: true })).toBeVisible();
+    await expect(page.getByText("$44.10", { exact: true })).toBeVisible();
   });
 });

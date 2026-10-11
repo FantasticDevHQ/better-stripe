@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 import Stripe from "stripe";
 
 import { api, internal } from "./_generated/api";
@@ -16,7 +17,7 @@ import { stripe } from "./stripe";
 type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
 >;
-const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
+const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";
 
 /**
  * Core demo personas (BTS-7 added the visitor). Each role is a singleton, so
@@ -134,7 +135,7 @@ export const linkUserAccount = internalMutation({
   args: { userId: v.id("users"), stripeAccountId: v.string() },
   returns: v.null(),
   handler: async (ctx, { userId, stripeAccountId }) => {
-    await ctx.db.patch(userId, { stripeAccountId });
+    await ctx.db.patch("users", userId, { stripeAccountId });
     return null;
   },
 });
@@ -182,7 +183,7 @@ export const seedAccounts = internalAction({
     // Account creation needs a live Stripe key. Without one, skip linkage rather
     // than crash the whole seed (mirrors how seedStripe's create branch is
     // exercised only via e2e:webhooks).
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!env.STRIPE_SECRET_KEY) {
       console.warn(
         "[seed] STRIPE_SECRET_KEY not set — skipping persona account linkage.",
       );
@@ -219,7 +220,7 @@ export const seedAccounts = internalAction({
         (p) => p.type === "recurring" && p.interval === "month",
       );
       if (monthlyPrice) {
-        const rawStripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        const rawStripe = new Stripe(env.STRIPE_SECRET_KEY, {
           apiVersion: STRIPE_API_VERSION,
         });
         await rawStripe.subscriptions.create({
@@ -339,6 +340,16 @@ async function activateTestRecipient(
       identity: {
         entity_type: "individual",
         individual: {
+          given_name: "Test",
+          surname: "Recipient",
+          date_of_birth: { day: 1, month: 1, year: 1990 },
+          address: {
+            line1: "354 Oyster Point Blvd",
+            city: "South San Francisco",
+            state: "CA",
+            postal_code: "94080",
+            country: "US",
+          },
           id_numbers: [{ type: "us_ssn", value: "000000000" }],
         },
         attestations: {
@@ -351,7 +362,7 @@ async function activateTestRecipient(
         },
       },
       defaults: {
-        profile: { business_url: "https://better-stripe.example.com" },
+        profile: { business_url: "https://accessible.stripe.com" },
       },
     },
   });
@@ -403,7 +414,7 @@ export const seedMarketplaceAccounts = internalAction({
       return { alreadySeeded: true };
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!env.STRIPE_SECRET_KEY) {
       console.warn(
         "[seed] STRIPE_SECRET_KEY not set — skipping marketplace account linkage.",
       );
@@ -419,6 +430,30 @@ export const seedMarketplaceAccounts = internalAction({
         country: "US",
       });
       const { stripeAccountId } = account;
+
+      // Transfers require these settings in the same request that first
+      // applies recipient capabilities. Keep sandbox recipients API-onboardable.
+      if (persona.role !== "buyer") {
+        await stripe.updateV2Account(ctx, {
+          stripeAccountId,
+          updateParams: {
+            dashboard: "none",
+            defaults: {
+              responsibilities: {
+                losses_collector: "application",
+                fees_collector: "application",
+              },
+            },
+            configuration: {
+              recipient: {
+                capabilities: {
+                  stripe_balance: { stripe_transfers: { requested: true } },
+                },
+              },
+            },
+          },
+        });
+      }
 
       if (persona.role === "seller") {
         await stripe.addRecipientConfiguration(ctx, { stripeAccountId });
@@ -547,7 +582,7 @@ export const seedMarketplaceCatalog = internalAction({
       return { alreadySeeded: true, storesSeeded: 0 };
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!env.STRIPE_SECRET_KEY) {
       console.warn(
         "[seed] STRIPE_SECRET_KEY not set — skipping marketplace catalog.",
       );

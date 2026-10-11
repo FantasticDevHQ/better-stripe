@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -54,6 +55,64 @@ test.describe("live affiliate split flow", () => {
     "Requires a seeded deployment + webhook forwarding: E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=… (see README)",
   );
 
+  test("a purchase without a referral completes checkout", async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.goto("/marketplace/split");
+    await expect(page.getByTestId("attribution-badge")).toContainText(
+      "No referral — store keeps the full net",
+      { timeout: 60_000 },
+    );
+    await page.getByRole("button", { name: "Buy with test card" }).click();
+    const frame = page.frameLocator('iframe[src*="embedded-checkout-inner"]');
+    await frame.locator("#email").fill("billie@example.com");
+    await frame.locator("#cardNumber").fill("4242424242424242");
+    await frame.locator("#cardExpiry").fill("12 / 34");
+    await frame.locator("#cardCvc").fill("123");
+    await frame.locator("#billingName").fill("Billie Buyer");
+    await frame.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/checkout\/status\?session_id=cs_/, {
+      timeout: 60_000,
+    });
+    await expect(
+      page.getByText("Payment successful", { exact: false }),
+    ).toBeVisible({
+      timeout: 60_000,
+    });
+    const sessionId = new URL(page.url()).searchParams.get("session_id");
+    expect(sessionId).toBeTruthy();
+    // Inspect the actual Stripe destination transfer and fee, not just the
+    // checkout success UI. Internal, read-only, sandbox-guarded assertion.
+    const payment = JSON.parse(
+      execFileSync(
+        "pnpm",
+        [
+          "exec",
+          "convex",
+          "run",
+          "e2eCheckout:inspectPayment",
+          JSON.stringify({ stripeSessionId: sessionId }),
+        ],
+        { encoding: "utf8", timeout: 60_000 },
+      ),
+    );
+    expect(payment.amount).toBe(10_000);
+    const personas = JSON.parse(
+      execFileSync(
+        "pnpm",
+        ["exec", "convex", "run", "queries:getMarketplacePersonas", "{}"],
+        { encoding: "utf8", timeout: 60_000 },
+      ),
+    );
+    expect(payment.destinationAccountId).toBe(personas.store.accountId);
+    expect(payment.applicationFeeAmount).toBe(320);
+    expect(payment.transferAmount).toBe(10_000);
+    expect(payment.transferAmount - payment.applicationFeeAmount).toBe(9_680);
+    await page.screenshot({
+      path: "/tmp/bts-direct-checkout-fixed.png",
+      fullPage: true,
+    });
+  });
+
   test("a referred purchase produces a reconciling three-way split", async ({
     page,
   }) => {
@@ -69,7 +128,7 @@ test.describe("live affiliate split flow", () => {
     await page.getByRole("button", { name: "Buy with test card" }).click();
 
     // Embedded Stripe checkout renders in an iframe; pay with the test card.
-    const frame = page.frameLocator('iframe[src*="checkout.stripe.com"]');
+    const frame = page.frameLocator('iframe[src*="embedded-checkout-inner"]');
     await frame.locator("#email").fill("billie@example.com");
     await frame.locator("#cardNumber").fill("4242424242424242");
     await frame.locator("#cardExpiry").fill("12 / 34");
@@ -86,11 +145,33 @@ test.describe("live affiliate split flow", () => {
     // reconcile to the $100 charge (platform = charge − store − affiliate).
     await page.goto("/marketplace/split?ref=avery");
     const breakdown = page.getByText("Latest sale — split breakdown");
-    await expect(breakdown).toBeVisible();
+    await expect(breakdown).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("Store", { exact: true })).toBeVisible({
       timeout: 60_000,
     });
     await expect(page.getByText("Affiliate", { exact: true })).toBeVisible();
     await expect(page.getByText("Platform", { exact: true })).toBeVisible();
+    const splitCard = page
+      .locator('[data-slot="card"]')
+      .filter({ hasText: "Latest sale — split breakdown" });
+    await expect(
+      splitCard
+        .locator("dl > div")
+        .filter({ has: page.getByText("Store", { exact: true }) }),
+    ).toContainText("$77.44");
+    await expect(
+      splitCard
+        .locator("dl > div")
+        .filter({ has: page.getByText("Affiliate", { exact: true }) }),
+    ).toContainText("$19.36");
+    await expect(
+      splitCard
+        .locator("dl > div")
+        .filter({ has: page.getByText("Platform", { exact: true }) }),
+    ).toContainText("$3.20");
+    await page.screenshot({
+      path: "/tmp/bts-affiliate-fixed.png",
+      fullPage: true,
+    });
   });
 });

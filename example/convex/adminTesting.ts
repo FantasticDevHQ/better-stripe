@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 /**
  * Real (test-mode) Stripe webhook triggers for the admin Testing page
  * (BTS-45).
@@ -17,6 +18,7 @@
  * actions are typecheck- + lint-covered.
  */
 import Stripe from "stripe";
+import { v } from "convex/values";
 import { makeFunctionReference } from "convex/server";
 import type { RegisteredQuery } from "convex/server";
 
@@ -34,10 +36,10 @@ export { assertTestModeStripeKey };
 type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
 >;
-const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
+const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";
 
 function rawStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = env.STRIPE_SECRET_KEY;
   assertTestModeStripeKey(key);
   return new Stripe(key as string, { apiVersion: STRIPE_API_VERSION });
 }
@@ -50,6 +52,14 @@ const POLL_INTERVAL_MS = 2_000;
 /** Maya's store account + Billie the buyer's account, resolved from the BTS-41 marketplace seed. */
 export const getDemoAccounts = query({
   args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      storeAccountId: v.string(),
+      buyerUserId: v.id("users"),
+      buyerAccountId: v.string(),
+    }),
+  ),
   handler: async (ctx) => {
     const store = await ctx.db
       .query("users")
@@ -69,7 +79,11 @@ export const getDemoAccounts = query({
 });
 
 type QueryReturn<Query> =
-  Query extends RegisteredQuery<"public" | "internal", Record<string, unknown>, infer Return>
+  Query extends RegisteredQuery<
+    "public" | "internal",
+    Record<string, unknown>,
+    infer Return
+  >
     ? Awaited<Return>
     : never;
 type DemoAccounts = QueryReturn<typeof getDemoAccounts>;
@@ -116,10 +130,11 @@ export function describeLedgerSync(
 /** Poll `check` until it returns a truthy row, or give up. */
 async function pollForLedgerRow<T>(
   check: () => Promise<T | null | undefined>,
+  matches: (row: T) => boolean = () => true,
 ): Promise<{ row: T | null; attempts: number }> {
   for (let attempt = 1; attempt <= POLL_ATTEMPTS; attempt++) {
     const row = await check();
-    if (row) return { row, attempts: attempt };
+    if (row && matches(row)) return { row, attempts: attempt };
     if (attempt < POLL_ATTEMPTS) await sleep(POLL_INTERVAL_MS);
   }
   return { row: null, attempts: POLL_ATTEMPTS };
@@ -145,8 +160,14 @@ async function requireDemoAccounts(ctx: ActionCtx) {
  */
 export const fireAccountUpdated = action({
   args: {},
+  returns: v.object({
+    stripeAccountId: v.string(),
+    pingedAt: v.string(),
+    ledgerSync: v.string(),
+    componentRow: v.any(),
+  }),
   handler: async (ctx) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const { storeAccountId } = await requireDemoAccounts(ctx);
     const pingedAt = new Date().toISOString();
 
@@ -155,8 +176,10 @@ export const fireAccountUpdated = action({
       updateParams: { metadata: { bsAdminTestPing: pingedAt } },
     });
 
-    const { row, attempts } = await pollForLedgerRow(() =>
-      stripe.getAccountByStripeId(ctx, { stripeAccountId: storeAccountId }),
+    const { row, attempts } = await pollForLedgerRow(
+      () =>
+        stripe.getAccountByStripeId(ctx, { stripeAccountId: storeAccountId }),
+      (row) => row.metadata?.bsAdminTestPing === pingedAt,
     );
 
     return {
@@ -178,8 +201,14 @@ export const fireAccountUpdated = action({
  */
 export const fireSubscriptionUpdated = action({
   args: {},
+  returns: v.object({
+    stripeSubscriptionId: v.string(),
+    pingedAt: v.string(),
+    ledgerSync: v.string(),
+    componentRow: v.any(),
+  }),
   handler: async (ctx) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const { storeAccountId, buyerUserId } = await requireDemoAccounts(ctx);
 
     const active = await stripe.getActiveSubscription(ctx, {
@@ -198,10 +227,12 @@ export const fireSubscriptionUpdated = action({
       metadata: { bsAdminTestPing: pingedAt },
     });
 
-    const { row, attempts } = await pollForLedgerRow(() =>
-      stripe.getSubscriptionByStripeId(ctx, {
-        stripeSubscriptionId: active.stripeSubscriptionId,
-      }),
+    const { row, attempts } = await pollForLedgerRow(
+      () =>
+        stripe.getSubscriptionByStripeId(ctx, {
+          stripeSubscriptionId: active.stripeSubscriptionId,
+        }),
+      (row) => row.metadata?.bsAdminTestPing === pingedAt,
     );
 
     return {
@@ -226,8 +257,15 @@ const ADMIN_TEST_PAYMENT_AMOUNT = 500; // $5.00 — small, fixed, test-mode only
  */
 export const fireCheckoutCompleted = action({
   args: {},
+  returns: v.object({
+    stripePaymentIntentId: v.string(),
+    status: v.string(),
+    amount: v.number(),
+    ledgerSync: v.string(),
+    componentRow: v.any(),
+  }),
   handler: async (ctx) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const { storeAccountId } = await requireDemoAccounts(ctx);
     const raw = rawStripe();
 
@@ -262,31 +300,46 @@ export const fireCheckoutCompleted = action({
 /**
  * Create a brand-new subscription (off-checkout) for the seeded buyer against
  * the seeded store's monthly price, no trial. The first invoice finalizes and
- * pays synchronously against the buyer's already-attached `pm_card_visa`
- * (seeded via `attachPaymentMethod`), firing a genuine `invoice.paid` event.
+ * pays using a fresh attached sandbox Visa, selected explicitly on the new
+ * subscription, firing a genuine `invoice.paid` event.
  * Creates a fresh, isolated subscription each click — never mutates an
  * existing subscription.
  */
 export const fireInvoicePaid = action({
   args: {},
+  returns: v.object({
+    stripeSubscriptionId: v.string(),
+    subscriptionStatus: v.string(),
+    ledgerSync: v.string(),
+    componentRow: v.any(),
+  }),
   handler: async (ctx) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const { storeAccountId, buyerUserId, buyerAccountId } =
       await requireDemoAccounts(ctx);
 
-    const context = await ctx.runQuery(
-      getMarketplaceDemoContextRef,
-      {},
-    );
+    const context = await ctx.runQuery(getMarketplaceDemoContextRef, {});
     if (!context) {
       throw new Error(
         "Marketplace demo context not seeded — run `npm run setup` first.",
       );
     }
 
+    // Each trigger gets its own attached sandbox card; existing buyer defaults
+    // and subscriptions are left alone. The test-mode guard runs first.
+    const raw = rawStripe();
+    const paymentMethod = await raw.paymentMethods.create({
+      type: "card",
+      card: { token: "tok_visa" },
+    });
+    await raw.paymentMethods.attach(paymentMethod.id, {
+      customer_account: buyerAccountId,
+    });
+
     const sub = await stripe.createSubscription(ctx, {
       userId: buyerUserId,
       customerAccount: buyerAccountId,
+      defaultPaymentMethod: paymentMethod.id,
       stripePriceId: context.price.stripePriceId,
       destinationAccountId: storeAccountId,
       metadata: { bsAdminTest: "invoice-paid" },

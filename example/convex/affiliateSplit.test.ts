@@ -6,7 +6,9 @@ import {
   STORE_SPLIT_PERCENT,
   buildSplitRecipients,
   isAffiliateReferral,
+  netSplitAmounts,
 } from "./affiliateSplit";
+import { computeSplit } from "../../src/client/core/fees";
 
 /**
  * The affiliate-split demo's attribution + split-leg logic (BTS-43) is pure and
@@ -32,6 +34,39 @@ describe("buildSplitRecipients", () => {
   const store = { accountId: "acct_maya", name: "Maya's Fitness Studio" };
   const affiliate = { accountId: "acct_avery", name: "Avery Affiliate" };
 
+  it.each(["avery", null])(
+    "reserves the platform fee before allocating net shares (%s)",
+    (referralCode) => {
+      const recipients = buildSplitRecipients({
+        store,
+        affiliate,
+        referralCode,
+      });
+      const split = netSplitAmounts(recipients, 10000, 320);
+      const result = computeSplit(10000, { percent: 2.9, fixed: 30 }, split);
+      expect(result.transfers.map((t) => t.amount)).toEqual(
+        referralCode ? [7744, 1936] : [9680],
+      );
+      expect(result.platformRetained).toBe(320);
+      expect(
+        result.transfers.reduce(
+          (sum, t) => sum + t.amount,
+          result.platformRetained,
+        ),
+      ).toBe(10000);
+    },
+  );
+
+  it("keeps sub-cent rounding with the platform", () => {
+    expect(
+      netSplitAmounts(
+        buildSplitRecipients({ store, affiliate, referralCode: "avery" }),
+        2,
+        1,
+      ).map((t) => t.amount),
+    ).toEqual([0, 0]);
+  });
+
   it("routes store + affiliate legs on an attributed referral", () => {
     const legs = buildSplitRecipients({
       store,
@@ -39,7 +74,11 @@ describe("buildSplitRecipients", () => {
       referralCode: "avery",
     });
     expect(legs).toEqual([
-      { destinationAccountId: "acct_maya", role: "store", percent: STORE_SPLIT_PERCENT },
+      {
+        destinationAccountId: "acct_maya",
+        role: "store",
+        percent: STORE_SPLIT_PERCENT,
+      },
       {
         destinationAccountId: "acct_avery",
         role: "affiliate",

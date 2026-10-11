@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 const component = defineComponent("betterStripe", {
   env: {
-    // The only env var the component itself reads (core/queries.ts: getStripeMode).
+    // Server-side credentials used by core/queries.ts: getStripeMode.
     // Declared as required so Convex validates its presence at push time; the
     // installing app wires it in via
     // `app.use(betterStripe, { env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY } })`.
@@ -12,6 +12,7 @@ const component = defineComponent("betterStripe", {
     // here: they are read by the app layer (registerRoutes) directly from the
     // deployment env, never by the component.
     STRIPE_SECRET_KEY: v.string(),
+    STRIPE_PUBLISHABLE_KEY: v.optional(v.string()),
   },
 });
 export default component;

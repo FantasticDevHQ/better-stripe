@@ -80,6 +80,9 @@ function makeCtx(queryResult?: unknown) {
 
 function makeStripe() {
   return {
+    prices: {
+      retrieve: vi.fn().mockRejectedValue({ code: "resource_missing" }),
+    },
     checkout: {
       sessions: {
         create: vi.fn(),
@@ -283,7 +286,9 @@ describe("createCheckoutSession", () => {
     });
 
     const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(createArg.line_items).toEqual([{ price: "price_seat", quantity: 5 }]);
+    expect(createArg.line_items).toEqual([
+      { price: "price_seat", quantity: 5 },
+    ]);
   });
 
   it("sets customer_account when accountId is provided", async () => {
@@ -679,8 +684,16 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
     stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
     const ctx = makeCtx();
     const split = [
-      { destinationAccountId: "acct_store", role: "store" as const, percent: 80 },
-      { destinationAccountId: "acct_aff", role: "affiliate" as const, percent: 5 },
+      {
+        destinationAccountId: "acct_store",
+        role: "store" as const,
+        percent: 80,
+      },
+      {
+        destinationAccountId: "acct_aff",
+        role: "affiliate" as const,
+        percent: 5,
+      },
     ];
 
     await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
@@ -695,8 +708,12 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
 
     const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
     expect(createArg.payment_intent_data.transfer_data).toBeUndefined();
-    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe("separate");
-    expect(JSON.parse(createArg.payment_intent_data.metadata.bsSplit)).toHaveLength(2);
+    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe(
+      "separate",
+    );
+    expect(
+      JSON.parse(createArg.payment_intent_data.metadata.bsSplit),
+    ).toHaveLength(2);
 
     const [, upsertArgs] = ctx.runMutation.mock.calls[0];
     expect(upsertArgs.chargeType).toBe("separate");
@@ -725,7 +742,9 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
     expect(createArg.subscription_data.transfer_data).toBeUndefined();
     expect(createArg.subscription_data.application_fee_percent).toBeUndefined();
     expect(createArg.subscription_data.metadata.bsChargeType).toBe("separate");
-    expect(JSON.parse(createArg.subscription_data.metadata.bsSplit)).toHaveLength(2);
+    expect(
+      JSON.parse(createArg.subscription_data.metadata.bsSplit),
+    ).toHaveLength(2);
 
     const [, upsertArgs] = ctx.runMutation.mock.calls[0];
     expect(upsertArgs.chargeType).toBe("separate");
@@ -743,7 +762,9 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
       mode: "subscription",
       returnUrl: "https://app.test/return",
       accountId: "acct_buyer",
-      split: [{ destinationAccountId: "acct_store", role: "store", percent: 90 }],
+      split: [
+        { destinationAccountId: "acct_store", role: "store", percent: 90 },
+      ],
       feeConfig: { percent: 10 },
     });
 
@@ -775,7 +796,9 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
 
     const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
     expect(createArg.payment_intent_data.transfer_data).toBeUndefined();
-    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe("separate");
+    expect(createArg.payment_intent_data.metadata.bsChargeType).toBe(
+      "separate",
+    );
   });
 
   it("rejects split/destination/fee in setup mode", async () => {
@@ -789,7 +812,9 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
         mode: "setup",
         returnUrl: "https://app.test/return",
         accountId: "acct_buyer",
-        split: [{ destinationAccountId: "acct_store", role: "store", amount: 100 }],
+        split: [
+          { destinationAccountId: "acct_store", role: "store", amount: 100 },
+        ],
       }),
     ).rejects.toThrow(/setup/i);
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
@@ -809,7 +834,8 @@ describe("createCheckoutSession — N-recipient split (BTS-21)", () => {
       // A non-split caller trying to forge webhook instructions.
       metadata: {
         bsChargeType: "separate",
-        bsSplit: '[{"destinationAccountId":"acct_evil","role":"store","amount":9999}]',
+        bsSplit:
+          '[{"destinationAccountId":"acct_evil","role":"store","amount":9999}]',
         plan: "pro",
       },
     });
@@ -879,6 +905,25 @@ describe("createCheckoutSession — price-on-platform validation (BTS-15)", () =
     expect(ctx.runQuery).toHaveBeenCalledWith(expect.any(Object), {
       stripeProductId: "prod_1",
     });
+  });
+
+  it("allows a platform price tagged to a store in the component catalog", async () => {
+    const stripe = makeStripe();
+    stripe.prices.retrieve.mockResolvedValue({ id: "price_1" });
+    stripe.checkout.sessions.create.mockResolvedValue(sessionResponse());
+    const ctx = routedCtx({
+      "products/queries/getPriceByStripeId": { stripeProductId: "prod_1" },
+      "products/queries/getProductByStripeId": { accountId: "acct_store" },
+    });
+    await createCheckoutSession(asStripe(stripe), makeComponent(), ctx, {
+      userId: "buyer_1",
+      stripePriceId: "price_1",
+      mode: "payment",
+      returnUrl: "https://app.test/return",
+      destinationAccountId: "acct_store",
+    });
+    expect(stripe.prices.retrieve).toHaveBeenCalledWith("price_1");
+    expect(stripe.checkout.sessions.create).toHaveBeenCalled();
   });
 
   it("allows a destination charge for a platform-owned price", async () => {
@@ -1005,7 +1050,10 @@ describe("getCheckoutSessionByStripeId", () => {
 
 describe("listCheckoutSessionsByUser", () => {
   it("forwards userId and optional status filter and returns the rows", async () => {
-    const ctx = makeCtx([{ stripeSessionId: "cs_a" }, { stripeSessionId: "cs_b" }]);
+    const ctx = makeCtx([
+      { stripeSessionId: "cs_a" },
+      { stripeSessionId: "cs_b" },
+    ]);
     const result = await listCheckoutSessionsByUser(makeComponent(), ctx, {
       userId: "user_1",
       status: "complete",
@@ -1157,9 +1205,9 @@ describe("createCheckoutSession — per-store statement descriptor (BTS-32)", ()
     });
 
     const createArg = stripe.checkout.sessions.create.mock.calls[0][0];
-    expect(
-      "statement_descriptor_suffix" in createArg.payment_intent_data,
-    ).toBe(false);
+    expect("statement_descriptor_suffix" in createArg.payment_intent_data).toBe(
+      false,
+    );
   });
 
   it("subscription mode: stashes bsStatementDescriptor for the invoice.created processor without clobbering fee markers", async () => {

@@ -432,8 +432,8 @@ function SeedDataCard() {
         <div>
           <h2 className="text-lg font-semibold">3. Seed Demo Data</h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            Creates demo users (customer, seller, admin) and Stripe products
-            with prices. Idempotent — skips if data already exists.
+            Creates demo users, linked Stripe accounts, a trial subscription,
+            and marketplace products with prices. Reruns fill in missing data.
           </p>
         </div>
         <Button onClick={handleSeed} disabled={isSeeding} className="shrink-0">

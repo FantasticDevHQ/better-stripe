@@ -62,3 +62,16 @@ export function buildSplitRecipients(opts: {
     { destinationAccountId: opts.store.accountId, role: "store", percent: 100 },
   ];
 }
+
+/** Convert the demo's net shares to fixed cents; library percents use gross. */
+export function netSplitAmounts(
+  recipients: DemoSplitRecipient[],
+  amount: number,
+  platformFee: number,
+) {
+  const net = amount - platformFee;
+  return recipients.map(({ percent, ...recipient }) => ({
+    ...recipient,
+    amount: Math.floor((net * percent) / 100),
+  }));
+}

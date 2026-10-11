@@ -20,6 +20,6 @@ export const useSplitBreakdown = createUseSplitBreakdown(
 
 export const useEarnings = createUseEarnings(
   useQuery,
-  api.queries.listTransfersByAccount,
-  api.queries.listPayoutsByAccount,
+  api.queries.getAccountEarnings,
+  api.queries.getAccountPayouts,
 );

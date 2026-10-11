@@ -83,7 +83,7 @@ test.describe("admin products — edit & deactivate", () => {
     await page.getByLabel("Description").fill("created by e2e");
     await page.getByRole("button", { name: "Create", exact: true }).click();
 
-    const row = page.getByRole("row", { name: new RegExp(productName) });
+    const row = page.locator("tr").filter({ hasText: productName });
     await expect(row).toBeVisible({ timeout: 30_000 });
 
     // --- Act 1: edit the product via the Edit dialog. ----------------------
@@ -96,7 +96,7 @@ test.describe("admin products — edit & deactivate", () => {
 
     // The table reflects the persisted change once the product.updated webhook
     // syncs the component DB — this asserts real persistence, not local state.
-    const editedRow = page.getByRole("row", { name: new RegExp(editedName) });
+    const editedRow = page.locator("tr").filter({ hasText: editedName });
     await expect(editedRow).toBeVisible({ timeout: 30_000 });
     await expect(editedRow).toContainText("edited by e2e");
 

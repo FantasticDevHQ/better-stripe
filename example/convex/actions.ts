@@ -1,9 +1,15 @@
+import { env } from "./_generated/server";
 import { v } from "convex/values";
 
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
-import { DEMO_SALE_AMOUNT, buildSplitRecipients } from "./affiliateSplit";
+import { computeFee } from "@fantastic.dev/better-stripe";
+import {
+  DEMO_SALE_AMOUNT,
+  buildSplitRecipients,
+  netSplitAmounts,
+} from "./affiliateSplit";
 import {
   assertAccountOwner,
   assertDisputeOwner,
@@ -75,8 +81,8 @@ export const verifyWebhookEnvs = action({
   args: {},
   handler: async () => {
     return {
-      v1: !!process.env.STRIPE_WEBHOOK_SECRET,
-      v2: !!process.env.STRIPE_WEBHOOK_SECRET_V2,
+      v1: !!env.STRIPE_WEBHOOK_SECRET,
+      v2: !!env.STRIPE_WEBHOOK_SECRET_V2,
     };
   },
 });
@@ -85,9 +91,9 @@ export const checkEnvVars = action({
   args: {},
   handler: async () => {
     return {
-      stripeSecretKey: !!process.env.STRIPE_SECRET_KEY,
-      webhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      webhookSecretV2: !!process.env.STRIPE_WEBHOOK_SECRET_V2,
+      stripeSecretKey: !!env.STRIPE_SECRET_KEY,
+      webhookSecret: !!env.STRIPE_WEBHOOK_SECRET,
+      webhookSecretV2: !!env.STRIPE_WEBHOOK_SECRET_V2,
     };
   },
 });
@@ -95,9 +101,8 @@ export const checkEnvVars = action({
 // Setup — seed demo data
 export const seedDemoData = action({
   args: {},
-  handler: async (ctx) => {
-    await ctx.runMutation(internal.seed.seedDb, {});
-    await ctx.runAction(internal.seed.seedStripe, {});
+  handler: async (ctx): Promise<null> => {
+    return await ctx.runAction(internal.seed.run, {});
   },
 });
 
@@ -127,6 +132,24 @@ export const resetAll = action({
 });
 
 // Products
+export const createSellerLoginLink = action({
+  args: { userId: v.string(), stripeAccountId: v.string() },
+  returns: v.object({ url: v.string() }),
+  handler: async (ctx, args) => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    await assertAccountOwner(ctx, args);
+    try {
+      return await stripe.createLoginLink(ctx, {
+        stripeAccountId: args.stripeAccountId,
+      });
+    } catch {
+      throw new Error(
+        "Stripe dashboard access is unavailable for this account. Complete onboarding and ensure the account uses the Express dashboard.",
+      );
+    }
+  },
+});
+
 export const createProduct = action({
   args: { name: v.string(), description: v.optional(v.string()) },
   handler: async (ctx, args) => stripe.createProduct(ctx, args),
@@ -177,7 +200,7 @@ export const deactivatePrice = action({
   args: { userId: v.string(), stripePriceId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     await assertPriceOwner(ctx, args);
     return stripe.deactivatePrice(ctx, { stripePriceId: args.stripePriceId });
   },
@@ -305,8 +328,7 @@ export const getAccountBalance = action({
 // Refunds & reversals (BTS-80)
 
 export type AmountSizing =
-  | { kind: "full" }
-  | { kind: "partial"; amountCents: number };
+  { kind: "full" } | { kind: "partial"; amountCents: number };
 
 export function amountForStripe(sizing: AmountSizing): number | undefined {
   if (sizing.kind === "full") return undefined;
@@ -341,7 +363,7 @@ export const issueRefund = action({
     ),
   },
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const account = await assertPaymentOwner(ctx, args);
 
     const amount =
@@ -366,7 +388,7 @@ export const reverseSaleTransfers = action({
     amountCents: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     await assertTransfersOwner(ctx, args);
 
     const amount =
@@ -514,7 +536,7 @@ export const createAffiliateSplitCheckout = action({
       );
     }
 
-    const split = buildSplitRecipients({
+    const recipients = buildSplitRecipients({
       store: {
         accountId: personas.store.accountId,
         name: personas.store.name,
@@ -527,6 +549,12 @@ export const createAffiliateSplitCheckout = action({
         : null,
       referralCode: args.referralCode ?? null,
     });
+
+    const feeConfig = stripe.resolveFee();
+    const platformFee = feeConfig
+      ? computeFee(DEMO_SALE_AMOUNT, feeConfig).feeAmount
+      : 0;
+    const split = netSplitAmounts(recipients, DEMO_SALE_AMOUNT, platformFee);
 
     return stripe.createCheckoutSession(ctx, {
       userId: args.userId,
@@ -557,7 +585,7 @@ export const createAffiliateSplitCheckout = action({
 export const createDisputeSession = action({
   args: { userId: v.string(), stripeAccountId: v.string() },
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     await assertAccountOwner(ctx, args);
     return stripe.createDisputeSession(ctx, {
       stripeAccountId: args.stripeAccountId,
@@ -581,7 +609,7 @@ export const submitDisputeEvidence = action({
     submit: v.boolean(),
   },
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const dispute = await assertDisputeOwner(ctx, args);
     return stripe.updateDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,
@@ -600,7 +628,7 @@ export const submitDisputeEvidence = action({
 export const acceptDispute = action({
   args: { userId: v.string(), stripeDisputeId: v.string() },
   handler: async (ctx, args) => {
-    assertTestModeStripeKey(process.env.STRIPE_SECRET_KEY);
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     const dispute = await assertDisputeOwner(ctx, args);
     return stripe.closeDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,

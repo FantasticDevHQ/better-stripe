@@ -209,6 +209,7 @@ export const listWebhookEvents = query({
 export const getSeedStatus = query({
   args: {},
   handler: async (ctx) => {
+    // eslint-disable-next-line @convex-dev/no-collect-in-query -- Counts the small, fixed set of demo personas.
     const users = await ctx.db.query("users").collect();
     return { userCount: users.length };
   },
@@ -279,4 +280,34 @@ export const listPayoutsByAccount = query({
   args: { accountId: v.string() },
   handler: async (ctx, args) =>
     stripe.listPayouts(ctx, { stripeAccountId: args.accountId }),
+});
+
+/** Aggregate shapes expected by createUseEarnings (not bounded row lists). */
+export const getAccountEarnings = query({
+  args: { destinationAccountId: v.string() },
+  returns: v.object({
+    gross: v.number(),
+    reversed: v.number(),
+    transferCount: v.number(),
+    transfers: v.array(v.any()),
+  }),
+  handler: async (ctx, args) =>
+    ctx.runQuery(
+      components.betterStripe.connect.queries.getAccountEarnings,
+      args,
+    ),
+});
+
+export const getAccountPayouts = query({
+  args: { accountId: v.string() },
+  returns: v.object({
+    paidOut: v.number(),
+    payoutCount: v.number(),
+    payouts: v.array(v.any()),
+  }),
+  handler: async (ctx, args) =>
+    ctx.runQuery(
+      components.betterStripe.connect.queries.getAccountPayouts,
+      args,
+    ),
 });

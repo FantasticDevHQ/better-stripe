@@ -6,14 +6,16 @@ All data comes from Stripe via better-stripe -- no mock data.
 ## Quick Start
 
 ```bash
+pnpm install
+pnpm build
 cd example
-npm install
+pnpm exec convex dev --once
 ```
 
 **Set the Stripe secret key:**
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 This reads `STRIPE_SECRET_KEY` from `.env.local` and sets it as a Convex environment variable. That's all the CLI setup does.
@@ -21,7 +23,7 @@ This reads `STRIPE_SECRET_KEY` from `.env.local` and sets it as a Convex environ
 **Start the app:**
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open **http://localhost:5173** and go to **/admin/setup** to finish setup:
@@ -33,8 +35,8 @@ Open **http://localhost:5173** and go to **/admin/setup** to finish setup:
 ### Reset & Re-seed
 
 ```bash
-npx convex run reset:run   # Clear all data (app DB + better-stripe component DB)
-npm run setup               # Re-set the Stripe key
+pnpm exec convex run reset:run   # Clear all data (app DB + better-stripe component DB)
+pnpm run setup               # Re-set the Stripe key
 ```
 
 Then visit `/admin/setup` again to re-seed and re-sync.
@@ -70,11 +72,12 @@ Beyond the classic demo personas, the seed creates a real marketplace
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.12+ (required by the Vite development server)
+- pnpm 10 (the workspace package manager)
 - A Stripe account with a test-mode secret key
 - Copy `.env.local.example` to `.env.local` and fill in your keys:
   ```
-  VITE_CONVEX_URL=             # from `npx convex dev`
+  VITE_CONVEX_URL=             # from `pnpm exec convex dev`
   VITE_STRIPE_PUBLISHABLE_KEY= # pk_test_...
   STRIPE_SECRET_KEY=           # sk_test_... (used by setup script)
   VITE_CONVEX_SITE_URL=        # https://your-deployment.convex.site
@@ -267,7 +270,7 @@ adding configurations later, after the account already exists — see
 
 Every trigger and hook also records a row in the app's `triggerLog` table (`convex/triggerLogger.ts`) so the E2E webhook test can assert they actually ran — sync triggers write in the same transaction as the dispatcher mutation.
 
-### Setup Script (`npm run setup`)
+### Setup Script (`pnpm run setup`)
 
 The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All other setup (webhooks, seeding, syncing) is done through the Admin UI at `/admin/setup`.
 
@@ -281,13 +284,13 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by `convex/e2eMoney.ts`) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
 
-| Check | What it drives | What it asserts |
-| ----- | -------------- | --------------- |
-| `money: destination fee` | a $100 destination charge with a $10 `application_fee` | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes) |
-| `money: split sale` | a $100 separate-charges sale split $80 store / $10 affiliate | **2 `transfers`** ledger rows for the charge (one per recipient) |
-| `money: refund reverses transfers` | a refund of the split charge (`reverseTransfer`) | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (BTS-73: not merely `> 0`) |
+| Check                                                                    | What it drives                                                                                                                                                        | What it asserts                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `money: destination fee`                                                 | a $100 destination charge with a $10 `application_fee`                                                                                                                | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes)                                                                                                                                                                                                                                               |
+| `money: split sale`                                                      | a $100 separate-charges sale split $80 store / $10 affiliate                                                                                                          | **2 `transfers`** ledger rows for the charge (one per recipient)                                                                                                                                                                                                                                                                                                                                       |
+| `money: refund reverses transfers`                                       | a refund of the split charge (`reverseTransfer`)                                                                                                                      | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (BTS-73: not merely `> 0`)                                                                                                                                                                                                                                                                                        |
 | `money: full refund of a per-charge-fee sale caps the reversal (BTS-66)` | a $100 destination charge tagged `bsFeeMode=per_charge` (3.2% → $3.20 collected by partial transfer reversal, the BTS-60 path), then a FULL refund with default flags | the fee lands on the `payments` row (`feeCollectedAmount=320`); the refund succeeds and marks it `fully_refunded` for 10000; the live transfer shows **exactly two reversals** — the preserved 320 fee + the refund reversal **capped at 9680** (`amount_reversed == amount`). Live-verified 2026-07-03: Stripe caps instead of erroring; a refund **error** on this row is a genuine FAIL, not a SKIP |
-| `money: dispute reverses transfers` | a disputed split (Stripe `tok_createDispute`) | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`) |
+| `money: dispute reverses transfers`                                      | a disputed split (Stripe `tok_createDispute`)                                                                                                                         | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`)                                                                                                                                                                                                                                                                              |
 
 **Reversal amounts are asserted exactly (BTS-73).** The refund and dispute checks use `reversalsMatchExactly` (pure, unit-tested in `example/scripts/money-assertions.ts`) to require each leg's `reversedAmount` to equal its expected pro-rata value — a partial, missing, over-, or wrong-role reversal FAILs. A full refund / full-amount dispute of the $80/$10 split reverses each leg completely (verified against `computeReversalSlices`).
 
@@ -302,7 +305,28 @@ So a real clawback regression can no longer pass the gate silently.
 
 Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. A legitimate live-drive failure (recipient provisioning, the dispute never landing) SKIPs the affected rows with a reason; a genuine wrong outcome — including a landed-but-not-reversed dispute — FAILs. **No false PASS, no false FAIL.**
 
-> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the BTS-66 cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`npx convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The BTS-66 scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the BTS-66 cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`pnpm exec convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The BTS-66 scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
+
+### Direct checkout and Express login fixtures
+
+The live direct checkout test verifies the actual Stripe destination transfer,
+platform fee, and store account through an internal, read-only action that
+rejects live Stripe keys. Run against the seeded development deployment:
+
+```sh
+E2E_LIVE_BACKEND=1 pnpm e2e e2e/affiliate-split.spec.ts e2e/express-login.spec.ts --workers=1
+```
+
+Express login requires the seeded seller to use an Express dashboard and have
+completed sandbox onboarding. Use Stripe's test phone/code and test bank
+credentials during hosted onboarding. Inspect readiness from `example/` with
+`pnpm exec convex run e2eCheckout:inspectSeller '{}'`; expect `dashboard: express`,
+`detailsSubmitted`, `chargesEnabled`, and `payoutsEnabled` to be true, with no
+currently due requirements. The login test verifies the hosted login handoff for the account displayed by
+the app. Stripe may challenge headless browsers with CAPTCHA; opt into full
+hosted dashboard assertions with `E2E_STRIPE_HOSTED_LOGIN=1` only in a browser
+environment that can complete normal Stripe login. Login URLs are single-use
+and must not be saved in reports.
 
 ### Browser E2E Tests (`npm run e2e`)
 
@@ -343,7 +367,7 @@ E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=https://<your-dev-deployment>.convex.cloud \
 ```
 
 Requirements: a linked Convex dev deployment with the current functions pushed
-(`npx convex dev --once`), `STRIPE_SECRET_KEY` set, demo data seeded, and webhook
+(`pnpm exec convex dev --once`), `STRIPE_SECRET_KEY` set, demo data seeded, and webhook
 event destinations configured (via `/admin/setup`) so `product.updated` events
 sync back to the UI. Current live-backend specs:
 
@@ -450,7 +474,7 @@ Two layers:
 
 **Manual QA steps** (against a seeded, webhook-forwarded dev deployment):
 
-1. Seed the marketplace: `npm run setup` (creates Maya's store + Avery Affiliate
+1. Seed the marketplace: `pnpm run setup` (creates Maya's store + Avery Affiliate
    and Maya's one-time $100 "1:1 Session" price), and forward webhooks:
    `stripe listen --forward-to <your-site-url>/stripe/webhook`.
 2. Visit `/marketplace/split?ref=avery`. Confirm the attribution badge reads
@@ -511,6 +535,7 @@ Against a seeded dev deployment with `stripe listen` forwarding webhooks:
    fraudulent) and let it settle. Stripe emits `charge.dispute.created`, which
    the component records and (per BTS-27/28) claws back the funded transfer and
    auto-cancels the buyer's subscription.
+
 3. **Open `/seller/disputes`** as the seller persona (role switcher). The
    dispute appears in the headless list with its status and, if a deadline
    exists, a due-by countdown badge.
@@ -754,15 +779,15 @@ example/
 
 ## Scripts
 
-| Command                    | Description                                 |
-| -------------------------- | ------------------------------------------- |
-| `npm run setup`            | Set STRIPE_SECRET_KEY in Convex environment |
-| `npm run e2e`              | Playwright browser E2E suite (see below)    |
-| `npm run e2e:report`       | Open the last Playwright HTML report        |
-| `npm run e2e:webhooks`     | Automated E2E webhook test (see below)      |
-| `npm run dev`              | Start Vite + Convex dev in parallel         |
-| `npm run typecheck`        | TypeScript check (frontend)                 |
-| `npm run typecheck:convex` | TypeScript check (Convex functions)         |
-| `npm run lint`             | ESLint                                      |
-| `npm run build`            | Production build                            |
-| `npx convex run reset:run` | Clear all data                              |
+| Command                          | Description                                 |
+| -------------------------------- | ------------------------------------------- |
+| `pnpm run setup`                 | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run e2e`                    | Playwright browser E2E suite (see below)    |
+| `npm run e2e:report`             | Open the last Playwright HTML report        |
+| `npm run e2e:webhooks`           | Automated E2E webhook test (see below)      |
+| `pnpm run dev`                   | Start Vite + Convex dev in parallel         |
+| `npm run typecheck`              | TypeScript check (frontend)                 |
+| `npm run typecheck:convex`       | TypeScript check (Convex functions)         |
+| `npm run lint`                   | ESLint                                      |
+| `npm run build`                  | Production build                            |
+| `pnpm exec convex run reset:run` | Clear all data                              |

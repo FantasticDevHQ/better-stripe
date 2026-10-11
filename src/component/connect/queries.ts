@@ -339,9 +339,6 @@ export const listTransfersByAccount = query({
 // REVERSAL-CLAIM RECLAIM (BTS-74) — ops diagnostics for wedged legs
 // =============================================================================
 
-/** Page size for the wedged-claim scan. */
-const RECLAIM_PAGE_SIZE = 200;
-
 /**
  * Fetch one reversal operation's claim record (BTS-63/74) by its id, or null.
  * The `_creationTime` lets the reclaim path age-gate a release against Stripe's
@@ -367,7 +364,7 @@ export const getReversalOp = query({
  * successor. For each wedged leg, returns the recorded ops holding an
  * unexecuted slice on it (the blockers ops must reclaim).
  *
- * An admin/ops diagnostic, not a hot path. It paginates the `transfers` and
+ * An admin/ops diagnostic, not a hot path. It iterates the `transfers` and
  * `transferReversalOps` tables to completion, so it is exact up to Convex's
  * per-query document-read limit (16,384) — beyond which it throws (loud) rather
  * than silently truncating, matching the BTS-64 aggregate convention.
@@ -378,18 +375,10 @@ export const listWedgedReversalClaims = query({
   handler: async (ctx) => {
     // Collect the wedged legs first.
     const wedged: Doc<"transfers">[] = [];
-    let cursor: string | null = null;
-    for (;;) {
-      const page = await ctx.db
-        .query("transfers")
-        .paginate({ cursor, numItems: RECLAIM_PAGE_SIZE });
-      for (const tr of page.page) {
-        if ((tr.reversalClaimedAmount ?? 0) > (tr.reversedAmount ?? 0)) {
-          wedged.push(tr);
-        }
+    for await (const tr of ctx.db.query("transfers")) {
+      if ((tr.reversalClaimedAmount ?? 0) > (tr.reversedAmount ?? 0)) {
+        wedged.push(tr);
       }
-      if (page.isDone) break;
-      cursor = page.continueCursor;
     }
     if (wedged.length === 0) return [];
 
@@ -404,22 +393,14 @@ export const listWedgedReversalClaims = query({
       string,
       { operationId: string; from: number; to: number }[]
     >();
-    cursor = null;
-    for (;;) {
-      const page = await ctx.db
-        .query("transferReversalOps")
-        .paginate({ cursor, numItems: RECLAIM_PAGE_SIZE });
-      for (const op of page.page) {
-        for (const s of op.slices) {
-          if (!wedgedIds.has(s.stripeTransferId)) continue;
-          if (s.to <= (confirmedById.get(s.stripeTransferId) ?? 0)) continue;
-          const list = blockersByLeg.get(s.stripeTransferId) ?? [];
-          list.push({ operationId: op.operationId, from: s.from, to: s.to });
-          blockersByLeg.set(s.stripeTransferId, list);
-        }
+    for await (const op of ctx.db.query("transferReversalOps")) {
+      for (const s of op.slices) {
+        if (!wedgedIds.has(s.stripeTransferId)) continue;
+        if (s.to <= (confirmedById.get(s.stripeTransferId) ?? 0)) continue;
+        const list = blockersByLeg.get(s.stripeTransferId) ?? [];
+        list.push({ operationId: op.operationId, from: s.from, to: s.to });
+        blockersByLeg.set(s.stripeTransferId, list);
       }
-      if (page.isDone) break;
-      cursor = page.continueCursor;
     }
 
     return wedged.map((t) => ({
@@ -441,20 +422,18 @@ export const listWedgedReversalClaims = query({
 //
 // The row-list queries above `.take(50)`, so summing their rows client-side
 // (as the earnings hooks did) silently understated totals for accounts with
-// more than 50 transfers/payouts. These aggregates paginate the account's
+// more than 50 transfers/payouts. These aggregates iterate the account's
 // ledger to completion and return EXACT totals regardless of row count, plus a
 // bounded preview of rows for drill-down UIs. Exact up to Convex's per-query
-// document-read limit (a single query may scan at most 16,384 documents);
+// document/byte read limits (currently 32,000 documents or 16 MiB; see
+// https://docs.convex.dev/production/state/limits);
 // beyond that the query throws (loud) rather than silently truncating —
 // strictly safer than a fixed cap for financial figures.
-
-/** Page size for the internal pagination loops. */
-const EARNINGS_PAGE_SIZE = 200;
 
 /**
  * Exact earnings totals for one connected account (BTS-64): `gross` (sum of all
  * transfer amounts, incl. reinstatements — the earnings view) and `reversed`
- * (sum of all `reversedAmount`), paginated to completion so totals are never
+ * (sum of all `reversedAmount`), iterated to completion so totals are never
  * capped. `transfers` is a bounded preview (`previewLimit ?? 50` rows) for
  * drill-down; use `gross`/`reversed`/`transferCount` for the money figures.
  */
@@ -476,22 +455,15 @@ export const getAccountEarnings = query({
     let transferCount = 0;
     const transfers: Doc<"transfers">[] = [];
 
-    let cursor: string | null = null;
-    for (;;) {
-      const page = await ctx.db
-        .query("transfers")
-        .withIndex("by_destination_account_id", (q) =>
-          q.eq("destinationAccountId", args.destinationAccountId),
-        )
-        .paginate({ cursor, numItems: EARNINGS_PAGE_SIZE });
-      for (const tr of page.page) {
-        gross += tr.amount;
-        reversed += tr.reversedAmount ?? 0;
-        transferCount += 1;
-        if (transfers.length < previewLimit) transfers.push(tr);
-      }
-      if (page.isDone) break;
-      cursor = page.continueCursor;
+    for await (const tr of ctx.db
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.destinationAccountId),
+      )) {
+      gross += tr.amount;
+      reversed += tr.reversedAmount ?? 0;
+      transferCount += 1;
+      if (transfers.length < previewLimit) transfers.push(tr);
     }
 
     return { gross, reversed, transferCount, transfers };
@@ -500,7 +472,7 @@ export const getAccountEarnings = query({
 
 /**
  * Exact payout totals for one connected account (BTS-64): `paidOut` (sum of all
- * `paid` payout amounts), paginated to completion so it is never capped.
+ * `paid` payout amounts), iterated to completion so it is never capped.
  * `payouts` is a bounded preview (`previewLimit ?? 50` rows) for drill-down; use
  * `paidOut`/`payoutCount` for the money figures.
  */
@@ -517,19 +489,12 @@ export const getAccountPayouts = query({
     let payoutCount = 0;
     const payouts: Doc<"payouts">[] = [];
 
-    let cursor: string | null = null;
-    for (;;) {
-      const page = await ctx.db
-        .query("payouts")
-        .withIndex("by_account_id", (q) => q.eq("accountId", args.accountId))
-        .paginate({ cursor, numItems: EARNINGS_PAGE_SIZE });
-      for (const p of page.page) {
-        payoutCount += 1;
-        if (p.status === "paid") paidOut += p.amount;
-        if (payouts.length < previewLimit) payouts.push(p);
-      }
-      if (page.isDone) break;
-      cursor = page.continueCursor;
+    for await (const p of ctx.db
+      .query("payouts")
+      .withIndex("by_account_id", (q) => q.eq("accountId", args.accountId))) {
+      payoutCount += 1;
+      if (p.status === "paid") paidOut += p.amount;
+      if (payouts.length < previewLimit) payouts.push(p);
     }
 
     return { paidOut, payoutCount, payouts };

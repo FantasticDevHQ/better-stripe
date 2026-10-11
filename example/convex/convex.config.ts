@@ -9,9 +9,15 @@ import { v } from "convex/values";
 const app = defineApp({
   env: {
     STRIPE_SECRET_KEY: v.string(),
+    STRIPE_PUBLISHABLE_KEY: v.optional(v.string()),
+    STRIPE_WEBHOOK_SECRET: v.optional(v.string()),
+    STRIPE_WEBHOOK_SECRET_V2: v.optional(v.string()),
   },
 });
 app.use(betterStripe, {
-  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+  env: {
+    STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY: app.env.STRIPE_PUBLISHABLE_KEY,
+  },
 });
 export default app;

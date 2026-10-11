@@ -87,31 +87,32 @@
   "dependencies": {
     "@stripe/connect-js": "^3.4.6",
     "@stripe/react-connect-js": "^3.4.4",
-    "@stripe/react-stripe-js": "^6.12.0",
-    "@stripe/stripe-js": "^9.17.0",
-    "stripe": "~22.2.3"
+    "@stripe/react-stripe-js": "^7.0.0",
+    "@stripe/stripe-js": "^10.0.0",
+    "stripe": "~23.0.0"
   },
   "devDependencies": {
-    "@convex-dev/eslint-plugin": "^2.0.0",
+    "@convex-dev/eslint-plugin": "^5.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@typescript-eslint/parser": "^8.70.1",
-    "@vitest/coverage-v8": "5.0.2",
+    "@typescript-eslint/parser": "^8.71.1",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "@vitest/coverage-v8": "5.0.3",
     "convex": "^1.46.0",
-    "convex-test": "0.0.53",
-    "eslint": "^10.11.0",
-    "jsdom": "^30.1.1",
+    "convex-test": "0.0.60",
+    "eslint": "^10.12.0",
+    "jsdom": "^30.1.2",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "pretty-quick": "^4.2.2",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.70.1",
-    "vitest": "^5.0.2"
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
   },
   "peerDependencies": {
     "convex": "^1.29.3",
@@ -119,7 +120,7 @@
     "react-dom": "^18.3.1 || ^19.0.0"
   },
   "engines": {
-    "node": ">=v18.18.0"
+    "node": ">=20"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

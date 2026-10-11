@@ -2,10 +2,7 @@ import type Stripe from "stripe";
 
 import { throwStripeError } from "../errors.js";
 import type { RunCtx } from "../helpers.js";
-import type {
-  V2AccountLinkCreateParams,
-  V2AppliedConfiguration,
-} from "../stripe-types.js";
+import type { V2AccountLinkCreateParams } from "../stripe-types.js";
 import type { AccountLinkWithStatus } from "../types.js";
 
 // =============================================================================
@@ -47,8 +44,6 @@ export async function createV2AccountLink(
       ? {
           type: "account_update",
           account_update: {
-            configurations: (opts.configurations ??
-              []) as V2AppliedConfiguration[],
             refresh_url: opts.refreshUrl,
             return_url: opts.returnUrl,
           },
@@ -56,8 +51,6 @@ export async function createV2AccountLink(
       : {
           type: "account_onboarding",
           account_onboarding: {
-            configurations: (opts.configurations ??
-              []) as V2AppliedConfiguration[],
             refresh_url: opts.refreshUrl,
             return_url: opts.returnUrl,
           },

@@ -1,3 +1,5 @@
+import { subscriptionRouting } from "./subscriptionRouting.js";
+import { resolveOwnerAccount } from "../utils/owner.js";
 import type Stripe from "stripe";
 
 import type { SubscriptionStatus } from "../../component/billing/validators.js";
@@ -10,7 +12,10 @@ import {
   stripReservedMetadata,
 } from "../helpers.js";
 import { throwStripeError } from "../errors.js";
-import type { PlatformFeeConfig, StripeComponentSubscription } from "../types.js";
+import type {
+  PlatformFeeConfig,
+  StripeComponentSubscription,
+} from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 
 // =============================================================================
@@ -23,7 +28,10 @@ import { componentRef } from "../webhooks/helpers.js";
  * the Convex action/mutation boundary instead of propagating as a raw `Error`.
  * This is the Plan 006 convention; see `src/client/errors.ts`.
  */
-async function callStripe<T>(message: string, fn: () => Promise<T>): Promise<T> {
+async function callStripe<T>(
+  message: string,
+  fn: () => Promise<T>,
+): Promise<T> {
   try {
     return await fn();
   } catch (err) {
@@ -53,6 +61,8 @@ export async function createSubscription(
     split?: SplitRecipient[];
     feeConfig?: PlatformFeeConfig;
     trialDays?: number;
+    /** Attached payment method to use for this subscription. */
+    defaultPaymentMethod?: string;
     /** Platform-default statement-descriptor suffix (BTS-32); see checkout.ts. */
     defaultStatementDescriptorSuffix?: string;
     metadata?: Record<string, string>;
@@ -105,6 +115,9 @@ export async function createSubscription(
 
   const params: Stripe.SubscriptionCreateParams = {
     customer_account: opts.customerAccount,
+    ...(opts.defaultPaymentMethod
+      ? { default_payment_method: opts.defaultPaymentMethod }
+      : {}),
     items: [{ price: opts.stripePriceId }],
     metadata,
   };
@@ -125,7 +138,9 @@ export async function createSubscription(
       ...metadata,
       bsChargeType: "separate",
       bsSplit: JSON.stringify(opts.split),
-      ...(opts.feeConfig ? { bsFeeConfig: JSON.stringify(opts.feeConfig) } : {}),
+      ...(opts.feeConfig
+        ? { bsFeeConfig: JSON.stringify(opts.feeConfig) }
+        : {}),
     };
     feeRow.chargeType = "separate";
     feeRow.splitRecipients = opts.split;
@@ -162,6 +177,25 @@ export async function createSubscription(
     stripe.subscriptions.create(params, requestOpts),
   );
 
+  // Stripe 23 permits future status strings; our ledger accepts only these
+  // known statuses. Reject an unknown value before attempting to persist it.
+  const isKnownStatus = (value: string): value is SubscriptionStatus =>
+    value === "active" ||
+    value === "canceled" ||
+    value === "incomplete" ||
+    value === "incomplete_expired" ||
+    value === "past_due" ||
+    value === "paused" ||
+    value === "trialing" ||
+    value === "unpaid";
+  const status = sub.status;
+  if (!isKnownStatus(status)) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      `Unsupported subscription status: ${status}`,
+    );
+  }
+
   const firstItem = sub.items?.data?.[0];
   await runMutationOrThrow(
     ctx,
@@ -171,10 +205,12 @@ export async function createSubscription(
       accountId: opts.customerAccount,
       userId: opts.userId,
       orgId: opts.orgId,
-      status: sub.status,
+      status,
       priceId: firstItem?.price?.id ?? opts.stripePriceId,
       quantity: firstItem?.quantity ?? undefined,
-      currentPeriodStart: epochToIso(firstItem?.current_period_start ?? undefined),
+      currentPeriodStart: epochToIso(
+        firstItem?.current_period_start ?? undefined,
+      ),
       currentPeriodEnd: epochToIso(firstItem?.current_period_end ?? undefined),
       cancelAtPeriodEnd: sub.cancel_at_period_end,
       canceledAt: epochToIso(sub.canceled_at),
@@ -186,7 +222,7 @@ export async function createSubscription(
     },
   );
 
-  return { stripeSubscriptionId: sub.id, status: sub.status };
+  return { stripeSubscriptionId: sub.id, status };
 }
 
 export async function getSubscription(
@@ -255,7 +291,8 @@ export async function updateSubscriptionQuantity(
     stripe.subscriptions.retrieve(opts.stripeSubscriptionId),
   );
   const itemId = sub.items?.data?.[0]?.id;
-  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
+  if (!itemId)
+    throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
   await callStripe("Failed to update subscription quantity", () =>
     stripe.subscriptionItems.update(itemId, { quantity: opts.quantity }),
   );
@@ -263,8 +300,8 @@ export async function updateSubscriptionQuantity(
 }
 
 /**
- * Pause collection on a subscription. Sets `pause_collection` (Stripe transitions
- * the subscription to `status: "paused"`); the component DB is updated when the
+ * Pause collection on a subscription. Sets `pause_collection` without changing
+ * the subscription status; the component DB is updated when the
  * resulting `customer.subscription.updated` webhook arrives.
  */
 export async function pauseSubscription(
@@ -288,10 +325,8 @@ export async function pauseSubscription(
 }
 
 /**
- * Resume a paused subscription by clearing `pause_collection`. There is no
- * dedicated Stripe resume endpoint — passing the empty-string sentinel
- * (`Emptyable<PauseCollection>`) clears the field and Stripe returns the
- * subscription to its prior active status.
+ * Resume payment collection by clearing `pause_collection`. The empty-string
+ * sentinel clears the field without changing the subscription status.
  */
 export async function resumeSubscription(
   stripe: Stripe,
@@ -326,7 +361,8 @@ export async function updateSubscriptionPrice(
     stripe.subscriptions.retrieve(opts.stripeSubscriptionId),
   );
   const itemId = sub.items?.data?.[0]?.id;
-  if (!itemId) throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
+  if (!itemId)
+    throwStripeError("SUBSCRIPTION_UPDATE_FAILED", "Subscription has no items");
   await callStripe("Failed to update subscription price", () =>
     stripe.subscriptions.update(opts.stripeSubscriptionId, {
       items: [{ id: itemId, price: opts.stripePriceId }],
@@ -546,10 +582,8 @@ export async function syncAllSubscriptions(
         componentRef(component, "billing/mutations/upsertSubscription"),
         {
           stripeSubscriptionId: sub.id,
-          accountId:
-            typeof sub.customer === "string"
-              ? sub.customer
-              : (sub.customer?.id ?? ""),
+          ...subscriptionRouting(sub),
+          accountId: resolveOwnerAccount(sub) ?? "",
           userId,
           orgId,
           status: sub.status,
@@ -558,6 +592,7 @@ export async function syncAllSubscriptions(
           currentPeriodStart: epochToIso(periodStart),
           currentPeriodEnd: epochToIso(periodEnd),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
+          isCollectionPaused: !!sub.pause_collection,
           canceledAt: epochToIso(sub.canceled_at),
           isTrialing: sub.status === "trialing",
           trialStart: epochToIso(sub.trial_start),

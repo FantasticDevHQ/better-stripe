@@ -3,7 +3,7 @@
  * Tests for the earnings AGGREGATE queries (BTS-64). The row-list queries
  * (`listTransfersByAccount`, `listPayouts`) `.take(50)`, so a busy account's
  * earnings totals were silently truncated when summed client-side. These
- * aggregate queries paginate the account's ledger to completion and return
+ * aggregate queries iterate the account's ledger to completion and return
  * EXACT gross/reversed/paidOut regardless of row count, plus a bounded preview
  * of rows for drill-down UIs.
  */
@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import { api } from "./_generated/api.js";
 import schema from "./schema.js";
+import { getAccountEarnings, getAccountPayouts } from "./connect/queries.js";
 
 const modules = import.meta.glob("./**/*.*s");
 
@@ -192,5 +193,30 @@ describe("getAccountPayouts — exact paidOut past the 50-row cap (BTS-64)", () 
 
     expect(result.payoutCount).toBe(420);
     expect(result.paidOut).toBe(210 * 100);
+  });
+});
+
+// convex-test does not enforce production document/byte read limits. Simulate
+// a database iterator reaching that boundary after a row has been accumulated.
+// The aggregate must reject rather than exposing the partial financial total.
+describe("aggregate read-limit failures (BTS-116)", () => {
+  it.each([
+    ["earnings", getAccountEarnings, { destinationAccountId: "acct_limit" }],
+    ["payouts", getAccountPayouts, { accountId: "acct_limit" }],
+  ])("rejects incomplete %s totals", async (_name, query, args) => {
+    const readLimit = new Error(
+      "Too many documents read in a single function execution",
+    );
+    const rows = {
+      async *[Symbol.asyncIterator]() {
+        yield { amount: 100, reversedAmount: 10, status: "paid" };
+        throw readLimit;
+      },
+    };
+    const ctx = { db: { query: () => ({ withIndex: () => rows }) } };
+    const registered = query as unknown as {
+      _handler: (ctx: unknown, args: unknown) => Promise<unknown>;
+    };
+    await expect(registered._handler(ctx, args)).rejects.toBe(readLimit);
   });
 });

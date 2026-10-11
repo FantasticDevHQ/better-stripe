@@ -4,8 +4,8 @@ import { STRIPE_API_VERSION } from "./constants.js";
 import { epochToIso, getStripeClient, runMutationOrThrow } from "./helpers.js";
 
 describe("STRIPE_API_VERSION", () => {
-  it("is a dahlia API version", () => {
-    expect(STRIPE_API_VERSION).toMatch(/\.dahlia$/);
+  it("matches the installed SDK API version", () => {
+    expect(STRIPE_API_VERSION).toBe("2026-09-30.endive");
   });
 });
 

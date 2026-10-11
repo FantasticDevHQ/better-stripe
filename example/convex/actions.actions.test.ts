@@ -33,6 +33,7 @@ vi.mock("./stripe", () => ({
     updateDispute: vi.fn(),
     closeDispute: vi.fn(),
     createDisputeSession: vi.fn(),
+    createLoginLink: vi.fn(),
     createRefund: vi.fn(),
     listTransfersByCharge: vi.fn(),
     reverseTransfers: vi.fn(),
@@ -66,6 +67,7 @@ type MockedStripe = {
   updateDispute: Mock;
   closeDispute: Mock;
   createDisputeSession: Mock;
+  createLoginLink: Mock;
   createRefund: Mock;
   listTransfersByCharge: Mock;
   reverseTransfers: Mock;
@@ -101,7 +103,9 @@ const OWNER_SUBSCRIPTION = {
 describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", () => {
   it("cancelSubscription rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.cancelSubscription, {
@@ -114,7 +118,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("cancelSubscription succeeds for the true owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
     mockedStripe.cancelSubscription.mockResolvedValue({ status: "active" });
 
     await t.action(api.actions.cancelSubscription, {
@@ -130,7 +136,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("reactivateSubscription rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.reactivateSubscription, {
@@ -143,7 +151,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("pauseSubscription rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.pauseSubscription, {
@@ -156,7 +166,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("resumeSubscription rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.resumeSubscription, {
@@ -169,7 +181,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("updateSubscriptionQuantity rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.updateSubscriptionQuantity, {
@@ -183,7 +197,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("updateSubscriptionPrice rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.updateSubscriptionPrice, {
@@ -221,7 +237,9 @@ describe("actions — subscription lifecycle wrong-owner rejection (BTS-83)", ()
 
   it("updateSubscriptionTrialEnd rejects a caller who isn't the subscription's owner", async () => {
     const t = convexTest(schema, modules);
-    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(OWNER_SUBSCRIPTION);
+    mockedStripe.getSubscriptionByStripeId.mockResolvedValue(
+      OWNER_SUBSCRIPTION,
+    );
 
     await expect(
       t.action(api.actions.updateSubscriptionTrialEnd, {
@@ -413,7 +431,9 @@ describe("actions — issueRefund wrong-owner rejection (BTS-83)", () => {
 
   it("succeeds for the store leg of a split sale even without a destination account", async () => {
     const t = withComponent();
-    mockedStripe.getAccountByUserId.mockImplementation(accountFor("store_owner"));
+    mockedStripe.getAccountByUserId.mockImplementation(
+      accountFor("store_owner"),
+    );
     mockedStripe.createRefund.mockResolvedValue({ stripeRefundId: "re_2" });
     await t.mutation(components.betterStripe.connect.mutations.upsertPayment, {
       stripePaymentIntentId: "pi_split",
@@ -481,7 +501,11 @@ describe("actions — reverseSaleTransfers wrong-owner rejection (BTS-83)", () =
     const t = convexTest(schema, modules);
     mockedStripe.getAccountByUserId.mockImplementation(accountFor("owner_1"));
     mockedStripe.listTransfersByCharge.mockResolvedValue([
-      { stripeTransferId: "tr_1", destinationAccountId: "acct_owner", amount: 1000 },
+      {
+        stripeTransferId: "tr_1",
+        destinationAccountId: "acct_owner",
+        amount: 1000,
+      },
     ]);
 
     await expect(
@@ -501,7 +525,12 @@ describe("actions — reverseSaleTransfers wrong-owner rejection (BTS-83)", () =
         : null,
     );
     mockedStripe.listTransfersByCharge.mockResolvedValue([
-      { stripeTransferId: "tr_1", destinationAccountId: "acct_owner", role: "store", amount: 800 },
+      {
+        stripeTransferId: "tr_1",
+        destinationAccountId: "acct_owner",
+        role: "store",
+        amount: 800,
+      },
       {
         stripeTransferId: "tr_2",
         destinationAccountId: "acct_affiliate",
@@ -523,7 +552,11 @@ describe("actions — reverseSaleTransfers wrong-owner rejection (BTS-83)", () =
     const t = convexTest(schema, modules);
     mockedStripe.getAccountByUserId.mockImplementation(accountFor("owner_1"));
     mockedStripe.listTransfersByCharge.mockResolvedValue([
-      { stripeTransferId: "tr_1", destinationAccountId: "acct_owner", amount: 1000 },
+      {
+        stripeTransferId: "tr_1",
+        destinationAccountId: "acct_owner",
+        amount: 1000,
+      },
     ]);
     mockedStripe.reverseTransfers.mockResolvedValue({
       reversals: [{ stripeTransferId: "tr_1", amount: 1000 }],
@@ -730,5 +763,59 @@ describe("actions — refuse a live/misconfigured key before any Stripe call (BT
       }),
     ).rejects.toThrowError(/not set/);
     expect(mockedStripe.createRefund).not.toHaveBeenCalled();
+  });
+});
+
+describe("seller dashboard login link", () => {
+  it("uses Stripe's generated login URL after checking ownership", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockResolvedValue({
+      stripeAccountId: "acct_owner",
+    });
+    mockedStripe.createLoginLink.mockResolvedValue({
+      url: "https://connect.stripe.com/express/test-login",
+    });
+    await expect(
+      t.action(api.actions.createSellerLoginLink, {
+        userId: "owner",
+        stripeAccountId: "acct_owner",
+      }),
+    ).resolves.toEqual({
+      url: "https://connect.stripe.com/express/test-login",
+    });
+    expect(mockedStripe.createLoginLink).toHaveBeenCalledWith(
+      expect.anything(),
+      { stripeAccountId: "acct_owner" },
+    );
+  });
+
+  it("rejects another seller's account before requesting a link", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockResolvedValue({
+      stripeAccountId: "acct_owner",
+    });
+    await expect(
+      t.action(api.actions.createSellerLoginLink, {
+        userId: "owner",
+        stripeAccountId: "acct_other",
+      }),
+    ).rejects.toThrow(/Account not found/);
+    expect(mockedStripe.createLoginLink).not.toHaveBeenCalled();
+  });
+
+  it("explains when the account cannot access an Express dashboard", async () => {
+    const t = convexTest(schema, modules);
+    mockedStripe.getAccountByUserId.mockResolvedValue({
+      stripeAccountId: "acct_owner",
+    });
+    mockedStripe.createLoginLink.mockRejectedValue(
+      new Error("unsupported dashboard"),
+    );
+    await expect(
+      t.action(api.actions.createSellerLoginLink, {
+        userId: "owner",
+        stripeAccountId: "acct_owner",
+      }),
+    ).rejects.toThrow(/Complete onboarding/);
   });
 });

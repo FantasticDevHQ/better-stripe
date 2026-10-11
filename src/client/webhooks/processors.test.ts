@@ -79,7 +79,10 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
         legs.map((t) => ({
           stripeTransferId: t.stripeTransferId,
           amount: t.amount,
-          frontier: Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0),
+          frontier: Math.max(
+            t.reversedAmount ?? 0,
+            t.reversalClaimedAmount ?? 0,
+          ),
         })),
         args.mode as Parameters<typeof computeReversalSlices>[1],
       );
@@ -121,25 +124,36 @@ function makeStripe() {
       retrieve: vi.fn(),
     },
     transfers: {
-      create: vi.fn(async (_params: unknown) => ({ id: `tr_${++trCreateSeq}` })),
+      create: vi.fn(async (_params: unknown) => ({
+        id: `tr_${++trCreateSeq}`,
+      })),
       createReversal: vi.fn(
         async (
           _id: unknown,
           _params?: unknown,
           _opts?: unknown,
-        ): Promise<MockReversal> => ({ id: "trr_x", amount: 0, metadata: null }),
+        ): Promise<MockReversal> => ({
+          id: "trr_x",
+          amount: 0,
+          metadata: null,
+        }),
       ),
       // No prior reversals by default; the first-invoice-fee adoption guard
       // (BTS-69) lists these before reversing.
       listReversals: vi.fn(
-        async (_id: unknown, _opts?: unknown): Promise<{ data: MockReversal[] }> => ({
+        async (
+          _id: unknown,
+          _opts?: unknown,
+        ): Promise<{ data: MockReversal[] }> => ({
           data: [],
         }),
       ),
     },
     invoicePayments: {
       list: vi.fn(
-        async (_params: unknown): Promise<{ data: Record<string, unknown>[] }> => ({
+        async (
+          _params: unknown,
+        ): Promise<{ data: Record<string, unknown>[] }> => ({
           data: [{ payment: { charge: "ch_inv" } }],
         }),
       ),
@@ -183,7 +197,10 @@ function event(type: string, object: unknown): Stripe.Event {
 /** The payload + resolved ref path from the Nth runMutation call. */
 function dispatchedPayload(ctx: ReturnType<typeof makeCtx>, n = 0) {
   const call = ctx.runMutation.mock.calls[n];
-  return { path: call[0][TO_REF] as string, data: call[1] as Record<string, unknown> };
+  return {
+    path: call[0][TO_REF] as string,
+    data: call[1] as Record<string, unknown>,
+  };
 }
 
 beforeEach(() => {
@@ -255,7 +272,9 @@ describe("processEvent — prices", () => {
     // last runMutation is the price upsert (no auto-create happened)
     const calls = ctx.runMutation.mock.calls;
     const upsert = calls[calls.length - 1];
-    expect(upsert[0][TO_REF]).toBe("betterStripe/products/mutations/upsertPrice");
+    expect(upsert[0][TO_REF]).toBe(
+      "betterStripe/products/mutations/upsertPrice",
+    );
     expect(upsert[1]).toMatchObject({
       stripePriceId: "price_1",
       productId: "internal_prod_1",
@@ -352,10 +371,7 @@ describe("processEvent — subscriptions", () => {
 
   it("normalizes a created subscription with identifiers, trial, period, and price", async () => {
     const whCtx = makeWhCtx();
-    await processEvent(
-      whCtx,
-      event("customer.subscription.created", baseSub),
-    );
+    await processEvent(whCtx, event("customer.subscription.created", baseSub));
 
     const { path, data } = dispatchedPayload(whCtx.ctx);
     expect(path).toBe("betterStripe/billing/mutations/upsertSubscription");
@@ -375,12 +391,36 @@ describe("processEvent — subscriptions", () => {
     );
   });
 
-  it("routes a deleted subscription through the subscriptionDeleted dispatcher", async () => {
+  it("tracks collection pause separately from subscription status", async () => {
     const whCtx = makeWhCtx();
     await processEvent(
       whCtx,
-      event("customer.subscription.deleted", baseSub),
+      event("customer.subscription.updated", {
+        ...baseSub,
+        pause_collection: { behavior: "keep_as_draft" },
+      }),
     );
+    expect(dispatchedPayload(whCtx.ctx).data).toMatchObject({
+      status: "active",
+      isCollectionPaused: true,
+    });
+    const resumed = makeWhCtx();
+    await processEvent(
+      resumed,
+      event("customer.subscription.updated", {
+        ...baseSub,
+        pause_collection: null,
+      }),
+    );
+    expect(dispatchedPayload(resumed.ctx).data).toMatchObject({
+      status: "active",
+      isCollectionPaused: false,
+    });
+  });
+
+  it("routes a deleted subscription through the subscriptionDeleted dispatcher", async () => {
+    const whCtx = makeWhCtx();
+    await processEvent(whCtx, event("customer.subscription.deleted", baseSub));
     // both dispatchers map to the same upsertSubscription path, so assert the
     // event still produces exactly one subscription upsert
     expect(whCtx.ctx.runMutation).toHaveBeenCalledTimes(1);
@@ -413,6 +453,28 @@ describe("processEvent — subscriptions", () => {
     );
     expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_v2");
   });
+
+  it.each(["customer.subscription.created", "customer.subscription.updated"])(
+    "preserves checkout destination and platform fee on %s",
+    async (type) => {
+      const whCtx = makeWhCtx();
+      await processEvent(
+        whCtx,
+        event(type, {
+          ...baseSub,
+          customer_account: "acct_buyer",
+          transfer_data: { destination: "acct_store" },
+          application_fee_percent: 10,
+        }),
+      );
+      expect(dispatchedPayload(whCtx.ctx).data).toMatchObject({
+        accountId: "acct_buyer",
+        chargeType: "destination",
+        destinationAccountId: "acct_store",
+        applicationFeePercent: 10,
+      });
+    },
+  );
 
   it("falls back to the empty-string userId sentinel when metadata is absent", async () => {
     const whCtx = makeWhCtx();
@@ -538,6 +600,35 @@ describe("processEvent — checkout", () => {
 });
 
 describe("processEvent — invoices", () => {
+  it.each([false, true])(
+    "inherits subscription identifiers when invoice metadata is empty (override=%s)",
+    async (override) => {
+      const whCtx = makeWhCtx();
+      await processEvent(
+        whCtx,
+        event("invoice.paid", {
+          id: "in_inherited",
+          currency: "usd",
+          amount_due: 2900,
+          amount_paid: 2900,
+          status: "paid",
+          metadata: override
+            ? { userId: "invoice_user", orgId: "invoice_org" }
+            : {},
+          parent: {
+            subscription_details: {
+              subscription: "sub_parent",
+              metadata: { userId: "buyer_1", orgId: "store_org" },
+            },
+          },
+        }),
+      );
+      const { data } = dispatchedPayload(whCtx.ctx);
+      expect(data.userId).toBe(override ? "invoice_user" : "buyer_1");
+      expect(data.orgId).toBe(override ? "invoice_org" : "store_org");
+    },
+  );
+
   it("normalizes an invoice and resolves the parent subscription id", async () => {
     const whCtx = makeWhCtx();
     await processEvent(
@@ -667,14 +758,17 @@ describe("processEvent — payments (status collapse)", () => {
     ["requires_confirmation", "requires_action"],
     ["requires_payment_method", "requires_action"],
     ["requires_capture", "requires_action"],
-  ])("maps Stripe status %s to app status %s", async (stripeStatus, expected) => {
-    const whCtx = makeWhCtx();
-    await processEvent(
-      whCtx,
-      event("payment_intent.succeeded", { ...base, status: stripeStatus }),
-    );
-    expect(dispatchedPayload(whCtx.ctx).data.status).toBe(expected);
-  });
+  ])(
+    "maps Stripe status %s to app status %s",
+    async (stripeStatus, expected) => {
+      const whCtx = makeWhCtx();
+      await processEvent(
+        whCtx,
+        event("payment_intent.succeeded", { ...base, status: stripeStatus }),
+      );
+      expect(dispatchedPayload(whCtx.ctx).data.status).toBe(expected);
+    },
+  );
 
   it("maps any unrecognized status to failed", async () => {
     const whCtx = makeWhCtx();
@@ -901,7 +995,11 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
           metadata: {
             bsChargeType: "separate",
             bsSplit: JSON.stringify([
-              { destinationAccountId: "acct_store", role: "store", percent: 90 },
+              {
+                destinationAccountId: "acct_store",
+                role: "store",
+                percent: 90,
+              },
             ]),
           },
         }),
@@ -1001,7 +1099,10 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
 
   it("does not split a normal (non-separate) subscription invoice", async () => {
     const stripe = makeStripe();
-    stripe.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", metadata: {} });
+    stripe.subscriptions.retrieve.mockResolvedValue({
+      id: "sub_1",
+      metadata: {},
+    });
     const whCtx = makeWhCtx({ stripe });
 
     await processEvent(
@@ -1024,8 +1125,18 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     // The charge funded a store + affiliate transfer.
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
-        { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+        {
+          stripeTransferId: "tr_store",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 8000,
+        },
+        {
+          stripeTransferId: "tr_aff",
+          destinationAccountId: "acct_aff",
+          role: "affiliate",
+          amount: 1000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1062,7 +1173,12 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     const stripe = makeStripe();
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+        {
+          stripeTransferId: "tr_store",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 8000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1088,7 +1204,14 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     const stripe = makeStripe();
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+        {
+          stripeTransferId: "tr_store",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 8000,
+          currency: "usd",
+          reversedAmount: 8000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1118,7 +1241,14 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     const stripe = makeStripe();
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
+        {
+          stripeTransferId: "tr_store",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 8000,
+          currency: "usd",
+          reversedAmount: 8000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1271,7 +1401,12 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     stripe.charges.retrieve.mockRejectedValue(new Error("stripe down"));
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 9000 },
+        {
+          stripeTransferId: "tr_store",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 9000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1302,7 +1437,12 @@ describe("processEvent — split transfer engine (BTS-22)", () => {
     const stripe = makeStripe();
     const ctx = makeCtx({
       query: [
-        { stripeTransferId: "tr_only", destinationAccountId: "acct_store", role: "store", amount: 9000 },
+        {
+          stripeTransferId: "tr_only",
+          destinationAccountId: "acct_store",
+          role: "store",
+          amount: 9000,
+        },
       ],
     });
     const whCtx = makeWhCtx({ stripe, ctx });
@@ -1482,7 +1622,8 @@ describe("processEvent — per-invoice statement descriptor (BTS-32)", () => {
 
     expect(errSpy).toHaveBeenCalled();
     // The invoice row still lands in the component DB.
-    const paths = (whCtx.ctx.runMutation as ReturnType<typeof vi.fn>).mock.calls;
+    const paths = (whCtx.ctx.runMutation as ReturnType<typeof vi.fn>).mock
+      .calls;
     expect(paths.length).toBeGreaterThan(0);
   });
 });
@@ -1544,7 +1685,10 @@ describe("processEvent — per-invoice fixed/tier fee (BTS-51)", () => {
 
     await processEvent(
       whCtx,
-      event("invoice.created", flaggedInvoice({ metadata: { bsFeeApplied: "1" } })),
+      event(
+        "invoice.created",
+        flaggedInvoice({ metadata: { bsFeeApplied: "1" } }),
+      ),
     );
     expect(stripe.invoices.update).not.toHaveBeenCalled();
   });
@@ -1830,7 +1974,10 @@ describe("processEvent — first-invoice fee correction (BTS-68)", () => {
     const reversals: MockReversal[] = [];
     stripe.transfers.createReversal.mockImplementation(
       async (id: unknown, params: unknown) => {
-        const p = params as { amount: number; metadata?: Record<string, string> };
+        const p = params as {
+          amount: number;
+          metadata?: Record<string, string>;
+        };
         const rev: MockReversal = {
           id: `trr_${reversals.length + 1}`,
           amount: p.amount,
@@ -1850,7 +1997,9 @@ describe("processEvent — first-invoice fee correction (BTS-68)", () => {
     // ── Delivery 1: the reversal SUCCEEDS, then the bsFeeCollected marker write
     // FAILS → the error propagates → the event is marked `failed`. So the money
     // moved (F1=320 reversed) but the invoice was never marked collected.
-    stripe.invoices.update.mockRejectedValueOnce(new Error("marker write failed"));
+    stripe.invoices.update.mockRejectedValueOnce(
+      new Error("marker write failed"),
+    );
     await expect(
       processEvent(whCtx, event("invoice.paid", paidFirstInvoice())),
     ).rejects.toThrow("marker write failed");
@@ -1909,7 +2058,10 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
   function wireHappyPath(
     stripe: ReturnType<typeof makeStripe>,
     pi: Record<string, unknown>,
-    opts: { amountReceived?: number; freshMetadata?: Record<string, string> } = {},
+    opts: {
+      amountReceived?: number;
+      freshMetadata?: Record<string, string>;
+    } = {},
   ) {
     stripe.paymentIntents.retrieve.mockResolvedValue({
       ...pi,
@@ -2029,7 +2181,9 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
 
     expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
-    expect(dispatchedPayload(whCtx.ctx).data.feeCollectedAmount).toBeUndefined();
+    expect(
+      dispatchedPayload(whCtx.ctx).data.feeCollectedAmount,
+    ).toBeUndefined();
   });
 
   it("swallows malformed bsFeeConfig without reversing or crashing", async () => {
@@ -2072,7 +2226,9 @@ describe("processEvent — per-charge fixed/tier fee (BTS-60)", () => {
     const stripe = makeStripe();
     const pi = flaggedPi();
     wireHappyPath(stripe, pi);
-    stripe.paymentIntents.update.mockRejectedValueOnce(new Error("mark failed"));
+    stripe.paymentIntents.update.mockRejectedValueOnce(
+      new Error("mark failed"),
+    );
     const whCtx = makeWhCtx({ stripe });
 
     // Delivery 1: reversal succeeds, marking the PI fails → must throw (the
@@ -2350,7 +2506,8 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
     const calls = whCtx.ctx.runMutation.mock.calls;
     const feeCall = calls.find(
       (c) =>
-        c[0][TO_REF] === "betterStripe/connect/mutations/recordPaymentFeeRefund",
+        c[0][TO_REF] ===
+        "betterStripe/connect/mutations/recordPaymentFeeRefund",
     );
     expect(feeCall).toBeDefined();
     // Absolute cumulative values straight from Stripe — never incremented, so
@@ -2365,7 +2522,8 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
     await processEvent(whCtx, feeEvent);
     const feeCalls = whCtx.ctx.runMutation.mock.calls.filter(
       (c) =>
-        c[0][TO_REF] === "betterStripe/connect/mutations/recordPaymentFeeRefund",
+        c[0][TO_REF] ===
+        "betterStripe/connect/mutations/recordPaymentFeeRefund",
     );
     expect(feeCalls).toHaveLength(2);
     expect(feeCalls[1][1]).toEqual(feeCalls[0][1]);
@@ -2373,7 +2531,10 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
 
   it("application_fee.refunded skips quietly when the charge has no payment intent", async () => {
     const stripe = makeStripe();
-    stripe.charges.retrieve.mockResolvedValue({ id: "ch_1", payment_intent: null });
+    stripe.charges.retrieve.mockResolvedValue({
+      id: "ch_1",
+      payment_intent: null,
+    });
     const whCtx = makeWhCtx({ stripe });
 
     await expect(

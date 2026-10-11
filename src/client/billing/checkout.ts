@@ -58,12 +58,13 @@ function deriveFeeRow(params: CheckoutSessionCreateParams): {
 }
 
 /**
- * Destination charges require the price to live on the PLATFORM account, not a
- * connected account. Best-effort guard: if the price is in the component catalog
- * and its product belongs to a connected account, throw a clear error before
- * hitting Stripe. A price absent from the catalog is left to Stripe to validate.
+ * Destination and separate charges use platform prices. Catalog accountId is a
+ * store attribution tag, not Stripe ownership (createProduct uses the platform).
+ * For tagged products, verify the price in the platform Stripe context before
+ * rejecting it. Untagged/unknown catalog entries are validated by Checkout.
  */
 async function assertPlatformPrice(
+  stripe: Stripe,
   component: Component,
   ctx: RunCtx,
   stripePriceId: string,
@@ -80,10 +81,23 @@ async function assertPlatformPrice(
   )) as { accountId?: string } | null;
 
   if (product?.accountId) {
-    throwStripeError(
-      "INVALID_CONFIGURATION",
-      `Price ${stripePriceId} belongs to connected account ${product.accountId}; destination charges require a platform-owned price.`,
-    );
+    try {
+      await stripe.prices.retrieve(stripePriceId);
+    } catch (error) {
+      // Only absence on the platform means the ownership check failed.
+      // Auth/network/rate-limit failures must not be misreported as ownership.
+      if (
+        !error ||
+        typeof error !== "object" ||
+        !("code" in error) ||
+        error.code !== "resource_missing"
+      )
+        throw error;
+      throwStripeError(
+        "INVALID_CONFIGURATION",
+        `Price ${stripePriceId} is unavailable on the platform account; destination charges require a platform-owned price.`,
+      );
+    }
   }
 }
 
@@ -171,7 +185,9 @@ export async function createCheckoutSession(
     ? {
         bsChargeType: "separate",
         bsSplit: JSON.stringify(opts.split),
-        ...(opts.feeConfig ? { bsFeeConfig: JSON.stringify(opts.feeConfig) } : {}),
+        ...(opts.feeConfig
+          ? { bsFeeConfig: JSON.stringify(opts.feeConfig) }
+          : {}),
       }
     : {};
 
@@ -314,7 +330,7 @@ export async function createCheckoutSession(
     (isSeparate || feeRow.chargeType === "destination") &&
     typeof finalPriceId === "string"
   ) {
-    await assertPlatformPrice(component, ctx, finalPriceId);
+    await assertPlatformPrice(stripe, component, ctx, finalPriceId);
   }
 
   const session = await stripe.checkout.sessions.create(finalSessionParams);

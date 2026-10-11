@@ -39,7 +39,10 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
+  readonly STRIPE_PUBLISHABLE_KEY: string | undefined;
   readonly STRIPE_SECRET_KEY: string;
+  readonly STRIPE_WEBHOOK_SECRET: string | undefined;
+  readonly STRIPE_WEBHOOK_SECRET_V2: string | undefined;
 };
 
 /**

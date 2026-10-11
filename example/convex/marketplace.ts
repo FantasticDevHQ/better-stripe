@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 import Stripe from "stripe";
 import { computeFee } from "@fantastic.dev/better-stripe";
 import { v } from "convex/values";
@@ -31,7 +32,7 @@ import { stripe } from "./stripe";
 type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
 >;
-const STRIPE_API_VERSION: StripeApiVersion = "2026-05-27.dahlia";
+const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";
 
 /** The platform's demo fee: a flat 10% application fee on the destination charge. */
 export const DEMO_FEE_PERCENT = 10;
@@ -387,9 +388,9 @@ export const getRecipientBalance = action({
     }),
   ),
   handler: async (_ctx, args): Promise<BalanceSnapshot | null> => {
-    if (!process.env.STRIPE_SECRET_KEY) return null;
+    if (!env.STRIPE_SECRET_KEY) return null;
     try {
-      const raw = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      const raw = new Stripe(env.STRIPE_SECRET_KEY, {
         apiVersion: STRIPE_API_VERSION,
       });
       const balance = await raw.balance.retrieve(

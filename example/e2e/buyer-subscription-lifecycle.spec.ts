@@ -32,27 +32,37 @@ test.describe("live buyer subscription lifecycle", () => {
     page.on("pageerror", (err) => pageErrors.push(err));
 
     await page.goto("/dashboard/billing");
-    await expect(
-      page.getByTestId("buyer-subscription-status"),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("buyer-subscription-status")).toBeVisible({
+      timeout: 30_000,
+    });
 
+    // A previous interrupted run may have left test collection paused.
+    const initialResume = page.getByTestId("buyer-subscription-resume");
+    if (await initialResume.isEnabled()) {
+      await initialResume.click();
+      await expect(page.getByTestId("buyer-subscription-pause")).toBeEnabled({
+        timeout: 90_000,
+      });
+    }
     await page.getByTestId("buyer-subscription-pause").click();
     await expect(
       page.getByTestId("buyer-subscription-action-message"),
     ).toContainText("pause subscription requested");
 
     await expect(page.getByTestId("buyer-subscription-status")).toContainText(
-      /Paused|Active|Trial|Cancels at period end/,
+      "Collection paused",
       { timeout: 90_000 },
     );
-
     const resume = page.getByTestId("buyer-subscription-resume");
-    if (await resume.isEnabled()) {
-      await resume.click();
-      await expect(
-        page.getByTestId("buyer-subscription-action-message"),
-      ).toContainText("resume subscription requested");
-    }
+    await expect(resume).toBeEnabled();
+    await resume.click();
+    await expect(
+      page.getByTestId("buyer-subscription-action-message"),
+    ).toContainText("resume subscription requested");
+    await expect(
+      page.getByTestId("buyer-subscription-status"),
+    ).not.toContainText("Collection paused", { timeout: 90_000 });
+    await expect(page.getByTestId("buyer-subscription-pause")).toBeEnabled();
 
     expect(
       pageErrors,

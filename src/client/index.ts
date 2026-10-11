@@ -679,15 +679,20 @@ export class BetterStripe {
     },
   ) {
     const { fee, ...rest } = opts;
-    return checkoutImpl.createCheckoutSession(this.stripe(), this.component, ctx, {
-      ...rest,
-      // Fees apply to destination or split sales; resolve override → default.
-      feeConfig:
-        opts.destinationAccountId || opts.split?.length
-          ? this.resolveFee(fee)
-          : undefined,
-      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
-    });
+    return checkoutImpl.createCheckoutSession(
+      this.stripe(),
+      this.component,
+      ctx,
+      {
+        ...rest,
+        // Fees apply to destination or split sales; resolve override → default.
+        feeConfig:
+          opts.destinationAccountId || opts.split?.length
+            ? this.resolveFee(fee)
+            : undefined,
+        defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
+      },
+    );
   }
 
   async getCheckoutSession(
@@ -760,20 +765,27 @@ export class BetterStripe {
       split?: SplitRecipient[];
       fee?: FeeOverride;
       trialDays?: number;
+      /** Attached payment method to use for this subscription. */
+      defaultPaymentMethod?: string;
       metadata?: Record<string, string>;
       /** Stripe idempotency key for retry-safe subscription creation. */
       idempotencyKey?: string;
     },
   ) {
     const { fee, ...rest } = opts;
-    return subscriptionsImpl.createSubscription(this.stripe(), this.component, ctx, {
-      ...rest,
-      feeConfig:
-        opts.destinationAccountId || opts.split?.length
-          ? this.resolveFee(fee)
-          : undefined,
-      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
-    });
+    return subscriptionsImpl.createSubscription(
+      this.stripe(),
+      this.component,
+      ctx,
+      {
+        ...rest,
+        feeConfig:
+          opts.destinationAccountId || opts.split?.length
+            ? this.resolveFee(fee)
+            : undefined,
+        defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
+      },
+    );
   }
 
   async getSubscription(
@@ -1169,7 +1181,12 @@ export class BetterStripe {
       operationId?: string;
     },
   ) {
-    return transfersImpl.reverseTransfers(this.stripe(), this.component, ctx, opts);
+    return transfersImpl.reverseTransfers(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   /**
@@ -1799,44 +1816,31 @@ export class BetterStripe {
       ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined
     > = {
       afterAccountUpdated: hooks?.onAccountUpdated as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterCheckoutCompleted: hooks?.onCheckoutCompleted as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterSubscriptionUpdated: hooks?.onSubscriptionUpdated as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterSubscriptionCanceled: hooks?.onSubscriptionCanceled as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterTrialEnding: hooks?.onTrialEnding as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterInvoicePaid: hooks?.onInvoicePaid as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterInvoicePaymentFailed: hooks?.onInvoicePaymentFailed as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterPaymentSucceeded: hooks?.onPaymentSucceeded as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterPaymentFailed: hooks?.onPaymentFailed as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterPayoutCompleted: hooks?.onPayoutCompleted as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterRefundCreated: hooks?.onRefundCreated as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterDisputeCreated: hooks?.onDisputeCreated as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
       afterDisputeClosed: hooks?.onDisputeClosed as
-        | ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>)
-        | undefined,
+        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
     };
 
     const syncWebhook = internalMutationGeneric({

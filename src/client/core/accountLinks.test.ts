@@ -45,7 +45,8 @@ function makeStripe() {
 type MockStripe = ReturnType<typeof makeStripe>;
 
 // Cast helper — the mock only implements the slice of Stripe these functions use.
-const asStripe = (s: MockStripe) => s as unknown as Parameters<typeof createAccountLink>[0];
+const asStripe = (s: MockStripe) =>
+  s as unknown as Parameters<typeof createAccountLink>[0];
 
 describe("createAccountLink", () => {
   it("passes through params and returns the url", async () => {
@@ -94,7 +95,6 @@ describe("createV2AccountLink", () => {
       use_case: {
         type: "account_onboarding",
         account_onboarding: {
-          configurations: ["merchant"],
           refresh_url: "https://refresh",
           return_url: "https://return",
         },
@@ -122,7 +122,6 @@ describe("createV2AccountLink", () => {
       use_case: {
         type: "account_update",
         account_update: {
-          configurations: ["recipient"],
           refresh_url: "https://refresh",
           return_url: "https://return",
         },
@@ -130,7 +129,7 @@ describe("createV2AccountLink", () => {
     });
   });
 
-  it("defaults configurations to an empty array for account_update too", async () => {
+  it("omits configurations for account_update", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accountLinks.create.mockResolvedValue({
       url: "https://v2",
@@ -145,10 +144,10 @@ describe("createV2AccountLink", () => {
     });
 
     const arg = stripe.v2.core.accountLinks.create.mock.calls[0][0];
-    expect(arg.use_case.account_update.configurations).toEqual([]);
+    expect(arg.use_case.account_update).not.toHaveProperty("configurations");
   });
 
-  it("defaults configurations to an empty array when omitted", async () => {
+  it("omits configurations for account_onboarding", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accountLinks.create.mockResolvedValue({
       url: "https://v2",
@@ -163,7 +162,9 @@ describe("createV2AccountLink", () => {
     });
 
     const arg = stripe.v2.core.accountLinks.create.mock.calls[0][0];
-    expect(arg.use_case.account_onboarding.configurations).toEqual([]);
+    expect(arg.use_case.account_onboarding).not.toHaveProperty(
+      "configurations",
+    );
   });
 });
 
@@ -283,9 +284,11 @@ describe("getAccountLinkWithStatus", () => {
     expect(result).toEqual({ url: "https://onboard", linkType: "onboarding" });
     // login link must NOT be used while requirements are outstanding
     expect(stripe.accounts.createLoginLink).not.toHaveBeenCalled();
-    // applied_configurations should flow into the onboarding link
+    // Stripe 23 collects requirements without a configurations parameter.
     const arg = stripe.v2.core.accountLinks.create.mock.calls[0][0];
-    expect(arg.use_case.account_onboarding.configurations).toEqual(["merchant"]);
+    expect(arg.use_case.account_onboarding).not.toHaveProperty(
+      "configurations",
+    );
   });
 
   it("returns a login link for an express dashboard account with no requirements", async () => {
@@ -352,15 +355,19 @@ describe("getAccountLinkWithStatus", () => {
 
     expect(result.linkType).toBe("onboarding");
     const arg = stripe.v2.core.accountLinks.create.mock.calls[0][0];
-    // applied_configurations absent → defaults to []
-    expect(arg.use_case.account_onboarding.configurations).toEqual([]);
+    // No configurations parameter is sent.
+    expect(arg.use_case.account_onboarding).not.toHaveProperty(
+      "configurations",
+    );
   });
 });
 
 describe("createDisputeSession (BTS-30)", () => {
   it("creates an account session with the disputes components for the seller", async () => {
     const stripe = makeStripe();
-    stripe.accountSessions.create.mockResolvedValue({ client_secret: "acs_secret" });
+    stripe.accountSessions.create.mockResolvedValue({
+      client_secret: "acs_secret",
+    });
 
     const result = await createDisputeSession(asStripe(stripe), {} as RunCtx, {
       stripeAccountId: "acct_seller",
@@ -375,4 +382,4 @@ describe("createDisputeSession (BTS-30)", () => {
     });
     expect(result).toEqual({ clientSecret: "acs_secret" });
   });
-})
+});

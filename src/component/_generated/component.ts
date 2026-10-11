@@ -108,6 +108,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -157,6 +158,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -307,6 +309,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -353,6 +356,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -513,6 +517,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -559,6 +564,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -605,6 +611,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -663,6 +670,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;

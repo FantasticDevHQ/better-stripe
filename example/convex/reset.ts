@@ -12,9 +12,10 @@ export const clearAppDb = internalMutation({
     let totalCleared = 0;
 
     for (const tableName of tables) {
+      // eslint-disable-next-line @convex-dev/no-collect-in-query -- Internal reset mutation over the seeded demo personas.
       const docs = await ctx.db.query(tableName).collect();
       for (const doc of docs) {
-        await ctx.db.delete(doc._id);
+        await ctx.db.delete(tableName, doc._id);
       }
       if (docs.length > 0) {
         console.log(`[reset] Cleared ${docs.length} rows from ${tableName}`);

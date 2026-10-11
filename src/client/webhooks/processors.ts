@@ -1,3 +1,4 @@
+import { subscriptionRouting } from "../billing/subscriptionRouting.js";
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
@@ -234,6 +235,7 @@ async function upsertSubscriptionFromStripe(
 
   await dispatchUpsert(whCtx, dispatcherName, {
     stripeSubscriptionId: subscription.id,
+    ...subscriptionRouting(subscription),
     accountId,
     userId,
     orgId,
@@ -243,6 +245,7 @@ async function upsertSubscriptionFromStripe(
     currentPeriodStart: epochToIso(periodStart),
     currentPeriodEnd: epochToIso(periodEnd),
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    isCollectionPaused: !!subscription.pause_collection,
     canceledAt: epochToIso(subscription.canceled_at),
     isTrialing: trial.isTrialing,
     trialStart: trial.trialStart,
@@ -499,8 +502,8 @@ async function applyFirstInvoiceFee(
   // so either signal means "already collected". Checking Stripe's own field
   // (not just our marker) is the authoritative double-collection guard; the SDK
   // doesn't type it on the Invoice object, hence the narrow read.
-  const alreadyOnInvoice =
-    (fresh as { application_fee_amount?: number | null }).application_fee_amount;
+  const alreadyOnInvoice = (fresh as { application_fee_amount?: number | null })
+    .application_fee_amount;
   if (freshMeta.bsFeeApplied || alreadyOnInvoice != null) {
     return undefined;
   }
@@ -575,9 +578,12 @@ async function applyFirstInvoiceFee(
   // survives both the marker-write failure and the key TTL, so finding it means
   // "already collected": re-record the marker with the actually-reversed amount
   // and return without reversing again.
-  const priorReversals = await whCtx.stripe.transfers.listReversals(transferId, {
-    limit: 100,
-  });
+  const priorReversals = await whCtx.stripe.transfers.listReversals(
+    transferId,
+    {
+      limit: 100,
+    },
+  );
   const adopted = priorReversals.data.find(
     (r) => r.metadata?.bsFeeFor === invoice.id,
   );
@@ -708,9 +714,15 @@ async function upsertInvoiceFromStripe(
   whCtx: WebhookContext,
   invoice: Stripe.Invoice,
 ): Promise<void> {
-  const { userId, orgId } = extractIdentifiers(
-    invoice.metadata as Record<string, string> | null,
+  // Subscription-generated invoices carry the subscription metadata snapshot
+  // on parent.subscription_details, not in invoice.metadata. Prefer explicit
+  // invoice identifiers, including their snake_case aliases, when provided.
+  const invoiceIdentifiers = extractIdentifiers(invoice.metadata);
+  const subscriptionIdentifiers = extractIdentifiers(
+    invoice.parent?.subscription_details?.metadata,
   );
+  const userId = invoiceIdentifiers.userId || subscriptionIdentifiers.userId;
+  const orgId = invoiceIdentifiers.orgId ?? subscriptionIdentifiers.orgId;
 
   const parentSub = invoice.parent?.subscription_details?.subscription;
   const subscriptionId =
@@ -885,11 +897,7 @@ async function upsertPaymentFromStripe(
     requires_capture: "requires_action",
   };
   const status = (statusMap[paymentIntent.status] ?? "failed") as
-    | "succeeded"
-    | "failed"
-    | "canceled"
-    | "processing"
-    | "requires_action";
+    "succeeded" | "failed" | "canceled" | "processing" | "requires_action";
 
   await dispatchUpsert(whCtx, "paymentUpserted", {
     stripePaymentIntentId: paymentIntent.id,
@@ -925,11 +933,7 @@ async function handlePayoutEvent(
     amount: payout.amount,
     currency: payout.currency,
     status: payout.status as
-      | "pending"
-      | "paid"
-      | "failed"
-      | "canceled"
-      | "in_transit",
+      "pending" | "paid" | "failed" | "canceled" | "in_transit",
     arrivalDate: epochToIso(payout.arrival_date),
     method: payout.method ?? undefined,
     metadata: payout.metadata ?? undefined,

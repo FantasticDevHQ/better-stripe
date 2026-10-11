@@ -58,9 +58,10 @@ export const listTriggerLog = internalQuery({
 export const clearTriggerLog = internalMutation({
   args: {},
   handler: async (ctx) => {
+    // eslint-disable-next-line @convex-dev/no-collect-in-query -- Internal test reset mutation, not a reactive query.
     const rows = await ctx.db.query("triggerLog").collect();
     for (const row of rows) {
-      await ctx.db.delete(row._id);
+      await ctx.db.delete("triggerLog", row._id);
     }
     return { deleted: rows.length };
   },

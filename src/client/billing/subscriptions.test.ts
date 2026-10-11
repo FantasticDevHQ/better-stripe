@@ -110,7 +110,9 @@ describe("getSubscription", () => {
     expect(refPath(ctx.runQuery.mock.calls[0])).toBe(
       "betterStripe/billing/queries/getSubscription",
     );
-    expect(ctx.runQuery.mock.calls[0][1]).toEqual({ subscriptionId: "internal_1" });
+    expect(ctx.runQuery.mock.calls[0][1]).toEqual({
+      subscriptionId: "internal_1",
+    });
   });
 
   it("returns null when the row is missing", async () => {
@@ -492,6 +494,10 @@ describe("syncAllSubscriptions", () => {
         {
           id: "sub_1",
           customer: { id: "cus_1" },
+          customer_account: "acct_buyer",
+          transfer_data: { destination: { id: "acct_store" } },
+          application_fee_percent: 10,
+          pause_collection: { behavior: "void" },
           status: "trialing",
           cancel_at_period_end: false,
           canceled_at: null,
@@ -527,7 +533,10 @@ describe("syncAllSubscriptions", () => {
     );
     expect(ctx.runMutation.mock.calls[0][1]).toEqual({
       stripeSubscriptionId: "sub_1",
-      accountId: "cus_1",
+      accountId: "acct_buyer",
+      chargeType: "destination",
+      destinationAccountId: "acct_store",
+      applicationFeePercent: 10,
       userId: "user_1",
       orgId: "org_1",
       status: "trialing",
@@ -536,6 +545,7 @@ describe("syncAllSubscriptions", () => {
       currentPeriodStart: "2021-01-01T00:00:00.000Z",
       currentPeriodEnd: "2021-02-01T00:00:00.000Z",
       cancelAtPeriodEnd: false,
+      isCollectionPaused: true,
       canceledAt: undefined,
       isTrialing: true,
       trialStart: "2021-01-01T00:00:00.000Z",
@@ -557,7 +567,9 @@ describe("syncAllSubscriptions", () => {
           trial_start: null,
           trial_end: null,
           metadata: { user_id: "user_2", org_id: "org_2" },
-          items: { data: [{ id: "si_2", price: { id: "price_2" }, quantity: 1 }] },
+          items: {
+            data: [{ id: "si_2", price: { id: "price_2" }, quantity: 1 }],
+          },
         },
       ]),
     );
@@ -719,13 +731,18 @@ describe("createSubscription (BTS-17)", () => {
     stripe.subscriptions.create.mockResolvedValue(createdSub());
     const ctx = makeCtx();
 
-    const result = await createSubscription(asStripe(stripe), makeComponent(), ctx, {
-      userId: "buyer_1",
-      customerAccount: "acct_buyer",
-      stripePriceId: "price_1",
-      destinationAccountId: "acct_store",
-      feeConfig: { percent: 10 },
-    });
+    const result = await createSubscription(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+      {
+        userId: "buyer_1",
+        customerAccount: "acct_buyer",
+        stripePriceId: "price_1",
+        destinationAccountId: "acct_store",
+        feeConfig: { percent: 10 },
+      },
+    );
 
     const createArg = stripe.subscriptions.create.mock.calls[0][0];
     expect(createArg.customer_account).toBe("acct_buyer");
@@ -744,7 +761,26 @@ describe("createSubscription (BTS-17)", () => {
       destinationAccountId: "acct_store",
       applicationFeePercent: 10,
     });
-    expect(result).toEqual({ stripeSubscriptionId: "sub_new", status: "active" });
+    expect(result).toEqual({
+      stripeSubscriptionId: "sub_new",
+      status: "active",
+    });
+  });
+
+  it("rejects an unknown Stripe status before writing the ledger", async () => {
+    const stripe = makeStripe();
+    stripe.subscriptions.create.mockResolvedValue(
+      createdSub({ status: "future_status" }),
+    );
+    const ctx = makeCtx();
+    await expect(
+      createSubscription(asStripe(stripe), makeComponent(), ctx, {
+        userId: "buyer_1",
+        customerAccount: "acct_buyer",
+        stripePriceId: "price_1",
+      }),
+    ).rejects.toThrow("Unsupported subscription status: future_status");
+    expect(ctx.runMutation).not.toHaveBeenCalled();
   });
 
   it("flags percent+fixed fees for per-invoice computation", async () => {
@@ -841,7 +877,9 @@ describe("createSubscription (BTS-17)", () => {
       userId: "buyer_1",
       customerAccount: "acct_buyer",
       stripePriceId: "price_1",
-      split: [{ destinationAccountId: "acct_store", role: "store", percent: 90 }],
+      split: [
+        { destinationAccountId: "acct_store", role: "store", percent: 90 },
+      ],
       feeConfig: { percent: 10 },
     });
 
@@ -882,13 +920,15 @@ describe("createSubscription (BTS-17)", () => {
 
 describe("groupSubscriptionsByStore (BTS-19)", () => {
   it("groups a buyer's subscriptions by store, preserving first-seen order", () => {
-    const subs: { stripeSubscriptionId: string; destinationAccountId?: string }[] =
-      [
-        { stripeSubscriptionId: "s1", destinationAccountId: "store_a" },
-        { stripeSubscriptionId: "s2", destinationAccountId: "store_b" },
-        { stripeSubscriptionId: "s3", destinationAccountId: "store_a" },
-        { stripeSubscriptionId: "s4" }, // no store → platform-direct
-      ];
+    const subs: {
+      stripeSubscriptionId: string;
+      destinationAccountId?: string;
+    }[] = [
+      { stripeSubscriptionId: "s1", destinationAccountId: "store_a" },
+      { stripeSubscriptionId: "s2", destinationAccountId: "store_b" },
+      { stripeSubscriptionId: "s3", destinationAccountId: "store_a" },
+      { stripeSubscriptionId: "s4" }, // no store → platform-direct
+    ];
 
     const grouped = groupSubscriptionsByStore(subs);
 
@@ -897,15 +937,15 @@ describe("groupSubscriptionsByStore (BTS-19)", () => {
       "store_b",
       null,
     ]);
-    expect(
-      grouped[0].subscriptions.map((s) => s.stripeSubscriptionId),
-    ).toEqual(["s1", "s3"]);
-    expect(grouped[1].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
-      "s2",
-    ]);
-    expect(grouped[2].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual([
-      "s4",
-    ]);
+    expect(grouped[0].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual(
+      ["s1", "s3"],
+    );
+    expect(grouped[1].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual(
+      ["s2"],
+    );
+    expect(grouped[2].subscriptions.map((s) => s.stripeSubscriptionId)).toEqual(
+      ["s4"],
+    );
   });
 
   it("returns an empty array for no subscriptions", () => {
@@ -984,4 +1024,26 @@ describe("createSubscription — per-store statement descriptor (BTS-32)", () =>
     expect(params.metadata.bsStatementDescriptor).toBeUndefined();
     expect(ctx.runQuery).not.toHaveBeenCalled();
   });
+});
+
+it("passes an explicit attached payment method to Stripe for the first invoice", async () => {
+  const stripe = makeStripe();
+  stripe.subscriptions.create.mockResolvedValue({
+    id: "sub_card",
+    status: "active",
+    items: { data: [] },
+  });
+  await createSubscription(asStripe(stripe), makeComponent(), makeCtx(), {
+    userId: "user",
+    customerAccount: "acct_buyer",
+    stripePriceId: "price_monthly",
+    defaultPaymentMethod: "pm_attached",
+  });
+  expect(stripe.subscriptions.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      customer_account: "acct_buyer",
+      default_payment_method: "pm_attached",
+    }),
+    undefined,
+  );
 });

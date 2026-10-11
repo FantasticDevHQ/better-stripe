@@ -1,3 +1,4 @@
+import { env } from "./_generated/server";
 import { registerRoutes } from "@fantastic.dev/better-stripe";
 import { httpRouter } from "convex/server";
 
@@ -7,9 +8,9 @@ const http = httpRouter();
 
 registerRoutes(http, components.betterStripe, {
   webhookPath: "/stripe/webhook",
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
+  stripeSecretKey: env.STRIPE_SECRET_KEY,
+  webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+  webhookSecretV2: env.STRIPE_WEBHOOK_SECRET_V2,
   webhooks: internal.stripe,
 });
 

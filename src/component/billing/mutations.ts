@@ -25,6 +25,7 @@ export const upsertSubscription = mutation({
     currentPeriodStart: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.string()),
     cancelAtPeriodEnd: v.boolean(),
+    isCollectionPaused: v.optional(v.boolean()),
     canceledAt: v.optional(v.string()),
     isTrialing: v.boolean(),
     trialStart: v.optional(v.string()),

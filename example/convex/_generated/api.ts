@@ -12,6 +12,7 @@ import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
+import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as http from "../http.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
@@ -37,6 +38,7 @@ const fullApi: ApiFromModules<{
   adminTesting: typeof adminTesting;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
+  e2eCheckout: typeof e2eCheckout;
   e2eMoney: typeof e2eMoney;
   http: typeof http;
   "lib/marketplace": typeof lib_marketplace;

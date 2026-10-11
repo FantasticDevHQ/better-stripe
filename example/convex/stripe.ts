@@ -1,9 +1,10 @@
+import { env } from "./_generated/server";
 import { BetterStripe } from "@fantastic.dev/better-stripe";
 
 import { components, internal } from "./_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
 
   // The platform's take on marketplace sales (BTS-41), Skool-style tiers:
   // 2.9% + 30¢ on charges up to $899, 3.9% + 30¢ above. Applied whenever a

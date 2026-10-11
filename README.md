@@ -28,6 +28,25 @@ Release policy lives in `release-please-config.json`. Keep the workflow file nam
 
 The private `example` workspace isn't published.
 
+### Development toolchain
+
+Install with `pnpm install` from the repository root, then run `pnpm build`
+and `pnpm dev` to start the example at http://localhost:5173. The example needs
+Node.js 22.12+ and a configured Convex development deployment; see
+[the example setup guide](example/README.md).
+
+Builds and typechecks use TypeScript 7 (`@typescript/native` aliases
+`typescript`). ESLint and Convex code generation still need the TypeScript 6
+API, so `typescript` aliases Microsoft's `@typescript/typescript6` compatibility
+package. Keep both aliases when updating dependencies, as described in
+[Microsoft's migration guide](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0).
+
+Stripe 23 targets API version `2026-09-30.endive`. Account links now collect
+requirements without a `configurations` parameter; callers can still pass the
+legacy option, but it is not sent to Stripe. See the
+[Stripe API changelog](https://docs.stripe.com/changelog) before upgrading an
+existing integration to this API version.
+
 ### Regenerating codegen
 
 The component ships committed Convex codegen output at `src/component/_generated/{api,component,dataModel,server}.ts` — consumers reach the bindings via the `./_generated/component` subpath export. The example app also commits its own codegen at `example/convex/_generated/`. Running `pnpm dev` (which wraps `convex dev`) regenerates these automatically when the schema or function definitions change, but only against the live dev deployment and only while the dev server is watching.

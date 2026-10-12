@@ -155,6 +155,42 @@ describe("verifyV2Event", () => {
 });
 
 describe("handleV2Event — routing / early returns", () => {
+  it("resolves an account pointer without id from its URL", async () => {
+    const whCtx = makeWhCtx();
+    whCtx.stripe.v2.core.accounts.retrieve.mockResolvedValue(makeAccount());
+    expect(
+      await handleV2Event(
+        whCtx,
+        makeThinEvent({
+          related_object: {
+            type: "v2.core.account",
+            url: "/v2/core/accounts/acct_123",
+          },
+        }),
+      ),
+    ).toBe("acct_123");
+  });
+
+  it("preserves the verified notification context when refreshing account capabilities", async () => {
+    const whCtx = makeWhCtx();
+    whCtx.stripe.v2.core.accounts.retrieve.mockResolvedValue(
+      makeAccount({
+        configuration: {
+          merchant: {
+            applied: true,
+            capabilities: { card_payments: { status: "rejected" } },
+          },
+        },
+      }),
+    );
+    await handleV2Event(whCtx, makeThinEvent({ context: "org_123/acct_123" }));
+    expect(whCtx.stripe.v2.core.accounts.retrieve).toHaveBeenCalledWith(
+      "acct_123",
+      expect.objectContaining({ include: expect.any(Array) }),
+      { stripeContext: "org_123/acct_123" },
+    );
+    expect(dispatched(whCtx.ctx).data.onboardingStatus).toBe("restricted");
+  });
   it("skips and returns null for a non-account V2 event type", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const whCtx = makeWhCtx();

@@ -44,6 +44,7 @@ export function EmbeddedCheckout({
   return (
     <div className={className}>
       <EmbeddedCheckoutProvider
+        key={`${publishableKey}:${clientSecret}`}
         stripe={stripePromise}
         options={{ fetchClientSecret, onComplete }}
       >

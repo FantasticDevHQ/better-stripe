@@ -36,6 +36,7 @@ export async function createV2AccountLink(
     type: "account_onboarding" | "account_update";
     refreshUrl: string;
     returnUrl: string;
+    /** @deprecated Endive collects requirements without configurations. Ignored. */
     configurations?: string[];
   },
 ) {
@@ -147,11 +148,9 @@ export async function getAccountLinkWithStatus(
   });
 
   const getOnboardingLink = async (): Promise<AccountLinkWithStatus> => {
-    const configs = account.applied_configurations ?? [];
     const link = await createV2AccountLink(stripe, ctx, {
       stripeAccountId: opts.stripeAccountId,
       type: "account_onboarding",
-      configurations: configs,
       refreshUrl: opts.refreshUrl,
       returnUrl: opts.returnUrl,
     });

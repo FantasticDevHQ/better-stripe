@@ -58,7 +58,7 @@ export async function handleV2Event(
   // (type: 'v2.core.account') or a sub-resource (type: 'v2.core.account_person').
   // For sub-resources, parse the account ID from the URL (/v2/core/accounts/acct_xxx/...).
   let accountId: string;
-  if (relatedObject.type === "v2.core.account") {
+  if (relatedObject.type === "v2.core.account" && relatedObject.id) {
     accountId = relatedObject.id;
   } else if (relatedObject.url) {
     const match = relatedObject.url.match(/\/accounts\/(acct_[a-zA-Z0-9]+)/);
@@ -74,15 +74,25 @@ export async function handleV2Event(
     return null;
   }
 
-  const account = await stripe.v2.core.accounts.retrieve(accountId, {
+  const retrieveParams = {
     include: [
       "configuration.merchant",
       "configuration.recipient",
       "configuration.customer",
       "identity",
       "requirements",
-    ],
-  });
+    ] satisfies NonNullable<
+      Parameters<Stripe["v2"]["core"]["accounts"]["retrieve"]>[1]
+    >["include"],
+  };
+  // Preserve the verified notification's account/organization context when
+  // fetching the latest resource; otherwise organization keys can fetch from
+  // the wrong account. Keep the raw string in the public thin-event payload.
+  const account = thinEvent.context
+    ? await stripe.v2.core.accounts.retrieve(accountId, retrieveParams, {
+        stripeContext: thinEvent.context,
+      })
+    : await stripe.v2.core.accounts.retrieve(accountId, retrieveParams);
   const identity = account.identity;
   const metadata = (account.metadata ?? {}) as Record<string, string>;
   const { userId, orgId } = extractIdentifiers(metadata);

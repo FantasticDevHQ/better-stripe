@@ -1,10 +1,7 @@
 import type Stripe from "stripe";
 
 export type BetterStripeOnboardingStatus =
-  | "pending"
-  | "in_progress"
-  | "complete"
-  | "restricted";
+  "pending" | "in_progress" | "complete" | "restricted";
 
 /**
  * Accepts a V2 Account (or partial shape with configuration/requirements).
@@ -13,6 +10,14 @@ type StripeAccountLike = Pick<
   Partial<Stripe.V2.Core.Account>,
   "configuration" | "requirements"
 >;
+
+/** Capability groups such as stripe_balance nest their leaf statuses. */
+function capabilityStatuses(value: unknown): string[] {
+  if (!value || typeof value !== "object") return [];
+  const record = value as Record<string, unknown>;
+  if (typeof record.status === "string") return [record.status];
+  return Object.values(record).flatMap(capabilityStatuses);
+}
 
 export function deriveAccountStatus(account: StripeAccountLike): {
   onboardingStatus: BetterStripeOnboardingStatus;
@@ -53,6 +58,25 @@ export function deriveAccountStatus(account: StripeAccountLike): {
     };
   }
 
+  const configuration = account.configuration;
+  const configs = [
+    configuration?.customer,
+    configuration?.merchant,
+    configuration?.recipient,
+  ].filter(Boolean);
+  const statuses = configs.flatMap((cfg) =>
+    capabilityStatuses(cfg?.capabilities),
+  );
+
+  // An applied configuration does not imply that its capabilities are active.
+  // Endive adds rejected to the V2 capability status enum. A blocked capability
+  // takes precedence over requirements still awaiting Stripe verification.
+  if (
+    statuses.some((status) => status === "restricted" || status === "rejected")
+  ) {
+    return { onboardingStatus: "restricted", missingRequirements };
+  }
+
   if (missingRequirements.length > 0) {
     return {
       onboardingStatus: "in_progress",
@@ -60,20 +84,12 @@ export function deriveAccountStatus(account: StripeAccountLike): {
     };
   }
 
-  const configuration = account.configuration;
   if (!configuration) {
     return {
       onboardingStatus: "pending",
       missingRequirements,
     };
   }
-
-  // V2 configurations use `applied: boolean` to indicate active state
-  const configs = [
-    configuration.customer,
-    configuration.merchant,
-    configuration.recipient,
-  ].filter(Boolean);
 
   if (configs.length === 0) {
     return {
@@ -85,7 +101,8 @@ export function deriveAccountStatus(account: StripeAccountLike): {
   const allApplied = configs.every((cfg) => cfg?.applied === true);
 
   return {
-    onboardingStatus: allApplied ? "complete" : "in_progress",
+    onboardingStatus:
+      allApplied && !statuses.includes("pending") ? "complete" : "in_progress",
     missingRequirements,
   };
 }

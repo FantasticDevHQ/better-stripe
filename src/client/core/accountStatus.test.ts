@@ -28,6 +28,73 @@ function makeEntry(
 }
 
 describe("deriveAccountStatus", () => {
+  it.each(["rejected", "restricted"] as const)(
+    "maps an Endive %s capability to restricted even when the config is applied",
+    (status) => {
+      expect(
+        deriveAccountStatus({
+          configuration: {
+            merchant: {
+              applied: true,
+              capabilities: { card_payments: { status } },
+            } as V2AccountConfigMerchant,
+          },
+        }).onboardingStatus,
+      ).toBe("restricted");
+    },
+  );
+
+  it("keeps pending nested capabilities in progress", () => {
+    expect(
+      deriveAccountStatus({
+        configuration: {
+          merchant: {
+            applied: true,
+            capabilities: {
+              stripe_balance: { payouts: { status: "pending" } },
+            },
+          } as V2AccountConfigMerchant,
+        },
+      }).onboardingStatus,
+    ).toBe("in_progress");
+  });
+
+  it("prioritizes rejected capabilities over requirements awaiting Stripe", () => {
+    expect(
+      deriveAccountStatus({
+        requirements: {
+          entries: [
+            makeEntry("identity_document", { awaiting_action_from: "stripe" }),
+          ],
+        },
+        configuration: {
+          merchant: {
+            applied: true,
+            capabilities: { card_payments: { status: "rejected" } },
+          } as V2AccountConfigMerchant,
+        },
+      }),
+    ).toMatchObject({
+      onboardingStatus: "restricted",
+      missingRequirements: ["identity_document"],
+    });
+  });
+
+  it("permits active capabilities and ignores unsupported optional methods", () => {
+    expect(
+      deriveAccountStatus({
+        configuration: {
+          merchant: {
+            applied: true,
+            capabilities: {
+              card_payments: { status: "active" },
+              ach_debit_payments: { status: "unsupported" },
+            },
+          } as V2AccountConfigMerchant,
+        },
+      }).onboardingStatus,
+    ).toBe("complete");
+  });
   it("returns pending when no requirements and no config", () => {
     const status = deriveAccountStatus({});
     expect(status.onboardingStatus).toBe("pending");

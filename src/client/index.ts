@@ -1095,6 +1095,7 @@ export class BetterStripe {
       type: "account_onboarding" | "account_update";
       refreshUrl: string;
       returnUrl: string;
+      /** @deprecated Endive collects requirements without configurations. Ignored. */
       configurations?: string[];
     },
   ) {

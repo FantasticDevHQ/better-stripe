@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.6.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.5.0...v0.6.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* the package name changes to @fantastic.dev/better-stripe; @getdojo/better-stripe receives no further releases.
+
+### Features
+
+* complete Stripe Endive compatibility and release 0.5.0 ([#126](https://github.com/FantasticDevHQ/better-stripe/issues/126)) ([135695f](https://github.com/FantasticDevHQ/better-stripe/commit/135695f51906ea156a36dbe8d0d43cf1d99e5fc1))
+* publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing (BTS-114) ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
+
+
+### Bug Fixes
+
+* repair example checkout billing and seller flows ([#125](https://github.com/FantasticDevHQ/better-stripe/issues/125)) ([5911fb8](https://github.com/FantasticDevHQ/better-stripe/commit/5911fb8d8bc585fab62fe48e58e1e964047b8fd9))
+
+
+### Maintenance
+
+* **deps:** update dependencies to latest (BTS-115) ([#122](https://github.com/FantasticDevHQ/better-stripe/issues/122)) ([a7e4161](https://github.com/FantasticDevHQ/better-stripe/commit/a7e416179d20afdd2356668cbd4482e2e3fa4eff))
+
+
+### Continuous Integration
+
+* **release:** open release PRs with the org release GitHub App ([#124](https://github.com/FantasticDevHQ/better-stripe/issues/124)) ([3c94f2e](https://github.com/FantasticDevHQ/better-stripe/commit/3c94f2ef317f939ac039c261f9c148e6b1f14a56))
+
 ## 0.5.0
 
 ### Features

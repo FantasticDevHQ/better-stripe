@@ -80,6 +80,13 @@ export type RegisterRoutesConfig = {
   onEvent?: StripeEventHandler<StripeWebhookEvent>;
   events?: StripeEventHandlers;
   /**
+   * Select verified V1 events whose onEvent/event hooks must succeed before
+   * delivery is acknowledged. Failures return 500 and permit redelivery;
+   * an in-flight delivery returns 503. Hooks must be idempotent by event.id.
+   * V2 events and scheduled asyncWebhook hooks retain best-effort behavior.
+   */
+  retryOnHookError?: (event: StripeWebhookEvent) => boolean;
+  /**
    * Function references to the app's exported `webhookHandlers()` pair,
    * e.g. `webhooks: internal.stripe` (no cast needed). When provided,
    * webhook upserts run through `syncWebhook` so sync triggers execute in the

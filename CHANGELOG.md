@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.5.0
+
+### Features
+
+- Incorporate Dojo's `retryOnHookError` webhook patch upstream. Selected,
+  signature-verified V1 `onEvent`/event hooks must succeed before acknowledgment;
+  failed hooks and unavailable ledger writes return 500, in-flight deliveries
+  return 503, and successful redelivery deduplicates. The default remains
+  best-effort. Add regression coverage using real SDK signatures and the real
+  Convex component ledger, including stale-reservation recovery.
+
+### Bug Fixes
+
+- Complete support for Stripe API **`2026-09-30.endive`** with stripe-node
+  **23.0.0** (already pinned in the 0.4.0 checkout). Verify both client factories'
+  outgoing version headers against the typed single-source API constant.
+- Preserve verified V2 notification context when retrieving accounts; accept
+  related-object pointers without an id and resolve accounts from their URL.
+- Map Endive `rejected`/`restricted` capabilities to `restricted` and pending
+  capabilities to `in_progress`, including nested Stripe balance capabilities.
+- Remount embedded Checkout when its key/client secret changes, using React
+  Stripe.js 7's current `createEmbeddedCheckoutPage` integration.
+- Deprecate the retained, ignored V2 account-link `configurations` option and
+  remove its obsolete internal use.
+
+### Migration
+
+See [MIGRATION.md](MIGRATION.md) for removing the Dojo pnpm patch, upgrading
+0.2.0 webhook wiring, billing-anchor/payment-method request changes, and
+**separate consumer-controlled webhook destination upgrades**. The public
+`V2ThinEvent.related_object.id` is now optional; consumers must guard it.
+No account defaults, event destinations, DNS, or production deployments are
+changed by this release.
+
 ## 0.4.0
 
 **Renamed to `@fantastic.dev/better-stripe`.** This is the first release under the new name, published from `FantasticDevHQ/better-stripe` through npm trusted publishing with provenance. `@getdojo/better-stripe` is deprecated and gets no further releases. To migrate, replace `@getdojo/better-stripe` with `@fantastic.dev/better-stripe` in `package.json`, in imports and in `convex.config.ts`, then run `npx convex dev` to regenerate `_generated/`. The API is unchanged by the rename.

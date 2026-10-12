@@ -6,7 +6,7 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 
 ## Status
 
-**Version**: `0.4.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.5.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
@@ -1038,7 +1038,7 @@ the deployment env — no `app.use` wiring required.
 
 ### Stripe API Version
 
-The component pins the Stripe API version internally (`2026-05-27.dahlia`). Upgrading the pinned version requires a package release and changelog entry. Apps do not need to set `STRIPE_API_VERSION`.
+The component pins the Stripe API version internally (`2026-09-30.endive`) using the installed stripe-node 23 SDK's exact API-version type. Upgrading the pinned version requires a package release and changelog entry. Apps do not need to set `STRIPE_API_VERSION`. See [the migration notes](MIGRATION.md) for removing Dojo's fulfillment-retry patch and upgrading webhook payload versions separately.
 
 ### SDK Management
 

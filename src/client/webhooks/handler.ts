@@ -179,6 +179,13 @@ export async function handleWebhookRequest(
     );
   }
 
+  let requiresHookSuccess: boolean;
+  try {
+    requiresHookSuccess = config?.retryOnHookError?.(event) ?? false;
+  } catch (error) {
+    console.error("[better-stripe] retryOnHookError selector failed:", error);
+    return jsonResponse({ error: "Webhook retry policy failed" }, 500);
+  }
   // --- Atomic webhook dedup via event ledger ---
   const eventId = event.id;
   console.info(
@@ -195,6 +202,9 @@ export async function handleWebhookRequest(
       },
     );
     if (dedupStatus !== "inserted") {
+      if (requiresHookSuccess && dedupStatus === "processing") {
+        return jsonResponse({ error: "Event processing in progress" }, 503);
+      }
       console.info(`[better-stripe]   ↳ deduplicated (already processed)`);
       return jsonResponse({ success: true, deduplicated: true }, 200);
     }
@@ -204,6 +214,8 @@ export async function handleWebhookRequest(
       `[better-stripe] Webhook ledger insert failed for ${eventId}:`,
       error,
     );
+    if (requiresHookSuccess)
+      return jsonResponse({ error: "Webhook ledger unavailable" }, 500);
   }
 
   // --- Process event (sync) ---
@@ -226,6 +238,29 @@ export async function handleWebhookRequest(
     return jsonResponse({ error: "Sync processing failed" }, 500);
   }
 
+  if (requiresHookSuccess) {
+    try {
+      await runHooks(ctx, config, event, true);
+    } catch (error) {
+      console.error(
+        `[better-stripe] Required hook failed for ${event.type}:`,
+        error,
+      );
+      try {
+        await ctx.runMutation(
+          componentRef(component, "webhooks/mutations/markWebhookEventFailed"),
+          {
+            stripeEventId: eventId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
+      } catch {
+        // A stale processing row is recoverable on a later delivery.
+      }
+      return jsonResponse({ error: "Application fulfillment failed" }, 500);
+    }
+  }
+
   // --- Mark processed ---
   try {
     await ctx.runMutation(
@@ -235,6 +270,8 @@ export async function handleWebhookRequest(
       },
     );
   } catch {
+    if (requiresHookSuccess)
+      return jsonResponse({ error: "Webhook completion unavailable" }, 500);
     /* ledger update best-effort */
   }
 
@@ -244,7 +281,7 @@ export async function handleWebhookRequest(
 
   // --- Run async hooks (errors must not crash the handler) ---
   try {
-    await runHooks(ctx, config, event);
+    if (!requiresHookSuccess) await runHooks(ctx, config, event);
   } catch (error) {
     console.error(
       `[better-stripe] Hook runner error for ${event.type}:`,

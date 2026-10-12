@@ -26,7 +26,8 @@ export type V2ThinEvent = {
   created: string;
   livemode?: boolean;
   related_object?: {
-    id: string;
+    /** Singleton related objects may omit their id (stripe-node 23). */
+    id?: string;
     type: string;
     url: string;
   };

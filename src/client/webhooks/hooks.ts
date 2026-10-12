@@ -14,11 +14,13 @@ export async function runHooks(
   ctx: WebhookActionCtx,
   config: RegisterRoutesConfig | undefined,
   event: StripeWebhookEvent,
+  shouldThrow = false,
 ): Promise<void> {
   if (config?.onEvent) {
     try {
       await config.onEvent(ctx, event);
     } catch (error) {
+      if (shouldThrow) throw error;
       console.error(
         `[better-stripe] onEvent hook error for ${event.type}:`,
         error,
@@ -31,6 +33,7 @@ export async function runHooks(
     try {
       await handler(ctx, event);
     } catch (error) {
+      if (shouldThrow) throw error;
       console.error(
         `[better-stripe] Event hook error for ${event.type}:`,
         error,

@@ -14,6 +14,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.7.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.1...v0.7.0) (2026-10-13)
+
+
+### Features
+
+* expand marketplace example with seller billing and sandbox fixtures ([#129](https://github.com/FantasticDevHQ/better-stripe/issues/129)) ([7f21f53](https://github.com/FantasticDevHQ/better-stripe/commit/7f21f5365ce82cab9ecc984b94f444408223f8b8))
+
 ## [0.6.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.0...v0.6.1) (2026-10-13)
 
 

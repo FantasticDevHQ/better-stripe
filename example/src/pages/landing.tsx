@@ -76,19 +76,21 @@ export function Landing() {
                       <CardHeader>
                         <CardTitle>{product.name}</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <p className="text-muted-foreground text-sm">
-                          {product.description}
-                        </p>
-                        <p className="text-xl font-semibold">
-                          {new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: price.currency.toUpperCase(),
-                          }).format(price.unitAmount / 100)}
-                          {price.interval
-                            ? ` / ${price.interval}`
-                            : " one time"}
-                        </p>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground text-sm">
+                            {product.description}
+                          </p>
+                          <p className="text-xl font-semibold">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: price.currency.toUpperCase(),
+                            }).format(price.unitAmount / 100)}
+                            {price.interval
+                              ? ` / ${price.interval}`
+                              : " one time"}
+                          </p>
+                        </div>
                       </CardContent>
                       <CardFooter>
                         {canBuy ? (

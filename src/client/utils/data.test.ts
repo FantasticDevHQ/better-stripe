@@ -54,6 +54,8 @@ describe("clearAll", () => {
       runMutation: vi.fn().mockRejectedValue(new Error("table locked")),
     } as unknown as RunCtx;
 
-    await expect(clearAll(makeComponent(), ctx)).rejects.toThrow("table locked");
+    await expect(clearAll(makeComponent(), ctx)).rejects.toThrow(
+      "table locked",
+    );
   });
 });

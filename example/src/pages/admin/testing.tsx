@@ -101,9 +101,11 @@ export function AdminTesting() {
       {/* Environment Guard */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            Environment Guard
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Environment Guard
+            </div>
           </CardTitle>
           <CardDescription>
             <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
@@ -128,12 +130,14 @@ export function AdminTesting() {
       {/* Real Webhook Triggers */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Real Webhook Triggers
-            <Badge variant="destructive" className="ml-1">
-              test-mode only
-            </Badge>
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Real Webhook Triggers
+              <Badge variant="destructive" className="ml-1">
+                test-mode only
+              </Badge>
+            </div>
           </CardTitle>
           <CardDescription>
             Fires <strong>real</strong> test-mode Stripe API calls against the
@@ -197,9 +201,11 @@ export function AdminTesting() {
       {/* Fixture Factories */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5" />
-            Fixture Factories
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <FlaskConical className="h-5 w-5" />
+              Fixture Factories
+            </div>
           </CardTitle>
           <CardDescription>
             Create typed test data for unit and integration tests.
@@ -305,9 +311,9 @@ export function AdminTesting() {
                       {entry.timestamp}
                     </span>
                     {entry.status === "success" ? (
-                      <CheckCircle className="h-4 w-4 shrink-0 text-green-400" />
+                      <CheckCircle className="h-4 w-4 shrink-0 text-success" />
                     ) : (
-                      <XCircle className="h-4 w-4 shrink-0 text-red-400" />
+                      <XCircle className="h-4 w-4 shrink-0 text-destructive" />
                     )}
                     <div className="min-w-0">
                       <span className="font-mono font-medium">

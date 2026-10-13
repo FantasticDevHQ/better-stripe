@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { roleHome } from "@/lib/role-navigation";
-import { cn } from "@/lib/utils";
 import { type Role, useRole } from "@/providers/role-context";
 import { Eye, Palette, Settings, User, Users } from "lucide-react";
 
@@ -25,7 +24,7 @@ export function RoleSwitcher() {
         return (
           <Button
             key={role.value}
-            variant={currentRole === role.value ? "default" : "ghost"}
+            variant={currentRole === role.value ? "default" : "muted-ghost"}
             size="sm"
             onClick={() => {
               setRole(role.value);
@@ -39,9 +38,6 @@ export function RoleSwitcher() {
               ))
                 navigate(roleHome(role.value));
             }}
-            className={cn(
-              currentRole !== role.value && "text-muted-foreground",
-            )}
           >
             <Icon className="mr-1.5 h-3.5 w-3.5" />
             {role.label}

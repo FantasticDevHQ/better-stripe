@@ -28,16 +28,13 @@ describe("useStripeMode", () => {
     expect(useQueryMock).toHaveBeenCalledWith(mockQueryRef, {});
   });
 
-  it.each(["test", "live"] as const)(
-    "returns the resolved %s mode",
-    (mode) => {
-      useQueryMock.mockReturnValue(mode);
+  it.each(["test", "live"] as const)("returns the resolved %s mode", (mode) => {
+    useQueryMock.mockReturnValue(mode);
 
-      const result = useStripeMode(mockQueryRef);
+    const result = useStripeMode(mockQueryRef);
 
-      expect(result).toBe(mode);
-    },
-  );
+    expect(result).toBe(mode);
+  });
 
   it("returns undefined while the query is still loading", () => {
     useQueryMock.mockReturnValue(undefined);

@@ -70,36 +70,40 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Add a Payment Method
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Add a Payment Method
+            </div>
           </CardTitle>
           <CardDescription>Add a new card to your account.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <AddCardForm
-            onSuccess={async (paymentMethodId) => {
-              setAttachError(null);
-              try {
-                await attachMethod({
-                  paymentMethodId,
-                  stripeCustomerId: stripeAccountId,
-                });
-                await reload();
-              } catch (err) {
-                setAttachError(
-                  err instanceof Error ? err.message : String(err),
-                );
-              }
-            }}
-          />
+        <CardContent>
+          <div className="space-y-4">
+            <AddCardForm
+              onSuccess={async (paymentMethodId) => {
+                setAttachError(null);
+                try {
+                  await attachMethod({
+                    paymentMethodId,
+                    stripeCustomerId: stripeAccountId,
+                  });
+                  await reload();
+                } catch (err) {
+                  setAttachError(
+                    err instanceof Error ? err.message : String(err),
+                  );
+                }
+              }}
+            />
 
-          {attachError && (
-            <Alert variant="destructive" role="alert">
-              <AlertTitle>Action failed</AlertTitle>
-              <AlertDescription>{attachError}</AlertDescription>
-            </Alert>
-          )}
+            {attachError && (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{attachError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -107,47 +111,49 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
         <CardHeader>
           <CardTitle>Saved Payment Methods</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : loadError ? (
-            <Alert variant="destructive" role="alert">
-              <AlertTitle>Failed to load payment methods</AlertTitle>
-              <AlertDescription>{loadError}</AlertDescription>
-            </Alert>
-          ) : methods.length === 0 ? (
-            <Alert role="status" aria-live="polite">
-              <AlertDescription>
-                No data found. Add a payment method above.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <PaymentMethodsList
-              methods={methods}
-              onDelete={async (paymentMethodId: string) => {
-                setDeleteError(null);
-                try {
-                  await detachMethod({ paymentMethodId });
-                  await reload();
-                } catch (err) {
-                  setDeleteError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                }
-              }}
-            />
-          )}
+        <CardContent>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : loadError ? (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Failed to load payment methods</AlertTitle>
+                <AlertDescription>{loadError}</AlertDescription>
+              </Alert>
+            ) : methods.length === 0 ? (
+              <Alert role="status" aria-live="polite">
+                <AlertDescription>
+                  No data found. Add a payment method above.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <PaymentMethodsList
+                methods={methods}
+                onDelete={async (paymentMethodId: string) => {
+                  setDeleteError(null);
+                  try {
+                    await detachMethod({ paymentMethodId });
+                    await reload();
+                  } catch (err) {
+                    setDeleteError(
+                      err instanceof Error ? err.message : String(err),
+                    );
+                  }
+                }}
+              />
+            )}
 
-          {deleteError && (
-            <Alert variant="destructive" role="alert">
-              <AlertTitle>Action failed</AlertTitle>
-              <AlertDescription>{deleteError}</AlertDescription>
-            </Alert>
-          )}
+            {deleteError && (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{deleteError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

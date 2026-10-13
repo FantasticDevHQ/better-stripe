@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 
 import type { Doc, Id } from "../_generated/dataModel";
-import { mutation, type MutationCtx } from "../_generated/server";
+import { mutation } from "../_generated/server";
 import { feeRoutingFields } from "../lib/fees";
-import { computeReversalSlices } from "../lib/reversals";
+import { computeReversalSlices, deriveReversalState } from "../lib/reversals";
+import { paymentSeller } from "../lib/paymentSeller";
 import {
   disputeFields,
   paymentStatusValidator,
@@ -12,23 +13,7 @@ import {
   transferFields,
 } from "./validators";
 
-async function paymentSeller(
-  ctx: MutationCtx,
-  stripePaymentIntentId?: string,
-): Promise<string | undefined> {
-  if (!stripePaymentIntentId) return undefined;
-  const payment = await ctx.db
-    .query("payments")
-    .withIndex("by_stripe_payment_intent_id", (q) =>
-      q.eq("stripePaymentIntentId", stripePaymentIntentId),
-    )
-    .first();
-  return payment?.destinationAccountId;
-}
-
-// =============================================================================
-// PAYMENT MUTATIONS
-// =============================================================================
+// Payment mutations
 
 export const upsertPayment = mutation({
   args: {
@@ -331,30 +316,6 @@ export const upsertDispute = mutation({
 // =============================================================================
 // TRANSFER MUTATIONS (ledger — BTS-12)
 // =============================================================================
-
-/**
- * Derive reversal status + transfer status from a (transfer amount, cumulative
- * reversed amount) pair. Shared by upsert and reversal so the three reversal
- * fields can never drift.
- */
-function deriveReversalState(
-  amount: number,
-  reversedAmount: number,
-  baseStatus: "pending" | "paid" | "failed" | "reversed",
-) {
-  const reversalStatus =
-    reversedAmount <= 0
-      ? undefined
-      : reversedAmount >= amount
-        ? ("fully_reversed" as const)
-        : ("partially_reversed" as const);
-  return {
-    reversedAmount: reversedAmount > 0 ? reversedAmount : undefined,
-    reversalStatus,
-    status:
-      reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
-  };
-}
 
 export const upsertTransfer = mutation({
   args: transferFields,

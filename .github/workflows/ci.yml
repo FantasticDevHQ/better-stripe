@@ -18,10 +18,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm test
+      - run: pnpm run check:all
 
   shadscan:
     name: Shadscan UI quality gate (100)

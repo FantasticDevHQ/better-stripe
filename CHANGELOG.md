@@ -16,44 +16,38 @@
 
 ## [0.7.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.1...v0.7.0) (2026-10-13)
 
-
 ### Features
 
-* expand marketplace example with seller billing and sandbox fixtures ([#129](https://github.com/FantasticDevHQ/better-stripe/issues/129)) ([7f21f53](https://github.com/FantasticDevHQ/better-stripe/commit/7f21f5365ce82cab9ecc984b94f444408223f8b8))
+- expand marketplace example with seller billing and sandbox fixtures ([#129](https://github.com/FantasticDevHQ/better-stripe/issues/129)) ([7f21f53](https://github.com/FantasticDevHQ/better-stripe/commit/7f21f5365ce82cab9ecc984b94f444408223f8b8))
 
 ## [0.6.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.0...v0.6.1) (2026-10-13)
 
-
 ### Bug Fixes
 
-* complete large split reversals and keep public docs current ([#127](https://github.com/FantasticDevHQ/better-stripe/issues/127)) ([e7cc0a9](https://github.com/FantasticDevHQ/better-stripe/commit/e7cc0a9b0ea01f4993447f9d73edebe71b364081))
+- complete large split reversals and keep public docs current ([#127](https://github.com/FantasticDevHQ/better-stripe/issues/127)) ([e7cc0a9](https://github.com/FantasticDevHQ/better-stripe/commit/e7cc0a9b0ea01f4993447f9d73edebe71b364081))
 
 ## [0.6.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.5.0...v0.6.0) (2026-10-12)
 
-
 ### ⚠ BREAKING CHANGES
 
-* the package name changes to @fantastic.dev/better-stripe; @getdojo/better-stripe receives no further releases.
+- the package name changes to @fantastic.dev/better-stripe; @getdojo/better-stripe receives no further releases.
 
 ### Features
 
-* complete Stripe Endive compatibility and release 0.5.0 ([#126](https://github.com/FantasticDevHQ/better-stripe/issues/126)) ([135695f](https://github.com/FantasticDevHQ/better-stripe/commit/135695f51906ea156a36dbe8d0d43cf1d99e5fc1))
-* publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
-
+- complete Stripe Endive compatibility and release 0.5.0 ([#126](https://github.com/FantasticDevHQ/better-stripe/issues/126)) ([135695f](https://github.com/FantasticDevHQ/better-stripe/commit/135695f51906ea156a36dbe8d0d43cf1d99e5fc1))
+- publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
 
 ### Bug Fixes
 
-* repair example checkout billing and seller flows ([#125](https://github.com/FantasticDevHQ/better-stripe/issues/125)) ([5911fb8](https://github.com/FantasticDevHQ/better-stripe/commit/5911fb8d8bc585fab62fe48e58e1e964047b8fd9))
-
+- repair example checkout billing and seller flows ([#125](https://github.com/FantasticDevHQ/better-stripe/issues/125)) ([5911fb8](https://github.com/FantasticDevHQ/better-stripe/commit/5911fb8d8bc585fab62fe48e58e1e964047b8fd9))
 
 ### Maintenance
 
-* **deps:** update dependencies to latest ([#122](https://github.com/FantasticDevHQ/better-stripe/issues/122)) ([a7e4161](https://github.com/FantasticDevHQ/better-stripe/commit/a7e416179d20afdd2356668cbd4482e2e3fa4eff))
-
+- **deps:** update dependencies to latest ([#122](https://github.com/FantasticDevHQ/better-stripe/issues/122)) ([a7e4161](https://github.com/FantasticDevHQ/better-stripe/commit/a7e416179d20afdd2356668cbd4482e2e3fa4eff))
 
 ### Continuous Integration
 
-* **release:** open release PRs with the org release GitHub App ([#124](https://github.com/FantasticDevHQ/better-stripe/issues/124)) ([3c94f2e](https://github.com/FantasticDevHQ/better-stripe/commit/3c94f2ef317f939ac039c261f9c148e6b1f14a56))
+- **release:** open release PRs with the org release GitHub App ([#124](https://github.com/FantasticDevHQ/better-stripe/issues/124)) ([3c94f2e](https://github.com/FantasticDevHQ/better-stripe/commit/3c94f2ef317f939ac039c261f9c148e6b1f14a56))
 
 ## 0.5.0
 
@@ -125,7 +119,7 @@ changed by this release.
 
 - [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `DisputesList` component with due-by countdown badges ([#41](https://github.com/kellykampen/better-stripe/issues/41)).
 
-  Pure, hook-free presentational list of a seller's disputes, sorted by evidence deadline (soonest first, no-deadline rows last, overdue rows naturally at the top). Rows accept the exact shape `getDisputeWithCountdown`/`useDisputeWithCountdown`  produce, so the component never recomputes deadlines itself.
+  Pure, hook-free presentational list of a seller's disputes, sorted by evidence deadline (soonest first, no-deadline rows last, overdue rows naturally at the top). Rows accept the exact shape `getDisputeWithCountdown`/`useDisputeWithCountdown` produce, so the component never recomputes deadlines itself.
 
   Headless overrides: `className`, i18n labels (`emptyLabel`, `loadingLabel`, `dueLabel`/`overdueLabel` with `{days}` templating), a per-row `renderRow` slot, and a whole-list `children` render prop. Default markup is semantic `ul[role=list] > li[data-dispute-id]` with a `span[role=status]` badge carrying `data-overdue`. Purely additive.
 
@@ -191,7 +185,7 @@ changed by this release.
 
 - [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add product-level `statement_descriptor` so it covers a subscription's first charge ([#63](https://github.com/kellykampen/better-stripe/issues/63)).
 
-  The invoice-time descriptor path  sets the descriptor at `invoice.created`, which never reaches a subscription's first invoice — Stripe finalizes and (for `charge_automatically`/Checkout subscription-mode) pays invoice [#1](https://github.com/kellykampen/better-stripe/issues/1) synchronously at creation, before that handler runs. Per Stripe's descriptor precedence (Invoice → Product → charge-type default), a product-level `statement_descriptor` covers every cycle including the first.
+  The invoice-time descriptor path sets the descriptor at `invoice.created`, which never reaches a subscription's first invoice — Stripe finalizes and (for `charge_automatically`/Checkout subscription-mode) pays invoice [#1](https://github.com/kellykampen/better-stripe/issues/1) synchronously at creation, before that handler runs. Per Stripe's descriptor precedence (Invoice → Product → charge-type default), a product-level `statement_descriptor` covers every cycle including the first.
 
   `createProduct`/`updateProduct` now resolve the per-store descriptor (the store's stored suffix, else the platform default — mirroring the account-level descriptor resolution) and stamp it onto the Stripe Product's `statement_descriptor`, for products with an `accountId`. No public API change to existing call shapes.
 
@@ -280,7 +274,7 @@ changed by this release.
 
   - A bare metadata/status update (no `evidence`) is unchanged — no `submit` is forced.
   - An explicit `submit: true` / `submit: false` is always honored.
-  - `EvidenceForm`  already passes `submit` explicitly, so it is unaffected.
+  - `EvidenceForm` already passes `submit` explicitly, so it is unaffected.
 
   If you relied on the old behavior of submitting evidence by omitting `submit`, pass `submit: true` explicitly.
 
@@ -288,7 +282,7 @@ changed by this release.
 
 - [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Regenerate the component's `_generated` API so transfer/dispute queries are typed for consumers ([#71](https://github.com/kellykampen/better-stripe/issues/71)).
 
-  `src/component/_generated/component.ts` was stale — it predated `listTransfersByCharge`/`listTransfersByAccount`  and `getDisputeByStripeId`/`listDisputes`, so `components.betterStripe.connect.queries.*` for those methods was untyped for any consumer reaching into the raw component API. Regenerated via `npx convex codegen`; no source logic changed, generated bindings only.
+  `src/component/_generated/component.ts` was stale — it predated `listTransfersByCharge`/`listTransfersByAccount` and `getDisputeByStripeId`/`listDisputes`, so `components.betterStripe.connect.queries.*` for those methods was untyped for any consumer reaching into the raw component API. Regenerated via `npx convex codegen`; no source logic changed, generated bindings only.
 
 - [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: `updateDispute` now sends an explicit `submit: false` on every call, including metadata-only updates ([#67](https://github.com/kellykampen/better-stripe/issues/67)).
 

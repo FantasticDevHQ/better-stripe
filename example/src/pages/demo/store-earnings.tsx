@@ -133,70 +133,72 @@ export function StoreEarnings() {
         <CardHeader>
           <CardTitle>Balance &amp; payouts</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <PayoutSchedule
-            balance={balance}
-            payouts={payoutRows}
-            isLoading={payouts === undefined}
-          >
-            {({ availableLabel, pendingLabel, nextPayoutMessage }) => (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Figure label="Available" value={availableLabel} />
-                  <Figure label="Pending" value={pendingLabel} />
+        <CardContent>
+          <div className="space-y-6">
+            <PayoutSchedule
+              balance={balance}
+              payouts={payoutRows}
+              isLoading={payouts === undefined}
+            >
+              {({ availableLabel, pendingLabel, nextPayoutMessage }) => (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Figure label="Available" value={availableLabel} />
+                    <Figure label="Pending" value={pendingLabel} />
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    {nextPayoutMessage}
+                  </p>
                 </div>
-                <p className="text-muted-foreground text-sm">
-                  {nextPayoutMessage}
-                </p>
-              </div>
-            )}
-          </PayoutSchedule>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Payout ID</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Arrival</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payoutRows.map((payout) => (
-                <TableRow key={payout._id}>
-                  <TableCell className="font-mono text-xs">
-                    {payout.stripePayoutId}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(
-                      payout.amount ?? 0,
-                      payout.currency || "usd",
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {payout.status.replace("_", " ")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {payout.arrivalDate
-                      ? new Date(payout.arrivalDate).toLocaleDateString()
-                      : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {payoutRows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-muted-foreground py-6">
-                    <EmptyState>
-                      No payouts yet. Balance reflects funds awaiting the next
-                      rolling payout.
-                    </EmptyState>
-                  </TableCell>
-                </TableRow>
               )}
-            </TableBody>
-          </Table>
+            </PayoutSchedule>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Payout ID</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Arrival</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payoutRows.map((payout) => (
+                  <TableRow key={payout._id}>
+                    <TableCell variant="identifier" density="compact">
+                      {payout.stripePayoutId}
+                    </TableCell>
+                    <TableCell variant="amount">
+                      {formatCurrency(
+                        payout.amount ?? 0,
+                        payout.currency || "usd",
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {payout.status.replace("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell tone="muted">
+                      {payout.arrivalDate
+                        ? new Date(payout.arrivalDate).toLocaleDateString()
+                        : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {payoutRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} size="summary" tone="muted">
+                      <EmptyState>
+                        No payouts yet. Balance reflects funds awaiting the next
+                        rolling payout.
+                      </EmptyState>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

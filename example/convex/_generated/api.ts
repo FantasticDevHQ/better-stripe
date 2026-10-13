@@ -17,6 +17,7 @@ import type * as e2eMoney from "../e2eMoney.js";
 import type * as http from "../http.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as lib_sandboxFixturePlan from "../lib/sandboxFixturePlan.js";
+import type * as lib_sandboxFixtureResources from "../lib/sandboxFixtureResources.js";
 import type * as lib_sellerCostLedger from "../lib/sellerCostLedger.js";
 import type * as lib_sellerCostValidators from "../lib/sellerCostValidators.js";
 import type * as lib_sellerCosts from "../lib/sellerCosts.js";
@@ -65,6 +66,7 @@ const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/marketplace": typeof lib_marketplace;
   "lib/sandboxFixturePlan": typeof lib_sandboxFixturePlan;
+  "lib/sandboxFixtureResources": typeof lib_sandboxFixtureResources;
   "lib/sellerCostLedger": typeof lib_sellerCostLedger;
   "lib/sellerCostValidators": typeof lib_sellerCostValidators;
   "lib/sellerCosts": typeof lib_sellerCosts;

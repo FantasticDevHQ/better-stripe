@@ -21,6 +21,19 @@ export default defineConfig({
   },
   test: {
     silent: true,
+    coverage: {
+      reporter: ["text", "json-summary", "html"],
+      include: [
+        "src/**/*.{ts,tsx}",
+        "example/src/**/*.{ts,tsx}",
+        "example/convex/**/*.ts",
+      ],
+      exclude: [
+        "**/_generated/**",
+        "**/*.test.{ts,tsx}",
+        "example/src/test/**",
+      ],
+    },
     projects: [
       {
         test: {

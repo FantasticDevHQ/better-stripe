@@ -37,7 +37,8 @@ describe("getPublishableKey", () => {
     const result = await getPublishableKey(component, ctx);
 
     expect(result).toBe("pk_test_123");
-    const [ref, args] = (ctx.runQuery as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [ref, args] = (ctx.runQuery as ReturnType<typeof vi.fn>).mock
+      .calls[0];
     expect(ref[TO_REF]).toBe("betterStripe/core/queries/getPublishableKey");
     expect(args).toEqual({});
   });

@@ -164,99 +164,105 @@ export function AffiliateSplitDemo() {
 
       {/* Attribution */}
       <Card>
-        <CardContent className="space-y-3 p-6">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Referral attribution</span>
-            {attributed ? (
-              <Badge data-testid="attribution-badge">
-                Referred by {personas?.affiliate?.name}
-              </Badge>
-            ) : (
-              <Badge variant="secondary" data-testid="attribution-badge">
-                No referral — store keeps the full net
-              </Badge>
+        <CardContent padding="lg">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Referral attribution</span>
+              {attributed ? (
+                <Badge data-testid="attribution-badge">
+                  Referred by {personas?.affiliate?.name}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" data-testid="attribution-badge">
+                  No referral — store keeps the full net
+                </Badge>
+              )}
+            </div>
+            {!attributed && (
+              <p className="text-muted-foreground text-sm">
+                Add an affiliate:{" "}
+                <Button
+                  variant="link"
+                  className="h-auto p-0"
+                  nativeButton={false}
+                  role="link"
+                  render={
+                    <Link to={referralLink} aria-label="Open affiliate link" />
+                  }
+                >
+                  visit with ?ref={AFFILIATE_REFERRAL_CODE}
+                </Button>
+              </p>
             )}
           </div>
-          {!attributed && (
-            <p className="text-muted-foreground text-sm">
-              Add an affiliate:{" "}
-              <Button
-                variant="link"
-                className="h-auto p-0"
-                nativeButton={false}
-                role="link"
-                render={
-                  <Link to={referralLink} aria-label="Open affiliate link" />
-                }
-              >
-                visit with ?ref={AFFILIATE_REFERRAL_CODE}
-              </Button>
-            </p>
-          )}
         </CardContent>
       </Card>
 
       {/* Run the sale */}
       <Card>
-        <CardContent className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold">Run a referred sale</h2>
-          {personas === undefined ? (
-            <Skeleton className="h-24 w-full" />
-          ) : !storeAccountId || !oneTimePrice ? (
-            <Alert>
-              <AlertTitle>No data found</AlertTitle>
-              <AlertDescription>
-                The marketplace is not seeded. Run <code>npm run setup</code> to
-                seed the marketplace personas and catalog, then reload.
-              </AlertDescription>
-            </Alert>
-          ) : !showCheckout ? (
-            <div className="space-y-3">
-              <p className="text-sm">
-                One-time purchase — <strong>$100.00</strong> from{" "}
-                {personas.store?.name}.
-              </p>
-              <Button onClick={() => setShowCheckout(true)}>
-                Buy with test card
-              </Button>
-            </div>
-          ) : !publishableKey ? (
-            <Skeleton className="h-32 w-full" />
-          ) : (
-            <SplitCheckoutForm
-              priceId={oneTimePrice.stripePriceId}
-              userId={currentUser.id}
-              referralCode={referralCode}
-              publishableKey={publishableKey}
-            />
-          )}
+        <CardContent padding="lg">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Run a referred sale</h2>
+            {personas === undefined ? (
+              <Skeleton className="h-24 w-full" />
+            ) : !storeAccountId || !oneTimePrice ? (
+              <Alert>
+                <AlertTitle>No data found</AlertTitle>
+                <AlertDescription>
+                  The marketplace is not seeded. Run <code>npm run setup</code>{" "}
+                  to seed the marketplace personas and catalog, then reload.
+                </AlertDescription>
+              </Alert>
+            ) : !showCheckout ? (
+              <div className="space-y-3">
+                <p className="text-sm">
+                  One-time purchase — <strong>$100.00</strong> from{" "}
+                  {personas.store?.name}.
+                </p>
+                <Button onClick={() => setShowCheckout(true)}>
+                  Buy with test card
+                </Button>
+              </div>
+            ) : !publishableKey ? (
+              <Skeleton className="h-32 w-full" />
+            ) : (
+              <SplitCheckoutForm
+                priceId={oneTimePrice.stripePriceId}
+                userId={currentUser.id}
+                referralCode={referralCode}
+                publishableKey={publishableKey}
+              />
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* The breakdown */}
       <Card>
-        <CardContent className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold">
-            Latest sale — split breakdown
-          </h2>
-          <SplitBreakdown
-            breakdown={breakdown}
-            isLoading={splitLoading}
-            emptyLabel="No referred sale yet — complete a purchase above to see the split."
-            className="[&_dt]:text-muted-foreground [&_dd]:font-medium [&>dl]:space-y-1 [&>dl>div]:flex [&>dl>div]:justify-between"
-          />
-          <Separator />
-          <h2 className="text-lg font-semibold">Affiliate earnings</h2>
-          <EarningsSummary
-            gross={earnings.gross}
-            reversed={earnings.reversed}
-            net={earnings.net}
-            payouts={earnings.payouts}
-            paidOut={earnings.paidOut}
-            isLoading={earnings.isLoading}
-            emptyLabel="No affiliate earnings yet."
-            className="[&_dt]:text-muted-foreground [&_dd]:font-medium [&>dl]:space-y-1"
-          />
+        <CardContent padding="lg">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">
+              Latest sale — split breakdown
+            </h2>
+            <SplitBreakdown
+              breakdown={breakdown}
+              isLoading={splitLoading}
+              emptyLabel="No referred sale yet — complete a purchase above to see the split."
+              className="[&_dt]:text-muted-foreground [&_dd]:font-medium [&>dl]:space-y-1 [&>dl>div]:flex [&>dl>div]:justify-between"
+            />
+            <Separator />
+            <h2 className="text-lg font-semibold">Affiliate earnings</h2>
+            <EarningsSummary
+              gross={earnings.gross}
+              reversed={earnings.reversed}
+              net={earnings.net}
+              payouts={earnings.payouts}
+              paidOut={earnings.paidOut}
+              isLoading={earnings.isLoading}
+              emptyLabel="No affiliate earnings yet."
+              className="[&_dt]:text-muted-foreground [&_dd]:font-medium [&>dl]:space-y-1"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

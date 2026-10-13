@@ -1,20 +1,18 @@
 // @vitest-environment edge-runtime
 /**
- * Tests for `handleWebhookRequest` — the top-level webhook entrypoint that
- * owns request validation, signature verification (routing V1 vs. V2 by event
- * type prefix), the atomic dedup ledger, the sync dispatch into the processor,
- * and the success/failure HTTP contract.
- *
- * We exercise the function DIRECTLY (not via registerRoutes), mocking the
- * Stripe SDK module so `getStripeClient()` yields a controllable client:
- *   - V1 verification → `webhooks.constructEventAsync`
- *   - V2 verification → `parseEventNotificationAsync` (NEVER constructEventAsync;
- *     stripe-node v22 rejects thin payloads passed to constructEventAsync)
- *   - V2 account re-fetch → `v2.core.accounts.retrieve`
- * Every assertion is on the response status/body and on which component
- * mutation/query refs were invoked per branch.
+ * Exercises handleWebhookRequest directly with a controllable Stripe mock.
+ * Checks V1/V2 signature routing, account re-fetch, deduplication, processor
+ * dispatch, and HTTP responses, including the invoked component references.
  */
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type Mock,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import type { Component } from "../helpers.js";
 import type { RegisterRoutesConfig, WebhookActionCtx } from "../types.js";
@@ -97,7 +95,9 @@ function makeCtx(
   } as unknown as WebhookActionCtx & { runMutation: Mock; runQuery: Mock };
 }
 
-function baseConfig(over?: Partial<RegisterRoutesConfig>): RegisterRoutesConfig {
+function baseConfig(
+  over?: Partial<RegisterRoutesConfig>,
+): RegisterRoutesConfig {
   return {
     stripeSecretKey: "sk_test_123",
     webhookSecret: "whsec_test",
@@ -105,10 +105,7 @@ function baseConfig(over?: Partial<RegisterRoutesConfig>): RegisterRoutesConfig 
   } as RegisterRoutesConfig;
 }
 
-function makeRequest(
-  body: unknown,
-  headers?: Record<string, string>,
-): Request {
+function makeRequest(body: unknown, headers?: Record<string, string>): Request {
   return new Request("https://example.com/stripe/webhook", {
     method: "POST",
     body: typeof body === "string" ? body : JSON.stringify(body),

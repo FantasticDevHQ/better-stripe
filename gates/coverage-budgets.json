@@ -1,0 +1,13 @@
+{
+  "_comment": "Per-package coverage floors. Each package is held to its own floor (packages[dir]) or `default` if unlisted; floors only ratchet UP. Seeded 0.5pt below each baseline.",
+  "default": {
+    "functions": 80,
+    "lines": 80
+  },
+  "packages": {
+    "coverage/coverage-summary.json": {
+      "functions": 53.55,
+      "lines": 61.35
+    }
+  }
+}

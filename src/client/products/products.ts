@@ -79,7 +79,9 @@ export async function createProduct(
     description: opts.description ?? undefined,
     active: opts.active ?? true,
     metadata: opts.metadata ?? undefined,
-    ...(statementDescriptor ? { statement_descriptor: statementDescriptor } : {}),
+    ...(statementDescriptor
+      ? { statement_descriptor: statementDescriptor }
+      : {}),
   });
 
   await runMutationOrThrow(

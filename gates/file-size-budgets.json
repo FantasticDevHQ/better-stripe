@@ -1,0 +1,27 @@
+{
+  "_comment": "Grandfathered per-file line budgets. Files over the threshold are frozen at their current line count; the ratchet only goes down. Refactor and lower these; never raise them.",
+  "budgets": {
+    "example/convex/actions.actions.test.ts": 821,
+    "example/convex/actions.ts": 772,
+    "example/convex/seed.ts": 645,
+    "example/scripts/e2e-webhooks.ts": 907,
+    "example/src/pages/admin/products.tsx": 656,
+    "example/src/pages/admin/setup.tsx": 653,
+    "src/client/billing/checkout.test.ts": 1282,
+    "src/client/billing/subscriptions.test.ts": 1049,
+    "src/client/billing/subscriptions.ts": 639,
+    "src/client/core/accounts.test.ts": 1496,
+    "src/client/core/accounts.ts": 667,
+    "src/client/index.test.ts": 1848,
+    "src/client/index.ts": 1877,
+    "src/client/webhook-handlers.test.ts": 603,
+    "src/client/webhooks.test.ts": 1689,
+    "src/client/webhooks/handler.test.ts": 604,
+    "src/client/webhooks/processors.test.ts": 2553,
+    "src/client/webhooks/processors.ts": 1170,
+    "src/component/connect.test.ts": 721,
+    "src/component/connect/mutations.ts": 635,
+    "src/component/public.test.ts": 1858,
+    "src/component/reversal-races.test.ts": 960
+  }
+}

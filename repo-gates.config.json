@@ -1,0 +1,100 @@
+{
+  "runner": "pnpm run",
+  "scanRoots": ["."],
+  "sourceExtensions": [
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mts",
+    ".cts",
+    ".mjs",
+    ".cjs"
+  ],
+  "excludeDirSegments": [
+    "node_modules",
+    "dist",
+    "dist-e2e",
+    "out",
+    ".turbo",
+    ".wrangler",
+    "__golden__",
+    "_generated",
+    "coverage",
+    ".git",
+    ".worktrees",
+    ".next",
+    ".yarn",
+    ".cache",
+    "gates"
+  ],
+  "coverage": {
+    "summaryGlobs": ["coverage/coverage-summary.json"]
+  },
+  "agents": {
+    "targets": ["AGENTS.md"],
+    "runnerCommand": "pnpm"
+  },
+  "gates": [
+    {
+      "name": "build",
+      "conditional": false
+    },
+    {
+      "name": "lint",
+      "conditional": false
+    },
+    {
+      "name": "check:design-system",
+      "conditional": false
+    },
+    {
+      "name": "format:check",
+      "conditional": false
+    },
+    {
+      "name": "typecheck",
+      "conditional": false
+    },
+    {
+      "name": "codegen:check",
+      "conditional": false
+    },
+    {
+      "name": "check:size",
+      "conditional": false
+    },
+    {
+      "name": "check:debt",
+      "conditional": false
+    },
+    {
+      "name": "check:circular",
+      "conditional": false
+    },
+    {
+      "name": "check:secrets",
+      "conditional": false
+    },
+    {
+      "name": "check:shadscan",
+      "conditional": false
+    },
+    {
+      "name": "test",
+      "conditional": false
+    },
+    {
+      "name": "check:coverage",
+      "conditional": false
+    },
+    {
+      "name": "check:agents",
+      "conditional": false
+    },
+    {
+      "name": "check:ci-parity",
+      "conditional": false
+    }
+  ]
+}

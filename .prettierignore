@@ -1,2 +1,8 @@
 # Convex-generated code — never format these (regenerated on every codegen)
 **/_generated/
+
+# Generated test coverage reports
+coverage/
+
+# Compiled build output
+**/dist/

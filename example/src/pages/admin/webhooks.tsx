@@ -153,18 +153,16 @@ export function AdminWebhooks() {
                     }
                   }}
                 >
-                  <TableCell className="text-muted-foreground font-mono text-sm">
+                  <TableCell tone="muted" variant="identifier">
                     {formatTimestamp(event.processedAt)}
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {event.eventType}
-                  </TableCell>
+                  <TableCell variant="identifier">{event.eventType}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(event.status)}>
                       {event.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
+                  <TableCell tone="muted" variant="identifier">
                     {event.stripeEventId}
                   </TableCell>
                 </TableRow>
@@ -172,7 +170,7 @@ export function AdminWebhooks() {
                 {/* Expanded Details */}
                 {expandedEvent === event._id && (
                   <TableRow key={`${event._id}-details`}>
-                    <TableCell colSpan={4} className="bg-muted/30">
+                    <TableCell colSpan={4} variant="expanded">
                       <div className="text-muted-foreground space-y-1 text-xs">
                         {event.lastError && (
                           <p>
@@ -194,7 +192,7 @@ export function AdminWebhooks() {
             ))}
             {events.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="py-8">
+                <TableCell colSpan={4} size="empty">
                   <Alert>
                     <AlertDescription className="text-center">
                       No data found. No webhook events match the current

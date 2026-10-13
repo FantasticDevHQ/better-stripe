@@ -51,7 +51,9 @@ describe("marketplace seed account configuration", () => {
       expect(stripe.updateV2Account).toHaveBeenCalledWith(expect.anything(), {
         stripeAccountId: user.stripeAccountId,
         updateParams: expect.objectContaining({
-          defaults: { profile: { business_url: "https://accessible.stripe.com" } },
+          defaults: {
+            profile: { business_url: "https://accessible.stripe.com" },
+          },
           identity: expect.objectContaining({
             individual: expect.objectContaining({
               given_name: "Test",

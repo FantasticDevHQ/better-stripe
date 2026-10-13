@@ -74,7 +74,11 @@ describe("DisputeDetail", () => {
       createElement(DisputeDetail, {
         dispute: {
           ...dispute,
-          countdown: { dueBy: dispute.evidenceDueBy, daysRemaining: -2, isOverdue: true },
+          countdown: {
+            dueBy: dispute.evidenceDueBy,
+            daysRemaining: -2,
+            isOverdue: true,
+          },
         },
       }),
     );

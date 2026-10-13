@@ -37,7 +37,12 @@ describe("assertOwnership (BTS-83 generic ownership gate)", () => {
     const loadOwnedResource = vi.fn().mockResolvedValue(null);
 
     await expect(
-      assertOwnership(fakeCtx, "user_1", loadOwnedResource, "Widget not found for this user"),
+      assertOwnership(
+        fakeCtx,
+        "user_1",
+        loadOwnedResource,
+        "Widget not found for this user",
+      ),
     ).rejects.toThrow("Widget not found for this user");
     expect(loadOwnedResource).toHaveBeenCalledWith(fakeCtx, "user_1");
   });

@@ -25,7 +25,10 @@ export type EmbeddedDisputesProps = {
  * Must be rendered inside a {@link ConnectProvider} whose `fetchClientSecret`
  * returns that session's `clientSecret`.
  */
-export function EmbeddedDisputes({ payment, className }: EmbeddedDisputesProps) {
+export function EmbeddedDisputes({
+  payment,
+  className,
+}: EmbeddedDisputesProps) {
   return (
     <div className={className}>
       {payment ? (

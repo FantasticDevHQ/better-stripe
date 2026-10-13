@@ -52,7 +52,7 @@ export function AppCommandMenu() {
       onOpenChange={setOpen}
       label="Navigate BetterStripe"
       overlayClassName="fixed inset-0 z-50 bg-black/50"
-      contentClassName="bg-popover text-popover-foreground fixed left-1/2 top-24 z-50 w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border shadow-xl"
+      contentClassName="bg-popover text-popover-foreground fixed left-1/2 top-24 z-50 w-command -translate-x-1/2 overflow-hidden rounded-xl border shadow-xl"
     >
       <CommandInput
         className="border-border focus-visible:ring-ring w-full border-b bg-transparent px-4 py-3 text-sm focus-visible:ring-2"

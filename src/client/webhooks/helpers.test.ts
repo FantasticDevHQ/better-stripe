@@ -122,22 +122,29 @@ describe("deriveTrialFields", () => {
 
   it("marks isTrialing true only when status is exactly 'trialing'", () => {
     expect(
-      deriveTrialFields(sub({ status: "trialing", trial_start: null, trial_end: null }))
-        .isTrialing,
+      deriveTrialFields(
+        sub({ status: "trialing", trial_start: null, trial_end: null }),
+      ).isTrialing,
     ).toBe(true);
     expect(
-      deriveTrialFields(sub({ status: "active", trial_start: null, trial_end: null }))
-        .isTrialing,
+      deriveTrialFields(
+        sub({ status: "active", trial_start: null, trial_end: null }),
+      ).isTrialing,
     ).toBe(false);
     expect(
-      deriveTrialFields(sub({ status: "past_due", trial_start: null, trial_end: null }))
-        .isTrialing,
+      deriveTrialFields(
+        sub({ status: "past_due", trial_start: null, trial_end: null }),
+      ).isTrialing,
     ).toBe(false);
   });
 
   it("converts trial_start/trial_end epochs to ISO strings", () => {
     const result = deriveTrialFields(
-      sub({ status: "trialing", trial_start: 1704067200, trial_end: 1704153600 }),
+      sub({
+        status: "trialing",
+        trial_start: 1704067200,
+        trial_end: 1704153600,
+      }),
     );
     expect(result.trialStart).toBe("2024-01-01T00:00:00.000Z");
     expect(result.trialEnd).toBe("2024-01-02T00:00:00.000Z");
@@ -154,7 +161,9 @@ describe("deriveTrialFields", () => {
 
 describe("componentRef", () => {
   it("returns the ref via direct property lookup when the path exists", () => {
-    const component = makeComponent({ paths: ["billing/queries/getSubscription"] });
+    const component = makeComponent({
+      paths: ["billing/queries/getSubscription"],
+    });
     const result = componentRef(component, "billing/queries/getSubscription");
     expect((result as any)[TO_REF]).toBe(
       "betterStripe/billing/queries/getSubscription",
@@ -172,7 +181,9 @@ describe("componentRef", () => {
 
   it("throws when neither the path nor an anchor ref is available", () => {
     const component = makeComponent({ withAnchor: false });
-    expect(() => componentRef(component, "billing/mutations/upsertInvoice")).toThrow(
+    expect(() =>
+      componentRef(component, "billing/mutations/upsertInvoice"),
+    ).toThrow(
       /Cannot resolve component path: billing\/mutations\/upsertInvoice/,
     );
   });
@@ -208,7 +219,9 @@ describe("componentRef", () => {
 
 describe("getComponentRef", () => {
   it("resolves a mapped export via direct property lookup", () => {
-    const component = makeComponent({ paths: ["billing/queries/getSubscription"] });
+    const component = makeComponent({
+      paths: ["billing/queries/getSubscription"],
+    });
     const result = getComponentRef(component, "billing", "getSubscription");
     expect((result as any)[TO_REF]).toBe(
       "betterStripe/billing/queries/getSubscription",
@@ -235,9 +248,9 @@ describe("getComponentRef", () => {
 
   it("throws when no anchor ref exists on the component", () => {
     const component = makeComponent({ withAnchor: false });
-    expect(() => getComponentRef(component, "billing", "upsertInvoice")).toThrow(
-      /Cannot resolve component ref for upsertInvoice/,
-    );
+    expect(() =>
+      getComponentRef(component, "billing", "upsertInvoice"),
+    ).toThrow(/Cannot resolve component ref for upsertInvoice/);
   });
 });
 

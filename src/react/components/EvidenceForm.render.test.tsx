@@ -19,10 +19,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { EvidenceForm as BarrelExport } from "../index.js";
-import {
-  EvidenceForm,
-  type EvidenceFormRenderProps,
-} from "./EvidenceForm.js";
+import { EvidenceForm, type EvidenceFormRenderProps } from "./EvidenceForm.js";
 
 const allFields = {
   productDescription: "Ceramics Masterclass, lifetime access",
@@ -33,10 +30,7 @@ const allFields = {
 
 /** Render via the children prop and hand back the captured render props. */
 function capture(
-  props: Omit<
-    Parameters<typeof EvidenceForm>[0],
-    "children"
-  >,
+  props: Omit<Parameters<typeof EvidenceForm>[0], "children">,
 ): EvidenceFormRenderProps {
   let received: EvidenceFormRenderProps | undefined;
   renderToStaticMarkup(

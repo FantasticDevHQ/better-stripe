@@ -59,7 +59,7 @@ export function AdminOverview() {
         <Badge variant={stripeMode === "test" ? "secondary" : "default"}>
           <span
             className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
-              stripeMode === "test" ? "bg-yellow-500" : "bg-green-500"
+              stripeMode === "test" ? "bg-warning" : "bg-success"
             }`}
           />
           {stripeMode === "test" ? "Test Mode" : "Live Mode"}
@@ -75,7 +75,7 @@ export function AdminOverview() {
           { label: "Data Status", value: isLoading ? "Loading..." : "Live" },
         ].map((metric) => (
           <Card key={metric.label}>
-            <CardHeader className="pb-2">
+            <CardHeader spacing="compact">
               <CardDescription>{metric.label}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -114,7 +114,7 @@ export function AdminOverview() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {quickLinks.map((link) => (
             <Link key={link.to} to={link.to}>
-              <Card className="hover:border-primary/50 transition-colors">
+              <Card variant="interactive">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     {link.label}

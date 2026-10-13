@@ -1,3 +1,5 @@
+import { EnvVarsCard } from "@/components/setup-env-vars";
+import { CopyButton } from "@/components/setup-controls";
 import { useCallback, useEffect, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,140 +15,9 @@ import { api } from "../../../convex/_generated/api";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function CopyButton({ text, label }: { text: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Button variant="outline" size="sm" onClick={handleCopy}>
-      {copied ? "Copied!" : (label ?? "Copy")}
-    </Button>
-  );
-}
-
-function StatusBadge({ ok, label }: { ok: boolean; label?: string }) {
-  return (
-    <Badge variant={ok ? "default" : "destructive"}>
-      {label ?? (ok ? "Set" : "Not set")}
-    </Badge>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Step 1: Environment Variables
 // ---------------------------------------------------------------------------
-
-function EnvVarsCard() {
-  const checkEnvVars = useAction(api.actions.checkEnvVars);
-  const [envs, setEnvs] = useState<{
-    stripeSecretKey: boolean;
-    webhookSecret: boolean;
-    webhookSecretV2: boolean;
-  } | null>(null);
-  const [checking, setChecking] = useState(true);
-
-  const refresh = useCallback(async () => {
-    setChecking(true);
-    try {
-      const result = await checkEnvVars({});
-      setEnvs(result);
-    } catch {
-      // non-fatal
-    } finally {
-      setChecking(false);
-    }
-  }, [checkEnvVars]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
-    refresh();
-  }, [refresh]);
-
-  const allSet =
-    envs?.stripeSecretKey && envs?.webhookSecret && envs?.webhookSecretV2;
-
-  return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">1. Environment Variables</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Convex environment variables must be set for the app to connect to
-            Stripe. Set <code>STRIPE_SECRET_KEY</code> first — the webhook
-            secrets are set after running webhook setup (step 2).
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refresh}
-          disabled={checking}
-        >
-          {checking ? "Checking…" : "Refresh"}
-        </Button>
-      </div>
-
-      {checking && !envs ? (
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : envs ? (
-        <div className="space-y-2">
-          {[
-            { name: "STRIPE_SECRET_KEY", set: envs.stripeSecretKey },
-            { name: "STRIPE_WEBHOOK_SECRET", set: envs.webhookSecret },
-            { name: "STRIPE_WEBHOOK_SECRET_V2", set: envs.webhookSecretV2 },
-          ].map(({ name, set }) => (
-            <div
-              key={name}
-              className="bg-muted flex items-center justify-between rounded-md px-3 py-2"
-            >
-              <code className="text-sm">{name}</code>
-              <StatusBadge ok={set} />
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {envs && !envs.stripeSecretKey && (
-        <Alert>
-          <AlertDescription className="space-y-2">
-            <p>
-              Set your Stripe secret key first. Find it in the{" "}
-              <a
-                href="https://dashboard.stripe.com/apikeys"
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                Stripe Dashboard
-              </a>
-              , then run:
-            </p>
-            <div className="bg-muted flex items-center gap-2 rounded-md p-3 font-mono text-xs">
-              <code className="flex-1">
-                npx convex env set STRIPE_SECRET_KEY sk_test_your_key_here
-              </code>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {allSet && (
-        <p className="text-muted-foreground text-sm">
-          All environment variables are set.
-        </p>
-      )}
-    </Card>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Step 2: Webhook Destinations
@@ -289,109 +160,113 @@ function WebhookSetupCard() {
     : null;
 
   return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">2. Webhook Destinations</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Creates two Stripe event destinations: <strong>V1 snapshot</strong>{" "}
-            for payments/subscriptions and <strong>V2 thin</strong> for Connect
-            account onboarding events.
-          </p>
+    <Card size="panel">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">2. Webhook Destinations</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Creates two Stripe event destinations:{" "}
+              <strong>V1 snapshot</strong> for payments/subscriptions and{" "}
+              <strong>V2 thin</strong> for Connect account onboarding events.
+            </p>
+          </div>
+          <Button
+            onClick={handleSetup}
+            disabled={isLoading || !siteUrl}
+            className="shrink-0"
+          >
+            {isLoading ? "Setting up…" : "Setup Webhooks"}
+          </Button>
         </div>
-        <Button
-          onClick={handleSetup}
-          disabled={isLoading || !siteUrl}
-          className="shrink-0"
-        >
-          {isLoading ? "Setting up…" : "Setup Webhooks"}
-        </Button>
+
+        {!isChecking && status && (
+          <div
+            className="grid gap-3 sm:grid-cols-2"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="border-border rounded-md border p-3">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-sm font-medium">V1 Snapshot</span>
+                {status.v1 ? (
+                  <Badge variant="default">Active</Badge>
+                ) : (
+                  <Badge variant="destructive">Not found</Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {status.v1
+                  ? `${status.v1.eventCount} events — payments, subscriptions, invoices, payouts`
+                  : 'Click "Setup Webhooks" to create'}
+              </p>
+            </div>
+            <div className="border-border rounded-md border p-3">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-sm font-medium">V2 Thin</span>
+                {status.v2 ? (
+                  <Badge variant="default">Active</Badge>
+                ) : (
+                  <Badge variant="destructive">Not found</Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {status.v2
+                  ? `${status.v2.eventCount} events — Connect account onboarding & status`
+                  : 'Click "Setup Webhooks" to create'}
+              </p>
+            </div>
+          </div>
+        )}
+        {isChecking && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-18 w-full" />
+            <Skeleton className="h-18 w-full" />
+          </div>
+        )}
+
+        {!siteUrl && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Missing <code>VITE_CONVEX_SITE_URL</code> in your{" "}
+              <code>.env.local</code>.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && (
+          <Alert variant="destructive" role="alert">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {result && (
+          <Alert role="status" aria-live="polite">
+            <AlertDescription>
+              <div className="space-y-3">
+                <p>
+                  Webhook destinations configured. Set these Convex environment
+                  variables:
+                </p>
+                {v1EnvCommand && (
+                  <EnvCommandRow
+                    command={v1EnvCommand}
+                    envName="v1"
+                    verifyFn={verifyWebhookEnvs}
+                  />
+                )}
+                {v2EnvCommand && (
+                  <EnvCommandRow
+                    command={v2EnvCommand}
+                    envName="v2"
+                    verifyFn={verifyWebhookEnvs}
+                  />
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
-
-      {!isChecking && status && (
-        <div
-          className="grid gap-3 sm:grid-cols-2"
-          role="status"
-          aria-live="polite"
-        >
-          <div className="border-border rounded-md border p-3">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-sm font-medium">V1 Snapshot</span>
-              {status.v1 ? (
-                <Badge variant="default">Active</Badge>
-              ) : (
-                <Badge variant="destructive">Not found</Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {status.v1
-                ? `${status.v1.eventCount} events — payments, subscriptions, invoices, payouts`
-                : 'Click "Setup Webhooks" to create'}
-            </p>
-          </div>
-          <div className="border-border rounded-md border p-3">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-sm font-medium">V2 Thin</span>
-              {status.v2 ? (
-                <Badge variant="default">Active</Badge>
-              ) : (
-                <Badge variant="destructive">Not found</Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {status.v2
-                ? `${status.v2.eventCount} events — Connect account onboarding & status`
-                : 'Click "Setup Webhooks" to create'}
-            </p>
-          </div>
-        </div>
-      )}
-      {isChecking && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Skeleton className="h-[72px] w-full" />
-          <Skeleton className="h-[72px] w-full" />
-        </div>
-      )}
-
-      {!siteUrl && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            Missing <code>VITE_CONVEX_SITE_URL</code> in your{" "}
-            <code>.env.local</code>.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {result && (
-        <Alert role="status" aria-live="polite">
-          <AlertDescription className="space-y-3">
-            <p>
-              Webhook destinations configured. Set these Convex environment
-              variables:
-            </p>
-            {v1EnvCommand && (
-              <EnvCommandRow
-                command={v1EnvCommand}
-                envName="v1"
-                verifyFn={verifyWebhookEnvs}
-              />
-            )}
-            {v2EnvCommand && (
-              <EnvCommandRow
-                command={v2EnvCommand}
-                envName="v2"
-                verifyFn={verifyWebhookEnvs}
-              />
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
     </Card>
   );
 }
@@ -429,124 +304,130 @@ function SeedDataCard() {
   };
 
   return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">3. Seed Demo Data</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Creates demo users, linked Stripe accounts, products, and paid store
-            plans. Then populates the Stripe sandbox with sales, affiliate
-            referrals, refunds, disputes, subscriptions, invoices, and payouts.
-            Reruns skip completed fixtures.
-          </p>
-        </div>
-        <Button onClick={handleSeed} disabled={isSeeding} className="shrink-0">
-          {isSeeding ? "Seeding…" : "Seed Data"}
-        </Button>
-      </div>
-
-      <div className="space-y-3 rounded-md border p-4">
-        <div className="flex items-center justify-between gap-3">
+    <Card size="panel">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-medium">Sandbox activity fixtures</h3>
-            <p className="text-muted-foreground text-sm">
-              40 sales, affiliate splits, 6 refunds, 4 disputes, and payouts.
-              All transactions use Stripe test payment methods.
+            <h2 className="text-lg font-semibold">3. Seed Demo Data</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Creates demo users, linked Stripe accounts, products, and paid
+              store plans. Then populates the Stripe sandbox with sales,
+              affiliate referrals, refunds, disputes, subscriptions, invoices,
+              and payouts. Reruns skip completed fixtures.
             </p>
           </div>
           <Button
-            variant="outline"
-            disabled={
-              isSeeding ||
-              fixtures?.status === "running" ||
-              fixtures?.status === "complete" ||
-              userCount === 0
-            }
-            onClick={async () => {
-              setError(null);
-              try {
-                await populateSandbox({});
-              } catch (e) {
-                setError(String(e));
-              }
-            }}
+            onClick={handleSeed}
+            disabled={isSeeding}
+            className="shrink-0"
           >
-            {fixtures?.status === "failed"
-              ? "Resume fixtures"
-              : fixtures?.status === "complete"
-                ? "Fixtures populated"
-                : "Populate sandbox"}
+            {isSeeding ? "Seeding…" : "Seed Data"}
           </Button>
         </div>
-        {fixtures && (
-          <>
-            <progress
-              aria-label="Sandbox fixture progress"
-              className="h-2 w-full"
-              value={fixtures.cursor}
-              max={fixtures.total}
-            />
-            <p className="text-muted-foreground text-sm" role="status">
-              {fixtures.cursor} of {fixtures.total} steps complete.{" "}
-              {fixtures.status === "running"
-                ? "Stripe events continue to update the app as fixtures are created."
-                : fixtures.status === "complete"
-                  ? "Ready to explore. Dispute and payout statuses may continue updating through webhooks."
-                  : "Population stopped. Resume to retry this step."}
-            </p>
-            {fixtures.error && (
-              <p role="alert" className="text-destructive text-sm">
-                {fixtures.error}
+
+        <div className="space-y-3 rounded-md border p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-medium">Sandbox activity fixtures</h3>
+              <p className="text-muted-foreground text-sm">
+                40 sales, affiliate splits, 6 refunds, 4 disputes, and payouts.
+                All transactions use Stripe test payment methods.
               </p>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="border-border rounded-md border p-3">
-          <p className="text-muted-foreground text-xs">Users</p>
-          <p className="text-xl font-semibold">{userCount}</p>
+            </div>
+            <Button
+              variant="outline"
+              disabled={
+                isSeeding ||
+                fixtures?.status === "running" ||
+                fixtures?.status === "complete" ||
+                userCount === 0
+              }
+              onClick={async () => {
+                setError(null);
+                try {
+                  await populateSandbox({});
+                } catch (e) {
+                  setError(String(e));
+                }
+              }}
+            >
+              {fixtures?.status === "failed"
+                ? "Resume fixtures"
+                : fixtures?.status === "complete"
+                  ? "Fixtures populated"
+                  : "Populate sandbox"}
+            </Button>
+          </div>
+          {fixtures && (
+            <>
+              <progress
+                aria-label="Sandbox fixture progress"
+                className="h-2 w-full"
+                value={fixtures.cursor}
+                max={fixtures.total}
+              />
+              <p className="text-muted-foreground text-sm" role="status">
+                {fixtures.cursor} of {fixtures.total} steps complete.{" "}
+                {fixtures.status === "running"
+                  ? "Stripe events continue to update the app as fixtures are created."
+                  : fixtures.status === "complete"
+                    ? "Ready to explore. Dispute and payout statuses may continue updating through webhooks."
+                    : "Population stopped. Resume to retry this step."}
+              </p>
+              {fixtures.error && (
+                <p role="alert" className="text-destructive text-sm">
+                  {fixtures.error}
+                </p>
+              )}
+            </>
+          )}
         </div>
-        <div className="border-border rounded-md border p-3">
-          <p className="text-muted-foreground text-xs">Products</p>
-          <p className="text-xl font-semibold">{productCount}</p>
-        </div>
-      </div>
 
-      {!isSeeding &&
-        !done &&
-        seedStatus !== undefined &&
-        products !== undefined &&
-        !hasData && (
-          <Alert role="status" aria-live="polite">
-            <AlertDescription>
-              No data found. Seed demo data to create users and products.
-            </AlertDescription>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="border-border rounded-md border p-3">
+            <p className="text-muted-foreground text-xs">Users</p>
+            <p className="text-xl font-semibold">{userCount}</p>
+          </div>
+          <div className="border-border rounded-md border p-3">
+            <p className="text-muted-foreground text-xs">Products</p>
+            <p className="text-xl font-semibold">{productCount}</p>
+          </div>
+        </div>
+
+        {!isSeeding &&
+          !done &&
+          seedStatus !== undefined &&
+          products !== undefined &&
+          !hasData && (
+            <Alert role="status" aria-live="polite">
+              <AlertDescription>
+                No data found. Seed demo data to create users and products.
+              </AlertDescription>
+            </Alert>
+          )}
+
+        {error && (
+          <Alert variant="destructive" role="alert">
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {done && !error && (
+          <Alert role="status" aria-live="polite">
+            <AlertDescription>Demo data seeded successfully.</AlertDescription>
+          </Alert>
+        )}
 
-      {done && !error && (
-        <Alert role="status" aria-live="polite">
-          <AlertDescription>Demo data seeded successfully.</AlertDescription>
-        </Alert>
-      )}
-
-      {hasData && !done && (
-        <p
-          className="text-muted-foreground text-sm"
-          role="status"
-          aria-live="polite"
-        >
-          Data already exists. Clicking Seed Data will skip existing records.
-        </p>
-      )}
+        {hasData && !done && (
+          <p
+            className="text-muted-foreground text-sm"
+            role="status"
+            aria-live="polite"
+          >
+            Data already exists. Clicking Seed Data will skip existing records.
+          </p>
+        )}
+      </div>
     </Card>
   );
 }
@@ -590,39 +471,41 @@ function SyncCard() {
   ];
 
   return (
-    <Card className="space-y-4 p-6">
-      <div>
-        <h2 className="text-lg font-semibold">4. Sync from Stripe</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Pull existing data from Stripe into Convex. Useful if you have
-          products, subscriptions, or connected accounts already set up in
-          Stripe.
-        </p>
-      </div>
+    <Card size="panel">
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">4. Sync from Stripe</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Pull existing data from Stripe into Convex. Useful if you have
+            products, subscriptions, or connected accounts already set up in
+            Stripe.
+          </p>
+        </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {items.map(({ name, action }) => (
-          <div key={name} className="border-border rounded-md border p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">{name}</span>
-              {results[name] && (
-                <Badge variant="default">{results[name]}</Badge>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {items.map(({ name, action }) => (
+            <div key={name} className="border-border rounded-md border p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium">{name}</span>
+                {results[name] && (
+                  <Badge variant="default">{results[name]}</Badge>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={syncing === name}
+                onClick={() => handleSync(name, action)}
+              >
+                {syncing === name ? "Syncing…" : `Sync ${name}`}
+              </Button>
+              {errors[name] && (
+                <p className="text-destructive mt-2 text-xs">{errors[name]}</p>
               )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              disabled={syncing === name}
-              onClick={() => handleSync(name, action)}
-            >
-              {syncing === name ? "Syncing…" : `Sync ${name}`}
-            </Button>
-            {errors[name] && (
-              <p className="text-destructive mt-2 text-xs">{errors[name]}</p>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Card>
   );
@@ -653,40 +536,42 @@ function ResetCard() {
   };
 
   return (
-    <Card className="space-y-4 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">5. Reset</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Clear all data from the app database (users) and the better-stripe
-            component database (accounts, products, prices, subscriptions,
-            invoices, payments, payouts, webhook events). Use this when you
-            reset your Stripe sandbox.
-          </p>
+    <Card size="panel">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">5. Reset</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Clear all data from the app database (users) and the better-stripe
+              component database (accounts, products, prices, subscriptions,
+              invoices, payments, payouts, webhook events). Use this when you
+              reset your Stripe sandbox.
+            </p>
+          </div>
+          <Button
+            variant="destructive-solid"
+            className="shrink-0"
+            onClick={handleReset}
+            disabled={isResetting}
+          >
+            {isResetting ? "Resetting…" : "Reset All Data"}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shrink-0"
-          onClick={handleReset}
-          disabled={isResetting}
-        >
-          {isResetting ? "Resetting…" : "Reset All Data"}
-        </Button>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {done && (
+          <Alert>
+            <AlertDescription>
+              All data cleared. Click "Seed Data" above to re-populate.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {done && (
-        <Alert>
-          <AlertDescription>
-            All data cleared. Click "Seed Data" above to re-populate.
-          </AlertDescription>
-        </Alert>
-      )}
     </Card>
   );
 }

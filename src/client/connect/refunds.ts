@@ -3,7 +3,10 @@ import type Stripe from "stripe";
 import type { RefundStatus } from "../../component/connect/validators.js";
 import { throwStripeError } from "../errors.js";
 import type { Component, RunCtx } from "../helpers.js";
-import type { StripeComponentPayment, StripeComponentRefund } from "../types.js";
+import type {
+  StripeComponentPayment,
+  StripeComponentRefund,
+} from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 import { type RefundActor, isRefundAuthorized } from "./refundActor.js";
 

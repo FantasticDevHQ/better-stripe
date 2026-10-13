@@ -19,8 +19,7 @@ import type { SplitRecipientRole } from "../../component/lib/fees.js";
 
 /** Who is initiating a refund. `accountId` is the seller's `acct_…` id. */
 export type RefundActor =
-  | { type: "admin" }
-  | { type: "seller"; accountId: string };
+  { type: "admin" } | { type: "seller"; accountId: string };
 
 /**
  * The subset of a payment's routing needed to authorize a seller refund, read

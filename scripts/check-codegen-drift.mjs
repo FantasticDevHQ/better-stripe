@@ -111,10 +111,7 @@ function checkLibraryComponent(componentRoot = root) {
         // function names are unique across the component's API surface (a
         // Convex requirement), so a global substring check can't false-negative
         // on shadowing between modules.
-        const propRegex = new RegExp(
-          `^\\s*${name}:\\s*FunctionReference`,
-          "m",
-        );
+        const propRegex = new RegExp(`^\\s*${name}:\\s*FunctionReference`, "m");
         if (!propRegex.test(generated)) {
           missing.push(`${moduleDir}/${fileName}: export const ${name}`);
         }
@@ -229,22 +226,22 @@ function checkExampleApp(exampleRoot = root) {
   // + fullApi entry in api.ts and goes undetected — the forward loop above
   // only ever walks source -> generated, never the reverse.
   const stale = [];
-  const importRegex = /^import type \* as (\w+) from ["'](\.\.\/[^"']+)\.js["'];$/gm;
+  const importRegex =
+    /^import type \* as (\w+) from ["'](\.\.\/[^"']+)\.js["'];$/gm;
   let importMatch;
   while ((importMatch = importRegex.exec(generated)) !== null) {
     const [, alias, importPath] = importMatch;
     const modulePath = importPath.replace(/^\.\.\//, "");
     const sourcePath = join(convexDir, `${modulePath}.ts`);
     if (!existsSync(sourcePath)) {
-      stale.push(`${alias}: imports "${modulePath}.ts", which no longer exists`);
+      stale.push(
+        `${alias}: imports "${modulePath}.ts", which no longer exists`,
+      );
     }
   }
 
   if (missing.length > 0 || stale.length > 0) {
-    const relativeGeneratedPath = generatedPath.replace(
-      exampleRoot + sep,
-      "",
-    );
+    const relativeGeneratedPath = generatedPath.replace(exampleRoot + sep, "");
     const sections = [];
     if (missing.length > 0) {
       sections.push(

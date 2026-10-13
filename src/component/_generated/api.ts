@@ -19,6 +19,7 @@ import type * as core_queries from "../core/queries.js";
 import type * as core_validators from "../core/validators.js";
 import type * as lib_fees from "../lib/fees.js";
 import type * as lib_idempotency from "../lib/idempotency.js";
+import type * as lib_paymentSeller from "../lib/paymentSeller.js";
 import type * as lib_reversals from "../lib/reversals.js";
 import type * as lib_stripeFactory from "../lib/stripeFactory.js";
 import type * as products_mutations from "../products/mutations.js";
@@ -47,6 +48,7 @@ const fullApi: ApiFromModules<{
   "core/validators": typeof core_validators;
   "lib/fees": typeof lib_fees;
   "lib/idempotency": typeof lib_idempotency;
+  "lib/paymentSeller": typeof lib_paymentSeller;
   "lib/reversals": typeof lib_reversals;
   "lib/stripeFactory": typeof lib_stripeFactory;
   "products/mutations": typeof products_mutations;

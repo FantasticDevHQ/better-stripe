@@ -69,7 +69,10 @@ describe("BuyerBillingView", () => {
 
   it("renders the empty label with no subscriptions and no saved card", () => {
     const html = renderToStaticMarkup(
-      createElement(BuyerBillingView, { subscriptions: [], paymentMethod: null }),
+      createElement(BuyerBillingView, {
+        subscriptions: [],
+        paymentMethod: null,
+      }),
     );
     expect(html).toContain("No billing yet");
   });
@@ -122,7 +125,9 @@ describe("BuyerBillingView", () => {
       createElement(BuyerBillingView, {
         subscriptions: [activeSub],
         paymentMethod,
-        updateCardSlot: createElement("div", { "data-testid": "embedded-card" }),
+        updateCardSlot: createElement("div", {
+          "data-testid": "embedded-card",
+        }),
       }),
     );
     expect(html).toContain('data-testid="embedded-card"');

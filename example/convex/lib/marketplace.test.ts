@@ -8,7 +8,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { selectPurchasablePrices, type PurchasableProduct } from "./marketplace";
+import {
+  selectPurchasablePrices,
+  type PurchasableProduct,
+} from "./marketplace";
 
 const platformOneTime: PurchasableProduct["prices"][number] = {
   stripePriceId: "price_platform_one_time",
@@ -60,15 +63,19 @@ describe("selectPurchasablePrices (BTS-46)", () => {
     const products: PurchasableProduct[] = [
       {
         name: "Widget",
-        prices: [platformOneTime, { ...platformOneTime, stripePriceId: "price_2" }],
+        prices: [
+          platformOneTime,
+          { ...platformOneTime, stripePriceId: "price_2" },
+        ],
       },
-      { name: "Gadget", prices: [{ ...platformOneTime, stripePriceId: "price_3" }] },
+      {
+        name: "Gadget",
+        prices: [{ ...platformOneTime, stripePriceId: "price_3" }],
+      },
     ];
-    expect(selectPurchasablePrices(products).map((p) => p.stripePriceId)).toEqual([
-      "price_platform_one_time",
-      "price_2",
-      "price_3",
-    ]);
+    expect(
+      selectPurchasablePrices(products).map((p) => p.stripePriceId),
+    ).toEqual(["price_platform_one_time", "price_2", "price_3"]);
   });
 
   it("returns an empty list for no products", () => {

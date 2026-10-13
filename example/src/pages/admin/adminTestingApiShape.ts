@@ -117,7 +117,10 @@ export type AdminTestingApiShapeCheck = [
     Equal<RealReturn<"fireAccountUpdated">, ApiReturn<"fireAccountUpdated">>
   >,
   Expect<
-    Equal<RealArgs<"fireSubscriptionUpdated">, ApiArgs<"fireSubscriptionUpdated">>
+    Equal<
+      RealArgs<"fireSubscriptionUpdated">,
+      ApiArgs<"fireSubscriptionUpdated">
+    >
   >,
   Expect<
     Equal<
@@ -146,7 +149,10 @@ export type AdminTestingPageBindingShapeCheck = [
   Expect<Equal<keyof PageActionBinding, PageActionName>>,
   Expect<NotAny<PageActionRef<"fireAccountUpdated">>>,
   Expect<
-    Equal<PageActionRef<"fireAccountUpdated">, RealActionRef<"fireAccountUpdated">>
+    Equal<
+      PageActionRef<"fireAccountUpdated">,
+      RealActionRef<"fireAccountUpdated">
+    >
   >,
   Expect<
     Equal<
@@ -206,6 +212,9 @@ export type AdminTestingPageBindingShapeCheck = [
     Equal<PageActionArgs<"fireInvoicePaid">, RealActionArgs<"fireInvoicePaid">>
   >,
   Expect<
-    Equal<PageActionReturn<"fireInvoicePaid">, RealActionReturn<"fireInvoicePaid">>
+    Equal<
+      PageActionReturn<"fireInvoicePaid">,
+      RealActionReturn<"fireInvoicePaid">
+    >
   >,
 ];

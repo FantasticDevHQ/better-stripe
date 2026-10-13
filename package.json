@@ -83,7 +83,18 @@
     "prepublishOnly": "npm run clean && npm run build && npm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check:design-system": "eslint --config eslint.design-system.config.mjs . --max-warnings 0",
+    "check:shadscan": "shadscan \"./example\" --json --fail-under 100 --no-roast --no-interactive",
+    "check:all": "repo-gates check-all",
+    "check:size": "repo-gates check-size",
+    "check:debt": "repo-gates check-debt",
+    "check:circular": "repo-gates check-circular",
+    "check:secrets": "repo-gates check-secrets",
+    "check:ci-parity": "repo-gates check-ci-parity",
+    "check:coverage": "repo-gates check-coverage",
+    "format:check": "pnpm run format",
+    "check:agents": "repo-gates check-agents"
   },
   "dependencies": {
     "@stripe/connect-js": "^3.4.6",
@@ -95,6 +106,7 @@
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^5.0.0",
     "@edge-runtime/vm": "^5.0.0",
+    "@fantastic.dev/repo-gates": "^0.4.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -113,7 +125,9 @@
     "pretty-quick": "^4.2.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.71.1",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "@shadcn/lint": "0.1.5",
+    "@shadscan/cli": "0.7.0"
   },
   "peerDependencies": {
     "convex": "^1.29.3",

@@ -15,11 +15,7 @@ describe("connect — refunds", () => {
       stripePaymentIntentId?: string;
       accountId?: string;
       status:
-        | "pending"
-        | "requires_action"
-        | "succeeded"
-        | "failed"
-        | "canceled";
+        "pending" | "requires_action" | "succeeded" | "failed" | "canceled";
     },
   ) => {
     await t.mutation(api.connect.mutations.upsertRefund, {

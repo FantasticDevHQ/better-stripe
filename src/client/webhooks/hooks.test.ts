@@ -40,8 +40,7 @@ function makeWhCtx(opts?: {
   return {
     ctx: {
       runQuery: vi.fn().mockResolvedValue(opts?.doc ?? null),
-      scheduler:
-        opts?.withScheduler === false ? undefined : { runAfter },
+      scheduler: opts?.withScheduler === false ? undefined : { runAfter },
     },
     component: makeComponent(),
     stripe: {} as never,

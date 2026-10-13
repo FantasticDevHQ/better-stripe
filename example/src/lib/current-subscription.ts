@@ -17,9 +17,7 @@ export function currentSubscriptionFrom<
         (s.status === "active" || s.status === "trialing"),
     ) ??
     subscriptions.find((s) =>
-      ["trialing", "active", "paused", "past_due", "unpaid"].includes(
-        s.status,
-      ),
+      ["trialing", "active", "paused", "past_due", "unpaid"].includes(s.status),
     ) ??
     subscriptions[0] ??
     null

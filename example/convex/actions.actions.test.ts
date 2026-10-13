@@ -1,19 +1,9 @@
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 /**
- * Mocked unit coverage for `actions.ts`'s state-changing actions (BTS-83):
- * every subscription-lifecycle, dispute, and refund/reversal action must
- * reject when the caller-claimed `userId` doesn't own the target resource,
- * and every money-moving/dispute-closing action must refuse to run against a
- * non-test-mode `STRIPE_SECRET_KEY` before making any Stripe call.
- *
- * Follows the `adminTesting.actions.test.ts` pattern: `./stripe` (the app's
- * `BetterStripe` singleton) is mocked wholesale so these tests exercise only
- * this app's own action/authz wiring, never a real Stripe call.
- * `issueRefund`/`reverseSaleTransfers` additionally verify ownership against
- * real component ledger rows (payments/transfers) via `convex-test`'s
- * installed component, the same way `fireCheckoutCompleted` does in
- * `adminTesting.actions.test.ts`.
+ * Tests ownership and test-mode guards before money-moving Stripe operations.
+ * The Stripe client is mocked; refund and reversal cases verify ownership
+ * against real component ledger rows through convex-test.
  */
 import { convexTest } from "convex-test";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
@@ -54,29 +44,7 @@ import componentSchema from "../../dist/component/schema.js";
 const modules = import.meta.glob("./**/*.*s");
 const componentModules = import.meta.glob("../../dist/component/**/*.js");
 
-type MockedStripe = {
-  getSubscriptionByStripeId: Mock;
-  cancelSubscription: Mock;
-  reactivateSubscription: Mock;
-  pauseSubscription: Mock;
-  resumeSubscription: Mock;
-  updateSubscriptionQuantity: Mock;
-  updateSubscriptionPrice: Mock;
-  updateSubscriptionTrialEnd: Mock;
-  getAccountByUserId: Mock;
-  getAccountByStripeId: Mock;
-  getDisputeByStripeId: Mock;
-  updateDispute: Mock;
-  closeDispute: Mock;
-  createDisputeSession: Mock;
-  createLoginLink: Mock;
-  createRefund: Mock;
-  listTransfersByCharge: Mock;
-  reverseTransfers: Mock;
-  getPriceByStripeId: Mock;
-  getProductByStripeId: Mock;
-  deactivatePrice: Mock;
-};
+type MockedStripe = { [K in keyof typeof mockedStripeUntyped]: Mock };
 const mockedStripe = mockedStripeUntyped as unknown as MockedStripe;
 
 function withComponent() {

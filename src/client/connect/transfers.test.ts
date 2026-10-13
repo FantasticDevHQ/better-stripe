@@ -14,7 +14,9 @@ function makeComponent(): Component {
   const ref = (path: string) => ({ [TO_REF]: `betterStripe/${path}` });
   return {
     connect: {
-      queries: { listTransfersByCharge: ref("connect/queries/listTransfersByCharge") },
+      queries: {
+        listTransfersByCharge: ref("connect/queries/listTransfersByCharge"),
+      },
       mutations: {
         recordTransferReversal: ref("connect/mutations/recordTransferReversal"),
         upsertTransfer: ref("connect/mutations/upsertTransfer"),
@@ -56,7 +58,10 @@ function makeCtx(transfers: unknown[]) {
         legs.map((t) => ({
           stripeTransferId: t.stripeTransferId,
           amount: t.amount,
-          frontier: Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0),
+          frontier: Math.max(
+            t.reversedAmount ?? 0,
+            t.reversalClaimedAmount ?? 0,
+          ),
         })),
         args.mode as Parameters<typeof computeReversalSlices>[1],
       );
@@ -117,7 +122,9 @@ describe("reverseTransfers (BTS-25)", () => {
       undefined,
     );
     // ledger updated with cumulative reversed amounts
-    const reversedAmounts = ctx.runMutation.mock.calls.map((c) => c[1].reversedAmount);
+    const reversedAmounts = ctx.runMutation.mock.calls.map(
+      (c) => c[1].reversedAmount,
+    );
     expect(reversedAmounts).toEqual([8000, 1000]);
   });
 
@@ -391,7 +398,12 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
     const stripe = makeStripe();
     // The store transfer already exists from a prior (partial) run.
     const ctx = makeCtx([
-      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
+      {
+        stripeTransferId: "tr_store",
+        destinationAccountId: "acct_store",
+        role: "store",
+        amount: 8000,
+      },
     ]);
 
     await createSplitTransfers(asStripe(stripe), makeComponent(), ctx, {
@@ -414,8 +426,18 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
   it("creates nothing when all recipients are already in the ledger (full replay)", async () => {
     const stripe = makeStripe();
     const ctx = makeCtx([
-      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000 },
-      { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000 },
+      {
+        stripeTransferId: "tr_store",
+        destinationAccountId: "acct_store",
+        role: "store",
+        amount: 8000,
+      },
+      {
+        stripeTransferId: "tr_aff",
+        destinationAccountId: "acct_aff",
+        role: "affiliate",
+        amount: 1000,
+      },
     ]);
 
     await createSplitTransfers(asStripe(stripe), makeComponent(), ctx, {
@@ -436,8 +458,22 @@ describe("reinstateTransfers (BTS-29)", () => {
   it("re-creates transfers for the reversed amounts (dispute won)", async () => {
     const stripe = makeStripe();
     const ctx = makeCtx([
-      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd", reversedAmount: 8000 },
-      { stripeTransferId: "tr_aff", destinationAccountId: "acct_aff", role: "affiliate", amount: 1000, currency: "usd", reversedAmount: 1000 },
+      {
+        stripeTransferId: "tr_store",
+        destinationAccountId: "acct_store",
+        role: "store",
+        amount: 8000,
+        currency: "usd",
+        reversedAmount: 8000,
+      },
+      {
+        stripeTransferId: "tr_aff",
+        destinationAccountId: "acct_aff",
+        role: "affiliate",
+        amount: 1000,
+        currency: "usd",
+        reversedAmount: 1000,
+      },
     ]);
 
     await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
@@ -448,7 +484,11 @@ describe("reinstateTransfers (BTS-29)", () => {
 
     expect(stripe.transfers.create).toHaveBeenCalledTimes(2);
     expect(stripe.transfers.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 8000, currency: "usd", destination: "acct_store" }),
+      expect.objectContaining({
+        amount: 8000,
+        currency: "usd",
+        destination: "acct_store",
+      }),
       { idempotencyKey: "bs_reinstate_dp_1_acct_store_store" },
     );
     expect(stripe.transfers.create).toHaveBeenCalledWith(
@@ -457,14 +497,22 @@ describe("reinstateTransfers (BTS-29)", () => {
     );
     // Ledger rows are tagged reinstatement so they stay out of the charge's
     // split-leg view and can't be re-reversed.
-    expect(ctx.runMutation.mock.calls[0][1]).toMatchObject({ reinstatement: true });
+    expect(ctx.runMutation.mock.calls[0][1]).toMatchObject({
+      reinstatement: true,
+    });
   });
 
   it("uses a legacy row's fallback currency from the dispute, not USD", async () => {
     const stripe = makeStripe();
     const ctx = makeCtx([
       // Legacy row with no stored currency.
-      { stripeTransferId: "tr_x", destinationAccountId: "acct_x", role: "store", amount: 5000, reversedAmount: 5000 },
+      {
+        stripeTransferId: "tr_x",
+        destinationAccountId: "acct_x",
+        role: "store",
+        amount: 5000,
+        reversedAmount: 5000,
+      },
     ]);
     await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
       sourceChargeId: "ch_1",
@@ -480,7 +528,13 @@ describe("reinstateTransfers (BTS-29)", () => {
   it("skips transfers that were never reversed", async () => {
     const stripe = makeStripe();
     const ctx = makeCtx([
-      { stripeTransferId: "tr_store", destinationAccountId: "acct_store", role: "store", amount: 8000, currency: "usd" },
+      {
+        stripeTransferId: "tr_store",
+        destinationAccountId: "acct_store",
+        role: "store",
+        amount: 8000,
+        currency: "usd",
+      },
     ]);
     await reinstateTransfers(asStripe(stripe), makeComponent(), ctx, {
       sourceChargeId: "ch_1",

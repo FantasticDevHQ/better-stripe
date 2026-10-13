@@ -227,69 +227,73 @@ export function SellerRefunds() {
         </Alert>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 lg:grid-cols-master-detail">
         <Card>
           <CardHeader>
             <CardTitle>Refund a payment</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="refund-payment-intent">PaymentIntent id</Label>
-                <Input
-                  id="refund-payment-intent"
-                  value={paymentIntentId}
-                  onChange={(event) => setPaymentIntentId(event.target.value)}
-                  placeholder="pi_..."
-                  data-testid="refund-payment-intent-input"
-                />
+          <CardContent>
+            <div className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="refund-payment-intent">
+                    PaymentIntent id
+                  </Label>
+                  <Input
+                    id="refund-payment-intent"
+                    value={paymentIntentId}
+                    onChange={(event) => setPaymentIntentId(event.target.value)}
+                    placeholder="pi_..."
+                    data-testid="refund-payment-intent-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refund-amount">Partial amount</Label>
+                  <Input
+                    id="refund-amount"
+                    value={refundAmount}
+                    onChange={(event) => setRefundAmount(event.target.value)}
+                    placeholder="25.00"
+                    inputMode="decimal"
+                    data-testid="refund-partial-amount-input"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="refund-amount">Partial amount</Label>
-                <Input
-                  id="refund-amount"
-                  value={refundAmount}
-                  onChange={(event) => setRefundAmount(event.target.value)}
-                  placeholder="25.00"
-                  inputMode="decimal"
-                  data-testid="refund-partial-amount-input"
-                />
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() => void submitRefund("full")}
+                  disabled={busy !== null}
+                  data-testid="refund-full-button"
+                >
+                  <Undo2 data-icon="inline-start" className="size-4" />
+                  Full refund
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void submitRefund("partial")}
+                  disabled={busy !== null}
+                  data-testid="refund-partial-button"
+                >
+                  <Undo2 data-icon="inline-start" className="size-4" />
+                  Partial refund
+                </Button>
               </div>
-            </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                onClick={() => void submitRefund("full")}
-                disabled={busy !== null}
-                data-testid="refund-full-button"
-              >
-                <Undo2 data-icon="inline-start" className="size-4" />
-                Full refund
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void submitRefund("partial")}
-                disabled={busy !== null}
-                data-testid="refund-partial-button"
-              >
-                <Undo2 data-icon="inline-start" className="size-4" />
-                Partial refund
-              </Button>
+              {refundResult && (
+                <Alert data-testid="refund-result">
+                  <AlertTitle>Refund created</AlertTitle>
+                  <AlertDescription>
+                    Stripe refund id:{" "}
+                    <span className="font-mono">
+                      {refundResult.stripeRefundId}
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-
-            {refundResult && (
-              <Alert data-testid="refund-result">
-                <AlertTitle>Refund created</AlertTitle>
-                <AlertDescription>
-                  Stripe refund id:{" "}
-                  <span className="font-mono">
-                    {refundResult.stripeRefundId}
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
           </CardContent>
         </Card>
 
@@ -297,40 +301,42 @@ export function SellerRefunds() {
           <CardHeader>
             <CardTitle>Payment status</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {cleanPaymentIntentId && payment === undefined ? (
-              <Skeleton className="h-20 w-full" />
-            ) : payment ? (
-              <div className="grid grid-cols-2 gap-4">
-                <Figure
-                  label="Charged"
-                  value={formatCurrency(payment.amount, payment.currency)}
-                  testId="refund-payment-amount"
-                />
-                <Figure
-                  label="Refunded"
-                  value={formatCurrency(
-                    payment.refundedAmount ?? 0,
-                    payment.currency,
-                  )}
-                  testId="refund-payment-refunded"
-                />
-                <Figure
-                  label="Status"
-                  value={payment.status}
-                  testId="refund-payment-status"
-                />
-                <Figure
-                  label="Refund state"
-                  value={payment.refundStatus ?? "none"}
-                  testId="refund-payment-refund-status"
-                />
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Enter a PaymentIntent id to inspect its recorded refund state.
-              </p>
-            )}
+          <CardContent>
+            <div className="space-y-4">
+              {cleanPaymentIntentId && payment === undefined ? (
+                <Skeleton className="h-20 w-full" />
+              ) : payment ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <Figure
+                    label="Charged"
+                    value={formatCurrency(payment.amount, payment.currency)}
+                    testId="refund-payment-amount"
+                  />
+                  <Figure
+                    label="Refunded"
+                    value={formatCurrency(
+                      payment.refundedAmount ?? 0,
+                      payment.currency,
+                    )}
+                    testId="refund-payment-refunded"
+                  />
+                  <Figure
+                    label="Status"
+                    value={payment.status}
+                    testId="refund-payment-status"
+                  />
+                  <Figure
+                    label="Refund state"
+                    value={payment.refundStatus ?? "none"}
+                    testId="refund-payment-refund-status"
+                  />
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Enter a PaymentIntent id to inspect its recorded refund state.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -339,65 +345,67 @@ export function SellerRefunds() {
         <CardHeader>
           <CardTitle>Refund history</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Figure
-              label="Rows"
-              value={refunds === undefined ? "..." : String(refunds.length)}
-              testId="refund-history-count"
-            />
-            <Figure
-              label="Total"
-              value={formatCurrency(refundedTotal)}
-              testId="refund-history-total"
-            />
-            <Figure
-              label="Scope"
-              value={cleanPaymentIntentId ? "Payment" : "All refunds"}
-              testId="refund-history-scope"
-            />
-          </div>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Figure
+                label="Rows"
+                value={refunds === undefined ? "..." : String(refunds.length)}
+                testId="refund-history-count"
+              />
+              <Figure
+                label="Total"
+                value={formatCurrency(refundedTotal)}
+                testId="refund-history-total"
+              />
+              <Figure
+                label="Scope"
+                value={cleanPaymentIntentId ? "Payment" : "All refunds"}
+                testId="refund-history-scope"
+              />
+            </div>
 
-          {refunds === undefined ? (
-            <Skeleton className="h-32 w-full" />
-          ) : refunds.length === 0 ? (
-            <Alert data-testid="refund-history-empty">
-              <AlertTitle>No data yet</AlertTitle>
-              <AlertDescription>
-                No refunds are recorded. Issue a refund or enter a PaymentIntent
-                with refund webhooks to see history here.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Table data-testid="refunds-history">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Refund</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {refunds.map((refund) => (
-                  <TableRow key={refund.stripeRefundId}>
-                    <TableCell className="font-mono">
-                      {refund.stripeRefundId}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{refund.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(refund.amount, refund.currency)}
-                    </TableCell>
-                    <TableCell>{refund.reason ?? "unknown"}</TableCell>
-                    <TableCell>{formatDate(refund._creationTime)}</TableCell>
+            {refunds === undefined ? (
+              <Skeleton className="h-32 w-full" />
+            ) : refunds.length === 0 ? (
+              <Alert data-testid="refund-history-empty">
+                <AlertTitle>No data yet</AlertTitle>
+                <AlertDescription>
+                  No refunds are recorded. Issue a refund or enter a
+                  PaymentIntent with refund webhooks to see history here.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Table data-testid="refunds-history">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Refund</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Created</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                </TableHeader>
+                <TableBody>
+                  {refunds.map((refund) => (
+                    <TableRow key={refund.stripeRefundId}>
+                      <TableCell variant="identifier">
+                        {refund.stripeRefundId}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{refund.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(refund.amount, refund.currency)}
+                      </TableCell>
+                      <TableCell>{refund.reason ?? "unknown"}</TableCell>
+                      <TableCell>{formatDate(refund._creationTime)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -405,62 +413,65 @@ export function SellerRefunds() {
         <CardHeader>
           <CardTitle>Standalone transfer reversal</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="reversal-source-charge">Source charge id</Label>
-              <Input
-                id="reversal-source-charge"
-                value={sourceChargeId}
-                onChange={(event) => setSourceChargeId(event.target.value)}
-                placeholder="ch_..."
-                data-testid="reversal-charge-input"
-              />
+        <CardContent>
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="reversal-source-charge">Source charge id</Label>
+                <Input
+                  id="reversal-source-charge"
+                  value={sourceChargeId}
+                  onChange={(event) => setSourceChargeId(event.target.value)}
+                  placeholder="ch_..."
+                  data-testid="reversal-charge-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reversal-amount">Partial amount</Label>
+                <Input
+                  id="reversal-amount"
+                  value={reversalAmount}
+                  onChange={(event) => setReversalAmount(event.target.value)}
+                  placeholder="10.00"
+                  inputMode="decimal"
+                  data-testid="reversal-partial-amount-input"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reversal-amount">Partial amount</Label>
-              <Input
-                id="reversal-amount"
-                value={reversalAmount}
-                onChange={(event) => setReversalAmount(event.target.value)}
-                placeholder="10.00"
-                inputMode="decimal"
-                data-testid="reversal-partial-amount-input"
-              />
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={() => void submitReversal("full")}
+                disabled={busy !== null}
+                data-testid="reversal-full-button"
+              >
+                <RotateCcw data-icon="inline-start" className="size-4" />
+                Full reversal
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void submitReversal("partial")}
+                disabled={busy !== null}
+                data-testid="reversal-partial-button"
+              >
+                <RotateCcw data-icon="inline-start" className="size-4" />
+                Partial reversal
+              </Button>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              onClick={() => void submitReversal("full")}
-              disabled={busy !== null}
-              data-testid="reversal-full-button"
-            >
-              <RotateCcw data-icon="inline-start" className="size-4" />
-              Full reversal
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void submitReversal("partial")}
-              disabled={busy !== null}
-              data-testid="reversal-partial-button"
-            >
-              <RotateCcw data-icon="inline-start" className="size-4" />
-              Partial reversal
-            </Button>
+            {reversalResult && (
+              <Alert data-testid="reversal-result">
+                <AlertTitle>Reversal complete</AlertTitle>
+                <AlertDescription>
+                  {reversalResult.summary.reversalCount} transfer(s),{" "}
+                  {formatCurrency(reversalResult.summary.totalReversed)}{" "}
+                  reversed.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
-
-          {reversalResult && (
-            <Alert data-testid="reversal-result">
-              <AlertTitle>Reversal complete</AlertTitle>
-              <AlertDescription>
-                {reversalResult.summary.reversalCount} transfer(s),{" "}
-                {formatCurrency(reversalResult.summary.totalReversed)} reversed.
-              </AlertDescription>
-            </Alert>
-          )}
         </CardContent>
       </Card>
     </div>

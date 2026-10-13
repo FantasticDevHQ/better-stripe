@@ -21,6 +21,7 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
    - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which you can leave open to collect more changes: nothing publishes until that PR is merged.
 
    Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
+
 2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`.
 3. **Merging the release PR** is the release decision. The same run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
 
@@ -42,6 +43,11 @@ monthly billing, actual Stripe fee reconciliation, and refund/dispute cost
 recovery. The example also demonstrates optional balance-funded subscriptions
 using Stripe's Accounts v2 preview. See the setup guide for consent requirements,
 renewal tests, and payment-recovery limitations.
+
+Run `pnpm run check:all` before submitting changes. It runs the build, lint,
+formatting, typechecks, codegen drift check, tests, and repository quality gates
+used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in
+`gates/`. Fix failures without weakening the gates or raising existing budgets.
 
 Builds and typechecks use TypeScript 7 (`@typescript/native` aliases
 `typescript`). ESLint and Convex code generation still need the TypeScript 6
@@ -72,8 +78,8 @@ All three require a configured dev deployment (`CONVEX_DEPLOYMENT` env var, norm
 **CI gate.** Two layers verify the committed files are not stale:
 
 1. **Structural drift check** (`pnpm codegen:check`, always runs in CI): two independent scans, each checking both directions (every source export appears in the generated file, and every generated entry still has a matching source), neither needing a deployment:
-   - Library component — scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. The reverse direction also flags a stale entry left behind by a *deleted* query/mutation/action. The export-detection regex intentionally matches only direct `query(...)`/`mutation(...)`/`action(...)` exports — not wrapper or re-export forms like `customQuery(...)` (convex-helpers) or `export { fn as name }`, which this component has none of today; widen the regex (and the reverse scan) rather than assuming that stays true.
-   - Example app — scans `example/convex/**/*.ts` and verifies every source module is imported and registered in `example/convex/_generated/api.ts`. Catches the common case of adding a new `example/convex/<module>.ts` (or nested file like `example/convex/lib/<module>.ts`) without regenerating. The reverse direction likewise flags a stale import left behind by a *deleted* module.
+   - Library component — scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. The reverse direction also flags a stale entry left behind by a _deleted_ query/mutation/action. The export-detection regex intentionally matches only direct `query(...)`/`mutation(...)`/`action(...)` exports — not wrapper or re-export forms like `customQuery(...)` (convex-helpers) or `export { fn as name }`, which this component has none of today; widen the regex (and the reverse scan) rather than assuming that stays true.
+   - Example app — scans `example/convex/**/*.ts` and verifies every source module is imported and registered in `example/convex/_generated/api.ts`. Catches the common case of adding a new `example/convex/<module>.ts` (or nested file like `example/convex/lib/<module>.ts`) without regenerating. The reverse direction likewise flags a stale import left behind by a _deleted_ module.
 2. **Authoritative regen-and-diff** (runs in CI when `CONVEX_DEPLOYMENT` is configured): runs `pnpm codegen` against the configured dev deployment and fails if `git diff` shows changes. Catches every drift case, including validator-shape changes the structural check can't see. To enable on a fork, set the `CONVEX_DEPLOYMENT` repo secret to a dev deployment name and authorize the CI runner — see Convex's [GitHub Actions guide](https://docs.convex.dev/production/integration/deployments#github-actions).
 
 ### Relation to `@convex-dev/stripe`
@@ -216,27 +222,27 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 ### Account
 
-| Method                                                                            | Description                                              |
-| --------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `createAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })`      | Create a V2 account in Stripe and the component database |
-| `getAccount(ctx, { accountId })`                                                  | Get account by component document ID                     |
-| `getAccountByStripeId(ctx, { stripeAccountId })`                                  | Get account by Stripe account ID                         |
-| `getOrCreateAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })` | Get existing or create new account                       |
-| `getAccountByUserId(ctx, { userId })`                                             | Get account by app-layer user ID                         |
-| `getAccountByOrgId(ctx, { orgId })`                                               | Get account by organization/team ID                      |
-| `getAccountOnboardingStatus(ctx, { accountId })`                                  | Get Connect onboarding status (by component document ID) |
-| `updateAccount(ctx, { stripeAccountId, email?, name?, metadata? })`               | Update account fields                                    |
-| `createAccountLink(ctx, { stripeAccountId, refreshUrl, returnUrl, type })`        | Create Connect onboarding or update link                 |
-| `createAccountSession(ctx, { stripeAccountId, components })`                      | Create embedded account management session               |
-| `createLoginLink(ctx, { stripeAccountId })`                                       | Create Express dashboard login link                      |
-| `addRecipientConfiguration(ctx, { stripeAccountId })`                             | Add recipient configuration to an existing account       |
-| `getV2Account(ctx, { stripeAccountId, include? })`                                | Retrieve a V2 account directly from Stripe               |
-| `updateV2Account(ctx, { stripeAccountId, updateParams })`                         | Update a V2 account in Stripe                            |
-| `listStripeAccounts(ctx, { limit? })`                                             | List V2 accounts directly from Stripe                    |
-| `closeAccount(ctx, { stripeAccountId })`                                          | Close a V2 account; returns `{ closed: boolean }`        |
-| `restartAccountOnboarding(ctx, { stripeAccountId })`                              | Close the account so onboarding can restart fresh        |
-| `setAccountStatementDescriptor(ctx, { stripeAccountId, statementDescriptor })` | Set (or `null` to clear) the account's per-store statement-descriptor suffix |
-| `createDisputeSession(ctx, { stripeAccountId })` | Create an embedded Account Session scoped to the seller's disputes |
+| Method                                                                            | Description                                                                  |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `createAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })`      | Create a V2 account in Stripe and the component database                     |
+| `getAccount(ctx, { accountId })`                                                  | Get account by component document ID                                         |
+| `getAccountByStripeId(ctx, { stripeAccountId })`                                  | Get account by Stripe account ID                                             |
+| `getOrCreateAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })` | Get existing or create new account                                           |
+| `getAccountByUserId(ctx, { userId })`                                             | Get account by app-layer user ID                                             |
+| `getAccountByOrgId(ctx, { orgId })`                                               | Get account by organization/team ID                                          |
+| `getAccountOnboardingStatus(ctx, { accountId })`                                  | Get Connect onboarding status (by component document ID)                     |
+| `updateAccount(ctx, { stripeAccountId, email?, name?, metadata? })`               | Update account fields                                                        |
+| `createAccountLink(ctx, { stripeAccountId, refreshUrl, returnUrl, type })`        | Create Connect onboarding or update link                                     |
+| `createAccountSession(ctx, { stripeAccountId, components })`                      | Create embedded account management session                                   |
+| `createLoginLink(ctx, { stripeAccountId })`                                       | Create Express dashboard login link                                          |
+| `addRecipientConfiguration(ctx, { stripeAccountId })`                             | Add recipient configuration to an existing account                           |
+| `getV2Account(ctx, { stripeAccountId, include? })`                                | Retrieve a V2 account directly from Stripe                                   |
+| `updateV2Account(ctx, { stripeAccountId, updateParams })`                         | Update a V2 account in Stripe                                                |
+| `listStripeAccounts(ctx, { limit? })`                                             | List V2 accounts directly from Stripe                                        |
+| `closeAccount(ctx, { stripeAccountId })`                                          | Close a V2 account; returns `{ closed: boolean }`                            |
+| `restartAccountOnboarding(ctx, { stripeAccountId })`                              | Close the account so onboarding can restart fresh                            |
+| `setAccountStatementDescriptor(ctx, { stripeAccountId, statementDescriptor })`    | Set (or `null` to clear) the account's per-store statement-descriptor suffix |
+| `createDisputeSession(ctx, { stripeAccountId })`                                  | Create an embedded Account Session scoped to the seller's disputes           |
 
 ### Product and Price
 
@@ -257,22 +263,22 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 ### Checkout and Subscription
 
-| Method                                                                                                                                                                     | Description                                                                                                       |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Method                                                                                                                                                                                                                   | Description                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createCheckoutSession(ctx, { userId, stripePriceId, mode, returnUrl, uiMode?, quantity?, trialDays?, accountId?, orgId?, customerEmail?, destinationAccountId?, split?, fee?, amount?, metadata?, sessionOverrides? })` | Create checkout session (embedded or redirect); `destinationAccountId`/`split` route funds, `fee` overrides the platform's configured default |
-| `getCheckoutSession(ctx, { sessionId })`                                                                                                                                   | Get checkout session by component document ID                                                                     |
-| `getCheckoutSessionByStripeId(ctx, { stripeSessionId })`                                                                                                                   | Get checkout session by Stripe session ID                                                                         |
-| `createSubscription(ctx, { userId, orgId?, customerAccount, stripePriceId, destinationAccountId?, split?, fee?, trialDays?, metadata? })` | Create a subscription directly for a V2 buyer (off the checkout flow), with the same routing/fee options as checkout |
-| `getSubscription(ctx, { subscriptionId })`                                                                                                                                 | Get subscription by component document ID                                                                         |
-| `getSubscriptionByStripeId(ctx, { stripeSubscriptionId })`                                                                                                                 | Get subscription by Stripe subscription ID                                                                        |
-| `listSubscriptions(ctx, { stripeAccountId?, status?, limit? })`                                                                                                            | List subscriptions, optionally scoped to a Connect account (use `listSubscriptionsByUser` for per-user filtering) |
-| `listSubscriptionsByUser(ctx, { userId, status? })`                                                                                                                        | List all subscriptions for a user                                                                                 |
-| `listSubscriptionsByOrg(ctx, { orgId, status? })`                                                                                                                          | List all subscriptions for an organization                                                                        |
-| `getActiveSubscription(ctx, { userId, orgId? })`                                                                                                                           | Get the active subscription for a user or org                                                                     |
-| `getTrialStatus(ctx, { subscriptionId })`                                                                                                                                  | Get trial state for a subscription                                                                                |
-| `cancelSubscription(ctx, { stripeSubscriptionId, cancelAtPeriodEnd? })`                                                                                                    | Cancel subscription immediately or at period end                                                                  |
-| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                    | Reactivate a canceled subscription                                                                                |
-| `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                      | Update subscription seat quantity                                                                                 |
+| `getCheckoutSession(ctx, { sessionId })`                                                                                                                                                                                 | Get checkout session by component document ID                                                                                                 |
+| `getCheckoutSessionByStripeId(ctx, { stripeSessionId })`                                                                                                                                                                 | Get checkout session by Stripe session ID                                                                                                     |
+| `createSubscription(ctx, { userId, orgId?, customerAccount, stripePriceId, destinationAccountId?, split?, fee?, trialDays?, metadata? })`                                                                                | Create a subscription directly for a V2 buyer (off the checkout flow), with the same routing/fee options as checkout                          |
+| `getSubscription(ctx, { subscriptionId })`                                                                                                                                                                               | Get subscription by component document ID                                                                                                     |
+| `getSubscriptionByStripeId(ctx, { stripeSubscriptionId })`                                                                                                                                                               | Get subscription by Stripe subscription ID                                                                                                    |
+| `listSubscriptions(ctx, { stripeAccountId?, status?, limit? })`                                                                                                                                                          | List subscriptions, optionally scoped to a Connect account (use `listSubscriptionsByUser` for per-user filtering)                             |
+| `listSubscriptionsByUser(ctx, { userId, status? })`                                                                                                                                                                      | List all subscriptions for a user                                                                                                             |
+| `listSubscriptionsByOrg(ctx, { orgId, status? })`                                                                                                                                                                        | List all subscriptions for an organization                                                                                                    |
+| `getActiveSubscription(ctx, { userId, orgId? })`                                                                                                                                                                         | Get the active subscription for a user or org                                                                                                 |
+| `getTrialStatus(ctx, { subscriptionId })`                                                                                                                                                                                | Get trial state for a subscription                                                                                                            |
+| `cancelSubscription(ctx, { stripeSubscriptionId, cancelAtPeriodEnd? })`                                                                                                                                                  | Cancel subscription immediately or at period end                                                                                              |
+| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
+| `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
 ### Invoice, Payment Method, and Payout
 
@@ -294,17 +300,17 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 ### Refund and Dispute
 
-| Method                                                                                                          | Description                                                                      |
-| --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Method                                                                                                                                                   | Description                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId?, refundApplicationFee?, reverseTransfer? })` | Issue a refund (provide a payment intent or charge); returns/reverses the platform fee and destination transfer by default; synced via `refund.created`/`.updated` |
-| `getRefundByStripeId(ctx, { stripeRefundId })`                                                                  | Get a refund by Stripe refund ID                                                 |
-| `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                               | List refunds with optional filters                                               |
-| `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                | Get a dispute by Stripe dispute ID                                               |
-| `getDisputeWithCountdown(ctx, { stripeDisputeId })`                                                             | Get a dispute plus its evidence-due countdown (`daysRemaining`, `isOverdue`)      |
-| `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                              | List disputes with optional filters                                              |
-| `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                      | Submit/stage dispute evidence (`submit: true` finalizes the response)            |
-| `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                      | Accept a dispute (concede the chargeback) — irreversible                         |
-| `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                  | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually) |
+| `getRefundByStripeId(ctx, { stripeRefundId })`                                                                                                           | Get a refund by Stripe refund ID                                                                                                                                   |
+| `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                                                                        | List refunds with optional filters                                                                                                                                 |
+| `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                                                         | Get a dispute by Stripe dispute ID                                                                                                                                 |
+| `getDisputeWithCountdown(ctx, { stripeDisputeId })`                                                                                                      | Get a dispute plus its evidence-due countdown (`daysRemaining`, `isOverdue`)                                                                                       |
+| `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                                                                       | List disputes with optional filters                                                                                                                                |
+| `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                                                               | Submit/stage dispute evidence (`submit: true` finalizes the response)                                                                                              |
+| `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                                                               | Accept a dispute (concede the chargeback) — irreversible                                                                                                           |
+| `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                                                           | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually)                                         |
 
 Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
 
@@ -629,7 +635,11 @@ await stripe.createCheckoutSession(ctx, {
   returnUrl,
   split: [
     { destinationAccountId: storeAccountId, role: "store", percent: 80 },
-    { destinationAccountId: affiliateAccountId, role: "affiliate", percent: 10 },
+    {
+      destinationAccountId: affiliateAccountId,
+      role: "affiliate",
+      percent: 10,
+    },
   ],
   fee: { percent: 10 }, // per-call override; omit to use the configured default
 });
@@ -708,21 +718,21 @@ Read hooks are exported as factory functions that take the app's `useQuery` bind
 
 ### Read Hooks
 
-| Hook Factory                 | Hook Arguments                             | Returns                                                                                               |
-| ---------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `createUseAccount`           | `(userId?)`                                | `{ account, isLoading }`                                                                              |
-| `createUseProducts`          | `({ accountId?, active? }?)`               | `{ products, isLoading }`                                                                             |
-| `createUsePrices`            | `(productId?)`                             | `{ prices, isLoading }`                                                                               |
-| `createUseSubscription`      | `(subscriptionId?)`                        | `{ subscription, isActive, isTrialing, isCanceling, daysUntilRenewal, daysUntilTrialEnd, isLoading }` |
-| `createUseSubscriptions`     | `({ userId?, status? }?)`                  | `{ subscriptions, activeSubscription, isLoading }`                                                    |
-| `createUseCheckout`          | `(sessionId?)`                             | `{ session, status, isComplete, isLoading }`                                                          |
-| `createUsePaymentMethods`    | `(accountId?)`                             | `{ methods, defaultMethod, isLoading }`                                                               |
-| `createUseInvoices`          | `({ userId?, subscriptionId?, status? }?)` | `{ invoices, isLoading }`                                                                             |
-| `createUseAccountOnboarding` | `(accountId?)`                             | `{ account, status, isReady, missingRequirements, isLoading }`                                        |
-| `createUseEarnings`          | `(accountId?)`                             | `{ gross, reversed, net, payouts, paidOut, transfers, isLoading }` — recipient balance/earnings |
-| `createUseSplitBreakdown`    | `({ sourceChargeId?, saleAmount? })`       | `{ breakdown: { legs, store, affiliate, other, recipientsTotal, platform? } \| null, isLoading }` — per-sale split |
-| `createUseDisputes`          | `({ accountId?, status? }?)`               | `{ disputes, isLoading }`                                                                              |
-| `createUseDisputeWithCountdown` | `(stripeDisputeId?)`                    | `{ dispute, countdown: { dueBy?, daysRemaining?, isOverdue } \| null, isLoading }`                      |
+| Hook Factory                    | Hook Arguments                             | Returns                                                                                                            |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `createUseAccount`              | `(userId?)`                                | `{ account, isLoading }`                                                                                           |
+| `createUseProducts`             | `({ accountId?, active? }?)`               | `{ products, isLoading }`                                                                                          |
+| `createUsePrices`               | `(productId?)`                             | `{ prices, isLoading }`                                                                                            |
+| `createUseSubscription`         | `(subscriptionId?)`                        | `{ subscription, isActive, isTrialing, isCanceling, daysUntilRenewal, daysUntilTrialEnd, isLoading }`              |
+| `createUseSubscriptions`        | `({ userId?, status? }?)`                  | `{ subscriptions, activeSubscription, isLoading }`                                                                 |
+| `createUseCheckout`             | `(sessionId?)`                             | `{ session, status, isComplete, isLoading }`                                                                       |
+| `createUsePaymentMethods`       | `(accountId?)`                             | `{ methods, defaultMethod, isLoading }`                                                                            |
+| `createUseInvoices`             | `({ userId?, subscriptionId?, status? }?)` | `{ invoices, isLoading }`                                                                                          |
+| `createUseAccountOnboarding`    | `(accountId?)`                             | `{ account, status, isReady, missingRequirements, isLoading }`                                                     |
+| `createUseEarnings`             | `(accountId?)`                             | `{ gross, reversed, net, payouts, paidOut, transfers, isLoading }` — recipient balance/earnings                    |
+| `createUseSplitBreakdown`       | `({ sourceChargeId?, saleAmount? })`       | `{ breakdown: { legs, store, affiliate, other, recipientsTotal, platform? } \| null, isLoading }` — per-sale split |
+| `createUseDisputes`             | `({ accountId?, status? }?)`               | `{ disputes, isLoading }`                                                                                          |
+| `createUseDisputeWithCountdown` | `(stripeDisputeId?)`                       | `{ dispute, countdown: { dueBy?, daysRemaining?, isOverdue } \| null, isLoading }`                                 |
 
 ### Checkout Session Hooks
 
@@ -837,8 +847,8 @@ All components accept:
 
 ### Buyer Billing
 
-| Component          | Description                                                            |
-| ------------------ | --------------------------------------------------------------------- |
+| Component          | Description                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
 | `BuyerBillingView` | Per-store buyer billing view: subscriptions grouped by store, reusable saved card, embedded card update |
 
 An embedded-only billing surface for buyers: their subscriptions are grouped by
@@ -856,7 +866,9 @@ import {
 import { groupSubscriptionsByStore } from "@fantastic.dev/better-stripe";
 
 function BuyerBilling({ userId, customerAccount }: Props) {
-  const subscriptions = useQuery(api.stripe.listSubscriptionsByUser, { userId });
+  const subscriptions = useQuery(api.stripe.listSubscriptionsByUser, {
+    userId,
+  });
   const { defaultMethod } = usePaymentMethods(customerAccount);
   const cancel = useMutation(api.stripe.cancelSubscription);
   const reactivate = useMutation(api.stripe.reactivateSubscription);
@@ -864,7 +876,10 @@ function BuyerBilling({ userId, customerAccount }: Props) {
   return (
     <BuyerBillingView
       // groupSubscriptionsByStore reused, not recomputed
-      subscriptions={subscriptions?.map((s) => ({ ...s, id: s.stripeSubscriptionId }))}
+      subscriptions={subscriptions?.map((s) => ({
+        ...s,
+        id: s.stripeSubscriptionId,
+      }))}
       paymentMethod={defaultMethod}
       isLoading={subscriptions === undefined}
       onCancel={(sub) => cancel({ stripeSubscriptionId: sub.id })}
@@ -896,21 +911,21 @@ function BuyerBilling({ userId, customerAccount }: Props) {
 
 ### Payouts and Earnings
 
-| Component          | Description                                                                                                    |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `PayoutSchedule`    | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. Payouts are automatic/rolling — no manual-withdrawal action is offered. |
-| `EarningsSummary`   | Gross / reversals & adjustments / net + latest payout, fed by `useEarnings(accountId)`. Reversals cover both deferred fee collection and refund/dispute clawbacks — not a pure fees figure, hence the "Reversals & adjustments" label rather than "Fees". |
-| `SplitBreakdown`    | Per-sale store / affiliate / other / platform split lines, fed by `useSplitBreakdown`. The platform line reads "unknown" (not $0) when the hook wasn't given the sale amount. |
+| Component         | Description                                                                                                                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PayoutSchedule`  | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. Payouts are automatic/rolling — no manual-withdrawal action is offered.                                                                                      |
+| `EarningsSummary` | Gross / reversals & adjustments / net + latest payout, fed by `useEarnings(accountId)`. Reversals cover both deferred fee collection and refund/dispute clawbacks — not a pure fees figure, hence the "Reversals & adjustments" label rather than "Fees". |
+| `SplitBreakdown`  | Per-sale store / affiliate / other / platform split lines, fed by `useSplitBreakdown`. The platform line reads "unknown" (not $0) when the hook wasn't given the sale amount.                                                                             |
 
 ### Disputes (headless)
 
 The app-owned alternative to [Embedded Disputes](#embedded-disputes-stripe-connect) below — build a custom dispute UI on the read hooks and these components instead of Stripe's hosted ConnectJS components.
 
-| Component        | Description                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `DisputesList`    | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`          |
-| `DisputeDetail`   | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown` |
-| `EvidenceForm`    | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
+| Component       | Description                                                                                                                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DisputesList`  | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`                                                                                                                                            |
+| `DisputeDetail` | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown`                                                                                                                             |
+| `EvidenceForm`  | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
 
 ### Embedded Disputes (Stripe Connect)
 
@@ -919,8 +934,8 @@ views and responds to their own disputes via Stripe's embedded `disputes_list`
 / `payment_disputes` components, driven by the Account Session that
 `createDisputeSession` creates.
 
-| Component          | Description                                                                                    |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
+| Component          | Description                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
 | `ConnectProvider`  | Initializes ConnectJS with your publishable key + an account-session fetcher                    |
 | `EmbeddedDisputes` | Mounts the embedded `disputes_list` (or `payment_disputes` when scoped via `payment`) component |
 
@@ -934,7 +949,10 @@ export const createDisputeSession = action({
 });
 
 // Seller disputes page (client side)
-import { ConnectProvider, EmbeddedDisputes } from "@fantastic.dev/better-stripe/react";
+import {
+  ConnectProvider,
+  EmbeddedDisputes,
+} from "@fantastic.dev/better-stripe/react";
 
 function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
   const createSession = useAction(api.stripe.createDisputeSession);
@@ -1106,8 +1124,8 @@ Async hook (scheduled action)          --> App calls external APIs
 
 ### Package Entry Points
 
-| Entry Point                            | Contents                                                 |
-| -------------------------------------- | -------------------------------------------------------- |
+| Entry Point                                  | Contents                                                 |
+| -------------------------------------------- | -------------------------------------------------------- |
 | `@fantastic.dev/better-stripe`               | `BetterStripe` class, `registerRoutes`, TypeScript types |
 | `@fantastic.dev/better-stripe/react`         | React hooks, headless UI components, formatting helpers  |
 | `@fantastic.dev/better-stripe/testing`       | Test fixtures, mock webhooks, `assertTestEnvironment`    |

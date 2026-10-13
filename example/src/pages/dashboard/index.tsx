@@ -69,15 +69,15 @@ export function Dashboard() {
                   Renews {formatDate(userSubscription.currentPeriodEnd)}
                 </p>
               </div>
-              <Badge variant="default" className="capitalize">
-                {userSubscription.status}
+              <Badge variant="default">
+                <span className="capitalize">{userSubscription.status}</span>
               </Badge>
             </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent padding="status" className="text-center">
             <Alert>
               <AlertTitle>No active subscription</AlertTitle>
               <AlertDescription>

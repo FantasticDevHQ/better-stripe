@@ -49,8 +49,10 @@ function PayoutTable({ payouts, empty }: { payouts: Payout[]; empty: string }) {
       <TableBody>
         {payouts.map((payout) => (
           <TableRow key={payout.id}>
-            <TableCell className="font-mono text-xs">{payout.id}</TableCell>
-            <TableCell className="font-medium tabular-nums">
+            <TableCell variant="identifier" density="compact">
+              {payout.id}
+            </TableCell>
+            <TableCell variant="amount">
               {currency(payout.amount, payout.currency)}
             </TableCell>
             <TableCell>
@@ -73,7 +75,9 @@ function PayoutTable({ payouts, empty }: { payouts: Payout[]; empty: string }) {
           <TableRow>
             <TableCell
               colSpan={4}
-              className="py-8 text-center text-muted-foreground"
+              size="empty"
+              tone="muted"
+              className="text-center"
             >
               {empty}
             </TableCell>
@@ -177,7 +181,7 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
             {(["available", "pending"] as const).map((kind) => (
               <Card key={kind}>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle variant="metric">
                     {kind === "available" ? "Available" : "Pending"}
                   </CardTitle>
                 </CardHeader>
@@ -203,9 +207,7 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
             ))}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Next payout
-                </CardTitle>
+                <CardTitle variant="metric">Next payout</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-semibold tabular-nums">

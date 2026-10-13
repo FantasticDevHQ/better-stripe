@@ -41,7 +41,8 @@ export function reversalsMatchExactly(
   for (const role of expectedRoles) {
     const matching = rows.filter((r) => r.role === role);
     if (matching.length !== 1) return false;
-    if ((matching[0].reversedAmount ?? 0) !== expectedByRole[role]) return false;
+    if ((matching[0].reversedAmount ?? 0) !== expectedByRole[role])
+      return false;
   }
   return true;
 }

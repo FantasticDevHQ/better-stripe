@@ -124,7 +124,10 @@ describe("reversalsMatchExactly (BTS-73 exact reversal assertion)", () => {
 
   it("does NOT match a missing leg", () => {
     expect(
-      reversalsMatchExactly([{ role: "store", reversedAmount: 8_000 }], EXPECTED),
+      reversalsMatchExactly(
+        [{ role: "store", reversedAmount: 8_000 }],
+        EXPECTED,
+      ),
     ).toBe(false);
   });
 

@@ -37,8 +37,7 @@ vi.mock("stripe", () => {
 
 // Mock httpActionGeneric to capture the raw handler
 let _capturedHandler:
-  | ((ctx: any, request: Request) => Promise<Response>)
-  | undefined;
+  ((ctx: any, request: Request) => Promise<Response>) | undefined;
 
 vi.mock("convex/server", () => ({
   httpActionGeneric: (fn: any) => fn,

@@ -201,7 +201,11 @@ export function computeSplit(
         `Invalid split amount for ${r.destinationAccountId}: ${amt}`,
       );
     }
-    return { destinationAccountId: r.destinationAccountId, role: r.role, amount: amt };
+    return {
+      destinationAccountId: r.destinationAccountId,
+      role: r.role,
+      amount: amt,
+    };
   });
 
   const sumTransfers = transfers.reduce((s, t) => s + t.amount, 0);
@@ -247,7 +251,10 @@ export function validateSplit(recipients: SplitRecipient[]): void {
         `split recipient ${r.destinationAccountId} must set exactly one of amount or percent`,
       );
     }
-    if (hasAmount && (!Number.isInteger(r.amount) || (r.amount as number) < 0)) {
+    if (
+      hasAmount &&
+      (!Number.isInteger(r.amount) || (r.amount as number) < 0)
+    ) {
       throw new Error(
         `split recipient ${r.destinationAccountId} amount must be a non-negative integer (minor units)`,
       );

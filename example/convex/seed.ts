@@ -1,3 +1,4 @@
+import { STORE_CATALOGS } from "./lib/sandboxFixturePlan";
 import { env } from "./_generated/server";
 import Stripe from "stripe";
 
@@ -484,54 +485,6 @@ export const seedMarketplaceAccounts = internalAction({
     return { alreadySeeded: false, linked };
   },
 });
-
-/** What each store sells. Keyed by the seller persona's email. */
-type StoreCatalog = {
-  product: { name: string; description: string };
-  prices: Array<{
-    unitAmount: number;
-    type: "one_time" | "recurring";
-    interval?: "month" | "year";
-    nickname?: string;
-  }>;
-};
-
-const STORE_CATALOGS: Record<string, StoreCatalog> = {
-  "maya@example.com": {
-    product: {
-      name: "Fitness Coaching Membership",
-      description: "Weekly group coaching and training plans from Maya",
-    },
-    prices: [
-      {
-        unitAmount: 4900,
-        type: "recurring",
-        interval: "month",
-        nickname: "Monthly",
-      },
-      {
-        unitAmount: 49900,
-        type: "recurring",
-        interval: "year",
-        nickname: "Yearly",
-      },
-      // One-time $100 session — the sale visualized by the affiliate-split
-      // demo ($100 → store / affiliate / platform, BTS-43).
-      {
-        unitAmount: 10000,
-        type: "one_time",
-        nickname: "1:1 Session",
-      },
-    ],
-  },
-  "sasha@example.com": {
-    product: {
-      name: "Ceramics Masterclass",
-      description: "A self-paced wheel-throwing course by Sasha",
-    },
-    prices: [{ unitAmount: 12900, type: "one_time", nickname: "Lifetime" }],
-  },
-};
 
 /**
  * Seed each store's catalog: products/prices created on the PLATFORM Stripe

@@ -14,8 +14,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
  * Result of a checkout confirmation attempt.
  */
 export type CheckoutConfirmResult =
-  | { type: "success" }
-  | { type: "error"; message: string };
+  { type: "success" } | { type: "error"; message: string };
 
 /**
  * Checkout session state and actions.

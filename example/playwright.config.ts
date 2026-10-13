@@ -44,7 +44,8 @@ export default defineConfig({
     // longer works.
     env: {
       VITE_CONVEX_URL:
-        process.env.VITE_CONVEX_URL ?? "https://placeholder-otter-123.convex.cloud",
+        process.env.VITE_CONVEX_URL ??
+        "https://placeholder-otter-123.convex.cloud",
     },
   },
 });

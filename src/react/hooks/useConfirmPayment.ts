@@ -8,8 +8,7 @@ import { useElements, useStripe } from "@stripe/react-stripe-js";
  * Normalized result from a Stripe confirmation operation.
  */
 export type StripeConfirmResult =
-  | { success: true }
-  | { success: false; error: string };
+  { success: true } | { success: false; error: string };
 
 /**
  * Hook for confirming a PaymentIntent (immediate charge) or SetupIntent (future charge / trial).

@@ -26,9 +26,7 @@ describe("buildCheckoutReturnUrl", () => {
 
   it("respects the given origin", () => {
     const url = buildCheckoutReturnUrl("http://localhost:5173");
-    expect(url.startsWith("http://localhost:5173/checkout/status")).toBe(
-      true,
-    );
+    expect(url.startsWith("http://localhost:5173/checkout/status")).toBe(true);
   });
 
   it("embeds the placeholder for a custom path (BTS-58)", () => {

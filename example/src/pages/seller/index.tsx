@@ -44,9 +44,11 @@ export function SellerHome() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
-              <CardContent className="space-y-3 p-6">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-32" />
+              <CardContent padding="lg">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -127,7 +129,7 @@ export function SellerHome() {
           { label: "Total Payouts", value: formatCurrency(totalPayouts) },
         ].map((stat) => (
           <Card key={stat.label}>
-            <CardHeader className="pb-2">
+            <CardHeader spacing="compact">
               <CardDescription>{stat.label}</CardDescription>
             </CardHeader>
             <CardContent>

@@ -1,6 +1,11 @@
 import { EnvVarsCard } from "@/components/setup-env-vars";
 import { CopyButton } from "@/components/setup-controls";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useWorkflowAction,
+  useWebhookSetup,
+  useTaskRunner,
+  FixtureProgress,
+} from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -32,26 +37,12 @@ function EnvCommandRow({
   envName: "v1" | "v2";
   verifyFn: () => Promise<{ v1: boolean; v2: boolean }>;
 }) {
-  const [verified, setVerified] = useState(false);
-  const [checkingEnv, setCheckingEnv] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  const handleVerify = async () => {
-    setCheckingEnv(true);
-    setFailed(false);
-    try {
-      const result = await verifyFn();
-      if (result[envName]) {
-        setVerified(true);
-      } else {
-        setFailed(true);
-      }
-    } catch {
-      setFailed(true);
-    } finally {
-      setCheckingEnv(false);
-    }
-  };
+  const verification = useWorkflowAction(verifyFn, envName);
+  const verified = !!verification.result?.[envName];
+  const checkingEnv = verification.isPending;
+  const failed =
+    !!verification.error || (verification.result !== undefined && !verified);
+  const handleVerify = () => verification.run();
 
   const envVarName =
     envName === "v1" ? "STRIPE_WEBHOOK_SECRET" : "STRIPE_WEBHOOK_SECRET_V2";
@@ -98,59 +89,23 @@ function WebhookSetupCard() {
   const getWebhookStatus = useAction(api.actions.getWebhookStatus);
   const verifyWebhookEnvs = useAction(api.actions.verifyWebhookEnvs);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-  const [result, setResult] = useState<{
-    v1: { id: string; secret: string; url: string };
-    v2: {
-      id: string;
-      secret: string;
-      url: string;
-      enabledEvents: string[];
-      created: boolean;
-    };
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<{
-    v1: { id: string; status: string; eventCount: number } | null;
-    v2: { id: string; status: string; eventCount: number } | null;
-  } | null>(null);
-
   const siteUrl = import.meta.env.VITE_CONVEX_SITE_URL as string | undefined;
-
-  const checkStatus = useCallback(async () => {
-    if (!siteUrl) return;
-    setIsChecking(true);
-    try {
-      const s = await getWebhookStatus({ siteUrl });
-      setStatus(s);
-    } catch {
-      // Non-fatal
-    } finally {
-      setIsChecking(false);
-    }
-  }, [siteUrl, getWebhookStatus]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
-    checkStatus();
-  }, [checkStatus]);
-
-  const handleSetup = async () => {
-    if (!siteUrl) return;
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
-    try {
-      const res = await setupWebhooks({ siteUrl });
-      setResult(res);
-      await checkStatus();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    result,
+    error,
+    status,
+    isChecking,
+    isPending: isLoading,
+    configure: handleSetup,
+  } = useWebhookSetup({
+    scopeKey: `webhooks:${siteUrl ?? "missing"}`,
+    load: () =>
+      siteUrl ? getWebhookStatus({ siteUrl }) : Promise.resolve(null),
+    setup: () => {
+      if (!siteUrl) throw new Error("Configure VITE_CONVEX_SITE_URL first.");
+      return setupWebhooks({ siteUrl });
+    },
+  });
 
   const v1EnvCommand = result?.v1.secret
     ? `npx convex env set STRIPE_WEBHOOK_SECRET ${result.v1.secret}`
@@ -282,26 +237,14 @@ function SeedDataCard() {
   const populateSandbox = useAction(api.sandboxFixtures.start);
   const products = useQuery(api.queries.listProducts);
 
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const tasks = useTaskRunner({ scopeKey: "seed" });
+  const isSeeding = tasks.isPending;
+  const done = !!tasks.results.seed;
+  const error = tasks.errors.seed || tasks.errors.fixtures;
   const userCount = seedStatus?.userCount ?? 0;
   const productCount = products?.length ?? 0;
   const hasData = userCount > 0 || productCount > 0;
-
-  const handleSeed = async () => {
-    setIsSeeding(true);
-    setError(null);
-    try {
-      await seedDemoData({});
-      setDone(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setIsSeeding(false);
-    }
-  };
+  const handleSeed = () => tasks.run("seed", () => seedDemoData({}));
 
   return (
     <Card size="panel">
@@ -342,13 +285,8 @@ function SeedDataCard() {
                 fixtures?.status === "complete" ||
                 userCount === 0
               }
-              onClick={async () => {
-                setError(null);
-                try {
-                  await populateSandbox({});
-                } catch (e) {
-                  setError(String(e));
-                }
+              onClick={() => {
+                void tasks.run("fixtures", () => populateSandbox({}));
               }}
             >
               {fixtures?.status === "failed"
@@ -359,27 +297,26 @@ function SeedDataCard() {
             </Button>
           </div>
           {fixtures && (
-            <>
-              <progress
-                aria-label="Sandbox fixture progress"
-                className="h-2 w-full"
-                value={fixtures.cursor}
-                max={fixtures.total}
-              />
-              <p className="text-muted-foreground text-sm" role="status">
-                {fixtures.cursor} of {fixtures.total} steps complete.{" "}
-                {fixtures.status === "running"
-                  ? "Stripe events continue to update the app as fixtures are created."
-                  : fixtures.status === "complete"
-                    ? "Ready to explore. Dispute and payout statuses may continue updating through webhooks."
-                    : "Population stopped. Resume to retry this step."}
-              </p>
-              {fixtures.error && (
-                <p role="alert" className="text-destructive text-sm">
-                  {fixtures.error}
-                </p>
+            <FixtureProgress state={fixtures}>
+              {({ progress, message, error, cursor, total }) => (
+                <>
+                  <progress
+                    aria-label="Sandbox fixture progress"
+                    className="h-2 w-full"
+                    value={progress}
+                    max={1}
+                  />
+                  <p className="text-muted-foreground text-sm" role="status">
+                    {cursor} of {total} steps complete. {message}
+                  </p>
+                  {error && (
+                    <p role="alert" className="text-destructive text-sm">
+                      {error}
+                    </p>
+                  )}
+                </>
               )}
-            </>
+            </FixtureProgress>
           )}
         </div>
 
@@ -441,28 +378,16 @@ function SyncCard() {
   const syncSubscriptions = useAction(api.actions.syncSubscriptions);
   const syncAccounts = useAction(api.actions.syncAccounts);
 
-  const [syncing, setSyncing] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, string>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleSync = async (
+  const {
+    pendingOperation: syncing,
+    results,
+    errors,
+    run,
+  } = useTaskRunner({ scopeKey: "sync", formatResult: () => "Synced" });
+  const handleSync = (
     name: string,
     fn: (args: Record<string, never>) => Promise<unknown>,
-  ) => {
-    setSyncing(name);
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-    try {
-      await fn({});
-      setResults((prev) => ({ ...prev, [name]: "Synced" }));
-    } catch (e) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: e instanceof Error ? e.message : String(e),
-      }));
-    } finally {
-      setSyncing(null);
-    }
-  };
+  ) => run(name, () => fn({}));
 
   const items = [
     { name: "Products", action: syncProducts },
@@ -517,23 +442,14 @@ function SyncCard() {
 
 function ResetCard() {
   const resetAll = useAction(api.actions.resetAll);
-  const [isResetting, setIsResetting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleReset = async () => {
-    setIsResetting(true);
-    setError(null);
-    setDone(false);
-    try {
-      await resetAll({});
-      setDone(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setIsResetting(false);
-    }
-  };
+  const reset = useWorkflowAction(async () => {
+    await resetAll({});
+    return true;
+  }, "reset");
+  const isResetting = reset.isPending;
+  const done = reset.result ?? false;
+  const error = reset.error;
+  const handleReset = () => reset.run();
 
   return (
     <Card size="panel">

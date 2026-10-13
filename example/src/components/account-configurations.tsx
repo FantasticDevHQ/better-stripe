@@ -1,18 +1,12 @@
-import { Badge } from "@/components/ui/badge";
+import { AccountConfigurations as BetterStripeAccountConfigurations } from "@fantastic.dev/better-stripe/react";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "@/components/ui/card";
-
-const CONFIGURATION_LABELS: Record<string, string> = {
-  recipient: "Recipient (payouts)",
-  customer: "Customer (billable)",
-  merchant: "Merchant (card payments)",
-};
-
+import { Badge } from "@/components/ui/badge";
 export function AccountConfigurations({
   configurations,
 }: {
@@ -27,16 +21,22 @@ export function AccountConfigurations({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-wrap gap-2">
-          {configurations.length === 0 && (
-            <span className="text-muted-foreground text-sm">No data yet</span>
+        <BetterStripeAccountConfigurations configurations={configurations}>
+          {({ items, isEmpty }) => (
+            <div className="flex flex-wrap gap-2">
+              {isEmpty && (
+                <span className="text-muted-foreground text-sm">
+                  No data yet
+                </span>
+              )}
+              {items.map((item) => (
+                <Badge key={item.key} variant="default">
+                  {item.label}
+                </Badge>
+              ))}
+            </div>
           )}
-          {configurations.map((c) => (
-            <Badge key={c} variant="default">
-              {CONFIGURATION_LABELS[c] ?? c}
-            </Badge>
-          ))}
-        </div>
+        </BetterStripeAccountConfigurations>
       </CardContent>
     </Card>
   );

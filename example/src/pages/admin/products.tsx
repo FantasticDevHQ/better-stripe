@@ -1,5 +1,6 @@
 import { formatAmount } from "@/lib/format-amount";
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
+import { useProductManager } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -46,118 +47,40 @@ export function AdminProducts() {
   const deactivateProduct = useAction(api.actions.deactivateProduct);
   const deactivatePrice = useAction(api.actions.deactivatePrice);
 
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showAddPriceFor, setShowAddPriceFor] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState({ name: "", description: "" });
-  const [newPrice, setNewPrice] = useState({
-    amount: "",
-    currency: "usd",
-    interval: "month",
+  const {
+    expandedProduct,
+    setExpandedProduct,
+    showCreateDialog,
+    setShowCreateDialog,
+    showAddPriceFor,
+    setShowAddPriceFor,
+    newProduct,
+    setNewProduct,
+    newPrice,
+    setNewPrice,
+    isCreatingProduct,
+    isCreatingPrice,
+    deactivatingPriceId,
+    error,
+    clearError,
+    handleCreateProduct,
+    handleAddPrice,
+    handleDeactivatePrice,
+    editingProduct,
+    setEditingProduct,
+    isSavingEdit,
+    deactivatingId,
+    handleSaveEdit,
+    handleDeactivate,
+  } = useProductManager({
+    scopeKey: currentUser.id,
+    createProduct,
+    createPrice,
+    updateProduct,
+    deactivateProduct,
+    deactivatePrice: (args) =>
+      deactivatePrice({ ...args, userId: currentUser.id }),
   });
-  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
-  const [isCreatingPrice, setIsCreatingPrice] = useState(false);
-  // Edit dialog state: which product is being edited (null = closed).
-  const [editingProduct, setEditingProduct] = useState<{
-    stripeProductId: string;
-    name: string;
-    description: string;
-  } | null>(null);
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
-  const [deactivatingPriceId, setDeactivatingPriceId] = useState<string | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const handleCreateProduct = async () => {
-    setIsCreatingProduct(true);
-    setError(null);
-    try {
-      await createProduct({
-        name: newProduct.name,
-        description: newProduct.description || undefined,
-      });
-      setNewProduct({ name: "", description: "" });
-      setShowCreateDialog(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsCreatingProduct(false);
-    }
-  };
-
-  const handleAddPrice = async (stripeProductId: string) => {
-    setIsCreatingPrice(true);
-    setError(null);
-    try {
-      const interval = newPrice.interval as
-        "month" | "year" | "week" | "day" | "one_time";
-      await createPrice({
-        stripeProductId,
-        unitAmount: Number(newPrice.amount),
-        currency: newPrice.currency,
-        type: interval === "one_time" ? "one_time" : "recurring",
-        interval:
-          interval === "one_time"
-            ? undefined
-            : (interval as "month" | "year" | "week" | "day"),
-      });
-      setNewPrice({ amount: "", currency: "usd", interval: "month" });
-      setShowAddPriceFor(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsCreatingPrice(false);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingProduct) return;
-    setIsSavingEdit(true);
-    setError(null);
-    try {
-      await updateProduct({
-        stripeProductId: editingProduct.stripeProductId,
-        name: editingProduct.name,
-        description: editingProduct.description || undefined,
-      });
-      setEditingProduct(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsSavingEdit(false);
-    }
-  };
-
-  const handleDeactivate = async (stripeProductId: string) => {
-    setDeactivatingId(stripeProductId);
-    setError(null);
-    try {
-      await deactivateProduct({ stripeProductId });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDeactivatingId(null);
-    }
-  };
-
-  // Archive a single price (BTS-88). The action binds the caller to the price's
-  // owning product's connected account, so it takes the active persona's id.
-  // The row-level control is only shown when the persona owns the product
-  // (BTS-94); this stays as a defensive fallback surfaced via the same
-  // <Alert> in case it's ever invoked for an unowned price.
-  const handleDeactivatePrice = async (stripePriceId: string) => {
-    setDeactivatingPriceId(stripePriceId);
-    setError(null);
-    try {
-      await deactivatePrice({ userId: currentUser.id, stripePriceId });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDeactivatingPriceId(null);
-    }
-  };
 
   if (products === undefined) {
     return (
@@ -232,7 +155,7 @@ export function AdminProducts() {
                 variant="outline"
                 onClick={() => {
                   setShowCreateDialog(false);
-                  setError(null);
+                  clearError();
                 }}
               >
                 Cancel
@@ -251,7 +174,7 @@ export function AdminProducts() {
           onOpenChange={(open) => {
             if (!open) {
               setEditingProduct(null);
-              setError(null);
+              clearError();
             }
           }}
         >
@@ -302,7 +225,7 @@ export function AdminProducts() {
                 variant="outline"
                 onClick={() => {
                   setEditingProduct(null);
-                  setError(null);
+                  clearError();
                 }}
               >
                 Cancel

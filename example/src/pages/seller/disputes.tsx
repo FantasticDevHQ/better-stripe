@@ -1,3 +1,9 @@
+import {
+  ChargebackLedger as BetterStripeChargebackLedger,
+  type ChargebackSummary,
+} from "@fantastic.dev/better-stripe/react";
+import { Collection } from "@fantastic.dev/better-stripe/react";
+import { WorkflowTable } from "@/components/workflow-table";
 import { IntegrationExamples } from "@/components/integration-examples";
 import { ConnectExample } from "@/components/connect-example";
 import { SellerCosts } from "@/components/seller-costs";
@@ -29,123 +35,76 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDisputes, useDisputeWithCountdown } from "@/lib/dispute-hooks";
 import { useRole } from "@/providers/role-context";
 import {
+  useDisputeResponse,
   DisputeDetail,
   DisputesList,
   EvidenceForm,
   type EvidenceFormUpdateArgs,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
-import { useState } from "react";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatMoney(amount: number, currency: string = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
-}
-
-type ChargebackTransfer = {
-  stripeTransferId: string;
-  destinationAccountId: string;
-  amount: number;
-  currency: string;
-  role?: string;
-  reversedAmount?: number;
-  reversalStatus?: string;
-};
-
-type ChargebackSummary = {
-  dispute: { stripeChargeId?: string; currency: string; status: string };
-  transfers: ChargebackTransfer[];
-  gross: number;
-  reversed: number;
-  net: number;
-};
 
 function ChargebackLedger({
   chargeback,
 }: {
   chargeback: ChargebackSummary | null | undefined;
 }) {
-  if (chargeback === undefined) {
-    return <Skeleton className="h-32 w-full" />;
-  }
-
-  if (chargeback === null || !chargeback.dispute.stripeChargeId) {
-    return (
-      <Alert data-testid="chargeback-ledger-empty">
-        <AlertDescription>
-          No linked charge is available yet, so there are no transfer clawbacks
-          to display.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const currency = chargeback.dispute.currency;
-
   return (
-    <div className="space-y-3" data-testid="chargeback-ledger">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">
-            Original transfers
+    <BetterStripeChargebackLedger chargeback={chargeback}>
+      {(state) =>
+        state.isLoading ? (
+          <div role="status" aria-label="Loading chargeback ledger">
+            <Skeleton className="h-32 w-full" />
           </div>
-          <div className="text-lg font-semibold" data-testid="chargeback-gross">
-            {formatMoney(chargeback.gross, currency)}
-          </div>
-        </div>
-        <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">Funds pulled back</div>
-          <div
-            className="text-lg font-semibold text-destructive"
-            data-testid="chargeback-reversed"
-          >
-            -{formatMoney(chargeback.reversed, currency)}
-          </div>
-        </div>
-        <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">Seller net</div>
-          <div className="text-lg font-semibold" data-testid="chargeback-net">
-            {formatMoney(chargeback.net, currency)}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {chargeback.transfers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No transfer rows found for charge{" "}
-            {chargeback.dispute.stripeChargeId}.
-          </p>
+        ) : state.isEmpty ? (
+          <Alert data-testid="chargeback-ledger-empty">
+            <AlertDescription>
+              No linked charge is available yet, so there are no transfer
+              clawbacks to display.
+            </AlertDescription>
+          </Alert>
         ) : (
-          chargeback.transfers.map((transfer) => (
-            <div
-              key={transfer.stripeTransferId}
-              className="rounded-md border p-3 text-sm"
-              data-testid="chargeback-transfer-row"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-mono">{transfer.stripeTransferId}</span>
-                <Badge variant="secondary">
-                  {transfer.reversalStatus ?? "not_reversed"}
-                </Badge>
-              </div>
-              <div className="mt-2 grid gap-2 text-muted-foreground sm:grid-cols-3">
-                <span>{transfer.role ?? "transfer"}</span>
-                <span>{formatMoney(transfer.amount, transfer.currency)}</span>
-                <span data-testid="chargeback-transfer-reversed">
-                  clawback{" "}
-                  {formatMoney(transfer.reversedAmount ?? 0, transfer.currency)}
-                </span>
-              </div>
+          <div className="space-y-3" data-testid="chargeback-ledger">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  label: "Original transfers",
+                  value: state.grossLabel,
+                  id: "gross",
+                },
+                {
+                  label: "Funds pulled back",
+                  value: state.reversedLabel,
+                  id: "reversed",
+                },
+                { label: "Seller net", value: state.netLabel, id: "net" },
+              ].map((metric) => (
+                <div key={metric.id} className="rounded-md border p-3">
+                  <div className="text-xs text-muted-foreground">
+                    {metric.label}
+                  </div>
+                  <div
+                    className="text-lg font-semibold"
+                    data-testid={`chargeback-${metric.id}`}
+                  >
+                    {metric.value}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        )}
-      </div>
-    </div>
+            <Collection
+              rows={state.data!.transfers}
+              columns={state.columns}
+              getKey={(row) => row.stripeTransferId}
+              emptyLabel="No transfer rows found."
+            >
+              {(rows) => <WorkflowTable {...rows} />}
+            </Collection>
+          </div>
+        )
+      }
+    </BetterStripeChargebackLedger>
   );
 }
 
@@ -157,37 +116,26 @@ function HeadlessDisputes({
   userId: string;
 }) {
   const { disputes, isLoading } = useDisputes({ accountId: stripeAccountId });
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [acceptStatus, setAcceptStatus] = useState<
-    "idle" | "confirming" | "submitting" | "accepted" | "error"
-  >("idle");
-  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const acceptDispute = useAction(api.actions.acceptDispute);
+  const {
+    selectedId,
+    setSelectedId,
+    acceptStatus,
+    acceptError,
+    requestAccept,
+    cancelAccept,
+    accept: handleAcceptDispute,
+  } = useDisputeResponse({
+    scopeKey: stripeAccountId,
+    acceptDispute: (stripeDisputeId) =>
+      acceptDispute({ userId, stripeDisputeId }),
+  });
   const { dispute } = useDisputeWithCountdown(selectedId);
   const chargeback = useQuery(
     api.queries.getDisputeChargeback,
     selectedId ? { stripeDisputeId: selectedId } : "skip",
   ) as ChargebackSummary | null | undefined;
   const submitEvidence = useAction(api.actions.submitDisputeEvidence);
-  const acceptDispute = useAction(api.actions.acceptDispute);
-
-  async function handleAcceptDispute() {
-    if (!selectedId) return;
-    setAcceptStatus("submitting");
-    setAcceptError(null);
-    try {
-      await acceptDispute({
-        userId,
-        stripeDisputeId: selectedId,
-      });
-      setAcceptStatus("accepted");
-    } catch (err) {
-      setAcceptStatus("error");
-      setAcceptError(
-        err instanceof Error ? err.message : "Failed to accept dispute",
-      );
-    }
-  }
-
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card size="inset" data-testid="disputes-list">
@@ -202,8 +150,6 @@ function HeadlessDisputes({
               type="button"
               onClick={() => {
                 setSelectedId(row.dispute.stripeDisputeId);
-                setAcceptStatus("idle");
-                setAcceptError(null);
               }}
               className="flex w-full items-center justify-between rounded-md border p-3 text-left hover:bg-muted"
               data-dispute-id={row.dispute.stripeDisputeId}
@@ -246,7 +192,7 @@ function HeadlessDisputes({
                   <Button
                     type="button"
                     variant="destructive"
-                    onClick={() => setAcceptStatus("confirming")}
+                    onClick={requestAccept}
                     disabled={acceptStatus === "submitting"}
                     data-testid="accept-dispute-button"
                   >
@@ -277,7 +223,7 @@ function HeadlessDisputes({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setAcceptStatus("idle")}
+                      onClick={cancelAccept}
                       data-testid="accept-dispute-cancel-button"
                     >
                       Cancel
@@ -298,6 +244,7 @@ function HeadlessDisputes({
               )}
             </div>
             <EvidenceForm
+              key={selectedId}
               stripeDisputeId={selectedId}
               stripeAccountId={stripeAccountId}
               onUpdateDispute={(args: EvidenceFormUpdateArgs) =>

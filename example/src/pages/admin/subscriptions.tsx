@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSubscriptionFilter } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -16,14 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
-
-const tabs = [
-  { label: "All", value: "all" },
-  { label: "Active", value: "active" },
-  { label: "Trialing", value: "trialing" },
-  { label: "Past Due", value: "past_due" },
-  { label: "Canceled", value: "canceled" },
-] as const;
 
 function statusVariant(
   status: string,
@@ -49,7 +41,8 @@ function formatDate(dateStr: string | undefined) {
 
 export function AdminSubscriptions() {
   const subscriptions = useQuery(api.queries.listSubscriptions);
-  const [filter, setFilter] = useState<string>("all");
+  const { filter, setFilter, filtered, countByStatus, tabs } =
+    useSubscriptionFilter(subscriptions);
 
   if (subscriptions === undefined) {
     return (
@@ -66,14 +59,6 @@ export function AdminSubscriptions() {
       </div>
     );
   }
-
-  const filtered =
-    filter === "all"
-      ? subscriptions
-      : subscriptions.filter((s) => s.status === filter);
-
-  const countByStatus = (status: string) =>
-    subscriptions.filter((s) => s.status === status).length;
 
   return (
     <div className="space-y-6">

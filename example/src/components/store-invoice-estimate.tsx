@@ -1,33 +1,23 @@
-import { useState } from "react";
+import {
+  useInvoiceEstimate,
+  formatPrice,
+} from "@fantastic.dev/better-stripe/react";
 import { useAction } from "convex/react";
 import { Link } from "react-router-dom";
-import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 export function StoreInvoiceEstimate({ sellerId }: { sellerId: Id<"users"> }) {
   const estimate = useAction(api.storeInvoiceActions.estimate);
-  const [invoice, setInvoice] =
-    useState<FunctionReturnType<typeof api.storeInvoiceActions.estimate>>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const {
+    invoice,
+    isPending: busy,
+    error,
+    refresh,
+  } = useInvoiceEstimate(() => estimate({ sellerId }), sellerId);
   const money = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: invoice?.currency ?? "usd",
-    }).format(amount / 100);
-  async function refresh() {
-    setBusy(true);
-    setError(undefined);
-    try {
-      setInvoice(await estimate({ sellerId }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+    formatPrice(amount, invoice?.currency ?? "usd");
   return (
     <Card>
       <CardHeader>

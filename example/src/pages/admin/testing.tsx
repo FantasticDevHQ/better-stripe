@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useTaskRunner } from "@fantastic.dev/better-stripe/react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,16 +24,17 @@ import {
 import { api } from "../../../convex/_generated/api";
 import { adminTestingActions } from "./adminTestingActions";
 
-interface LogEntry {
-  timestamp: string;
-  action: string;
-  result: string;
-  status: "success" | "error";
-}
-
 export function AdminTesting() {
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const [firing, setFiring] = useState<string | null>(null);
+  const {
+    log,
+    pendingOperation: firing,
+    run: runTrigger,
+    appendLog: addLog,
+    clearLog,
+  } = useTaskRunner({
+    scopeKey: "sandbox-testing",
+    formatResult: (value) => JSON.stringify(value, null, 2) ?? "Completed",
+  });
   const stripeMode = useQuery(api.queries.getStripeMode);
 
   const fireAccountUpdated = useAction(adminTestingActions.fireAccountUpdated);
@@ -44,41 +45,6 @@ export function AdminTesting() {
     adminTestingActions.fireCheckoutCompleted,
   );
   const fireInvoicePaid = useAction(adminTestingActions.fireInvoicePaid);
-
-  const addLog = (
-    action: string,
-    result: string,
-    status: "success" | "error" = "success",
-  ) => {
-    setLog((prev) => [
-      {
-        timestamp: new Date().toLocaleTimeString(),
-        action,
-        result,
-        status,
-      },
-      ...prev,
-    ]);
-  };
-
-  const runTrigger = async (
-    action: string,
-    fn: () => Promise<Record<string, unknown>>,
-  ) => {
-    setFiring(action);
-    try {
-      const result = await fn();
-      addLog(action, JSON.stringify(result, null, 2));
-    } catch (err) {
-      addLog(
-        action,
-        err instanceof Error ? err.message : "Unknown error",
-        "error",
-      );
-    } finally {
-      setFiring(null);
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -296,7 +262,7 @@ export function AdminTesting() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Activity Log</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setLog([])}>
+              <Button variant="ghost" size="sm" onClick={clearLog}>
                 <Trash2 data-icon="inline-start" className="mr-1 h-3 w-3" />
                 Clear
               </Button>

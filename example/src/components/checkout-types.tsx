@@ -1,3 +1,4 @@
+import { CHECKOUT_OPTIONS as CHECKOUT_TYPES } from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
@@ -9,48 +10,6 @@ import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { SessionCheckout } from "@/components/session-checkout";
 import { PaymentIntentCheckout } from "@/components/payment-intent-checkout";
-const CHECKOUT_TYPES = [
-  {
-    id: "redirect",
-    title: "Hosted Checkout",
-    api: "Checkout Sessions",
-    pros: "Fastest setup. Stripe owns the payment page, order summary, subscriptions, and payment-method UI.",
-    cons: "Redirects away from your app. Layout customization is limited.",
-    docs: "https://docs.stripe.com/payments/checkout",
-  },
-  {
-    id: "embedded",
-    title: "Embedded Checkout",
-    api: "Checkout Sessions · embedded_page",
-    pros: "Stripe's complete checkout stays inside your app. Less custom checkout code to maintain.",
-    cons: "Stripe controls the form layout. The page embeds a Stripe iframe.",
-    docs: "https://docs.stripe.com/payments/checkout",
-  },
-  {
-    id: "custom",
-    title: "Payment Element + Checkout Sessions",
-    api: "Checkout Sessions · elements",
-    pros: "Custom page layout with Stripe handling the checkout session and payment state. Recommended for most custom checkouts.",
-    cons: "You build the order summary, form controls, and confirmation UI.",
-    docs: "https://docs.stripe.com/payments/payment-element",
-  },
-  {
-    id: "payment-intent",
-    title: "Payment Element + Payment Intents",
-    api: "Payment Intents · Stripe.js",
-    pros: "Low-level control over the payment lifecycle, capture, and your own checkout state.",
-    cons: "You build pricing, tax, shipping, discounts, and subscription orchestration. This example supports one-time purchases.",
-    docs: "https://docs.stripe.com/payments/payment-intents",
-  },
-  {
-    id: "form",
-    title: "Embedded Checkout Form",
-    api: "Checkout Sessions · form · public preview",
-    pros: "Stripe's compact prebuilt checkout form with Appearance API customization.",
-    cons: "Preview availability can vary by sandbox. Less layout control than individual Elements.",
-    docs: "https://docs.stripe.com/payments/checkout/how-checkout-works?payment-ui=checkout-form",
-  },
-] as const;
 export function CheckoutTypeExamples({
   priceId,
   referralCode,

@@ -1,3 +1,4 @@
+import { Storefront } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useQuery } from "convex/react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -14,21 +15,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import { isAffiliateReferral } from "../../convex/affiliateSplit";
-
 export function Landing() {
   const stores = useQuery(api.storefront.listStores);
   const [params] = useSearchParams();
   const { currentRole } = useRole();
   const referral = params.get("ref");
-  const storeId = params.get("store");
-  const visibleStores = stores?.filter(
-    (store) => !storeId || store.accountId === storeId,
-  );
-  const canBuy = currentRole === "visitor" || currentRole === "customer";
+  const canBuy = currentRole === "customer" || currentRole === "visitor";
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div className="space-y-3 py-8">
-        <h1 className="text-4xl font-bold">Shop our sellers</h1>
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">Shop our sellers</h1>
         <p className="text-muted-foreground">
           Buy directly from a seller. Choose a one-time purchase or a
           subscription. Guests are welcome.
@@ -47,81 +43,88 @@ export function Landing() {
           Choose Customer or Visitor above to make a purchase.
         </p>
       )}
-      {stores === undefined ? (
-        <Skeleton className="h-48 w-full" />
-      ) : !visibleStores?.length ? (
-        <Alert>
-          <AlertDescription>
-            <EmptyState>No stores are available yet.</EmptyState>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        visibleStores.map((store) => (
-          <section key={store.accountId} className="space-y-4">
-            <h2 className="text-2xl font-semibold">{store.name}</h2>
-            {!store.products.length && (
-              <p className="text-muted-foreground">
-                No products available yet.
-              </p>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {store.products.flatMap((product) =>
-                product.prices.map((price) => {
-                  const query = new URLSearchParams({
-                    priceId: price.stripePriceId,
-                  });
-                  if (referral) query.set("ref", referral);
-                  return (
-                    <Card key={price.stripePriceId}>
-                      <CardHeader>
-                        <CardTitle>{product.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <p className="text-muted-foreground text-sm">
-                            {product.description}
-                          </p>
-                          <p className="text-xl font-semibold">
-                            {new Intl.NumberFormat("en-US", {
-                              style: "currency",
-                              currency: price.currency.toUpperCase(),
-                            }).format(price.unitAmount / 100)}
-                            {price.interval
-                              ? ` / ${price.interval}`
-                              : " one time"}
-                          </p>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        {canBuy ? (
-                          <Button
-                            nativeButton={false}
-                            role="link"
-                            render={
-                              <Link
-                                to={`/checkout?${query}`}
-                                aria-label={`${price.type === "recurring" ? "Subscribe to" : "Buy"} ${product.name}`}
-                              />
-                            }
-                          >
-                            {price.type === "recurring"
-                              ? "Subscribe"
-                              : "Buy now"}
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">
-                            Switch to Customer or Visitor to buy
-                          </span>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  );
-                }),
-              )}
+      <Storefront
+        stores={stores}
+        storeId={params.get("store") ?? undefined}
+        referralCode={referral ?? undefined}
+        canPurchase={canBuy}
+        getCheckoutUrl={({ price, referralCode }) => {
+          const query = new URLSearchParams({ priceId: price.stripePriceId });
+          if (referralCode) query.set("ref", referralCode);
+          return `/checkout?${query}`;
+        }}
+      >
+        {(state) =>
+          state.isLoading ? (
+            <div role="status" aria-label="Loading stores">
+              <Skeleton className="h-48 w-full" />
             </div>
-          </section>
-        ))
-      )}
+          ) : state.isEmpty ? (
+            <Alert>
+              <AlertDescription>
+                <EmptyState>No stores are available yet.</EmptyState>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            state.stores.map((store) => (
+              <section key={store.accountId} className="space-y-4">
+                <h2 className="text-2xl font-semibold">{store.name}</h2>
+                {!state.cards.some(
+                  (card) => card.store.accountId === store.accountId,
+                ) && (
+                  <p className="text-muted-foreground">
+                    No products available yet.
+                  </p>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {state.cards
+                    .filter((card) => card.store.accountId === store.accountId)
+                    .map((card) => (
+                      <Card key={card.price.stripePriceId}>
+                        <CardHeader>
+                          <CardTitle>{card.product.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <p className="text-muted-foreground text-sm">
+                              {card.product.description}
+                            </p>
+                            <p className="text-xl font-semibold">
+                              {card.formattedPrice}
+                              {card.price.type === "one_time"
+                                ? " one time"
+                                : ""}
+                            </p>
+                          </div>
+                        </CardContent>
+                        <CardFooter>
+                          {canBuy ? (
+                            <Button
+                              nativeButton={false}
+                              role="link"
+                              render={
+                                <Link
+                                  to={card.checkoutUrl!}
+                                  aria-label={card.accessibilityLabel}
+                                />
+                              }
+                            >
+                              {card.purchaseLabel}
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              Switch to Customer or Visitor to buy
+                            </span>
+                          )}
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </div>
+              </section>
+            ))
+          )
+        }
+      </Storefront>
     </div>
   );
 }

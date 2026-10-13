@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
+  getPayoutTotals,
   AccountCreateCard,
   ConnectStatusBadge,
   type StripeComponentPayout,
@@ -97,21 +98,8 @@ export function SellerHome() {
     );
   }
 
-  // Compute earnings from real payout data
-  const paidPayouts = payouts?.filter((p) => p.status === "paid") ?? [];
-  const pendingPayouts =
-    payouts?.filter(
-      (p) => p.status === "pending" || p.status === "in_transit",
-    ) ?? [];
-
-  const totalPayouts = paidPayouts.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-  const pendingBalance = pendingPayouts.reduce(
-    (sum, p) => sum + (p.amount ?? 0),
-    0,
-  );
-  const totalEarned = totalPayouts + pendingBalance;
-
-  const recentPayouts = (payouts ?? []).slice(0, 3);
+  const { totalPayouts, pendingBalance, totalEarned, recentPayouts } =
+    getPayoutTotals(payouts, "usd");
 
   // State: fully onboarded — show earnings overview
   return (

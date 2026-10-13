@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { currentSubscriptionFrom } from "@/lib/current-subscription";
 import { useRole } from "@/providers/role-context";
 import {
+  useSubscriptionManager,
   BillingPortalLink,
   BuyerBillingView,
   getSubscriptionStatusLabel,
@@ -104,35 +105,60 @@ export function Billing() {
     [prices, subscription?.priceId],
   );
 
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState("1");
-  const [selectedPriceId, setSelectedPriceId] = useState("");
-  const [trialEnd, setTrialEnd] = useState("");
+  const {
+    pendingAction,
+    message,
+    quantity,
+    setQuantity,
+    selectedPriceId,
+    setSelectedPriceId,
+    trialEnd,
+    setTrialEnd,
+    canPause,
+    canResume,
+    canReactivate,
+    run,
+  } = useSubscriptionManager({
+    scopeKey: currentUser.id,
+    subscription,
+    onAction: (command) => {
+      const base = {
+        userId: currentUser.id,
+        stripeSubscriptionId: command.stripeSubscriptionId,
+      };
+      switch (command.type) {
+        case "pause":
+          return pauseSubscription({ ...base, behavior: "keep_as_draft" });
+        case "resume":
+          return resumeSubscription(base);
+        case "reactivate":
+          return reactivateSubscription(base);
+        case "cancel":
+          return cancelSubscription(base);
+        case "price":
+          return updateSubscriptionPrice({
+            ...base,
+            stripePriceId: command.stripePriceId!,
+          });
+        case "quantity":
+          return updateSubscriptionQuantity({
+            ...base,
+            quantity: command.quantity!,
+          });
+        case "trial":
+        case "endTrial":
+          return updateSubscriptionTrialEnd({
+            ...base,
+            trialEnd: command.trialEnd!,
+          });
+      }
+    },
+  });
 
   const isLoading =
     subscriptions === undefined ||
     account === undefined ||
     prices === undefined;
-
-  const runLifecycleAction = async (
-    actionName: string,
-    action: () => Promise<unknown>,
-  ) => {
-    setPendingAction(actionName);
-    setMessage(null);
-    try {
-      await action();
-      setMessage(`${actionName} requested. Waiting for Stripe webhook sync.`);
-    } catch (err) {
-      console.error(`Failed to ${actionName}:`, err);
-      setMessage(
-        err instanceof Error ? err.message : `Failed to ${actionName}.`,
-      );
-    } finally {
-      setPendingAction(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -187,14 +213,6 @@ export function Billing() {
   }
 
   const isTrialing = subscription?.isTrialing ?? false;
-  const canPause =
-    !subscription?.isCollectionPaused &&
-    (subscription?.status === "active" || subscription?.status === "trialing");
-  const canResume = !!subscription?.isCollectionPaused;
-  const canReactivate =
-    !!subscription?.cancelAtPeriodEnd &&
-    (subscription.status === "active" || subscription.status === "trialing");
-
   return (
     <div className="space-y-8" data-testid="buyer-subscription-shell">
       <div>
@@ -356,15 +374,7 @@ export function Billing() {
                   variant="outline"
                   disabled={!canPause || pendingAction !== null}
                   data-testid="buyer-subscription-pause"
-                  onClick={() =>
-                    runLifecycleAction("pause subscription", () =>
-                      pauseSubscription({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                        behavior: "keep_as_draft",
-                      }),
-                    )
-                  }
+                  onClick={() => run("pause")}
                 >
                   Pause
                 </Button>
@@ -373,14 +383,7 @@ export function Billing() {
                   variant="outline"
                   disabled={!canResume || pendingAction !== null}
                   data-testid="buyer-subscription-resume"
-                  onClick={() =>
-                    runLifecycleAction("resume subscription", () =>
-                      resumeSubscription({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                      }),
-                    )
-                  }
+                  onClick={() => run("resume")}
                 >
                   Resume
                 </Button>
@@ -389,14 +392,7 @@ export function Billing() {
                   variant="outline"
                   disabled={!canReactivate || pendingAction !== null}
                   data-testid="buyer-subscription-reactivate"
-                  onClick={() =>
-                    runLifecycleAction("reactivate subscription", () =>
-                      reactivateSubscription({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                      }),
-                    )
-                  }
+                  onClick={() => run("reactivate")}
                 >
                   Reactivate
                 </Button>
@@ -406,15 +402,7 @@ export function Billing() {
                     variant="destructive"
                     disabled={pendingAction !== null}
                     data-testid="buyer-subscription-cancel"
-                    onClick={() =>
-                      runLifecycleAction("cancel subscription", () =>
-                        cancelSubscription({
-                          userId: currentUser.id,
-                          stripeSubscriptionId:
-                            subscription.stripeSubscriptionId,
-                        }),
-                      )
-                    }
+                    onClick={() => run("cancel")}
                   >
                     Cancel
                   </Button>
@@ -451,17 +439,7 @@ export function Billing() {
                     variant="secondary"
                     disabled={!selectedPriceId || pendingAction !== null}
                     data-testid="buyer-subscription-plan-change"
-                    onClick={() =>
-                      runLifecycleAction("change plan", () =>
-                        updateSubscriptionPrice({
-                          userId: currentUser.id,
-                          stripeSubscriptionId:
-                            subscription.stripeSubscriptionId,
-                          stripePriceId: selectedPriceId,
-                          prorationBehavior: "none",
-                        }),
-                      )
-                    }
+                    onClick={() => run("price")}
                   >
                     Change plan
                   </Button>
@@ -482,16 +460,7 @@ export function Billing() {
                     variant="secondary"
                     disabled={Number(quantity) < 1 || pendingAction !== null}
                     data-testid="buyer-subscription-quantity-change"
-                    onClick={() =>
-                      runLifecycleAction("update quantity", () =>
-                        updateSubscriptionQuantity({
-                          userId: currentUser.id,
-                          stripeSubscriptionId:
-                            subscription.stripeSubscriptionId,
-                          quantity: Number(quantity),
-                        }),
-                      )
-                    }
+                    onClick={() => run("quantity")}
                   >
                     Update quantity
                   </Button>
@@ -513,16 +482,7 @@ export function Billing() {
                       variant="secondary"
                       disabled={!trialEnd || pendingAction !== null}
                       data-testid="buyer-subscription-trial-end-update"
-                      onClick={() =>
-                        runLifecycleAction("update trial end", () =>
-                          updateSubscriptionTrialEnd({
-                            userId: currentUser.id,
-                            stripeSubscriptionId:
-                              subscription.stripeSubscriptionId,
-                            trialEnd,
-                          }),
-                        )
-                      }
+                      onClick={() => run("trial")}
                     >
                       Set date
                     </Button>
@@ -530,16 +490,7 @@ export function Billing() {
                       variant="secondary"
                       disabled={pendingAction !== null}
                       data-testid="buyer-subscription-trial-end-now"
-                      onClick={() =>
-                        runLifecycleAction("end trial now", () =>
-                          updateSubscriptionTrialEnd({
-                            userId: currentUser.id,
-                            stripeSubscriptionId:
-                              subscription.stripeSubscriptionId,
-                            trialEnd: "now",
-                          }),
-                        )
-                      }
+                      onClick={() => run("endTrial")}
                     >
                       End now
                     </Button>

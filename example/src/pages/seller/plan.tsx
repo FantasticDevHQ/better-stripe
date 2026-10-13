@@ -1,10 +1,12 @@
 import { EmptyState } from "@/components/empty-state";
 import { StorePaymentSource } from "@/components/store-payment-source";
 import { StoreInvoiceEstimate } from "@/components/store-invoice-estimate";
-import { useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
-import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
+import {
+  EmbeddedCheckout,
+  usePlanBilling,
+} from "@fantastic.dev/better-stripe/react";
 import { useRole } from "@/providers/role-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,53 +27,25 @@ export function SellerPlan() {
   const confirm = useAction(api.storePlanActions.confirmCheckout);
   const [params] = useSearchParams();
   const sessionId = params.get("session_id");
-  const confirmed = useRef<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  useEffect(() => {
-    if (
-      !sessionId ||
-      !sellerId ||
-      confirmed.current === `${sellerId}:${sessionId}`
-    )
-      return;
-    confirmed.current = `${sellerId}:${sessionId}`;
-    void confirm({ sellerId, sessionId }).catch((e) => setError(String(e)));
-  }, [confirm, sellerId, sessionId]);
-  async function choose(planId: StorePlanId) {
-    setBusy(true);
-    setError(undefined);
-    try {
-      const session = await createCheckout({
+  const {
+    clientSecret,
+    isPending: busy,
+    error,
+    choose,
+    openPortal,
+  } = usePlanBilling({
+    scopeKey: sellerId,
+    sessionId,
+    confirm: (sessionId) => confirm({ sellerId, sessionId }),
+    createCheckout: (planId: StorePlanId) =>
+      createCheckout({
         sellerId,
         planId,
         returnUrl: `${window.location.origin}/seller/plan?session_id={CHECKOUT_SESSION_ID}`,
-      });
-      if (!session.clientSecret)
-        throw new Error("Stripe did not return a checkout form.");
-      setClientSecret(session.clientSecret);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function openPortal() {
-    setBusy(true);
-    setError(undefined);
-    try {
-      window.location.assign(
-        await manage({
-          sellerId,
-          returnUrl: `${window.location.origin}/seller/plan`,
-        }),
-      );
-    } catch (e) {
-      setError(String(e));
-      setBusy(false);
-    }
-  }
+      }),
+    createPortal: () =>
+      manage({ sellerId, returnUrl: `${window.location.origin}/seller/plan` }),
+  });
   return (
     <div className="space-y-6 max-w-5xl">
       <h1 className="text-3xl font-bold">Billing</h1>

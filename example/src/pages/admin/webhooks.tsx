@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
+import { useWebhookFilters } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -44,14 +45,16 @@ function formatTimestamp(ts: number) {
 }
 
 export function AdminWebhooks() {
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
-
-  const events = useQuery(api.queries.listWebhookEvents, {
-    eventType: typeFilter === "all" ? undefined : typeFilter,
-    status: statusFilter === "all" ? undefined : statusFilter,
-  });
+  const {
+    typeFilter,
+    setTypeFilter,
+    statusFilter,
+    setStatusFilter,
+    expandedEvent,
+    setExpandedEvent,
+    queryArgs,
+  } = useWebhookFilters();
+  const events = useQuery(api.queries.listWebhookEvents, queryArgs);
 
   if (events === undefined) {
     return (

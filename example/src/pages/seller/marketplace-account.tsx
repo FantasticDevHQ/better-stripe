@@ -1,3 +1,8 @@
+import {
+  useOnboarding,
+  useAccountManager,
+  useWorkflowAction,
+} from "@fantastic.dev/better-stripe/react";
 import { AccountConfigurations } from "@/components/account-configurations";
 import { useState } from "react";
 
@@ -81,24 +86,78 @@ export function SellerMarketplaceAccount({
     api.actions.createMarketplaceSelfPurchaseCheckout,
   );
 
-  const [selectedCountry, setSelectedCountry] = useState("US");
   const [selectedPriceId, setSelectedPriceId] = useState<string | undefined>(
     undefined,
   );
-  const [isCreating, setIsCreating] = useState(false);
-  const [isLinking, setIsLinking] = useState(false);
-  const [isAddingCustomer, setIsAddingCustomer] = useState(false);
-  const [isAddingRecipient, setIsAddingRecipient] = useState(false);
-  const [isAddingMerchant, setIsAddingMerchant] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [linkError, setLinkError] = useState<string | null>(null);
-  const [addCustomerError, setAddCustomerError] = useState<string | null>(null);
-  const [addRecipientError, setAddRecipientError] = useState<string | null>(
-    null,
-  );
-  const [addMerchantError, setAddMerchantError] = useState<string | null>(null);
-  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const {
+    selectedCountry,
+    setSelectedCountry,
+    isCreating,
+    isLinking,
+    createError,
+    linkError,
+    create: createAccount,
+    continue: continueOnboarding,
+  } = useOnboarding({
+    scopeKey: currentUser.id,
+    createAccount: (country) =>
+      createOnboarding({
+        userId: currentUser.id,
+        email: currentUser.email,
+        country,
+        refreshUrl: window.location.href,
+        returnUrl: window.location.origin + "/seller/marketplace-account",
+      }),
+    continueOnboarding: () =>
+      getAccountLink({
+        stripeAccountId: account!.stripeAccountId,
+        refreshUrl: window.location.href,
+        returnUrl: window.location.origin + "/seller/marketplace-account",
+      }),
+  });
+  const accountManager = useAccountManager({
+    scopeKey: currentUser.id,
+    configure: (configuration) => {
+      const args = { stripeAccountId: account!.stripeAccountId };
+      return configuration === "customer"
+        ? addCustomerConfig(args)
+        : configuration === "recipient"
+          ? addRecipientConfig(args)
+          : addMerchantConfig(args);
+    },
+  });
+  const isAddingCustomer =
+    accountManager.isPending &&
+    accountManager.pendingConfiguration === "customer";
+  const isAddingRecipient =
+    accountManager.isPending &&
+    accountManager.pendingConfiguration === "recipient";
+  const isAddingMerchant =
+    accountManager.isPending &&
+    accountManager.pendingConfiguration === "merchant";
+  const addCustomerError =
+    accountManager.lastConfiguration === "customer" && accountManager.error;
+  const addRecipientError =
+    accountManager.lastConfiguration === "recipient" && accountManager.error;
+  const addMerchantError =
+    accountManager.lastConfiguration === "merchant" && accountManager.error;
+  const purchaseAction = useWorkflowAction(async () => {
+    if (!selectedPriceId) throw new Error("Choose a price first.");
+    return createSelfPurchase({
+      userId: currentUser.id,
+      stripeAccountId: account!.stripeAccountId,
+      stripePriceId: selectedPriceId,
+      returnUrl:
+        window.location.origin +
+        "/seller/marketplace-account?purchase_session_id={CHECKOUT_SESSION_ID}",
+    });
+  }, currentUser.id);
+  const isPurchasing = purchaseAction.isPending;
+  const purchaseError = purchaseAction.error;
+  const purchase = async () => {
+    const result = await purchaseAction.run();
+    if (result?.url) window.location.assign(result.url);
+  };
 
   if (account === undefined) {
     return (
@@ -156,26 +215,7 @@ export function SellerMarketplaceAccount({
               </div>
 
               <Button
-                onClick={async () => {
-                  setIsCreating(true);
-                  setCreateError(null);
-                  try {
-                    const result = await createOnboarding({
-                      userId: currentUser.id,
-                      email: currentUser.email,
-                      country: selectedCountry,
-                      refreshUrl: window.location.href,
-                      returnUrl:
-                        window.location.origin + "/seller/marketplace-account",
-                    });
-                    window.location.href = result.onboardingUrl;
-                  } catch (err) {
-                    setCreateError(
-                      err instanceof Error ? err.message : String(err),
-                    );
-                    setIsCreating(false);
-                  }
-                }}
+                onClick={() => void createAccount()}
                 disabled={isCreating || !selectedCountry}
               >
                 {isCreating ? (
@@ -296,24 +336,7 @@ export function SellerMarketplaceAccount({
                 </>
               )}
               <Button
-                onClick={async () => {
-                  setIsLinking(true);
-                  setLinkError(null);
-                  try {
-                    const result = await getAccountLink({
-                      stripeAccountId: account.stripeAccountId,
-                      refreshUrl: window.location.href,
-                      returnUrl:
-                        window.location.origin + "/seller/marketplace-account",
-                    });
-                    window.location.href = result.url;
-                  } catch (err) {
-                    setLinkError(
-                      err instanceof Error ? err.message : String(err),
-                    );
-                    setIsLinking(false);
-                  }
-                }}
+                onClick={() => void continueOnboarding()}
                 disabled={isLinking}
               >
                 {isLinking ? (
@@ -360,21 +383,7 @@ export function SellerMarketplaceAccount({
               </CardHeader>
               <CardContent>
                 <Button
-                  onClick={async () => {
-                    setIsAddingCustomer(true);
-                    setAddCustomerError(null);
-                    try {
-                      await addCustomerConfig({
-                        stripeAccountId: account.stripeAccountId,
-                      });
-                    } catch (err) {
-                      setAddCustomerError(
-                        err instanceof Error ? err.message : String(err),
-                      );
-                    } finally {
-                      setIsAddingCustomer(false);
-                    }
-                  }}
+                  onClick={() => void accountManager.configure("customer")}
                   disabled={isAddingCustomer}
                 >
                   {isAddingCustomer ? (
@@ -452,29 +461,7 @@ export function SellerMarketplaceAccount({
                         </Select>
                       </div>
                       <Button
-                        onClick={async () => {
-                          if (!selectedPriceId) return;
-                          setIsPurchasing(true);
-                          setPurchaseError(null);
-                          try {
-                            const result = await createSelfPurchase({
-                              userId: currentUser.id,
-                              stripeAccountId: account.stripeAccountId,
-                              stripePriceId: selectedPriceId,
-                              returnUrl:
-                                window.location.origin +
-                                "/seller/marketplace-account?purchase_session_id={CHECKOUT_SESSION_ID}",
-                            });
-                            if (result.url) {
-                              window.location.href = result.url;
-                            }
-                          } catch (err) {
-                            setPurchaseError(
-                              err instanceof Error ? err.message : String(err),
-                            );
-                            setIsPurchasing(false);
-                          }
-                        }}
+                        onClick={purchase}
                         disabled={isPurchasing || !selectedPriceId}
                       >
                         {isPurchasing ? (
@@ -522,21 +509,7 @@ export function SellerMarketplaceAccount({
                   {!hasRecipientConfig && (
                     <Button
                       variant="outline"
-                      onClick={async () => {
-                        setIsAddingRecipient(true);
-                        setAddRecipientError(null);
-                        try {
-                          await addRecipientConfig({
-                            stripeAccountId: account.stripeAccountId,
-                          });
-                        } catch (err) {
-                          setAddRecipientError(
-                            err instanceof Error ? err.message : String(err),
-                          );
-                        } finally {
-                          setIsAddingRecipient(false);
-                        }
-                      }}
+                      onClick={() => void accountManager.configure("recipient")}
                       disabled={isAddingRecipient}
                     >
                       {isAddingRecipient ? (
@@ -552,21 +525,7 @@ export function SellerMarketplaceAccount({
                   {!hasMerchantConfig && (
                     <Button
                       variant="outline"
-                      onClick={async () => {
-                        setIsAddingMerchant(true);
-                        setAddMerchantError(null);
-                        try {
-                          await addMerchantConfig({
-                            stripeAccountId: account.stripeAccountId,
-                          });
-                        } catch (err) {
-                          setAddMerchantError(
-                            err instanceof Error ? err.message : String(err),
-                          );
-                        } finally {
-                          setIsAddingMerchant(false);
-                        }
-                      }}
+                      onClick={() => void accountManager.configure("merchant")}
                       disabled={isAddingMerchant}
                     >
                       {isAddingMerchant ? (

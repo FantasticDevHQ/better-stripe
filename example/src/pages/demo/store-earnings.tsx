@@ -1,6 +1,5 @@
 import { EmptyState } from "@/components/empty-state";
 import { useRole } from "@/providers/role-context";
-import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  useWorkflowResource,
   earningsFromBalance,
-  type BalanceSnapshot,
-} from "@/lib/store-earnings";
-import {
   EarningsSummary,
   PayoutSchedule,
   type StripeComponentPayout,
@@ -53,7 +50,6 @@ function Figure({ label, value }: { label: string; value: string }) {
 export function StoreEarnings() {
   const { currentUser } = useRole();
   const getBalance = useAction(api.marketplace.getRecipientBalance);
-  const [balance, setBalance] = useState<BalanceSnapshot | null>(null);
 
   const accountId = currentUser.stripeAccountId;
   const payouts = useQuery(
@@ -61,19 +57,18 @@ export function StoreEarnings() {
     accountId ? { stripeAccountId: accountId } : "skip",
   ) as StripeComponentPayout[] | undefined;
 
-  // Fetch the connected account's live balance once the account id is known.
-  // Balance comes from Stripe (an action), so it's fetched imperatively rather
-  // than via a reactive query; a null result degrades to payouts-only.
-  useEffect(() => {
-    if (!accountId) return;
-    let cancelled = false;
-    void getBalance({ stripeAccountId: accountId }).then((snap) => {
-      if (!cancelled) setBalance(snap);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [accountId, getBalance]);
+  const {
+    data,
+    error,
+    isLoading: isBalanceLoading,
+  } = useWorkflowResource(
+    () =>
+      accountId
+        ? getBalance({ stripeAccountId: accountId })
+        : Promise.resolve(null),
+    accountId ?? "missing",
+  );
+  const balance = data ?? null;
 
   if (!accountId)
     return (
@@ -89,6 +84,11 @@ export function StoreEarnings() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Earnings</h1>
         <p className="text-muted-foreground">
@@ -110,7 +110,7 @@ export function StoreEarnings() {
             paidOut={earnings.paidOut}
             payouts={payoutRows}
             currency={earnings.currency}
-            isLoading={payouts === undefined}
+            isLoading={payouts === undefined || isBalanceLoading}
           >
             {({ grossLabel, netLabel, paidOutLabel, latestPayoutMessage }) => (
               <div className="space-y-4">
@@ -138,7 +138,7 @@ export function StoreEarnings() {
             <PayoutSchedule
               balance={balance}
               payouts={payoutRows}
-              isLoading={payouts === undefined}
+              isLoading={payouts === undefined || isBalanceLoading}
             >
               {({ availableLabel, pendingLabel, nextPayoutMessage }) => (
                 <div className="space-y-4">

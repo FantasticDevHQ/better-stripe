@@ -1,16 +1,8 @@
-import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
-import { ConnectProvider } from "@fantastic.dev/better-stripe/react";
 import {
-  ConnectAccountManagement,
-  ConnectAccountOnboarding,
-  ConnectBalances,
-  ConnectDisputesList,
-  ConnectNotificationBanner,
-  ConnectPayments,
-  ConnectPayouts,
-  type CommonComponentProps,
-} from "@stripe/react-connect-js";
+  Connect,
+  type ConnectComponent,
+} from "@fantastic.dev/better-stripe/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useRole } from "@/providers/role-context";
@@ -20,25 +12,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-type Kind =
-  | "account"
-  | "onboarding"
-  | "payments"
-  | "refunds"
-  | "disputes"
-  | "balances"
-  | "payouts"
-  | "notifications";
-const widgets = {
-  account: ConnectAccountManagement,
-  onboarding: ConnectAccountOnboarding,
-  payments: ConnectPayments,
-  refunds: ConnectPayments,
-  disputes: ConnectDisputesList,
-  balances: ConnectBalances,
-  payouts: ConnectPayouts,
-  notifications: ConnectNotificationBanner,
-};
 const titles = {
   account: "Account",
   onboarding: "Account setup",
@@ -49,39 +22,12 @@ const titles = {
   payouts: "Payouts",
   notifications: "Account requirements",
 };
-export function ConnectExample({ kind }: { kind: Kind }) {
+export function ConnectExample({ kind }: { kind: ConnectComponent }) {
   const { currentUser } = useRole();
   const { resolvedTheme } = useTheme();
-  return (
-    <ConnectExampleBody
-      key={`${currentUser.id}:${kind}:${resolvedTheme}`}
-      userId={currentUser.id as Id<"users">}
-      hasAccount={!!currentUser.stripeAccountId}
-      kind={kind}
-      dark={resolvedTheme === "dark"}
-    />
-  );
-}
-function ConnectExampleBody({
-  userId,
-  hasAccount,
-  kind,
-  dark,
-}: {
-  userId: Id<"users">;
-  hasAccount: boolean;
-  kind: Kind;
-  dark: boolean;
-}) {
   const publishableKey = useQuery(api.queries.getPublishableKey);
   const create = useAction(api.embeddedExamples.createSession);
-  const [error, setError] = useState<string | null>(null);
-  const [completed, setCompleted] = useState(false);
-  const [attempt, retry] = useState(0);
-  const Widget = widgets[kind];
-  const onLoadError: CommonComponentProps["onLoadError"] = ({ error }) =>
-    setError(error.message ?? "Stripe could not load this component.");
-  if (!hasAccount)
+  if (!currentUser.stripeAccountId)
     return (
       <Alert>
         <AlertTitle>Stripe account required</AlertTitle>
@@ -91,15 +37,10 @@ function ConnectExampleBody({
         </AlertDescription>
       </Alert>
     );
+  const dark = resolvedTheme === "dark";
   return (
     <div className="space-y-4" data-testid={`connect-example-${kind}`}>
       <h1 className="text-2xl font-bold">{titles[kind]}</h1>
-      {completed && (
-        <p role="status">
-          Account setup completed. Review the latest requirements in the
-          Headless view.
-        </p>
-      )}
       {["payments", "refunds", "disputes"].includes(kind) && (
         <Alert>
           <AlertTitle>Connected-account charges</AlertTitle>
@@ -116,30 +57,16 @@ function ConnectExampleBody({
           <CardTitle>Stripe embedded {titles[kind].toLowerCase()}</CardTitle>
         </CardHeader>
         <CardContent>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertTitle>Component unavailable</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-              <Button
-                variant="outline"
-                className="mt-3"
-                onClick={() => {
-                  setError(null);
-                  retry((n) => n + 1);
-                }}
-              >
-                Retry
-              </Button>
-            </Alert>
-          ) : publishableKey === undefined ? (
+          {publishableKey === undefined ? (
             <Skeleton className="h-40 w-full" />
           ) : !publishableKey ? (
             <EmptyState>
               No publishable key is configured. Configure Stripe in Admin setup.
             </EmptyState>
           ) : (
-            <ConnectProvider
-              key={attempt}
+            <Connect
+              component={kind}
+              scopeKey={`${currentUser.id}:${resolvedTheme}`}
               publishableKey={publishableKey}
               appearance={{
                 variables: {
@@ -148,24 +75,35 @@ function ConnectExampleBody({
                   colorPrimary: dark ? "#fafafa" : "#171717",
                 },
               }}
-              fetchClientSecret={async () => {
-                try {
-                  return (await create({ userId, kind })).clientSecret;
-                } catch (error) {
-                  setError(
-                    error instanceof Error
-                      ? error.message
-                      : "Could not create a Stripe session.",
-                  );
-                  throw error;
-                }
-              }}
+              fetchClientSecret={async () =>
+                (await create({ userId: currentUser.id as Id<"users">, kind }))
+                  .clientSecret
+              }
             >
-              <Widget
-                onLoadError={onLoadError}
-                onExit={() => setCompleted(true)}
-              />
-            </ConnectProvider>
+              {({ content, error, retry, completed }) => (
+                <>
+                  {completed && (
+                    <p role="status">
+                      Account setup completed. Review the latest requirements in
+                      the Headless view.
+                    </p>
+                  )}
+                  {error ? (
+                    <Alert variant="destructive">
+                      <AlertTitle>Component unavailable</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                      <div className="mt-3">
+                        <Button variant="outline" onClick={retry}>
+                          Retry
+                        </Button>
+                      </div>
+                    </Alert>
+                  ) : (
+                    content
+                  )}
+                </>
+              )}
+            </Connect>
           )}
         </CardContent>
       </Card>

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckoutFrame } from "@/components/checkout-frame";
+import { useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
-  EmbeddedCheckout,
+  Checkout,
   EarningsSummary,
   SplitBreakdown,
 } from "@fantastic.dev/better-stripe/react";
@@ -49,65 +50,25 @@ function SplitCheckoutForm({
   publishableKey: string;
 }) {
   const createCheckout = useAction(api.actions.createAffiliateSplitCheckout);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const hasInitiated = useRef(false);
-
-  const initCheckout = useCallback(async () => {
-    if (hasInitiated.current) return;
-    hasInitiated.current = true;
-    try {
-      const session = await createCheckout({
-        userId: userId
-          ? (userId as import("../../../convex/_generated/dataModel").Id<"users">)
-          : undefined,
-        stripePriceId: priceId,
-        referralCode: referralCode ?? undefined,
-        returnUrl: buildSplitCheckoutReturnUrl(window.location.origin),
-      });
-      if (session?.clientSecret) {
-        setClientSecret(session.clientSecret);
-      } else {
-        setError("Failed to create checkout session. No client secret.");
-      }
-    } catch (err) {
-      console.error("Split checkout error:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to create checkout.",
-      );
-    }
-  }, [createCheckout, userId, priceId, referralCode]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: creates the checkout session on mount
-    void initCheckout();
-  }, [initCheckout]);
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Checkout Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
-  }
-
-  // No onComplete handler: Stripe substitutes the real session id into
-  // return_url and redirects there itself (see buildCheckoutReturnUrl).
   return (
-    <EmbeddedCheckout
+    <Checkout
+      mode="embedded"
+      orderKey={`${userId}:${priceId}:${referralCode ?? ""}`}
       publishableKey={publishableKey}
-      clientSecret={clientSecret}
-    />
+      returnUrl={buildSplitCheckoutReturnUrl(window.location.origin)}
+      createSession={() =>
+        createCheckout({
+          userId: userId
+            ? (userId as import("../../../convex/_generated/dataModel").Id<"users">)
+            : undefined,
+          stripePriceId: priceId,
+          referralCode: referralCode ?? undefined,
+          returnUrl: buildSplitCheckoutReturnUrl(window.location.origin),
+        })
+      }
+    >
+      {(state) => <CheckoutFrame {...state} />}
+    </Checkout>
   );
 }
 

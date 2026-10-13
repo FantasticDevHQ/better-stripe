@@ -379,3 +379,87 @@ describe("earnings hook aggregate wiring", () => {
     ).toEqual({ paidOut: 0, payoutCount: 0, payouts: [] });
   });
 });
+
+it("resolves the persona's linked Stripe account instead of an older duplicate", async () => {
+  const t = withComponent();
+  const userId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Maya",
+      email: "maya@example.com",
+      role: "seller",
+      stripeAccountId: "acct_store",
+    }),
+  );
+  for (const stripeAccountId of ["acct_old", "acct_store"]) {
+    await t.mutation(components.betterStripe.core.mutations.upsertAccount, {
+      userId,
+      stripeAccountId,
+      appliedConfigurations: ["recipient"],
+      onboardingStatus: "complete",
+    });
+  }
+  const account = await t.query(api.queries.getAccountByUserId, { userId });
+  expect(account?.stripeAccountId).toBe("acct_store");
+});
+
+it("shows the originating store on affiliate sales, including older split transfers", async () => {
+  const t = withComponent();
+  const sellerId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Maya Seller",
+      email: "maya@example.com",
+      role: "seller",
+      stripeAccountId: "acct_maya",
+      storeName: "Maya's Fitness Studio",
+    }),
+  );
+  await t.run((ctx) =>
+    ctx.db.insert("storeSales", {
+      sellerId,
+      sellerAccountId: "acct_maya",
+      affiliateAccountId: "acct_affiliate",
+      chargeId: "ch_new",
+      paymentIntentId: "pi_new",
+      planId: "starter",
+      gross: 10000,
+      processingFee: 320,
+      sellingFee: 900,
+      platformNet: 580,
+      sellerNet: 7280,
+      affiliateNet: 1820,
+      currency: "usd",
+      status: "settled",
+    }),
+  );
+  for (const charge of ["ch_new", "ch_old", "ch_unknown"]) {
+    await t.mutation(components.betterStripe.connect.mutations.upsertTransfer, {
+      stripeTransferId: `tr_${charge}`,
+      destinationAccountId: "acct_affiliate",
+      sourceChargeId: charge,
+      role: "affiliate",
+      amount: 1820,
+      currency: "usd",
+      status: "paid",
+    });
+  }
+  await t.mutation(components.betterStripe.connect.mutations.upsertTransfer, {
+    stripeTransferId: "tr_old_store",
+    destinationAccountId: "acct_maya",
+    sourceChargeId: "ch_old",
+    role: "store",
+    amount: 7280,
+    currency: "usd",
+    status: "paid",
+  });
+  const rows = await t.query(api.queries.listAffiliateSales, {
+    accountId: "acct_affiliate",
+  });
+  expect(rows).toHaveLength(3);
+  for (const charge of ["ch_new", "ch_old"])
+    expect(rows.find((row) => row.sourceChargeId === charge)?.storeName).toBe(
+      "Maya's Fitness Studio",
+    );
+  expect(
+    rows.find((row) => row.sourceChargeId === "ch_unknown")?.storeName,
+  ).toBeNull();
+});

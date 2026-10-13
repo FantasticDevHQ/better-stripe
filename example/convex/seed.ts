@@ -10,6 +10,7 @@ import {
 import { v } from "convex/values";
 
 import { stripe } from "./stripe";
+import { assertTestModeStripeKey } from "./authz";
 
 // Match the API version the BetterStripe client pins, so the raw client used to
 // seed a subscription speaks the same V2 dialect. Typed off the SDK's own
@@ -634,12 +635,15 @@ export const run = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
+    if (env.STRIPE_SECRET_KEY) assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
     await ctx.runMutation(internal.seed.seedDb, {});
     await ctx.runAction(internal.seed.seedStripe, {});
     await ctx.runAction(internal.seed.seedAccounts, {});
     await ctx.runMutation(internal.seed.seedMarketplaceDb, {});
     await ctx.runAction(internal.seed.seedMarketplaceAccounts, {});
     await ctx.runAction(internal.seed.seedMarketplaceCatalog, {});
+    if (env.STRIPE_SECRET_KEY)
+      await ctx.runAction(api.sandboxFixtures.start, {});
     return null;
   },
 });

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/providers/use-theme";
 import { Toaster } from "sonner";
 
 import { Button } from "@/components/ui/button";

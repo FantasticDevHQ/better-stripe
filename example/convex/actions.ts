@@ -4,12 +4,7 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
-import { computeFee } from "@fantastic.dev/better-stripe";
-import {
-  DEMO_SALE_AMOUNT,
-  buildSplitRecipients,
-  netSplitAmounts,
-} from "./affiliateSplit";
+import { isAffiliateReferral } from "./affiliateSplit";
 import {
   assertAccountOwner,
   assertDisputeOwner,
@@ -300,20 +295,78 @@ export function checkoutModeForPrice(
 
 export const createCheckoutSession = action({
   args: {
-    userId: v.string(),
+    userId: v.optional(v.id("users")),
     stripePriceId: v.string(),
+    referralCode: v.optional(v.string()),
     returnUrl: v.string(),
   },
-  handler: async (ctx, args) => {
+  returns: v.object({
+    stripeSessionId: v.string(),
+    clientSecret: v.optional(v.string()),
+    url: v.optional(v.string()),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    stripeSessionId: string;
+    clientSecret?: string;
+    url?: string;
+  }> => {
     const price = await stripe.getPriceByStripeId(ctx, {
       stripePriceId: args.stripePriceId,
     });
+    if (
+      !price?.active ||
+      !Number.isSafeInteger(price.unitAmount) ||
+      price.unitAmount! <= 0
+    ) {
+      throw new Error("This price is not available for purchase.");
+    }
+    const product = await stripe.getProductByStripeId(ctx, {
+      stripeProductId: price.stripeProductId,
+    });
+    if (!product?.active)
+      throw new Error("This product is not available for purchase.");
+    const sellerAccountId = product.accountId;
+    const identity = await ctx.runQuery(
+      internal.storefront.checkoutParticipants,
+      { userId: args.userId, sellerAccountId },
+    );
+    const account = identity.userId
+      ? await ctx.runQuery(api.queries.getAccountByUserId, {
+          userId: identity.userId,
+        })
+      : null;
+    if (
+      isAffiliateReferral(args.referralCode) &&
+      sellerAccountId &&
+      !identity.affiliateAccountId
+    ) {
+      throw new Error(
+        "The affiliate account is not ready. Try a direct store purchase.",
+      );
+    }
     return stripe.createCheckoutSession(ctx, {
-      userId: args.userId,
+      userId: identity.userId,
+      accountId: account?.stripeAccountId,
+      customerEmail: identity.email,
       stripePriceId: args.stripePriceId,
+      amount: price.unitAmount,
       mode: checkoutModeForPrice(price),
+      sessionOverrides: { adaptive_pricing: { enabled: false } },
       returnUrl: args.returnUrl,
       uiMode: "embedded",
+      metadata: {
+        referralCode: isAffiliateReferral(args.referralCode) ? "avery" : "",
+        productName: product.name,
+        storeBilling: "sale_v1",
+        sellerId: identity.sellerId,
+        planId: identity.planId,
+        affiliateAccountId: isAffiliateReferral(args.referralCode)
+          ? identity.affiliateAccountId!
+          : "",
+      },
     });
   },
 });
@@ -523,51 +576,24 @@ export const updateSubscriptionTrialEnd = action({
  */
 export const createAffiliateSplitCheckout = action({
   args: {
-    userId: v.string(),
+    userId: v.optional(v.id("users")),
     stripePriceId: v.string(),
     referralCode: v.optional(v.string()),
     returnUrl: v.string(),
   },
-  handler: async (ctx, args) => {
-    const personas = await ctx.runQuery(api.queries.getMarketplacePersonas, {});
-    if (!personas.store?.accountId) {
-      throw new Error(
-        "Marketplace store not seeded — run `npm run setup` first.",
-      );
-    }
-
-    const recipients = buildSplitRecipients({
-      store: {
-        accountId: personas.store.accountId,
-        name: personas.store.name,
-      },
-      affiliate: personas.affiliate?.accountId
-        ? {
-            accountId: personas.affiliate.accountId,
-            name: personas.affiliate.name,
-          }
-        : null,
-      referralCode: args.referralCode ?? null,
-    });
-
-    const feeConfig = stripe.resolveFee();
-    const platformFee = feeConfig
-      ? computeFee(DEMO_SALE_AMOUNT, feeConfig).feeAmount
-      : 0;
-    const split = netSplitAmounts(recipients, DEMO_SALE_AMOUNT, platformFee);
-
-    return stripe.createCheckoutSession(ctx, {
-      userId: args.userId,
-      stripePriceId: args.stripePriceId,
-      mode: "payment",
-      uiMode: "embedded",
-      amount: DEMO_SALE_AMOUNT,
-      split,
-      returnUrl: args.returnUrl,
-      // `bs*` keys are reserved and stripped by the component, so use a plain key.
-      metadata: { demoReferralCode: args.referralCode ?? "" },
-    });
-  },
+  returns: v.object({
+    stripeSessionId: v.string(),
+    clientSecret: v.optional(v.string()),
+    url: v.optional(v.string()),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    stripeSessionId: string;
+    clientSecret?: string;
+    url?: string;
+  }> => ctx.runAction(api.actions.createCheckoutSession, args),
 });
 
 // ===========================================================================

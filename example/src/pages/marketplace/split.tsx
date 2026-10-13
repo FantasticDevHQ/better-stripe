@@ -58,7 +58,9 @@ function SplitCheckoutForm({
     hasInitiated.current = true;
     try {
       const session = await createCheckout({
-        userId,
+        userId: userId
+          ? (userId as import("../../../convex/_generated/dataModel").Id<"users">)
+          : undefined,
         stripePriceId: priceId,
         referralCode: referralCode ?? undefined,
         returnUrl: buildSplitCheckoutReturnUrl(window.location.origin),
@@ -181,6 +183,8 @@ export function AffiliateSplitDemo() {
               <Button
                 variant="link"
                 className="h-auto p-0"
+                nativeButton={false}
+                role="link"
                 render={
                   <Link to={referralLink} aria-label="Open affiliate link" />
                 }

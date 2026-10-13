@@ -403,6 +403,8 @@ function WebhookSetupCard() {
 function SeedDataCard() {
   const seedDemoData = useAction(api.actions.seedDemoData);
   const seedStatus = useQuery(api.queries.getSeedStatus);
+  const fixtures = useQuery(api.sandboxFixtureState.status);
+  const populateSandbox = useAction(api.sandboxFixtures.start);
   const products = useQuery(api.queries.listProducts);
 
   const [isSeeding, setIsSeeding] = useState(false);
@@ -432,13 +434,73 @@ function SeedDataCard() {
         <div>
           <h2 className="text-lg font-semibold">3. Seed Demo Data</h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            Creates demo users, linked Stripe accounts, a trial subscription,
-            and marketplace products with prices. Reruns fill in missing data.
+            Creates demo users, linked Stripe accounts, products, and paid store
+            plans. Then populates the Stripe sandbox with sales, affiliate
+            referrals, refunds, disputes, subscriptions, invoices, and payouts.
+            Reruns skip completed fixtures.
           </p>
         </div>
         <Button onClick={handleSeed} disabled={isSeeding} className="shrink-0">
           {isSeeding ? "Seeding…" : "Seed Data"}
         </Button>
+      </div>
+
+      <div className="space-y-3 rounded-md border p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-medium">Sandbox activity fixtures</h3>
+            <p className="text-muted-foreground text-sm">
+              40 sales, affiliate splits, 6 refunds, 4 disputes, and payouts.
+              All transactions use Stripe test payment methods.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            disabled={
+              isSeeding ||
+              fixtures?.status === "running" ||
+              fixtures?.status === "complete" ||
+              userCount === 0
+            }
+            onClick={async () => {
+              setError(null);
+              try {
+                await populateSandbox({});
+              } catch (e) {
+                setError(String(e));
+              }
+            }}
+          >
+            {fixtures?.status === "failed"
+              ? "Resume fixtures"
+              : fixtures?.status === "complete"
+                ? "Fixtures populated"
+                : "Populate sandbox"}
+          </Button>
+        </div>
+        {fixtures && (
+          <>
+            <progress
+              aria-label="Sandbox fixture progress"
+              className="h-2 w-full"
+              value={fixtures.cursor}
+              max={fixtures.total}
+            />
+            <p className="text-muted-foreground text-sm" role="status">
+              {fixtures.cursor} of {fixtures.total} steps complete.{" "}
+              {fixtures.status === "running"
+                ? "Stripe events continue to update the app as fixtures are created."
+                : fixtures.status === "complete"
+                  ? "Ready to explore. Dispute and payout statuses may continue updating through webhooks."
+                  : "Population stopped. Resume to retry this step."}
+            </p>
+            {fixtures.error && (
+              <p role="alert" className="text-destructive text-sm">
+                {fixtures.error}
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

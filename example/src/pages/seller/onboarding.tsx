@@ -48,7 +48,10 @@ const CONNECT_COUNTRIES = [
   { code: "SG", name: "Singapore" },
 ];
 
-export function SellerOnboarding() {
+export function SellerOnboarding({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
+  const Heading = embedded ? "h2" : "h1";
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
@@ -81,7 +84,9 @@ export function SellerOnboarding() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Seller Onboarding</h1>
+          <Heading className="text-2xl font-bold">
+            {embedded ? "Setup" : "Seller Onboarding"}
+          </Heading>
           <p className="text-muted-foreground mt-1">
             No data yet. Create a Stripe Connect account to start receiving
             payouts.
@@ -173,7 +178,9 @@ export function SellerOnboarding() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Seller Onboarding</h1>
+          <Heading className="text-2xl font-bold">
+            {embedded ? "Setup" : "Seller Onboarding"}
+          </Heading>
           <p className="text-muted-foreground mt-1">
             {isComplete
               ? "Your account is verified and ready to receive payouts."

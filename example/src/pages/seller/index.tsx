@@ -31,9 +31,10 @@ export function SellerHome() {
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
-  const payouts = useQuery(api.queries.listPayouts) as
-    | StripeComponentPayout[]
-    | undefined;
+  const payouts = useQuery(
+    api.queries.listPayoutsByAccount,
+    account?.stripeAccountId ? { accountId: account.stripeAccountId } : "skip",
+  ) as StripeComponentPayout[] | undefined;
 
   if (account === undefined) {
     return (

@@ -14,6 +14,9 @@ test.describe("live Express dashboard login", () => {
       localStorage.setItem("betterlearn-role", "seller");
     });
     await page.goto("/seller/account");
+    await page
+      .getByLabel("Seller persona")
+      .selectOption({ label: "Jordan Seller" });
     await expect(
       page.getByRole("button", { name: "Open dashboard", exact: true }),
     ).toBeVisible({ timeout: 60_000 });

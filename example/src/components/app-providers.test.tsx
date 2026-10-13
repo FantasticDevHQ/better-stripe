@@ -8,7 +8,7 @@ const themeState = vi.hoisted(() => ({
   setTheme: vi.fn(),
 }));
 
-vi.mock("next-themes", () => ({
+vi.mock("@/providers/use-theme", () => ({
   useTheme: () => themeState,
 }));
 

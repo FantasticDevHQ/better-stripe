@@ -1,9 +1,10 @@
+import { EmptyState } from "@/components/empty-state";
+import { useRole } from "@/providers/role-context";
 import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -50,19 +51,15 @@ function Figure({ label, value }: { label: string; value: string }) {
  * the resulting invoice.
  */
 export function StoreEarnings() {
-  const context = useQuery(api.marketplace.getMarketplaceDemoContext);
+  const { currentUser } = useRole();
   const getBalance = useAction(api.marketplace.getRecipientBalance);
   const [balance, setBalance] = useState<BalanceSnapshot | null>(null);
 
-  const accountId = context?.store.stripeAccountId;
+  const accountId = currentUser.stripeAccountId;
   const payouts = useQuery(
     api.marketplace.listStorePayouts,
     accountId ? { stripeAccountId: accountId } : "skip",
   ) as StripeComponentPayout[] | undefined;
-  const invoice = useQuery(
-    api.marketplace.getLatestStoreInvoice,
-    context ? { userId: context.buyer.id } : "skip",
-  );
 
   // Fetch the connected account's live balance once the account id is known.
   // Balance comes from Stripe (an action), so it's fetched imperatively rather
@@ -78,45 +75,25 @@ export function StoreEarnings() {
     };
   }, [accountId, getBalance]);
 
-  if (context === undefined) {
+  if (!accountId)
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
+      <Alert>
+        <AlertTitle>Store account unavailable</AlertTitle>
+        <AlertDescription>
+          Finish the seller setup to view store earnings.
+        </AlertDescription>
+      </Alert>
     );
-  }
-
-  if (context === null) {
-    return (
-      <div className="mx-auto max-w-2xl py-16">
-        <Alert>
-          <AlertTitle>No data found</AlertTitle>
-          <AlertDescription>
-            The marketplace demo is not seeded. Run the marketplace seed (with a
-            live Stripe key) to create the store and catalog:{" "}
-            <code className="bg-muted rounded px-1">
-              pnpm --filter ./example run setup
-            </code>
-            .
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const { store } = context;
   const payoutRows = payouts ?? [];
   const earnings = earningsFromBalance(balance, payoutRows);
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">{store.storeName} — Earnings</h1>
+        <h1 className="text-2xl font-bold">Earnings</h1>
         <p className="text-muted-foreground">
-          Money from destination-charge subscriptions lands in the store's
-          Stripe balance and pays out on a rolling schedule.
+          Your earnings arrive in the store's Stripe balance and pay out on a
+          rolling schedule.
         </p>
       </div>
 
@@ -211,45 +188,15 @@ export function StoreEarnings() {
               {payoutRows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-muted-foreground py-6">
-                    No payouts yet — balance reflects funds awaiting the next
-                    rolling payout.
+                    <EmptyState>
+                      No payouts yet. Balance reflects funds awaiting the next
+                      rolling payout.
+                    </EmptyState>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      {/* Platform fee on the resulting invoice. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Latest sale — platform fee</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {invoice === undefined ? (
-            <Skeleton className="h-16 w-full" />
-          ) : invoice === null ? (
-            <p className="text-muted-foreground text-sm">
-              No paid invoice yet. Complete the subscription checkout to see the
-              charge and its platform fee.
-            </p>
-          ) : (
-            <div className="grid grid-cols-3 gap-4">
-              <Figure
-                label="Charged"
-                value={formatCurrency(invoice.gross, invoice.currency)}
-              />
-              <Figure
-                label={`Platform fee (${context.feePercent}%)`}
-                value={formatCurrency(invoice.fee, invoice.currency)}
-              />
-              <Figure
-                label="Seller net"
-                value={formatCurrency(invoice.net, invoice.currency)}
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

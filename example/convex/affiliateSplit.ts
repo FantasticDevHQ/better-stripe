@@ -70,8 +70,12 @@ export function netSplitAmounts(
   platformFee: number,
 ) {
   const net = amount - platformFee;
-  return recipients.map(({ percent, ...recipient }) => ({
+  const legs = recipients.map(({ percent, ...recipient }) => ({
     ...recipient,
     amount: Math.floor((net * percent) / 100),
   }));
+  const store = legs.find((leg) => leg.role === "store");
+  if (store)
+    store.amount += net - legs.reduce((sum, leg) => sum + leg.amount, 0);
+  return legs;
 }

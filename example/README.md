@@ -1,4 +1,4 @@
-# better-stripe Example -- T-Shirt Shop
+# BetterStripe example
 
 A Vite + React SPA showcasing every feature of the `better-stripe` Convex component.
 All data comes from Stripe via better-stripe -- no mock data.
@@ -62,9 +62,19 @@ Beyond the classic demo personas, the seed creates a real marketplace
   PLATFORM Stripe account and tagged to the store via the component's
   `accountId` field plus `storeAccountId`/`storeName` metadata
   (`stripe.listProducts({ accountId })` lists one store's catalog).
-- **Platform fee tiers** -- `convex/stripe.ts` configures the platform's take
-  as a tiered `platformFee` (2.9% + 30¢ up to $899, 3.9% + 30¢ above), applied
-  whenever a sale routes funds to a seller.
+- **Seller store plans** -- `/seller/plan` charges $9/month for Starter,
+  $49/month for Growth, or $99/month for Pro. A paid, active plan is required
+  for store listings and new purchases. Starter takes the greater of 9% or
+  actual Stripe processing; Growth takes the greater of 4.9% or actual
+  processing; Pro takes processing only. The platform keeps the difference
+  and never subsidizes processing. New sales wait for actual Stripe fees,
+  then transfer the remainder to the seller and, for referrals, the affiliate.
+  The affiliate receives 20% of the remainder after the inclusive sale fee.
+  Existing customer renewals continue using the seller's current or last paid
+  tier, even if the store has closed to new purchases. Use Stripe's billing
+  portal for paid plan changes, payment details, invoices, and cancellation.
+  The older fee configuration in `convex/stripe.ts` remains for standalone
+  legacy component demos.
 - **Affiliate** (`Avery Affiliate`) -- a recipient-only account, activated the
   same way, for referral-share transfers in split sales.
 - **Buyer** (`Billie Buyer`) -- a billable `customer_account` with a reusable
@@ -86,7 +96,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
 ## Architecture
 
 All Stripe data flows through the `better-stripe` Convex component.
-The app never calls the Stripe SDK directly -- it uses:
+The app uses the component for account and billing data. Seller plans and sale settlement also use the Stripe SDK to verify paid subscriptions and read actual processing fees. The main integration files are:
 
 - **`convex/stripe.ts`** -- `BetterStripe` client instance with triggers and hooks
 - **`convex/queries.ts`** -- Query wrappers exposing component data to the frontend
@@ -95,11 +105,21 @@ The app never calls the Stripe SDK directly -- it uses:
 
 ## Roles
 
-Use the role switcher in the header to explore different perspectives:
+Use the role switcher in the header to explore five perspectives:
 
-- **Customer** -- Browse products, subscribe, manage billing & payment methods, view invoices
-- **Seller** -- Connect onboarding, view payouts & earnings, manage Stripe account
-- **Admin** -- Manage products/prices, view subscriptions, webhook event log, setup
+- **Visitor**: browse `/stores` and buy from a seller without an app account, including through affiliate links. Guest checkout does not borrow a seeded customer's identity.
+- **Customer**: buy from sellers and manage personal subscriptions, invoices, and payment methods.
+- **Seller**: manage store products, subscriptions, earnings, payouts, and the connected Stripe account. The seller selector switches between Maya, Sasha, and Jordan.
+- **Affiliate**: Avery has a separate Stripe account, referral links, and an earnings ledger at `/affiliate`. Customers do not receive affiliate payouts.
+- **Admin**: manage the platform's catalog, subscriptions, webhooks, testing, and setup.
+
+A referred sale takes the configured platform fee first, pays Avery 20% of the remainder, and pays the seller the rest, including any final rounding cent. A direct sale pays the seller the entire remainder. `/stores?store=<seller-account>&ref=avery` keeps attribution through checkout and role switching.
+
+The old `/marketplace/split` and `/demo/destination-charge` links redirect to the storefront. `/demo/subscribe` now lists the active seller's subscriptions; `/demo/store-earnings` reads that seller's balance and payouts. Customers purchase recurring plans from the store catalog.
+
+The role menu, command menu, and route redirects use the same role rules. These are demonstration UI boundaries, not authentication.
+
+For the opt-in local sandbox browser checks, run `E2E_LIVE_BACKEND=1 pnpm exec playwright test marketplace-roles.spec.ts` from `example/`. These tests use a normal browser and record video. They create synthetic test-mode payments and a subscription; see [the October 13 QA report](QA-2026-10-13.md) for coverage and remaining limits.
 
 ## Demo security model
 
@@ -284,13 +304,13 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by `convex/e2eMoney.ts`) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
 
-| Check                                                                    | What it drives                                                                                                                                                        | What it asserts                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `money: destination fee`                                                 | a $100 destination charge with a $10 `application_fee`                                                                                                                | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes)                                                                                                                                                                                                                                               |
-| `money: split sale`                                                      | a $100 separate-charges sale split $80 store / $10 affiliate                                                                                                          | **2 `transfers`** ledger rows for the charge (one per recipient)                                                                                                                                                                                                                                                                                                                                       |
-| `money: refund reverses transfers`                                       | a refund of the split charge (`reverseTransfer`)                                                                                                                      | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (exact reversal assertions: not merely `> 0`)                                                                                                                                                                                                                                                                                        |
+| Check                                                           | What it drives                                                                                                                                                                 | What it asserts                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `money: destination fee`                                        | a $100 destination charge with a $10 `application_fee`                                                                                                                         | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes)                                                                                                                                                                                                                                               |
+| `money: split sale`                                             | a $100 separate-charges sale split $80 store / $10 affiliate                                                                                                                   | **2 `transfers`** ledger rows for the charge (one per recipient)                                                                                                                                                                                                                                                                                                                                       |
+| `money: refund reverses transfers`                              | a refund of the split charge (`reverseTransfer`)                                                                                                                               | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (exact reversal assertions: not merely `> 0`)                                                                                                                                                                                                                                                                     |
 | `money: full refund of a per-charge-fee sale caps the reversal` | a $100 destination charge tagged `bsFeeMode=per_charge` (3.2% → $3.20 collected by partial transfer reversal, the per-charge fees path), then a FULL refund with default flags | the fee lands on the `payments` row (`feeCollectedAmount=320`); the refund succeeds and marks it `fully_refunded` for 10000; the live transfer shows **exactly two reversals** — the preserved 320 fee + the refund reversal **capped at 9680** (`amount_reversed == amount`). Live-verified 2026-07-03: Stripe caps instead of erroring; a refund **error** on this row is a genuine FAIL, not a SKIP |
-| `money: dispute reverses transfers`                                      | a disputed split (Stripe `tok_createDispute`)                                                                                                                         | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`)                                                                                                                                                                                                                                                                              |
+| `money: dispute reverses transfers`                             | a disputed split (Stripe `tok_createDispute`)                                                                                                                                  | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`)                                                                                                                                                                                                                                                                              |
 
 **Reversal amounts are asserted exactly.** The refund and dispute checks use `reversalsMatchExactly` (pure, unit-tested in `example/scripts/money-assertions.ts`) to require each leg's `reversedAmount` to equal its expected pro-rata value — a partial, missing, over-, or wrong-role reversal FAILs. A full refund / full-amount dispute of the $80/$10 split reverses each leg completely (verified against `computeReversalSlices`).
 
@@ -385,11 +405,11 @@ sync back to the UI. Current live-backend specs:
 - `e2e/destination-charge.spec.ts` — destination charge + platform fee demo,
   single recipient; see below.
 - `e2e/refunds-reversals.spec.ts` — refunds & reversals seller ops page
-; see below.
+  ; see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
-The one-time checkout demo  has two layers:
+The one-time checkout demo has two layers:
 
 - **Backend-independent** (runs everywhere, incl. CI): the payment-mode
   checkout and success routes boot without page errors.
@@ -408,93 +428,19 @@ The session's mode is derived server-side in
 `convex/actions.ts#createCheckoutSession`: one-time prices get
 `mode: "payment"`, recurring prices `mode: "subscription"`.
 
-#### Paid subscription + payout flow (`e2e/subscription-payout.spec.ts`)
+#### Customer purchases and seller finances (`e2e/marketplace-roles.spec.ts`)
 
-A real paid subscription demo  that shows the marketplace money model
-end to end: a buyer subscribes to a seeded store's recurring plan as a
-**destination charge**, and the seller sees the money via balance + payouts while
-the platform keeps its fee. Backend in `convex/marketplace.ts`; pages under
-`/demo/*`.
+The live marketplace suite checks every role's pages, guest referred checkout, direct customer checkout, and a customer subscription with pause/resume. Payments use Stripe's synthetic Visa and the configured sandbox. Tests read the stored checkout identity and actual Stripe payment or transfer ledger before asserting success.
 
-- **`/demo/subscribe`** — buyer (Billie) subscribes to Maya's Fitness Studio
-  monthly plan. `createStoreSubscriptionCheckout` opens an embedded checkout in
-  `subscription` mode routed to the store via `destinationAccountId`, with a
-  per-call `fee: { percent: 10 }`. No trial → the first invoice charges
-  immediately (a real charge). The percent-only override rides on Stripe's
-  `application_fee_percent`, which applies to every invoice (including the
-  first) and gives the demo a clean, deterministic 10% fee to display.
-- **`/demo/store-earnings`** — the store's balance + rolling payouts via the
-  merged `PayoutSchedule`, earnings via the merged `EarningsSummary` (derived
-  from the balance snapshot + payouts, since a destination charge leaves no
-  transfer-ledger row — that ledger, which `useEarnings` reads, is the
-  separate-charges split view), and the platform fee on the resulting invoice.
+Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring plans open subscription checkout; one-time prices open payment checkout. The return page displays the purchased product. Customer billing is scoped to that customer's ID, while seller subscriptions and earnings use the store selected in the header.
 
-Two layers, like the one-time flow: a backend-independent boot check (both routes
-render without page errors) and a live flow gated on `E2E_LIVE_BACKEND=1`
-(embedded checkout → test card → the store-earnings page shows the 10% platform
-fee). The live flow also needs webhook forwarding (`stripe listen`) so the
-charge/invoice/payout events sync.
+Avery's referral links are on `/affiliate`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives 20% of the remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
 
-**Manual QA steps**
-
-1. Seed a live deployment: set `STRIPE_SECRET_KEY`, run
-   `pnpm --filter ./example run setup`, and configure webhook destinations via
-   `/admin/setup`. Start webhook forwarding:
-   `stripe listen --forward-to <your-site-url>/stripe/webhook`.
-2. Open `/demo/subscribe`. Confirm it resolves the store (Maya's Fitness Studio)
-   and its monthly price, and shows the 10% platform-fee line.
-3. Complete the embedded checkout with test card `4242 4242 4242 4242`, any
-   future expiry, any CVC. Confirm it's a real charge (no trial) and you're
-   redirected to `/demo/store-earnings`.
-4. On `/demo/store-earnings`, confirm: **Latest sale — platform fee** shows the
-   charge, the 10% platform fee, and the seller net; **Balance & payouts** shows
-   an available/pending balance reflecting the transfer (payouts appear once
-   Stripe's rolling schedule runs — the balance moves first); **Earnings** shows
-   gross/net/paid-out. (Webhook sync takes a few seconds; refresh if needed.)
-
-#### Affiliate split flow (`e2e/affiliate-split.spec.ts`)
-
-The affiliate split breakdown demo  — the headline proof: **one $100
-sale, three destinations**. Route: `/marketplace/split` (also in the customer
-nav as "Affiliate Split"). An affiliate referral flows in via the `?ref=avery`
-query param; the sale routes store + affiliate, and the platform takes its
-configured tiered fee. The result is visualized with the headless
-`SplitBreakdown` (store / affiliate / platform) and `EarningsSummary`, driven by
-the `useSplitBreakdown` / `useEarnings` hooks.
-
-Two layers:
-
-- **Backend-independent** (runs everywhere, incl. CI): the demo route boots
-  without app page errors, plain and with `?ref=avery`. (The Convex client's
-  placeholder-URL connection fatal is filtered — that is the intended
-  backend-independent boundary.)
-- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): a referred purchase →
-  the webhook engine creates the store + affiliate transfers → the three-way
-  breakdown reconciles to the $100 charge.
-
-**Manual QA steps** (against a seeded, webhook-forwarded dev deployment):
-
-1. Seed the marketplace: `pnpm run setup` (creates Maya's store + Avery Affiliate
-   and Maya's one-time $100 "1:1 Session" price), and forward webhooks:
-   `stripe listen --forward-to <your-site-url>/stripe/webhook`.
-2. Visit `/marketplace/split?ref=avery`. Confirm the attribution badge reads
-   **"Referred by Avery Affiliate"** (visit without `?ref` → "No referral").
-3. Click **Buy with test card**; in the embedded Stripe form pay with
-   `4242 4242 4242 4242`, any future expiry, any CVC. You land on
-   `/checkout/status`.
-4. Return to `/marketplace/split?ref=avery`. Under **Latest sale — split
-   breakdown**, confirm three lines — **Store**, **Affiliate**, **Platform** —
-   and that Store + Affiliate + Platform **reconcile to $100.00** (the platform
-   line = charge − store − affiliate). The **Affiliate earnings** panel shows
-   Avery's gross/net.
-
-Attribution and the split-leg math are unit-tested in
-`convex/affiliateSplit.test.ts`; the split executes as separate transfers via
-the webhook engine (see `stripe.ts` `platformFee` for the platform's cut).
+The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials. See [October 13 QA](QA-2026-10-13.md) for amounts, evidence, and coverage limits.
 
 #### Seller disputes flow (`e2e/seller-disputes.spec.ts`)
 
-The seller disputes demo  is the culminating dispute demo: a
+The seller disputes demo is the culminating dispute demo: a
 seller-facing `/seller/disputes` page that exercises the whole merged dispute
 stack. It offers two surfaces via tabs:
 
@@ -555,7 +501,7 @@ triggered in test mode, so the reversal ledger is best verified via the
 
 #### Marketplace account lifecycle (`e2e/marketplace-account.spec.ts`)
 
-The marketplace account demo  shows "one V2 account, configurations
+The marketplace account demo shows "one V2 account, configurations
 accrue": a single Stripe account is both a payouts recipient and a billable
 customer. Two layers:
 
@@ -596,31 +542,13 @@ Manual QA (until the live-E2E spec is verified against a real deployment):
    the badge list updates (demonstrates configurations accruing over time,
    not just at creation).
 
-#### Destination charge + platform fee flow (`e2e/destination-charge.spec.ts`)
+#### Direct seller payment (`e2e/destination-charge.spec.ts`)
 
-The destination-charge + platform-fee demo  — the simplest single-
-recipient case: one seller (Sasha's Ceramics), one one-time charge, no
-affiliate routing. Route: `/demo/destination-charge`. A buyer (Billie) buys
-Sasha's seeded $129 one-time price; funds route to Sasha's connected account
-as a destination charge, and the platform keeps its 10% application fee. The
-fee/payout breakdown is computed up front from the known price
-(`getDestinationChargeDemoContext`) and confirmed inline once Stripe redirects
-back with the real session id (reusing the checkout return URLs `buildCheckoutReturnUrl`
-helper, generalized to point at this page instead of the generic
-`/checkout/status`).
-
-Two layers, like the other demos:
-
-- **Backend-independent** (runs everywhere, incl. CI): the demo route boots
-  without page errors, plain and with a `session_id` query param.
-- **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): a purchase → the
-  charge completes → the fee/payout breakdown reconciles exactly to the
-  charge amount (`fee + payout == charge`, asserted both by the pure
-  `reconciles()` helper's unit tests and by the live spec).
+The legacy `/demo/destination-charge` route redirects to `/stores`. It no longer creates a checkout for a fixed seeded buyer. Direct seller checkout and actual application-fee assertions are in `e2e/marketplace-roles.spec.ts`: a $100 direct sale pays a $3.20 platform fee and leaves the seller $96.80.
 
 #### Refunds & reversals (`e2e/refunds-reversals.spec.ts`)
 
-Seller ops page  at `/seller/refunds` for the two claw-back
+Seller ops page at `/seller/refunds` for the two claw-back
 primitives the money layer needs: `issueRefund` (full or partial, by
 PaymentIntent id) and a standalone `reverseSaleTransfers` (full or partial,
 by source charge id) for when ops needs a manual transfer clawback outside
@@ -790,3 +718,82 @@ example/
 | `npm run lint`                   | ESLint                                      |
 | `npm run build`                  | Production build                            |
 | `pnpm exec convex run reset:run` | Clear all data                              |
+
+## Populated Stripe sandbox
+
+The example always uses a Stripe sandbox. There is no offline mock mode.
+After configuring the sandbox key and webhook destination, open Admin → Setup
+and choose Seed Data. Seeding automatically starts a resumable fixture job.
+Its progress and any retryable failure appear on that page. You can also start
+or resume it from the example directory:
+
+```sh
+pnpm exec convex run sandboxFixtures:start
+pnpm exec convex run sandboxFixtureState:status
+```
+
+The fixture pack creates 40 sandbox sales, six refunds, four disputes with open,
+won, and lost outcomes, referred purchases, a customer subscription, paid monthly
+seller plans, and three connected-account payouts. These are real sandbox Stripe
+objects, created with Stripe's test payment methods. Stripe webhooks populate the
+same component ledger used by interactive purchases. Running the job again
+recovers its existing resources rather than repeating completed charges.
+The Express seller remains an interactive onboarding example; automatic sales
+use the sellers whose recipient capabilities are already active.
+
+Refund and dispute costs are read from Stripe balance transactions. Costs that
+are not covered by the retained sale fee are deducted from subsequent seller
+transfers before payout. Any outstanding amount is attached to the next monthly
+store invoice; returned costs become credits. Sales show the cost adjustment,
+and Store Plan shows the outstanding balance. The ledger reserves each deduction
+or invoice allocation atomically so retries cannot collect it twice.
+
+Reset clears the local example and component tables, including fixture progress.
+It does not delete Stripe objects. Keep the same sandbox when resuming; use a new
+sandbox when you need an entirely fresh Stripe dataset. Fixture actions reject
+live-mode secret keys.
+
+### Seller balance-funded billing
+
+Billing sits below Account in the seller sidebar. Account combines details,
+onboarding, and Accounts v2 configuration. Existing onboarding and marketplace
+account URLs redirect to the corresponding Account section.
+
+Under Billing → Payment source, a seller with a subscription can authorize
+recurring platform charges from their available Stripe earnings. The example
+creates a `stripe_balance` payment method using the preview API, attaches it to
+the seller's `customer_account`, and sets that method explicitly on the existing
+store subscription. This bypasses Checkout's dynamic payment method selection.
+Opting out restores the previous subscription payment method and method types.
+Consent is recorded, and a rejected Stripe request does not mark the option enabled.
+
+Balance Pay requires Stripe's Accounts v2 preview and an eligible connected
+account. Insufficient available balance leaves the invoice unpaid. Stripe's
+recovery settings determine whether the subscription stays open for retries or
+is canceled. Paying an invoice after cancellation does not reactivate the store
+plan. Configure those settings before relying on retry-based recovery.
+
+Stripe also supports retrying the same invoice with a different payment method,
+including an authorized saved card. Automatic card fallback is not implemented
+in this example. See [Stripe's Balance Pay guide](https://docs.stripe.com/payments/pay-with-balance#manually-retrying).
+
+Billing's invoice estimate combines Stripe's upcoming invoice preview with
+unrecovered refund/dispute costs and credits. It excludes costs already reserved
+for an invoice or deducted from earnings. Refund and dispute itemizations are
+under their respective menu pages, with links from estimated adjustment lines.
+
+### Testing monthly renewals
+
+Run `pnpm run e2e:balance-renewals` from the example directory. The script creates
+isolated sellers with Stripe test clocks, paid monthly plans, actual refund and
+dispute costs, and balance payment consent. It advances monthly invoices and
+checks both sufficient and insufficient earned balances. It also retries the
+same unpaid invoice after earnings arrive and verifies that costs are collected
+once. If Stripe canceled the subscription on failure, the report records that
+paying the debt leaves store access closed. It does not claim to reactivate a
+canceled subscription.
+
+The test refreshes webhook event subscriptions before starting. It cancels each
+test subscription afterward, hides these test sellers from the persona picker,
+and saves evidence under `qa/2026-10-13/`. All charges are sandbox-only. Stripe
+objects remain available for inspection.

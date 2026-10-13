@@ -35,6 +35,14 @@ and `pnpm dev` to start the example at http://localhost:5173. The example needs
 Node.js 22.12+ and a configured Convex development deployment; see
 [the example setup guide](example/README.md).
 
+The BetterStripe example separates visitor, customer, affiliate, seller, and
+platform-admin workflows. Its resumable Stripe sandbox fixtures populate sales,
+referrals, refunds, disputes, subscriptions, and payouts. Seller plans include
+monthly billing, actual Stripe fee reconciliation, and refund/dispute cost
+recovery. The example also demonstrates optional balance-funded subscriptions
+using Stripe's Accounts v2 preview. See the setup guide for consent requirements,
+renewal tests, and payment-recovery limitations.
+
 Builds and typechecks use TypeScript 7 (`@typescript/native` aliases
 `typescript`). ESLint and Convex code generation still need the TypeScript 6
 API, so `typescript` aliases Microsoft's `@typescript/typescript6` compatibility

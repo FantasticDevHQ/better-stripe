@@ -82,3 +82,35 @@ export const inspectPayment = internalAction({
     };
   },
 });
+
+export const inspectSale = internalAction({
+  args: { stripeSessionId: v.string() },
+  returns: v.object({
+    amount: v.number(),
+    paymentStatus: v.string(),
+    chargeId: v.string(),
+  }),
+  handler: async (_ctx, args) => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    const raw = new Stripe(env.STRIPE_SECRET_KEY!, {
+      apiVersion: "2026-09-30.endive",
+    });
+    const session = await raw.checkout.sessions.retrieve(args.stripeSessionId);
+    const paymentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
+    if (!paymentId) throw new Error("Checkout has no payment intent");
+    const payment = await raw.paymentIntents.retrieve(paymentId);
+    const chargeId =
+      typeof payment.latest_charge === "string"
+        ? payment.latest_charge
+        : payment.latest_charge?.id;
+    if (!chargeId) throw new Error("Checkout has no charge");
+    return {
+      amount: payment.amount_received,
+      paymentStatus: session.payment_status,
+      chargeId,
+    };
+  },
+});

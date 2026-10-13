@@ -109,6 +109,8 @@ export function Invoices() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      nativeButton={false}
+                      role="link"
                       render={
                         <a
                           href={invoice.hostedInvoiceUrl}

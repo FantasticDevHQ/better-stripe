@@ -1,3 +1,7 @@
+import { useSearchParams } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SellerOnboarding } from "./onboarding";
+import { SellerMarketplaceAccount } from "./marketplace-account";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,7 +23,7 @@ import { Button } from "@/components/ui/button";
 
 import { api } from "../../../convex/_generated/api";
 
-export function SellerAccount() {
+function AccountDetails() {
   const { currentUser } = useRole();
   const createLoginLink = useAction(api.actions.createSellerLoginLink);
   const [pending, setPending] = useState(false);
@@ -41,11 +45,14 @@ export function SellerAccount() {
   if (account === null) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Account Settings</h1>
+        <h2 className="text-xl font-semibold">Account details</h2>
         <Alert>
           <AlertDescription>
             No data found for a Stripe Connect account. Visit the{" "}
-            <a href="/seller/onboarding" className="text-primary underline">
+            <a
+              href="/seller/account?section=setup"
+              className="text-primary underline"
+            >
               onboarding page
             </a>{" "}
             to create one.
@@ -60,7 +67,7 @@ export function SellerAccount() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Account Settings</h1>
+      <h2 className="text-xl font-semibold">Account details</h2>
       <p className="text-muted-foreground">
         Manage your Stripe Connect account details and access your Express
         dashboard.
@@ -157,6 +164,48 @@ export function SellerAccount() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+export function SellerAccount() {
+  const [params, setParams] = useSearchParams();
+  const selected = params.get("section");
+  const section =
+    selected === "setup" || selected === "stripe-settings"
+      ? selected
+      : "details";
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Account</h1>
+        <p className="mt-1 text-muted-foreground">
+          Manage your store's Stripe account, setup, and payment capabilities.
+        </p>
+      </div>
+      <Tabs
+        value={section}
+        onValueChange={(value) => {
+          const next = new URLSearchParams(params);
+          next.set("section", String(value));
+          setParams(next);
+        }}
+      >
+        <TabsList className="max-w-full">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="setup">Setup</TabsTrigger>
+          <TabsTrigger value="stripe-settings">Stripe settings</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details" className="pt-4">
+          <AccountDetails />
+        </TabsContent>
+        <TabsContent value="setup" className="pt-4">
+          <SellerOnboarding embedded />
+        </TabsContent>
+        <TabsContent value="stripe-settings" className="pt-4">
+          <SellerMarketplaceAccount embedded />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -5,53 +5,32 @@ import { Menu, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { type Role, useRole } from "@/providers/role-context";
+import { useRole } from "@/providers/role-context";
 import { Link, NavLink } from "react-router-dom";
 
-interface NavItem {
-  label: string;
-  to: string;
-  end?: boolean;
-}
+import { NAV_ITEMS } from "@/lib/role-navigation";
 
-const NAV_ITEMS: Record<Role, NavItem[]> = {
-  customer: [
-    { label: "Dashboard", to: "/dashboard", end: true },
-    { label: "Billing", to: "/dashboard/billing" },
-    { label: "Invoices", to: "/dashboard/invoices" },
-    { label: "Payment Methods", to: "/dashboard/payment-methods" },
-    { label: "Affiliate Split", to: "/marketplace/split" },
-    { label: "Destination Charge + Fee", to: "/demo/destination-charge" },
-    { label: "Store Subscription", to: "/demo/subscribe" },
-    { label: "Store Earnings", to: "/demo/store-earnings" },
-  ],
-  seller: [
-    { label: "Earnings", to: "/seller", end: true },
-    { label: "Products", to: "/seller/products" },
-    { label: "Onboarding", to: "/seller/onboarding" },
-    { label: "Payouts", to: "/seller/payouts" },
-    { label: "Disputes", to: "/seller/disputes" },
-    { label: "Refunds & reversals", to: "/seller/refunds" },
-    { label: "Account", to: "/seller/account" },
-    { label: "Marketplace Account", to: "/seller/marketplace-account" },
-  ],
-  admin: [
-    { label: "Overview", to: "/admin", end: true },
-    { label: "Products", to: "/admin/products" },
-    { label: "Subscriptions", to: "/admin/subscriptions" },
-    { label: "Webhooks", to: "/admin/webhooks" },
-    { label: "Testing", to: "/admin/testing" },
-    { label: "Setup", to: "/admin/setup" },
-  ],
-  // Visitor has no Stripe account yet — they see the customer surface, which
-  // renders pre-onboarding empty-states and CTAs rather than billing data.
-  visitor: [
-    { label: "Dashboard", to: "/dashboard", end: true },
-    { label: "Billing", to: "/dashboard/billing" },
-    { label: "Invoices", to: "/dashboard/invoices" },
-    { label: "Payment Methods", to: "/dashboard/payment-methods" },
-  ],
-};
+function StoreSelector() {
+  const { currentRole, currentUser, sellers, setSeller } = useRole();
+  if (currentRole !== "seller") return null;
+  return (
+    <label className="mb-4 block space-y-2">
+      <span className="text-muted-foreground text-xs font-medium">Store</span>
+      <select
+        aria-label="Seller persona"
+        className="border-input bg-background w-full min-w-0 rounded-md border px-2 py-2 text-sm"
+        value={currentUser.id}
+        onChange={(event) => setSeller(event.target.value)}
+      >
+        {sellers.map((seller) => (
+          <option key={seller.id} value={seller.id}>
+            {seller.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 export function NavSidebar() {
   const { currentRole } = useRole();
@@ -91,11 +70,9 @@ export function NavSidebar() {
         </NavLink>
         <Separator className="my-4" />
         <div className="text-muted-foreground mb-4 text-xs font-semibold tracking-wider uppercase">
-          {currentRole === "customer" && "Customer"}
-          {currentRole === "seller" && "Seller"}
-          {currentRole === "admin" && "Admin"}
-          {currentRole === "visitor" && "Visitor"}
+          {currentRole}
         </div>
+        <StoreSelector />
         <ul className="space-y-1">
           {items.map((item) => (
             <li key={item.to}>
@@ -136,7 +113,7 @@ export function NavSidebar() {
             aria-label="Mobile navigation"
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-semibold">BetterTees</span>
+              <span className="font-semibold">BetterStripe</span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -157,6 +134,7 @@ export function NavSidebar() {
               Home
             </Link>
             <Separator className="my-4" />
+            <StoreSelector />
             <ul className="space-y-1">
               {items.map((item) => (
                 <li key={item.to}>

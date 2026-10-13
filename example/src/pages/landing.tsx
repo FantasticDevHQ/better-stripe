@@ -1,6 +1,7 @@
-import { useState } from "react";
-
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/empty-state";
+import { useQuery } from "convex/react";
+import { Link, useSearchParams } from "react-router-dom";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,132 +10,116 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  IntervalSelector,
-  PriceBadge,
-} from "@fantastic.dev/better-stripe/react";
-import { useQuery } from "convex/react";
-import { Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
-import { api } from "../../convex/_generated/api";
+import { useRole } from "@/providers/role-context";
+import { isAffiliateReferral } from "../../convex/affiliateSplit";
 
 export function Landing() {
-  const navigate = useNavigate();
-  const [interval, setInterval] = useState<"month" | "year">("month");
-
-  const productsWithPrices = useQuery(api.queries.listProductsWithPrices);
-
-  // Flatten all active prices from all active products
-  const allPrices =
-    productsWithPrices
-      ?.filter((p) => p.active)
-      .flatMap((product) =>
-        product.prices
-          .filter((price) => price.active)
-          .map((price) => ({
-            ...price,
-            productName: product.name,
-          })),
-      ) ?? [];
-
-  // Filter by selected interval (show recurring prices for the interval + one-time prices)
-  const filteredPrices = allPrices.filter(
-    (p) => p.interval === interval || p.type === "one_time",
+  const stores = useQuery(api.storefront.listStores);
+  const [params] = useSearchParams();
+  const { currentRole } = useRole();
+  const referral = params.get("ref");
+  const storeId = params.get("store");
+  const visibleStores = stores?.filter(
+    (store) => !storeId || store.accountId === storeId,
   );
-
+  const canBuy = currentRole === "visitor" || currentRole === "customer";
   return (
-    <div className="space-y-16">
-      {/* Hero */}
-      <div className="space-y-4 py-16 text-center">
-        <h1 className="text-5xl font-bold tracking-tight">
-          Premium tees, made for you
-        </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          Get premium tees or start selling as a partner. Subscribe for
-          exclusive drops and early access.
+    <div className="mx-auto max-w-5xl space-y-8">
+      <div className="space-y-3 py-8">
+        <h1 className="text-4xl font-bold">Shop our sellers</h1>
+        <p className="text-muted-foreground">
+          Buy directly from a seller. Choose a one-time purchase or a
+          subscription. Guests are welcome.
         </p>
       </div>
-
-      {/* Pricing */}
-      <div className="mx-auto max-w-4xl space-y-8">
-        <h2 className="text-center text-3xl font-bold">
-          Simple, transparent pricing
-        </h2>
-
-        <div className="flex justify-center">
-          <IntervalSelector
-            value={interval}
-            onChange={setInterval}
-            monthLabel="Monthly"
-            yearLabel="Yearly"
-          />
-        </div>
-
-        {productsWithPrices === undefined ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-4 w-40" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : filteredPrices.length === 0 ? (
-          <Alert>
-            <Sparkles className="h-4 w-4" />
-            <AlertDescription>
-              No data found for this billing interval. Check back soon.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {filteredPrices.map((price) => (
-              <Card key={price._id}>
-                <CardHeader>
-                  <CardTitle>{price.productName}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <PriceBadge
-                    unitAmount={price.unitAmount}
-                    currency={price.currency}
-                    interval={
-                      price.type === "one_time"
-                        ? null
-                        : (price.interval ?? null)
-                    }
-                  />
-
-                  {typeof price.metadata?.trialDays === "string" && (
-                    <p className="text-muted-foreground text-sm">
-                      {price.metadata.trialDays}-day free trial
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      navigate(`/checkout?priceId=${price.stripePriceId}`)
-                    }
-                  >
-                    Get Started
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      {isAffiliateReferral(referral) && (
+        <Alert>
+          <AlertDescription>
+            Referred by Avery Affiliate. Avery earns 20% of the sale after the
+            platform fee, at no extra cost to you.
+          </AlertDescription>
+        </Alert>
+      )}
+      {!canBuy && (
+        <p className="text-muted-foreground">
+          Choose Customer or Visitor above to make a purchase.
+        </p>
+      )}
+      {stores === undefined ? (
+        <Skeleton className="h-48 w-full" />
+      ) : !visibleStores?.length ? (
+        <Alert>
+          <AlertDescription>
+            <EmptyState>No stores are available yet.</EmptyState>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        visibleStores.map((store) => (
+          <section key={store.accountId} className="space-y-4">
+            <h2 className="text-2xl font-semibold">{store.name}</h2>
+            {!store.products.length && (
+              <p className="text-muted-foreground">
+                No products available yet.
+              </p>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {store.products.flatMap((product) =>
+                product.prices.map((price) => {
+                  const query = new URLSearchParams({
+                    priceId: price.stripePriceId,
+                  });
+                  if (referral) query.set("ref", referral);
+                  return (
+                    <Card key={price.stripePriceId}>
+                      <CardHeader>
+                        <CardTitle>{product.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-muted-foreground text-sm">
+                          {product.description}
+                        </p>
+                        <p className="text-xl font-semibold">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: price.currency.toUpperCase(),
+                          }).format(price.unitAmount / 100)}
+                          {price.interval
+                            ? ` / ${price.interval}`
+                            : " one time"}
+                        </p>
+                      </CardContent>
+                      <CardFooter>
+                        {canBuy ? (
+                          <Button
+                            nativeButton={false}
+                            role="link"
+                            render={
+                              <Link
+                                to={`/checkout?${query}`}
+                                aria-label={`${price.type === "recurring" ? "Subscribe to" : "Buy"} ${product.name}`}
+                              />
+                            }
+                          >
+                            {price.type === "recurring"
+                              ? "Subscribe"
+                              : "Buy now"}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            Switch to Customer or Visitor to buy
+                          </span>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  );
+                }),
+              )}
+            </div>
+          </section>
+        ))
+      )}
     </div>
   );
 }

@@ -101,7 +101,7 @@ export async function processEvent(
     case "payout.updated":
     case "payout.paid":
     case "payout.failed":
-      await handlePayoutEvent(whCtx, obj as Stripe.Payout);
+      await handlePayoutEvent(whCtx, obj as Stripe.Payout, event.account);
       break;
     case "refund.created":
     case "refund.updated":
@@ -923,13 +923,18 @@ async function upsertPaymentFromStripe(
 async function handlePayoutEvent(
   whCtx: WebhookContext,
   payout: Stripe.Payout,
+  connectedAccountId?: string,
 ): Promise<void> {
   await dispatchUpsert(whCtx, "payoutUpserted", {
     stripePayoutId: payout.id,
     accountId:
-      typeof payout.destination === "string"
+      connectedAccountId ??
+      (payout.metadata?.accountId?.startsWith("acct_")
+        ? payout.metadata.accountId
+        : undefined) ??
+      (typeof payout.destination === "string"
         ? payout.destination
-        : (payout.destination?.id ?? ""),
+        : (payout.destination?.id ?? "")),
     amount: payout.amount,
     currency: payout.currency,
     status: payout.status as

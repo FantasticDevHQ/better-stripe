@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppCommandMenu } from "./app-command-menu";
 
+vi.mock("@/providers/role-context", () => ({
+  useRole: () => ({ currentRole: "admin" }),
+}));
+
 const navigate = vi.hoisted(() => vi.fn());
 
 vi.mock("react-router-dom", () => ({
@@ -48,7 +52,7 @@ describe("AppCommandMenu", () => {
     render(<AppCommandMenu />);
     fireEvent.keyDown(document, { key: "k", metaKey: true });
 
-    fireEvent.click(screen.getByRole("button", { name: "Admin overview" }));
+    fireEvent.click(screen.getByRole("button", { name: "Overview" }));
 
     expect(navigate).toHaveBeenCalledWith("/admin");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

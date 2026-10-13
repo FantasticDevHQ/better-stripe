@@ -4,28 +4,28 @@ import { NavSidebar } from "@/components/nav-sidebar";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { Separator } from "@/components/ui/separator";
 import { useRole } from "@/providers/role-context";
-import { Outlet } from "react-router-dom";
+import { canVisit, roleHome } from "@/lib/role-navigation";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
 
 export function AppShell() {
-  const { currentUser } = useRole();
+  const { currentUser, currentRole } = useRole();
+  const location = useLocation();
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
       <AppCommandMenu />
       {/* Header */}
-      <header className="flex items-center justify-between py-3 pr-6 pl-20 md:px-6">
+      <header className="flex flex-wrap gap-3 items-center justify-between py-3 pr-6 pl-20 md:px-6">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold">BetterTees</span>
-          <span className="text-muted-foreground text-xs">
-            better-stripe example
-          </span>
+          <span className="text-lg font-bold">BetterStripe</span>
+          <span className="text-muted-foreground text-xs">example</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <RoleSwitcher />
           <span className="text-muted-foreground text-sm">
             {currentUser.name}
           </span>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -34,8 +34,12 @@ export function AppShell() {
       {/* Body */}
       <div className="flex flex-1">
         <NavSidebar />
-        <main className="flex-1 p-6">
-          <Outlet />
+        <main className="min-w-0 flex-1 p-6">
+          {canVisit(currentRole, location.pathname) ? (
+            <Outlet key={currentUser.id || currentRole} />
+          ) : (
+            <Navigate to={roleHome(currentRole)} replace />
+          )}
         </main>
       </div>
     </div>

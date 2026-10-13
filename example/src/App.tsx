@@ -9,12 +9,11 @@ import { Checkout } from "@/pages/checkout";
 import { CheckoutStatusPage } from "@/pages/checkout-status";
 import { StoreSubscribe } from "@/pages/demo/subscribe";
 import { StoreEarnings } from "@/pages/demo/store-earnings";
-import { DestinationChargeDemo } from "@/pages/demo/destination-charge";
+import { SellerSales } from "@/pages/seller/sales";
+import { SellerPlan } from "@/pages/seller/plan";
 import { SellerAccount } from "@/pages/seller/account";
 import { SellerHome } from "@/pages/seller/index";
 import { SellerDisputes } from "@/pages/seller/disputes";
-import { SellerMarketplaceAccount } from "@/pages/seller/marketplace-account";
-import { SellerOnboarding } from "@/pages/seller/onboarding";
 import { Payouts } from "@/pages/seller/payouts";
 import { SellerProducts } from "@/pages/seller/products";
 import { SellerRefunds } from "@/pages/seller/refunds";
@@ -23,16 +22,32 @@ import { Dashboard } from "@/pages/dashboard/index";
 import { Invoices } from "@/pages/dashboard/invoices";
 import { PaymentMethods } from "@/pages/dashboard/payment-methods";
 import { Landing } from "@/pages/landing";
-import { AffiliateSplitDemo } from "@/pages/marketplace/split";
+import { Affiliate, AffiliateSales, AffiliateLinks } from "@/pages/affiliate";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { RoleProvider } from "@/providers/role-context";
 import { Route, Routes } from "react-router-dom";
 
+function LegacySplit() {
+  const [params] = useSearchParams();
+  return <Navigate to={`/stores?${params}`} replace />;
+}
+
+function LegacyAccount({ section }: { section: "setup" | "stripe-settings" }) {
+  const [params] = useSearchParams();
+  const next = new URLSearchParams(params);
+  next.set("section", section);
+  return <Navigate to={`/seller/account?${next}`} replace />;
+}
 export default function App() {
   return (
     <RoleProvider>
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<Landing />} />
+          <Route path="/stores" element={<Landing />} />
+          <Route path="/affiliate" element={<Affiliate />} />
+          <Route path="/affiliate/sales" element={<AffiliateSales />} />
+          <Route path="/affiliate/links" element={<AffiliateLinks />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/status" element={<CheckoutStatusPage />} />
 
@@ -41,13 +56,10 @@ export default function App() {
           <Route path="/demo/store-earnings" element={<StoreEarnings />} />
 
           {/* Marketplace demos */}
-          <Route path="/marketplace/split" element={<AffiliateSplitDemo />} />
+          <Route path="/marketplace/split" element={<LegacySplit />} />
 
           {/* BTS-58 destination-charge + platform-fee demo (single recipient) */}
-          <Route
-            path="/demo/destination-charge"
-            element={<DestinationChargeDemo />}
-          />
+          <Route path="/demo/destination-charge" element={<LegacySplit />} />
 
           {/* Customer routes */}
           <Route path="/dashboard" element={<Dashboard />} />
@@ -59,16 +71,22 @@ export default function App() {
           />
 
           {/* Seller routes */}
+          <Route path="/seller/sales" element={<SellerSales />} />
+          <Route path="/seller/plan" element={<SellerPlan />} />
           <Route path="/seller" element={<SellerHome />} />
-          <Route path="/seller/onboarding" element={<SellerOnboarding />} />
+          <Route
+            path="/seller/onboarding"
+            element={<LegacyAccount section="setup" />}
+          />
           <Route path="/seller/payouts" element={<Payouts />} />
+          <Route path="/affiliate/payouts" element={<Payouts />} />
           <Route path="/seller/disputes" element={<SellerDisputes />} />
           <Route path="/seller/refunds" element={<SellerRefunds />} />
           <Route path="/seller/products" element={<SellerProducts />} />
           <Route path="/seller/account" element={<SellerAccount />} />
           <Route
             path="/seller/marketplace-account"
-            element={<SellerMarketplaceAccount />}
+            element={<LegacyAccount section="stripe-settings" />}
           />
 
           {/* Admin routes */}

@@ -1,3 +1,5 @@
+import { IntegrationExamples } from "@/components/integration-examples";
+import { ConnectExample } from "@/components/connect-example";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SellerOnboarding } from "./onboarding";
@@ -198,17 +200,26 @@ export function SellerAccount() {
         </TabsList>
         <TabsContent value="details">
           <div className="pt-4">
-            <AccountDetails />
+            <IntegrationExamples
+              headless={<AccountDetails />}
+              embedded={<ConnectExample kind="account" />}
+            />
           </div>
         </TabsContent>
         <TabsContent value="setup">
           <div className="pt-4">
-            <SellerOnboarding embedded />
+            <IntegrationExamples
+              headless={<SellerOnboarding embedded />}
+              embedded={<ConnectExample kind="onboarding" />}
+            />
           </div>
         </TabsContent>
         <TabsContent value="stripe-settings">
           <div className="pt-4">
-            <SellerMarketplaceAccount embedded />
+            <IntegrationExamples
+              headless={<SellerMarketplaceAccount embedded />}
+              embedded={<ConnectExample kind="notifications" />}
+            />
           </div>
         </TabsContent>
       </Tabs>

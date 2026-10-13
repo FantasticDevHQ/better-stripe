@@ -139,7 +139,14 @@ export const checkoutParticipants = internalQuery({
 export const listStoreSubscriptions = query({
   args: { sellerId: v.id("users") },
   returns: v.array(
-    v.object({ stripeSubscriptionId: v.string(), status: v.string() }),
+    v.object({
+      stripeSubscriptionId: v.string(),
+      status: v.string(),
+      isTrialing: v.boolean(),
+      cancelAtPeriodEnd: v.boolean(),
+      currentPeriodEnd: v.optional(v.string()),
+      trialEnd: v.optional(v.string()),
+    }),
   ),
   handler: async (ctx, args) => {
     const seller = await ctx.db.get("users", args.sellerId);
@@ -170,6 +177,10 @@ export const listStoreSubscriptions = query({
     return rows.flat(2).map((s) => ({
       stripeSubscriptionId: s.stripeSubscriptionId,
       status: s.status,
+      isTrialing: s.isTrialing,
+      cancelAtPeriodEnd: s.cancelAtPeriodEnd,
+      currentPeriodEnd: s.currentPeriodEnd,
+      trialEnd: s.trialEnd,
     }));
   },
 });

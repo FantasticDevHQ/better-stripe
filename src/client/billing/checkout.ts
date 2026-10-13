@@ -114,7 +114,7 @@ export async function createCheckoutSession(
     orgId?: string;
     stripePriceId: string;
     mode: "payment" | "subscription" | "setup";
-    uiMode?: "embedded" | "redirect";
+    uiMode?: "embedded" | "redirect" | "custom" | "form";
     quantity?: number;
     returnUrl: string;
     trialDays?: number;
@@ -295,8 +295,13 @@ export async function createCheckoutSession(
     sessionParams.payment_intent_data = paymentIntentData;
   }
 
-  if (uiMode === "embedded") {
-    sessionParams.ui_mode = "embedded_page";
+  if (uiMode === "embedded" || uiMode === "custom" || uiMode === "form") {
+    sessionParams.ui_mode =
+      uiMode === "custom"
+        ? "elements"
+        : uiMode === "form"
+          ? "form"
+          : "embedded_page";
     sessionParams.return_url = opts.returnUrl;
   } else {
     sessionParams.success_url = `${opts.returnUrl}?session_id={CHECKOUT_SESSION_ID}`;

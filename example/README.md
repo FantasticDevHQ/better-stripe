@@ -432,9 +432,9 @@ The session's mode is derived server-side in
 
 The live marketplace suite checks every role's pages, guest referred checkout, direct customer checkout, and a customer subscription with pause/resume. Payments use Stripe's synthetic Visa and the configured sandbox. Tests read the stored checkout identity and actual Stripe payment or transfer ledger before asserting success.
 
-Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring plans open subscription checkout; one-time prices open payment checkout. The return page displays the purchased product. Customer billing is scoped to that customer's ID, while seller subscriptions and earnings use the store selected in the header.
+Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring plans open subscription checkout; one-time prices open payment checkout. The return page displays the purchased product. Customer billing is scoped to that customer's ID, while seller subscriptions and earnings use the store selected in the seller sidebar.
 
-Avery's referral links are on `/affiliate`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives 20% of the remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
+Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives 20% of the remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
 
 The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials. See [October 13 QA](QA-2026-10-13.md) for amounts, evidence, and coverage limits.
 
@@ -544,7 +544,7 @@ Manual QA (until the live-E2E spec is verified against a real deployment):
 
 #### Direct seller payment (`e2e/destination-charge.spec.ts`)
 
-The legacy `/demo/destination-charge` route redirects to `/stores`. It no longer creates a checkout for a fixed seeded buyer. Direct seller checkout and actual application-fee assertions are in `e2e/marketplace-roles.spec.ts`: a $100 direct sale pays a $3.20 platform fee and leaves the seller $96.80.
+The legacy `/demo/destination-charge` route redirects to `/stores`. It no longer creates a checkout for a fixed seeded buyer. Direct seller checkout and actual application-fee assertions are in `e2e/marketplace-roles.spec.ts`: a $100 direct Starter-plan sale has a $9 inclusive sale fee. If Stripe processing is $3.20, the platform retains $5.80 and the seller receives $91.00.
 
 #### Refunds & reversals (`e2e/refunds-reversals.spec.ts`)
 
@@ -797,3 +797,100 @@ The test refreshes webhook event subscriptions before starting. It cancels each
 test subscription afterward, hides these test sellers from the persona picker,
 and saves evidence under `qa/2026-10-13/`. All charges are sandbox-only. Stripe
 objects remain available for inspection.
+
+## Compare integration styles
+
+The example is a developer reference. Supported workflows expose a presentation
+switch without changing the active persona, store, referral code, or account:
+
+| Workflow                              | Headless example                                            | Package components                  | Stripe UI alternative                                          |
+| ------------------------------------- | ----------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
+| Seller and affiliate earnings         | Custom earnings cards and ledger                            | `EarningsSummary`                   | Connect Balances                                               |
+| Seller and affiliate payouts          | Live balances, upcoming payouts, paginated history          | `PayoutSchedule`                    | Connect Payouts                                                |
+| Seller sales                          | Platform sale ledger and actual fee breakdown               | —                                   | Connect Payments for connected-account charges                 |
+| Seller refunds                        | API refund controls and seller cost recovery                | —                                   | Refund management in Connect Payments                          |
+| Seller disputes                       | `DisputesList`, `DisputeDetail`, and `EvidenceForm`         | Used by the headless view           | Connect Disputes List                                          |
+| Seller Account → Details              | API account details                                         | Account helpers and requirements    | Connect Account Management                                     |
+| Seller Account → Setup                | API-backed onboarding controls                              | Account onboarding helpers          | Connect Account Onboarding                                     |
+| Seller Account → Stripe settings      | API configuration controls                                  | Account configuration controls      | Connect Notification Banner                                    |
+| Seller/admin products                 | API catalog management                                      | `PriceCard` render props            | No Connect product catalog embed                               |
+| Seller/customer/admin subscriptions   | API subscriber and subscription controls                    | `SubscriptionCard`                  | Hosted Billing Portal for the customer or seller's own billing |
+| Customer invoices and payment methods | API-backed lists and controls                               | Existing billing/payment components | Hosted Billing Portal                                          |
+| Seller billing                        | Store plan, invoice estimate, balance-payment authorization | Existing plan and payment controls  | Hosted Billing Portal                                          |
+
+Use `?example=headless`, `?example=components`, `?example=embedded`, or
+`?example=hosted` for the modes available on a page. Only the active implementation
+mounts. Account Session creation resolves the account from the selected persona
+on the server and enables only the requested component. Affiliates cannot request
+seller payment, refund, or dispute features. Switching stores or themes recreates
+the embedded provider for the correct account and appearance.
+
+The marketplace uses **separate charges and transfers**: the platform owns the
+charge and transfers earnings to seller and affiliate accounts. Connect Payments
+and Disputes show connected-account charges and supported destination charges;
+they do not turn the platform's separate-charge ledger into seller-owned charges.
+Use Headless to manage those marketplace purchases. The embedded example explains
+this boundary and reports account/session eligibility errors with a Retry action.
+Do not compare an empty connected-account payment list with the platform ledger
+as though they were the same dataset.
+
+Products and subscription catalogs have no Connect embedded management component.
+The Components views demonstrate the package's React primitives against the same
+catalog and subscription data. Catalog mutations and subscription actions remain
+in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
+See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).
+
+### Choose a checkout type
+
+Open any seller product's checkout to compare these integrations. Each option
+shows its API, pros, cons, and official documentation before the payment form.
+`Stripe.js` is the browser SDK initialized with a publishable key; it is not a
+separate server-side payment API. Secret keys stay in the Convex backend.
+
+| Checkout type                       | Backend and frontend                                                                               | Advantages                                                                                              | Tradeoffs                                                                                                             |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Hosted Checkout                     | Checkout Sessions with a redirect to Stripe                                                        | Low maintenance; complete checkout and subscription UI                                                  | Redirects away from the app; limited layout control                                                                   |
+| Embedded Checkout                   | Checkout Sessions `uiMode: "embedded"` → `embedded_page`; package `EmbeddedCheckout`               | Complete Stripe checkout inside the app                                                                 | Stripe controls the checkout form layout                                                                              |
+| Payment Element + Checkout Sessions | `uiMode: "custom"` → `elements`; `CheckoutSessionProvider`, `PaymentElement`, `useCheckoutSession` | Custom page with Checkout Session orchestration; Stripe's recommended custom integration for most cases | App supplies order summary, contact fields, confirmation controls, and error UI                                       |
+| Payment Element + Payment Intents   | Payment Intents API; `StripeProvider`, Stripe.js Elements and `confirmPayment`                     | Lower-level control of payment lifecycle and capture                                                    | App owns pricing, tax, shipping, discounts, and subscription orchestration; this example accepts one-time prices only |
+| Embedded Checkout Form              | `uiMode: "form"`; Stripe `CheckoutFormProvider` and `CheckoutForm`                                 | Compact prebuilt form with Appearance API customization                                                 | Public preview; availability may differ by sandbox                                                                    |
+
+Deep-link a checkout with
+`?priceId=<price>&ref=avery&checkout=redirect|embedded|custom|payment-intent|form`.
+Switching types preserves the product and referral attribution. Each type creates
+its own Stripe session or intent; switching does not confirm a payment. Hosted
+Checkout opens only when you choose Continue to Stripe Checkout.
+
+The Payment Intent action reads the price and store eligibility from the server,
+rejects recurring or inactive prices, uses a stable per-attempt idempotency key,
+and writes the same store/affiliate metadata as Checkout Sessions. Successful
+payments go through the same webhook settlement and actual Stripe fee accounting.
+Receipts use server-side webhook state, including `/checkout/status?payment_intent=pi_…`
+for Payment Intent purchases. A bare PaymentIntent does not create a recurring
+subscription, so choose one of the Checkout Session flows for recurring products.
+
+Connect embedded components manage connected accounts; they do not provide a
+shopper checkout. Wallet buttons and Payment Links are additional payment entry
+points rather than different APIs demonstrated by this chooser. See
+[Stripe Checkout](https://docs.stripe.com/payments/checkout),
+[Payment Element](https://docs.stripe.com/payments/payment-element), and
+[Payment Intents](https://docs.stripe.com/payments/payment-intents).
+
+### Test the integration examples
+
+After sandbox setup and fixture seeding, run the opt-in browser checks from
+`example/` with the app running:
+
+```sh
+E2E_LIVE_BACKEND=1 E2E_HEADLESS=1 pnpm exec playwright test \
+  e2e/integration-examples.spec.ts e2e/checkout-methods.spec.ts --workers=1
+```
+
+The checkout checks create real Stripe sandbox purchases for all five types,
+including guest referral attribution. They wait for webhook confirmation and
+verify settled seller and affiliate transfers and that actual Stripe fees,
+platform revenue, commissions, seller earnings, and recovered costs reconcile.
+These purchases remain in your sandbox. Omit `E2E_HEADLESS=1` to watch checkout
+in a browser; use `E2E_PORT` when your dev server uses a different port. The
+component checks initialize each scoped Stripe embed and exercise the checkout
+chooser. They do not submit refunds or dispute evidence.

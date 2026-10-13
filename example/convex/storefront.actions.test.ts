@@ -1,3 +1,5 @@
+const intentRaw = vi.hoisted(() => ({ paymentIntents: { create: vi.fn() } }));
+vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => intentRaw }));
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +20,11 @@ const modules = import.meta.glob("./**/*.*s");
 const mock = vi.mocked(stripe);
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_unit");
+  intentRaw.paymentIntents.create.mockResolvedValue({
+    id: "pi_store",
+    client_secret: "test_client_secret",
+  });
   mock.getPriceByStripeId.mockResolvedValue({
     active: true,
     type: "one_time",
@@ -154,4 +161,46 @@ it("rejects customer access to seller subscriber lists", async () => {
   await expect(
     t.query(api.storefront.listStoreSubscriptions, { sellerId: ids.customer }),
   ).rejects.toThrow(/seller/i);
+});
+
+it("creates Payment Intents from server prices with the same referral settlement metadata", async () => {
+  const { t, ids } = await setup();
+  await t.action(api.checkoutExamples.createPaymentIntent, {
+    userId: ids.customer,
+    stripePriceId: "price_store",
+    referralCode: "avery",
+    requestId: "checkout-request-123",
+  });
+  expect(intentRaw.paymentIntents.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      amount: 12900,
+      currency: "usd",
+      metadata: expect.objectContaining({
+        storeBilling: "sale_v1",
+        sellerId: ids.seller,
+        userId: ids.customer,
+        affiliateAccountId: "acct_affiliate",
+      }),
+    }),
+    {
+      idempotencyKey: `example_pi_${ids.customer}_price_store_checkout-request-123`,
+    },
+  );
+});
+it("rejects recurring prices for the one-time Payment Intent example", async () => {
+  const { t } = await setup();
+  mock.getPriceByStripeId.mockResolvedValue({
+    active: true,
+    type: "recurring",
+    stripeProductId: "prod_store",
+    unitAmount: 12900,
+    currency: "usd",
+  } as never);
+  await expect(
+    t.action(api.checkoutExamples.createPaymentIntent, {
+      stripePriceId: "price_store",
+      requestId: "checkout-request-123",
+    }),
+  ).rejects.toThrow(/one-time/);
+  expect(intentRaw.paymentIntents.create).not.toHaveBeenCalled();
 });

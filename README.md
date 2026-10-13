@@ -61,11 +61,11 @@ pnpm codegen:example    # regen example/convex/_generated only
 
 All three require a configured dev deployment (`CONVEX_DEPLOYMENT` env var, normally set by a prior `npx convex dev`). They write only the local `_generated/` files — they don't push code or data to the deployment.
 
-**CI gate (BTS-104 / BTS-111 / BTS-112).** Two layers verify the committed files are not stale:
+**CI gate.** Two layers verify the committed files are not stale:
 
 1. **Structural drift check** (`pnpm codegen:check`, always runs in CI): two independent scans, each checking both directions (every source export appears in the generated file, and every generated entry still has a matching source), neither needing a deployment:
-   - Library component — scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. This is the [BTS-31](https://linear.app/dojoco/issue/BTS-31)/[BTS-50](https://linear.app/dojoco/issue/BTS-50) and [BTS-74](https://linear.app/dojoco/issue/BTS-74) incident class. The reverse direction also flags a stale entry left behind by a *deleted* query/mutation/action (BTS-112). The export-detection regex intentionally matches only direct `query(...)`/`mutation(...)`/`action(...)` exports — not wrapper or re-export forms like `customQuery(...)` (convex-helpers) or `export { fn as name }`, which this component has none of today; widen the regex (and the reverse scan) rather than assuming that stays true.
-   - Example app — scans `example/convex/**/*.ts` and verifies every source module is imported and registered in `example/convex/_generated/api.ts`. Catches the common case of adding a new `example/convex/<module>.ts` (or nested file like `example/convex/lib/<module>.ts`) without regenerating (BTS-111). The reverse direction likewise flags a stale import left behind by a *deleted* module (BTS-112).
+   - Library component — scans `src/component/**/*.{queries,mutations,actions}.ts` and verifies every exported function appears in `src/component/_generated/component.ts`. The reverse direction also flags a stale entry left behind by a *deleted* query/mutation/action. The export-detection regex intentionally matches only direct `query(...)`/`mutation(...)`/`action(...)` exports — not wrapper or re-export forms like `customQuery(...)` (convex-helpers) or `export { fn as name }`, which this component has none of today; widen the regex (and the reverse scan) rather than assuming that stays true.
+   - Example app — scans `example/convex/**/*.ts` and verifies every source module is imported and registered in `example/convex/_generated/api.ts`. Catches the common case of adding a new `example/convex/<module>.ts` (or nested file like `example/convex/lib/<module>.ts`) without regenerating. The reverse direction likewise flags a stale import left behind by a *deleted* module.
 2. **Authoritative regen-and-diff** (runs in CI when `CONVEX_DEPLOYMENT` is configured): runs `pnpm codegen` against the configured dev deployment and fails if `git diff` shows changes. Catches every drift case, including validator-shape changes the structural check can't see. To enable on a fork, set the `CONVEX_DEPLOYMENT` repo secret to a dev deployment name and authorize the CI runner — see Convex's [GitHub Actions guide](https://docs.convex.dev/production/integration/deployments#github-actions).
 
 ### Relation to `@convex-dev/stripe`
@@ -96,12 +96,12 @@ See [Roadmap / Known Gaps](#roadmap--known-gaps) for what's still in flight.
 
 ## Roadmap / Known Gaps
 
-The marketplace economics layer described above — platform fees, the split engine, rolling payouts, dispute clawback/reinstate, refund fee/transfer reversal, and per-store statement descriptors — is **implemented and merged**, tracked as issues on the `BTS` team in Linear. This section lists what's honestly still open, by ticket, rather than letting the feature list overstate the current state:
+The marketplace economics layer includes platform fees, split transfers, rolling payouts, dispute recovery, refund reversals, and per-store statement descriptors. The former roadmap gaps are covered as follows:
 
-- **[BTS-67](https://linear.app/dojoco/issue/BTS-67)** — the first charge of every destination-charge subscription carries no per-store statement descriptor. Direct `charge_automatically` subscriptions (and Checkout subscription mode) finalize and pay their first invoice synchronously at creation, before the `invoice.created` handler that sets the descriptor can run. Later invoices are unaffected. A product-level `statement_descriptor` fix (which would cover the first charge too) is proposed but not built.
-- **[BTS-68](https://linear.app/dojoco/issue/BTS-68)** — investigating whether the fixed/tiered per-invoice platform fee has the same first-invoice gap as BTS-67 (same `invoice.created` timing), which would be a fee-revenue miss rather than a cosmetic one. Not yet confirmed or fixed.
-- **[BTS-63](https://linear.app/dojoco/issue/BTS-63)** — dispute clawback (`reverseTransfers`) retrying after a partial success can hit Stripe idempotency-key conflicts on the legs that already succeeded.
-- **[BTS-64](https://linear.app/dojoco/issue/BTS-64)** — the earnings/split ledger queries backing `useEarnings` and `useSplitBreakdown` (`listTransfersByAccount`, `listTransfersByCharge`) silently cap at 50 rows, which can understate gross/net totals for high-volume accounts or heavily-split sales.
+- **First subscription charge descriptor** — `createProduct` and `updateProduct` stamp the store's descriptor (or platform fallback) onto store-owned Stripe products. The product descriptor covers the first invoice for direct subscriptions and Checkout subscription mode; the invoice-time descriptor still takes precedence on later invoices. Existing products need `updateProduct` to receive the descriptor, and a later store descriptor change requires refreshing its products. Shared products have one descriptor and should not be reused across stores that need different descriptors.
+- **First-invoice fees** — finalized first invoices bypass the draft update window. At `invoice.paid`, the processor collects the fixed/tiered fee through a partial reversal of the destination transfer. Invoice markers and invoice-tagged reversals prevent duplicate collection, including recovery after a failed marker write. Renewals whose fees were set on the draft invoice are skipped.
+- **Dispute reversal retries** — reversal slices are claimed atomically before any Stripe call. Partial-success retries reuse the recorded amounts and idempotency keys, skip confirmed legs, and reconcile money already moved before a ledger-write failure.
+- **Earnings and split totals** — `useEarnings` reads exact server-side aggregates with bounded drill-down previews. `listTransfersByAccount` remains a preview API; do not sum it for financial totals. `listTransfersByCharge` now returns every original split leg by default, and reversal claims cover all of those legs. An explicit list limit requests a preview. Convex read/write/response limits fail loudly rather than silently truncate financial data.
 
 ## Installation
 
@@ -598,7 +598,7 @@ const { feeAmount, percentApplied, fixedApplied, tier } = computeFee(2999, {
 
 - **Percent-only** fees (`isPercentOnlyFee(config)` — no `fixed`, no `tiers`) map directly to Stripe's `application_fee_percent` on the subscription/PaymentIntent — no per-invoice computation needed.
 - **Fixed or tiered** fees can't be expressed as a flat Stripe percentage, so they're computed and applied per invoice (`applyPerInvoiceFee`, at `invoice.created`) or per one-time charge (`applyPerChargeFee`) in the webhook processor, via `application_fee_amount`.
-- This per-invoice path shares the same first-invoice timing gap as statement descriptors — see [BTS-68](#roadmap--known-gaps).
+- For synchronously finalized first invoices, `invoice.paid` collects the missed fixed/tiered fee through a partial destination-transfer reversal. See [first-invoice fee handling](#roadmap--known-gaps).
 
 Fees only apply to **destination charges** (`destinationAccountId` set, or a single-recipient `split`). The **separate-charges-and-transfers** path (multi-recipient `split`) never uses `application_fee` — the platform's cut is realized by transferring less than was charged (see Split Engine below).
 
@@ -690,7 +690,7 @@ await stripe.setAccountStatementDescriptor(ctx, {
 });
 ```
 
-Validated against Stripe's rules (`validateStatementDescriptorSuffix`: 1–22 chars, at least one Latin letter, no `< > \ ' " *`, no non-Latin — rejects rather than truncates) before writing. Resolution order per charge: the store's stored suffix → the platform's configured `statementDescriptorSuffix` default (constructor option) → none. One-time payments set the suffix directly on the PaymentIntent at checkout; subscriptions set it on each invoice via the webhook processor — see [BTS-67](#roadmap--known-gaps) for the one gap in that mechanism (the first subscription charge).
+Validated against Stripe's rules (`validateStatementDescriptorSuffix`: 1–22 chars, at least one Latin letter, no `< > \ ' " *`, no non-Latin — rejects rather than truncates) before writing. Resolution order per charge: the store's stored suffix → the platform's configured `statementDescriptorSuffix` default (constructor option) → none. One-time payments set the suffix directly on the PaymentIntent at checkout. Store-owned products carry the descriptor for subscriptions' first charges; the webhook processor sets it on later invoices. Refresh existing products with `updateProduct` after changing a store's descriptor.
 
 ## React Hooks
 
@@ -711,8 +711,8 @@ Read hooks are exported as factory functions that take the app's `useQuery` bind
 | `createUsePaymentMethods`    | `(accountId?)`                             | `{ methods, defaultMethod, isLoading }`                                                               |
 | `createUseInvoices`          | `({ userId?, subscriptionId?, status? }?)` | `{ invoices, isLoading }`                                                                             |
 | `createUseAccountOnboarding` | `(accountId?)`                             | `{ account, status, isReady, missingRequirements, isLoading }`                                        |
-| `createUseEarnings`          | `(accountId?)`                             | `{ gross, reversed, net, payouts, paidOut, transfers, isLoading }` — recipient balance/earnings (BTS-36) |
-| `createUseSplitBreakdown`    | `({ sourceChargeId?, saleAmount? })`       | `{ breakdown: { legs, store, affiliate, other, recipientsTotal, platform? } \| null, isLoading }` — per-sale split (BTS-36) |
+| `createUseEarnings`          | `(accountId?)`                             | `{ gross, reversed, net, payouts, paidOut, transfers, isLoading }` — recipient balance/earnings |
+| `createUseSplitBreakdown`    | `({ sourceChargeId?, saleAmount? })`       | `{ breakdown: { legs, store, affiliate, other, recipientsTotal, platform? } \| null, isLoading }` — per-sale split |
 | `createUseDisputes`          | `({ accountId?, status? }?)`               | `{ disputes, isLoading }`                                                                              |
 | `createUseDisputeWithCountdown` | `(stripeDisputeId?)`                    | `{ dispute, countdown: { dueBy?, daysRemaining?, isOverdue } \| null, isLoading }`                      |
 
@@ -919,7 +919,7 @@ views and responds to their own disputes via Stripe's embedded `disputes_list`
 **Dependencies:** the wrapper uses [`@stripe/react-connect-js`](https://www.npmjs.com/package/@stripe/react-connect-js) and [`@stripe/connect-js`](https://www.npmjs.com/package/@stripe/connect-js), which ship as regular dependencies of this package (same convention as `@stripe/react-stripe-js` / `@stripe/stripe-js`) -- no extra install step. ConnectJS components are client-only iframes; render them in client components.
 
 ```tsx
-// convex/stripe.ts — expose the account session (server side, BTS-30)
+// convex/stripe.ts — expose the account session (server side)
 export const createDisputeSession = action({
   args: { stripeAccountId: v.string() },
   handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),

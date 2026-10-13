@@ -21,7 +21,7 @@
 
 `pnpm --filter ./example run e2e:webhooks` — requires an authenticated Stripe CLI and a linked Convex dev deployment. Not CI-runnable. Run it before releases; it has caught real bugs that unit tests can't.
 
-It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2) the **money layer** (BTS-49) — drives real destination-charge/split/refund/dispute scenarios and asserts the persisted `payments`/`transfers` ledger (application_fee collected, N transfers per split, reversals). The money phase provisions test recipients via the BTS-9/10 activation recipe (`dashboard:none` + identity/ToS attestation; ToS date is RFC3339); it SKIPs (never falsely PASSes) if a live drive fails, and `E2E_SKIP_MONEY=1` runs the event phase only. See `example/README.md` → "Money-layer assertions".
+It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2) the **money layer** — drives real destination-charge/split/refund/dispute scenarios and asserts the persisted `payments`/`transfers` ledger (application_fee collected, N transfers per split, reversals). The money phase provisions test recipients via the recipient activation recipe (`dashboard:none` + identity/ToS attestation; ToS date is RFC3339); it SKIPs (never falsely PASSes) if a live drive fails, and `E2E_SKIP_MONEY=1` runs the event phase only. See `example/README.md` → "Money-layer assertions".
 
 ## Branches
 
@@ -30,6 +30,8 @@ It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2)
 
 ## Rules
 
+- Public READMEs, changelogs, migration guides, and other documentation must not include internal issue IDs or ticket-system links. Use descriptive feature names and public references instead.
+- Keep root and example READMEs current in the same change as features, public APIs, setup instructions, limitations, and releases. Verify roadmap claims against the implementation; move completed work out of planned or unresolved sections and document any remaining limitations accurately.
 - Make commits when asked; don't commit on your own initiative.
 - Tests accompany every change.
 - `plans/` holds advisor-written implementation plans — read `plans/README.md` before starting one.
@@ -39,4 +41,4 @@ It asserts two layers: (1) event coverage (webhook ledger + triggerLog), and (2)
 - V2 thin events are verified via `parseEventNotificationAsync`, not `constructEventAsync` — stripe-node v22 rejects thin payloads with the latter.
 - `userId: ""` is the unattributed-record sentinel, not a bug.
 - Sync triggers run in the same transaction as component upserts; a throw rolls back both.
-- Convex `_generated/` codegen is committed (under `src/component/_generated/` and `example/convex/_generated/`). `pnpm dev` regenerates it automatically when schema/functions change while the dev server is watching. If you change `src/component/` or `example/convex/` source without the dev server watching, or after a rebase, run `pnpm codegen` before committing. CI runs a structural drift check (`pnpm codegen:check`) on every PR that covers both the library component and the example app. It scans both directions, so it also flags a *deleted* function/module whose stale codegen entry lingers (BTS-112); its export-detection regex deliberately matches only direct `query`/`mutation`/`action` exports, not wrapper/re-export forms like `customQuery(...)` (none exist here today). Plus an authoritative regen-and-diff when the `CONVEX_DEPLOYMENT` secret is set — see README § "Regenerating codegen".
+- Convex `_generated/` codegen is committed (under `src/component/_generated/` and `example/convex/_generated/`). `pnpm dev` regenerates it automatically when schema/functions change while the dev server is watching. If you change `src/component/` or `example/convex/` source without the dev server watching, or after a rebase, run `pnpm codegen` before committing. CI runs a structural drift check (`pnpm codegen:check`) on every PR that covers both the library component and the example app. It scans both directions, so it also flags a *deleted* function/module whose stale codegen entry lingers; its export-detection regex deliberately matches only direct `query`/`mutation`/`action` exports, not wrapper/re-export forms like `customQuery(...)` (none exist here today). Plus an authoritative regen-and-diff when the `CONVEX_DEPLOYMENT` secret is set — see README § "Regenerating codegen".

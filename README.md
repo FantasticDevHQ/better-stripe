@@ -22,7 +22,7 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
 
    Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
 
-2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`.
+2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit.
 3. **Merging the release PR** is the release decision. The same run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
 
 Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.

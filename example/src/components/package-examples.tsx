@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import {
   PriceCard,
   SubscriptionCard,
   EarningsSummary,
   PayoutSchedule,
-  type RecipientBalance,
+  useWorkflowResource,
+  BillingPortal,
 } from "@fantastic.dev/better-stripe/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -160,25 +161,15 @@ function PayoutComponentsBody() {
   const { currentUser } = useRole();
   const earnings = useEarnings(currentUser.stripeAccountId);
   const load = useAction(api.actions.getAccountBalance);
-  const [balance, setBalance] = useState<RecipientBalance | null>(null);
-  const [error, setError] = useState<string>();
-  useEffect(() => {
-    let canceled = false;
-    if (currentUser.stripeAccountId)
-      void load({ stripeAccountId: currentUser.stripeAccountId })
-        .then((rows) => {
-          if (!canceled)
-            setBalance(
-              rows.find((row) => row.currency === "usd") ?? rows[0] ?? null,
-            );
-        })
-        .catch((error: unknown) => {
-          if (!canceled) setError(String(error));
-        });
-    return () => {
-      canceled = true;
-    };
-  }, [currentUser.stripeAccountId, load]);
+  const { data, error } = useWorkflowResource(
+    () =>
+      currentUser.stripeAccountId
+        ? load({ stripeAccountId: currentUser.stripeAccountId })
+        : Promise.resolve([]),
+    currentUser.stripeAccountId ?? "missing",
+  );
+  const balance =
+    data?.find((row) => row.currency === "usd") ?? data?.[0] ?? null;
   if (!currentUser.stripeAccountId)
     return <EmptyState>Set up your Stripe account to see payouts.</EmptyState>;
   return (
@@ -208,58 +199,49 @@ export function HostedBillingExample() {
   const { currentUser, currentRole } = useRole();
   const customerPortal = useAction(api.actions.createBillingPortalSession);
   const storePortal = useAction(api.storePlanActions.manage);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
   return (
     <Card>
       <CardHeader>
         <CardTitle>Stripe hosted Billing Portal</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <p>
-            Manage subscriptions, invoices, and saved payment methods in
-            Stripe's hosted portal. This opens a separate Stripe page; Connect
-            has no embedded customer billing or product catalog component.
-          </p>
-          {error && (
-            <Alert variant="destructive">
-              <AlertTitle>Portal unavailable</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+        <BillingPortal
+          scopeKey={currentUser.id}
+          createSession={() =>
+            currentRole === "seller"
+              ? storePortal({
+                  sellerId: currentUser.id as Id<"users">,
+                  returnUrl: window.location.href,
+                })
+              : customerPortal({
+                  stripeAccountId: currentUser.stripeAccountId!,
+                  returnUrl: window.location.href,
+                })
+          }
+        >
+          {({ open, isPending, error }) => (
+            <div className="space-y-4" aria-live="polite">
+              <p>
+                Manage subscriptions, invoices, and saved payment methods in
+                Stripe's hosted portal. This opens a separate Stripe page;
+                Connect has no embedded customer billing or product catalog
+                component.
+              </p>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTitle>Portal unavailable</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <Button
+                disabled={isPending || !currentUser.stripeAccountId}
+                onClick={() => void open()}
+              >
+                {isPending ? "Opening portal…" : "Open Stripe Billing Portal"}
+              </Button>
+            </div>
           )}
-          <Button
-            disabled={busy || !currentUser.stripeAccountId}
-            onClick={async () => {
-              setBusy(true);
-              setError(undefined);
-              try {
-                const result =
-                  currentRole === "seller"
-                    ? await storePortal({
-                        sellerId: currentUser.id as Id<"users">,
-                        returnUrl: window.location.href,
-                      })
-                    : await customerPortal({
-                        stripeAccountId: currentUser.stripeAccountId!,
-                        returnUrl: window.location.href,
-                      });
-                window.location.assign(
-                  typeof result === "string" ? result : result.url,
-                );
-              } catch (error) {
-                setError(
-                  error instanceof Error
-                    ? error.message
-                    : "Could not open the portal.",
-                );
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Opening portal…" : "Open Stripe Billing Portal"}
-          </Button>
-        </div>
+        </BillingPortal>
       </CardContent>
     </Card>
   );

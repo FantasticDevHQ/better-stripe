@@ -1,6 +1,11 @@
 import { SellerCosts } from "@/components/seller-costs";
 import { useSearchParams } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import {
+  PaymentDetails,
+  RefundHistory,
+  useRefunds,
+} from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -40,14 +45,6 @@ function formatDate(timestamp: number) {
   }).format(new Date(timestamp));
 }
 
-function parseCents(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const numeric = Number(trimmed);
-  if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  return Math.round(numeric * 100);
-}
-
 function Figure({
   label,
   value,
@@ -69,12 +66,6 @@ function Figure({
   );
 }
 
-type RefundResult = { stripeRefundId: string };
-type ReversalResult = {
-  reversals: { stripeTransferId: string; amount: number }[];
-  summary: { reversalCount: number; totalReversed: number };
-};
-
 export function SellerRefunds() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
@@ -84,24 +75,32 @@ export function SellerRefunds() {
   const reverseTransfers = useAction(api.actions.reverseSaleTransfers);
 
   const [params] = useSearchParams();
-  const [paymentIntentId, setPaymentIntentId] = useState(
-    params.get("payment_intent") ?? "",
-  );
-  const [refundAmount, setRefundAmount] = useState("");
-  const [sourceChargeId, setSourceChargeId] = useState(
-    params.get("charge_id") ?? "",
-  );
-  const [reversalAmount, setReversalAmount] = useState("");
-  const [refundResult, setRefundResult] = useState<RefundResult | null>(null);
-  const [reversalResult, setReversalResult] = useState<ReversalResult | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"refund" | "reversal" | null>(null);
+  const {
+    paymentIntentId,
+    setPaymentIntentId,
+    refundAmount,
+    setRefundAmount,
+    sourceChargeId,
+    setSourceChargeId,
+    reversalAmount,
+    setReversalAmount,
+    refundResult,
+    reversalResult,
+    error,
+    busy,
+    submitRefund,
+    submitReversal,
+  } = useRefunds({
+    scopeKey: currentUser.id,
+    paymentIntentId: params.get("payment_intent") ?? "",
+    sourceChargeId: params.get("charge_id") ?? "",
+    issueRefund: (args) => issueRefund({ ...args, userId: currentUser.id }),
+    reverseTransfers: (args) =>
+      reverseTransfers({ ...args, userId: currentUser.id }),
+  });
 
   const stripeAccountId = account?.stripeAccountId ?? undefined;
   const cleanPaymentIntentId = paymentIntentId.trim();
-  const cleanSourceChargeId = sourceChargeId.trim();
   const refundHistoryArgs = cleanPaymentIntentId
     ? {
         accountId: stripeAccountId,
@@ -124,69 +123,6 @@ export function SellerRefunds() {
     () => (refunds ?? []).reduce((sum, row) => sum + row.amount, 0),
     [refunds],
   );
-
-  async function submitRefund(kind: "full" | "partial") {
-    setError(null);
-    setRefundResult(null);
-    if (!cleanPaymentIntentId) {
-      setError("Enter a PaymentIntent id before issuing a refund.");
-      return;
-    }
-
-    const parsedAmountCents =
-      kind === "partial" ? parseCents(refundAmount) : undefined;
-    if (kind === "partial" && parsedAmountCents === null) {
-      setError("Enter a positive partial refund amount.");
-      return;
-    }
-
-    setBusy("refund");
-    try {
-      const result = await issueRefund({
-        userId: currentUser.id,
-        stripePaymentIntentId: cleanPaymentIntentId,
-        amountCents: parsedAmountCents ?? undefined,
-        reason: "requested_by_customer",
-      });
-      setRefundResult(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to issue refund.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function submitReversal(kind: "full" | "partial") {
-    setError(null);
-    setReversalResult(null);
-    if (!cleanSourceChargeId) {
-      setError("Enter a source charge id before reversing transfers.");
-      return;
-    }
-
-    const parsedAmountCents =
-      kind === "partial" ? parseCents(reversalAmount) : undefined;
-    if (kind === "partial" && parsedAmountCents === null) {
-      setError("Enter a positive partial reversal amount.");
-      return;
-    }
-
-    setBusy("reversal");
-    try {
-      const result = await reverseTransfers({
-        userId: currentUser.id,
-        sourceChargeId: cleanSourceChargeId,
-        amountCents: parsedAmountCents ?? undefined,
-      });
-      setReversalResult(result);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to reverse transfers.",
-      );
-    } finally {
-      setBusy(null);
-    }
-  }
 
   if (account === undefined) {
     return (
@@ -306,31 +242,28 @@ export function SellerRefunds() {
               {cleanPaymentIntentId && payment === undefined ? (
                 <Skeleton className="h-20 w-full" />
               ) : payment ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <Figure
-                    label="Charged"
-                    value={formatCurrency(payment.amount, payment.currency)}
-                    testId="refund-payment-amount"
-                  />
-                  <Figure
-                    label="Refunded"
-                    value={formatCurrency(
-                      payment.refundedAmount ?? 0,
-                      payment.currency,
-                    )}
-                    testId="refund-payment-refunded"
-                  />
-                  <Figure
-                    label="Status"
-                    value={payment.status}
-                    testId="refund-payment-status"
-                  />
-                  <Figure
-                    label="Refund state"
-                    value={payment.refundStatus ?? "none"}
-                    testId="refund-payment-refund-status"
-                  />
-                </div>
+                <PaymentDetails payment={payment}>
+                  {({ metrics }) => (
+                    <div className="grid grid-cols-2 gap-4">
+                      {metrics.map((metric) => (
+                        <Figure
+                          key={metric.key}
+                          label={metric.label}
+                          value={metric.value}
+                          testId={
+                            metric.key === "charged"
+                              ? "refund-payment-amount"
+                              : metric.key === "refunded"
+                                ? "refund-payment-refunded"
+                                : metric.key === "status"
+                                  ? "refund-payment-status"
+                                  : "refund-payment-refund-status"
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </PaymentDetails>
               ) : (
                 <p className="text-muted-foreground text-sm">
                   Enter a PaymentIntent id to inspect its recorded refund state.
@@ -365,46 +298,56 @@ export function SellerRefunds() {
               />
             </div>
 
-            {refunds === undefined ? (
-              <Skeleton className="h-32 w-full" />
-            ) : refunds.length === 0 ? (
-              <Alert data-testid="refund-history-empty">
-                <AlertTitle>No data yet</AlertTitle>
-                <AlertDescription>
-                  No refunds are recorded. Issue a refund or enter a
-                  PaymentIntent with refund webhooks to see history here.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Table data-testid="refunds-history">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Refund</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {refunds.map((refund) => (
-                    <TableRow key={refund.stripeRefundId}>
-                      <TableCell variant="identifier">
-                        {refund.stripeRefundId}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{refund.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(refund.amount, refund.currency)}
-                      </TableCell>
-                      <TableCell>{refund.reason ?? "unknown"}</TableCell>
-                      <TableCell>{formatDate(refund._creationTime)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <RefundHistory rows={refunds}>
+              {({ rows, isLoading, isEmpty }) =>
+                isLoading ? (
+                  <div role="status" aria-label="Loading refund history">
+                    <Skeleton className="h-32 w-full" />
+                  </div>
+                ) : isEmpty ? (
+                  <Alert data-testid="refund-history-empty">
+                    <AlertTitle>No data yet</AlertTitle>
+                    <AlertDescription>
+                      No refunds are recorded. Issue a refund or enter a
+                      PaymentIntent with refund webhooks to see history here.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Table data-testid="refunds-history">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Refund</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((refund) => (
+                        <TableRow key={refund.stripeRefundId}>
+                          <TableCell variant="identifier">
+                            {refund.stripeRefundId}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{refund.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(refund.amount, refund.currency)}
+                          </TableCell>
+                          <TableCell>{refund.reason ?? "unknown"}</TableCell>
+                          <TableCell>
+                            {refund._creationTime === undefined
+                              ? "Unknown"
+                              : formatDate(refund._creationTime)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )
+              }
+            </RefundHistory>
           </div>
         </CardContent>
       </Card>

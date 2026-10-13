@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import { DEFAULT_CONNECT_COUNTRIES as CONNECT_COUNTRIES } from "@fantastic.dev/better-stripe/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
+  useOnboarding,
   AccountCloseCard,
   ConnectStatusBadge,
 } from "@fantastic.dev/better-stripe/react";
@@ -37,17 +37,6 @@ import {
 
 import { api } from "../../../convex/_generated/api";
 
-const CONNECT_COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-];
-
 export function SellerOnboarding({
   embedded = false,
 }: { embedded?: boolean } = {}) {
@@ -61,13 +50,37 @@ export function SellerOnboarding({
   );
   const getAccountLink = useAction(api.actions.getAccountLinkWithStatus);
   const restartOnboarding = useAction(api.actions.restartAccountOnboarding);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isLinking, setIsLinking] = useState(false);
-  const [isRestarting, setIsRestarting] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("US");
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [linkError, setLinkError] = useState<string | null>(null);
-  const [restartError, setRestartError] = useState<string | null>(null);
+  const {
+    selectedCountry,
+    setSelectedCountry,
+    isCreating,
+    isLinking,
+    isRestarting,
+    createError,
+    linkError,
+    restartError,
+    create: createAccount,
+    continue: continueOnboarding,
+    close: closeAccount,
+  } = useOnboarding({
+    scopeKey: currentUser.id,
+    createAccount: (country) =>
+      createAccountWithOnboarding({
+        userId: currentUser.id,
+        email: currentUser.email,
+        country,
+        refreshUrl: window.location.href,
+        returnUrl: window.location.origin + "/seller/onboarding",
+      }),
+    continueOnboarding: () =>
+      getAccountLink({
+        stripeAccountId: account!.stripeAccountId,
+        refreshUrl: window.location.href,
+        returnUrl: window.location.origin + "/seller/onboarding",
+      }),
+    closeAccount: () =>
+      restartOnboarding({ stripeAccountId: account!.stripeAccountId }),
+  });
 
   if (account === undefined) {
     return (
@@ -125,27 +138,7 @@ export function SellerOnboarding({
               </div>
 
               <Button
-                onClick={async () => {
-                  setIsCreating(true);
-                  setCreateError(null);
-                  try {
-                    const result = await createAccountWithOnboarding({
-                      userId: currentUser.id,
-                      email: currentUser.email,
-                      country: selectedCountry,
-                      refreshUrl: window.location.href,
-                      returnUrl: window.location.origin + "/seller/onboarding",
-                    });
-                    if (result.onboardingUrl) {
-                      window.location.href = result.onboardingUrl;
-                    }
-                  } catch (err) {
-                    setCreateError(
-                      err instanceof Error ? err.message : String(err),
-                    );
-                    setIsCreating(false);
-                  }
-                }}
+                onClick={() => void createAccount()}
                 disabled={isCreating || !selectedCountry}
               >
                 {isCreating ? (
@@ -239,25 +232,7 @@ export function SellerOnboarding({
               </div>
             ) : (
               <Button
-                onClick={async () => {
-                  setIsLinking(true);
-                  setLinkError(null);
-                  try {
-                    const result = await getAccountLink({
-                      stripeAccountId: account.stripeAccountId,
-                      refreshUrl: window.location.href,
-                      returnUrl: window.location.origin + "/seller/onboarding",
-                    });
-                    if (result.url) {
-                      window.location.href = result.url;
-                    }
-                  } catch (err) {
-                    setLinkError(
-                      err instanceof Error ? err.message : String(err),
-                    );
-                    setIsLinking(false);
-                  }
-                }}
+                onClick={() => void continueOnboarding()}
                 disabled={isLinking}
               >
                 {isLinking ? (
@@ -318,19 +293,7 @@ export function SellerOnboarding({
       {/* Restart / Close account */}
       <AccountCloseCard
         status={onboardingStatus}
-        onClose={async () => {
-          setIsRestarting(true);
-          setRestartError(null);
-          try {
-            await restartOnboarding({
-              stripeAccountId: account.stripeAccountId,
-            });
-          } catch (err) {
-            setRestartError(err instanceof Error ? err.message : String(err));
-          } finally {
-            setIsRestarting(false);
-          }
-        }}
+        onClose={() => void closeAccount()}
         isLoading={isRestarting}
       >
         {({ onClose, isLoading: closing, isComplete: complete }) => (

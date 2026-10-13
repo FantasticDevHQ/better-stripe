@@ -1,3 +1,4 @@
+import { CheckoutChooser } from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
@@ -9,48 +10,6 @@ import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { SessionCheckout } from "@/components/session-checkout";
 import { PaymentIntentCheckout } from "@/components/payment-intent-checkout";
-const CHECKOUT_TYPES = [
-  {
-    id: "redirect",
-    title: "Hosted Checkout",
-    api: "Checkout Sessions",
-    pros: "Fastest setup. Stripe owns the payment page, order summary, subscriptions, and payment-method UI.",
-    cons: "Redirects away from your app. Layout customization is limited.",
-    docs: "https://docs.stripe.com/payments/checkout",
-  },
-  {
-    id: "embedded",
-    title: "Embedded Checkout",
-    api: "Checkout Sessions · embedded_page",
-    pros: "Stripe's complete checkout stays inside your app. Less custom checkout code to maintain.",
-    cons: "Stripe controls the form layout. The page embeds a Stripe iframe.",
-    docs: "https://docs.stripe.com/payments/checkout",
-  },
-  {
-    id: "custom",
-    title: "Payment Element + Checkout Sessions",
-    api: "Checkout Sessions · elements",
-    pros: "Custom page layout with Stripe handling the checkout session and payment state. Recommended for most custom checkouts.",
-    cons: "You build the order summary, form controls, and confirmation UI.",
-    docs: "https://docs.stripe.com/payments/payment-element",
-  },
-  {
-    id: "payment-intent",
-    title: "Payment Element + Payment Intents",
-    api: "Payment Intents · Stripe.js",
-    pros: "Low-level control over the payment lifecycle, capture, and your own checkout state.",
-    cons: "You build pricing, tax, shipping, discounts, and subscription orchestration. This example supports one-time purchases.",
-    docs: "https://docs.stripe.com/payments/payment-intents",
-  },
-  {
-    id: "form",
-    title: "Embedded Checkout Form",
-    api: "Checkout Sessions · form · public preview",
-    pros: "Stripe's compact prebuilt checkout form with Appearance API customization.",
-    cons: "Preview availability can vary by sandbox. Less layout control than individual Elements.",
-    docs: "https://docs.stripe.com/payments/checkout/how-checkout-works?payment-ui=checkout-form",
-  },
-] as const;
 export function CheckoutTypeExamples({
   priceId,
   referralCode,
@@ -66,10 +25,6 @@ export function CheckoutTypeExamples({
     stripePriceId: priceId,
   });
   const requested = params.get("checkout") ?? "embedded";
-  const selected =
-    CHECKOUT_TYPES.find((type) => type.id === requested) ?? CHECKOUT_TYPES[1];
-  const unsupported =
-    selected.id === "payment-intent" && price?.type === "recurring";
   if (price === undefined)
     return <p role="status">Loading checkout options…</p>;
   if (price === null)
@@ -79,106 +34,122 @@ export function CheckoutTypeExamples({
       </EmptyState>
     );
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Choose your checkout type</h2>
-        <p className="text-sm text-muted-foreground">
-          Stripe.js uses your publishable key in the browser. Your server uses
-          the secret key to create a Checkout Session or PaymentIntent. Connect
-          embeds manage seller accounts; they are not shopper checkout forms.
-        </p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {CHECKOUT_TYPES.map((type) => (
-          <Card key={type.id}>
+    <CheckoutChooser
+      value={
+        requested as import("@fantastic.dev/better-stripe/react").CheckoutMode
+      }
+      recurring={price.type === "recurring"}
+      onValueChange={(mode) => {
+        const next = new URLSearchParams(params);
+        next.set("checkout", mode);
+        setParams(next, { replace: true });
+      }}
+    >
+      {({ options: CHECKOUT_TYPES, selected, unsupported, select }) => (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold">Choose your checkout type</h2>
+            <p className="text-sm text-muted-foreground">
+              Stripe.js uses your publishable key in the browser. Your server
+              uses the secret key to create a Checkout Session or PaymentIntent.
+              Connect embeds manage seller accounts; they are not shopper
+              checkout forms.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CHECKOUT_TYPES.map((type) => (
+              <Card key={type.id}>
+                <CardHeader>
+                  <CardTitle>{type.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant={type.id === selected.id ? "default" : "outline"}
+                    aria-pressed={type.id === selected.id}
+                    onClick={() => {
+                      select(type.id);
+                    }}
+                  >
+                    {type.id === selected.id ? "Selected" : "Choose"}{" "}
+                    {type.title}
+                  </Button>
+                  {type.id === "form" && (
+                    <div className="mt-2">
+                      <Badge variant="secondary">Preview</Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card>
             <CardHeader>
-              <CardTitle>{type.title}</CardTitle>
+              <CardTitle>{selected.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button
-                variant={type.id === selected.id ? "default" : "outline"}
-                aria-pressed={type.id === selected.id}
-                onClick={() => {
-                  const next = new URLSearchParams(params);
-                  next.set("checkout", type.id);
-                  setParams(next, { replace: true });
-                }}
-              >
-                {type.id === selected.id ? "Selected" : "Choose"} {type.title}
-              </Button>
-              {type.id === "form" && (
-                <div className="mt-2">
-                  <Badge variant="secondary">Preview</Badge>
-                </div>
-              )}
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{selected.api}</p>
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="font-medium">Pros</dt>
+                    <dd className="text-sm text-muted-foreground">
+                      {selected.pros}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium">Cons</dt>
+                    <dd className="text-sm text-muted-foreground">
+                      {selected.cons}
+                    </dd>
+                  </div>
+                </dl>
+                <a
+                  className="text-sm underline"
+                  href={selected.docs}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Stripe documentation
+                </a>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{selected.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">{selected.api}</p>
-            <dl className="space-y-3">
-              <div>
-                <dt className="font-medium">Pros</dt>
-                <dd className="text-sm text-muted-foreground">
-                  {selected.pros}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-medium">Cons</dt>
-                <dd className="text-sm text-muted-foreground">
-                  {selected.cons}
-                </dd>
-              </div>
-            </dl>
-            <a
-              className="text-sm underline"
-              href={selected.docs}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Stripe documentation
-            </a>
-          </div>
-        </CardContent>
-      </Card>
-      {price && (
-        <p className="font-medium">
-          {price.name} ·{" "}
-          {new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: price.currency,
-          }).format(price.amount / 100)}
-          {price.type === "recurring" ? " per billing period" : ""}
-        </p>
+          {price && (
+            <p className="font-medium">
+              {price.name} ·{" "}
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: price.currency,
+              }).format(price.amount / 100)}
+              {price.type === "recurring" ? " per billing period" : ""}
+            </p>
+          )}
+          {unsupported ? (
+            <p role="status">
+              Payment Intents alone do not create subscriptions. Choose a
+              Checkout Sessions example above for this recurring product.
+            </p>
+          ) : selected.id === "payment-intent" ? (
+            <PaymentIntentCheckout
+              key={`${selected.id}:${priceId}:${currentUser.id}:${referralCode ?? ""}`}
+              priceId={priceId}
+              referralCode={referralCode}
+              publishableKey={publishableKey}
+            />
+          ) : (
+            <SessionCheckout
+              key={`${selected.id}:${priceId}:${currentUser.id}:${referralCode ?? ""}`}
+              mode={selected.id}
+              priceId={priceId}
+              userId={
+                currentUser.id ? (currentUser.id as Id<"users">) : undefined
+              }
+              referralCode={referralCode}
+              publishableKey={publishableKey}
+            />
+          )}
+        </div>
       )}
-      {unsupported ? (
-        <p role="status">
-          Payment Intents alone do not create subscriptions. Choose a Checkout
-          Sessions example above for this recurring product.
-        </p>
-      ) : selected.id === "payment-intent" ? (
-        <PaymentIntentCheckout
-          key={`${selected.id}:${priceId}:${currentUser.id}:${referralCode ?? ""}`}
-          priceId={priceId}
-          referralCode={referralCode}
-          publishableKey={publishableKey}
-        />
-      ) : (
-        <SessionCheckout
-          key={`${selected.id}:${priceId}:${currentUser.id}:${referralCode ?? ""}`}
-          mode={selected.id}
-          priceId={priceId}
-          userId={currentUser.id ? (currentUser.id as Id<"users">) : undefined}
-          referralCode={referralCode}
-          publishableKey={publishableKey}
-        />
-      )}
-    </div>
+    </CheckoutChooser>
   );
 }

@@ -1,3 +1,4 @@
+import { SubscriptionOverview } from "@fantastic.dev/better-stripe/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,64 +39,70 @@ export function Dashboard() {
     );
   }
 
-  const userSubscription = subscriptions.find(
-    (s) => s.status === "active" || s.status === "trialing",
-  );
-
-  const hasSubscription = !!userSubscription;
-
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Welcome back, {currentUser.name}</h1>
-        <p className="text-muted-foreground mt-1">
-          Here's an overview of your account.
-        </p>
-      </div>
-
-      {/* Subscription Status */}
-      {hasSubscription ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Subscription</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">
-                  {userSubscription.stripeSubscriptionId}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Renews {formatDate(userSubscription.currentPeriodEnd)}
-                </p>
-              </div>
-              <Badge variant="default">
-                <span className="capitalize">{userSubscription.status}</span>
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent padding="status" className="text-center">
-            <Alert>
-              <AlertTitle>No active subscription</AlertTitle>
-              <AlertDescription>
-                No data yet for this account. Browse our sellers and subscribe
-                for exclusive access.
-              </AlertDescription>
-            </Alert>
-            <Button
-              nativeButton={false}
-              role="link"
-              render={<Link to="/" aria-label="Browse plans" />}
-              className="mt-4"
-            >
-              View Plans
-            </Button>
-          </CardContent>
-        </Card>
+    <SubscriptionOverview
+      subscriptions={subscriptions.filter(
+        (row) => row.status === "active" || row.status === "trialing",
       )}
-    </div>
+    >
+      {({ subscription: userSubscription }) => (
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-2xl font-bold">
+              Welcome back, {currentUser.name}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Here's an overview of your account.
+            </p>
+          </div>
+
+          {/* Subscription Status */}
+          {userSubscription ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Subscription</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">
+                      {userSubscription.stripeSubscriptionId}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      Renews {formatDate(userSubscription.currentPeriodEnd)}
+                    </p>
+                  </div>
+                  <Badge variant="default">
+                    <span className="capitalize">
+                      {userSubscription.status}
+                    </span>
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent padding="status" className="text-center">
+                <Alert>
+                  <AlertTitle>No active subscription</AlertTitle>
+                  <AlertDescription>
+                    No data yet for this account. Browse our sellers and
+                    subscribe for exclusive access.
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  nativeButton={false}
+                  role="link"
+                  render={<Link to="/" aria-label="Browse plans" />}
+                  className="mt-4"
+                >
+                  View Plans
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </SubscriptionOverview>
   );
 }

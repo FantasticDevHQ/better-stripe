@@ -1,3 +1,9 @@
+import {
+  useReferralLinks,
+  ReferredSales,
+  Earnings,
+} from "@fantastic.dev/better-stripe/react";
+import { WorkflowTable } from "@/components/workflow-table";
 import type { ReactNode } from "react";
 import { useQuery } from "convex/react";
 import { Link } from "react-router-dom";
@@ -10,11 +16,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AFFILIATE_REFERRAL_CODE } from "../../convex/affiliateSplit";
-
-const money = (amount: number, currency = "usd") =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
-    amount / 100,
-  );
 
 function AffiliateEmptyState({ children }: { children: ReactNode }) {
   return <p className="text-muted-foreground">{children}</p>;
@@ -34,12 +35,6 @@ function MissingAccount() {
 export function Affiliate() {
   const { currentUser } = useRole();
   const earnings = useEarnings(currentUser.stripeAccountId);
-  const figures = [
-    { label: "Gross", amount: earnings.gross },
-    { label: "Reversals & adjustments", amount: earnings.reversed },
-    { label: "Net", amount: earnings.net },
-    { label: "Paid out", amount: earnings.paidOut },
-  ];
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
@@ -53,31 +48,38 @@ export function Affiliate() {
         <MissingAccount />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {figures.map(({ label, amount }) => (
-              <Card key={label} variant={label === "Net" ? "muted" : "default"}>
-                <CardHeader>
-                  <CardTitle variant="metric">{label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    className="text-3xl font-semibold tracking-tight tabular-nums"
+          <Earnings {...earnings}>
+            {({ metrics, isLoading }) => (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {metrics.map(({ label, formattedValue }) => (
+                  <Card
+                    key={label}
+                    variant={label === "Net" ? "muted" : "default"}
                   >
-                    {earnings.isLoading ? "…" : money(amount)}
-                  </p>
-                  {label === "Paid out" &&
-                    !earnings.isLoading &&
-                    earnings.payouts.length === 0 && (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        No payouts yet
+                    <CardHeader>
+                      <CardTitle variant="metric">{label}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p
+                        role="status"
+                        aria-live="polite"
+                        className="text-3xl font-semibold tracking-tight tabular-nums"
+                      >
+                        {isLoading ? "…" : formattedValue}
                       </p>
-                    )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      {label === "Paid out" &&
+                        !earnings.isLoading &&
+                        earnings.payouts.length === 0 && (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            No payouts yet
+                          </p>
+                        )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Earnings>
           <p className="break-all text-sm text-muted-foreground">
             Stripe account: {currentUser.stripeAccountId}
           </p>
@@ -108,32 +110,9 @@ export function AffiliateSales() {
       ) : (
         <Card>
           <CardContent padding="section">
-            {sales === undefined ? (
-              <p role="status">Loading referred sales…</p>
-            ) : sales.length ? (
-              <ul className="divide-y">
-                {sales.map((transfer) => (
-                  <li
-                    key={transfer.stripeTransferId}
-                    className="flex justify-between gap-4 py-4 text-sm first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium">
-                        {transfer.storeName ?? "Store unavailable"}
-                      </p>
-                      <p className="mt-1 break-all text-muted-foreground">
-                        {transfer.sourceChargeId ?? transfer.stripeTransferId}
-                      </p>
-                    </div>
-                    <span className="shrink-0 font-medium tabular-nums">
-                      {money(transfer.amount, transfer.currency ?? "usd")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <AffiliateEmptyState>No referred sales yet.</AffiliateEmptyState>
-            )}
+            <ReferredSales rows={sales}>
+              {(state) => <WorkflowTable {...state} />}
+            </ReferredSales>
           </CardContent>
         </Card>
       )}
@@ -143,13 +122,10 @@ export function AffiliateSales() {
 
 export function AffiliateLinks() {
   const stores = useQuery(api.storefront.listStores);
+  const { copy } = useReferralLinks();
   const copyLink = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Referral link copied");
-    } catch {
-      toast.error("Could not copy the link. Select and copy the URL below.");
-    }
+    if (await copy(url)) toast.success("Referral link copied");
+    else toast.error("Could not copy the link. Select and copy the URL below.");
   };
   return (
     <div className="mx-auto max-w-5xl space-y-6">

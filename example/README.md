@@ -1,6 +1,6 @@
 # BetterStripe example
 
-A Vite + React SPA showcasing every feature of the `better-stripe` Convex component.
+A Vite + React SPA demonstrating the `better-stripe` backend and reusable React workflows.
 All data comes from Stripe via better-stripe -- no mock data.
 
 ## Quick Start
@@ -800,6 +800,15 @@ objects remain available for inspection.
 
 ## Compare integration styles
 
+The example uses the public `@fantastic.dev/better-stripe/react` workflows for
+checkout, payouts, onboarding, accounts, refunds, disputes, product management,
+subscriptions, billing, payment methods, referrals, earnings, and admin setup.
+The example binds Convex queries/actions and supplies shadcn renderers. Package
+consumers can use the same workflows with native unstyled markup or their own
+UI, without copying the example's controllers or providers. See
+[the React workflow guide](../docs/react-workflows.md) for imports and contracts,
+and [the page audit](../docs/react-workflows-audit.md) for the complete mapping.
+
 The example is a developer reference. Supported workflows expose a presentation
 switch without changing the active persona, store, referral code, or account:
 
@@ -807,8 +816,8 @@ switch without changing the active persona, store, referral code, or account:
 | ------------------------------------- | ----------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | Seller and affiliate earnings         | Custom earnings cards and ledger                            | `EarningsSummary`                   | Connect Balances                                               |
 | Seller and affiliate payouts          | Live balances, upcoming payouts, paginated history          | `PayoutSchedule`                    | Connect Payouts                                                |
-| Seller sales                          | Platform sale ledger and actual fee breakdown               | —                                   | Connect Payments for connected-account charges                 |
-| Seller refunds                        | API refund controls and seller cost recovery                | —                                   | Refund management in Connect Payments                          |
+| Seller sales                          | Platform sale ledger and actual fee breakdown               | `Sales`                             | Connect Payments for connected-account charges                 |
+| Seller refunds                        | API refund controls and seller cost recovery                | `Refunds`, `RefundHistory`          | Refund management in Connect Payments                          |
 | Seller disputes                       | `DisputesList`, `DisputeDetail`, and `EvidenceForm`         | Used by the headless view           | Connect Disputes List                                          |
 | Seller Account → Details              | API account details                                         | Account helpers and requirements    | Connect Account Management                                     |
 | Seller Account → Setup                | API-backed onboarding controls                              | Account onboarding helpers          | Connect Account Onboarding                                     |
@@ -835,7 +844,7 @@ Do not compare an empty connected-account payment list with the platform ledger
 as though they were the same dataset.
 
 Products and subscription catalogs have no Connect embedded management component.
-The Components views demonstrate the package's React primitives against the same
+The Components views demonstrate the package's compact React displays against the same
 catalog and subscription data. Catalog mutations and subscription actions remain
 in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
 See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).

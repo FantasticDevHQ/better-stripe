@@ -1,5 +1,6 @@
 import { formatAmount } from "@/lib/format-amount";
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
+import { useProductManager } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -50,21 +51,33 @@ export function SellerProducts() {
   const createPrice = useAction(api.actions.createPrice);
   const deactivatePrice = useAction(api.actions.deactivatePrice);
 
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showAddPriceFor, setShowAddPriceFor] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState({ name: "", description: "" });
-  const [newPrice, setNewPrice] = useState({
-    amount: "",
-    currency: "usd",
-    interval: "month",
+  const {
+    expandedProduct,
+    setExpandedProduct,
+    showCreateDialog,
+    setShowCreateDialog,
+    showAddPriceFor,
+    setShowAddPriceFor,
+    newProduct,
+    setNewProduct,
+    newPrice,
+    setNewPrice,
+    isCreatingProduct,
+    isCreatingPrice,
+    deactivatingPriceId,
+    error,
+    clearError,
+    handleCreateProduct,
+    handleAddPrice,
+    handleDeactivatePrice,
+  } = useProductManager({
+    scopeKey: currentUser.id,
+    createProduct: (args) =>
+      createProduct({ ...args, accountId: account!.stripeAccountId }),
+    createPrice,
+    deactivatePrice: (args) =>
+      deactivatePrice({ ...args, userId: currentUser.id }),
   });
-  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
-  const [isCreatingPrice, setIsCreatingPrice] = useState(false);
-  const [deactivatingPriceId, setDeactivatingPriceId] = useState<string | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
 
   // Loading state
   if (account === undefined) {
@@ -123,67 +136,6 @@ export function SellerProducts() {
     );
   }
 
-  const handleCreateProduct = async () => {
-    setIsCreatingProduct(true);
-    setError(null);
-    try {
-      await createProduct({
-        name: newProduct.name,
-        description: newProduct.description || undefined,
-        accountId: account.stripeAccountId,
-      });
-      setNewProduct({ name: "", description: "" });
-      setShowCreateDialog(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsCreatingProduct(false);
-    }
-  };
-
-  const handleAddPrice = async (stripeProductId: string) => {
-    setIsCreatingPrice(true);
-    setError(null);
-    try {
-      const interval = newPrice.interval as
-        "month" | "year" | "week" | "day" | "one_time";
-      await createPrice({
-        stripeProductId,
-        unitAmount: Number(newPrice.amount),
-        currency: newPrice.currency,
-        type: interval === "one_time" ? "one_time" : "recurring",
-        interval:
-          interval === "one_time"
-            ? undefined
-            : (interval as "month" | "year" | "week" | "day"),
-      });
-      setNewPrice({ amount: "", currency: "usd", interval: "month" });
-      setShowAddPriceFor(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsCreatingPrice(false);
-    }
-  };
-
-  // Archive a single price (BTS-88/BTS-94). The action binds the caller to the
-  // price's owning product's connected account, so it takes the active
-  // persona's id; here the seller always owns their own account-scoped
-  // prices, so this is the working path (unlike the admin god-view, whose
-  // persona has no connected account).
-  const handleDeactivatePrice = async (stripePriceId: string) => {
-    setDeactivatingPriceId(stripePriceId);
-    setError(null);
-    try {
-      await deactivatePrice({ userId: currentUser.id, stripePriceId });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setDeactivatingPriceId(null);
-    }
-  };
-
-  // Products still loading
   if (products === undefined) {
     return (
       <div className="space-y-6">
@@ -263,7 +215,7 @@ export function SellerProducts() {
                 variant="outline"
                 onClick={() => {
                   setShowCreateDialog(false);
-                  setError(null);
+                  clearError();
                 }}
               >
                 Cancel

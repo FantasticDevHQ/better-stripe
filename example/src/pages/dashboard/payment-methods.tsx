@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useState } from "react";
-
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
@@ -11,8 +9,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
+  usePaymentMethodsManager,
+  toPaymentMethodItem,
   AddCardForm,
-  type PaymentMethodItem,
   PaymentMethodsList,
   StripeProviderWithKey,
 } from "@fantastic.dev/better-stripe/react";
@@ -26,45 +25,24 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
   const listMethods = useAction(api.actions.listPaymentMethods);
   const attachMethod = useAction(api.actions.attachPaymentMethod);
   const detachMethod = useAction(api.actions.detachPaymentMethod);
-  const [methods, setMethods] = useState<PaymentMethodItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [attachError, setAttachError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(null);
-    try {
-      const result = await listMethods({ stripeCustomerId: stripeAccountId });
-      setMethods(
-        (result ?? []).map((pm) => ({
-          id: pm.id,
-          type: pm.type,
-          card: pm.card
-            ? {
-                brand: pm.card.brand,
-                last4: pm.card.last4,
-                expMonth: pm.card.exp_month,
-                expYear: pm.card.exp_year,
-              }
-            : undefined,
-          isDefault: false,
-        })),
-      );
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [listMethods, stripeAccountId]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
-    void reload();
-    // Only reload on mount or when stripeAccountId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stripeAccountId]);
+  const {
+    methods,
+    isLoading,
+    loadError,
+    attachError,
+    deleteError,
+    attach,
+    detach,
+  } = usePaymentMethodsManager({
+    scopeKey: stripeAccountId,
+    load: async () =>
+      ((await listMethods({ stripeCustomerId: stripeAccountId })) ?? []).map(
+        (method) => toPaymentMethodItem(method),
+      ),
+    attach: (paymentMethodId) =>
+      attachMethod({ paymentMethodId, stripeCustomerId: stripeAccountId }),
+    detach: (paymentMethodId) => detachMethod({ paymentMethodId }),
+  });
 
   return (
     <div className="space-y-6">
@@ -81,19 +59,8 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
         <CardContent>
           <div className="space-y-4">
             <AddCardForm
-              onSuccess={async (paymentMethodId) => {
-                setAttachError(null);
-                try {
-                  await attachMethod({
-                    paymentMethodId,
-                    stripeCustomerId: stripeAccountId,
-                  });
-                  await reload();
-                } catch (err) {
-                  setAttachError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                }
+              onSuccess={(paymentMethodId) => {
+                void attach(paymentMethodId);
               }}
             />
 
@@ -133,16 +100,8 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
             ) : (
               <PaymentMethodsList
                 methods={methods}
-                onDelete={async (paymentMethodId: string) => {
-                  setDeleteError(null);
-                  try {
-                    await detachMethod({ paymentMethodId });
-                    await reload();
-                  } catch (err) {
-                    setDeleteError(
-                      err instanceof Error ? err.message : String(err),
-                    );
-                  }
+                onDelete={(paymentMethodId) => {
+                  void detach(paymentMethodId);
                 }}
               />
             )}

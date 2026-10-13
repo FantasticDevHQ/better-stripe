@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
+  PayoutOverview,
   AccountCreateCard,
   ConnectStatusBadge,
   type StripeComponentPayout,
@@ -97,92 +98,77 @@ export function SellerHome() {
     );
   }
 
-  // Compute earnings from real payout data
-  const paidPayouts = payouts?.filter((p) => p.status === "paid") ?? [];
-  const pendingPayouts =
-    payouts?.filter(
-      (p) => p.status === "pending" || p.status === "in_transit",
-    ) ?? [];
-
-  const totalPayouts = paidPayouts.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-  const pendingBalance = pendingPayouts.reduce(
-    (sum, p) => sum + (p.amount ?? 0),
-    0,
-  );
-  const totalEarned = totalPayouts + pendingBalance;
-
-  const recentPayouts = (payouts ?? []).slice(0, 3);
-
   // State: fully onboarded — show earnings overview
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Seller Earnings</h1>
-        <ConnectStatusBadge status="complete" />
-      </div>
+    <PayoutOverview payouts={payouts} currency="usd">
+      {({ metrics, recentPayouts }) => (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Seller Earnings</h1>
+            <ConnectStatusBadge status="complete" />
+          </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { label: "Total Earned", value: formatCurrency(totalEarned) },
-          { label: "Pending Balance", value: formatCurrency(pendingBalance) },
-          { label: "Total Payouts", value: formatCurrency(totalPayouts) },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader spacing="compact">
-              <CardDescription>{stat.label}</CardDescription>
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {metrics.map((stat) => (
+              <Card key={stat.label}>
+                <CardHeader spacing="compact">
+                  <CardDescription>{stat.label}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {payouts === undefined ? (
+                    <Skeleton className="h-8 w-24" />
+                  ) : (
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Recent payouts */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Payouts</CardTitle>
             </CardHeader>
             <CardContent>
               {payouts === undefined ? (
-                <Skeleton className="h-8 w-24" />
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : recentPayouts.length === 0 ? (
+                <Alert>
+                  <AlertDescription>
+                    No data yet. Payouts will appear after earnings are
+                    released.
+                  </AlertDescription>
+                </Alert>
               ) : (
-                <p className="text-2xl font-bold">{stat.value}</p>
+                <div className="space-y-1">
+                  {recentPayouts.map((payout, i) => (
+                    <div key={payout._id}>
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-muted-foreground text-sm">
+                          {payout.arrivalDate
+                            ? new Date(payout.arrivalDate).toLocaleDateString()
+                            : "\u2014"}
+                        </span>
+                        <span className="font-medium">
+                          {formatCurrency(payout.amount ?? 0)}
+                        </span>
+                        <Badge variant="default">{payout.status}</Badge>
+                      </div>
+                      {i < recentPayouts.length - 1 && <Separator />}
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {/* Recent payouts */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Payouts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {payouts === undefined ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-8 w-full" />
-              ))}
-            </div>
-          ) : recentPayouts.length === 0 ? (
-            <Alert>
-              <AlertDescription>
-                No data yet. Payouts will appear after earnings are released.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-1">
-              {recentPayouts.map((payout, i) => (
-                <div key={payout._id}>
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-muted-foreground text-sm">
-                      {payout.arrivalDate
-                        ? new Date(payout.arrivalDate).toLocaleDateString()
-                        : "\u2014"}
-                    </span>
-                    <span className="font-medium">
-                      {formatCurrency(payout.amount ?? 0)}
-                    </span>
-                    <Badge variant="default">{payout.status}</Badge>
-                  </div>
-                  {i < recentPayouts.length - 1 && <Separator />}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      )}
+    </PayoutOverview>
   );
 }

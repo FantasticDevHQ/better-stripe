@@ -812,14 +812,20 @@ These are re-exported so apps never need to import from `@stripe/react-stripe-js
 
 ## React Components
 
-Import from `@fantastic.dev/better-stripe/react`. All components are headless by default -- they provide behavior and minimal structure. Style them with Tailwind or any CSS approach.
+Import from `@fantastic.dev/better-stripe/react`. The package includes the
+example's reusable checkout, payouts, refunds, disputes, accounts, onboarding,
+products, subscriptions, billing, referrals, and admin/setup workflows.
 
-All components accept:
+Use native unstyled markup, render props, or companion hooks with your own
+design system. Bind authenticated server callbacks and query data in your app.
+Supported workflows can select Stripe Connect embedded presentation; checkout
+supports five integrations. No example router, persona provider, or CSS is required.
 
-- `theme?: Stripe.Appearance` -- Stripe Appearance API object for styling
-- `className?: string` -- outer wrapper styling
-- String props for i18n with English defaults (e.g., `submitLabel?: string`)
-- Standard React props (`children`, event handlers)
+See [the React workflow guide](docs/react-workflows.md) for usage, the full
+component/hook matrix, styling, data contracts, and Stripe integration limits.
+Existing low-level components remain available below. Props vary by component;
+Stripe iframe styling uses `appearance`, while custom markup uses render props
+or the low-level component's `className`/label props.
 
 ### Provider
 

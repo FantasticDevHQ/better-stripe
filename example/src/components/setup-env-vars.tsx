@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useWorkflowResource } from "@fantastic.dev/better-stripe/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,30 +9,12 @@ import { api } from "../../convex/_generated/api";
 
 export function EnvVarsCard() {
   const checkEnvVars = useAction(api.actions.checkEnvVars);
-  const [envs, setEnvs] = useState<{
-    stripeSecretKey: boolean;
-    webhookSecret: boolean;
-    webhookSecretV2: boolean;
-  } | null>(null);
-  const [checking, setChecking] = useState(true);
-
-  const refresh = useCallback(async () => {
-    setChecking(true);
-    try {
-      const result = await checkEnvVars({});
-      setEnvs(result);
-    } catch {
-      // non-fatal
-    } finally {
-      setChecking(false);
-    }
-  }, [checkEnvVars]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount fetch
-    refresh();
-  }, [refresh]);
-
+  const {
+    data,
+    isLoading: checking,
+    refresh,
+  } = useWorkflowResource(() => checkEnvVars({}), "environment");
+  const envs = data ?? null;
   const allSet =
     envs?.stripeSecretKey && envs?.webhookSecret && envs?.webhookSecretV2;
 

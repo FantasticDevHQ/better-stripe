@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckoutFrame } from "@/components/checkout-frame";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
-import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
+import { ChargeSummary, Checkout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CheckCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -56,76 +56,28 @@ function DestinationChargeCheckoutForm({
   const createCheckout = useAction(
     api.marketplace.createDestinationChargeCheckout,
   );
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const hasInitiated = useRef(false);
-
-  const initCheckout = useCallback(async () => {
-    if (hasInitiated.current) return;
-    hasInitiated.current = true;
-    try {
-      const session = await createCheckout({
-        userId,
-        stripePriceId,
-        destinationAccountId,
-        amount,
-        // Returns to THIS page (not the generic /checkout/status) so the
-        // fee/payout breakdown can be confirmed inline once Stripe redirects
-        // back with the real session id (BTS-58, reusing the BTS-62 helper).
-        returnUrl: buildCheckoutReturnUrl(
-          window.location.origin,
-          "/demo/destination-charge",
-        ),
-      });
-      if (session?.clientSecret) {
-        setClientSecret(session.clientSecret);
-      } else {
-        setError(
-          "Failed to create checkout session. No client secret returned.",
-        );
-      }
-    } catch (err) {
-      console.error("Destination charge checkout error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create checkout session.",
-      );
-    }
-  }, [createCheckout, userId, stripePriceId, destinationAccountId, amount]);
-
-  // Kick off session creation once on mount; the ref guard keeps it
-  // idempotent under StrictMode's double-invoked effects (mirrors the base
-  // Checkout page). No `onComplete`: Stripe's own `return_url` redirect
-  // drives the post-checkout state via the `session_id` query param (BTS-62).
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: creates the checkout session on mount
-    void initCheckout();
-  }, [initCheckout]);
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Checkout Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
-  }
-
+  const returnUrl = buildCheckoutReturnUrl(
+    window.location.origin,
+    "/demo/destination-charge",
+  );
   return (
-    <EmbeddedCheckout
+    <Checkout
+      mode="embedded"
+      orderKey={`${userId}:${stripePriceId}:${destinationAccountId}`}
       publishableKey={publishableKey}
-      clientSecret={clientSecret}
-    />
+      returnUrl={returnUrl}
+      createSession={() =>
+        createCheckout({
+          userId,
+          stripePriceId,
+          destinationAccountId,
+          amount,
+          returnUrl,
+        })
+      }
+    >
+      {(state) => <CheckoutFrame {...state} />}
+    </Checkout>
   );
 }
 
@@ -259,23 +211,30 @@ export function DestinationChargeDemo() {
             {isComplete && (
               <Badge data-testid="charge-complete-badge">Charge complete</Badge>
             )}
-            <div className="grid grid-cols-3 gap-4">
-              <Figure
-                label="Charged"
-                value={formatCurrency(breakdown.gross, price.currency)}
-                testId="charged-amount"
-              />
-              <Figure
-                label={`Platform fee (${feePercent}%)`}
-                value={formatCurrency(breakdown.fee, price.currency)}
-                testId="platform-fee-amount"
-              />
-              <Figure
-                label="Seller payout"
-                value={formatCurrency(breakdown.net, price.currency)}
-                testId="seller-payout-amount"
-              />
-            </div>
+            <ChargeSummary
+              {...breakdown}
+              currency={price.currency}
+              feeLabel={`Platform fee (${feePercent}%)`}
+            >
+              {({ metrics }) => (
+                <div className="grid grid-cols-3 gap-4">
+                  {metrics.map((metric) => (
+                    <Figure
+                      key={metric.key}
+                      label={metric.label}
+                      value={metric.formattedAmount}
+                      testId={
+                        metric.key === "gross"
+                          ? "charged-amount"
+                          : metric.key === "fee"
+                            ? "platform-fee-amount"
+                            : "seller-payout-amount"
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </ChargeSummary>
             {breakdown.reconciles ? (
               <p className="text-muted-foreground text-sm">
                 Fee + seller payout reconciles exactly to the charge amount.

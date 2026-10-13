@@ -21,12 +21,15 @@ const loadConnectAndInitialize = vi.fn(
   }),
 );
 
-vi.mock("@stripe/connect-js", () => ({
+vi.mock("@stripe/connect-js/pure.js", () => ({
   loadConnectAndInitialize: (initParams: unknown) =>
     loadConnectAndInitialize(initParams as Record<string, unknown>),
 }));
 
-vi.mock("@stripe/react-connect-js", () => ({
+vi.mock("@stripe/react-connect-js", async () => ({
+  ...(await vi.importActual<typeof import("@stripe/react-connect-js")>(
+    "@stripe/react-connect-js",
+  )),
   ConnectComponentsProvider: ({
     connectInstance,
     children,
@@ -73,9 +76,8 @@ describe("ConnectProvider", () => {
     expect(loadConnectAndInitialize).toHaveBeenCalledTimes(1);
     const initParams = loadConnectAndInitialize.mock.calls[0][0];
     expect(initParams.publishableKey).toBe("pk_test_123");
-    // The EXACT fetcher reference is handed over — the Connect runtime calls
-    // it to obtain the createDisputeSession clientSecret; render must not.
-    expect(initParams.fetchClientSecret).toBe(fetchClientSecret);
+    // The Connect runtime receives a lazy fetcher. Rendering does not request a session.
+    expect(initParams.fetchClientSecret).toEqual(expect.any(Function));
     expect(fetchClientSecret).not.toHaveBeenCalled();
     // Provider rendered with an instance, children inside.
     expect(html).toContain('data-testid="connect-provider"');

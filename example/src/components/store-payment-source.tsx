@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useBalanceFunding } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -15,25 +15,16 @@ function BalancePaymentEmptyState() {
 export function StorePaymentSource({ sellerId }: { sellerId: Id<"users"> }) {
   const state = useQuery(api.storeBalanceFunding.state, { sellerId });
   const change = useAction(api.storeBalanceActions.setFunding);
-  const [consent, setConsent] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  async function confirm(enabled: boolean) {
-    setBusy(true);
-    setError(undefined);
-    try {
-      await change({
-        sellerId,
-        enabled,
-        consent: enabled && consent ? true : undefined,
-      });
-      setConsent(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const {
+    consent,
+    setConsent,
+    isPending: busy,
+    error,
+    confirm,
+  } = useBalanceFunding({
+    scopeKey: sellerId,
+    change: (args) => change({ sellerId, ...args }),
+  });
   return (
     <Card>
       <CardHeader>

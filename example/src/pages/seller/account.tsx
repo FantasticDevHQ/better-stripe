@@ -16,11 +16,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import {
+  useAccountManager,
   AccountLoginCard,
   ConnectRequirements,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { api } from "../../../convex/_generated/api";
@@ -28,10 +28,21 @@ import { api } from "../../../convex/_generated/api";
 function AccountDetails() {
   const { currentUser } = useRole();
   const createLoginLink = useAction(api.actions.createSellerLoginLink);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const account = useQuery(api.queries.getAccountByUserId, {
     userId: currentUser.id,
+  });
+
+  const {
+    isPending: pending,
+    error,
+    openDashboard,
+  } = useAccountManager({
+    scopeKey: currentUser.id,
+    createDashboardLink: () =>
+      createLoginLink({
+        userId: currentUser.id,
+        stripeAccountId: account!.stripeAccountId,
+      }),
   });
 
   if (account === undefined) {
@@ -82,23 +93,7 @@ function AccountDetails() {
         </Alert>
       )}
       <AccountLoginCard
-        onLogin={async () => {
-          setPending(true);
-          setError(null);
-          try {
-            const { url } = await createLoginLink({
-              userId: currentUser.id,
-              stripeAccountId: account.stripeAccountId,
-            });
-            window.location.assign(url);
-          } catch {
-            setError(
-              "Stripe dashboard access is unavailable. Complete onboarding and ensure your account uses the Express dashboard.",
-            );
-          } finally {
-            setPending(false);
-          }
-        }}
+        onLogin={openDashboard}
         renderDashboardLink={({ onLogin }) => (
           <Button onClick={onLogin} disabled={pending}>
             {pending ? "Opening dashboard…" : "Open dashboard"}

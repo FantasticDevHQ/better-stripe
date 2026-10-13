@@ -1,73 +1,15 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Invoices as BetterStripeInvoices } from "@fantastic.dev/better-stripe/react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { WorkflowTable } from "@/components/workflow-table";
 import { useRole } from "@/providers/role-context";
 import { useQuery } from "convex/react";
-import { ExternalLink } from "lucide-react";
-
 import { api } from "../../../convex/_generated/api";
-
-function statusVariant(
-  status: string,
-): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "paid":
-      return "default";
-    case "refunded":
-      return "secondary";
-    case "failed":
-    case "uncollectible":
-      return "destructive";
-    case "open":
-      return "secondary";
-    default:
-      return "outline";
-  }
-}
-
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
-}
-
 export function Invoices() {
   const { currentUser } = useRole();
-  // Scope invoices to the signed-in persona — a user (incl. the account-less
-  // visitor) must never see another account's invoices.
   const invoices = useQuery(api.queries.listInvoicesByUser, {
     userId: currentUser.id,
   });
-
-  if (invoices === undefined) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="mt-2 h-4 w-64" />
-        </div>
-        <Card>
-          <div className="space-y-4 p-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <div>
@@ -76,77 +18,34 @@ export function Invoices() {
           View and download your past invoices.
         </p>
       </div>
-
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invoice ID</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Invoice</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice._id}>
-                <TableCell variant="identifier">
-                  {invoice.stripeInvoiceId}
-                </TableCell>
-                <TableCell variant="amount">
-                  {formatCurrency(
-                    invoice.amountPaid ?? invoice.amountDue ?? 0,
-                    invoice.currency || "usd",
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(invoice.status)}>
-                    {invoice.status}
+        <BetterStripeInvoices
+          rows={invoices}
+          emptyLabel="No data found. Invoices will appear after billing begins."
+        >
+          {(state) => (
+            <WorkflowTable
+              {...state}
+              renderCell={(invoice, column, content) =>
+                column.id === "status" ? (
+                  <Badge
+                    variant={
+                      invoice.status === "paid"
+                        ? "default"
+                        : ["failed", "uncollectible"].includes(invoice.status)
+                          ? "destructive"
+                          : "secondary"
+                    }
+                  >
+                    {content}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {invoice.hostedInvoiceUrl ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      nativeButton={false}
-                      role="link"
-                      render={
-                        <a
-                          href={invoice.hostedInvoiceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="View hosted invoice"
-                        />
-                      }
-                    >
-                      <ExternalLink
-                        data-icon="inline-start"
-                        className="mr-1 h-3 w-3"
-                      />
-                      View
-                    </Button>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      {"\u2014"}
-                    </span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-            {invoices.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} size="empty">
-                  <Alert>
-                    <AlertDescription className="text-center">
-                      No data found. Invoices will appear after billing begins.
-                    </AlertDescription>
-                  </Alert>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                ) : (
+                  content
+                )
+              }
+            />
+          )}
+        </BetterStripeInvoices>
       </Card>
     </div>
   );

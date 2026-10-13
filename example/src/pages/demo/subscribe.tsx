@@ -1,3 +1,4 @@
+import { Subscriptions } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -23,24 +24,28 @@ export function StoreSubscribe() {
         <CardHeader>
           <CardTitle>Subscribers</CardTitle>
         </CardHeader>
-        <CardContent>
-          {subscriptions === undefined ? (
-            <Skeleton className="h-32" />
-          ) : subscriptions.length ? (
-            <ul className="space-y-3">
-              {subscriptions.map((s) => (
-                <li
-                  key={s.stripeSubscriptionId}
-                  className="flex justify-between gap-3"
-                >
-                  <span>{s.stripeSubscriptionId}</span>
-                  <span>{s.status}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState>No store subscriptions yet.</EmptyState>
-          )}
+        <CardContent aria-live="polite">
+          <Subscriptions rows={subscriptions}>
+            {({ rows, isLoading, isEmpty }) =>
+              isLoading ? (
+                <Skeleton className="h-32" />
+              ) : !isEmpty ? (
+                <ul className="space-y-3">
+                  {rows.map((s) => (
+                    <li
+                      key={s.stripeSubscriptionId}
+                      className="flex justify-between gap-3"
+                    >
+                      <span>{s.stripeSubscriptionId}</span>
+                      <span>{s.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyState>No store subscriptions yet.</EmptyState>
+              )
+            }
+          </Subscriptions>
         </CardContent>
       </Card>
     </div>

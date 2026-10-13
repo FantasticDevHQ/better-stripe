@@ -11,6 +11,7 @@ import {
  */
 export const subscriptionsTable = defineTable(subscriptionFields)
   .index("by_stripe_subscription_id", ["stripeSubscriptionId"])
+  .index("by_price_id", ["priceId"])
   .index("by_user_id", ["userId"])
   .index("by_org_id", ["orgId"])
   .index("by_status", ["status"])

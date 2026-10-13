@@ -81,11 +81,13 @@ export function Dashboard() {
             <Alert>
               <AlertTitle>No active subscription</AlertTitle>
               <AlertDescription>
-                No data yet for this account. Browse our t-shirt collection and
-                subscribe for exclusive access.
+                No data yet for this account. Browse our sellers and subscribe
+                for exclusive access.
               </AlertDescription>
             </Alert>
             <Button
+              nativeButton={false}
+              role="link"
               render={<Link to="/" aria-label="Browse plans" />}
               className="mt-4"
             >

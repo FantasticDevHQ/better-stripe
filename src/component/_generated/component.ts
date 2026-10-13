@@ -592,6 +592,52 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           }>,
           Name
         >;
+        listSubscriptionsByPrice: FunctionReference<
+          "query",
+          "internal",
+          { priceId: string },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accountId?: string;
+            applicationFeeAmount?: number;
+            applicationFeePercent?: number;
+            cancelAtPeriodEnd: boolean;
+            canceledAt?: string;
+            chargeType?: "destination" | "separate";
+            currency?: string;
+            currentPeriodEnd?: string;
+            currentPeriodStart?: string;
+            destinationAccountId?: string;
+            feeCollectedAmount?: number;
+            feeRefundedAmount?: number;
+            isTrialing: boolean;
+            metadata?: any;
+            orgId?: string;
+            priceId?: string;
+            quantity?: number;
+            splitRecipients?: Array<{
+              amount?: number;
+              destinationAccountId: string;
+              percent?: number;
+              role: "store" | "affiliate" | "other";
+            }>;
+            status:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+            stripeSubscriptionId: string;
+            trialEnd?: string;
+            trialStart?: string;
+            userId: string;
+          }>,
+          Name
+        >;
         listSubscriptionsByUser: FunctionReference<
           "query",
           "internal",

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import type { Doc, Id } from "../_generated/dataModel";
-import { mutation } from "../_generated/server";
+import { mutation, type MutationCtx } from "../_generated/server";
 import { feeRoutingFields } from "../lib/fees";
 import { computeReversalSlices } from "../lib/reversals";
 import {
@@ -11,6 +11,20 @@ import {
   refundFields,
   transferFields,
 } from "./validators";
+
+async function paymentSeller(
+  ctx: MutationCtx,
+  stripePaymentIntentId?: string,
+): Promise<string | undefined> {
+  if (!stripePaymentIntentId) return undefined;
+  const payment = await ctx.db
+    .query("payments")
+    .withIndex("by_stripe_payment_intent_id", (q) =>
+      q.eq("stripePaymentIntentId", stripePaymentIntentId),
+    )
+    .first();
+  return payment?.destinationAccountId;
+}
 
 // =============================================================================
 // PAYMENT MUTATIONS
@@ -87,6 +101,26 @@ export const upsertPayment = mutation({
       }
     }
 
+    // A refund/dispute can arrive before the platform charge has its seller
+    // routing metadata. Reconcile those case owners once routing is known.
+    const sellerAccountId =
+      args.destinationAccountId ?? existing?.destinationAccountId;
+    if (sellerAccountId) {
+      for (const table of ["refunds", "disputes"] as const) {
+        const cases = await ctx.db
+          .query(table)
+          .withIndex("by_stripe_payment_intent_id", (q) =>
+            q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
+          )
+          .take(100);
+        for (const record of cases)
+          if (!record.accountId)
+            await ctx.db.patch(table, record._id, {
+              accountId: sellerAccountId,
+            });
+      }
+    }
+
     return null;
   },
 });
@@ -140,10 +174,13 @@ export const upsertRefund = mutation({
       )
       .first();
 
+    const accountId =
+      args.accountId ?? (await paymentSeller(ctx, args.stripePaymentIntentId));
+    const record = { ...args, ...(accountId ? { accountId } : {}) };
     if (existing) {
-      await ctx.db.patch("refunds", existing._id, args);
+      await ctx.db.patch("refunds", existing._id, record);
     } else {
-      await ctx.db.insert("refunds", args);
+      await ctx.db.insert("refunds", record);
     }
 
     // Denormalize cumulative refund state onto the linked `payments` row so
@@ -278,10 +315,13 @@ export const upsertDispute = mutation({
       )
       .first();
 
+    const accountId =
+      args.accountId ?? (await paymentSeller(ctx, args.stripePaymentIntentId));
+    const record = { ...args, ...(accountId ? { accountId } : {}) };
     if (existing) {
-      await ctx.db.patch("disputes", existing._id, args);
+      await ctx.db.patch("disputes", existing._id, record);
     } else {
-      await ctx.db.insert("disputes", args);
+      await ctx.db.insert("disputes", record);
     }
 
     return null;

@@ -29,6 +29,7 @@ vi.mock("./stripe", () => ({
     updateSubscriptionPrice: vi.fn(),
     updateSubscriptionTrialEnd: vi.fn(),
     getAccountByUserId: vi.fn(),
+    getAccountByStripeId: vi.fn(),
     getDisputeByStripeId: vi.fn(),
     updateDispute: vi.fn(),
     closeDispute: vi.fn(),
@@ -63,6 +64,7 @@ type MockedStripe = {
   updateSubscriptionPrice: Mock;
   updateSubscriptionTrialEnd: Mock;
   getAccountByUserId: Mock;
+  getAccountByStripeId: Mock;
   getDisputeByStripeId: Mock;
   updateDispute: Mock;
   closeDispute: Mock;
@@ -818,4 +820,31 @@ describe("seller dashboard login link", () => {
       }),
     ).rejects.toThrow(/Complete onboarding/);
   });
+});
+
+it("uses the linked seller account for dashboard ownership despite older duplicate accounts", async () => {
+  const t = convexTest(schema, modules);
+  const userId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Maya",
+      email: "maya@example.com",
+      role: "seller",
+      stripeAccountId: "acct_store",
+    }),
+  );
+  mockedStripe.getAccountByUserId.mockResolvedValue({
+    stripeAccountId: "acct_old",
+  });
+  mockedStripe.getAccountByStripeId.mockResolvedValue({
+    stripeAccountId: "acct_store",
+  });
+  mockedStripe.createLoginLink.mockResolvedValue({
+    url: "https://connect.stripe.com/express/test-login",
+  });
+  await expect(
+    t.action(api.actions.createSellerLoginLink, {
+      userId,
+      stripeAccountId: "acct_store",
+    }),
+  ).resolves.toEqual({ url: "https://connect.stripe.com/express/test-login" });
 });

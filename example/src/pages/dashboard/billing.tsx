@@ -156,7 +156,7 @@ export function Billing() {
     return (
       <div className="space-y-8" data-testid="buyer-subscription-shell">
         <div>
-          <h1 className="text-2xl font-bold">Billing</h1>
+          <h1 className="text-2xl font-bold">Subscriptions</h1>
           <p className="text-muted-foreground mt-1">
             Manage your subscription and billing details.
           </p>
@@ -168,6 +168,8 @@ export function Billing() {
               started.
             </p>
             <Button
+              nativeButton={false}
+              role="link"
               render={<Link to="/" aria-label="Create account to subscribe" />}
             >
               Create account to subscribe
@@ -190,7 +192,7 @@ export function Billing() {
   return (
     <div className="space-y-8" data-testid="buyer-subscription-shell">
       <div>
-        <h1 className="text-2xl font-bold">Billing</h1>
+        <h1 className="text-2xl font-bold">Subscriptions</h1>
         <p className="text-muted-foreground mt-1">
           Manage your subscription lifecycle and billing details.
         </p>

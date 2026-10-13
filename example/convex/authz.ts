@@ -15,9 +15,17 @@
  * direct match, money/dispute flows resolve the actor's own connected
  * account first and then match it against the resource's owning account).
  */
+import type { StripeComponentAccount } from "@fantastic.dev/better-stripe";
 import type { ActionCtx } from "./_generated/server";
-import { components } from "./_generated/api";
+import { api, components } from "./_generated/api";
 import { stripe } from "./stripe";
+
+async function personaAccount(
+  ctx: ActionCtx,
+  userId: string,
+): Promise<StripeComponentAccount | null> {
+  return ctx.runQuery(api.queries.getAccountByUserId, { userId });
+}
 
 function requireNonBlank(value: string, label: string): string {
   if (!value.trim()) {
@@ -92,13 +100,16 @@ export async function assertAccountOwner(
   args: { userId: string; stripeAccountId: string },
 ) {
   const userId = requireNonBlank(args.userId, "userId");
-  const stripeAccountId = requireNonBlank(args.stripeAccountId, "stripeAccountId");
+  const stripeAccountId = requireNonBlank(
+    args.stripeAccountId,
+    "stripeAccountId",
+  );
 
   return assertOwnership(
     ctx,
     userId,
     async (ctx, actorId) => {
-      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      const account = await personaAccount(ctx, actorId);
       return account && account.stripeAccountId === stripeAccountId
         ? account
         : null;
@@ -116,15 +127,20 @@ export async function assertDisputeOwner(
   args: { userId: string; stripeDisputeId: string },
 ) {
   const userId = requireNonBlank(args.userId, "userId");
-  const stripeDisputeId = requireNonBlank(args.stripeDisputeId, "stripeDisputeId");
+  const stripeDisputeId = requireNonBlank(
+    args.stripeDisputeId,
+    "stripeDisputeId",
+  );
 
   return assertOwnership(
     ctx,
     userId,
     async (ctx, actorId) => {
-      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      const account = await personaAccount(ctx, actorId);
       if (!account?.stripeAccountId) return null;
-      const dispute = await stripe.getDisputeByStripeId(ctx, { stripeDisputeId });
+      const dispute = await stripe.getDisputeByStripeId(ctx, {
+        stripeDisputeId,
+      });
       return dispute && dispute.accountId === account.stripeAccountId
         ? dispute
         : null;
@@ -174,7 +190,7 @@ export async function assertPaymentOwner(
     ctx,
     userId,
     async (ctx, actorId) => {
-      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      const account = await personaAccount(ctx, actorId);
       if (!account?.stripeAccountId) return null;
       const payment = (await ctx.runQuery(connectQueries.getPaymentByStripeId, {
         stripePaymentIntentId,
@@ -204,7 +220,7 @@ export async function assertTransfersOwner(
     ctx,
     userId,
     async (ctx, actorId) => {
-      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      const account = await personaAccount(ctx, actorId);
       if (!account?.stripeAccountId) return null;
       const transfers = (await stripe.listTransfersByCharge(ctx, {
         sourceChargeId,
@@ -246,7 +262,7 @@ export async function assertPriceOwner(
     ctx,
     userId,
     async (ctx, actorId) => {
-      const account = await stripe.getAccountByUserId(ctx, { userId: actorId });
+      const account = await personaAccount(ctx, actorId);
       if (!account?.stripeAccountId) return null;
       const price = await stripe.getPriceByStripeId(ctx, { stripePriceId });
       if (!price) return null;

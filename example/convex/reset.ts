@@ -8,7 +8,16 @@ import { stripe } from "./stripe";
 export const clearAppDb = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const tables = ["users"] as const;
+    const tables = [
+      "users",
+      "storeSales",
+      "sellerCosts",
+      "storeCostBills",
+      "storeBalanceFunding",
+      "storePlanCatalog",
+      "sandboxFixtureJobs",
+      "sandboxFixtureResources",
+    ] as const;
     let totalCleared = 0;
 
     for (const tableName of tables) {

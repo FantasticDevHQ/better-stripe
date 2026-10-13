@@ -16,7 +16,16 @@ type TransferLedgerRow = {
 // Accounts
 export const getAccountByUserId = query({
   args: { userId: v.string() },
-  handler: async (ctx, args) => stripe.getAccountByUserId(ctx, args),
+  handler: async (ctx, args) => {
+    if (!args.userId) return null;
+    const userId = ctx.db.normalizeId("users", args.userId);
+    const user = userId ? await ctx.db.get("users", userId) : null;
+    return user?.stripeAccountId
+      ? stripe.getAccountByStripeId(ctx, {
+          stripeAccountId: user.stripeAccountId,
+        })
+      : stripe.getAccountByUserId(ctx, args);
+  },
 });
 
 // Products & Prices
@@ -175,12 +184,16 @@ export const listRefunds = query({
     accountId: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
   },
-  handler: async (ctx, args) =>
-    stripe.listRefunds(ctx, {
-      stripeAccountId: args.accountId,
+  handler: async (ctx, args) => {
+    const rows = await stripe.listRefunds(ctx, {
+      stripeAccountId: args.stripePaymentIntentId ? undefined : args.accountId,
       stripePaymentIntentId: args.stripePaymentIntentId,
       limit: 25,
-    }),
+    });
+    return args.accountId
+      ? rows.filter((row) => row.accountId === args.accountId)
+      : rows;
+  },
 });
 
 // Config
@@ -296,6 +309,65 @@ export const getAccountEarnings = query({
       components.betterStripe.connect.queries.getAccountEarnings,
       args,
     ),
+});
+
+/** Store labels for current sales and legacy separate-charge split transfers. */
+export const listAffiliateSales = query({
+  args: { accountId: v.string() },
+  returns: v.array(
+    v.object({
+      stripeTransferId: v.string(),
+      sourceChargeId: v.optional(v.string()),
+      storeName: v.union(v.string(), v.null()),
+      amount: v.number(),
+      currency: v.string(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const earnings = await ctx.runQuery(
+      components.betterStripe.connect.queries.getAccountEarnings,
+      { destinationAccountId: args.accountId },
+    );
+    return Promise.all(
+      earnings.transfers.map(async (transfer) => {
+        let seller = null;
+        if (transfer.sourceChargeId) {
+          const sale = await ctx.db
+            .query("storeSales")
+            .withIndex("by_charge", (q) =>
+              q.eq("chargeId", transfer.sourceChargeId!),
+            )
+            .first();
+          if (sale?.affiliateAccountId === args.accountId)
+            seller = await ctx.db.get("users", sale.sellerId);
+          if (!seller) {
+            const legs = await ctx.runQuery(
+              components.betterStripe.connect.queries.listTransfersByCharge,
+              { sourceChargeId: transfer.sourceChargeId, limit: 10 },
+            );
+            const store = legs.find((leg) => leg.role === "store");
+            if (store)
+              seller = await ctx.db
+                .query("users")
+                .withIndex("by_stripe_account", (q) =>
+                  q.eq("stripeAccountId", store.destinationAccountId),
+                )
+                .first();
+          }
+        }
+        return {
+          stripeTransferId: transfer.stripeTransferId,
+          sourceChargeId: transfer.sourceChargeId,
+          storeName:
+            seller?.role === "seller"
+              ? (seller.storeName ?? seller.name)
+              : null,
+          amount: transfer.amount - (transfer.reversedAmount ?? 0),
+          currency: transfer.currency,
+        };
+      }),
+    );
+  },
 });
 
 export const getAccountPayouts = query({

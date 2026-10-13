@@ -1,3 +1,4 @@
+import { SellerCosts } from "@/components/seller-costs";
 /**
  * Seller disputes page (BTS-44) — the culminating dispute demo.
  *
@@ -402,6 +403,8 @@ export function SellerDisputes() {
           buyer's subscription.
         </p>
       </div>
+
+      <SellerCosts kind="dispute" />
 
       <Tabs defaultValue="headless">
         <TabsList>

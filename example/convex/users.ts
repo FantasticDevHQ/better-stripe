@@ -5,8 +5,10 @@ import { query } from "./_generated/server";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    // eslint-disable-next-line @convex-dev/no-collect-in-query -- This example lists only its small, fixed set of seeded personas.
-    return await ctx.db.query("users").collect();
+    return ctx.db
+      .query("users")
+      .withIndex("by_test_fixture", (q) => q.eq("testFixture", undefined))
+      .take(100);
   },
 });
 

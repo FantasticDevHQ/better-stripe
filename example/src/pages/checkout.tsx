@@ -17,9 +17,11 @@ function CheckoutForm({
   priceId,
   userId,
   publishableKey,
+  referralCode,
 }: {
   priceId: string;
-  userId: string;
+  userId?: import("../../convex/_generated/dataModel").Id<"users">;
+  referralCode?: string;
   publishableKey: string;
 }) {
   const createCheckout = useAction(api.actions.createCheckoutSession);
@@ -33,6 +35,7 @@ function CheckoutForm({
     try {
       const session = await createCheckout({
         userId,
+        referralCode,
         stripePriceId: priceId,
         returnUrl: buildCheckoutReturnUrl(window.location.origin),
       });
@@ -51,7 +54,7 @@ function CheckoutForm({
           : "Failed to create checkout session.",
       );
     }
-  }, [createCheckout, userId, priceId]);
+  }, [createCheckout, userId, priceId, referralCode]);
 
   // Kick off checkout-session creation once on mount. The `hasInitiated`
   // ref guard inside `initCheckout` keeps it idempotent under StrictMode's
@@ -93,6 +96,7 @@ function CheckoutForm({
 export function Checkout() {
   const [searchParams] = useSearchParams();
   const priceId = searchParams.get("priceId");
+  const referralCode = searchParams.get("ref") ?? undefined;
   const { currentUser } = useRole();
   const publishableKey = useQuery(api.queries.getPublishableKey);
 
@@ -107,6 +111,8 @@ export function Checkout() {
         </Alert>
         <Button
           variant="link"
+          nativeButton={false}
+          role="link"
           render={<Link to="/" aria-label="Back to pricing" />}
         >
           Back to pricing
@@ -120,10 +126,7 @@ export function Checkout() {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Checkout</h1>
         <p className="text-muted-foreground">
-          Completing purchase for price:{" "}
-          <code className="bg-muted rounded px-2 py-0.5 text-sm">
-            {priceId}
-          </code>
+          Complete your purchase securely with Stripe.
         </p>
       </div>
 
@@ -145,8 +148,14 @@ export function Checkout() {
             </Alert>
           ) : (
             <CheckoutForm
+              key={`${currentUser.id}:${priceId}:${referralCode ?? ""}`}
               priceId={priceId}
-              userId={currentUser.id}
+              referralCode={referralCode}
+              userId={
+                currentUser.id
+                  ? (currentUser.id as import("../../convex/_generated/dataModel").Id<"users">)
+                  : undefined
+              }
               publishableKey={publishableKey}
             />
           )}
@@ -156,6 +165,8 @@ export function Checkout() {
       <Button
         variant="ghost"
         size="sm"
+        nativeButton={false}
+        role="link"
         render={<Link to="/" aria-label="Back to pricing" />}
       >
         <ArrowLeft data-icon="inline-start" className="mr-1 h-3 w-3" />

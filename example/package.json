@@ -16,7 +16,8 @@
     "typecheck": "tsc -b",
     "typecheck:convex": "npx convex dev --once",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e:balance-renewals": "node --import tsx scripts/test-balance-renewals.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -1,0 +1,479 @@
+{
+  "runId": "renewal-20261013-f",
+  "startedAt": "2026-10-13T08:45:55.246Z",
+  "webhooks": {
+    "snapshotEvents": 29,
+    "thinEvents": 12
+  },
+  "funded": {
+    "actor": {
+      "accountId": "acct_1UQ1LP9TiyYnyRon",
+      "clockId": "clock_1UQ1LO6JR7kThJogTRnVHHrX",
+      "periodEnd": 1794559558,
+      "sellerId": "jh754w3n9ns2g7avb1960kbnzs8g75hc",
+      "subscriptionId": "sub_1UQ1LX6JR7kThJogkdV4OA0u"
+    },
+    "sources": {
+      "disputePaymentId": "pi_3UQ1M86JR7kThJog1uNXAyJS",
+      "refundPaymentId": "pi_3UQ1Lz6JR7kThJog11OzjYpq"
+    },
+    "before": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1791881158,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 88,
+          "paymentIntentId": "pi_3UQ1Lz6JR7kThJog11OzjYpq",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 1559,
+          "paymentIntentId": "pi_3UQ1M86JR7kThJog1uNXAyJS",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 900,
+        "amountRemaining": 0,
+        "id": "in_1UQ1LX6JR7kThJogV8hPvFRE",
+        "lines": [
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_create",
+        "status": "paid",
+        "total": 900
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQ1LX6JR7kThJog0In0CP30",
+        "method": "card",
+        "status": "succeeded"
+      },
+      "periodEnd": 1794559558,
+      "subscriptionStatus": "active"
+    },
+    "draft": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1794559559,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Lz6JR7kThJog11OzjYpq",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1M86JR7kThJog1uNXAyJS",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQ1MR6JR7kThJog1FMFBVYI",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "draft",
+        "total": 2547
+      },
+      "localStatus": "unpaid",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "",
+        "method": "",
+        "status": ""
+      },
+      "periodEnd": 1797151558,
+      "subscriptionStatus": "active"
+    },
+    "paid": {
+      "available": 15653,
+      "clockStatus": "ready",
+      "clockTime": 1794566759,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Lz6JR7kThJog11OzjYpq",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1M86JR7kThJog1uNXAyJS",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [
+        {
+          "amount": -2547,
+          "description": "Stripe balance payment - Subscription update",
+          "fee": 0,
+          "id": "txn_1UQ1Mj9TiyYnyRonIxqQxmZL",
+          "net": -2547
+        }
+      ],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 2547,
+        "amountRemaining": 0,
+        "id": "in_1UQ1MR6JR7kThJog1FMFBVYI",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "paid",
+        "total": 2547
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQ1Mh6JR7kThJog1Oryps24",
+        "method": "stripe_balance",
+        "status": "succeeded"
+      },
+      "periodEnd": 1797151558,
+      "subscriptionStatus": "active"
+    },
+    "paidRetryResult": "Stripe rejected retry because the invoice is already paid",
+    "paidRetry": {
+      "available": 15653,
+      "clockStatus": "ready",
+      "clockTime": 1794566759,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Lz6JR7kThJog11OzjYpq",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1M86JR7kThJog1uNXAyJS",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [
+        {
+          "amount": -2547,
+          "description": "Stripe balance payment - Subscription update",
+          "fee": 0,
+          "id": "txn_1UQ1Mj9TiyYnyRonIxqQxmZL",
+          "net": -2547
+        }
+      ],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 2547,
+        "amountRemaining": 0,
+        "id": "in_1UQ1MR6JR7kThJog1FMFBVYI",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "paid",
+        "total": 2547
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQ1Mh6JR7kThJog1Oryps24",
+        "method": "stripe_balance",
+        "status": "succeeded"
+      },
+      "periodEnd": 1797151558,
+      "subscriptionStatus": "active"
+    }
+  },
+  "insufficient": {
+    "actor": {
+      "accountId": "acct_1UQ1N46egzmlIbyz",
+      "clockId": "clock_1UQ1N36JR7kThJogtA793wnd",
+      "periodEnd": 1794559661,
+      "sellerId": "jh79fyk07342t6nmsxzygt0c858g63bc",
+      "subscriptionId": "sub_1UQ1NC6JR7kThJogxe4MIOpD"
+    },
+    "sources": {
+      "disputePaymentId": "pi_3UQ1Ne6JR7kThJog1LlIRKRF",
+      "refundPaymentId": "pi_3UQ1NW6JR7kThJog1XonNXKp"
+    },
+    "before": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1791881261,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 88,
+          "paymentIntentId": "pi_3UQ1NW6JR7kThJog1XonNXKp",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 1559,
+          "paymentIntentId": "pi_3UQ1Ne6JR7kThJog1LlIRKRF",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 900,
+        "amountRemaining": 0,
+        "id": "in_1UQ1NC6JR7kThJogpL2XIapT",
+        "lines": [
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_create",
+        "status": "paid",
+        "total": 900
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQ1NC6JR7kThJog1QozL6Y1",
+        "method": "card",
+        "status": "succeeded"
+      },
+      "periodEnd": 1794559661,
+      "subscriptionStatus": "active"
+    },
+    "draft": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1794559662,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1NW6JR7kThJog1XonNXKp",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Ne6JR7kThJog1LlIRKRF",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQ1O36JR7kThJogKSWLgGPa",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "draft",
+        "total": 2547
+      },
+      "localStatus": "unpaid",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "",
+        "method": "",
+        "status": ""
+      },
+      "periodEnd": 1797151661,
+      "subscriptionStatus": "active"
+    },
+    "failed": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1794566862,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1NW6JR7kThJog1XonNXKp",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Ne6JR7kThJog1LlIRKRF",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQ1O36JR7kThJogKSWLgGPa",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "open",
+        "total": 2547
+      },
+      "localStatus": "canceled",
+      "payment": {
+        "declineCode": "generic_decline",
+        "errorCode": "insufficient_funds",
+        "errorMessage": "Account acct_1UQ1N46egzmlIbyz has insufficient funds. Please use a different payment method or try again later.",
+        "id": "pi_3UQ1OL6JR7kThJog1l6YYwti",
+        "method": "stripe_balance",
+        "status": "requires_payment_method"
+      },
+      "periodEnd": 1797151661,
+      "subscriptionStatus": "canceled"
+    },
+    "funded": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1794566862,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1NW6JR7kThJog1XonNXKp",
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQ1Ne6JR7kThJog1LlIRKRF",
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQ1O36JR7kThJogKSWLgGPa",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Unrecovered Stripe costs from refunds and disputes"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "open",
+        "total": 2547
+      },
+      "localStatus": "canceled",
+      "payment": {
+        "declineCode": "generic_decline",
+        "errorCode": "insufficient_funds",
+        "errorMessage": "Account acct_1UQ1N46egzmlIbyz has insufficient funds. Please use a different payment method or try again later.",
+        "id": "pi_3UQ1OL6JR7kThJog1l6YYwti",
+        "method": "stripe_balance",
+        "status": "requires_payment_method"
+      },
+      "periodEnd": 1797151661,
+      "subscriptionStatus": "canceled"
+    },
+    "cleanupError": "Error: Command failed: pnpm exec convex run sandboxRenewals:finish {\"sellerId\":\"jh79fyk07342t6nmsxzygt0c858g63bc\"}\n✖ Failed to run function \"sandboxRenewals:finish\":\nError: [Request ID: 8ac2ae1ae40453a1] Server Error\nUncaught Error: No such subscription: 'sub_1UQ1NC6JR7kThJogxe4MIOpD'\n    at generateV1Error (../../../node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/Error.ts:48:17)\n    at <anonymous> (../../../node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/RequestSender.ts:229:20)\n"
+  },
+  "status": "failed",
+  "error": "Error: Recovery after earnings arrive timed out: {\"available\":15653,\"clockStatus\":\"ready\",\"clockTime\":1794566862,\"costs\":[{\"amountDue\":88,\"collected\":0,\"invoiced\":88,\"outstanding\":0,\"paymentIntentId\":\"pi_3UQ1NW6JR7kThJog1XonNXKp\",\"sourceType\":\"refund\"},{\"amountDue\":1559,\"collected\":0,\"invoiced\":1559,\"outstanding\":0,\"paymentIntentId\":\"pi_3UQ1Ne6JR7kThJog1LlIRKRF\",\"sourceType\":\"dispute\"}],\"debits\":[{\"amount\":-2547,\"description\":\"Stripe balance payment - Subscription update\",\"fee\":0,\"id\":\"txn_1UQ1Or6egzmlIbyzArsNSqQ5\",\"net\":-2547}],\"hasAccess\":false,\"invoice\":{\"amountPaid\":2547,\"amountRemaining\":0,\"id\":\"in_1UQ1O36JR7kThJogKSWLgGPa\",\"lines\":[{\"amount\":1647,\"description\":\"Unrecovered Stripe costs from refunds and disputes\"},{\"amount\":900,\"description\":\"1 × BetterStripe Starter store plan (at $9.00 / month)\"}],\"reason\":\"subscription_cycle\",\"status\":\"paid\",\"total\":2547},\"localStatus\":\"canceled\",\"payment\":{\"declineCode\":\"\",\"errorCode\":\"\",\"errorMessage\":\"\",\"id\":\"pi_3UQ1OL6JR7kThJog1l6YYwti\",\"method\":\"stripe_balance\",\"status\":\"succeeded\"},\"periodEnd\":1797151661,\"subscriptionStatus\":\"canceled\"}",
+  "finishedAt": "2026-10-13T08:52:40.575Z"
+}

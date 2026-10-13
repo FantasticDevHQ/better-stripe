@@ -1,5 +1,6 @@
 import {
   type ReactNode,
+  type Context,
   createContext,
   useCallback,
   useContext,
@@ -8,10 +9,12 @@ import {
 } from "react";
 
 import { useQuery } from "convex/react";
+import { EmptyState } from "@/components/empty-state";
 
 import { api } from "../../convex/_generated/api";
 
-export type Role = "customer" | "seller" | "admin" | "visitor";
+import { type Role } from "@/lib/role-navigation";
+export type { Role } from "@/lib/role-navigation";
 
 export interface MockUser {
   id: string;
@@ -26,24 +29,38 @@ interface RoleContextValue {
   currentUser: MockUser;
   currentRole: Role;
   setRole: (role: Role) => void;
+  sellers: MockUser[];
+  setSeller: (id: string) => void;
 }
 
-const RoleContext = createContext<RoleContextValue | null>(null);
+// Keep the context identity while Vite replaces providers and consumers.
+const RoleContext: Context<RoleContextValue | null> =
+  import.meta.hot?.data?.roleContext ??
+  createContext<RoleContextValue | null>(null);
+if (import.meta.hot?.data) import.meta.hot.data.roleContext = RoleContext;
 
 const STORAGE_KEY = "betterlearn-role";
 
 export function RoleProvider({ children }: { children: ReactNode }) {
+  const [sellerId, setSellerState] = useState(
+    () => localStorage.getItem("betterstripe-seller") ?? "",
+  );
+  const setSeller = useCallback((id: string) => {
+    setSellerState(id);
+    localStorage.setItem("betterstripe-seller", id);
+  }, []);
   const [role, setRoleState] = useState<Role>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (
       stored === "customer" ||
       stored === "seller" ||
+      stored === "affiliate" ||
       stored === "admin" ||
       stored === "visitor"
     ) {
       return stored;
     }
-    return "customer";
+    return "visitor";
   });
 
   const setRole = useCallback((newRole: Role) => {
@@ -59,8 +76,33 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // is the real `_id` that `getAccountByUserId` resolves, and carries the
   // linked `stripeAccountId`.
   const users = useQuery(api.users.list);
+  const sellers: MockUser[] = (users ?? [])
+    .filter((u) => u.role === "seller")
+    .map((u) => ({
+      id: u._id,
+      name: u.storeName ?? u.name,
+      email: u.email,
+      role: "seller",
+      stripeAccountId: u.stripeAccountId,
+    }));
 
   // Query still pending — hold rendering so consumers never see a null user.
+  if (role === "visitor") {
+    return (
+      <RoleContext.Provider
+        value={{
+          currentUser: { id: "", name: "Visitor", email: "", role: "visitor" },
+          currentRole: role,
+          setRole,
+          sellers,
+          setSeller,
+        }}
+      >
+        {children}
+      </RoleContext.Provider>
+    );
+  }
+
   if (users === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
@@ -73,16 +115,35 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // than spin forever — the seed hasn't run (or the users table is empty).
   // Point at the actual seed trigger (`/admin/setup` → "Seed Demo Data"), not
   // the CLI `setup` script — that one only configures env vars (BTS-113).
-  const match = users.find((u) => u.role === role);
+  const match =
+    role === "seller"
+      ? (users.find((u) => u.role === "seller" && u._id === sellerId) ??
+        users.find((u) => u.role === "seller" && u.storeName) ??
+        users.find((u) => u.role === "seller"))
+      : users.find((u) => u.role === role);
   if (!match) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        No data found for the seeded “{role}” user. Open{" "}
-        <a href="/admin/setup" className="underline">
-          /admin/setup
-        </a>{" "}
-        and click “Seed Demo Data” to create the demo personas.
-      </div>
+      <RoleContext.Provider
+        value={{
+          currentUser: { id: "", name: role, email: "", role },
+          currentRole: role,
+          setRole,
+          sellers,
+          setSeller,
+        }}
+      >
+        {role === "admin" ? (
+          children
+        ) : (
+          <div className="p-6">
+            <EmptyState>
+              No demo persona is available for this role yet. Open admin setup
+              to seed the example.
+            </EmptyState>
+            <button onClick={() => setRole("admin")}>Open admin setup</button>
+          </div>
+        )}
+      </RoleContext.Provider>
     );
   }
 
@@ -90,16 +151,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     id: match._id,
     name: match.name,
     email: match.email,
-    // `match` was found by `u.role === role`, so the active switcher role IS
-    // the user's role — using the state value keeps `Role` narrowed to the
-    // switchable personas (marketplace-only roles like buyer/affiliate are
-    // seeded data, not switcher entries).
     role,
     stripeAccountId: match.stripeAccountId,
   };
 
   return (
-    <RoleContext.Provider value={{ currentUser, currentRole: role, setRole }}>
+    <RoleContext.Provider
+      value={{ currentUser, currentRole: role, setRole, sellers, setSeller }}
+    >
       {children}
     </RoleContext.Provider>
   );

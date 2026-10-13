@@ -1,5 +1,11 @@
+import { sellerCostFields, costBillFields } from "./lib/sellerCostValidators";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  storePlanIdValidator,
+  storePlanRecordValidator,
+  storeSaleRecordFields,
+} from "./lib/storePlanValidators";
 
 export default defineSchema({
   // Mock users (no auth — just IDs and roles)
@@ -16,6 +22,8 @@ export default defineSchema({
       v.literal("buyer"),
       v.literal("affiliate"),
     ),
+    storePlan: v.optional(storePlanRecordValidator),
+    testFixture: v.optional(v.boolean()),
     avatarUrl: v.optional(v.string()),
     // Marketplace sellers own a store; platform-owned products are tagged to
     // the seller's account id. Undefined for non-store personas.
@@ -25,8 +33,56 @@ export default defineSchema({
     // (e.g. admin, visitor) or before seeding has linked them.
     stripeAccountId: v.optional(v.string()),
   })
+    .index("by_test_fixture", ["testFixture"])
     .index("by_role", ["role"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_stripe_account", ["stripeAccountId"]),
+
+  storeBalanceFunding: defineTable({
+    sellerId: v.id("users"),
+    subscriptionId: v.string(),
+    enabled: v.boolean(),
+    paymentMethodId: v.string(),
+    previousPaymentMethodId: v.optional(v.string()),
+    previousPaymentMethodTypes: v.optional(v.array(v.string())),
+    consentAt: v.number(),
+  }).index("by_seller", ["sellerId"]),
+  storePlanCatalog: defineTable({
+    planId: storePlanIdValidator,
+    stripeProductId: v.string(),
+    stripePriceId: v.string(),
+  }).index("by_plan", ["planId"]),
+  storeSales: defineTable(storeSaleRecordFields)
+    .index("by_charge", ["chargeId"])
+    .index("by_seller", ["sellerId"]),
+
+  sellerCosts: defineTable(sellerCostFields)
+    .index("by_charge", ["sourceChargeId"])
+    // History must sort all costs by creation time, independently of open status.
+    // eslint-disable-next-line @convex-dev/no-duplicate-indexes
+    .index("by_seller", ["sellerId"])
+    .index("by_seller_open", ["sellerId", "open"]),
+  storeCostBills: defineTable(costBillFields).index("by_invoice", [
+    "invoiceId",
+  ]),
+  sandboxFixtureJobs: defineTable({
+    version: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("complete"),
+      v.literal("failed"),
+    ),
+    cursor: v.number(),
+    total: v.number(),
+    attempts: v.number(),
+    updatedAt: v.number(),
+    error: v.optional(v.string()),
+  }).index("by_version", ["version"]),
+  sandboxFixtureResources: defineTable({
+    key: v.string(),
+    stripeId: v.string(),
+    kind: v.string(),
+  }).index("by_key", ["key"]),
 
   // E2E observability: every sync trigger / async hook invocation records a
   // row here so the webhook E2E test can assert the trigger system ran.

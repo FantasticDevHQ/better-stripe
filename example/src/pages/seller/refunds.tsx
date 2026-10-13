@@ -1,3 +1,5 @@
+import { SellerCosts } from "@/components/seller-costs";
+import { useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -81,9 +83,14 @@ export function SellerRefunds() {
   const issueRefund = useAction(api.actions.issueRefund);
   const reverseTransfers = useAction(api.actions.reverseSaleTransfers);
 
-  const [paymentIntentId, setPaymentIntentId] = useState("");
+  const [params] = useSearchParams();
+  const [paymentIntentId, setPaymentIntentId] = useState(
+    params.get("payment_intent") ?? "",
+  );
   const [refundAmount, setRefundAmount] = useState("");
-  const [sourceChargeId, setSourceChargeId] = useState("");
+  const [sourceChargeId, setSourceChargeId] = useState(
+    params.get("charge_id") ?? "",
+  );
   const [reversalAmount, setReversalAmount] = useState("");
   const [refundResult, setRefundResult] = useState<RefundResult | null>(null);
   const [reversalResult, setReversalResult] = useState<ReversalResult | null>(
@@ -96,8 +103,11 @@ export function SellerRefunds() {
   const cleanPaymentIntentId = paymentIntentId.trim();
   const cleanSourceChargeId = sourceChargeId.trim();
   const refundHistoryArgs = cleanPaymentIntentId
-    ? { stripePaymentIntentId: cleanPaymentIntentId }
-    : {};
+    ? {
+        accountId: stripeAccountId,
+        stripePaymentIntentId: cleanPaymentIntentId,
+      }
+    : { accountId: stripeAccountId };
 
   const payment = useQuery(
     api.queries.getPaymentByStripeId,
@@ -107,7 +117,7 @@ export function SellerRefunds() {
   );
   const refunds = useQuery(
     api.queries.listRefunds,
-    account === undefined ? "skip" : refundHistoryArgs,
+    stripeAccountId ? refundHistoryArgs : "skip",
   );
 
   const refundedTotal = useMemo(
@@ -197,6 +207,8 @@ export function SellerRefunds() {
           run a standalone transfer reversal when ops needs a manual clawback.
         </p>
       </div>
+
+      <SellerCosts kind="refund" />
 
       {!stripeAccountId && (
         <Alert>

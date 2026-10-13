@@ -57,7 +57,10 @@ const CONFIGURATION_LABELS: Record<string, string> = {
  *  3. Lets that same account purchase a platform price as a customer.
  *  4. Demonstrates adding further configurations (recipient/merchant) later.
  */
-export function SellerMarketplaceAccount() {
+export function SellerMarketplaceAccount({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
+  const Heading = embedded ? "h2" : "h1";
   const { currentUser } = useRole();
   const [searchParams] = useSearchParams();
   const purchaseSessionId = searchParams.get("purchase_session_id");
@@ -118,7 +121,9 @@ export function SellerMarketplaceAccount() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Marketplace Account</h1>
+          <Heading className="text-2xl font-bold">
+            {embedded ? "Stripe settings" : "Marketplace Account"}
+          </Heading>
           <p className="text-muted-foreground mt-1">
             One Stripe account can be a payouts recipient AND a paying customer.
             This demo onboards you as a recipient first.
@@ -219,7 +224,9 @@ export function SellerMarketplaceAccount() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Marketplace Account</h1>
+          <Heading className="text-2xl font-bold">
+            {embedded ? "Stripe settings" : "Marketplace Account"}
+          </Heading>
           <p className="text-muted-foreground mt-1">
             One account, configurations accrue: recipient (payouts) → customer
             (billable) → optionally more later.
@@ -232,10 +239,7 @@ export function SellerMarketplaceAccount() {
         <CheckoutStatus
           status={
             purchaseSession?.status as
-              | "open"
-              | "complete"
-              | "expired"
-              | undefined
+              "open" | "complete" | "expired" | undefined
           }
           isLoading={purchaseSession === undefined}
           renderComplete={() => (

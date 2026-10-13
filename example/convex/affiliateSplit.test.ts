@@ -57,14 +57,14 @@ describe("buildSplitRecipients", () => {
     },
   );
 
-  it("keeps sub-cent rounding with the platform", () => {
+  it("keeps the final cent with the seller", () => {
     expect(
       netSplitAmounts(
         buildSplitRecipients({ store, affiliate, referralCode: "avery" }),
         2,
         1,
       ).map((t) => t.amount),
-    ).toEqual([0, 0]);
+    ).toEqual([1, 0]);
   });
 
   it("routes store + affiliate legs on an attributed referral", () => {
@@ -107,4 +107,18 @@ describe("buildSplitRecipients", () => {
       { destinationAccountId: "acct_maya", role: "store", percent: 100 },
     ]);
   });
+});
+
+it("allocates every remaining cent to the seller after the affiliate share", () => {
+  const recipients = buildSplitRecipients({
+    store: { accountId: "acct_seller", name: "Seller" },
+    affiliate: { accountId: "acct_avery", name: "Avery" },
+    referralCode: "avery",
+  });
+  const split = netSplitAmounts(recipients, 12900, 404);
+  expect(split).toEqual([
+    { destinationAccountId: "acct_seller", role: "store", amount: 9997 },
+    { destinationAccountId: "acct_avery", role: "affiliate", amount: 2499 },
+  ]);
+  expect(split.reduce((sum, leg) => sum + leg.amount, 404)).toBe(12900);
 });

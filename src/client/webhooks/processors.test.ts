@@ -800,6 +800,22 @@ describe("processEvent — payments (status collapse)", () => {
 });
 
 describe("processEvent — payouts", () => {
+  it("scopes connected payouts to the event account instead of the external bank", async () => {
+    const whCtx = makeWhCtx();
+    const payoutEvent = event("payout.paid", {
+      id: "po_connected",
+      destination: "ba_bank",
+      amount: 5000,
+      currency: "usd",
+      status: "paid",
+      arrival_date: 1700000000,
+      metadata: {},
+    });
+    payoutEvent.account = "acct_store";
+    await processEvent(whCtx, payoutEvent);
+    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_store");
+  });
+
   it("normalizes a payout, taking destination as a string id", async () => {
     const whCtx = makeWhCtx();
     await processEvent(

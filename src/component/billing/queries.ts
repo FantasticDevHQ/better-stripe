@@ -376,3 +376,15 @@ export const listInvoices = query({
     return await ctx.db.query("invoices").take(limit);
   },
 });
+
+/** Seller subscriber lists use catalog prices, including referred subscriptions. */
+export const listSubscriptionsByPrice = query({
+  args: { priceId: v.string() },
+  returns: v.array(subscriptionDocValidator),
+  handler: async (ctx, args) =>
+    ctx.db
+      .query("subscriptions")
+      .withIndex("by_price_id", (q) => q.eq("priceId", args.priceId))
+      .order("desc")
+      .take(100),
+});

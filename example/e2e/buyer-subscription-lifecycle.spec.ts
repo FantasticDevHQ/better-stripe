@@ -31,6 +31,9 @@ test.describe("live buyer subscription lifecycle", () => {
     const pageErrors: Error[] = [];
     page.on("pageerror", (err) => pageErrors.push(err));
 
+    await page.addInitScript(() =>
+      localStorage.setItem("betterlearn-role", "customer"),
+    );
     await page.goto("/dashboard/billing");
     await expect(page.getByTestId("buyer-subscription-status")).toBeVisible({
       timeout: 30_000,

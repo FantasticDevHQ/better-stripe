@@ -10,15 +10,18 @@ const CommandEmpty = Command.Empty;
 const CommandGroup = Command.Group;
 const CommandItem = Command.Item;
 
-const destinations = [
-  { label: "Home", path: "/" },
-  { label: "Customer dashboard", path: "/dashboard" },
-  { label: "Seller dashboard", path: "/seller" },
-  { label: "Admin overview", path: "/admin" },
-  { label: "Webhook event log", path: "/admin/webhooks" },
-] as const;
+import { NAV_ITEMS } from "@/lib/role-navigation";
+import { useRole } from "@/providers/role-context";
 
 export function AppCommandMenu() {
+  const { currentRole } = useRole();
+  const destinations = [
+    { label: "Home", path: "/" },
+    ...NAV_ITEMS[currentRole].map((item) => ({
+      label: item.label,
+      path: item.to,
+    })),
+  ];
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -47,7 +50,7 @@ export function AppCommandMenu() {
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      label="Navigate BetterTees"
+      label="Navigate BetterStripe"
       overlayClassName="fixed inset-0 z-50 bg-black/50"
       contentClassName="bg-popover text-popover-foreground fixed left-1/2 top-24 z-50 w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border shadow-xl"
     >

@@ -9,7 +9,10 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { api } from "../../convex/_generated/api";
 
+import { useRole } from "@/providers/role-context";
+
 export function CheckoutStatusPage() {
+  const { currentRole } = useRole();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -27,6 +30,8 @@ export function CheckoutStatusPage() {
         </Alert>
         <Button
           variant="link"
+          nativeButton={false}
+          role="link"
           render={<Link to="/" aria-label="Back to pricing" />}
         >
           Back to pricing
@@ -57,13 +62,29 @@ export function CheckoutStatusPage() {
               <h1 className="text-2xl font-bold">Payment successful!</h1>
               <p className="text-muted-foreground">
                 {session?.mode === "payment"
-                  ? "Your purchase is complete — thanks for your order!"
+                  ? "Your purchase is complete. Thanks for your order!"
                   : "Your subscription is now active. You can start learning right away."}
               </p>
+              {typeof session?.metadata?.productName === "string" && (
+                <p className="font-medium">{session.metadata.productName}</p>
+              )}
               <Button
-                render={<Link to="/dashboard" aria-label="Go to dashboard" />}
+                nativeButton={false}
+                role="link"
+                render={
+                  <Link
+                    to={currentRole === "customer" ? "/dashboard" : "/stores"}
+                    aria-label={
+                      currentRole === "customer"
+                        ? "Go to Dashboard"
+                        : "Continue shopping"
+                    }
+                  />
+                }
               >
-                Go to Dashboard
+                {currentRole === "customer"
+                  ? "Go to Dashboard"
+                  : "Continue shopping"}
               </Button>
             </CardContent>
           </Card>
@@ -76,7 +97,11 @@ export function CheckoutStatusPage() {
               <p className="text-muted-foreground">
                 This checkout session has expired. Please try again.
               </p>
-              <Button render={<Link to="/" aria-label="Back to pricing" />}>
+              <Button
+                nativeButton={false}
+                role="link"
+                render={<Link to="/" aria-label="Back to pricing" />}
+              >
                 Back to pricing
               </Button>
             </CardContent>
@@ -101,7 +126,11 @@ export function CheckoutStatusPage() {
             <p className="text-muted-foreground">
               No data found for this checkout session.
             </p>
-            <Button render={<Link to="/" aria-label="Back to pricing" />}>
+            <Button
+              nativeButton={false}
+              role="link"
+              render={<Link to="/" aria-label="Back to pricing" />}
+            >
               Back to pricing
             </Button>
           </CardContent>

@@ -42,7 +42,7 @@ export type UseSplitBreakdownResult = {
 };
 
 /**
- * Factory for a per-sale split-breakdown hook (BTS-36): reads the sale's
+ * Factory for a per-sale split-breakdown hook: reads the sale's
  * original split legs (`listTransfersByCharge` — reinstatement rows are
  * excluded server-side) and sums them by role, with the platform's share
  * derived from the sale amount when provided. Presentation math only — the
@@ -51,11 +51,9 @@ export type UseSplitBreakdownResult = {
  * Pass `sourceChargeId: undefined` to skip the query. The `useQuery` binding
  * must support Convex's `"skip"` sentinel.
  *
- * Note (BTS-64): the underlying `listTransfersByCharge` query is capped at 50
- * rows. Unlike the per-account earnings totals this is safe in practice — a
- * single sale has only a handful of split legs — but a sale split across more
- * than 50 recipients would undercount here; pass a higher `limit` on that query
- * if you ever do that.
+ * Bind this to a query that returns every original leg for the charge. The
+ * component's `listTransfersByCharge` returns all legs by default; applying an
+ * explicit preview limit in the app's wrapper would understate these totals.
  */
 export function createUseSplitBreakdown(
   useQuery: (queryRef: any, args: Record<string, unknown> | "skip") => any,

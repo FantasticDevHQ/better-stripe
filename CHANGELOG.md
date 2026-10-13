@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Return every original split leg by default from `listTransfersByCharge`,
+  excluding reinstatement rows before applying any explicit preview limit.
+  Split breakdowns and reversal claims now cover sales with more than 50 legs.
+  Queries and atomic claims fail on Convex resource limits rather than silently
+  truncate financial data. `listTransfersByAccount` remains a preview API;
+  earnings hooks use exact server-side aggregates.
+- Update the former roadmap to describe the existing product-level first-charge
+  descriptors, first-invoice fee recovery, retry-safe reversal claims, and exact
+  earnings aggregates, including their practical limitations.
+- Remove internal tracker references from public documentation and add a
+  regression check that prevents their reintroduction.
+
 ## [0.6.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.5.0...v0.6.0) (2026-10-12)
 
 
@@ -10,7 +24,7 @@
 ### Features
 
 * complete Stripe Endive compatibility and release 0.5.0 ([#126](https://github.com/FantasticDevHQ/better-stripe/issues/126)) ([135695f](https://github.com/FantasticDevHQ/better-stripe/commit/135695f51906ea156a36dbe8d0d43cf1d99e5fc1))
-* publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing (BTS-114) ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
+* publish as [@fantastic](https://github.com/fantastic).dev/better-stripe via Release Please and trusted publishing ([#120](https://github.com/FantasticDevHQ/better-stripe/issues/120)) ([7451eeb](https://github.com/FantasticDevHQ/better-stripe/commit/7451eeb514b09a09656355c74c4bec083e1ddce7))
 
 
 ### Bug Fixes
@@ -20,7 +34,7 @@
 
 ### Maintenance
 
-* **deps:** update dependencies to latest (BTS-115) ([#122](https://github.com/FantasticDevHQ/better-stripe/issues/122)) ([a7e4161](https://github.com/FantasticDevHQ/better-stripe/commit/a7e416179d20afdd2356668cbd4482e2e3fa4eff))
+* **deps:** update dependencies to latest ([#122](https://github.com/FantasticDevHQ/better-stripe/issues/122)) ([a7e4161](https://github.com/FantasticDevHQ/better-stripe/commit/a7e416179d20afdd2356668cbd4482e2e3fa4eff))
 
 
 ### Continuous Integration
@@ -69,13 +83,13 @@ changed by this release.
 
 ### Minor Changes
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `getAccountBalance` for per-account balance retrieval (BTS-65, [#62](https://github.com/kellykampen/better-stripe/issues/62)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `getAccountBalance` for per-account balance retrieval ([#62](https://github.com/kellykampen/better-stripe/issues/62)).
 
   New `BetterStripe.getAccountBalance({ stripeAccountId })` reads a connected account's live Stripe balance, scoped via the `Stripe-Account` header (mirroring the other per-account calls like `createPayout`). Pairs Stripe's separate `available`/`pending` per-currency lists into one `AccountBalance` (`{ available, pending, currency }`, minor units) per currency — a currency present on only one side defaults to `0` on the other. `AccountBalance` is re-exported at the package root, and its shape matches the `PayoutSchedule` component's `balance` prop directly.
 
   Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `BuyerBillingView` component (BTS-39, [#50](https://github.com/kellykampen/better-stripe/issues/50)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `BuyerBillingView` component ([#50](https://github.com/kellykampen/better-stripe/issues/50)).
 
   The buyer's embedded-only, in-app billing surface: shows a buyer's subscriptions grouped by store (via the existing `groupSubscriptionsByStore` util, not recomputed), with per-store cancel/reactivate through the shared `SubscriptionCard`/`SubscriptionActions`, the one saved payment method reusable across every store, and an embedded (no-redirect) card-update slot.
 
@@ -88,20 +102,20 @@ changed by this release.
 
   Previously `DEFAULT_ACCOUNT_CONFIGURATION` only requested the merchant configuration, so there was no first-class path to create a customer-billable account.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `DisputeDetail` + `EvidenceForm` headless React components (BTS-54, [#40](https://github.com/kellykampen/better-stripe/issues/40)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `DisputeDetail` + `EvidenceForm` headless React components ([#40](https://github.com/kellykampen/better-stripe/issues/40)).
 
   - `DisputeDetail` — renders a dispute's amount, reason, status, evidence-due countdown message, and linked transfer ids. Loading/empty states, i18n label overrides.
   - `EvidenceForm` — headless controlled form for the four Skool-style evidence fields (product description, access activity, additional info, customer communication); `stage()` saves a draft (no `submit` key), `submit()` finalizes with `submit: true`. Supports `stripeAccountId` scoping and `onStaged`/`onSubmitted`/`onError` callbacks.
 
-  Both are headless/themeable (`className` plus a `children` render-prop) and consume the existing BTS-31/BTS-53 core with no duplicated logic. Purely additive.
+  Both are headless/themeable (`className` plus a `children` render-prop) and consume the existing dispute handling/dispute hooks core with no duplicated logic. Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `DisputesList` component with due-by countdown badges (BTS-40, [#41](https://github.com/kellykampen/better-stripe/issues/41)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `DisputesList` component with due-by countdown badges ([#41](https://github.com/kellykampen/better-stripe/issues/41)).
 
-  Pure, hook-free presentational list of a seller's disputes, sorted by evidence deadline (soonest first, no-deadline rows last, overdue rows naturally at the top). Rows accept the exact shape `getDisputeWithCountdown`/`useDisputeWithCountdown` (BTS-53) produce, so the component never recomputes deadlines itself.
+  Pure, hook-free presentational list of a seller's disputes, sorted by evidence deadline (soonest first, no-deadline rows last, overdue rows naturally at the top). Rows accept the exact shape `getDisputeWithCountdown`/`useDisputeWithCountdown`  produce, so the component never recomputes deadlines itself.
 
   Headless overrides: `className`, i18n labels (`emptyLabel`, `loadingLabel`, `dueLabel`/`overdueLabel` with `{days}` templating), a per-row `renderRow` slot, and a whole-list `children` render prop. Default markup is semantic `ul[role=list] > li[data-dispute-id]` with a `span[role=status]` badge carrying `data-overdue`. Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add dispute React hooks: `createUseDisputes` + `createUseDisputeWithCountdown` (BTS-53, [#36](https://github.com/kellykampen/better-stripe/issues/36)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add dispute React hooks: `createUseDisputes` + `createUseDisputeWithCountdown` ([#36](https://github.com/kellykampen/better-stripe/issues/36)).
 
   Two new factory hooks following the existing `createUse*` convention:
 
@@ -110,7 +124,7 @@ changed by this release.
 
   Both wired into the `@getdojo/better-stripe/react` entry export; `StripeComponentDispute` re-exported for consumers. Purely additive.
 
-- [#51](https://github.com/kellykampen/better-stripe/pull/51) [`6345352`](https://github.com/kellykampen/better-stripe/commit/6345352cf4b3ad4247c865090693e877da6bf5ef) Thanks [@kellykampen](https://github.com/kellykampen)! - Smart-retry dunning: surface failed subscription cycles (BTS-33).
+- [#51](https://github.com/kellykampen/better-stripe/pull/51) [`6345352`](https://github.com/kellykampen/better-stripe/commit/6345352cf4b3ad4247c865090693e877da6bf5ef) Thanks [@kellykampen](https://github.com/kellykampen)! - Smart-retry dunning: surface failed subscription cycles.
 
   `invoice.payment_failed` previously upserted the invoice but fired **no** async hook, so apps couldn't react to a failed subscription cycle. It now schedules a new invoice-level hook:
 
@@ -124,7 +138,7 @@ changed by this release.
 
   Note: covered by unit tests (hook scheduling, invoice state transition + retry metadata, `past_due`/`unpaid` persistence). The live `invoice.payment_failed` path (real failed-card subscription cycle) should be exercised by the E2E webhook run before release.
 
-- [#64](https://github.com/kellykampen/better-stripe/pull/64) [`477e282`](https://github.com/kellykampen/better-stripe/commit/477e282ea1cfd2fc198f1aa19cc376eea96b38ca) Thanks [@kellykampen](https://github.com/kellykampen)! - Exact earnings totals — fix silently truncated financial figures past 50 rows (BTS-64).
+- [#64](https://github.com/kellykampen/better-stripe/pull/64) [`477e282`](https://github.com/kellykampen/better-stripe/commit/477e282ea1cfd2fc198f1aa19cc376eea96b38ca) Thanks [@kellykampen](https://github.com/kellykampen)! - Exact earnings totals — fix silently truncated financial figures past 50 rows.
 
   `listTransfersByAccount` and `listPayouts` cap their results at 50 rows, and the `useEarnings` hook summed those rows client-side — so an account with more than 50 transfers or payouts reported **silently wrong** (understated) gross / reversed / net / paid-out totals, with no error.
 
@@ -139,37 +153,37 @@ changed by this release.
 
   **Behavior change:** if you wired `createUseEarnings` against `listTransfersByAccount` / `listPayouts`, repoint the refs at the new aggregate queries. The list queries and `BetterStripe.listPayouts()` are unchanged, now documented as capped drill-down views. `listTransfersByCharge` (per-sale split legs) is unchanged and safe in practice — a sale has few legs.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `createUseEarnings` + `createUseSplitBreakdown` React hook factories (BTS-36, [#44](https://github.com/kellykampen/better-stripe/issues/44)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `createUseEarnings` + `createUseSplitBreakdown` React hook factories ([#44](https://github.com/kellykampen/better-stripe/issues/44)).
 
   - `createUseEarnings(useQuery, transfersRef, payoutsRef)` → `useEarnings(accountId)` reads a recipient's transfer ledger and payouts, deriving `gross` (total transferred in), `reversed` (pulled back via fee collection + refund/dispute clawbacks — deliberately not labeled "fees", since a true platform-fees figure lives on the payments rows' `feeCollectedAmount`), `net`, `payouts`/`paidOut`, and the raw `transfers` for drill-down.
   - `createUseSplitBreakdown(useQuery, transfersByChargeRef)` → `useSplitBreakdown({ sourceChargeId, saleAmount? })` sums a sale's split legs by role (`store`/`affiliate`/`other`), each net of reversals, with the `platform` share derived when the caller supplies the sale amount.
 
-  Both follow the `createUse*` factory convention from BTS-53. Purely additive.
+  Both follow the `createUse*` factory convention from dispute hooks. Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add embedded Stripe Connect dispute components (BTS-55, [#48](https://github.com/kellykampen/better-stripe/issues/48)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add embedded Stripe Connect dispute components ([#48](https://github.com/kellykampen/better-stripe/issues/48)).
 
   The Stripe-hosted alternative to the headless dispute components, built on `@stripe/react-connect-js`:
 
-  - `ConnectProvider` — initializes ConnectJS once per mount via `loadConnectAndInitialize({ publishableKey, fetchClientSecret, appearance?, locale? })` and provides the instance through `ConnectComponentsProvider`. `fetchClientSecret` wires to an app action wrapping `stripe.createDisputeSession({ stripeAccountId })` (BTS-30).
+  - `ConnectProvider` — initializes ConnectJS once per mount via `loadConnectAndInitialize({ publishableKey, fetchClientSecret, appearance?, locale? })` and provides the instance through `ConnectComponentsProvider`. `fetchClientSecret` wires to an app action wrapping `stripe.createDisputeSession({ stripeAccountId })`.
   - `EmbeddedDisputes` — mounts Stripe's `disputes_list` embedded component, or `payment_disputes` scoped to one payment via the `payment` prop. Must render inside `ConnectProvider`.
 
   Adds `@stripe/connect-js` and `@stripe/react-connect-js` as regular dependencies, mirroring the existing `@stripe/stripe-js`/`@stripe/react-stripe-js` convention. Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `PayoutSchedule` component for recipient balance + payout display (BTS-38, [#46](https://github.com/kellykampen/better-stripe/issues/46)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add headless `PayoutSchedule` component for recipient balance + payout display ([#46](https://github.com/kellykampen/better-stripe/issues/46)).
 
   Pure, hook-free component showing a seller's available/pending balance (from a `RecipientBalance` snapshot prop) and next payout — the earliest `pending`/`in_transit` payout row with an arrival date, templated as "Next payout of $40.00 expected Jul 10, 2026", falling back to a rolling-schedule message when none is upcoming (payouts are automatic/rolling; the component deliberately offers no manual withdrawal). Optional `manageUrl` link out to the hosted Express dashboard.
 
   Headless conventions: `className`, i18n label overrides, loading/empty states, and a `children` render-prop with all computed state. Data comes entirely via props (no data-fetching hook yet); purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add product-level `statement_descriptor` so it covers a subscription's first charge (BTS-67, [#63](https://github.com/kellykampen/better-stripe/issues/63)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add product-level `statement_descriptor` so it covers a subscription's first charge ([#63](https://github.com/kellykampen/better-stripe/issues/63)).
 
-  The invoice-time descriptor path (BTS-32) sets the descriptor at `invoice.created`, which never reaches a subscription's first invoice — Stripe finalizes and (for `charge_automatically`/Checkout subscription-mode) pays invoice [#1](https://github.com/kellykampen/better-stripe/issues/1) synchronously at creation, before that handler runs. Per Stripe's descriptor precedence (Invoice → Product → charge-type default), a product-level `statement_descriptor` covers every cycle including the first.
+  The invoice-time descriptor path  sets the descriptor at `invoice.created`, which never reaches a subscription's first invoice — Stripe finalizes and (for `charge_automatically`/Checkout subscription-mode) pays invoice [#1](https://github.com/kellykampen/better-stripe/issues/1) synchronously at creation, before that handler runs. Per Stripe's descriptor precedence (Invoice → Product → charge-type default), a product-level `statement_descriptor` covers every cycle including the first.
 
-  `createProduct`/`updateProduct` now resolve the per-store descriptor (the store's stored suffix, else the platform default — mirroring the BTS-32 account-level resolution) and stamp it onto the Stripe Product's `statement_descriptor`, for products with an `accountId`. No public API change to existing call shapes.
+  `createProduct`/`updateProduct` now resolve the per-store descriptor (the store's stored suffix, else the platform default — mirroring the account-level descriptor resolution) and stamp it onto the Stripe Product's `statement_descriptor`, for products with an `accountId`. No public API change to existing call shapes.
 
-- [#70](https://github.com/kellykampen/better-stripe/pull/70) [`306d402`](https://github.com/kellykampen/better-stripe/commit/306d402b0148e0794a2239a5c83a0d3780300c38) Thanks [@kellykampen](https://github.com/kellykampen)! - Reclaim/expiry of dead reversal claims (BTS-74).
+- [#70](https://github.com/kellykampen/better-stripe/pull/70) [`306d402`](https://github.com/kellykampen/better-stripe/commit/306d402b0148e0794a2239a5c83a0d3780300c38) Thanks [@kellykampen](https://github.com/kellykampen)! - Reclaim/expiry of dead reversal claims.
 
-  BTS-63 reserves reversal slices atomically before money moves; the executor now refuses to leapfrog an unexecuted predecessor claim. The residual, by-design failure mode: if the operation that reserved a slice dies permanently (its webhook exhausts Stripe's retries and never confirms), the claim frontier stays ahead of the confirmed `reversedAmount` forever, and every successor reversal on that leg blocks with `predecessor claim unexecuted`. This adds an ops path to resolve such wedged legs.
+  Atomic reversal claims reserve reversal slices atomically before money moves; the executor now refuses to leapfrog an unexecuted predecessor claim. The residual, by-design failure mode: if the operation that reserved a slice dies permanently (its webhook exhausts Stripe's retries and never confirms), the claim frontier stays ahead of the confirmed `reversedAmount` forever, and every successor reversal on that leg blocks with `predecessor claim unexecuted`. This adds an ops path to resolve such wedged legs.
 
   - **`BetterStripe.listWedgedReversalClaims(ctx)`** — lists legs where `reversalClaimedAmount > reversedAmount` and the recorded ops holding the blocking (unexecuted) slice on each. An ops/admin diagnostic; scans the ledger to completion (exact, and loud past Convex's 16,384-doc read limit rather than silently truncating).
   - **`BetterStripe.reclaimReversalClaim(ctx, { operationId, mode })`** — resolves a dead claim:
@@ -178,13 +192,13 @@ changed by this release.
 
   New component functions: `connect/queries/listWedgedReversalClaims`, `connect/queries/getReversalOp`, `connect/mutations/releaseReversalClaim`. No behavior change to existing reversal paths.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add refund actor scoping — seller (own sales) vs platform admin (BTS-35, [#56](https://github.com/kellykampen/better-stripe/issues/56)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add refund actor scoping — seller (own sales) vs platform admin ([#56](https://github.com/kellykampen/better-stripe/issues/56)).
 
-  `createRefund` (BTS-34) previously had no notion of who may initiate a refund. It now takes an optional `actor` option (`{ type: "admin" }` or `{ type: "seller", accountId }`) and enforces the rule before any Stripe call is made — an unauthorized refund never moves money. A platform admin may refund any sale; a seller may refund only sales routed to their own connected account (destination charge, or one of the split legs in a separate-charges split), resolved from the payment's own component-ledger routing. Fails closed: a seller is denied when the payment's routing can't be resolved.
+  `createRefund` previously had no notion of who may initiate a refund. It now takes an optional `actor` option (`{ type: "admin" }` or `{ type: "seller", accountId }`) and enforces the rule before any Stripe call is made — an unauthorized refund never moves money. A platform admin may refund any sale; a seller may refund only sales routed to their own connected account (destination charge, or one of the split legs in a separate-charges split), resolved from the payment's own component-ledger routing. Fails closed: a seller is denied when the payment's routing can't be resolved.
 
-  Additive and backwards compatible — omitting `actor` preserves the prior unrestricted behavior. The refund fee/transfer-reversal math from BTS-34 is unchanged.
+  Additive and backwards compatible — omitting `actor` preserves the prior unrestricted behavior. The refund fee/transfer-reversal math from refund handling is unchanged.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Refunds now return the platform fee pro-rata and reverse recipient transfers (BTS-34, [#45](https://github.com/kellykampen/better-stripe/issues/45)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Refunds now return the platform fee pro-rata and reverse recipient transfers ([#45](https://github.com/kellykampen/better-stripe/issues/45)).
 
   **Destination charges:** `createRefund` gains `refundApplicationFee` and `reverseTransfer` options, both defaulting `true`, sent only when the charge actually carries an application fee / destination transfer (sending either on an incapable charge is a hard Stripe error). Stripe pro-rates both natively for partial refunds; an explicit `false` always wins.
 
@@ -212,14 +226,14 @@ changed by this release.
 
   Note: V2 `customer_account` + `pause_collection`/dispute interplay and the refund-via-API path are covered by unit tests; the live E2E (`refund.created` via real API call, dispute triggers) should be run before release — `charge.dispute.funds_withdrawn`/`funds_reinstated` cannot be reliably triggered in test mode.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `SplitBreakdown` + `EarningsSummary` headless components (BTS-37, [#49](https://github.com/kellykampen/better-stripe/issues/49)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add `SplitBreakdown` + `EarningsSummary` headless components ([#49](https://github.com/kellykampen/better-stripe/issues/49)).
 
   - `SplitBreakdown` renders a sale's store + affiliate + platform lines (the `other` bucket only when it carries money) from `useSplitBreakdown`'s totals. When the platform share is underivable (no sale amount given to the hook) it renders an explicit "Unknown without the sale amount" state — never a silent zero.
   - `EarningsSummary` renders gross / reversals / net / paid-out plus the latest payout status line. Its props are a subset of `useEarnings`'s result shape, so `<EarningsSummary {...useEarnings(accountId)} />` works directly.
 
-  Consumes the BTS-36 hooks ([#44](https://github.com/kellykampen/better-stripe/issues/44)). Both headless/themeable (`className` + `children` render-prop). Purely additive.
+  Consumes the earnings hooks hooks ([#44](https://github.com/kellykampen/better-stripe/issues/44)). Both headless/themeable (`className` + `children` render-prop). Purely additive.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add per-store statement descriptors on destination charges (BTS-32, [#47](https://github.com/kellykampen/better-stripe/issues/47)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Add per-store statement descriptors on destination charges ([#47](https://github.com/kellykampen/better-stripe/issues/47)).
 
   - New `BetterStripe.setAccountStatementDescriptor` method (validates first; `null` clears) writes a `statementDescriptor` field on the component's account record via a new `core/mutations/setStatementDescriptor` mutation.
   - New constructor option `statementDescriptorSuffix` sets a configurable platform-wide default (validated at construction, same pattern as `platformFee`), used whenever a store account carries no suffix of its own. Resolution order: store's stored suffix → configured default → none.
@@ -242,9 +256,9 @@ changed by this release.
   - `listTransfersByCharge(ctx, { sourceChargeId, limit? })` — a sale's original split legs (reinstatement rows excluded), the read behind the `useSplitBreakdown` hook / per-sale breakdown UIs.
   - `listTransfersByAccount(ctx, { destinationAccountId, limit? })` — a recipient's transfer ledger (the earnings view, includes reinstatements), the read behind the `useEarnings` hook.
 
-  The underlying component queries already existed, but there was no client-side method to reach them, so an app couldn't wire the `useSplitBreakdown` / `useEarnings` hook factories to real data. These thin read wrappers close that gap (surfaced while building the affiliate-split demo, BTS-43).
+  The underlying component queries already existed, but there was no client-side method to reach them, so an app couldn't wire the `useSplitBreakdown` / `useEarnings` hook factories to real data. These thin read wrappers close that gap (surfaced while building the affiliate-split demo).
 
-- [#58](https://github.com/kellykampen/better-stripe/pull/58) [`61f755e`](https://github.com/kellykampen/better-stripe/commit/61f755ebf38065d5c3cc73db18e7dfd1c3d8c394) Thanks [@kellykampen](https://github.com/kellykampen)! - `updateDispute` now stages evidence by default instead of submitting it (BTS-61).
+- [#58](https://github.com/kellykampen/better-stripe/pull/58) [`61f755e`](https://github.com/kellykampen/better-stripe/commit/61f755ebf38065d5c3cc73db18e7dfd1c3d8c394) Thanks [@kellykampen](https://github.com/kellykampen)! - `updateDispute` now stages evidence by default instead of submitting it.
 
   Stripe's dispute-update `submit` parameter **defaults to `true`**, so evidence sent without an explicit `submit` is submitted to the bank — a one-shot, outcome-affecting action. The previous docblock incorrectly said omitting `submit` "saves a draft", and the method forwarded `submit` only when explicitly set, so a caller following the docs would submit unintentionally.
 
@@ -252,52 +266,52 @@ changed by this release.
 
   - A bare metadata/status update (no `evidence`) is unchanged — no `submit` is forced.
   - An explicit `submit: true` / `submit: false` is always honored.
-  - `EvidenceForm` (BTS-54) already passes `submit` explicitly, so it is unaffected.
+  - `EvidenceForm`  already passes `submit` explicitly, so it is unaffected.
 
   If you relied on the old behavior of submitting evidence by omitting `submit`, pass `submit: true` explicitly.
 
 ### Patch Changes
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Regenerate the component's `_generated` API so transfer/dispute queries are typed for consumers (BTS-70, [#71](https://github.com/kellykampen/better-stripe/issues/71)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Regenerate the component's `_generated` API so transfer/dispute queries are typed for consumers ([#71](https://github.com/kellykampen/better-stripe/issues/71)).
 
-  `src/component/_generated/component.ts` was stale — it predated `listTransfersByCharge`/`listTransfersByAccount` (BTS-50) and `getDisputeByStripeId`/`listDisputes` (BTS-31), so `components.betterStripe.connect.queries.*` for those methods was untyped for any consumer reaching into the raw component API. Regenerated via `npx convex codegen`; no source logic changed, generated bindings only.
+  `src/component/_generated/component.ts` was stale — it predated `listTransfersByCharge`/`listTransfersByAccount`  and `getDisputeByStripeId`/`listDisputes`, so `components.betterStripe.connect.queries.*` for those methods was untyped for any consumer reaching into the raw component API. Regenerated via `npx convex codegen`; no source logic changed, generated bindings only.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: `updateDispute` now sends an explicit `submit: false` on every call, including metadata-only updates (BTS-72, [#67](https://github.com/kellykampen/better-stripe/issues/67)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: `updateDispute` now sends an explicit `submit: false` on every call, including metadata-only updates ([#67](https://github.com/kellykampen/better-stripe/issues/67)).
 
-  BTS-61 made evidence-bearing `updateDispute` calls stage by default (`submit: false`), but left metadata-only updates sending no `submit` key at all — inheriting Stripe's server-side default, which Stripe's docs state is `true` on every update. Empirically, a metadata-only update does not submit previously staged evidence today, but that leniency contradicts the documented default and submission is one-shot and outcome-affecting. `updateDispute` now never omits `submit`: every call — evidence, metadata, or both — sends an explicit `submit: false` unless the caller passes `submit: true` to finalize.
+  Earlier evidence handling made evidence-bearing `updateDispute` calls stage by default (`submit: false`), but left metadata-only updates sending no `submit` key at all — inheriting Stripe's server-side default, which Stripe's docs state is `true` on every update. Empirically, a metadata-only update does not submit previously staged evidence today, but that leniency contradicts the documented default and submission is one-shot and outcome-affecting. `updateDispute` now never omits `submit`: every call — evidence, metadata, or both — sends an explicit `submit: false` unless the caller passes `submit: true` to finalize.
 
   No public API change; the safer default only ever narrows behavior (no call that previously submitted now stages, and vice versa).
 
-- [#68](https://github.com/kellykampen/better-stripe/pull/68) [`4d1b843`](https://github.com/kellykampen/better-stripe/commit/4d1b843cb9891a313c9b9a270ca067e36c686420) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix a first-invoice fee double-reversal crack (BTS-69).
+- [#68](https://github.com/kellykampen/better-stripe/pull/68) [`4d1b843`](https://github.com/kellykampen/better-stripe/commit/4d1b843cb9891a313c9b9a270ca067e36c686420) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix a first-invoice fee double-reversal crack.
 
   `applyFirstInvoiceFee` recomputed the platform fee from **live** subscription metadata (`bsFeeConfig`) on every webhook retry. If the transfer reversal succeeded but the `bsFeeCollected` invoice-marker write then failed (event marked `failed`), and the platform edited `bsFeeConfig` before Stripe redelivered, a retry landing **after** Stripe's ≤24h idempotency-key window would recompute a _different_ fee and create a **second** reversal — double-collecting the fee.
 
-  **Fix:** before reversing, `applyFirstInvoiceFee` now lists the destination transfer's existing reversals and adopts one tagged `metadata.bsFeeFor:<invoiceId>` as the idempotency source of truth. That tag survives both the marker-write failure and the idempotency-key TTL, so a retry re-records the marker with the already-reversed amount instead of reversing again — mirroring BTS-60's frozen-config guarantee. No API surface change.
+  **Fix:** before reversing, `applyFirstInvoiceFee` now lists the destination transfer's existing reversals and adopts one tagged `metadata.bsFeeFor:<invoiceId>` as the idempotency source of truth. That tag survives both the marker-write failure and the idempotency-key TTL, so a retry re-records the marker with the already-reversed amount instead of reversing again — mirroring the per-charge fee collector's frozen-config guarantee. No API surface change.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: collect the fixed/tier platform fee on a subscription's first invoice (BTS-68, [#52](https://github.com/kellykampen/better-stripe/issues/52)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: collect the fixed/tier platform fee on a subscription's first invoice ([#52](https://github.com/kellykampen/better-stripe/issues/52)).
 
-  `applyPerInvoiceFee` (BTS-51) applies a fixed/tier `application_fee_amount` at `invoice.created`, which only works while the invoice is still a draft. Stripe finalizes a `charge_automatically` subscription's first invoice synchronously at creation (and Checkout subscription-mode pays it during checkout), so `invoice.created` fires with an already-`open` invoice — the update is silently rejected and the first cycle's platform fee was lost on every destination-charge subscription with a fixed/tier fee. Percent-only fees and renewal invoices (which get Stripe's ~1h draft window) were unaffected.
+  `applyPerInvoiceFee` applies a fixed/tier `application_fee_amount` at `invoice.created`, which only works while the invoice is still a draft. Stripe finalizes a `charge_automatically` subscription's first invoice synchronously at creation (and Checkout subscription-mode pays it during checkout), so `invoice.created` fires with an already-`open` invoice — the update is silently rejected and the first cycle's platform fee was lost on every destination-charge subscription with a fixed/tier fee. Percent-only fees and renewal invoices (which get Stripe's ~1h draft window) were unaffected.
 
-  Fixed with a new `applyFirstInvoiceFee` processor hooked at `invoice.paid`: it collects the missed fee via a partial reversal of the automatic destination transfer, sized from `amount_paid` — the same mechanism BTS-60's `applyPerChargeFee` uses for one-time charges. Skips any invoice whose fee the draft path already collected, so there's no double-collection. No public API change.
+  Fixed with a new `applyFirstInvoiceFee` processor hooked at `invoice.paid`: it collects the missed fee via a partial reversal of the automatic destination transfer, sized from `amount_paid` — the same mechanism the per-charge fee collector's `applyPerChargeFee` uses for one-time charges. Skips any invoice whose fee the draft path already collected, so there's no double-collection. No public API change.
 
-- [#21](https://github.com/kellykampen/better-stripe/pull/21) [`1f43345`](https://github.com/kellykampen/better-stripe/commit/1f433459ec6eb11d75982f1ed883cff9414d4e15) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix `createPrice` orphaning a Stripe price when the product is missing from the component DB (BTS-2).
+- [#21](https://github.com/kellykampen/better-stripe/pull/21) [`1f43345`](https://github.com/kellykampen/better-stripe/commit/1f433459ec6eb11d75982f1ed883cff9414d4e15) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix `createPrice` orphaning a Stripe price when the product is missing from the component DB.
 
   `createPrice` previously called `stripe.prices.create(...)` **before** verifying the product existed in the component DB, then threw `PRODUCT_NOT_FOUND` afterward — leaving an orphaned price in Stripe with no corresponding component record. The product lookup now runs **first**, so a missing/unsynced product throws before any Stripe write happens. No API change; behavior only differs on the error path.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: collect deferred `per_charge` platform fees via transfer reversal (BTS-60, [#38](https://github.com/kellykampen/better-stripe/issues/38)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix: collect deferred `per_charge` platform fees via transfer reversal ([#38](https://github.com/kellykampen/better-stripe/issues/38)).
 
   `bsFeeMode="per_charge"` (used when a one-time destination charge's final amount isn't known up front — discounts, `custom_unit_amount` prices, or a `sessionOverrides`-replaced `line_items`) had no webhook consumer, so the fixed/tiered platform fee was silently never collected on those charges.
 
   Fixed with a new `applyPerChargeFee` processor at `payment_intent.succeeded`: it collects the fee the same way Stripe itself settles application fees on destination charges — a partial reversal of the automatic destination transfer, sized by `computeFee` from the amount actually charged (`amount_received`). No public API change; charges that already pass `amount` up front (computing `application_fee_amount` at session creation) are unaffected.
 
-- [#66](https://github.com/kellykampen/better-stripe/pull/66) [`a47d64d`](https://github.com/kellykampen/better-stripe/commit/a47d64d39ece42b4cc0d96508e9b87925c6bf8e9) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix `addRecipientConfiguration` not persisting `appliedConfigurations` to the component DB (BTS-71).
+- [#66](https://github.com/kellykampen/better-stripe/pull/66) [`a47d64d`](https://github.com/kellykampen/better-stripe/commit/a47d64d39ece42b4cc0d96508e9b87925c6bf8e9) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix `addRecipientConfiguration` not persisting `appliedConfigurations` to the component DB.
 
   `addRecipientConfiguration` applied the V2 recipient configuration on Stripe but never wrote the result back to the component `accounts` row, unlike `addCustomerConfiguration` which re-fetches and records `applied_configurations` after every update. Callers had to manually run `syncAllAccounts` afterward to reconcile the component DB, leaving it stale in between — anything reading `appliedConfigurations` off the component row (e.g. billing-view/UI gating) saw an out-of-date picture. `addRecipientConfiguration` now follows the same pattern: re-fetch the account after the Stripe update, read `applied_configurations`, recover the owning `userId` from the existing component record (failing closed with `ACCOUNT_NOT_FOUND` if the account isn't in the component DB yet), and `upsertAccount`. No public API change on the call side; the return shape now includes `appliedConfigurations` alongside `success`, matching `addCustomerConfiguration`.
 
-- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix three transfer-reversal money races via atomic reversal-slice claiming (BTS-63, [#61](https://github.com/kellykampen/better-stripe/issues/61)).
+- [#76](https://github.com/kellykampen/better-stripe/pull/76) [`c9f1489`](https://github.com/kellykampen/better-stripe/commit/c9f148948f2f5ea77f343c5fc1a78faffbb5ac1e) Thanks [@kellykampen](https://github.com/kellykampen)! - Fix three transfer-reversal money races via atomic reversal-slice claiming ([#61](https://github.com/kellykampen/better-stripe/issues/61)).
 
   - Dispute clawback (amount mode): a retry after partial success recomputed per-leg amounts from mutable ledger state — a same-params replay could double-record the ledger, or a shifted remainder could resend different params under an already-used Stripe idempotency key, causing a permanent event-retry loop.
-  - Refund clawback (delta-to-target, BTS-34): two distinct refunds racing between the ledger read and the Stripe call could both compute the same reversal target from stale state, over-reversing a leg and under-recording the ledger.
+  - Refund clawback (delta-to-target): two distinct refunds racing between the ledger read and the Stripe call could both compute the same reversal target from stale state, over-reversing a leg and under-recording the ledger.
   - `payment_intent.succeeded` redelivery could have `upsertPayment`'s blanket patch rewrite `feeCollectedAmount` back to the gross fee, bypassing the monotonic fee-refund guard.
 
   Fixed by claiming the exact reversal slice atomically, in a new component mutation, before any money moves — so a retry re-adopts the already-claimed slice instead of recomputing and re-reversing it. No public API change.

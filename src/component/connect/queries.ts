@@ -293,24 +293,32 @@ export const getTransferByStripeId = query({
 /**
  * All transfers funded from one charge (the legs of a split).
  *
- * ⚠️ CAPPED at `limit ?? 50` rows. Unlike the per-account earnings view this is
- * safe in practice — a single sale has a handful of split legs, far below the
- * cap (BTS-64) — but pass a higher `limit` if you ever split across many
- * recipients.
+ * Returns every original split leg unless an explicit limit is provided.
+ * Reinstatement audit rows do not consume that limit. Database read/response
+ * limits fail the query rather than silently returning incomplete money data.
  */
 export const listTransfersByCharge = query({
   args: { sourceChargeId: v.string(), limit: v.optional(v.number()) },
   returns: v.array(transferDocValidator),
   handler: async (ctx, args) => {
-    const rows = await ctx.db
+    if (
+      args.limit !== undefined &&
+      (!Number.isInteger(args.limit) || args.limit < 0)
+    ) {
+      throw new Error("limit must be a non-negative integer");
+    }
+    const rows: Doc<"transfers">[] = [];
+    if (args.limit === 0) return rows;
+    for await (const transfer of ctx.db
       .query("transfers")
       .withIndex("by_source_charge_id", (q) =>
         q.eq("sourceChargeId", args.sourceChargeId),
-      )
-      .take(args.limit ?? 50);
-    // Exclude reinstatement payouts — this returns the original split legs the
-    // reverse/split engines act on (reinstatement rows are audit-only here).
-    return rows.filter((t) => !t.reinstatement);
+      )) {
+      if (transfer.reinstatement) continue;
+      rows.push(transfer);
+      if (args.limit !== undefined && rows.length >= args.limit) break;
+    }
+    return rows;
   },
 });
 

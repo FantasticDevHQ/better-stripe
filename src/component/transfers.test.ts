@@ -2,10 +2,79 @@
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 
+import { createUseSplitBreakdown } from "../react/hooks/useSplitBreakdown.js";
+
 import { api } from "./_generated/api.js";
 import schema from "./schema.js";
 
 const modules = import.meta.glob("./**/*.*s");
+
+describe("complete split-leg reads", () => {
+  it("returns every original leg beyond the former 50-row cap and filters audit rows before limiting", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: "tr_audit_first",
+      sourceChargeId: "ch_many",
+      destinationAccountId: "acct_store",
+      amount: 100,
+      currency: "usd",
+      status: "paid",
+      reinstatement: true,
+    });
+    for (let i = 0; i < 120; i++) {
+      await t.mutation(api.connect.mutations.upsertTransfer, {
+        stripeTransferId: `tr_many_${i}`,
+        sourceChargeId: "ch_many",
+        destinationAccountId: `acct_${i}`,
+        amount: 100,
+        currency: "usd",
+        status: "paid",
+        role: i % 2 === 0 ? "store" : "affiliate",
+      });
+    }
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_many",
+    });
+    expect(rows).toHaveLength(120);
+    expect(rows.reduce((sum, row) => sum + row.amount, 0)).toBe(12000);
+    expect(rows.some((row) => row.reinstatement)).toBe(false);
+    const useSplitBreakdown = createUseSplitBreakdown(
+      () => rows,
+      "chargeQuery",
+    );
+    expect(
+      useSplitBreakdown({ sourceChargeId: "ch_many", saleAmount: 13000 })
+        .breakdown,
+    ).toMatchObject({
+      store: 6000,
+      affiliate: 6000,
+      recipientsTotal: 12000,
+      platform: 1000,
+    });
+    const preview = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_many",
+      limit: 50,
+    });
+    expect(preview).toHaveLength(50);
+    expect(preview[0].stripeTransferId).toBe("tr_many_0");
+    expect(
+      await t.query(api.connect.queries.listTransfersByCharge, {
+        sourceChargeId: "ch_many",
+        limit: 0,
+      }),
+    ).toEqual([]);
+  });
+
+  it.each([-1, 1.5])("rejects invalid explicit limit %s", async (limit) => {
+    const t = convexTest(schema, modules);
+    await expect(
+      t.query(api.connect.queries.listTransfersByCharge, {
+        sourceChargeId: "ch_many",
+        limit,
+      }),
+    ).rejects.toThrow("non-negative integer");
+  });
+});
 
 describe("transfers ledger (BTS-12)", () => {
   it("upserts a transfer and reads it back by stripe id", async () => {

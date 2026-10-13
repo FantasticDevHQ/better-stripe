@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { mutation } from "../_generated/server";
 import { feeRoutingFields } from "../lib/fees";
 import { computeReversalSlices } from "../lib/reversals";
@@ -311,7 +311,8 @@ function deriveReversalState(
   return {
     reversedAmount: reversedAmount > 0 ? reversedAmount : undefined,
     reversalStatus,
-    status: reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
+    status:
+      reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
   };
 }
 
@@ -333,7 +334,11 @@ export const upsertTransfer = mutation({
         existing.reversedAmount ?? 0,
         args.reversedAmount ?? 0,
       );
-      const derived = deriveReversalState(args.amount, reversedAmount, args.status);
+      const derived = deriveReversalState(
+        args.amount,
+        reversedAmount,
+        args.status,
+      );
       await ctx.db.patch("transfers", existing._id, { ...args, ...derived });
     } else {
       const derived = deriveReversalState(
@@ -459,21 +464,27 @@ export const claimReversalSlices = mutation({
     if (existingOp) {
       const slices = [];
       for (const s of existingOp.slices) {
-        slices.push({ ...s, confirmed: await confirmedFor(s.stripeTransferId) });
+        slices.push({
+          ...s,
+          confirmed: await confirmedFor(s.stripeTransferId),
+        });
       }
       return { replay: true, slices };
     }
 
     // Original split legs only — reinstatement payouts are audit rows and
     // must never be re-reversed (mirrors listTransfersByCharge).
-    const rows = (
-      await ctx.db
-        .query("transfers")
-        .withIndex("by_source_charge_id", (q) =>
-          q.eq("sourceChargeId", args.sourceChargeId),
-        )
-        .take(50)
-    ).filter((t) => !t.reinstatement);
+    // Claim every original split leg, including those beyond the former
+    // 50-row preview. Read/write limits abort the transaction before a partial
+    // claim can commit; no Stripe call happens until this mutation succeeds.
+    const rows: Doc<"transfers">[] = [];
+    for await (const transfer of ctx.db
+      .query("transfers")
+      .withIndex("by_source_charge_id", (q) =>
+        q.eq("sourceChargeId", args.sourceChargeId),
+      )) {
+      if (!transfer.reinstatement) rows.push(transfer);
+    }
 
     const byId = new Map(rows.map((r) => [r.stripeTransferId, r]));
     const slices = computeReversalSlices(

@@ -124,12 +124,12 @@ because there is no session to check that against. The shared gate lives
 in `convex/authz.ts` (`assertOwnership` plus a per-resource
 `assert*Owner` wrapper for subscriptions, seller accounts, disputes,
 payments, and transfers) and replaces the narrower `assertSubscriptionOwner`
-check BTS-81 introduced just for subscriptions.
+subscription price-ownership check.
 
 Money-moving and dispute-closing actions (`issueRefund`,
 `reverseSaleTransfers`, `acceptDispute`) are also gated by
 `assertTestModeStripeKey` (`convex/authz.ts`, shared with the admin Testing
-page's BTS-77 guard) **before** any Stripe call: it fails closed unless
+page's test-mode guard) **before** any Stripe call: it fails closed unless
 `STRIPE_SECRET_KEY` is an unambiguous `sk_test_`/`rk_test_` key. **Never
 deploy this example with a live secret key** -- these actions make real
 Stripe API calls, and the whole app assumes test mode throughout (see the
@@ -215,7 +215,7 @@ await stripe.createAccountWithOnboarding(ctx, {
 
 Default configuration is exposed as `BetterStripe.DEFAULT_ACCOUNT_CONFIGURATION`.
 
-The marketplace account demo (BTS-46, `/seller/marketplace-account`) is the
+The marketplace account demo (`/seller/marketplace-account`) is the
 end-to-end version of the `recipient`-only override above: onboard as a
 recipient via hosted Express, then `addCustomerConfiguration()` to make the
 SAME account billable, then pass that `stripeAccountId` as `accountId` on
@@ -278,7 +278,7 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 `scripts/e2e-webhooks.ts` exercises the real pipeline end to end: it deploys the current code, starts `stripe listen --forward-to <site>/stripe/webhook` (setting the deployment's webhook secrets to the CLI session secret), fires every pipeline-supported event via `stripe trigger`, creates a V2 account to emit `v2.core.account.*` thin events, then polls the component webhook ledger and the `triggerLog` table and prints a PASS/FAIL/SKIP table. Requires the Stripe CLI; it reads the test-mode API key from the deployment's `STRIPE_SECRET_KEY`. `payout.paid` and `trial_will_end` are reported as SKIP (not reachable via `stripe trigger`).
 
-#### Money-layer assertions (BTS-49)
+#### Money-layer assertions
 
 **Pre-release only, not CI** — this needs a real (test-mode) Stripe account + a linked Convex dev deployment, so it can't run in CI. It is the release gate that proves the money actually _moves_, which mocks can't catch.
 
@@ -288,24 +288,24 @@ After the event-coverage phase, the harness runs a money phase (`runMoneyAsserti
 | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `money: destination fee`                                                 | a $100 destination charge with a $10 `application_fee`                                                                                                                | the `payments` row denormalized `feeCollectedAmount=1000` + `destinationAccountId` (the same fee path a destination-charge subscription's invoice takes)                                                                                                                                                                                                                                               |
 | `money: split sale`                                                      | a $100 separate-charges sale split $80 store / $10 affiliate                                                                                                          | **2 `transfers`** ledger rows for the charge (one per recipient)                                                                                                                                                                                                                                                                                                                                       |
-| `money: refund reverses transfers`                                       | a refund of the split charge (`reverseTransfer`)                                                                                                                      | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (BTS-73: not merely `> 0`)                                                                                                                                                                                                                                                                                        |
-| `money: full refund of a per-charge-fee sale caps the reversal (BTS-66)` | a $100 destination charge tagged `bsFeeMode=per_charge` (3.2% → $3.20 collected by partial transfer reversal, the BTS-60 path), then a FULL refund with default flags | the fee lands on the `payments` row (`feeCollectedAmount=320`); the refund succeeds and marks it `fully_refunded` for 10000; the live transfer shows **exactly two reversals** — the preserved 320 fee + the refund reversal **capped at 9680** (`amount_reversed == amount`). Live-verified 2026-07-03: Stripe caps instead of erroring; a refund **error** on this row is a genuine FAIL, not a SKIP |
+| `money: refund reverses transfers`                                       | a refund of the split charge (`reverseTransfer`)                                                                                                                      | each transfer row reversed to its **exact** amount — store `8000` / affiliate `1000` (exact reversal assertions: not merely `> 0`)                                                                                                                                                                                                                                                                                        |
+| `money: full refund of a per-charge-fee sale caps the reversal` | a $100 destination charge tagged `bsFeeMode=per_charge` (3.2% → $3.20 collected by partial transfer reversal, the per-charge fees path), then a FULL refund with default flags | the fee lands on the `payments` row (`feeCollectedAmount=320`); the refund succeeds and marks it `fully_refunded` for 10000; the live transfer shows **exactly two reversals** — the preserved 320 fee + the refund reversal **capped at 9680** (`amount_reversed == amount`). Live-verified 2026-07-03: Stripe caps instead of erroring; a refund **error** on this row is a genuine FAIL, not a SKIP |
 | `money: dispute reverses transfers`                                      | a disputed split (Stripe `tok_createDispute`)                                                                                                                         | the `charge.dispute.created` clawback reversed the transfers to their **exact** amounts (store `8000` / affiliate `1000`)                                                                                                                                                                                                                                                                              |
 
-**Reversal amounts are asserted exactly (BTS-73).** The refund and dispute checks use `reversalsMatchExactly` (pure, unit-tested in `example/scripts/money-assertions.ts`) to require each leg's `reversedAmount` to equal its expected pro-rata value — a partial, missing, over-, or wrong-role reversal FAILs. A full refund / full-amount dispute of the $80/$10 split reverses each leg completely (verified against `computeReversalSlices`).
+**Reversal amounts are asserted exactly.** The refund and dispute checks use `reversalsMatchExactly` (pure, unit-tested in `example/scripts/money-assertions.ts`) to require each leg's `reversedAmount` to equal its expected pro-rata value — a partial, missing, over-, or wrong-role reversal FAILs. A full refund / full-amount dispute of the $80/$10 split reverses each leg completely (verified against `computeReversalSlices`).
 
-**Dispute: FAIL vs SKIP (BTS-73).** The dispute check no longer SKIPs indiscriminately on timeout. It polls the `disputes` ledger for the disputed charge's PaymentIntent (`listDisputesForPaymentIntent`):
+**Dispute: FAIL vs SKIP.** The dispute check no longer SKIPs indiscriminately on timeout. It polls the `disputes` ledger for the disputed charge's PaymentIntent (`listDisputesForPaymentIntent`):
 
 - dispute row **never landed** in the window (async timing) → **SKIP** (the genuinely-couldn't-verify case), but
 - dispute row **landed** yet the transfers weren't reversed to the exact amounts (broken clawback wiring) → **FAIL**.
 
 So a real clawback regression can no longer pass the gate silently.
 
-**Test-recipient activation (BTS-9/10 recipe).** Transfers only succeed to an onboarded recipient (an un-activated destination fails `insufficient_capabilities_for_transfer`). `provisionTestRecipient` recreates the validated spike recipe: create a `dashboard: "none"` V2 account requesting the recipient's `stripe_transfers` capability (Express accounts can't accept ToS via the API, so recipients must be `dashboard: none`), then attest identity + ToS so the test SSN `000000000` auto-verifies — **note: the ToS acceptance `date` is an RFC3339 string, not unix**. Two more requirements verified live 2026-07-03 (BTS-66): the create must include `contact_email` **and** `defaults.responsibilities` (`losses_collector`/`fees_collector: "application"`) or Stripe rejects it with `invalid_fields`, and the capability activates **asynchronously** (seconds) — `provisionTestRecipient` now polls for `active` before returning, since a transfer sent too early fails. If activation fails, the whole money phase reports SKIP (never a false PASS).
+**Test-recipient activation.** Transfers only succeed to an onboarded recipient (an un-activated destination fails `insufficient_capabilities_for_transfer`). `provisionTestRecipient` recreates the validated spike recipe: create a `dashboard: "none"` V2 account requesting the recipient's `stripe_transfers` capability (Express accounts can't accept ToS via the API, so recipients must be `dashboard: none`), then attest identity + ToS so the test SSN `000000000` auto-verifies — **note: the ToS acceptance `date` is an RFC3339 string, not unix**. Two more requirements verified live 2026-07-03: the create must include `contact_email` **and** `defaults.responsibilities` (`losses_collector`/`fees_collector: "application"`) or Stripe rejects it with `invalid_fields`, and the capability activates **asynchronously** (seconds) — `provisionTestRecipient` now polls for `active` before returning, since a transfer sent too early fails. If activation fails, the whole money phase reports SKIP (never a false PASS).
 
 Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. A legitimate live-drive failure (recipient provisioning, the dispute never landing) SKIPs the affected rows with a reason; a genuine wrong outcome — including a landed-but-not-reversed dispute — FAILs. **No false PASS, no false FAIL.**
 
-> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the BTS-66 cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`pnpm exec convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The BTS-66 scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the refund reversal cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`pnpm exec convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The refund reversal scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
 
 ### Direct checkout and Express login fixtures
 
@@ -371,25 +371,25 @@ Requirements: a linked Convex dev deployment with the current functions pushed
 event destinations configured (via `/admin/setup`) so `product.updated` events
 sync back to the UI. Current live-backend specs:
 
-- `e2e/admin-products.spec.ts` — admin product Edit + Deactivate (BTS-59);
+- `e2e/admin-products.spec.ts` — admin product Edit + Deactivate;
   self-contained (creates, edits, then archives its own product).
-- `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow (BTS-57);
+- `e2e/one-time-checkout.spec.ts` — one-time payment checkout flow;
   see below.
 - `e2e/subscription-payout.spec.ts` — paid subscription + payout/balance
-  visibility flow (BTS-42); see below.
-- `e2e/affiliate-split.spec.ts` — affiliate split breakdown demo (BTS-43);
+  visibility flow; see below.
+- `e2e/affiliate-split.spec.ts` — affiliate split breakdown demo;
   see below.
-- `e2e/seller-disputes.spec.ts` — seller disputes demo (BTS-44); see below.
-- `e2e/marketplace-account.spec.ts` — marketplace account lifecycle (BTS-46);
+- `e2e/seller-disputes.spec.ts` — seller disputes demo; see below.
+- `e2e/marketplace-account.spec.ts` — marketplace account lifecycle;
   see below.
 - `e2e/destination-charge.spec.ts` — destination charge + platform fee demo,
-  single recipient (BTS-58); see below.
+  single recipient; see below.
 - `e2e/refunds-reversals.spec.ts` — refunds & reversals seller ops page
-  (BTS-80); see below.
+; see below.
 
 #### One-time payment flow (`e2e/one-time-checkout.spec.ts`)
 
-The one-time checkout demo (BTS-57) has two layers:
+The one-time checkout demo  has two layers:
 
 - **Backend-independent** (runs everywhere, incl. CI): the payment-mode
   checkout and success routes boot without page errors.
@@ -410,7 +410,7 @@ The session's mode is derived server-side in
 
 #### Paid subscription + payout flow (`e2e/subscription-payout.spec.ts`)
 
-A real paid subscription demo (BTS-42) that shows the marketplace money model
+A real paid subscription demo  that shows the marketplace money model
 end to end: a buyer subscribes to a seeded store's recurring plan as a
 **destination charge**, and the seller sees the money via balance + payouts while
 the platform keeps its fee. Backend in `convex/marketplace.ts`; pages under
@@ -454,7 +454,7 @@ charge/invoice/payout events sync.
 
 #### Affiliate split flow (`e2e/affiliate-split.spec.ts`)
 
-The affiliate split breakdown demo (BTS-43) — the headline proof: **one $100
+The affiliate split breakdown demo  — the headline proof: **one $100
 sale, three destinations**. Route: `/marketplace/split` (also in the customer
 nav as "Affiliate Split"). An affiliate referral flows in via the `?ref=avery`
 query param; the sale routes store + affiliate, and the platform takes its
@@ -494,7 +494,7 @@ the webhook engine (see `stripe.ts` `platformFee` for the platform's cut).
 
 #### Seller disputes flow (`e2e/seller-disputes.spec.ts`)
 
-The seller disputes demo (BTS-44) is the culminating dispute demo: a
+The seller disputes demo  is the culminating dispute demo: a
 seller-facing `/seller/disputes` page that exercises the whole merged dispute
 stack. It offers two surfaces via tabs:
 
@@ -504,7 +504,7 @@ stack. It offers two surfaces via tabs:
   `submitDisputeEvidence` action (`convex/actions.ts`), which forwards to
   `stripe.updateDispute`.
 - **Embedded (Stripe Connect):** `ConnectProvider` + `EmbeddedDisputes`, fed by
-  the `createDisputeSession` action (`stripe.createDisputeSession`, BTS-30).
+  the `createDisputeSession` action (`stripe.createDisputeSession`).
 
 Two layers, like the checkout demo:
 
@@ -533,7 +533,7 @@ Against a seeded dev deployment with `stripe listen` forwarding webhooks:
 
    or create a charge with the disputed test card `4000000000000259` (dispute:
    fraudulent) and let it settle. Stripe emits `charge.dispute.created`, which
-   the component records and (per BTS-27/28) claws back the funded transfer and
+   the component records and (per dispute handling) claws back the funded transfer and
    auto-cancels the buyer's subscription.
 
 3. **Open `/seller/disputes`** as the seller persona (role switcher). The
@@ -555,7 +555,7 @@ triggered in test mode, so the reversal ledger is best verified via the
 
 #### Marketplace account lifecycle (`e2e/marketplace-account.spec.ts`)
 
-The marketplace account demo (BTS-46) shows "one V2 account, configurations
+The marketplace account demo  shows "one V2 account, configurations
 accrue": a single Stripe account is both a payouts recipient and a billable
 customer. Two layers:
 
@@ -598,14 +598,14 @@ Manual QA (until the live-E2E spec is verified against a real deployment):
 
 #### Destination charge + platform fee flow (`e2e/destination-charge.spec.ts`)
 
-The destination-charge + platform-fee demo (BTS-58) — the simplest single-
+The destination-charge + platform-fee demo  — the simplest single-
 recipient case: one seller (Sasha's Ceramics), one one-time charge, no
 affiliate routing. Route: `/demo/destination-charge`. A buyer (Billie) buys
 Sasha's seeded $129 one-time price; funds route to Sasha's connected account
 as a destination charge, and the platform keeps its 10% application fee. The
 fee/payout breakdown is computed up front from the known price
 (`getDestinationChargeDemoContext`) and confirmed inline once Stripe redirects
-back with the real session id (reusing the BTS-62 `buildCheckoutReturnUrl`
+back with the real session id (reusing the checkout return URLs `buildCheckoutReturnUrl`
 helper, generalized to point at this page instead of the generic
 `/checkout/status`).
 
@@ -620,7 +620,7 @@ Two layers, like the other demos:
 
 #### Refunds & reversals (`e2e/refunds-reversals.spec.ts`)
 
-Seller ops page (BTS-80) at `/seller/refunds` for the two claw-back
+Seller ops page  at `/seller/refunds` for the two claw-back
 primitives the money layer needs: `issueRefund` (full or partial, by
 PaymentIntent id) and a standalone `reverseSaleTransfers` (full or partial,
 by source charge id) for when ops needs a manual transfer clawback outside
@@ -645,9 +645,9 @@ guard demo), buttons that fire **real** test-mode webhook triggers
 component ledger for the synced row, and fixture-factory buttons that log
 typed test-data shapes for account/product/price/subscription. Money-moving
 actions elsewhere in the app share this page's `assertTestModeStripeKey`
-test-mode guard (BTS-77; see "Demo security model" above).
+test-mode guard (demo test-mode guard; see "Demo security model" above).
 
-Backend-independent only (BTS-77): the route boots without page errors.
+Backend-independent only: the route boots without page errors.
 Actually firing the webhook triggers against a real ledger is exercised
 manually, and by the `npm run e2e:webhooks` money-layer harness (see
 "Money-layer assertions" above), not this boot spec.
@@ -657,12 +657,11 @@ manually, and by the `npm run e2e:webhooks` money-layer harness (see
 The seller's own view of `stripe.listProducts()` / `listPricesByProduct()`
 scoped to their connected account (`accountId`): expand a product to see its
 prices, create a new product + price (`createProductForAccount`,
-`createPrice`), and deactivate a price (`deactivatePrice`, BTS-88/94) — the
+`createPrice`), and deactivate a price (`deactivatePrice`) — the
 deactivate action binds the caller to the price's owning connected account,
 so a seller can only ever touch their own catalog.
 
-Covered by the seller-pages boot-check batch (`e2e/seller-pages.spec.ts`,
-BTS-87): the route boots without page errors alongside the other seller
+Covered by the seller-pages boot-check batch (`e2e/seller-pages.spec.ts`): the route boots without page errors alongside the other seller
 pages.
 
 ### Webhook Processing
@@ -719,33 +718,33 @@ example/
 │   ├── seed.ts                   # Seed DB + Stripe products + marketplace scenario
 │   ├── reset.ts                  # Clear all data
 │   ├── users.ts                  # User queries
-│   ├── marketplace.ts            # Store subscription checkout + earnings/payout helpers (BTS-42)
-│   ├── affiliateSplit.ts         # Referral attribution + split-sale math (BTS-43)
-│   ├── subscriptionLifecycle.ts  # Buyer subscription cancel/resume lifecycle (BTS-81)
+│   ├── marketplace.ts            # Store subscription checkout + earnings/payout helpers
+│   ├── affiliateSplit.ts         # Referral attribution + split-sale math
+│   ├── subscriptionLifecycle.ts  # Buyer subscription cancel/resume lifecycle
 │   ├── triggerLogger.ts          # triggerLog table writer for sync triggers + async hooks
-│   ├── e2eMoney.ts               # Money-layer assertions backend for e2e:webhooks (BTS-49)
+│   ├── e2eMoney.ts               # Money-layer assertions backend for e2e:webhooks
 │   ├── lib/
 │   │   └── marketplace.ts        # Pure fee/catalog helpers shared by actions.ts + the frontend
 │   └── *.test.ts                 # Vitest unit tests colocated per module above
 ├── e2e/                          # Playwright suite (see "Browser E2E Tests" below)
 │   ├── smoke.spec.ts             # App boots + routes (backend-independent)
-│   ├── admin-pages.spec.ts       # Admin pages boot-check (BTS-87)
-│   ├── admin-products.spec.ts    # Admin product Edit + Deactivate (BTS-59)
-│   ├── admin-testing.spec.ts     # Admin Testing page boot-check (BTS-77)
-│   ├── dashboard-pages.spec.ts   # Customer dashboard pages boot-check (BTS-87)
-│   ├── seller-pages.spec.ts      # Seller pages boot-check (BTS-87)
+│   ├── admin-pages.spec.ts       # Admin pages boot-check
+│   ├── admin-products.spec.ts    # Admin product Edit + Deactivate
+│   ├── admin-testing.spec.ts     # Admin Testing page boot-check
+│   ├── dashboard-pages.spec.ts   # Customer dashboard pages boot-check
+│   ├── seller-pages.spec.ts      # Seller pages boot-check
 │   ├── seller-onboarding.spec.ts # Seller onboarding flow boot-check
 │   ├── payment-methods.spec.ts   # Payment methods page boot-check
 │   ├── nav-demo-links.spec.ts    # Nav sidebar demo route links boot-check
-│   ├── one-time-checkout.spec.ts # One-time payment flow (BTS-57)
-│   ├── subscription-payout.spec.ts    # Paid subscription + payout flow (BTS-42)
-│   ├── affiliate-split.spec.ts        # Affiliate split breakdown demo (BTS-43)
-│   ├── seller-disputes.spec.ts        # Seller disputes demo (BTS-44)
-│   ├── dispute-chargeback.spec.ts     # Dispute + chargeback lifecycle (BTS-82)
-│   ├── marketplace-account.spec.ts    # Marketplace account lifecycle (BTS-46)
-│   ├── destination-charge.spec.ts     # Destination charge + platform fee demo (BTS-58)
-│   ├── refunds-reversals.spec.ts      # Refunds & reversals seller ops page (BTS-80)
-│   └── buyer-subscription-lifecycle.spec.ts  # Buyer subscription lifecycle (BTS-81)
+│   ├── one-time-checkout.spec.ts # One-time payment flow
+│   ├── subscription-payout.spec.ts    # Paid subscription + payout flow
+│   ├── affiliate-split.spec.ts        # Affiliate split breakdown demo
+│   ├── seller-disputes.spec.ts        # Seller disputes demo
+│   ├── dispute-chargeback.spec.ts     # Dispute + chargeback lifecycle
+│   ├── marketplace-account.spec.ts    # Marketplace account lifecycle
+│   ├── destination-charge.spec.ts     # Destination charge + platform fee demo
+│   ├── refunds-reversals.spec.ts      # Refunds & reversals seller ops page
+│   └── buyer-subscription-lifecycle.spec.ts  # Buyer subscription lifecycle
 ├── scripts/
 │   ├── setup.ts                  # Sets STRIPE_SECRET_KEY in Convex env
 │   ├── e2e-webhooks.ts           # Automated webhook + money-layer E2E test (see below)

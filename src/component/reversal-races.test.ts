@@ -296,7 +296,47 @@ describe("BTS-63 race 1 — refund path: concurrent DISTINCT refunds must not do
 });
 
 describe("BTS-63 race 2 — dispute path: retry after partial success must converge", () => {
-  const DISPUTE = { sourceChargeId: "ch_dp", amount: 4500, operationId: "dp_1" };
+  it("claws back all 120 legs and converges after a failure beyond the former cap", async () => {
+    const t = convexTest(schema, modules);
+    const ctx = makeCtx(t);
+    const component = proxyComponent();
+    const stripe = makeRacingStripe();
+    for (let i = 0; i < 120; i++) {
+      await seedLeg(t, {
+        stripeTransferId: `tr_large_${i}`,
+        sourceChargeId: "ch_large",
+        amount: 100,
+      });
+    }
+    const opts = {
+      sourceChargeId: "ch_large",
+      amount: 6000,
+      operationId: "dispute_large",
+    };
+    stripe.failNextCallFor("tr_large_75");
+    await expect(
+      reverseTransfers(asStripe(stripe), component, ctx, opts),
+    ).rejects.toThrow(/network error/);
+    await reverseTransfers(asStripe(stripe), component, ctx, opts);
+    // A further redelivery must not move money or conflict with earlier keys.
+    await reverseTransfers(asStripe(stripe), component, ctx, opts);
+    const rows = await t.query(api.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_large",
+    });
+    expect(rows).toHaveLength(120);
+    expect(rows.reduce((sum, row) => sum + (row.reversedAmount ?? 0), 0)).toBe(
+      6000,
+    );
+    for (const row of rows) {
+      expect(row.reversedAmount).toBe(50);
+      expect(stripe.total(row.stripeTransferId)).toBe(50);
+    }
+  });
+  const DISPUTE = {
+    sourceChargeId: "ch_dp",
+    amount: 4500,
+    operationId: "dp_1",
+  };
 
   async function seedDisputeLegs(t: ReturnType<typeof convexTest>) {
     await seedLeg(t, {

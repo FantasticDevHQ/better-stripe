@@ -1,7 +1,7 @@
+import { AccountConfigurations } from "@/components/account-configurations";
 import { useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,12 +42,6 @@ const CONNECT_COUNTRIES = [
   { code: "JP", name: "Japan" },
   { code: "SG", name: "Singapore" },
 ];
-
-const CONFIGURATION_LABELS: Record<string, string> = {
-  recipient: "Recipient (payouts)",
-  customer: "Customer (billable)",
-  merchant: "Merchant (card payments)",
-};
 
 /**
  * BTS-46 — "one V2 account, configurations accrue" lifecycle demo, distinct
@@ -138,68 +132,75 @@ export function SellerMarketplaceAccount({
               verify your identity and connect a bank account for payouts.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="marketplace-country">Country</Label>
-              <Select
-                value={selectedCountry}
-                onValueChange={(v: string | null) => v && setSelectedCountry(v)}
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="marketplace-country">Country</Label>
+                <Select
+                  value={selectedCountry}
+                  onValueChange={(v: string | null) =>
+                    v && setSelectedCountry(v)
+                  }
+                >
+                  <SelectTrigger id="marketplace-country" className="w-64">
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONNECT_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                onClick={async () => {
+                  setIsCreating(true);
+                  setCreateError(null);
+                  try {
+                    const result = await createOnboarding({
+                      userId: currentUser.id,
+                      email: currentUser.email,
+                      country: selectedCountry,
+                      refreshUrl: window.location.href,
+                      returnUrl:
+                        window.location.origin + "/seller/marketplace-account",
+                    });
+                    window.location.href = result.onboardingUrl;
+                  } catch (err) {
+                    setCreateError(
+                      err instanceof Error ? err.message : String(err),
+                    );
+                    setIsCreating(false);
+                  }
+                }}
+                disabled={isCreating || !selectedCountry}
               >
-                <SelectTrigger id="marketplace-country" className="w-64">
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONNECT_COUNTRIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Onboard as recipient
+                    <ArrowRight
+                      data-icon="inline-end"
+                      className="ml-2 h-4 w-4"
+                    />
+                  </>
+                )}
+              </Button>
 
-            <Button
-              onClick={async () => {
-                setIsCreating(true);
-                setCreateError(null);
-                try {
-                  const result = await createOnboarding({
-                    userId: currentUser.id,
-                    email: currentUser.email,
-                    country: selectedCountry,
-                    refreshUrl: window.location.href,
-                    returnUrl:
-                      window.location.origin + "/seller/marketplace-account",
-                  });
-                  window.location.href = result.onboardingUrl;
-                } catch (err) {
-                  setCreateError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                  setIsCreating(false);
-                }
-              }}
-              disabled={isCreating || !selectedCountry}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                <>
-                  Onboard as recipient
-                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
-                </>
+              {createError && (
+                <Alert variant="destructive">
+                  <AlertTitle>Action failed</AlertTitle>
+                  <AlertDescription>{createError}</AlertDescription>
+                </Alert>
               )}
-            </Button>
-
-            {createError && (
-              <Alert variant="destructive">
-                <AlertTitle>Action failed</AlertTitle>
-                <AlertDescription>{createError}</AlertDescription>
-              </Alert>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -276,60 +277,68 @@ export function SellerMarketplaceAccount({
               this account can receive payouts.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {missingRequirements.length > 0 && (
-              <>
-                <div className="grid gap-1.5">
-                  {missingRequirements.map((req) => (
-                    <div key={req} className="flex items-center gap-2 text-sm">
-                      <Circle className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                      <span className="text-muted-foreground">{req}</span>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-              </>
-            )}
-            <Button
-              onClick={async () => {
-                setIsLinking(true);
-                setLinkError(null);
-                try {
-                  const result = await getAccountLink({
-                    stripeAccountId: account.stripeAccountId,
-                    refreshUrl: window.location.href,
-                    returnUrl:
-                      window.location.origin + "/seller/marketplace-account",
-                  });
-                  window.location.href = result.url;
-                } catch (err) {
-                  setLinkError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                  setIsLinking(false);
-                }
-              }}
-              disabled={isLinking}
-            >
-              {isLinking ? (
+          <CardContent>
+            <div className="space-y-4">
+              {missingRequirements.length > 0 && (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Redirecting to Stripe...
-                </>
-              ) : (
-                <>
-                  Continue setup on Stripe
-                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
+                  <div className="grid gap-1.5">
+                    {missingRequirements.map((req) => (
+                      <div
+                        key={req}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Circle className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <span className="text-muted-foreground">{req}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Separator />
                 </>
               )}
-            </Button>
+              <Button
+                onClick={async () => {
+                  setIsLinking(true);
+                  setLinkError(null);
+                  try {
+                    const result = await getAccountLink({
+                      stripeAccountId: account.stripeAccountId,
+                      refreshUrl: window.location.href,
+                      returnUrl:
+                        window.location.origin + "/seller/marketplace-account",
+                    });
+                    window.location.href = result.url;
+                  } catch (err) {
+                    setLinkError(
+                      err instanceof Error ? err.message : String(err),
+                    );
+                    setIsLinking(false);
+                  }
+                }}
+                disabled={isLinking}
+              >
+                {isLinking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Redirecting to Stripe...
+                  </>
+                ) : (
+                  <>
+                    Continue setup on Stripe
+                    <ArrowRight
+                      data-icon="inline-end"
+                      className="ml-2 h-4 w-4"
+                    />
+                  </>
+                )}
+              </Button>
 
-            {linkError && (
-              <Alert variant="destructive">
-                <AlertTitle>Action failed</AlertTitle>
-                <AlertDescription>{linkError}</AlertDescription>
-              </Alert>
-            )}
+              {linkError && (
+                <Alert variant="destructive">
+                  <AlertTitle>Action failed</AlertTitle>
+                  <AlertDescription>{linkError}</AlertDescription>
+                </Alert>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -337,26 +346,7 @@ export function SellerMarketplaceAccount({
       {isOnboardingComplete && (
         <>
           {/* Applied configurations */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Applied Configurations</CardTitle>
-              <CardDescription>
-                What this ONE Stripe account is currently allowed to do.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {appliedConfigurations.length === 0 && (
-                <span className="text-muted-foreground text-sm">
-                  No data yet
-                </span>
-              )}
-              {appliedConfigurations.map((c) => (
-                <Badge key={c} variant="default">
-                  {CONFIGURATION_LABELS[c] ?? c}
-                </Badge>
-              ))}
-            </CardContent>
-          </Card>
+          <AccountConfigurations configurations={appliedConfigurations} />
 
           {/* Step 2: add customer config */}
           {!hasCustomerConfig && (
@@ -417,96 +407,101 @@ export function SellerMarketplaceAccount({
                   customer. Pick something to buy to prove it.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {purchasablePrices.length === 0 ? (
-                  <Alert>
-                    <AlertDescription>
-                      No data found for one-time platform prices. Seed demo data
-                      first.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <>
-                    <div className="grid gap-2">
-                      <Label>Item</Label>
-                      <Select
-                        value={selectedPriceId}
-                        onValueChange={(v: string | null) =>
-                          v && setSelectedPriceId(v)
-                        }
-                      >
-                        <SelectTrigger
-                          className="w-72"
-                          aria-label="Product and price to buy"
-                        >
-                          <SelectValue placeholder="Select something to buy" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {purchasablePrices.map((price) => (
-                            <SelectItem
-                              key={price.stripePriceId}
-                              value={price.stripePriceId}
-                            >
-                              {price.productName} —{" "}
-                              {(price.unitAmount / 100).toLocaleString(
-                                undefined,
-                                { style: "currency", currency: price.currency },
-                              )}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        if (!selectedPriceId) return;
-                        setIsPurchasing(true);
-                        setPurchaseError(null);
-                        try {
-                          const result = await createSelfPurchase({
-                            userId: currentUser.id,
-                            stripeAccountId: account.stripeAccountId,
-                            stripePriceId: selectedPriceId,
-                            returnUrl:
-                              window.location.origin +
-                              "/seller/marketplace-account?purchase_session_id={CHECKOUT_SESSION_ID}",
-                          });
-                          if (result.url) {
-                            window.location.href = result.url;
+              <CardContent>
+                <div className="space-y-4">
+                  {purchasablePrices.length === 0 ? (
+                    <Alert>
+                      <AlertDescription>
+                        No data found for one-time platform prices. Seed demo
+                        data first.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Item</Label>
+                        <Select
+                          value={selectedPriceId}
+                          onValueChange={(v: string | null) =>
+                            v && setSelectedPriceId(v)
                           }
-                        } catch (err) {
-                          setPurchaseError(
-                            err instanceof Error ? err.message : String(err),
-                          );
-                          setIsPurchasing(false);
-                        }
-                      }}
-                      disabled={isPurchasing || !selectedPriceId}
-                    >
-                      {isPurchasing ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Redirecting to Stripe...
-                        </>
-                      ) : (
-                        <>
-                          Buy as this account
-                          <ArrowRight
-                            data-icon="inline-end"
-                            className="ml-2 h-4 w-4"
-                          />
-                        </>
-                      )}
-                    </Button>
+                        >
+                          <SelectTrigger
+                            className="w-72"
+                            aria-label="Product and price to buy"
+                          >
+                            <SelectValue placeholder="Select something to buy" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {purchasablePrices.map((price) => (
+                              <SelectItem
+                                key={price.stripePriceId}
+                                value={price.stripePriceId}
+                              >
+                                {price.productName} —{" "}
+                                {(price.unitAmount / 100).toLocaleString(
+                                  undefined,
+                                  {
+                                    style: "currency",
+                                    currency: price.currency,
+                                  },
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          if (!selectedPriceId) return;
+                          setIsPurchasing(true);
+                          setPurchaseError(null);
+                          try {
+                            const result = await createSelfPurchase({
+                              userId: currentUser.id,
+                              stripeAccountId: account.stripeAccountId,
+                              stripePriceId: selectedPriceId,
+                              returnUrl:
+                                window.location.origin +
+                                "/seller/marketplace-account?purchase_session_id={CHECKOUT_SESSION_ID}",
+                            });
+                            if (result.url) {
+                              window.location.href = result.url;
+                            }
+                          } catch (err) {
+                            setPurchaseError(
+                              err instanceof Error ? err.message : String(err),
+                            );
+                            setIsPurchasing(false);
+                          }
+                        }}
+                        disabled={isPurchasing || !selectedPriceId}
+                      >
+                        {isPurchasing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Redirecting to Stripe...
+                          </>
+                        ) : (
+                          <>
+                            Buy as this account
+                            <ArrowRight
+                              data-icon="inline-end"
+                              className="ml-2 h-4 w-4"
+                            />
+                          </>
+                        )}
+                      </Button>
 
-                    {purchaseError && (
-                      <Alert variant="destructive">
-                        <AlertTitle>Action failed</AlertTitle>
-                        <AlertDescription>{purchaseError}</AlertDescription>
-                      </Alert>
-                    )}
-                  </>
-                )}
+                      {purchaseError && (
+                        <Alert variant="destructive">
+                          <AlertTitle>Action failed</AlertTitle>
+                          <AlertDescription>{purchaseError}</AlertDescription>
+                        </Alert>
+                      )}
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -522,76 +517,78 @@ export function SellerMarketplaceAccount({
                   this account didn't start with them.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {!hasRecipientConfig && (
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      setIsAddingRecipient(true);
-                      setAddRecipientError(null);
-                      try {
-                        await addRecipientConfig({
-                          stripeAccountId: account.stripeAccountId,
-                        });
-                      } catch (err) {
-                        setAddRecipientError(
-                          err instanceof Error ? err.message : String(err),
-                        );
-                      } finally {
-                        setIsAddingRecipient(false);
-                      }
-                    }}
-                    disabled={isAddingRecipient}
-                  >
-                    {isAddingRecipient ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      "Add recipient configuration"
-                    )}
-                  </Button>
-                )}
-                {!hasMerchantConfig && (
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      setIsAddingMerchant(true);
-                      setAddMerchantError(null);
-                      try {
-                        await addMerchantConfig({
-                          stripeAccountId: account.stripeAccountId,
-                        });
-                      } catch (err) {
-                        setAddMerchantError(
-                          err instanceof Error ? err.message : String(err),
-                        );
-                      } finally {
-                        setIsAddingMerchant(false);
-                      }
-                    }}
-                    disabled={isAddingMerchant}
-                  >
-                    {isAddingMerchant ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      "Add merchant configuration"
-                    )}
-                  </Button>
-                )}
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {!hasRecipientConfig && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        setIsAddingRecipient(true);
+                        setAddRecipientError(null);
+                        try {
+                          await addRecipientConfig({
+                            stripeAccountId: account.stripeAccountId,
+                          });
+                        } catch (err) {
+                          setAddRecipientError(
+                            err instanceof Error ? err.message : String(err),
+                          );
+                        } finally {
+                          setIsAddingRecipient(false);
+                        }
+                      }}
+                      disabled={isAddingRecipient}
+                    >
+                      {isAddingRecipient ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add recipient configuration"
+                      )}
+                    </Button>
+                  )}
+                  {!hasMerchantConfig && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        setIsAddingMerchant(true);
+                        setAddMerchantError(null);
+                        try {
+                          await addMerchantConfig({
+                            stripeAccountId: account.stripeAccountId,
+                          });
+                        } catch (err) {
+                          setAddMerchantError(
+                            err instanceof Error ? err.message : String(err),
+                          );
+                        } finally {
+                          setIsAddingMerchant(false);
+                        }
+                      }}
+                      disabled={isAddingMerchant}
+                    >
+                      {isAddingMerchant ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add merchant configuration"
+                      )}
+                    </Button>
+                  )}
 
-                {(addRecipientError || addMerchantError) && (
-                  <Alert variant="destructive" className="w-full">
-                    <AlertTitle>Action failed</AlertTitle>
-                    <AlertDescription>
-                      {addRecipientError ?? addMerchantError}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {(addRecipientError || addMerchantError) && (
+                    <Alert variant="destructive" className="w-full">
+                      <AlertTitle>Action failed</AlertTitle>
+                      <AlertDescription>
+                        {addRecipientError ?? addMerchantError}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}

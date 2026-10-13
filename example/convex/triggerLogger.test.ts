@@ -137,7 +137,10 @@ describe("triggerLogger — listTriggerLog", () => {
       kind: "subscription.onUpdate",
       stripeId: "sub_new",
     });
-    const afterSecond = await t.query(internal.triggerLogger.listTriggerLog, {});
+    const afterSecond = await t.query(
+      internal.triggerLogger.listTriggerLog,
+      {},
+    );
     const newRow = afterSecond.find((r) => r.stripeId === "sub_new")!;
     expect(oldCreationTime).toBeLessThan(newRow._creationTime);
 
@@ -165,10 +168,7 @@ describe("triggerLogger — clearTriggerLog", () => {
       stripeId: "po_1",
     });
 
-    const result = await t.mutation(
-      internal.triggerLogger.clearTriggerLog,
-      {},
-    );
+    const result = await t.mutation(internal.triggerLogger.clearTriggerLog, {});
     expect(result).toEqual({ deleted: 2 });
 
     const rows = await t.query(internal.triggerLogger.listTriggerLog, {});
@@ -178,10 +178,7 @@ describe("triggerLogger — clearTriggerLog", () => {
   it("reports zero deletions when the table is already empty", async () => {
     const t = convexTest(schema, modules);
 
-    const result = await t.mutation(
-      internal.triggerLogger.clearTriggerLog,
-      {},
-    );
+    const result = await t.mutation(internal.triggerLogger.clearTriggerLog, {});
     expect(result).toEqual({ deleted: 0 });
   });
 });

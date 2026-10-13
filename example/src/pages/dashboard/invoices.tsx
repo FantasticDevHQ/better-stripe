@@ -90,10 +90,10 @@ export function Invoices() {
           <TableBody>
             {invoices.map((invoice) => (
               <TableRow key={invoice._id}>
-                <TableCell className="font-mono text-sm">
+                <TableCell variant="identifier">
                   {invoice.stripeInvoiceId}
                 </TableCell>
-                <TableCell className="font-medium">
+                <TableCell variant="amount">
                   {formatCurrency(
                     invoice.amountPaid ?? invoice.amountDue ?? 0,
                     invoice.currency || "usd",
@@ -136,7 +136,7 @@ export function Invoices() {
             ))}
             {invoices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="py-8">
+                <TableCell colSpan={4} size="empty">
                   <Alert>
                     <AlertDescription className="text-center">
                       No data found. Invoices will appear after billing begins.

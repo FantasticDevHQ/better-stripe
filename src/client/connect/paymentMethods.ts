@@ -51,5 +51,8 @@ export async function setDefaultPaymentMethod(
   _ctx: RunCtx,
   _opts: { stripeAccountId: string; paymentMethodId: string },
 ) {
-  throwStripeError("PAYMENT_METHOD_FAILED", "[better-stripe] setDefaultPaymentMethod is not yet implemented for V2 Accounts. Use createBillingPortalSession() to let users manage payment methods.");
+  throwStripeError(
+    "PAYMENT_METHOD_FAILED",
+    "[better-stripe] setDefaultPaymentMethod is not yet implemented for V2 Accounts. Use createBillingPortalSession() to let users manage payment methods.",
+  );
 }

@@ -55,7 +55,9 @@ test.describe("live dispute chargeback lifecycle", () => {
     );
 
     await page.getByTestId("accept-dispute-button").click();
-    await expect(page.getByTestId("accept-dispute-confirm-panel")).toBeVisible();
+    await expect(
+      page.getByTestId("accept-dispute-confirm-panel"),
+    ).toBeVisible();
     await page.getByTestId("accept-dispute-confirm-button").click();
     await expect(page.getByTestId("accept-dispute-status")).toContainText(
       /accepted/i,

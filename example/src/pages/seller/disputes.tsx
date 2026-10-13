@@ -191,7 +191,7 @@ function HeadlessDisputes({
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Card className="p-4" data-testid="disputes-list">
+      <Card size="inset" data-testid="disputes-list">
         <h2 className="mb-3 text-lg font-semibold">Your disputes</h2>
         <DisputesList
           disputes={disputes}
@@ -224,7 +224,7 @@ function HeadlessDisputes({
         />
       </Card>
 
-      <Card className="p-4" data-testid="dispute-detail">
+      <Card size="inset" data-testid="dispute-detail">
         <h2 className="mb-3 text-lg font-semibold">Respond to dispute</h2>
         {!selectedId ? (
           <Alert>
@@ -342,7 +342,7 @@ function EmbeddedSellerDisputes({
   }
 
   return (
-    <Card className="p-4" data-testid="embedded-disputes">
+    <Card size="inset" data-testid="embedded-disputes">
       <h2 className="mb-3 text-lg font-semibold">
         Embedded disputes (Stripe Connect)
       </h2>
@@ -411,17 +411,21 @@ export function SellerDisputes() {
           <TabsTrigger value="headless">Headless components</TabsTrigger>
           <TabsTrigger value="embedded">Embedded (Connect)</TabsTrigger>
         </TabsList>
-        <TabsContent value="headless" className="pt-4">
-          <HeadlessDisputes
-            stripeAccountId={stripeAccountId}
-            userId={currentUser.id}
-          />
+        <TabsContent value="headless">
+          <div className="pt-4">
+            <HeadlessDisputes
+              stripeAccountId={stripeAccountId}
+              userId={currentUser.id}
+            />
+          </div>
         </TabsContent>
-        <TabsContent value="embedded" className="pt-4">
-          <EmbeddedSellerDisputes
-            stripeAccountId={stripeAccountId}
-            userId={currentUser.id}
-          />
+        <TabsContent value="embedded">
+          <div className="pt-4">
+            <EmbeddedSellerDisputes
+              stripeAccountId={stripeAccountId}
+              userId={currentUser.id}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -131,7 +131,7 @@ export function Checkout() {
       </div>
 
       <Card>
-        <CardContent className="p-6">
+        <CardContent padding="lg">
           {publishableKey === undefined ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-full" />

@@ -75,7 +75,11 @@ export function SplitBreakdown({
   const money = (amount: number) => formatPrice(amount, currency, locale);
 
   const lines: SplitBreakdownLine[] = [
-    { key: "store" as const, label: labels?.store ?? "Store", amount: breakdown.store },
+    {
+      key: "store" as const,
+      label: labels?.store ?? "Store",
+      amount: breakdown.store,
+    },
     {
       key: "affiliate" as const,
       label: labels?.affiliate ?? "Affiliate",
@@ -83,7 +87,13 @@ export function SplitBreakdown({
     },
     // The catch-all bucket only earns a line when it carries money.
     ...(breakdown.other > 0
-      ? [{ key: "other" as const, label: labels?.other ?? "Other", amount: breakdown.other }]
+      ? [
+          {
+            key: "other" as const,
+            label: labels?.other ?? "Other",
+            amount: breakdown.other,
+          },
+        ]
       : []),
     {
       key: "platform" as const,

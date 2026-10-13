@@ -64,10 +64,14 @@ export function computeReversalSlices(
         );
         break;
       case "fraction":
-        to = Math.min(leg.amount, Math.max(from, Math.round(leg.amount * fraction)));
+        to = Math.min(
+          leg.amount,
+          Math.max(from, Math.round(leg.amount * fraction)),
+        );
         break;
       case "amount": {
-        const prorata = total > 0 ? Math.round((mode.amount * leg.amount) / total) : 0;
+        const prorata =
+          total > 0 ? Math.round((mode.amount * leg.amount) / total) : 0;
         const take = Math.max(0, Math.min(prorata, budget, leg.amount - from));
         budget -= take;
         to = from + take;
@@ -110,4 +114,28 @@ export function computeReversalSlices(
   }
 
   return slices;
+}
+
+/**
+ * Derive reversal status + transfer status from a (transfer amount, cumulative
+ * reversed amount) pair. Shared by upsert and reversal so the three reversal
+ * fields can never drift.
+ */
+export function deriveReversalState(
+  amount: number,
+  reversedAmount: number,
+  baseStatus: "pending" | "paid" | "failed" | "reversed",
+) {
+  const reversalStatus =
+    reversedAmount <= 0
+      ? undefined
+      : reversedAmount >= amount
+        ? ("fully_reversed" as const)
+        : ("partially_reversed" as const);
+  return {
+    reversedAmount: reversedAmount > 0 ? reversedAmount : undefined,
+    reversalStatus,
+    status:
+      reversalStatus === "fully_reversed" ? ("reversed" as const) : baseStatus,
+  };
 }

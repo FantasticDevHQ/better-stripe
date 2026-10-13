@@ -80,26 +80,29 @@ export function SellerPlan() {
       </p>
       {state && (
         <Card>
-          <CardContent className="pt-6 space-y-3">
-            <p>
-              {state.hasAccess
-                ? `Your ${state.storePlan?.planId} plan is active.`
-                : "Your store is closed to new purchases until a plan is paid."}
-            </p>
-            {state.storePlan && (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Status: {state.storePlan.status}.{" "}
-                  {state.storePlan.cancelAtPeriodEnd
-                    ? "Cancels"
-                    : "Paid through"}{" "}
-                  {new Date(state.storePlan.paidThrough).toLocaleDateString()}.
-                </p>
-                <Button disabled={busy} onClick={() => void openPortal()}>
-                  Manage plan, billing & cancellation
-                </Button>
-              </>
-            )}
+          <CardContent padding="section">
+            <div className="space-y-3">
+              <p>
+                {state.hasAccess
+                  ? `Your ${state.storePlan?.planId} plan is active.`
+                  : "Your store is closed to new purchases until a plan is paid."}
+              </p>
+              {state.storePlan && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Status: {state.storePlan.status}.{" "}
+                    {state.storePlan.cancelAtPeriodEnd
+                      ? "Cancels"
+                      : "Paid through"}{" "}
+                    {new Date(state.storePlan.paidThrough).toLocaleDateString()}
+                    .
+                  </p>
+                  <Button disabled={busy} onClick={() => void openPortal()}>
+                    Manage plan, billing & cancellation
+                  </Button>
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -126,26 +129,28 @@ export function SellerPlan() {
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-3xl font-bold">
-                  ${plan.monthlyAmount / 100}
-                  <span className="text-sm font-normal"> / month</span>
-                </p>
-                <p>{plan.feeLabel}</p>
-                <Button
-                  disabled={
-                    busy ||
-                    !state ||
-                    state.hasAccess ||
-                    (!!state.storePlan &&
-                      state.storePlan.status !== "canceled" &&
-                      state.storePlan.status !== "incomplete_expired") ||
-                    !state.stripeAccountId
-                  }
-                  onClick={() => void choose(plan.id)}
-                >
-                  Choose {plan.name}
-                </Button>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-3xl font-bold">
+                    ${plan.monthlyAmount / 100}
+                    <span className="text-sm font-normal"> / month</span>
+                  </p>
+                  <p>{plan.feeLabel}</p>
+                  <Button
+                    disabled={
+                      busy ||
+                      !state ||
+                      state.hasAccess ||
+                      (!!state.storePlan &&
+                        state.storePlan.status !== "canceled" &&
+                        state.storePlan.status !== "incomplete_expired") ||
+                      !state.stripeAccountId
+                    }
+                    onClick={() => void choose(plan.id)}
+                  >
+                    Choose {plan.name}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

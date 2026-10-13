@@ -142,10 +142,12 @@ export function Billing() {
           <Skeleton className="mt-2 h-4 w-64" />
         </div>
         <Card>
-          <CardContent className="space-y-4 p-6">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-4 w-64" />
+          <CardContent padding="lg">
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-64" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -162,18 +164,22 @@ export function Billing() {
           </p>
         </div>
         <Card>
-          <CardContent className="space-y-4 py-8 text-center">
-            <p className="text-muted-foreground">
-              No data yet. Create a billing account by picking a plan to get
-              started.
-            </p>
-            <Button
-              nativeButton={false}
-              role="link"
-              render={<Link to="/" aria-label="Create account to subscribe" />}
-            >
-              Create account to subscribe
-            </Button>
+          <CardContent padding="status">
+            <div className="space-y-4 text-center">
+              <p className="text-muted-foreground">
+                No data yet. Create a billing account by picking a plan to get
+                started.
+              </p>
+              <Button
+                nativeButton={false}
+                role="link"
+                render={
+                  <Link to="/" aria-label="Create account to subscribe" />
+                }
+              >
+                Create account to subscribe
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -224,43 +230,45 @@ export function Billing() {
           <CardHeader>
             <CardTitle>Current Plan</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="break-all text-xl font-bold">
-                  {subscription.stripeSubscriptionId}
-                </p>
-                <p className="text-muted-foreground break-all text-sm">
-                  {subscription.priceId ?? "Unknown price"}
-                </p>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="break-all text-xl font-bold">
+                    {subscription.stripeSubscriptionId}
+                  </p>
+                  <p className="text-muted-foreground break-all text-sm">
+                    {subscription.priceId ?? "Unknown price"}
+                  </p>
+                </div>
+                <Badge
+                  data-testid="buyer-subscription-status"
+                  variant={
+                    subscription.cancelAtPeriodEnd ? "destructive" : "default"
+                  }
+                >
+                  {subscription.cancelAtPeriodEnd
+                    ? "Cancels at period end"
+                    : subscription.isCollectionPaused
+                      ? "Collection paused"
+                      : getSubscriptionStatusLabel(subscription.status)}
+                </Badge>
               </div>
-              <Badge
-                data-testid="buyer-subscription-status"
-                variant={
-                  subscription.cancelAtPeriodEnd ? "destructive" : "default"
-                }
-              >
-                {subscription.cancelAtPeriodEnd
-                  ? "Cancels at period end"
-                  : subscription.isCollectionPaused
-                    ? "Collection paused"
-                    : getSubscriptionStatusLabel(subscription.status)}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              Current period: {formatDate(subscription.currentPeriodStart)} -{" "}
-              {formatDate(subscription.currentPeriodEnd)}
-            </p>
-            {typeof subscription.quantity === "number" && (
               <p className="text-muted-foreground text-sm">
-                Quantity: {subscription.quantity}
+                Current period: {formatDate(subscription.currentPeriodStart)} -{" "}
+                {formatDate(subscription.currentPeriodEnd)}
               </p>
-            )}
+              {typeof subscription.quantity === "number" && (
+                <p className="text-muted-foreground text-sm">
+                  Quantity: {subscription.quantity}
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent padding="status" className="text-center">
             <p className="text-muted-foreground">
               No data yet. Choose a plan to start a subscription.
             </p>
@@ -273,262 +281,269 @@ export function Billing() {
           <CardHeader>
             <CardTitle>Manage Subscription</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <BuyerBillingView
-              subscriptions={[
-                {
-                  id: subscription.stripeSubscriptionId,
-                  status: subscription.status,
-                  isTrialing: subscription.isTrialing,
-                  trialEnd: subscription.trialEnd,
-                  currentPeriodEnd: subscription.currentPeriodEnd,
-                  cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-                  canceledAt: subscription.canceledAt,
-                  destinationAccountId: subscription.accountId,
-                },
-              ]}
-              paymentMethod={null}
-              emptyLabel="No subscription yet"
-              storeName={(storeAccountId) =>
-                storeAccountId ? `Store ${storeAccountId}` : "Platform"
-              }
-            >
-              {({ groups }) => (
-                <div className="space-y-3">
-                  {groups.map((group) => (
-                    <div
-                      key={group.storeAccountId ?? "platform"}
-                      className="rounded-lg border p-3"
-                    >
-                      <p className="text-sm font-medium">
-                        {group.storeAccountId
-                          ? `Store ${group.storeAccountId}`
-                          : "Platform subscription"}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        Buyer subscription grouped with the library&apos;s
-                        BuyerBillingView.
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </BuyerBillingView>
-
-            <div className="flex flex-wrap gap-3">
-              <BillingPortalLink
-                onCreateSession={async () => {
-                  const { url } = await createBillingPortalSession({
-                    stripeAccountId: account.stripeAccountId,
-                    returnUrl: window.location.href,
-                  });
-                  window.location.assign(url);
-                }}
+          <CardContent>
+            <div className="space-y-6">
+              <BuyerBillingView
+                subscriptions={[
+                  {
+                    id: subscription.stripeSubscriptionId,
+                    status: subscription.status,
+                    isTrialing: subscription.isTrialing,
+                    trialEnd: subscription.trialEnd,
+                    currentPeriodEnd: subscription.currentPeriodEnd,
+                    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+                    canceledAt: subscription.canceledAt,
+                    destinationAccountId: subscription.accountId,
+                  },
+                ]}
+                paymentMethod={null}
+                emptyLabel="No subscription yet"
+                storeName={(storeAccountId) =>
+                  storeAccountId ? `Store ${storeAccountId}` : "Platform"
+                }
               >
-                {({ onClick, isLoading: portalLoading }) => (
+                {({ groups }) => (
+                  <div className="space-y-3">
+                    {groups.map((group) => (
+                      <div
+                        key={group.storeAccountId ?? "platform"}
+                        className="rounded-lg border p-3"
+                      >
+                        <p className="text-sm font-medium">
+                          {group.storeAccountId
+                            ? `Store ${group.storeAccountId}`
+                            : "Platform subscription"}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          Buyer subscription grouped with the library&apos;s
+                          BuyerBillingView.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </BuyerBillingView>
+
+              <div className="flex flex-wrap gap-3">
+                <BillingPortalLink
+                  onCreateSession={async () => {
+                    const { url } = await createBillingPortalSession({
+                      stripeAccountId: account.stripeAccountId,
+                      returnUrl: window.location.href,
+                    });
+                    window.location.assign(url);
+                  }}
+                >
+                  {({ onClick, isLoading: portalLoading }) => (
+                    <Button
+                      variant="outline"
+                      onClick={onClick}
+                      disabled={portalLoading}
+                      data-testid="buyer-subscription-portal"
+                    >
+                      <ExternalLink
+                        data-icon="inline-start"
+                        className="mr-2 h-4 w-4"
+                      />
+                      {portalLoading
+                        ? "Opening portal..."
+                        : "Open Billing Portal"}
+                    </Button>
+                  )}
+                </BillingPortalLink>
+
+                <Button
+                  variant="outline"
+                  disabled={!canPause || pendingAction !== null}
+                  data-testid="buyer-subscription-pause"
+                  onClick={() =>
+                    runLifecycleAction("pause subscription", () =>
+                      pauseSubscription({
+                        userId: currentUser.id,
+                        stripeSubscriptionId: subscription.stripeSubscriptionId,
+                        behavior: "keep_as_draft",
+                      }),
+                    )
+                  }
+                >
+                  Pause
+                </Button>
+
+                <Button
+                  variant="outline"
+                  disabled={!canResume || pendingAction !== null}
+                  data-testid="buyer-subscription-resume"
+                  onClick={() =>
+                    runLifecycleAction("resume subscription", () =>
+                      resumeSubscription({
+                        userId: currentUser.id,
+                        stripeSubscriptionId: subscription.stripeSubscriptionId,
+                      }),
+                    )
+                  }
+                >
+                  Resume
+                </Button>
+
+                <Button
+                  variant="outline"
+                  disabled={!canReactivate || pendingAction !== null}
+                  data-testid="buyer-subscription-reactivate"
+                  onClick={() =>
+                    runLifecycleAction("reactivate subscription", () =>
+                      reactivateSubscription({
+                        userId: currentUser.id,
+                        stripeSubscriptionId: subscription.stripeSubscriptionId,
+                      }),
+                    )
+                  }
+                >
+                  Reactivate
+                </Button>
+
+                {!subscription.cancelAtPeriodEnd && (
                   <Button
-                    variant="outline"
-                    onClick={onClick}
-                    disabled={portalLoading}
-                    data-testid="buyer-subscription-portal"
+                    variant="destructive"
+                    disabled={pendingAction !== null}
+                    data-testid="buyer-subscription-cancel"
+                    onClick={() =>
+                      runLifecycleAction("cancel subscription", () =>
+                        cancelSubscription({
+                          userId: currentUser.id,
+                          stripeSubscriptionId:
+                            subscription.stripeSubscriptionId,
+                        }),
+                      )
+                    }
                   >
-                    <ExternalLink
-                      data-icon="inline-start"
-                      className="mr-2 h-4 w-4"
-                    />
-                    {portalLoading
-                      ? "Opening portal..."
-                      : "Open Billing Portal"}
+                    Cancel
                   </Button>
                 )}
-              </BillingPortalLink>
+              </div>
 
-              <Button
-                variant="outline"
-                disabled={!canPause || pendingAction !== null}
-                data-testid="buyer-subscription-pause"
-                onClick={() =>
-                  runLifecycleAction("pause subscription", () =>
-                    pauseSubscription({
-                      userId: currentUser.id,
-                      stripeSubscriptionId: subscription.stripeSubscriptionId,
-                      behavior: "keep_as_draft",
-                    }),
-                  )
-                }
-              >
-                Pause
-              </Button>
-
-              <Button
-                variant="outline"
-                disabled={!canResume || pendingAction !== null}
-                data-testid="buyer-subscription-resume"
-                onClick={() =>
-                  runLifecycleAction("resume subscription", () =>
-                    resumeSubscription({
-                      userId: currentUser.id,
-                      stripeSubscriptionId: subscription.stripeSubscriptionId,
-                    }),
-                  )
-                }
-              >
-                Resume
-              </Button>
-
-              <Button
-                variant="outline"
-                disabled={!canReactivate || pendingAction !== null}
-                data-testid="buyer-subscription-reactivate"
-                onClick={() =>
-                  runLifecycleAction("reactivate subscription", () =>
-                    reactivateSubscription({
-                      userId: currentUser.id,
-                      stripeSubscriptionId: subscription.stripeSubscriptionId,
-                    }),
-                  )
-                }
-              >
-                Reactivate
-              </Button>
-
-              {!subscription.cancelAtPeriodEnd && (
-                <Button
-                  variant="destructive"
-                  disabled={pendingAction !== null}
-                  data-testid="buyer-subscription-cancel"
-                  onClick={() =>
-                    runLifecycleAction("cancel subscription", () =>
-                      cancelSubscription({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                      }),
-                    )
-                  }
-                >
-                  Cancel
-                </Button>
-              )}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="buyer-subscription-plan">Plan change</Label>
-                <Select
-                  value={selectedPriceId}
-                  onValueChange={(value) => setSelectedPriceId(value ?? "")}
-                >
-                  <SelectTrigger
-                    id="buyer-subscription-plan"
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-subscription-plan">Plan change</Label>
+                  <Select
+                    value={selectedPriceId}
+                    onValueChange={(value) => setSelectedPriceId(value ?? "")}
+                  >
+                    <SelectTrigger
+                      id="buyer-subscription-plan"
+                      className="w-full"
+                      data-testid="buyer-subscription-plan-select"
+                    >
+                      <SelectValue placeholder="Choose a recurring price" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activePrices.map((price) => (
+                        <SelectItem
+                          key={price.stripePriceId}
+                          value={price.stripePriceId}
+                        >
+                          {formatPriceLabel(price)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
                     className="w-full"
-                    data-testid="buyer-subscription-plan-select"
-                  >
-                    <SelectValue placeholder="Choose a recurring price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activePrices.map((price) => (
-                      <SelectItem
-                        key={price.stripePriceId}
-                        value={price.stripePriceId}
-                      >
-                        {formatPriceLabel(price)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="w-full"
-                  variant="secondary"
-                  disabled={!selectedPriceId || pendingAction !== null}
-                  data-testid="buyer-subscription-plan-change"
-                  onClick={() =>
-                    runLifecycleAction("change plan", () =>
-                      updateSubscriptionPrice({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                        stripePriceId: selectedPriceId,
-                        prorationBehavior: "none",
-                      }),
-                    )
-                  }
-                >
-                  Change plan
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="buyer-subscription-quantity">Quantity</Label>
-                <Input
-                  id="buyer-subscription-quantity"
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  data-testid="buyer-subscription-quantity-input"
-                  onChange={(event) => setQuantity(event.target.value)}
-                />
-                <Button
-                  className="w-full"
-                  variant="secondary"
-                  disabled={Number(quantity) < 1 || pendingAction !== null}
-                  data-testid="buyer-subscription-quantity-change"
-                  onClick={() =>
-                    runLifecycleAction("update quantity", () =>
-                      updateSubscriptionQuantity({
-                        userId: currentUser.id,
-                        stripeSubscriptionId: subscription.stripeSubscriptionId,
-                        quantity: Number(quantity),
-                      }),
-                    )
-                  }
-                >
-                  Update quantity
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="buyer-subscription-trial-end">Trial end</Label>
-                <Input
-                  id="buyer-subscription-trial-end"
-                  type="date"
-                  value={trialEnd}
-                  data-testid="buyer-subscription-trial-end-input"
-                  onChange={(event) => setTrialEnd(event.target.value)}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
                     variant="secondary"
-                    disabled={!trialEnd || pendingAction !== null}
-                    data-testid="buyer-subscription-trial-end-update"
+                    disabled={!selectedPriceId || pendingAction !== null}
+                    data-testid="buyer-subscription-plan-change"
                     onClick={() =>
-                      runLifecycleAction("update trial end", () =>
-                        updateSubscriptionTrialEnd({
+                      runLifecycleAction("change plan", () =>
+                        updateSubscriptionPrice({
                           userId: currentUser.id,
                           stripeSubscriptionId:
                             subscription.stripeSubscriptionId,
-                          trialEnd,
+                          stripePriceId: selectedPriceId,
+                          prorationBehavior: "none",
                         }),
                       )
                     }
                   >
-                    Set date
+                    Change plan
                   </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-subscription-quantity">Quantity</Label>
+                  <Input
+                    id="buyer-subscription-quantity"
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    data-testid="buyer-subscription-quantity-input"
+                    onChange={(event) => setQuantity(event.target.value)}
+                  />
                   <Button
+                    className="w-full"
                     variant="secondary"
-                    disabled={pendingAction !== null}
-                    data-testid="buyer-subscription-trial-end-now"
+                    disabled={Number(quantity) < 1 || pendingAction !== null}
+                    data-testid="buyer-subscription-quantity-change"
                     onClick={() =>
-                      runLifecycleAction("end trial now", () =>
-                        updateSubscriptionTrialEnd({
+                      runLifecycleAction("update quantity", () =>
+                        updateSubscriptionQuantity({
                           userId: currentUser.id,
                           stripeSubscriptionId:
                             subscription.stripeSubscriptionId,
-                          trialEnd: "now",
+                          quantity: Number(quantity),
                         }),
                       )
                     }
                   >
-                    End now
+                    Update quantity
                   </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="buyer-subscription-trial-end">
+                    Trial end
+                  </Label>
+                  <Input
+                    id="buyer-subscription-trial-end"
+                    type="date"
+                    value={trialEnd}
+                    data-testid="buyer-subscription-trial-end-input"
+                    onChange={(event) => setTrialEnd(event.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="secondary"
+                      disabled={!trialEnd || pendingAction !== null}
+                      data-testid="buyer-subscription-trial-end-update"
+                      onClick={() =>
+                        runLifecycleAction("update trial end", () =>
+                          updateSubscriptionTrialEnd({
+                            userId: currentUser.id,
+                            stripeSubscriptionId:
+                              subscription.stripeSubscriptionId,
+                            trialEnd,
+                          }),
+                        )
+                      }
+                    >
+                      Set date
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={pendingAction !== null}
+                      data-testid="buyer-subscription-trial-end-now"
+                      onClick={() =>
+                        runLifecycleAction("end trial now", () =>
+                          updateSubscriptionTrialEnd({
+                            userId: currentUser.id,
+                            stripeSubscriptionId:
+                              subscription.stripeSubscriptionId,
+                            trialEnd: "now",
+                          }),
+                        )
+                      }
+                    >
+                      End now
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -554,8 +569,8 @@ export function Billing() {
                   <span className="font-medium">
                     {formatCurrency(invoice.amountPaid ?? 0, invoice.currency)}
                   </span>
-                  <Badge variant="outline" className="capitalize">
-                    {invoice.status}
+                  <Badge variant="outline">
+                    <span className="capitalize">{invoice.status}</span>
                   </Badge>
                 </div>
               ))}

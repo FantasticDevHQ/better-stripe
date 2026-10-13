@@ -96,7 +96,10 @@ describe("createPrice", () => {
 
     // recurring → interval + default interval_count of 1
     const createArg = stripe.prices.create.mock.calls[0][0];
-    expect(createArg.recurring).toEqual({ interval: "month", interval_count: 1 });
+    expect(createArg.recurring).toEqual({
+      interval: "month",
+      interval_count: 1,
+    });
     expect(createArg.currency).toBe("usd");
 
     // component upsert carries the resolved internal product id
@@ -152,7 +155,10 @@ describe("createPrice", () => {
 
     const createArg = stripe.prices.create.mock.calls[0][0];
     expect(createArg.currency).toBe("eur");
-    expect(createArg.recurring).toEqual({ interval: "year", interval_count: 2 });
+    expect(createArg.recurring).toEqual({
+      interval: "year",
+      interval_count: 2,
+    });
   });
 
   it("throws PRODUCT_NOT_FOUND when the product is missing from the component DB", async () => {

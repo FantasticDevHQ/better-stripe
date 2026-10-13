@@ -1,3 +1,4 @@
+import { formatAmount } from "@/lib/format-amount";
 import { Fragment, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -35,13 +36,6 @@ import { useAction, useQuery } from "convex/react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
-}
 
 export function AdminProducts() {
   const { currentUser } = useRole();
@@ -98,11 +92,7 @@ export function AdminProducts() {
     setError(null);
     try {
       const interval = newPrice.interval as
-        | "month"
-        | "year"
-        | "week"
-        | "day"
-        | "one_time";
+        "month" | "year" | "week" | "day" | "one_time";
       await createPrice({
         stripeProductId,
         unitAmount: Number(newPrice.amount),
@@ -177,10 +167,12 @@ export function AdminProducts() {
           <Skeleton className="h-9 w-32" />
         </div>
         <Card>
-          <CardContent className="space-y-4 p-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+          <CardContent padding="lg">
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -394,7 +386,7 @@ export function AdminProducts() {
                       {product.active ? "Active" : "Archived"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell tone="muted">
                     {product.prices.length} price
                     {product.prices.length !== 1 ? "s" : ""}
                   </TableCell>
@@ -434,7 +426,7 @@ export function AdminProducts() {
                 {/* Expanded Prices */}
                 {expandedProduct === product._id && (
                   <TableRow key={`${product._id}-prices`}>
-                    <TableCell colSpan={4} className="bg-muted/30 p-4">
+                    <TableCell colSpan={4} variant="expanded">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h4 className="text-muted-foreground text-sm font-medium">
@@ -462,101 +454,105 @@ export function AdminProducts() {
                         {/* Add Price Form */}
                         {showAddPriceFor === product._id && (
                           <Card>
-                            <CardContent className="flex items-end gap-3 p-3">
-                              <div className="grid gap-1.5">
-                                <Label
-                                  htmlFor={`add-price-amount-${product._id}`}
-                                  className="text-xs"
-                                >
-                                  Amount (cents)
-                                </Label>
-                                <Input
-                                  id={`add-price-amount-${product._id}`}
-                                  type="number"
-                                  value={newPrice.amount}
-                                  onChange={(e) =>
-                                    setNewPrice({
-                                      ...newPrice,
-                                      amount: e.target.value,
-                                    })
-                                  }
-                                  className="w-28"
-                                  placeholder="2900"
-                                />
-                              </div>
-                              <div className="grid gap-1.5">
-                                <Label
-                                  htmlFor={`add-price-currency-${product._id}`}
-                                  className="text-xs"
-                                >
-                                  Currency
-                                </Label>
-                                <Select
-                                  value={newPrice.currency}
-                                  onValueChange={(value: string | null) =>
-                                    value &&
-                                    setNewPrice({
-                                      ...newPrice,
-                                      currency: value,
-                                    })
-                                  }
-                                >
-                                  <SelectTrigger
-                                    id={`add-price-currency-${product._id}`}
-                                    className="w-24"
+                            <CardContent padding="sm">
+                              <div className="flex items-end gap-3">
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`add-price-amount-${product._id}`}
+                                    size="sm"
                                   >
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="usd">USD</SelectItem>
-                                    <SelectItem value="eur">EUR</SelectItem>
-                                    <SelectItem value="gbp">GBP</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="grid gap-1.5">
-                                <Label
-                                  htmlFor={`add-price-interval-${product._id}`}
-                                  className="text-xs"
-                                >
-                                  Interval
-                                </Label>
-                                <Select
-                                  value={newPrice.interval}
-                                  onValueChange={(value: string | null) =>
-                                    value &&
-                                    setNewPrice({
-                                      ...newPrice,
-                                      interval: value,
-                                    })
-                                  }
-                                >
-                                  <SelectTrigger
-                                    id={`add-price-interval-${product._id}`}
+                                    Amount (cents)
+                                  </Label>
+                                  <Input
+                                    id={`add-price-amount-${product._id}`}
+                                    type="number"
+                                    value={newPrice.amount}
+                                    onChange={(e) =>
+                                      setNewPrice({
+                                        ...newPrice,
+                                        amount: e.target.value,
+                                      })
+                                    }
                                     className="w-28"
+                                    placeholder="2900"
+                                  />
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`add-price-currency-${product._id}`}
+                                    size="sm"
                                   >
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="month">
-                                      Monthly
-                                    </SelectItem>
-                                    <SelectItem value="year">Yearly</SelectItem>
-                                    <SelectItem value="one_time">
-                                      One-time
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                    Currency
+                                  </Label>
+                                  <Select
+                                    value={newPrice.currency}
+                                    onValueChange={(value: string | null) =>
+                                      value &&
+                                      setNewPrice({
+                                        ...newPrice,
+                                        currency: value,
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger
+                                      id={`add-price-currency-${product._id}`}
+                                      className="w-24"
+                                    >
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="usd">USD</SelectItem>
+                                      <SelectItem value="eur">EUR</SelectItem>
+                                      <SelectItem value="gbp">GBP</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`add-price-interval-${product._id}`}
+                                    size="sm"
+                                  >
+                                    Interval
+                                  </Label>
+                                  <Select
+                                    value={newPrice.interval}
+                                    onValueChange={(value: string | null) =>
+                                      value &&
+                                      setNewPrice({
+                                        ...newPrice,
+                                        interval: value,
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger
+                                      id={`add-price-interval-${product._id}`}
+                                      className="w-28"
+                                    >
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="month">
+                                        Monthly
+                                      </SelectItem>
+                                      <SelectItem value="year">
+                                        Yearly
+                                      </SelectItem>
+                                      <SelectItem value="one_time">
+                                        One-time
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleAddPrice(product.stripeProductId)
+                                  }
+                                  disabled={isCreatingPrice || !newPrice.amount}
+                                >
+                                  {isCreatingPrice ? "Adding..." : "Add"}
+                                </Button>
                               </div>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleAddPrice(product.stripeProductId)
-                                }
-                                disabled={isCreatingPrice || !newPrice.amount}
-                              >
-                                {isCreatingPrice ? "Adding..." : "Add"}
-                              </Button>
                             </CardContent>
                           </Card>
                         )}
@@ -565,13 +561,11 @@ export function AdminProducts() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-xs">Amount</TableHead>
-                              <TableHead className="text-xs">
-                                Interval
-                              </TableHead>
-                              <TableHead className="text-xs">Type</TableHead>
-                              <TableHead className="text-xs">Status</TableHead>
-                              <TableHead className="text-right text-xs">
+                              <TableHead size="sm">Amount</TableHead>
+                              <TableHead size="sm">Interval</TableHead>
+                              <TableHead size="sm">Type</TableHead>
+                              <TableHead size="sm">Status</TableHead>
+                              <TableHead size="sm" className="text-right">
                                 Actions
                               </TableHead>
                             </TableRow>
@@ -585,13 +579,17 @@ export function AdminProducts() {
                                     price.currency,
                                   )}
                                 </TableCell>
-                                <TableCell className="capitalize">
-                                  {price.type === "one_time"
-                                    ? "One-time"
-                                    : `Per ${price.interval ?? "month"}`}
+                                <TableCell>
+                                  <span className="capitalize">
+                                    {price.type === "one_time"
+                                      ? "One-time"
+                                      : `Per ${price.interval ?? "month"}`}
+                                  </span>
                                 </TableCell>
-                                <TableCell className="capitalize">
-                                  {price.type.replace("_", " ")}
+                                <TableCell>
+                                  <span className="capitalize">
+                                    {price.type.replace("_", " ")}
+                                  </span>
                                 </TableCell>
                                 <TableCell>
                                   <Badge
@@ -639,7 +637,7 @@ export function AdminProducts() {
             ))}
             {products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center">
+                <TableCell colSpan={4} size="empty" className="text-center">
                   <Alert>
                     <AlertDescription>
                       No data found. Create a product to get started.

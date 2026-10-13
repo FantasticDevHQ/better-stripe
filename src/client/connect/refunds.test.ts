@@ -53,7 +53,9 @@ function makeStripe(charge: Record<string, unknown>) {
         .mockResolvedValue({ id: "ch_1", payment_intent: "pi_1", ...charge }),
     },
     paymentIntents: {
-      retrieve: vi.fn().mockResolvedValue({ id: "pi_1", latest_charge: "ch_1" }),
+      retrieve: vi
+        .fn()
+        .mockResolvedValue({ id: "pi_1", latest_charge: "ch_1" }),
     },
   };
 }
@@ -62,11 +64,19 @@ const asStripe = (s: ReturnType<typeof makeStripe>) => s as unknown as Stripe;
 
 describe("createRefund — fee & transfer flags (BTS-34)", () => {
   it("defaults both flags on for a destination charge with an application fee", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
-
-    const result = await createRefund(asStripe(stripe), makeComponent(), noCtx, {
-      stripeChargeId: "ch_1",
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
     });
+
+    const result = await createRefund(
+      asStripe(stripe),
+      makeComponent(),
+      noCtx,
+      {
+        stripeChargeId: "ch_1",
+      },
+    );
 
     expect(result).toEqual({ stripeRefundId: "re_new" });
     expect(stripe.refunds.create).toHaveBeenCalledWith(
@@ -80,7 +90,10 @@ describe("createRefund — fee & transfer flags (BTS-34)", () => {
   });
 
   it("keeps the flags on a partial refund (Stripe pro-rates both natively)", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
+    });
 
     await createRefund(asStripe(stripe), makeComponent(), noCtx, {
       stripeChargeId: "ch_1",
@@ -124,7 +137,10 @@ describe("createRefund — fee & transfer flags (BTS-34)", () => {
   });
 
   it("honours an explicit false even when the charge is capable", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
+    });
 
     await createRefund(asStripe(stripe), makeComponent(), noCtx, {
       stripeChargeId: "ch_1",
@@ -217,7 +233,10 @@ describe("createRefund — fee & transfer flags (BTS-34)", () => {
 
 describe("createRefund — actor scoping (BTS-35)", () => {
   it("lets a platform admin refund any sale without a ledger lookup", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
+    });
     const ctx = makeCtx();
 
     await createRefund(asStripe(stripe), makeComponent(), ctx, {
@@ -250,7 +269,10 @@ describe("createRefund — actor scoping (BTS-35)", () => {
   });
 
   it("rejects a seller refunding another seller's destination charge", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
+    });
     const ctx = makeCtx({
       stripePaymentIntentId: "pi_1",
       destinationAccountId: "acct_other",
@@ -307,7 +329,10 @@ describe("createRefund — actor scoping (BTS-35)", () => {
   });
 
   it("rejects a seller when no matching payment exists in the ledger (fail closed)", async () => {
-    const stripe = makeStripe({ transfer: "tr_auto", application_fee: "fee_1" });
+    const stripe = makeStripe({
+      transfer: "tr_auto",
+      application_fee: "fee_1",
+    });
     const ctx = makeCtx(null);
 
     await expect(

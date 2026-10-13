@@ -1,17 +1,7 @@
 // @vitest-environment edge-runtime
 /**
- * Tests for the webhook event processor — the field-normalization surface that
- * turns Stripe wire objects into component upsert payloads. This is the riskiest
- * correctness area in the library: a wrong default or a mishandled
- * string-vs-object union silently corrupts a row with no error. We drive each
- * event type through `processEvent` and assert the EXACT payload handed to the
- * component mutation, covering every union branch, the `userId: ""` sentinel,
- * trial derivation, the payment-status collapse, and the checkout metadata
- * merge.
- *
- * `whCtx` is built WITHOUT `config.webhooks`, so `dispatchUpsert` routes through
- * `ctx.runMutation(componentRef(component, <path>), data)` — letting us read the
- * normalized payload straight off the runMutation mock.
+ * Drives Stripe event normalization through processEvent and checks the payloads
+ * passed to component mutations, including owner, fee, and trial fields.
  */
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,34 +14,28 @@ const TO_REF = Symbol.for("toReferencePath");
 
 /** Fake component exposing every query/mutation ref processors.ts resolves. */
 function makeComponent() {
-  const ref = (path: string) => ({ [TO_REF]: `betterStripe/${path}` });
+  const refs = (namespace: string, names: string[]) =>
+    Object.fromEntries(
+      names.map((name) => [
+        name,
+        { [TO_REF]: `betterStripe/${namespace}/${name}` },
+      ]),
+    );
   return {
     products: {
-      queries: {
-        getProductByStripeId: ref("products/queries/getProductByStripeId"),
-      },
-      mutations: {
-        upsertProduct: ref("products/mutations/upsertProduct"),
-        upsertPrice: ref("products/mutations/upsertPrice"),
-      },
+      queries: refs("products/queries", ["getProductByStripeId"]),
+      mutations: refs("products/mutations", ["upsertProduct", "upsertPrice"]),
     },
     billing: {
-      queries: {
-        getCheckoutSessionByStripeId: ref(
-          "billing/queries/getCheckoutSessionByStripeId",
-        ),
-      },
-      mutations: {
-        upsertSubscription: ref("billing/mutations/upsertSubscription"),
-        upsertCheckoutSession: ref("billing/mutations/upsertCheckoutSession"),
-        upsertInvoice: ref("billing/mutations/upsertInvoice"),
-      },
+      queries: refs("billing/queries", ["getCheckoutSessionByStripeId"]),
+      mutations: refs("billing/mutations", [
+        "upsertSubscription",
+        "upsertCheckoutSession",
+        "upsertInvoice",
+      ]),
     },
     connect: {
-      mutations: {
-        upsertPayment: ref("connect/mutations/upsertPayment"),
-        upsertPayout: ref("connect/mutations/upsertPayout"),
-      },
+      mutations: refs("connect/mutations", ["upsertPayment", "upsertPayout"]),
     },
   };
 }

@@ -196,14 +196,20 @@ export function SellerAccount() {
           <TabsTrigger value="setup">Setup</TabsTrigger>
           <TabsTrigger value="stripe-settings">Stripe settings</TabsTrigger>
         </TabsList>
-        <TabsContent value="details" className="pt-4">
-          <AccountDetails />
+        <TabsContent value="details">
+          <div className="pt-4">
+            <AccountDetails />
+          </div>
         </TabsContent>
-        <TabsContent value="setup" className="pt-4">
-          <SellerOnboarding embedded />
+        <TabsContent value="setup">
+          <div className="pt-4">
+            <SellerOnboarding embedded />
+          </div>
         </TabsContent>
-        <TabsContent value="stripe-settings" className="pt-4">
-          <SellerMarketplaceAccount embedded />
+        <TabsContent value="stripe-settings">
+          <div className="pt-4">
+            <SellerMarketplaceAccount embedded />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

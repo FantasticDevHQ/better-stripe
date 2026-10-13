@@ -15,7 +15,10 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 /** The seller's disputes (optionally scoped to their store account). */
-export const useDisputes = createUseDisputes(useQuery, api.queries.listDisputes);
+export const useDisputes = createUseDisputes(
+  useQuery,
+  api.queries.listDisputes,
+);
 
 /** A single dispute with its evidence-due countdown, for DisputeDetail. */
 export const useDisputeWithCountdown = createUseDisputeWithCountdown(

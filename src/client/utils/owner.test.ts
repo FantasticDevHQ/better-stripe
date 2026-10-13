@@ -17,7 +17,10 @@ describe("resolveOwnerAccount", () => {
 
   it("falls back to customer.id for an expanded customer object", () => {
     expect(
-      resolveOwnerAccount({ customer_account: null, customer: { id: "cus_x" } }),
+      resolveOwnerAccount({
+        customer_account: null,
+        customer: { id: "cus_x" },
+      }),
     ).toBe("cus_x");
   });
 

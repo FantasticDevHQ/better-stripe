@@ -48,8 +48,20 @@ const earningsResult = {
 };
 
 const previewPayouts = [
-  { stripePayoutId: "po_1", accountId: "acct_store", amount: 4000, currency: "usd", status: "paid" },
-  { stripePayoutId: "po_2", accountId: "acct_store", amount: 1500, currency: "usd", status: "pending" },
+  {
+    stripePayoutId: "po_1",
+    accountId: "acct_store",
+    amount: 4000,
+    currency: "usd",
+    status: "paid",
+  },
+  {
+    stripePayoutId: "po_2",
+    accountId: "acct_store",
+    amount: 1500,
+    currency: "usd",
+    status: "pending",
+  },
 ];
 
 const payoutsResult = {
@@ -70,7 +82,11 @@ describe("createUseEarnings", () => {
         [payoutsRef, payoutsResult],
       ]),
     );
-    const useEarnings = createUseEarnings(mockUseQuery, earningsRef, payoutsRef);
+    const useEarnings = createUseEarnings(
+      mockUseQuery,
+      earningsRef,
+      payoutsRef,
+    );
 
     const result = useEarnings("acct_store");
 
@@ -92,7 +108,11 @@ describe("createUseEarnings", () => {
         [payoutsRef, payoutsResult],
       ]),
     );
-    const useEarnings = createUseEarnings(mockUseQuery, earningsRef, payoutsRef);
+    const useEarnings = createUseEarnings(
+      mockUseQuery,
+      earningsRef,
+      payoutsRef,
+    );
 
     const result = useEarnings("acct_store");
 
@@ -111,7 +131,11 @@ describe("createUseEarnings", () => {
         [payoutsRef, undefined],
       ]),
     );
-    const useEarnings = createUseEarnings(mockUseQuery, earningsRef, payoutsRef);
+    const useEarnings = createUseEarnings(
+      mockUseQuery,
+      earningsRef,
+      payoutsRef,
+    );
 
     const result = useEarnings("acct_store");
 
@@ -125,7 +149,11 @@ describe("createUseEarnings", () => {
 
   it("skips both queries when the account id is undefined", () => {
     const mockUseQuery = useQueryFor(new Map());
-    const useEarnings = createUseEarnings(mockUseQuery, earningsRef, payoutsRef);
+    const useEarnings = createUseEarnings(
+      mockUseQuery,
+      earningsRef,
+      payoutsRef,
+    );
 
     const result = useEarnings(undefined);
 
@@ -143,11 +171,18 @@ describe("createUseEarnings", () => {
   it("treats empty ledgers as loaded with zero totals", () => {
     const mockUseQuery = useQueryFor(
       new Map<unknown, unknown>([
-        [earningsRef, { gross: 0, reversed: 0, transferCount: 0, transfers: [] }],
+        [
+          earningsRef,
+          { gross: 0, reversed: 0, transferCount: 0, transfers: [] },
+        ],
         [payoutsRef, { paidOut: 0, payoutCount: 0, payouts: [] }],
       ]),
     );
-    const useEarnings = createUseEarnings(mockUseQuery, earningsRef, payoutsRef);
+    const useEarnings = createUseEarnings(
+      mockUseQuery,
+      earningsRef,
+      payoutsRef,
+    );
 
     const result = useEarnings("acct_new");
 

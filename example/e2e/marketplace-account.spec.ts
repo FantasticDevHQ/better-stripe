@@ -112,7 +112,9 @@ test.describe("live marketplace account flow", () => {
       .getByRole("button", { name: "Add customer configuration" })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Step 2 — Buy Something as This Account" }),
+      page.getByRole("heading", {
+        name: "Step 2 — Buy Something as This Account",
+      }),
     ).toBeVisible({ timeout: 30_000 });
 
     // --- Phase 4: buy a seeded one-time platform price as this account. ----

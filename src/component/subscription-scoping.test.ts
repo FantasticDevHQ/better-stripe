@@ -64,7 +64,11 @@ describe("per-store subscription scoping (BTS-19)", () => {
 
     const active = await t.query(
       api.billing.queries.listSubscriptionsByUserAndStore,
-      { userId: "buyer_1", destinationAccountId: "acct_store_a", status: "active" },
+      {
+        userId: "buyer_1",
+        destinationAccountId: "acct_store_a",
+        status: "active",
+      },
     );
     expect(active.map((s) => s.stripeSubscriptionId)).toEqual(["sub_active"]);
   });

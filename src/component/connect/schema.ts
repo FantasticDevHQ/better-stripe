@@ -34,9 +34,10 @@ export const payoutsTable = defineTable(payoutFields)
  * (BTS-103). One row per payment intent; consumed and deleted by
  * `upsertPayment`'s insert branch.
  */
-export const pendingFeeRefundsTable = defineTable(
-  pendingFeeRefundFields,
-).index("by_stripe_payment_intent_id", ["stripePaymentIntentId"]);
+export const pendingFeeRefundsTable = defineTable(pendingFeeRefundFields).index(
+  "by_stripe_payment_intent_id",
+  ["stripePaymentIntentId"],
+);
 
 /**
  * Refunds. Compound status indexes follow Plan 002: filtered list queries

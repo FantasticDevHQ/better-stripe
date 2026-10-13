@@ -73,9 +73,7 @@ describe("EarningsSummary", () => {
   });
 
   it("renders gross, reversals, net, and paid-out amounts", () => {
-    const html = renderToStaticMarkup(
-      createElement(EarningsSummary, earnings),
-    );
+    const html = renderToStaticMarkup(createElement(EarningsSummary, earnings));
     expect(html).toContain("Gross");
     expect(html).toContain("$105.00");
     // Honest label per the BTS-36 review — NOT "Fees".
@@ -89,9 +87,7 @@ describe("EarningsSummary", () => {
   });
 
   it("announces the latest payout with amount and status", () => {
-    const html = renderToStaticMarkup(
-      createElement(EarningsSummary, earnings),
-    );
+    const html = renderToStaticMarkup(createElement(EarningsSummary, earnings));
     // po_latest (newest _creationTime) wins over po_old.
     expect(html).toContain("Latest payout of $40.00 — in_transit");
   });

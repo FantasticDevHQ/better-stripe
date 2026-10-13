@@ -22,6 +22,7 @@
 import { config } from "dotenv";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import { EXPECTED_REVERSED, reversalsMatchExactly } from "./money-assertions";
 
@@ -60,10 +61,6 @@ function stripeTrigger(event: string, apiKey: string): void {
     stdio: ["ignore", "pipe", "pipe"],
     env: { ...process.env, STRIPE_API_KEY: apiKey },
   });
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 // ─── Result tracking ─────────────────────────────────────────────────────
@@ -732,9 +729,12 @@ async function runMoneyAssertions(): Promise<Check[]> {
       // `fullRefundReversalPlan` expectation unit-tested in e2eMoney.test.ts):
       // exactly two reversals — the preserved 320 fee + the capped 9680 — and
       // the transfer exactly (never over-) reversed.
-      const state = convexRun<TransferState | null>("e2eMoney:e2eTransferState", {
-        stripeChargeId: chargeId,
-      });
+      const state = convexRun<TransferState | null>(
+        "e2eMoney:e2eTransferState",
+        {
+          stripeChargeId: chargeId,
+        },
+      );
       const capOk =
         !!state &&
         state.amountReversed === state.amount &&

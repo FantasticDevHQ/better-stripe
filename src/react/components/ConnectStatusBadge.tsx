@@ -3,10 +3,7 @@
 import type { ReactNode } from "react";
 
 export type ConnectStatus =
-  | "pending"
-  | "in_progress"
-  | "complete"
-  | "restricted";
+  "pending" | "in_progress" | "complete" | "restricted";
 
 export type ConnectStatusDetails = {
   detailsSubmitted: boolean;

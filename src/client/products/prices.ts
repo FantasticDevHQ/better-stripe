@@ -33,7 +33,10 @@ export async function createPrice(
     { stripeProductId: opts.stripeProductId },
   );
   if (!internalProduct) {
-    throwStripeError("PRODUCT_NOT_FOUND", `Product ${opts.stripeProductId} not found in component DB when creating price`);
+    throwStripeError(
+      "PRODUCT_NOT_FOUND",
+      `Product ${opts.stripeProductId} not found in component DB when creating price`,
+    );
   }
 
   const priceParams: Stripe.PriceCreateParams = {

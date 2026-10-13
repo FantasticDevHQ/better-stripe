@@ -75,7 +75,9 @@ describe("listInvoices", () => {
 
     expect(result).toEqual([]);
     const [ref, args] = ctx.runQuery.mock.calls[0];
-    expect(ref[TO_REF]).toBe(refPath(component, "billing/queries/listInvoices"));
+    expect(ref[TO_REF]).toBe(
+      refPath(component, "billing/queries/listInvoices"),
+    );
     expect(args).toEqual({});
   });
 
@@ -125,7 +127,9 @@ describe("listInvoicesByUser", () => {
 
     expect(result).toBe(rows);
     const [ref, args] = ctx.runQuery.mock.calls[0];
-    expect(ref[TO_REF]).toBe(refPath(component, "billing/queries/listInvoices"));
+    expect(ref[TO_REF]).toBe(
+      refPath(component, "billing/queries/listInvoices"),
+    );
     expect(args).toEqual({ userId: "u_9" });
   });
 });
@@ -177,9 +181,9 @@ describe("upsertInvoice", () => {
   it("throws when ctx has no runMutation (runMutationOrThrow guard)", async () => {
     const ctx = { runQuery: vi.fn() } as unknown as RunCtx;
 
-    await expect(
-      upsertInvoice(makeComponent(), ctx, baseOpts),
-    ).rejects.toThrow(/requires a Convex ctx with runMutation/);
+    await expect(upsertInvoice(makeComponent(), ctx, baseOpts)).rejects.toThrow(
+      /requires a Convex ctx with runMutation/,
+    );
   });
 });
 
@@ -189,7 +193,9 @@ describe("getInvoice", () => {
     const row = { stripeInvoiceId: "in_4", status: "paid" };
     const ctx = makeCtx(row);
 
-    const result = await getInvoice(component, ctx, { stripeInvoiceId: "in_4" });
+    const result = await getInvoice(component, ctx, {
+      stripeInvoiceId: "in_4",
+    });
 
     expect(result).toBe(row);
     const [ref, args] = ctx.runQuery.mock.calls[0];

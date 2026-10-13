@@ -20,7 +20,11 @@ export type CustomerOwned = {
 export function resolveOwnerAccount(obj: CustomerOwned): string | null {
   if (obj.customer_account) return obj.customer_account;
   if (typeof obj.customer === "string") return obj.customer;
-  if (obj.customer && typeof obj.customer === "object" && "id" in obj.customer) {
+  if (
+    obj.customer &&
+    typeof obj.customer === "object" &&
+    "id" in obj.customer
+  ) {
     return obj.customer.id ?? null;
   }
   return null;

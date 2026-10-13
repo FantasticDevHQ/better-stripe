@@ -55,14 +55,9 @@ export function Affiliate() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {figures.map(({ label, amount }) => (
-              <Card
-                key={label}
-                className={label === "Net" ? "bg-muted/40" : undefined}
-              >
+              <Card key={label} variant={label === "Net" ? "muted" : "default"}>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {label}
-                  </CardTitle>
+                  <CardTitle variant="metric">{label}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p
@@ -112,7 +107,7 @@ export function AffiliateSales() {
         <MissingAccount />
       ) : (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent padding="section">
             {sales === undefined ? (
               <p role="status">Loading referred sales…</p>
             ) : sales.length ? (
@@ -166,40 +161,44 @@ export function AffiliateLinks() {
         </p>
       </div>
       <Card>
-        <CardContent className="space-y-6 pt-6">
-          {stores === undefined ? (
-            <p role="status">Loading referral links…</p>
-          ) : stores.filter((store) => store.products.length).length === 0 ? (
-            <AffiliateEmptyState>No stores available yet.</AffiliateEmptyState>
-          ) : (
-            stores
-              .filter((store) => store.products.length)
-              .map((store) => {
-                const path = `/stores?${new URLSearchParams({ store: store.accountId, ref: AFFILIATE_REFERRAL_CODE })}`;
-                const url = `${window.location.origin}${path}`;
-                return (
-                  <div key={store.accountId}>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <Link className="font-medium underline" to={path}>
-                        {store.name}
-                      </Link>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        aria-label={`Copy referral link for ${store.name}`}
-                        onClick={() => void copyLink(url)}
-                      >
-                        <Copy aria-hidden="true" data-icon="inline-start" />
-                        Copy link
-                      </Button>
+        <CardContent padding="section">
+          <div className="space-y-6">
+            {stores === undefined ? (
+              <p role="status">Loading referral links…</p>
+            ) : stores.filter((store) => store.products.length).length === 0 ? (
+              <AffiliateEmptyState>
+                No stores available yet.
+              </AffiliateEmptyState>
+            ) : (
+              stores
+                .filter((store) => store.products.length)
+                .map((store) => {
+                  const path = `/stores?${new URLSearchParams({ store: store.accountId, ref: AFFILIATE_REFERRAL_CODE })}`;
+                  const url = `${window.location.origin}${path}`;
+                  return (
+                    <div key={store.accountId}>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Link className="font-medium underline" to={path}>
+                          {store.name}
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          aria-label={`Copy referral link for ${store.name}`}
+                          onClick={() => void copyLink(url)}
+                        >
+                          <Copy aria-hidden="true" data-icon="inline-start" />
+                          Copy link
+                        </Button>
+                      </div>
+                      <p className="mt-1 break-all text-sm text-muted-foreground select-all">
+                        {url}
+                      </p>
                     </div>
-                    <p className="mt-1 break-all text-sm text-muted-foreground select-all">
-                      {url}
-                    </p>
-                  </div>
-                );
-              })
-          )}
+                  );
+                })
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

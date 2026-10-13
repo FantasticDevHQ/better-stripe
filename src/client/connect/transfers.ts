@@ -78,7 +78,10 @@ async function executeClaimedSlices(
         await runMutationOrThrow(
           ctx,
           componentRef(component, "connect/mutations/recordTransferReversal"),
-          { stripeTransferId: slice.stripeTransferId, reversedAmount: slice.to },
+          {
+            stripeTransferId: slice.stripeTransferId,
+            reversedAmount: slice.to,
+          },
         );
         continue;
       }
@@ -242,7 +245,10 @@ export async function reclaimReversalClaim(
     ctx,
     componentRef(component, "connect/mutations/releaseReversalClaim"),
     { operationId: op.operationId, verified },
-  )) as { released: boolean; rewound: { stripeTransferId: string; to: number }[] };
+  )) as {
+    released: boolean;
+    rewound: { stripeTransferId: string; to: number }[];
+  };
   return { mode: "release", ...res };
 }
 
@@ -312,7 +318,13 @@ export async function reverseTransfers(
               : { kind: "full" as const },
       },
     )) as ReversalClaim;
-    return executeClaimedSlices(stripe, component, ctx, opts.operationId, claim);
+    return executeClaimedSlices(
+      stripe,
+      component,
+      ctx,
+      opts.operationId,
+      claim,
+    );
   }
 
   // Legacy one-shot path (no operationId): size against the claim frontier so
@@ -330,7 +342,10 @@ export async function reverseTransfers(
   const reversals: { stripeTransferId: string; amount: number }[] = [];
 
   for (const t of transfers) {
-    const already = Math.max(t.reversedAmount ?? 0, t.reversalClaimedAmount ?? 0);
+    const already = Math.max(
+      t.reversedAmount ?? 0,
+      t.reversalClaimedAmount ?? 0,
+    );
     const remaining = t.amount - already;
     if (remaining <= 0) continue; // already fully reversed — idempotent
 
@@ -338,7 +353,8 @@ export async function reverseTransfers(
     if (opts.percent !== undefined) {
       reversalAmt = Math.round((t.amount * opts.percent) / 100);
     } else if (amountBudget !== undefined) {
-      const prorata = total > 0 ? Math.round((opts.amount! * t.amount) / total) : 0;
+      const prorata =
+        total > 0 ? Math.round((opts.amount! * t.amount) / total) : 0;
       reversalAmt = Math.min(prorata, amountBudget);
     } else {
       reversalAmt = remaining; // full reversal
@@ -355,9 +371,15 @@ export async function reverseTransfers(
     await runMutationOrThrow(
       ctx,
       componentRef(component, "connect/mutations/recordTransferReversal"),
-      { stripeTransferId: t.stripeTransferId, reversedAmount: already + reversalAmt },
+      {
+        stripeTransferId: t.stripeTransferId,
+        reversedAmount: already + reversalAmt,
+      },
     );
-    reversals.push({ stripeTransferId: t.stripeTransferId, amount: reversalAmt });
+    reversals.push({
+      stripeTransferId: t.stripeTransferId,
+      amount: reversalAmt,
+    });
   }
 
   return { reversals };
@@ -461,7 +483,9 @@ export async function createSplitTransfers(
         metadata: { bsRole: t.role, bsSourceCharge: opts.sourceChargeId },
       },
       // Deterministic key so a webhook retry can't double-transfer (BTS-24).
-      { idempotencyKey: `bs_split_${opts.sourceChargeId}_${t.destinationAccountId}_${t.role}` },
+      {
+        idempotencyKey: `bs_split_${opts.sourceChargeId}_${t.destinationAccountId}_${t.role}`,
+      },
     );
     await runMutationOrThrow(
       ctx,

@@ -14,6 +14,15 @@ import { componentRef } from "../webhooks/helpers.js";
 import { validateStatementDescriptorSuffix } from "./descriptors.js";
 import { deriveAccountStatus } from "./accountStatus.js";
 
+import {
+  DEFAULT_ACCOUNT_CONFIGURATION,
+  DEFAULT_ACCOUNT_DEFAULTS,
+} from "./accountDefaults.js";
+export {
+  DEFAULT_ACCOUNT_CONFIGURATION,
+  DEFAULT_ACCOUNT_DEFAULTS,
+} from "./accountDefaults.js";
+
 // =============================================================================
 // Account CRUD
 // =============================================================================
@@ -76,22 +85,6 @@ export async function createAccount(
   };
 }
 
-/**
- * Default V2 account configuration: merchant with card_payments.
- */
-export const DEFAULT_ACCOUNT_CONFIGURATION: Record<string, unknown> = {
-  merchant: {
-    capabilities: { card_payments: { requested: true } },
-  },
-};
-
-export const DEFAULT_ACCOUNT_DEFAULTS: Record<string, unknown> = {
-  responsibilities: {
-    losses_collector: "application",
-    fees_collector: "application",
-  },
-};
-
 export async function createAccountWithOnboarding(
   stripe: Stripe,
   component: Component,
@@ -145,7 +138,11 @@ export async function createAccountWithOnboarding(
     } catch {
       // Best effort cleanup
     }
-    throwStripeError("ACCOUNT_CREATE_FAILED", "Failed to apply account configuration after create; account was rolled back", configError);
+    throwStripeError(
+      "ACCOUNT_CREATE_FAILED",
+      "Failed to apply account configuration after create; account was rolled back",
+      configError,
+    );
   }
 
   // Re-fetch account to get actual applied_configurations from Stripe

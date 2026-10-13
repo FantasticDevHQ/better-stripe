@@ -38,15 +38,17 @@ describe("validateStatementDescriptorSuffix", () => {
   it.each(["<", ">", "\\", "'", '"', "*"])(
     "rejects the disallowed character %s",
     (char) => {
-      expect(() => validateStatementDescriptorSuffix(`STORE${char}NAME`)).toThrow(
-        /character/i,
-      );
+      expect(() =>
+        validateStatementDescriptorSuffix(`STORE${char}NAME`),
+      ).toThrow(/character/i);
     },
   );
 
   it("rejects a value with no letter (digits/punctuation only)", () => {
     expect(() => validateStatementDescriptorSuffix("12345")).toThrow(/letter/i);
-    expect(() => validateStatementDescriptorSuffix("---  9")).toThrow(/letter/i);
+    expect(() => validateStatementDescriptorSuffix("---  9")).toThrow(
+      /letter/i,
+    );
   });
 
   it("rejects non-ASCII (non-Latin) characters", () => {

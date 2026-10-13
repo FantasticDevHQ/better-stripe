@@ -63,12 +63,17 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+function TableHead({
+  className,
+  size = "default",
+  ...props
+}: React.ComponentProps<"th"> & { size?: "default" | "sm" }) {
   return (
     <th
       data-slot="table-head"
       className={cn(
         "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        size === "sm" && "text-xs",
         className,
       )}
       {...props}
@@ -76,12 +81,36 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   );
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+const cellVariants = {
+  default: "",
+  identifier: "font-mono",
+  amount: "font-medium tabular-nums",
+  expanded: "bg-muted/30 p-4",
+};
+const cellSizes = { default: "", empty: "py-8", summary: "py-6" };
+
+function TableCell({
+  className,
+  variant = "default",
+  size = "default",
+  tone = "default",
+  density = "default",
+  ...props
+}: React.ComponentProps<"td"> & {
+  variant?: keyof typeof cellVariants;
+  size?: keyof typeof cellSizes;
+  tone?: "default" | "muted";
+  density?: "default" | "compact";
+}) {
   return (
     <td
       data-slot="table-cell"
       className={cn(
         "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        cellVariants[variant],
+        cellSizes[size],
+        tone === "muted" && "text-muted-foreground",
+        density === "compact" && "text-xs",
         className,
       )}
       {...props}

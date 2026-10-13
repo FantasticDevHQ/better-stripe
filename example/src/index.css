@@ -6,6 +6,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --radius-control-xs: min(var(--radius-md), 10px);
+  --radius-control-sm: min(var(--radius-md), 12px);
+  --text-control-sm: 0.8rem;
+  --spacing-tab-trigger: calc(100% - 1px);
+  --spacing-command: min(36rem, calc(100% - 2rem));
+  --container-dialog: calc(100% - 2rem);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -61,6 +69,8 @@ body {
 }
 
 :root {
+  --success: oklch(0.627 0.194 149.214);
+  --warning: oklch(0.795 0.184 86.047);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -96,6 +106,8 @@ body {
 }
 
 .dark {
+  --success: oklch(0.792 0.209 151.711);
+  --warning: oklch(0.852 0.199 91.936);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -139,4 +151,21 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/* Shared icon, heading, and master/detail layouts. */
+@utility grid-cols-alert {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+@utility grid-cols-card-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+@utility grid-rows-card-header {
+  grid-template-rows: auto auto;
+}
+
+@utility grid-cols-master-detail {
+  grid-template-columns: minmax(0, 1fr) 22.5rem;
 }

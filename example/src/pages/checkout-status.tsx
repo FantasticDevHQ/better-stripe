@@ -57,45 +57,81 @@ export function CheckoutStatusPage() {
         isLoading={session === undefined}
         renderComplete={() => (
           <Card>
-            <CardContent className="space-y-4 py-8 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-              <h1 className="text-2xl font-bold">Payment successful!</h1>
-              <p className="text-muted-foreground">
-                {session?.mode === "payment"
-                  ? "Your purchase is complete. Thanks for your order!"
-                  : "Your subscription is now active. You can start learning right away."}
-              </p>
-              {typeof session?.metadata?.productName === "string" && (
-                <p className="font-medium">{session.metadata.productName}</p>
-              )}
-              <Button
-                nativeButton={false}
-                role="link"
-                render={
-                  <Link
-                    to={currentRole === "customer" ? "/dashboard" : "/stores"}
-                    aria-label={
-                      currentRole === "customer"
-                        ? "Go to Dashboard"
-                        : "Continue shopping"
-                    }
-                  />
-                }
-              >
-                {currentRole === "customer"
-                  ? "Go to Dashboard"
-                  : "Continue shopping"}
-              </Button>
+            <CardContent padding="status">
+              <div className="space-y-4 text-center">
+                <CheckCircle className="mx-auto h-12 w-12 text-success" />
+                <h1 className="text-2xl font-bold">Payment successful!</h1>
+                <p className="text-muted-foreground">
+                  {session?.mode === "payment"
+                    ? "Your purchase is complete. Thanks for your order!"
+                    : "Your subscription is now active. You can start learning right away."}
+                </p>
+                {typeof session?.metadata?.productName === "string" && (
+                  <p className="font-medium">{session.metadata.productName}</p>
+                )}
+                <Button
+                  nativeButton={false}
+                  role="link"
+                  render={
+                    <Link
+                      to={currentRole === "customer" ? "/dashboard" : "/stores"}
+                      aria-label={
+                        currentRole === "customer"
+                          ? "Go to Dashboard"
+                          : "Continue shopping"
+                      }
+                    />
+                  }
+                >
+                  {currentRole === "customer"
+                    ? "Go to Dashboard"
+                    : "Continue shopping"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
         renderExpired={() => (
           <Card>
-            <CardContent className="space-y-4 py-8 text-center">
-              <XCircle className="mx-auto h-12 w-12 text-red-500" />
-              <h1 className="text-2xl font-bold">Session expired</h1>
+            <CardContent padding="status">
+              <div className="space-y-4 text-center">
+                <XCircle className="mx-auto h-12 w-12 text-destructive" />
+                <h1 className="text-2xl font-bold">Session expired</h1>
+                <p className="text-muted-foreground">
+                  This checkout session has expired. Please try again.
+                </p>
+                <Button
+                  nativeButton={false}
+                  role="link"
+                  render={<Link to="/" aria-label="Back to pricing" />}
+                >
+                  Back to pricing
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        renderOpen={() => (
+          <Card>
+            <CardContent padding="status">
+              <div className="space-y-4 text-center">
+                <p className="text-muted-foreground">
+                  Your payment is being processed...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      />
+
+      {session === null && (
+        <Card>
+          <CardContent padding="status">
+            <div className="space-y-4 text-center">
+              <XCircle className="mx-auto h-12 w-12 text-destructive" />
+              <h1 className="text-2xl font-bold">Session not found</h1>
               <p className="text-muted-foreground">
-                This checkout session has expired. Please try again.
+                No data found for this checkout session.
               </p>
               <Button
                 nativeButton={false}
@@ -104,35 +140,7 @@ export function CheckoutStatusPage() {
               >
                 Back to pricing
               </Button>
-            </CardContent>
-          </Card>
-        )}
-        renderOpen={() => (
-          <Card>
-            <CardContent className="space-y-4 py-8 text-center">
-              <p className="text-muted-foreground">
-                Your payment is being processed...
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      />
-
-      {session === null && (
-        <Card>
-          <CardContent className="space-y-4 py-8 text-center">
-            <XCircle className="mx-auto h-12 w-12 text-red-500" />
-            <h1 className="text-2xl font-bold">Session not found</h1>
-            <p className="text-muted-foreground">
-              No data found for this checkout session.
-            </p>
-            <Button
-              nativeButton={false}
-              role="link"
-              render={<Link to="/" aria-label="Back to pricing" />}
-            >
-              Back to pricing
-            </Button>
+            </div>
           </CardContent>
         </Card>
       )}

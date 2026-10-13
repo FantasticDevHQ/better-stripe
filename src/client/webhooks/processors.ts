@@ -15,6 +15,7 @@ import { resolveOwnerAccount } from "../utils/owner.js";
 import {
   type WebhookContext,
   componentRef,
+  feeRoutingFromPaymentIntent,
   deriveTrialFields,
   dispatchUpsert,
   epochToIso,
@@ -295,29 +296,6 @@ async function handleCheckoutEvent(
     priceId,
     metadata: mergedMetadata,
   });
-}
-
-/**
- * Fee/transfer fields (BTS-11) captured off a PaymentIntent for denormalization
- * onto the `payments` row. Returns `{}` when the charge carried no fee/transfer.
- */
-function feeRoutingFromPaymentIntent(pi: Stripe.PaymentIntent): {
-  chargeType?: "destination";
-  destinationAccountId?: string;
-  applicationFeeAmount?: number;
-  feeCollectedAmount?: number;
-} {
-  const dest = pi.transfer_data?.destination;
-  const destinationAccountId = typeof dest === "string" ? dest : dest?.id;
-  const fee = pi.application_fee_amount ?? undefined;
-  if (!destinationAccountId && fee === undefined) return {};
-  return {
-    chargeType: "destination",
-    ...(destinationAccountId ? { destinationAccountId } : {}),
-    ...(fee !== undefined
-      ? { applicationFeeAmount: fee, feeCollectedAmount: fee }
-      : {}),
-  };
 }
 
 /**

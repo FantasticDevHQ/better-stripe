@@ -1,0 +1,4 @@
+{
+  "_comment": "Grandfathered circular-import groups (comma-separated, sorted repo-relative paths — one strongly-connected component per entry). Ratchet only goes down.",
+  "allowlist": []
+}

@@ -236,10 +236,13 @@ describe("webhook event ledger", () => {
     it("fresh processing dedupes", async () => {
       const t = convexTest(schema, modules);
 
-      const first = await t.mutation(api.webhooks.mutations.insertWebhookEvent, {
-        stripeEventId: "evt_stale_001",
-        eventType: "invoice.paid",
-      });
+      const first = await t.mutation(
+        api.webhooks.mutations.insertWebhookEvent,
+        {
+          stripeEventId: "evt_stale_001",
+          eventType: "invoice.paid",
+        },
+      );
       expect(first).toBe("inserted");
 
       // Immediate second insert — row is fresh processing, must dedupe.

@@ -158,9 +158,11 @@ export function DestinationChargeDemo() {
       <div className="mx-auto max-w-2xl space-y-6">
         <Skeleton className="h-8 w-64" />
         <Card>
-          <CardContent className="space-y-4 p-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-32 w-full" />
+          <CardContent padding="lg">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -202,16 +204,18 @@ export function DestinationChargeDemo() {
       </div>
 
       <Card>
-        <CardContent className="space-y-1 p-6">
-          <div className="flex justify-between">
-            <span>Price</span>
-            <span className="font-medium">
-              {formatCurrency(price.unitAmount, price.currency)}
-            </span>
-          </div>
-          <div className="text-muted-foreground flex justify-between text-sm">
-            <span>Platform fee</span>
-            <span>{feePercent}% application fee</span>
+        <CardContent padding="lg">
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span>Price</span>
+              <span className="font-medium">
+                {formatCurrency(price.unitAmount, price.currency)}
+              </span>
+            </div>
+            <div className="text-muted-foreground flex justify-between text-sm">
+              <span>Platform fee</span>
+              <span>{feePercent}% application fee</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -226,7 +230,7 @@ export function DestinationChargeDemo() {
               <Skeleton className="h-16 w-full" />
             ) : isComplete ? (
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 <span>Charge complete — see the breakdown below.</span>
               </div>
             ) : (
@@ -250,40 +254,42 @@ export function DestinationChargeDemo() {
         <CardHeader>
           <CardTitle>Fee + payout breakdown</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {isComplete && (
-            <Badge data-testid="charge-complete-badge">Charge complete</Badge>
-          )}
-          <div className="grid grid-cols-3 gap-4">
-            <Figure
-              label="Charged"
-              value={formatCurrency(breakdown.gross, price.currency)}
-              testId="charged-amount"
-            />
-            <Figure
-              label={`Platform fee (${feePercent}%)`}
-              value={formatCurrency(breakdown.fee, price.currency)}
-              testId="platform-fee-amount"
-            />
-            <Figure
-              label="Seller payout"
-              value={formatCurrency(breakdown.net, price.currency)}
-              testId="seller-payout-amount"
-            />
+        <CardContent>
+          <div className="space-y-4">
+            {isComplete && (
+              <Badge data-testid="charge-complete-badge">Charge complete</Badge>
+            )}
+            <div className="grid grid-cols-3 gap-4">
+              <Figure
+                label="Charged"
+                value={formatCurrency(breakdown.gross, price.currency)}
+                testId="charged-amount"
+              />
+              <Figure
+                label={`Platform fee (${feePercent}%)`}
+                value={formatCurrency(breakdown.fee, price.currency)}
+                testId="platform-fee-amount"
+              />
+              <Figure
+                label="Seller payout"
+                value={formatCurrency(breakdown.net, price.currency)}
+                testId="seller-payout-amount"
+              />
+            </div>
+            {breakdown.reconciles ? (
+              <p className="text-muted-foreground text-sm">
+                Fee + seller payout reconciles exactly to the charge amount.
+              </p>
+            ) : (
+              <Alert variant="destructive">
+                <AlertTitle>Breakdown does not reconcile</AlertTitle>
+                <AlertDescription>
+                  Fee + payout does not equal the charge amount — this should
+                  never happen.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
-          {breakdown.reconciles ? (
-            <p className="text-muted-foreground text-sm">
-              Fee + seller payout reconciles exactly to the charge amount.
-            </p>
-          ) : (
-            <Alert variant="destructive">
-              <AlertTitle>Breakdown does not reconcile</AlertTitle>
-              <AlertDescription>
-                Fee + payout does not equal the charge amount — this should
-                never happen.
-              </AlertDescription>
-            </Alert>
-          )}
         </CardContent>
       </Card>
     </div>

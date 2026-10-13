@@ -50,17 +50,21 @@ function makeComponent(): Component {
  * product row (for updateProduct's account lookup); `account` is the store's
  * account record; both default to null.
  */
-function makeCtx(opts: {
-  product?: { _id?: string; accountId?: string } | null;
-  account?: { statementDescriptor?: string } | null;
-  mutation?: unknown;
-} = {}) {
-  const runQuery = vi.fn().mockImplementation((refObj: Record<symbol, string>) => {
-    const path = refObj[TO_REF] ?? "";
-    if (path.includes("getAccountByStripeId")) return opts.account ?? null;
-    if (path.includes("getProductByStripeId")) return opts.product ?? null;
-    return null;
-  });
+function makeCtx(
+  opts: {
+    product?: { _id?: string; accountId?: string } | null;
+    account?: { statementDescriptor?: string } | null;
+    mutation?: unknown;
+  } = {},
+) {
+  const runQuery = vi
+    .fn()
+    .mockImplementation((refObj: Record<symbol, string>) => {
+      const path = refObj[TO_REF] ?? "";
+      if (path.includes("getAccountByStripeId")) return opts.account ?? null;
+      if (path.includes("getProductByStripeId")) return opts.product ?? null;
+      return null;
+    });
   const runMutation = vi.fn().mockResolvedValue(opts.mutation ?? undefined);
   return { runQuery, runMutation } as unknown as RunCtx & {
     runQuery: ReturnType<typeof vi.fn>;
@@ -115,7 +119,10 @@ describe("createProduct", () => {
       name: "Widget",
     });
 
-    expect(result).toEqual({ productId: "internal_1", stripeProductId: "prod_1" });
+    expect(result).toEqual({
+      productId: "internal_1",
+      stripeProductId: "prod_1",
+    });
     // active defaults to true when omitted
     expect(stripe.products.create.mock.calls[0][0].active).toBe(true);
   });
@@ -261,7 +268,9 @@ describe("createProduct — per-store statement descriptor (BTS-67)", () => {
     ).toBeUndefined();
     // The account query is never made when there's no store.
     expect(ctx.runQuery).not.toHaveBeenCalledWith(
-      expect.objectContaining({ [TO_REF]: "betterStripe/core/queries/getAccountByStripeId" }),
+      expect.objectContaining({
+        [TO_REF]: "betterStripe/core/queries/getAccountByStripeId",
+      }),
       expect.anything(),
     );
   });
@@ -312,7 +321,9 @@ describe("deactivateProduct / deleteProduct", () => {
 
 describe("read delegators", () => {
   it("getProduct returns the queried row", async () => {
-    const ctx = { runQuery: vi.fn().mockResolvedValue({ _id: "x" }) } as unknown as RunCtx;
+    const ctx = {
+      runQuery: vi.fn().mockResolvedValue({ _id: "x" }),
+    } as unknown as RunCtx;
     expect(await getProduct(makeComponent(), ctx, { productId: "x" })).toEqual({
       _id: "x",
     });
@@ -377,7 +388,13 @@ describe("syncAllProducts", () => {
     const stripe = makeStripe();
     stripe.products.list.mockReturnValue(
       asyncIterable([
-        { id: "prod_1", name: "A", description: null, active: true, metadata: {} },
+        {
+          id: "prod_1",
+          name: "A",
+          description: null,
+          active: true,
+          metadata: {},
+        },
       ]),
     );
     // two prices for the SAME product → product should be looked up once (cache)
@@ -408,7 +425,11 @@ describe("syncAllProducts", () => {
       runQuery,
     } as unknown as RunCtx;
 
-    const result = await syncAllProducts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllProducts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result).toEqual({
       productsSynced: 1,
@@ -441,7 +462,11 @@ describe("syncAllProducts", () => {
       runQuery: vi.fn().mockResolvedValue(null), // product not found
     } as unknown as RunCtx;
 
-    const result = await syncAllProducts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllProducts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result.pricesSynced).toBe(0);
     expect(result.errorCount).toBe(0); // skipped, not errored
@@ -452,8 +477,20 @@ describe("syncAllProducts", () => {
     const stripe = makeStripe();
     stripe.products.list.mockReturnValue(
       asyncIterable([
-        { id: "prod_ok", name: "A", description: null, active: true, metadata: {} },
-        { id: "prod_bad", name: "B", description: null, active: true, metadata: {} },
+        {
+          id: "prod_ok",
+          name: "A",
+          description: null,
+          active: true,
+          metadata: {},
+        },
+        {
+          id: "prod_bad",
+          name: "B",
+          description: null,
+          active: true,
+          metadata: {},
+        },
       ]),
     );
     stripe.prices.list.mockReturnValue(asyncIterable([]));
@@ -466,7 +503,11 @@ describe("syncAllProducts", () => {
       runQuery: vi.fn(),
     } as unknown as RunCtx;
 
-    const result = await syncAllProducts(asStripe(stripe), makeComponent(), ctx);
+    const result = await syncAllProducts(
+      asStripe(stripe),
+      makeComponent(),
+      ctx,
+    );
 
     expect(result.productsSynced).toBe(1);
     expect(result.errorCount).toBe(1);

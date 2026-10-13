@@ -36,3 +36,37 @@ export function selectPurchasablePrices(products: PurchasableProduct[]) {
         .map((price) => ({ ...price, productName: p.name })),
     );
 }
+
+export type AmountSizing =
+  { kind: "full" } | { kind: "partial"; amountCents: number };
+
+export function amountForStripe(sizing: AmountSizing): number | undefined {
+  if (sizing.kind === "full") return undefined;
+  if (!Number.isInteger(sizing.amountCents) || sizing.amountCents <= 0) {
+    throw new Error(
+      "Partial amount must be a positive integer number of cents.",
+    );
+  }
+  return sizing.amountCents;
+}
+
+export function summarizeReversalResult(result: {
+  reversals: { stripeTransferId: string; amount: number }[];
+}) {
+  return {
+    reversalCount: result.reversals.length,
+    totalReversed: result.reversals.reduce((sum, row) => sum + row.amount, 0),
+  };
+}
+
+/**
+ * Checkout mode for a price (BTS-57): one-time prices check out in `payment`
+ * mode, recurring in `subscription` mode. Unknown prices (not yet synced into
+ * the component) keep the subscription default; Stripe validates the actual
+ * price/mode pairing when the session is created.
+ */
+export function checkoutModeForPrice(
+  price: { type: string } | null,
+): "payment" | "subscription" {
+  return price?.type === "one_time" ? "payment" : "subscription";
+}

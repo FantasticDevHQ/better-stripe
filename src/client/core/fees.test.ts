@@ -14,7 +14,9 @@ describe("validatePlatformFee (BTS-13)", () => {
   });
 
   it("accepts percent + fixed", () => {
-    expect(() => validatePlatformFee({ percent: 2.9, fixed: 30 })).not.toThrow();
+    expect(() =>
+      validatePlatformFee({ percent: 2.9, fixed: 30 }),
+    ).not.toThrow();
   });
 
   it("accepts ascending tiers with a null final upper bound", () => {
@@ -219,14 +221,10 @@ describe("computeSplit (BTS-23)", () => {
   const aff = "acct_aff";
 
   it("splits with fixed recipient amounts; platform retains the rest", () => {
-    const r = computeSplit(
-      10000,
-      { percent: 10 },
-      [
-        { destinationAccountId: store, role: "store", amount: 8000 },
-        { destinationAccountId: aff, role: "affiliate", amount: 1000 },
-      ],
-    );
+    const r = computeSplit(10000, { percent: 10 }, [
+      { destinationAccountId: store, role: "store", amount: 8000 },
+      { destinationAccountId: aff, role: "affiliate", amount: 1000 },
+    ]);
     expect(r.transfers).toEqual([
       { destinationAccountId: store, role: "store", amount: 8000 },
       { destinationAccountId: aff, role: "affiliate", amount: 1000 },
@@ -239,14 +237,10 @@ describe("computeSplit (BTS-23)", () => {
   });
 
   it("supports percent-of-gross recipients", () => {
-    const r = computeSplit(
-      10000,
-      { percent: 10 },
-      [
-        { destinationAccountId: store, role: "store", percent: 80 },
-        { destinationAccountId: aff, role: "affiliate", percent: 5 },
-      ],
-    );
+    const r = computeSplit(10000, { percent: 10 }, [
+      { destinationAccountId: store, role: "store", percent: 80 },
+      { destinationAccountId: aff, role: "affiliate", percent: 5 },
+    ]);
     expect(r.transfers.map((t) => t.amount)).toEqual([8000, 500]);
     expect(r.platformRetained).toBe(1500); // 10000 - 8500
   });
@@ -269,15 +263,11 @@ describe("computeSplit (BTS-23)", () => {
 
   it("assigns the rounding remainder deterministically to the platform", () => {
     // 33% + 33% + 33% of 100 → 33 + 33 + 33 = 99; platform keeps the 1 remainder.
-    const r = computeSplit(
-      100,
-      undefined,
-      [
-        { destinationAccountId: store, role: "store", percent: 33 },
-        { destinationAccountId: aff, role: "affiliate", percent: 33 },
-        { destinationAccountId: "acct_c", role: "other", percent: 33 },
-      ],
-    );
+    const r = computeSplit(100, undefined, [
+      { destinationAccountId: store, role: "store", percent: 33 },
+      { destinationAccountId: aff, role: "affiliate", percent: 33 },
+      { destinationAccountId: "acct_c", role: "other", percent: 33 },
+    ]);
     const sum = r.transfers.reduce((s, t) => s + t.amount, 0);
     expect(sum).toBe(99);
     expect(r.platformRetained).toBe(1);
@@ -300,7 +290,7 @@ describe("computeSplit (BTS-23)", () => {
     expect(r.platformFee).toBe(0);
     expect(r.platformRetained).toBe(0);
   });
-})
+});
 
 describe("validateSplit (BTS-21)", () => {
   const r = (over = {}) => ({
@@ -354,7 +344,9 @@ describe("validateSplit (BTS-21)", () => {
   });
 
   it("rejects an empty destinationAccountId", () => {
-    expect(() => validateSplit([r({ destinationAccountId: "", amount: 100 })])).toThrow();
+    expect(() =>
+      validateSplit([r({ destinationAccountId: "", amount: 100 })]),
+    ).toThrow();
   });
 
   it("rejects duplicate destination+role legs (idempotency-key collision)", () => {

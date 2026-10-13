@@ -2,9 +2,7 @@ import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { isBetterStripeError } from "./errors.js";
-import { components as _components } from "./setup.test.js";
-
-const components = _components;
+import { components } from "./setup.test.js";
 
 // ---------------------------------------------------------------------------
 // Mock Stripe SDK
@@ -294,25 +292,27 @@ describe("BetterStripe", () => {
         STRIPE_SECRET_KEY: "sk_test_xxx",
       });
 
-      mockCtx.runMutation.mockImplementation(async (ref: Record<symbol, string>) => {
-        const TO_REF = Symbol.for("toReferencePath");
-        const claimRef = components.betterStripe.connect.mutations
-          .claimReversalSlices as unknown as Record<symbol, string>;
-        if (ref[TO_REF] === claimRef[TO_REF]) {
-          return {
-            replay: false,
-            slices: [
-              {
-                stripeTransferId: "tr_store",
-                from: 0,
-                to: 8000,
-                confirmed: 0,
-              },
-            ],
-          };
-        }
-        return undefined;
-      });
+      mockCtx.runMutation.mockImplementation(
+        async (ref: Record<symbol, string>) => {
+          const TO_REF = Symbol.for("toReferencePath");
+          const claimRef = components.betterStripe.connect.mutations
+            .claimReversalSlices as unknown as Record<symbol, string>;
+          if (ref[TO_REF] === claimRef[TO_REF]) {
+            return {
+              replay: false,
+              slices: [
+                {
+                  stripeTransferId: "tr_store",
+                  from: 0,
+                  to: 8000,
+                  confirmed: 0,
+                },
+              ],
+            };
+          }
+          return undefined;
+        },
+      );
       mockStripeInstance.transfers.createReversal.mockResolvedValue({
         id: "trr_1",
       });

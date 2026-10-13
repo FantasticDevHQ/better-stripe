@@ -48,15 +48,13 @@ describe("assertTestModeStripeKey (BTS-77 fail-closed test-mode guard)", () => {
   });
 
   it("throws on an unset key", () => {
-    expect(() => assertTestModeStripeKey(undefined)).toThrowError(
-      /not set/,
-    );
+    expect(() => assertTestModeStripeKey(undefined)).toThrowError(/not set/);
   });
 
   it("throws on a malformed/unrecognized key (fails closed, not open)", () => {
-    expect(() => assertTestModeStripeKey("totally-not-a-stripe-key")).toThrowError(
-      /test-mode key/,
-    );
+    expect(() =>
+      assertTestModeStripeKey("totally-not-a-stripe-key"),
+    ).toThrowError(/test-mode key/);
   });
 
   it("passes on a test secret key", () => {

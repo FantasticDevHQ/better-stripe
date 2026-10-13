@@ -8,10 +8,7 @@ export const StripeDashboardResourcePath = {
 } as const;
 
 export type StripeDashboardResourceType =
-  | "product"
-  | "price"
-  | "customer"
-  | "subscription";
+  "product" | "price" | "customer" | "subscription";
 
 export type StripeMode = "test" | "live";
 

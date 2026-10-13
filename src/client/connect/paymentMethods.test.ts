@@ -60,7 +60,9 @@ describe("payment methods are keyed to the customer_account (BTS-19 reuse)", () 
 
   it("detaches a payment method by id", async () => {
     const stripe = makeStripe();
-    await detachPaymentMethod(asStripe(stripe), ctx, { paymentMethodId: "pm_1" });
+    await detachPaymentMethod(asStripe(stripe), ctx, {
+      paymentMethodId: "pm_1",
+    });
     expect(stripe.paymentMethods.detach).toHaveBeenCalledWith("pm_1");
   });
 });

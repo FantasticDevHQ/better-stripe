@@ -1,0 +1,4 @@
+{
+  "_comment": "Grandfathered untracked debt markers (path:line). Each must match an existing TODO/FIXME/HACK/XXX with no tracker ref on the same line. Ratchet only goes down.",
+  "allowlist": ["example/e2e/marketplace-account.spec.ts:90"]
+}

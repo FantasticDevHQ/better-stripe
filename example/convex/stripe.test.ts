@@ -61,9 +61,7 @@ async function runCallback(
     // convex-test mutation ctx provides.
     await fn(ctx, ...docs);
   });
-  const rows = await t.run(async (ctx) =>
-    ctx.db.query("triggerLog").collect(),
-  );
+  const rows = await t.run(async (ctx) => ctx.db.query("triggerLog").collect());
   return rows.map((r) => ({
     source: r.source,
     kind: r.kind,

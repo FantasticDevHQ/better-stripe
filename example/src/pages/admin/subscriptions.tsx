@@ -115,26 +115,24 @@ export function AdminSubscriptions() {
                         {sub.stripeSubscriptionId}
                       </p>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {sub.userId}
-                    </TableCell>
+                    <TableCell tone="muted">{sub.userId}</TableCell>
                     <TableCell>
                       <Badge variant={statusVariant(sub.status)}>
                         {sub.status.replace("_", " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell tone="muted">
                       {formatDate(sub.currentPeriodStart)} &rarr;{" "}
                       {formatDate(sub.currentPeriodEnd)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell tone="muted">
                       {sub.trialEnd ? formatDate(sub.trialEnd) : "\u2014"}
                     </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8">
+                    <TableCell colSpan={5} size="empty">
                       <Alert>
                         <AlertDescription className="text-center">
                           No data found for the current subscription filters.

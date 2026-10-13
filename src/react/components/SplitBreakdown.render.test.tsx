@@ -34,8 +34,18 @@ const leg = (over: Record<string, unknown>) => ({
 
 const totals = {
   legs: [
-    leg({ stripeTransferId: "tr_store", role: "store", amount: 8000, net: 8000 }),
-    leg({ stripeTransferId: "tr_aff", role: "affiliate", amount: 1000, net: 1000 }),
+    leg({
+      stripeTransferId: "tr_store",
+      role: "store",
+      amount: 8000,
+      net: 8000,
+    }),
+    leg({
+      stripeTransferId: "tr_aff",
+      role: "affiliate",
+      amount: 1000,
+      net: 1000,
+    }),
   ],
   store: 8000,
   affiliate: 1000,
@@ -79,7 +89,10 @@ describe("SplitBreakdown", () => {
       createElement(SplitBreakdown, {
         breakdown: {
           ...totals,
-          legs: [...totals.legs, leg({ stripeTransferId: "tr_misc", amount: 500, net: 500 })],
+          legs: [
+            ...totals.legs,
+            leg({ stripeTransferId: "tr_misc", amount: 500, net: 500 }),
+          ],
           other: 500,
           recipientsTotal: 9500,
           platform: 500,
@@ -136,8 +149,18 @@ describe("SplitBreakdown", () => {
     expect(received!.breakdown).toBe(totals);
     expect(received!.lines).toEqual([
       { key: "store", label: "Store", amount: 8000, amountLabel: "$80.00" },
-      { key: "affiliate", label: "Affiliate", amount: 1000, amountLabel: "$10.00" },
-      { key: "platform", label: "Platform", amount: 1000, amountLabel: "$10.00" },
+      {
+        key: "affiliate",
+        label: "Affiliate",
+        amount: 1000,
+        amountLabel: "$10.00",
+      },
+      {
+        key: "platform",
+        label: "Platform",
+        amount: 1000,
+        amountLabel: "$10.00",
+      },
     ]);
     expect(html).toBe("<p>3</p>");
   });

@@ -101,69 +101,76 @@ export function SellerOnboarding({
               your identity and connect your bank account.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="onboarding-country">Country</Label>
-              <Select
-                value={selectedCountry}
-                onValueChange={(v: string | null) => v && setSelectedCountry(v)}
-              >
-                <SelectTrigger id="onboarding-country" className="w-64">
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONNECT_COUNTRIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={async () => {
-                setIsCreating(true);
-                setCreateError(null);
-                try {
-                  const result = await createAccountWithOnboarding({
-                    userId: currentUser.id,
-                    email: currentUser.email,
-                    country: selectedCountry,
-                    refreshUrl: window.location.href,
-                    returnUrl: window.location.origin + "/seller/onboarding",
-                  });
-                  if (result.onboardingUrl) {
-                    window.location.href = result.onboardingUrl;
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="onboarding-country">Country</Label>
+                <Select
+                  value={selectedCountry}
+                  onValueChange={(v: string | null) =>
+                    v && setSelectedCountry(v)
                   }
-                } catch (err) {
-                  setCreateError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                  setIsCreating(false);
-                }
-              }}
-              disabled={isCreating || !selectedCountry}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                <>
-                  Create account
-                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
+                >
+                  <SelectTrigger id="onboarding-country" className="w-64">
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONNECT_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {createError && (
-              <Alert variant="destructive">
-                <AlertTitle>Action failed</AlertTitle>
-                <AlertDescription>{createError}</AlertDescription>
-              </Alert>
-            )}
+              <Button
+                onClick={async () => {
+                  setIsCreating(true);
+                  setCreateError(null);
+                  try {
+                    const result = await createAccountWithOnboarding({
+                      userId: currentUser.id,
+                      email: currentUser.email,
+                      country: selectedCountry,
+                      refreshUrl: window.location.href,
+                      returnUrl: window.location.origin + "/seller/onboarding",
+                    });
+                    if (result.onboardingUrl) {
+                      window.location.href = result.onboardingUrl;
+                    }
+                  } catch (err) {
+                    setCreateError(
+                      err instanceof Error ? err.message : String(err),
+                    );
+                    setIsCreating(false);
+                  }
+                }}
+                disabled={isCreating || !selectedCountry}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Create account
+                    <ArrowRight
+                      data-icon="inline-end"
+                      className="ml-2 h-4 w-4"
+                    />
+                  </>
+                )}
+              </Button>
+
+              {createError && (
+                <Alert variant="destructive">
+                  <AlertTitle>Action failed</AlertTitle>
+                  <AlertDescription>{createError}</AlertDescription>
+                </Alert>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -200,81 +207,89 @@ export function SellerOnboarding({
               : "Stripe requires identity verification and banking details before funds can be transferred."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Requirements checklist */}
-          {missingRequirements.length > 0 && (
-            <>
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm font-medium">
-                  {missingRequirements.length} items remaining
-                </p>
-                <div className="grid gap-1.5">
-                  {missingRequirements.map((req) => (
-                    <div key={req} className="flex items-center gap-2 text-sm">
-                      <Circle className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                      <span className="text-muted-foreground">{req}</span>
-                    </div>
-                  ))}
+        <CardContent>
+          <div className="space-y-4">
+            {/* Requirements checklist */}
+            {missingRequirements.length > 0 && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-muted-foreground text-sm font-medium">
+                    {missingRequirements.length} items remaining
+                  </p>
+                  <div className="grid gap-1.5">
+                    {missingRequirements.map((req) => (
+                      <div
+                        key={req}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Circle className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <span className="text-muted-foreground">{req}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+                <Separator />
+              </>
+            )}
+
+            {isComplete ? (
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>All requirements met — payouts are active.</span>
               </div>
-              <Separator />
-            </>
-          )}
-
-          {isComplete ? (
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span>All requirements met — payouts are active.</span>
-            </div>
-          ) : (
-            <Button
-              onClick={async () => {
-                setIsLinking(true);
-                setLinkError(null);
-                try {
-                  const result = await getAccountLink({
-                    stripeAccountId: account.stripeAccountId,
-                    refreshUrl: window.location.href,
-                    returnUrl: window.location.origin + "/seller/onboarding",
-                  });
-                  if (result.url) {
-                    window.location.href = result.url;
+            ) : (
+              <Button
+                onClick={async () => {
+                  setIsLinking(true);
+                  setLinkError(null);
+                  try {
+                    const result = await getAccountLink({
+                      stripeAccountId: account.stripeAccountId,
+                      refreshUrl: window.location.href,
+                      returnUrl: window.location.origin + "/seller/onboarding",
+                    });
+                    if (result.url) {
+                      window.location.href = result.url;
+                    }
+                  } catch (err) {
+                    setLinkError(
+                      err instanceof Error ? err.message : String(err),
+                    );
+                    setIsLinking(false);
                   }
-                } catch (err) {
-                  setLinkError(
-                    err instanceof Error ? err.message : String(err),
-                  );
-                  setIsLinking(false);
-                }
-              }}
-              disabled={isLinking}
-            >
-              {isLinking ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Redirecting to Stripe...
-                </>
-              ) : (
-                <>
-                  Continue setup on Stripe
-                  <ArrowRight data-icon="inline-end" className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          )}
+                }}
+                disabled={isLinking}
+              >
+                {isLinking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Redirecting to Stripe...
+                  </>
+                ) : (
+                  <>
+                    Continue setup on Stripe
+                    <ArrowRight
+                      data-icon="inline-end"
+                      className="ml-2 h-4 w-4"
+                    />
+                  </>
+                )}
+              </Button>
+            )}
 
-          {linkError && (
-            <Alert variant="destructive">
-              <AlertTitle>Action failed</AlertTitle>
-              <AlertDescription>{linkError}</AlertDescription>
-            </Alert>
-          )}
+            {linkError && (
+              <Alert variant="destructive">
+                <AlertTitle>Action failed</AlertTitle>
+                <AlertDescription>{linkError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Account info */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent padding="section">
           <div className="grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <span className="text-muted-foreground">Account ID</span>
@@ -291,10 +306,7 @@ export function SellerOnboarding({
             <div>
               <span className="text-muted-foreground">Status</span>
               <p className="flex items-center gap-1.5">
-                <Badge
-                  variant={isComplete ? "default" : "secondary"}
-                  className="text-xs"
-                >
+                <Badge variant={isComplete ? "default" : "secondary"}>
                   {onboardingStatus}
                 </Badge>
               </p>
@@ -324,9 +336,11 @@ export function SellerOnboarding({
         {({ onClose, isLoading: closing, isComplete: complete }) => (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <RotateCcw className="h-4 w-4" />
-                {complete ? "Close Account" : "Restart Onboarding"}
+              <CardTitle>
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  {complete ? "Close Account" : "Restart Onboarding"}
+                </div>
               </CardTitle>
               <CardDescription>
                 {complete
@@ -336,9 +350,8 @@ export function SellerOnboarding({
             </CardHeader>
             <CardContent>
               <Button
-                variant="outline"
+                variant="destructive-solid"
                 size="sm"
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={onClose}
                 disabled={closing}
               >
@@ -368,9 +381,11 @@ export function SellerOnboarding({
       {/* Help */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <HelpCircle className="h-4 w-4" />
-            Need Help?
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              Need Help?
+            </div>
           </CardTitle>
           <CardDescription>
             Ensure your documents are clear and match the name on your account.

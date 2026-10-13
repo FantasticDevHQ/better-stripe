@@ -14,6 +14,19 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.8.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.7.0...v0.8.0) (2026-10-13)
+
+
+### Features
+
+* compare checkout and embedded integration examples ([#133](https://github.com/FantasticDevHQ/better-stripe/issues/133)) ([0d916f6](https://github.com/FantasticDevHQ/better-stripe/commit/0d916f6aecf734877da379327a3148753fc0c4c3))
+* ship reusable React workflows and migrate the example UI ([#134](https://github.com/FantasticDevHQ/better-stripe/issues/134)) ([a1336ce](https://github.com/FantasticDevHQ/better-stripe/commit/a1336ced2a6d3a09210e769a89cf70022c0f7531))
+
+
+### Maintenance
+
+* add repo-gates and enforce check:all ([#131](https://github.com/FantasticDevHQ/better-stripe/issues/131)) ([be80b7f](https://github.com/FantasticDevHQ/better-stripe/commit/be80b7f8fe186bc22dbdc956357bd4a1120eec29))
+
 ## [0.7.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.1...v0.7.0) (2026-10-13)
 
 ### Features

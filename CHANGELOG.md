@@ -14,6 +14,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.8.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.8.0...v0.8.1) (2026-10-13)
+
+### Bug Fixes
+
+- harden sandbox example and reusable React workflows ([#135](https://github.com/FantasticDevHQ/better-stripe/issues/135)) ([65985a5](https://github.com/FantasticDevHQ/better-stripe/commit/65985a5be392e3bcb04c4055fb36515ba02de0b2))
+
 ## [0.8.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.7.0...v0.8.0) (2026-10-13)
 
 ### Features

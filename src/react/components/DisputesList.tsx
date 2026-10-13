@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { canRespondToDispute } from "./DisputeDetail.js";
 
 import type { StripeComponentDispute } from "../types.js";
 import type { DisputeEvidenceCountdown } from "../hooks/useDisputeWithCountdown.js";
@@ -78,7 +79,7 @@ export function DisputesList({
 
   const badgeTextFor = (row: DisputesListRow): string | undefined => {
     const countdown = row.countdown;
-    if (!countdown?.dueBy) return undefined;
+    if (!canRespondToDispute(row.status) || !countdown?.dueBy) return undefined;
     if (countdown.isOverdue) return overdueLabel;
     return dueLabel.replace("{days}", String(countdown.daysRemaining));
   };

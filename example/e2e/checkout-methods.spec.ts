@@ -17,6 +17,7 @@ function convex(name: string, args = {}) {
 }
 async function fillPayment(page: Page) {
   const deadline = Date.now() + 45000;
+  let filledOnce = false;
   while (Date.now() < deadline) {
     let foundCard = false;
     for (const frame of page.frames()) {
@@ -36,6 +37,11 @@ async function fillPayment(page: Page) {
         });
       const card = frame.getByRole("button", { name: "Card", exact: true });
       if (await card.isVisible().catch(() => false)) await card.click();
+      const country = frame
+        .getByRole("combobox", { name: /^Country(?: or region)?$/i })
+        .first();
+      if (await country.isVisible().catch(() => false))
+        await country.selectOption({ label: "United States" });
       for (const [selector, value] of [
         [
           '#checkout-email, #payment-email, #email, input[name="email"]',
@@ -45,7 +51,10 @@ async function fillPayment(page: Page) {
         ['#cardExpiry, input[name="expiry"]', "1234"],
         ['#cardCvc, input[name="cvc"]', "123"],
         ['#billingName, input[name="name"]', "Sandbox Test Buyer"],
-        ['#billingPostalCode, input[name="postalCode"]', "10001"],
+        [
+          '#billingPostalCode, input[name="postalCode"], input[autocomplete="postal-code"]',
+          "10001",
+        ],
       ]) {
         const input = frame.locator(selector).first();
         if (await input.isVisible().catch(() => false)) {
@@ -54,19 +63,21 @@ async function fillPayment(page: Page) {
         }
       }
     }
-    if (foundCard) return;
+    if (foundCard && filledOnce) return;
+    filledOnce = foundCard;
     await page.waitForTimeout(500);
   }
   throw new Error("No Stripe card input became available");
 }
-for (const mode of [
-  "embedded",
-  "custom",
-  "payment-intent",
-  "form",
-  "redirect",
-]) {
-  test(`${mode} completes a referred guest purchase in Stripe sandbox`, async ({
+for (const [mode, role] of [
+  ["embedded", "visitor"],
+  ["custom", "visitor"],
+  ["payment-intent", "visitor"],
+  ["form", "visitor"],
+  ["redirect", "visitor"],
+  ["payment-intent", "customer"],
+] as const) {
+  test(`${mode} completes a referred ${role === "visitor" ? "guest" : "customer"} purchase in Stripe sandbox`, async ({
     page,
   }) => {
     test.skip(!live, "Requires seeded Stripe sandbox");
@@ -83,8 +94,9 @@ for (const mode of [
       .find(
         (price: { type: string; active: boolean }) => price.type === "one_time",
       ).stripePriceId;
-    await page.addInitScript(() =>
-      localStorage.setItem("betterlearn-role", "visitor"),
+    await page.addInitScript(
+      (role) => localStorage.setItem("betterlearn-role", role),
+      role,
     );
     await page.goto(`/checkout?priceId=${price}&ref=avery&checkout=${mode}`);
     if (mode === "redirect")
@@ -129,6 +141,7 @@ for (const mode of [
         stripePaymentIntentId: url.searchParams.get("payment_intent"),
       });
       expect(payment.status).toBe("succeeded");
+      if (role === "customer") expect(payment.userId).not.toBe("");
       const findSale = () =>
         convex("storeSaleSettlement:listSellerSales", {
           sellerId: payment.metadata.sellerId,

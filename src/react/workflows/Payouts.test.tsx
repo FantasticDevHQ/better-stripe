@@ -80,3 +80,33 @@ it("exports payout history with explicit empty/loading states and date formattin
   expect(screen.getByText("po_history")).toBeTruthy();
   expect(screen.getByText("Not supplied by Stripe")).toBeTruthy();
 });
+it("keeps completed payouts out of upcoming and sorts the remaining arrivals", async () => {
+  const pending = {
+    ...row("po_pending", "pending"),
+    arrivalDate: 1900000000000,
+  };
+  const transit = {
+    ...row("po_transit", "in_transit"),
+    arrivalDate: 1800000000000,
+  };
+  const paid = row("po_paid");
+  const failed = row("po_failed", "failed");
+  const load = async () => ({
+    balances: [],
+    upcoming: [paid, pending, failed, transit],
+    payouts: [paid, pending, failed, transit],
+    nextCursor: null,
+  });
+  const { container } = render(<Payouts scopeKey="seller" load={load} />);
+  await screen.findByText("po_pending");
+  const headings = Array.from(container.querySelectorAll("h3"));
+  const upcomingTable = headings.find(
+    (node) => node.textContent === "Upcoming payouts",
+  )!.nextElementSibling!;
+  expect(upcomingTable.textContent).not.toContain("po_paid");
+  expect(upcomingTable.textContent).not.toContain("po_failed");
+  expect(upcomingTable.textContent!.indexOf("po_transit")).toBeLessThan(
+    upcomingTable.textContent!.indexOf("po_pending"),
+  );
+  expect(screen.getAllByText("po_paid")).toHaveLength(1);
+});

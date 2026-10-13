@@ -99,3 +99,16 @@ export const STORE_CATALOGS: Record<string, StoreCatalog> = {
     prices: [{ unitAmount: 12900, type: "one_time", nickname: "Lifetime" }],
   },
 };
+
+/** Stripe activates fresh test recipients asynchronously. Keep this wait bounded. */
+export function shouldRetryFixtureStep(message: string, attempts: number) {
+  const limit = /recipient transfers are not ready yet/i.test(message)
+    ? 60
+    : 12;
+  return (
+    attempts < limit &&
+    /not ready|not available yet|balance_insufficient|insufficient available|rate limit|temporarily/i.test(
+      message,
+    )
+  );
+}

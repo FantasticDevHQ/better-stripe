@@ -18,7 +18,7 @@ test("affiliate sidebar opens separate earnings, sales, and links pages", async 
   }
   await expect(page.getByText("Stripe account:")).toBeVisible();
   await page.screenshot({
-    path: "qa/2026-10-13/affiliate-earnings-cards.png",
+    path: test.info().outputPath("affiliate-earnings-cards.png"),
     fullPage: true,
   });
   const nav = page.getByRole("navigation", { name: "Primary navigation" });
@@ -33,16 +33,16 @@ test("affiliate sidebar opens separate earnings, sales, and links pages", async 
   await expect(
     nav.getByRole("link", { name: "Referred sales", exact: true }),
   ).toHaveAttribute("aria-current", "page");
-  const sales = page.locator("main li");
+  const sales = page.locator("main tbody tr");
   await expect(sales.first()).toBeVisible();
-  await expect(sales.first().locator("p").first()).toHaveText(
+  await expect(sales.first().locator("td").first()).toHaveText(
     /Maya's Fitness Studio|Sasha's Ceramics|Jordan's Design Shop/,
   );
   await expect(
     page.getByText("Store unavailable", { exact: true }),
   ).toHaveCount(0);
   await page.screenshot({
-    path: "qa/2026-10-13/affiliate-sales-stores.png",
+    path: test.info().outputPath("affiliate-sales-stores.png"),
     fullPage: true,
   });
   await page.reload();
@@ -86,7 +86,7 @@ test("affiliate sidebar opens separate earnings, sales, and links pages", async 
   expect(body!.width).toBeLessThanOrEqual(390);
   expect(main!.x + main!.width).toBeLessThanOrEqual(390);
   await page.screenshot({
-    path: "qa/2026-10-13/affiliate-earnings-mobile.png",
+    path: test.info().outputPath("affiliate-earnings-mobile.png"),
     fullPage: true,
   });
 });

@@ -330,7 +330,6 @@ export const issueRefund = action({
       stripePaymentIntentId: args.stripePaymentIntentId,
       amount,
       reason: args.reason,
-      stripeAccountId: account.stripeAccountId,
       actor: { type: "seller", accountId: account.stripeAccountId },
     });
   },
@@ -543,7 +542,9 @@ export const submitDisputeEvidence = action({
       stripeDisputeId: args.stripeDisputeId,
       evidence: args.evidence,
       submit: args.submit,
-      stripeAccountId: dispute.accountId,
+      // Example sales are platform charges; accountId scopes the seller,
+      // not the Stripe request account that owns the charge/dispute.
+      actor: { type: "seller", accountId: dispute.accountId! },
     });
   },
 });
@@ -560,7 +561,9 @@ export const acceptDispute = action({
     const dispute = await assertDisputeOwner(ctx, args);
     return stripe.closeDispute(ctx, {
       stripeDisputeId: args.stripeDisputeId,
-      stripeAccountId: dispute.accountId,
+      // Example sales are platform charges; accountId scopes the seller,
+      // not the Stripe request account that owns the charge/dispute.
+      actor: { type: "seller", accountId: dispute.accountId! },
     });
   },
 });

@@ -79,8 +79,7 @@ describe("EvidenceForm", () => {
     expect(args.evidence).toEqual({
       product_description: allFields.productDescription,
       access_activity_log: allFields.accessActivity,
-      uncategorized_text: allFields.additionalInfo,
-      customer_communication: allFields.customerCommunication,
+      uncategorized_text: `${allFields.additionalInfo}\n\nCustomer communication:\n${allFields.customerCommunication}`,
     });
     // Stripe's dispute-update `submit` DEFAULTS TO TRUE when omitted, so a
     // draft must send an explicit false — omission would submit to the bank.

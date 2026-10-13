@@ -5,6 +5,11 @@ import type { ReactNode } from "react";
 import type { DisputeWithCountdown } from "../hooks/useDisputeWithCountdown.js";
 import { formatPrice } from "../lib/price-helpers.js";
 
+/** Stripe only accepts responses while the dispute requires one. */
+export function canRespondToDispute(status: string | undefined) {
+  return status === "needs_response" || status === "warning_needs_response";
+}
+
 export type DisputeDetailRenderProps = {
   dispute: DisputeWithCountdown;
   /** Formatted dispute amount, e.g. "$120.50". */
@@ -26,6 +31,7 @@ export type DisputeDetailProps = {
   dueLabel?: string;
   overdueLabel?: string;
   noDeadlineLabel?: string;
+  responseClosedLabel?: string;
   /** Field captions in the default rendering. */
   labels?: {
     amount?: string;
@@ -53,6 +59,7 @@ export function DisputeDetail({
   dueLabel = "Evidence due in {days} days",
   overdueLabel = "Evidence overdue",
   noDeadlineLabel = "No evidence deadline",
+  responseClosedLabel = "Evidence submission closed",
   labels,
   locale,
   className,
@@ -70,11 +77,13 @@ export function DisputeDetail({
   }
 
   const { countdown } = dispute;
-  const countdownMessage = countdown.isOverdue
-    ? overdueLabel
-    : countdown.daysRemaining !== undefined
-      ? dueLabel.replace("{days}", String(countdown.daysRemaining))
-      : noDeadlineLabel;
+  const countdownMessage = !canRespondToDispute(dispute.status)
+    ? responseClosedLabel
+    : countdown.isOverdue
+      ? overdueLabel
+      : countdown.daysRemaining !== undefined
+        ? dueLabel.replace("{days}", String(countdown.daysRemaining))
+        : noDeadlineLabel;
 
   const renderProps: DisputeDetailRenderProps = {
     dispute,

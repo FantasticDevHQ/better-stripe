@@ -261,13 +261,10 @@ describe("actions — dispute actions wrong-owner rejection (BTS-83)", () => {
       stripeDisputeId: "dp_1",
     });
 
-    expect(mockedStripe.closeDispute).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        stripeDisputeId: "dp_1",
-        stripeAccountId: "acct_owner",
-      }),
-    );
+    expect(mockedStripe.closeDispute).toHaveBeenCalledWith(expect.anything(), {
+      stripeDisputeId: "dp_1",
+      actor: { type: "seller", accountId: "acct_owner" },
+    });
   });
 
   it("submitDisputeEvidence rejects a caller who isn't the dispute's owning account", async () => {
@@ -393,9 +390,11 @@ describe("actions — issueRefund wrong-owner rejection (BTS-83)", () => {
       expect.anything(),
       expect.objectContaining({
         stripePaymentIntentId: "pi_1",
-        stripeAccountId: "acct_owner",
         actor: { type: "seller", accountId: "acct_owner" },
       }),
+    );
+    expect(mockedStripe.createRefund.mock.calls[0][1]).not.toHaveProperty(
+      "stripeAccountId",
     );
   });
 

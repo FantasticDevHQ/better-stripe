@@ -260,9 +260,19 @@ export function buildDisputeEvidence(input: {
   accessActivity?: string;
   /** Off-platform context / anything else (Stripe: uncategorized_text). */
   additionalInfo?: string;
-  /** Communications with the buyer (Stripe: customer_communication). */
+  /** Communication prose is appended to text evidence; file_ IDs remain file evidence. */
   customerCommunication?: string;
 }): import("stripe").Stripe.DisputeUpdateParams.Evidence {
+  const communication = input.customerCommunication;
+  const file = communication?.startsWith("file_") ? communication : undefined;
+  const text = [
+    input.additionalInfo,
+    !file && communication
+      ? `Customer communication:\n${communication}`
+      : undefined,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
   return {
     ...(input.productDescription
       ? { product_description: input.productDescription }
@@ -270,12 +280,8 @@ export function buildDisputeEvidence(input: {
     ...(input.accessActivity
       ? { access_activity_log: input.accessActivity }
       : {}),
-    ...(input.additionalInfo
-      ? { uncategorized_text: input.additionalInfo }
-      : {}),
-    ...(input.customerCommunication
-      ? { customer_communication: input.customerCommunication }
-      : {}),
+    ...(text ? { uncategorized_text: text } : {}),
+    ...(file ? { customer_communication: file } : {}),
   };
 }
 

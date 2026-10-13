@@ -739,19 +739,45 @@ objects, created with Stripe's test payment methods. Stripe webhooks populate th
 same component ledger used by interactive purchases. Running the job again
 recovers its existing resources rather than repeating completed charges.
 The Express seller remains an interactive onboarding example; automatic sales
-use the sellers whose recipient capabilities are already active.
+wait for both the seller and affiliate recipient capabilities to become active
+before creating a payment. Stripe verification can take several minutes; the
+job retries recipient readiness for up to five minutes per step. Other transient
+failures use a shorter retry budget, and permanent failures remain visible for
+resumption after correction.
 
 Refund and dispute costs are read from Stripe balance transactions. Costs that
 are not covered by the retained sale fee are deducted from subsequent seller
 transfers before payout. Any outstanding amount is attached to the next monthly
 store invoice; returned costs become credits. Sales show the cost adjustment,
-and Store Plan shows the outstanding balance. The ledger reserves each deduction
+and Billing shows the estimated next invoice. The ledger reserves each deduction
 or invoice allocation atomically so retries cannot collect it twice.
 
 Reset clears the local example and component tables, including fixture progress.
 It does not delete Stripe objects. Keep the same sandbox when resuming; use a new
 sandbox when you need an entirely fresh Stripe dataset. Fixture actions reject
 live-mode secret keys.
+
+To verify a complete reset and reseed in a disposable sandbox, with the local
+app running, use the explicitly destructive opt-in test:
+
+```sh
+E2E_LIVE_BACKEND=1 E2E_RESET_SANDBOX=1 pnpm exec playwright test e2e/sandbox-reset-reseed.spec.ts --workers=1
+```
+
+The test checks test mode before clearing data, waits for automatic population,
+and reruns the seed to check that personas and completed fixture work are not
+duplicated. It records a video and a completion screenshot in the test output.
+
+Dispute responses use platform Stripe requests for the example's platform
+charges, with the seller passed separately for authorization. Resolved and
+under-review disputes are read-only. Customer communication prose is appended
+to text evidence; Stripe `file_` IDs are sent as file evidence. The UI confirms
+success only after Stripe accepts the draft or submission.
+
+The live dispute browser test consumes one open dispute. After a fresh seed,
+run it with `E2E_LIVE_BACKEND=1 pnpm exec playwright test e2e/seller-disputes.spec.ts`.
+To exercise partial and remaining-balance refunds on a disposable settled sale,
+add `E2E_REFUND_SANDBOX=1` when running `e2e/refunds-reversals.spec.ts`.
 
 ### Seller balance-funded billing
 

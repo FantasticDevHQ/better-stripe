@@ -37,11 +37,13 @@ import { useRole } from "@/providers/role-context";
 import {
   useDisputeResponse,
   DisputeDetail,
+  canRespondToDispute,
   DisputesList,
   EvidenceForm,
   type EvidenceFormUpdateArgs,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
+import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 
@@ -130,7 +132,8 @@ function HeadlessDisputes({
     acceptDispute: (stripeDisputeId) =>
       acceptDispute({ userId, stripeDisputeId }),
   });
-  const { dispute } = useDisputeWithCountdown(selectedId);
+  const { dispute, isLoading: detailLoading } =
+    useDisputeWithCountdown(selectedId);
   const chargeback = useQuery(
     api.queries.getDisputeChargeback,
     selectedId ? { stripeDisputeId: selectedId } : "skip",
@@ -179,83 +182,91 @@ function HeadlessDisputes({
           </Alert>
         ) : (
           <div className="space-y-4">
-            <DisputeDetail dispute={dispute} />
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-medium">Accept chargeback</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Concede the dispute and keep the clawback in place.
-                  </p>
-                </div>
-                {acceptStatus !== "confirming" && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={requestAccept}
-                    disabled={acceptStatus === "submitting"}
-                    data-testid="accept-dispute-button"
-                  >
-                    {acceptStatus === "submitting"
-                      ? "Accepting..."
-                      : "Accept dispute"}
-                  </Button>
-                )}
-              </div>
-              {acceptStatus === "confirming" && (
-                <div
-                  className="mt-3 space-y-2 rounded-md border border-destructive bg-destructive/10 p-3"
-                  data-testid="accept-dispute-confirm-panel"
-                >
-                  <p className="text-sm font-medium">
-                    This cannot be undone. Accepting permanently closes the
-                    dispute and keeps the clawback in place.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={handleAcceptDispute}
-                      data-testid="accept-dispute-confirm-button"
-                    >
-                      Yes, accept dispute
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={cancelAccept}
-                      data-testid="accept-dispute-cancel-button"
-                    >
-                      Cancel
-                    </Button>
+            <DisputeDetail dispute={dispute} isLoading={detailLoading} />
+            {canRespondToDispute(dispute?.status) && (
+              <>
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-medium">Accept chargeback</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Concede the dispute and keep the clawback in place.
+                      </p>
+                    </div>
+                    {acceptStatus !== "confirming" && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={requestAccept}
+                        disabled={acceptStatus === "submitting"}
+                        data-testid="accept-dispute-button"
+                      >
+                        {acceptStatus === "submitting"
+                          ? "Accepting..."
+                          : "Accept dispute"}
+                      </Button>
+                    )}
                   </div>
+                  {acceptStatus === "confirming" && (
+                    <div
+                      className="mt-3 space-y-2 rounded-md border border-destructive bg-destructive/10 p-3"
+                      data-testid="accept-dispute-confirm-panel"
+                    >
+                      <p className="text-sm font-medium">
+                        This cannot be undone. Accepting permanently closes the
+                        dispute and keeps the clawback in place.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={handleAcceptDispute}
+                          data-testid="accept-dispute-confirm-button"
+                        >
+                          Yes, accept dispute
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={cancelAccept}
+                          data-testid="accept-dispute-cancel-button"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {acceptStatus === "accepted" && (
+                    <p
+                      className="mt-2 text-sm"
+                      data-testid="accept-dispute-status"
+                    >
+                      Dispute accepted. The row will update after Stripe
+                      delivers the closed webhook.
+                    </p>
+                  )}
+                  {acceptError && (
+                    <p className="mt-2 text-sm text-destructive" role="alert">
+                      {acceptError}
+                    </p>
+                  )}
                 </div>
-              )}
-              {acceptStatus === "accepted" && (
-                <p className="mt-2 text-sm" data-testid="accept-dispute-status">
-                  Dispute accepted. The row will update after Stripe delivers
-                  the closed webhook.
-                </p>
-              )}
-              {acceptError && (
-                <p className="mt-2 text-sm text-destructive" role="alert">
-                  {acceptError}
-                </p>
-              )}
-            </div>
-            <EvidenceForm
-              key={selectedId}
-              stripeDisputeId={selectedId}
-              stripeAccountId={stripeAccountId}
-              onUpdateDispute={(args: EvidenceFormUpdateArgs) =>
-                submitEvidence({
-                  userId,
-                  stripeDisputeId: args.stripeDisputeId,
-                  evidence: args.evidence,
-                  submit: args.submit,
-                })
-              }
-            />
+                <EvidenceForm
+                  key={selectedId}
+                  stripeDisputeId={selectedId}
+                  onStaged={() => toast.success("Evidence draft saved")}
+                  onSubmitted={() => toast.success("Evidence submitted")}
+                  onUpdateDispute={(args: EvidenceFormUpdateArgs) =>
+                    submitEvidence({
+                      userId,
+                      stripeDisputeId: args.stripeDisputeId,
+                      evidence: args.evidence,
+                      submit: args.submit,
+                    })
+                  }
+                />
+              </>
+            )}
             <Separator />
             <section className="space-y-3">
               <div>

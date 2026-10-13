@@ -15,6 +15,7 @@ import {
   SANDBOX_REFUNDS,
   SANDBOX_DISPUTES,
   fixtureKey,
+  shouldRetryFixtureStep,
 } from "./lib/sandboxFixturePlan";
 
 const TASKS = [
@@ -493,11 +494,7 @@ export const step = internalAction({
       const message = (
         error instanceof Error ? error.message : String(error)
       ).split("\n")[0];
-      const retry =
-        job.attempts < 12 &&
-        /not ready|not available yet|balance_insufficient|insufficient available|rate limit|temporarily/i.test(
-          message,
-        );
+      const retry = shouldRetryFixtureStep(message, job.attempts);
       await ctx.runMutation(internal.sandboxFixtureState.failure, {
         ...args,
         error: message,

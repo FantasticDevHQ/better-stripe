@@ -3,10 +3,9 @@ import {
   summarizeReversalResult,
   checkoutModeForPrice,
 } from "./lib/marketplace";
-import { env } from "./_generated/server";
 import { v } from "convex/values";
 
-import { action } from "./_generated/server";
+import { action, env } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
 import { isAffiliateReferral } from "./affiliateSplit";

@@ -110,9 +110,7 @@ export const upsertPayment = mutation({
   },
 });
 
-// =============================================================================
-// PAYOUT MUTATIONS
-// =============================================================================
+// Payout mutations
 
 export const upsertPayout = mutation({
   args: {

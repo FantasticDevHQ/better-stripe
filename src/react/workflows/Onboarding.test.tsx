@@ -60,3 +60,16 @@ it("keeps onboarding link failures associated with the active operation", async 
   expect(result.current.linkError).toBe("Link unavailable");
   expect(result.current.createError).toBeNull();
 });
+it("offers the shared example countries in the native onboarding UI", async () => {
+  const { render, screen } = await import("@testing-library/react");
+  const { Onboarding } = await import("./Onboarding.js");
+  render(
+    <Onboarding
+      scopeKey="store"
+      account={null}
+      createAccount={async () => ({})}
+      continueOnboarding={async () => ({})}
+    />,
+  );
+  expect(screen.getByRole("option", { name: "United Kingdom" })).toBeTruthy();
+});

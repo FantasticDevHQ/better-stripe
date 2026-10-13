@@ -806,7 +806,8 @@ subscriptions, billing, payment methods, referrals, earnings, and admin setup.
 The example binds Convex queries/actions and supplies shadcn renderers. Package
 consumers can use the same workflows with native unstyled markup or their own
 UI, without copying the example's controllers or providers. See
-[the React workflow guide](../docs/react-workflows.md) for imports and contracts.
+[the React workflow guide](../docs/react-workflows.md) for imports and contracts,
+and [the page audit](../docs/react-workflows-audit.md) for the complete mapping.
 
 The example is a developer reference. Supported workflows expose a presentation
 switch without changing the active persona, store, referral code, or account:

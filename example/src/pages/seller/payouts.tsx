@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/empty-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,10 @@ import {
 import { useRole } from "@/providers/role-context";
 import { useAction } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Payouts as BetterStripePayouts } from "@fantastic.dev/better-stripe/react";
+import {
+  PayoutHistory,
+  Payouts as BetterStripePayouts,
+} from "@fantastic.dev/better-stripe/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
@@ -37,54 +41,58 @@ const upcomingStatus = (status: string) =>
 
 function PayoutTable({ payouts, empty }: { payouts: Payout[]; empty: string }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Payout ID</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Arrival date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {payouts.map((payout) => (
-          <TableRow key={payout.id}>
-            <TableCell variant="identifier" density="compact">
-              {payout.id}
-            </TableCell>
-            <TableCell variant="amount">
-              {currency(payout.amount, payout.currency)}
-            </TableCell>
-            <TableCell>
-              <Badge
-                variant={
-                  payout.status === "failed"
-                    ? "destructive"
-                    : payout.status === "paid"
-                      ? "default"
-                      : "secondary"
-                }
-              >
-                {payout.status.replaceAll("_", " ")}
-              </Badge>
-            </TableCell>
-            <TableCell>{date(payout.arrivalDate)}</TableCell>
-          </TableRow>
-        ))}
-        {!payouts.length && (
-          <TableRow>
-            <TableCell
-              colSpan={4}
-              size="empty"
-              tone="muted"
-              className="text-center"
-            >
-              {empty}
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <PayoutHistory rows={payouts} emptyLabel={empty}>
+      {({ rows, isEmpty }) => (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Payout ID</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Arrival date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((payout) => (
+              <TableRow key={payout.id}>
+                <TableCell variant="identifier" density="compact">
+                  {payout.id}
+                </TableCell>
+                <TableCell variant="amount">
+                  {currency(payout.amount, payout.currency)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      payout.status === "failed"
+                        ? "destructive"
+                        : payout.status === "paid"
+                          ? "default"
+                          : "secondary"
+                    }
+                  >
+                    {payout.status.replaceAll("_", " ")}
+                  </Badge>
+                </TableCell>
+                <TableCell>{date(payout.arrivalDate)}</TableCell>
+              </TableRow>
+            ))}
+            {isEmpty && (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  size="empty"
+                  tone="muted"
+                  className="text-center"
+                >
+                  <EmptyState>{empty}</EmptyState>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )}
+    </PayoutHistory>
   );
 }
 

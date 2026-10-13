@@ -1,6 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
+  CheckoutChooser,
+  SubscriptionOverview,
+  PayoutHistory,
+  PayoutOverview,
+  ChargeSummary,
+  PaymentDetails,
   Account,
   Onboarding,
   Payouts,
@@ -45,6 +51,21 @@ const subscription = {
 };
 describe("public workflows without example providers, a router, or CSS", () => {
   const cases: [string, ReactNode][] = [
+    ["CheckoutChooser", <CheckoutChooser />],
+    ["SubscriptionOverview", <SubscriptionOverview subscriptions={[]} />],
+    ["PayoutHistory", <PayoutHistory rows={[]} />],
+    ["PayoutOverview", <PayoutOverview payouts={[]} currency="usd" />],
+    [
+      "ChargeSummary",
+      <ChargeSummary
+        gross={1000}
+        fee={90}
+        net={910}
+        currency="usd"
+        reconciles
+      />,
+    ],
+    ["PaymentDetails", <PaymentDetails payment={null} />],
     ["Account", <Account scopeKey="seller" account={account} />],
     [
       "Onboarding",

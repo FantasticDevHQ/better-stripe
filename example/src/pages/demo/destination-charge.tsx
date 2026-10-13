@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
-import { Checkout } from "@fantastic.dev/better-stripe/react";
+import { ChargeSummary, Checkout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CheckCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -211,23 +211,30 @@ export function DestinationChargeDemo() {
             {isComplete && (
               <Badge data-testid="charge-complete-badge">Charge complete</Badge>
             )}
-            <div className="grid grid-cols-3 gap-4">
-              <Figure
-                label="Charged"
-                value={formatCurrency(breakdown.gross, price.currency)}
-                testId="charged-amount"
-              />
-              <Figure
-                label={`Platform fee (${feePercent}%)`}
-                value={formatCurrency(breakdown.fee, price.currency)}
-                testId="platform-fee-amount"
-              />
-              <Figure
-                label="Seller payout"
-                value={formatCurrency(breakdown.net, price.currency)}
-                testId="seller-payout-amount"
-              />
-            </div>
+            <ChargeSummary
+              {...breakdown}
+              currency={price.currency}
+              feeLabel={`Platform fee (${feePercent}%)`}
+            >
+              {({ metrics }) => (
+                <div className="grid grid-cols-3 gap-4">
+                  {metrics.map((metric) => (
+                    <Figure
+                      key={metric.key}
+                      label={metric.label}
+                      value={metric.formattedAmount}
+                      testId={
+                        metric.key === "gross"
+                          ? "charged-amount"
+                          : metric.key === "fee"
+                            ? "platform-fee-amount"
+                            : "seller-payout-amount"
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </ChargeSummary>
             {breakdown.reconciles ? (
               <p className="text-muted-foreground text-sm">
                 Fee + seller payout reconciles exactly to the charge amount.

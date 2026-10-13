@@ -1,4 +1,7 @@
-import { useSubscriptionFilter } from "@fantastic.dev/better-stripe/react";
+import {
+  Subscriptions,
+  useSubscriptionFilter,
+} from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -82,52 +85,57 @@ export function AdminSubscriptions() {
         {/* Single content area for all tabs since we handle filtering ourselves */}
         <TabsContent value={filter} className="mt-6">
           <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Subscription ID</TableHead>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Current Period</TableHead>
-                  <TableHead>Trial End</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((sub) => (
-                  <TableRow key={sub._id}>
-                    <TableCell>
-                      <p className="font-mono text-sm">
-                        {sub.stripeSubscriptionId}
-                      </p>
-                    </TableCell>
-                    <TableCell tone="muted">{sub.userId}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant(sub.status)}>
-                        {sub.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell tone="muted">
-                      {formatDate(sub.currentPeriodStart)} &rarr;{" "}
-                      {formatDate(sub.currentPeriodEnd)}
-                    </TableCell>
-                    <TableCell tone="muted">
-                      {sub.trialEnd ? formatDate(sub.trialEnd) : "\u2014"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} size="empty">
-                      <Alert>
-                        <AlertDescription className="text-center">
-                          No data found for the current subscription filters.
-                        </AlertDescription>
-                      </Alert>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <Subscriptions rows={filtered}>
+              {({ rows, isEmpty }) => (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subscription ID</TableHead>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Current Period</TableHead>
+                      <TableHead>Trial End</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((sub) => (
+                      <TableRow key={sub._id}>
+                        <TableCell>
+                          <p className="font-mono text-sm">
+                            {sub.stripeSubscriptionId}
+                          </p>
+                        </TableCell>
+                        <TableCell tone="muted">{sub.userId}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant(sub.status)}>
+                            {sub.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell tone="muted">
+                          {formatDate(sub.currentPeriodStart)} &rarr;{" "}
+                          {formatDate(sub.currentPeriodEnd)}
+                        </TableCell>
+                        <TableCell tone="muted">
+                          {sub.trialEnd ? formatDate(sub.trialEnd) : "\u2014"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {isEmpty && (
+                      <TableRow>
+                        <TableCell colSpan={5} size="empty">
+                          <Alert>
+                            <AlertDescription className="text-center">
+                              No data found for the current subscription
+                              filters.
+                            </AlertDescription>
+                          </Alert>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </Subscriptions>
           </Card>
         </TabsContent>
       </Tabs>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import {
   useWorkflowResource,
+  PayoutHistory,
   earningsFromBalance,
   EarningsSummary,
   PayoutSchedule,
@@ -153,51 +154,64 @@ export function StoreEarnings() {
               )}
             </PayoutSchedule>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Payout ID</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Arrival</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payoutRows.map((payout) => (
-                  <TableRow key={payout._id}>
-                    <TableCell variant="identifier" density="compact">
-                      {payout.stripePayoutId}
-                    </TableCell>
-                    <TableCell variant="amount">
-                      {formatCurrency(
-                        payout.amount ?? 0,
-                        payout.currency || "usd",
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {payout.status.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell tone="muted">
-                      {payout.arrivalDate
-                        ? new Date(payout.arrivalDate).toLocaleDateString()
-                        : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {payoutRows.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} size="summary" tone="muted">
-                      <EmptyState>
-                        No payouts yet. Balance reflects funds awaiting the next
-                        rolling payout.
-                      </EmptyState>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <PayoutHistory
+              rows={payoutRows.map((row) => ({
+                ...row,
+                id: row.stripePayoutId,
+                amount: row.amount ?? 0,
+                arrivalDate: row.arrivalDate
+                  ? new Date(row.arrivalDate).getTime()
+                  : null,
+              }))}
+            >
+              {({ rows, isEmpty }) => (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payout ID</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Arrival</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((payout) => (
+                      <TableRow key={payout._id}>
+                        <TableCell variant="identifier" density="compact">
+                          {payout.stripePayoutId}
+                        </TableCell>
+                        <TableCell variant="amount">
+                          {formatCurrency(
+                            payout.amount ?? 0,
+                            payout.currency || "usd",
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {payout.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell tone="muted">
+                          {payout.arrivalDate
+                            ? new Date(payout.arrivalDate).toLocaleDateString()
+                            : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {isEmpty && (
+                      <TableRow>
+                        <TableCell colSpan={4} size="summary" tone="muted">
+                          <EmptyState>
+                            No payouts yet. Balance reflects funds awaiting the
+                            next rolling payout.
+                          </EmptyState>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </PayoutHistory>
           </div>
         </CardContent>
       </Card>

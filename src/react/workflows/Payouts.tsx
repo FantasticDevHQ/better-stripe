@@ -3,6 +3,11 @@ import { useState, type ReactNode } from "react";
 import { Connect, type ConnectProps } from "./Connect.js";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 import { useWorkflowResource } from "./useWorkflowResource.js";
+import {
+  Collection,
+  type CollectionProps,
+  type WorkflowColumn,
+} from "./Collection.js";
 import { formatPrice } from "../lib/price-helpers.js";
 export type PayoutRow = {
   id: string;
@@ -107,36 +112,40 @@ function date(value: number | null) {
     ? "Not supplied by Stripe"
     : new Date(value).toLocaleDateString(undefined, { timeZone: "UTC" });
 }
-function PayoutTable({
-  rows,
-  emptyLabel,
-}: {
-  rows: PayoutRow[];
-  emptyLabel: string;
-}) {
-  return rows.length ? (
-    <table>
-      <thead>
-        <tr>
-          <th>Payout ID</th>
-          <th>Amount</th>
-          <th>Status</th>
-          <th>Arrival date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.id}>
-            <td>{row.id}</td>
-            <td>{formatPrice(row.amount, row.currency)}</td>
-            <td>{row.status}</td>
-            <td>{date(row.arrivalDate)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ) : (
-    <p>{emptyLabel}</p>
+export type PayoutHistoryRow = Pick<
+  PayoutRow,
+  "id" | "amount" | "currency" | "status" | "arrivalDate"
+>;
+export type PayoutHistoryProps<
+  Row extends PayoutHistoryRow = PayoutHistoryRow,
+> = Omit<CollectionProps<Row>, "columns" | "getKey"> & {
+  columns?: WorkflowColumn<Row>[];
+};
+export function PayoutHistory<Row extends PayoutHistoryRow>(
+  props: PayoutHistoryProps<Row>,
+) {
+  const columns: WorkflowColumn<Row>[] = [
+    { id: "id", label: "Payout ID", cell: (row) => row.id },
+    {
+      id: "amount",
+      label: "Amount",
+      align: "end",
+      cell: (row) => formatPrice(row.amount, row.currency),
+    },
+    { id: "status", label: "Status", cell: (row) => row.status },
+    {
+      id: "arrival",
+      label: "Arrival date",
+      cell: (row) => date(row.arrivalDate),
+    },
+  ];
+  return (
+    <Collection
+      emptyLabel="No payouts yet."
+      {...props}
+      getKey={(row) => row.id}
+      columns={props.columns ?? columns}
+    />
   );
 }
 function NativePayouts({
@@ -176,12 +185,12 @@ function NativePayouts({
             </dd>
           </dl>
           <h3>Upcoming payouts</h3>
-          <PayoutTable
+          <PayoutHistory
             rows={data.upcoming}
             emptyLabel="No upcoming payouts scheduled."
           />
           <h3>Previous payouts</h3>
-          <PayoutTable
+          <PayoutHistory
             rows={previousPayouts}
             emptyLabel="No previous payouts yet."
           />

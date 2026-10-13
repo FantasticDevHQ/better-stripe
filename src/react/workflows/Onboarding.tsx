@@ -3,6 +3,16 @@ import { useId, useState, type ReactNode } from "react";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 import { Connect, type ConnectProps } from "./Connect.js";
 import { AccountOnboardingCard } from "../components/AccountOnboardingCard.js";
+export const DEFAULT_CONNECT_COUNTRIES = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "JP", name: "Japan" },
+  { code: "SG", name: "Singapore" },
+];
 export type OnboardingActions = {
   scopeKey: string;
   initialCountry?: string;
@@ -118,13 +128,11 @@ function OnboardingBody(props: Extract<OnboardingProps, { account: unknown }>) {
             value={state.selectedCountry}
             onChange={(event) => state.setSelectedCountry(event.target.value)}
           >
-            {(props.countries ?? [{ code: "US", name: "United States" }]).map(
-              (country) => (
-                <option key={country.code} value={country.code}>
-                  {country.name}
-                </option>
-              ),
-            )}
+            {(props.countries ?? DEFAULT_CONNECT_COUNTRIES).map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.name}
+              </option>
+            ))}
           </select>
           <button type="submit" disabled={state.isPending}>
             {state.isCreating ? "Creating account…" : "Create account"}

@@ -1,7 +1,11 @@
 import { SellerCosts } from "@/components/seller-costs";
 import { useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
-import { RefundHistory, useRefunds } from "@fantastic.dev/better-stripe/react";
+import {
+  PaymentDetails,
+  RefundHistory,
+  useRefunds,
+} from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -238,31 +242,28 @@ export function SellerRefunds() {
               {cleanPaymentIntentId && payment === undefined ? (
                 <Skeleton className="h-20 w-full" />
               ) : payment ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <Figure
-                    label="Charged"
-                    value={formatCurrency(payment.amount, payment.currency)}
-                    testId="refund-payment-amount"
-                  />
-                  <Figure
-                    label="Refunded"
-                    value={formatCurrency(
-                      payment.refundedAmount ?? 0,
-                      payment.currency,
-                    )}
-                    testId="refund-payment-refunded"
-                  />
-                  <Figure
-                    label="Status"
-                    value={payment.status}
-                    testId="refund-payment-status"
-                  />
-                  <Figure
-                    label="Refund state"
-                    value={payment.refundStatus ?? "none"}
-                    testId="refund-payment-refund-status"
-                  />
-                </div>
+                <PaymentDetails payment={payment}>
+                  {({ metrics }) => (
+                    <div className="grid grid-cols-2 gap-4">
+                      {metrics.map((metric) => (
+                        <Figure
+                          key={metric.key}
+                          label={metric.label}
+                          value={metric.value}
+                          testId={
+                            metric.key === "charged"
+                              ? "refund-payment-amount"
+                              : metric.key === "refunded"
+                                ? "refund-payment-refunded"
+                                : metric.key === "status"
+                                  ? "refund-payment-status"
+                                  : "refund-payment-refund-status"
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </PaymentDetails>
               ) : (
                 <p className="text-muted-foreground text-sm">
                   Enter a PaymentIntent id to inspect its recorded refund state.

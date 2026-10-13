@@ -27,8 +27,9 @@ and short-lived client secrets returned by your server.
 `Checkout` supports all five checkout integrations. It creates the session or
 PaymentIntent, handles loading and retry, mounts the required Stripe provider,
 and reports confirmation errors. Hosted Checkout waits for an explicit click.
-`CHECKOUT_OPTIONS` exports the chooser descriptions and pros and cons used in
-the example.
+`CheckoutChooser` renders the five choices and their pros and cons. It supports
+controlled selection, render props, and a recurring-product compatibility notice.
+`CHECKOUT_OPTIONS` also exports the descriptions.
 
 ```tsx
 import { Checkout } from "@fantastic.dev/better-stripe/react";
@@ -130,27 +131,27 @@ widgets. Use package UI or the hosted Billing Portal for those workflows.
 
 ## Component and hook reference
 
-| Workflow              | Unstyled components                                                                                      | Companion hooks/helpers                                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Store browsing        | `Storefront`, `PriceCard`                                                                                | Store/product/price models and purchase callbacks                            |
-| Checkout              | `Checkout`, `CheckoutElementsForm`, `PaymentIntentForm`, `CheckoutForm`, `EmbeddedCheckout`              | `CHECKOUT_OPTIONS`                                                           |
-| Receipts              | `PaymentReceipt`, `CheckoutStatus`                                                                       | Server-backed payment/session data                                           |
-| Earnings              | `Earnings`, `EarningsSummary`                                                                            | `earningsFromBalance`                                                        |
-| Payouts               | `Payouts`, `PayoutSchedule`                                                                              | `getPayoutTotals`                                                            |
-| Sales                 | `Sales`, `ReferredSales`                                                                                 | Server-authoritative economic rows                                           |
-| Refunds               | `Refunds`, `RefundHistory`                                                                               | `useRefunds`, `parseAmountCents`                                             |
-| Disputes              | `Disputes`, `DisputesList`, `DisputeDetail`, `EvidenceForm`, `ChargebackLedger`                          | `useDisputeResponse`                                                         |
-| Onboarding            | `Onboarding`                                                                                             | `useOnboarding`                                                              |
-| Accounts              | `Account`, `AccountConfigurations`                                                                       | `useAccountManager`                                                          |
-| Product management    | `Products`                                                                                               | `useProductManager`                                                          |
-| Subscriptions         | `Subscriptions`, `SubscriptionManager`, `SubscriptionCard`                                               | `useSubscriptionManager`, `useSubscriptionFilter`, `currentSubscriptionFrom` |
-| Billing               | `BillingPlans`, `BillingPortal`, `InvoiceEstimate`, `Invoices`, `BalancePaymentSource`                   | `usePlanBilling`, `useInvoiceEstimate`, `useBalanceFunding`                  |
-| Payment methods       | `PaymentMethods`, `PaymentMethodsList`, `AddCardForm`                                                    | `usePaymentMethodsManager`, `toPaymentMethodItem`                            |
-| Seller cost recovery  | `CostRecovery`                                                                                           | Server-calculated outstanding/collected/invoiced amounts                     |
-| Referral sharing      | `ReferralLinks`, `ClipboardButton`                                                                       | `useReferralLinks`                                                           |
-| Admin                 | `Overview`, `WebhookEvents`                                                                              | `useWebhookFilters`, `webhookQueryArgs`                                      |
-| Sandbox setup/testing | `StripeSetup`, `SandboxTesting`, `WorkflowTasks`, `WebhookSetup`, `EnvironmentStatus`, `FixtureProgress` | `useTaskRunner`, `useWebhookSetup`                                           |
-| Shared state/tables   | `IntegrationSwitch`, `Collection`                                                                        | `useWorkflowAction`, `useWorkflowResource`                                   |
+| Workflow              | Unstyled components                                                                                            | Companion hooks/helpers                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Store browsing        | `Storefront`, `PriceCard`                                                                                      | Store/product/price models and purchase callbacks                            |
+| Checkout              | `CheckoutChooser`, `Checkout`, `CheckoutElementsForm`, `PaymentIntentForm`, `CheckoutForm`, `EmbeddedCheckout` | `CHECKOUT_OPTIONS`                                                           |
+| Receipts              | `PaymentReceipt`, `CheckoutStatus`                                                                             | Server-backed payment/session data                                           |
+| Earnings              | `Earnings`, `EarningsSummary`                                                                                  | `earningsFromBalance`                                                        |
+| Payouts               | `Payouts`, `PayoutSchedule`, `PayoutHistory`, `PayoutOverview`                                                 | `getPayoutTotals`                                                            |
+| Sales                 | `Sales`, `ReferredSales`                                                                                       | Server-authoritative economic rows                                           |
+| Refunds               | `Refunds`, `RefundHistory`                                                                                     | `useRefunds`, `parseAmountCents`                                             |
+| Disputes              | `Disputes`, `DisputesList`, `DisputeDetail`, `EvidenceForm`, `ChargebackLedger`                                | `useDisputeResponse`                                                         |
+| Onboarding            | `Onboarding`                                                                                                   | `useOnboarding`                                                              |
+| Accounts              | `Account`, `AccountConfigurations`                                                                             | `useAccountManager`                                                          |
+| Product management    | `Products`                                                                                                     | `useProductManager`                                                          |
+| Subscriptions         | `Subscriptions`, `SubscriptionManager`, `SubscriptionOverview`, `SubscriptionCard`                             | `useSubscriptionManager`, `useSubscriptionFilter`, `currentSubscriptionFrom` |
+| Billing               | `BillingPlans`, `BillingPortal`, `InvoiceEstimate`, `Invoices`, `BalancePaymentSource`                         | `usePlanBilling`, `useInvoiceEstimate`, `useBalanceFunding`                  |
+| Payment methods       | `PaymentMethods`, `PaymentMethodsList`, `AddCardForm`                                                          | `usePaymentMethodsManager`, `toPaymentMethodItem`                            |
+| Seller cost recovery  | `CostRecovery`                                                                                                 | Server-calculated outstanding/collected/invoiced amounts                     |
+| Referral sharing      | `ReferralLinks`, `ClipboardButton`                                                                             | `useReferralLinks`                                                           |
+| Admin                 | `Overview`, `WebhookEvents`                                                                                    | `useWebhookFilters`, `webhookQueryArgs`                                      |
+| Sandbox setup/testing | `StripeSetup`, `SandboxTesting`, `WorkflowTasks`, `WebhookSetup`, `EnvironmentStatus`, `FixtureProgress`       | `useTaskRunner`, `useWebhookSetup`                                           |
+| Shared state/tables   | `IntegrationSwitch`, `Collection`                                                                              | `useWorkflowAction`, `useWorkflowResource`                                   |
 
 The example still owns its navigation, persona switcher, application branding,
 server authorization, sandbox fixture definitions, and marketplace fee policy.
@@ -215,3 +216,16 @@ Default markup has `data-better-stripe` attributes for scoped CSS. Use render
 props to replace markup with your design system, including labels and locale
 formatting. A render function replaces the supplied markup; render its `content`
 or `paymentElement` where those are part of the state's contract.
+
+## Example coverage
+
+See [the page audit](react-workflows-audit.md) for the mapping from every example
+page to package components and hooks. `ChargeSummary` displays server-calculated
+charge/fee/payout figures. `PaymentDetails` displays recorded charge and refund
+state. `PayoutOverview` shows payout activity totals, which are separate from the
+available and pending Stripe balances shown by `Payouts`.
+
+`DEFAULT_CONNECT_COUNTRIES` provides the example's eight country choices and is
+shared by its account pages and native `Onboarding`. Supply `countries` to limit
+or expand the UI for your platform. This default is not a complete list of
+Stripe-supported countries; your server must validate account eligibility.

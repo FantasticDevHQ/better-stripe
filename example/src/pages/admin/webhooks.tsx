@@ -1,5 +1,8 @@
 import { Fragment } from "react";
-import { useWebhookFilters } from "@fantastic.dev/better-stripe/react";
+import {
+  WebhookEvents,
+  useWebhookFilters,
+} from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -124,89 +127,95 @@ export function AdminWebhooks() {
 
       {/* Events Table */}
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Event Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Stripe Event ID</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.map((event) => (
-              <Fragment key={event._id}>
-                <TableRow
-                  key={event._id}
-                  className="cursor-pointer"
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={expandedEvent === event._id}
-                  onClick={() =>
-                    setExpandedEvent(
-                      expandedEvent === event._id ? null : event._id,
-                    )
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setExpandedEvent(
-                        expandedEvent === event._id ? null : event._id,
-                      );
-                    }
-                  }}
-                >
-                  <TableCell tone="muted" variant="identifier">
-                    {formatTimestamp(event.processedAt)}
-                  </TableCell>
-                  <TableCell variant="identifier">{event.eventType}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(event.status)}>
-                      {event.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell tone="muted" variant="identifier">
-                    {event.stripeEventId}
-                  </TableCell>
+        <WebhookEvents rows={events}>
+          {({ rows, isEmpty }) => (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>Event Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Stripe Event ID</TableHead>
                 </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((event) => (
+                  <Fragment key={event._id}>
+                    <TableRow
+                      key={event._id}
+                      className="cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedEvent === event._id}
+                      onClick={() =>
+                        setExpandedEvent(
+                          expandedEvent === event._id ? null : event._id,
+                        )
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpandedEvent(
+                            expandedEvent === event._id ? null : event._id,
+                          );
+                        }
+                      }}
+                    >
+                      <TableCell tone="muted" variant="identifier">
+                        {formatTimestamp(event.processedAt)}
+                      </TableCell>
+                      <TableCell variant="identifier">
+                        {event.eventType}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant(event.status)}>
+                          {event.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell tone="muted" variant="identifier">
+                        {event.stripeEventId}
+                      </TableCell>
+                    </TableRow>
 
-                {/* Expanded Details */}
-                {expandedEvent === event._id && (
-                  <TableRow key={`${event._id}-details`}>
-                    <TableCell colSpan={4} variant="expanded">
-                      <div className="text-muted-foreground space-y-1 text-xs">
-                        {event.lastError && (
-                          <p>
-                            <span className="font-medium">Error:</span>{" "}
-                            {event.lastError}
-                          </p>
-                        )}
-                        {event.livemode !== undefined && (
-                          <p>
-                            <span className="font-medium">Mode:</span>{" "}
-                            {event.livemode ? "Live" : "Test"}
-                          </p>
-                        )}
-                      </div>
+                    {/* Expanded Details */}
+                    {expandedEvent === event._id && (
+                      <TableRow key={`${event._id}-details`}>
+                        <TableCell colSpan={4} variant="expanded">
+                          <div className="text-muted-foreground space-y-1 text-xs">
+                            {event.lastError && (
+                              <p>
+                                <span className="font-medium">Error:</span>{" "}
+                                {event.lastError}
+                              </p>
+                            )}
+                            {event.livemode !== undefined && (
+                              <p>
+                                <span className="font-medium">Mode:</span>{" "}
+                                {event.livemode ? "Live" : "Test"}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                ))}
+                {isEmpty && (
+                  <TableRow>
+                    <TableCell colSpan={4} size="empty">
+                      <Alert>
+                        <AlertDescription className="text-center">
+                          No data found. No webhook events match the current
+                          filters.
+                        </AlertDescription>
+                      </Alert>
                     </TableCell>
                   </TableRow>
                 )}
-              </Fragment>
-            ))}
-            {events.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} size="empty">
-                  <Alert>
-                    <AlertDescription className="text-center">
-                      No data found. No webhook events match the current
-                      filters.
-                    </AlertDescription>
-                  </Alert>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              </TableBody>
+            </Table>
+          )}
+        </WebhookEvents>
       </Card>
     </div>
   );

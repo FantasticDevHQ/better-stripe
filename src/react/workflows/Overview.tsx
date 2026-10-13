@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "../lib/price-helpers.js";
 import type { ReactNode } from "react";
 export type OverviewState = {
   isLoading: boolean;
@@ -62,4 +63,61 @@ export function getPayoutTotals<
     totalEarned: totalPayouts + pendingBalance,
     recentPayouts: rows.slice(0, 3),
   };
+}
+
+export type PayoutOverviewRow = {
+  stripePayoutId: string;
+  amount?: number;
+  currency: string;
+  status: string;
+  arrivalDate?: string | null;
+};
+export type PayoutOverviewProps<
+  Row extends PayoutOverviewRow = PayoutOverviewRow,
+> = {
+  payouts: Row[] | undefined;
+  currency: string;
+  children?: (
+    state: ReturnType<typeof getPayoutTotals<Row>> & {
+      isLoading: boolean;
+      metrics: { label: string; value: string }[];
+    },
+  ) => ReactNode;
+};
+/** Payout activity totals. These amounts are not the available or pending account balance. */
+export function PayoutOverview<Row extends PayoutOverviewRow>({
+  payouts,
+  currency,
+  children,
+}: PayoutOverviewProps<Row>) {
+  const totals = getPayoutTotals(payouts, currency);
+  const state = {
+    ...totals,
+    isLoading: payouts === undefined,
+    metrics: [
+      {
+        label: "Total payouts tracked",
+        value: formatPrice(totals.totalEarned, currency),
+      },
+      {
+        label: "Upcoming payouts",
+        value: formatPrice(totals.pendingBalance, currency),
+      },
+      { label: "Paid out", value: formatPrice(totals.totalPayouts, currency) },
+    ],
+  };
+  if (children) return <>{children(state)}</>;
+  return (
+    <section data-better-stripe="payout-overview">
+      <h2>Payout activity</h2>
+      <dl>
+        {state.metrics.map((metric) => (
+          <div key={metric.label}>
+            <dt>{metric.label}</dt>
+            <dd>{state.isLoading ? "Loading…" : metric.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }

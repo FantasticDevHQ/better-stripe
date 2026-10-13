@@ -58,3 +58,25 @@ it("shows a load error with a working retry", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   await screen.findByText("No previous payouts yet.");
 });
+it("exports payout history with explicit empty/loading states and date formatting", async () => {
+  const { PayoutHistory } = await import("./Payouts.js");
+  const { rerender } = render(<PayoutHistory rows={undefined} />);
+  expect(screen.getByRole("status")).toBeTruthy();
+  rerender(<PayoutHistory rows={[]} />);
+  expect(screen.getByText("No payouts yet.")).toBeTruthy();
+  rerender(
+    <PayoutHistory
+      rows={[
+        {
+          id: "po_history",
+          amount: 900,
+          currency: "usd",
+          status: "paid",
+          arrivalDate: null,
+        },
+      ]}
+    />,
+  );
+  expect(screen.getByText("po_history")).toBeTruthy();
+  expect(screen.getByText("Not supplied by Stripe")).toBeTruthy();
+});

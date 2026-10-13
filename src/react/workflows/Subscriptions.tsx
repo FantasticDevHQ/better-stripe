@@ -242,12 +242,14 @@ export function useSubscriptionFilter<T extends { status: string }>(
     tabs: SUBSCRIPTION_FILTERS,
   };
 }
-export type SubscriptionsProps = Omit<
-  CollectionProps<SubscriptionRow>,
-  "getKey" | "columns"
-> & { columns?: WorkflowColumn<SubscriptionRow>[] };
-export function Subscriptions(props: SubscriptionsProps) {
-  const columns: WorkflowColumn<SubscriptionRow>[] = [
+export type SubscriptionsProps<Row extends SubscriptionRow = SubscriptionRow> =
+  Omit<CollectionProps<Row>, "getKey" | "columns"> & {
+    columns?: WorkflowColumn<Row>[];
+  };
+export function Subscriptions<Row extends SubscriptionRow>(
+  props: SubscriptionsProps<Row>,
+) {
+  const columns: WorkflowColumn<Row>[] = [
     {
       id: "id",
       label: "Subscription",

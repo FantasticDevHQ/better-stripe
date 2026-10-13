@@ -180,8 +180,10 @@ export type WebhookEventRow = {
   lastError?: string;
   livemode?: boolean;
 };
-export function WebhookEvents(props: ResourceCollectionProps<WebhookEventRow>) {
-  const columns: WorkflowColumn<WebhookEventRow>[] = [
+export function WebhookEvents<Row extends WebhookEventRow>(
+  props: ResourceCollectionProps<Row>,
+) {
+  const columns: WorkflowColumn<Row>[] = [
     { id: "type", label: "Type", cell: (row) => row.eventType },
     { id: "status", label: "Status", cell: (row) => row.status },
     { id: "id", label: "Event ID", cell: (row) => row.stripeEventId },

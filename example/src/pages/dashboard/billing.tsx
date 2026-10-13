@@ -18,6 +18,7 @@ import { currentSubscriptionFrom } from "@/lib/current-subscription";
 import { useRole } from "@/providers/role-context";
 import {
   useSubscriptionManager,
+  Invoices,
   BillingPortalLink,
   BuyerBillingView,
   getSubscriptionStatusLabel,
@@ -508,24 +509,31 @@ export function Billing() {
             <CardTitle>Recent Invoices</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {invoices.slice(0, 5).map((invoice) => (
-                <div
-                  key={invoice._id}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span className="text-muted-foreground break-all">
-                    {invoice.stripeInvoiceId}
-                  </span>
-                  <span className="font-medium">
-                    {formatCurrency(invoice.amountPaid ?? 0, invoice.currency)}
-                  </span>
-                  <Badge variant="outline">
-                    <span className="capitalize">{invoice.status}</span>
-                  </Badge>
+            <Invoices rows={invoices.slice(0, 5)}>
+              {({ rows }) => (
+                <div className="space-y-3">
+                  {rows.map((invoice) => (
+                    <div
+                      key={invoice.stripeInvoiceId}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="text-muted-foreground break-all">
+                        {invoice.stripeInvoiceId}
+                      </span>
+                      <span className="font-medium">
+                        {formatCurrency(
+                          invoice.amountPaid ?? 0,
+                          invoice.currency,
+                        )}
+                      </span>
+                      <Badge variant="outline">
+                        <span className="capitalize">{invoice.status}</span>
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </Invoices>
           </CardContent>
         </Card>
       )}

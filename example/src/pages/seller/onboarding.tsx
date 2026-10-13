@@ -1,3 +1,4 @@
+import { DEFAULT_CONNECT_COUNTRIES as CONNECT_COUNTRIES } from "@fantastic.dev/better-stripe/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,17 +36,6 @@ import {
 } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
-
-const CONNECT_COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-];
 
 export function SellerOnboarding({
   embedded = false,

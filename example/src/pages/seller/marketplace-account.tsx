@@ -1,3 +1,4 @@
+import { DEFAULT_CONNECT_COUNTRIES as CONNECT_COUNTRIES } from "@fantastic.dev/better-stripe/react";
 import {
   useOnboarding,
   useAccountManager,
@@ -36,17 +37,6 @@ import { useSearchParams } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
 import { selectPurchasablePrices } from "../../../convex/lib/marketplace";
-
-const CONNECT_COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "JP", name: "Japan" },
-  { code: "SG", name: "Singapore" },
-];
 
 /**
  * BTS-46 — "one V2 account, configurations accrue" lifecycle demo, distinct

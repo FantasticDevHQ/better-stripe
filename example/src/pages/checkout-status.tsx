@@ -1,3 +1,4 @@
+import { PaymentIntentReceipt } from "@/components/payment-intent-receipt";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,13 @@ export function CheckoutStatusPage() {
     api.queries.getCheckoutSessionByStripeId,
     sessionId ? { stripeSessionId: sessionId } : "skip",
   );
+
+  if (searchParams.get("payment_intent"))
+    return (
+      <PaymentIntentReceipt
+        paymentIntentId={searchParams.get("payment_intent")!}
+      />
+    );
 
   if (!sessionId) {
     return (

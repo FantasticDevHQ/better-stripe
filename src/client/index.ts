@@ -660,7 +660,7 @@ export class BetterStripe {
       orgId?: string;
       stripePriceId: string;
       mode: "payment" | "subscription" | "setup";
-      uiMode?: "embedded" | "redirect";
+      uiMode?: "embedded" | "redirect" | "custom" | "form";
       quantity?: number;
       returnUrl: string;
       trialDays?: number;

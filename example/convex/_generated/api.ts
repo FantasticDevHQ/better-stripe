@@ -12,8 +12,10 @@ import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
+import type * as checkoutExamples from "../checkoutExamples.js";
 import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
+import type * as embeddedExamples from "../embeddedExamples.js";
 import type * as http from "../http.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as lib_sandboxFixturePlan from "../lib/sandboxFixturePlan.js";
@@ -21,6 +23,7 @@ import type * as lib_sandboxFixtureResources from "../lib/sandboxFixtureResource
 import type * as lib_sellerCostLedger from "../lib/sellerCostLedger.js";
 import type * as lib_sellerCostValidators from "../lib/sellerCostValidators.js";
 import type * as lib_sellerCosts from "../lib/sellerCosts.js";
+import type * as lib_storeCheckout from "../lib/storeCheckout.js";
 import type * as lib_storePlanValidators from "../lib/storePlanValidators.js";
 import type * as lib_storePlans from "../lib/storePlans.js";
 import type * as lib_storeRecipient from "../lib/storeRecipient.js";
@@ -61,8 +64,10 @@ const fullApi: ApiFromModules<{
   adminTesting: typeof adminTesting;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
+  checkoutExamples: typeof checkoutExamples;
   e2eCheckout: typeof e2eCheckout;
   e2eMoney: typeof e2eMoney;
+  embeddedExamples: typeof embeddedExamples;
   http: typeof http;
   "lib/marketplace": typeof lib_marketplace;
   "lib/sandboxFixturePlan": typeof lib_sandboxFixturePlan;
@@ -70,6 +75,7 @@ const fullApi: ApiFromModules<{
   "lib/sellerCostLedger": typeof lib_sellerCostLedger;
   "lib/sellerCostValidators": typeof lib_sellerCostValidators;
   "lib/sellerCosts": typeof lib_sellerCosts;
+  "lib/storeCheckout": typeof lib_storeCheckout;
   "lib/storePlanValidators": typeof lib_storePlanValidators;
   "lib/storePlans": typeof lib_storePlans;
   "lib/storeRecipient": typeof lib_storeRecipient;

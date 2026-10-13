@@ -1,103 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckoutTypeExamples } from "@/components/checkout-types";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRole } from "@/providers/role-context";
-import { EmbeddedCheckout } from "@fantastic.dev/better-stripe/react";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { api } from "../../convex/_generated/api";
-import { buildCheckoutReturnUrl } from "../lib/checkout-return-url";
-
-function CheckoutForm({
-  priceId,
-  userId,
-  publishableKey,
-  referralCode,
-}: {
-  priceId: string;
-  userId?: import("../../convex/_generated/dataModel").Id<"users">;
-  referralCode?: string;
-  publishableKey: string;
-}) {
-  const createCheckout = useAction(api.actions.createCheckoutSession);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const hasInitiated = useRef(false);
-
-  const initCheckout = useCallback(async () => {
-    if (hasInitiated.current) return;
-    hasInitiated.current = true;
-    try {
-      const session = await createCheckout({
-        userId,
-        referralCode,
-        stripePriceId: priceId,
-        returnUrl: buildCheckoutReturnUrl(window.location.origin),
-      });
-      if (session?.clientSecret) {
-        setClientSecret(session.clientSecret);
-      } else {
-        setError(
-          "Failed to create checkout session. No client secret returned.",
-        );
-      }
-    } catch (err) {
-      console.error("Checkout session error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create checkout session.",
-      );
-    }
-  }, [createCheckout, userId, priceId, referralCode]);
-
-  // Kick off checkout-session creation once on mount. The `hasInitiated`
-  // ref guard inside `initCheckout` keeps it idempotent under StrictMode's
-  // double-invoked effects.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: creates the checkout session on mount
-    void initCheckout();
-  }, [initCheckout]);
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Checkout Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
-  // No onComplete handler: Stripe substitutes the real session id into
-  // return_url and redirects there itself (see buildCheckoutReturnUrl).
-  return (
-    <EmbeddedCheckout
-      publishableKey={publishableKey}
-      clientSecret={clientSecret}
-    />
-  );
-}
 
 export function Checkout() {
   const [searchParams] = useSearchParams();
   const priceId = searchParams.get("priceId");
   const referralCode = searchParams.get("ref") ?? undefined;
-  const { currentUser } = useRole();
   const publishableKey = useQuery(api.queries.getPublishableKey);
 
   if (!priceId) {
@@ -122,7 +38,7 @@ export function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Checkout</h1>
         <p className="text-muted-foreground">
@@ -147,15 +63,9 @@ export function Checkout() {
               </AlertDescription>
             </Alert>
           ) : (
-            <CheckoutForm
-              key={`${currentUser.id}:${priceId}:${referralCode ?? ""}`}
+            <CheckoutTypeExamples
               priceId={priceId}
               referralCode={referralCode}
-              userId={
-                currentUser.id
-                  ? (currentUser.id as import("../../convex/_generated/dataModel").Id<"users">)
-                  : undefined
-              }
               publishableKey={publishableKey}
             />
           )}

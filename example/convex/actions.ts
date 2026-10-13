@@ -1,14 +1,14 @@
 import {
-  amountForStripe,
-  summarizeReversalResult,
-  checkoutModeForPrice,
-} from "./lib/marketplace";
+  checkoutArgsValidator,
+  checkoutResult,
+  createStoreCheckout,
+} from "./lib/storeCheckout";
+import { amountForStripe, summarizeReversalResult } from "./lib/marketplace";
 import { v } from "convex/values";
 
 import { action, env } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
-import { isAffiliateReferral } from "./affiliateSplit";
 import {
   assertAccountOwner,
   assertDisputeOwner,
@@ -288,81 +288,9 @@ export const detachPaymentMethod = action({
 export { checkoutModeForPrice } from "./lib/marketplace";
 
 export const createCheckoutSession = action({
-  args: {
-    userId: v.optional(v.id("users")),
-    stripePriceId: v.string(),
-    referralCode: v.optional(v.string()),
-    returnUrl: v.string(),
-  },
-  returns: v.object({
-    stripeSessionId: v.string(),
-    clientSecret: v.optional(v.string()),
-    url: v.optional(v.string()),
-  }),
-  handler: async (
-    ctx,
-    args,
-  ): Promise<{
-    stripeSessionId: string;
-    clientSecret?: string;
-    url?: string;
-  }> => {
-    const price = await stripe.getPriceByStripeId(ctx, {
-      stripePriceId: args.stripePriceId,
-    });
-    if (
-      !price?.active ||
-      !Number.isSafeInteger(price.unitAmount) ||
-      price.unitAmount! <= 0
-    ) {
-      throw new Error("This price is not available for purchase.");
-    }
-    const product = await stripe.getProductByStripeId(ctx, {
-      stripeProductId: price.stripeProductId,
-    });
-    if (!product?.active)
-      throw new Error("This product is not available for purchase.");
-    const sellerAccountId = product.accountId;
-    const identity = await ctx.runQuery(
-      internal.storefront.checkoutParticipants,
-      { userId: args.userId, sellerAccountId },
-    );
-    const account = identity.userId
-      ? await ctx.runQuery(api.queries.getAccountByUserId, {
-          userId: identity.userId,
-        })
-      : null;
-    if (
-      isAffiliateReferral(args.referralCode) &&
-      sellerAccountId &&
-      !identity.affiliateAccountId
-    ) {
-      throw new Error(
-        "The affiliate account is not ready. Try a direct store purchase.",
-      );
-    }
-    return stripe.createCheckoutSession(ctx, {
-      userId: identity.userId,
-      accountId: account?.stripeAccountId,
-      customerEmail: identity.email,
-      stripePriceId: args.stripePriceId,
-      amount: price.unitAmount,
-      mode: checkoutModeForPrice(price),
-      sessionOverrides: { adaptive_pricing: { enabled: false } },
-      returnUrl: args.returnUrl,
-      uiMode: "embedded",
-      metadata: {
-        referralCode: isAffiliateReferral(args.referralCode) ? "avery" : "",
-        productName: product.name,
-        storeBilling: "sale_v1",
-        sellerId: identity.sellerId,
-        planId: identity.planId,
-        affiliateAccountId: isAffiliateReferral(args.referralCode)
-          ? identity.affiliateAccountId!
-          : "",
-      },
-    });
-  },
+  args: checkoutArgsValidator,
+  returns: checkoutResult,
+  handler: createStoreCheckout,
 });
 
 // Payouts / balance (BTS-65)

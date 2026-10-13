@@ -1,3 +1,12 @@
+import { IntegrationExamples } from "@/components/integration-examples";
+import { ConnectExample } from "@/components/connect-example";
+import {
+  ProductComponents,
+  SubscriptionComponents,
+  EarningsComponents,
+  PayoutComponents,
+  HostedBillingExample,
+} from "@/components/package-examples";
 import { AppShell } from "@/components/app-shell";
 import { AdminOverview } from "@/pages/admin/index";
 import { AdminProducts } from "@/pages/admin/products";
@@ -45,15 +54,42 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route path="/" element={<Landing />} />
           <Route path="/stores" element={<Landing />} />
-          <Route path="/affiliate" element={<Affiliate />} />
+          <Route
+            path="/affiliate"
+            element={
+              <IntegrationExamples
+                headless={<Affiliate />}
+                components={<EarningsComponents />}
+                embedded={<ConnectExample kind="balances" />}
+              />
+            }
+          />
           <Route path="/affiliate/sales" element={<AffiliateSales />} />
           <Route path="/affiliate/links" element={<AffiliateLinks />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/status" element={<CheckoutStatusPage />} />
 
           {/* BTS-42 marketplace subscription + payout demo */}
-          <Route path="/demo/subscribe" element={<StoreSubscribe />} />
-          <Route path="/demo/store-earnings" element={<StoreEarnings />} />
+          <Route
+            path="/demo/subscribe"
+            element={
+              <IntegrationExamples
+                headless={<StoreSubscribe />}
+                components={<SubscriptionComponents />}
+                note="These are your customers’ subscriptions. Connect embeds do not manage the platform’s subscription catalog."
+              />
+            }
+          />
+          <Route
+            path="/demo/store-earnings"
+            element={
+              <IntegrationExamples
+                headless={<StoreEarnings />}
+                components={<EarningsComponents />}
+                embedded={<ConnectExample kind="balances" />}
+              />
+            }
+          />
 
           {/* Marketplace demos */}
           <Route path="/marketplace/split" element={<LegacySplit />} />
@@ -63,26 +99,99 @@ export default function App() {
 
           {/* Customer routes */}
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/billing" element={<Billing />} />
-          <Route path="/dashboard/invoices" element={<Invoices />} />
+          <Route
+            path="/dashboard/billing"
+            element={
+              <IntegrationExamples
+                headless={<Billing />}
+                components={<SubscriptionComponents />}
+                hosted={<HostedBillingExample />}
+              />
+            }
+          />
+          <Route
+            path="/dashboard/invoices"
+            element={
+              <IntegrationExamples
+                headless={<Invoices />}
+                hosted={<HostedBillingExample />}
+              />
+            }
+          />
           <Route
             path="/dashboard/payment-methods"
-            element={<PaymentMethods />}
+            element={
+              <IntegrationExamples
+                headless={<PaymentMethods />}
+                hosted={<HostedBillingExample />}
+              />
+            }
           />
 
           {/* Seller routes */}
-          <Route path="/seller/sales" element={<SellerSales />} />
-          <Route path="/seller/plan" element={<SellerPlan />} />
+          <Route
+            path="/seller/sales"
+            element={
+              <IntegrationExamples
+                headless={<SellerSales />}
+                embedded={<ConnectExample kind="payments" />}
+              />
+            }
+          />
+          <Route
+            path="/seller/plan"
+            element={
+              <IntegrationExamples
+                headless={<SellerPlan />}
+                hosted={<HostedBillingExample />}
+              />
+            }
+          />
           <Route path="/seller" element={<SellerHome />} />
           <Route
             path="/seller/onboarding"
             element={<LegacyAccount section="setup" />}
           />
-          <Route path="/seller/payouts" element={<Payouts />} />
-          <Route path="/affiliate/payouts" element={<Payouts />} />
+          <Route
+            path="/seller/payouts"
+            element={
+              <IntegrationExamples
+                headless={<Payouts />}
+                components={<PayoutComponents />}
+                embedded={<ConnectExample kind="payouts" />}
+              />
+            }
+          />
+          <Route
+            path="/affiliate/payouts"
+            element={
+              <IntegrationExamples
+                headless={<Payouts />}
+                components={<PayoutComponents />}
+                embedded={<ConnectExample kind="payouts" />}
+              />
+            }
+          />
           <Route path="/seller/disputes" element={<SellerDisputes />} />
-          <Route path="/seller/refunds" element={<SellerRefunds />} />
-          <Route path="/seller/products" element={<SellerProducts />} />
+          <Route
+            path="/seller/refunds"
+            element={
+              <IntegrationExamples
+                headless={<SellerRefunds />}
+                embedded={<ConnectExample kind="refunds" />}
+              />
+            }
+          />
+          <Route
+            path="/seller/products"
+            element={
+              <IntegrationExamples
+                headless={<SellerProducts />}
+                components={<ProductComponents />}
+                note="Stripe Connect has no embedded product catalog. Compare custom catalog management with package price components."
+              />
+            }
+          />
           <Route path="/seller/account" element={<SellerAccount />} />
           <Route
             path="/seller/marketplace-account"
@@ -91,8 +200,24 @@ export default function App() {
 
           {/* Admin routes */}
           <Route path="/admin" element={<AdminOverview />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+          <Route
+            path="/admin/products"
+            element={
+              <IntegrationExamples
+                headless={<AdminProducts />}
+                components={<ProductComponents />}
+              />
+            }
+          />
+          <Route
+            path="/admin/subscriptions"
+            element={
+              <IntegrationExamples
+                headless={<AdminSubscriptions />}
+                components={<SubscriptionComponents />}
+              />
+            }
+          />
           <Route path="/admin/webhooks" element={<AdminWebhooks />} />
           <Route path="/admin/testing" element={<AdminTesting />} />
           <Route path="/admin/setup" element={<AdminSetup />} />

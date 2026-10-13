@@ -44,6 +44,14 @@ recovery. The example also demonstrates optional balance-funded subscriptions
 using Stripe's Accounts v2 preview. See the setup guide for consent requirements,
 renewal tests, and payment-recovery limitations.
 
+The example also compares headless APIs, package React components, Stripe Connect
+embeds, and hosted billing where supported. Its checkout chooser demonstrates
+Hosted Checkout, Embedded Checkout, custom Checkout Sessions with Payment Element,
+Payment Intents with Payment Element, and the preview Embedded Checkout Form,
+with pros and cons for each. `createCheckoutSession` accepts `uiMode` values
+`"redirect"`, `"embedded"`, `"custom"`, and `"form"`; the latter two map to Stripe's
+`elements` and preview `form` modes. See [the integration examples](example/README.md#compare-integration-styles).
+
 Run `pnpm run check:all` before submitting changes. It runs the build, lint,
 formatting, typechecks, codegen drift check, tests, and repository quality gates
 used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in

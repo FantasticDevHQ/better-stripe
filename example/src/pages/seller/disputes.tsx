@@ -1,3 +1,5 @@
+import { IntegrationExamples } from "@/components/integration-examples";
+import { ConnectExample } from "@/components/connect-example";
 import { SellerCosts } from "@/components/seller-costs";
 /**
  * Seller disputes page (BTS-44) — the culminating dispute demo.
@@ -24,14 +26,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDisputes, useDisputeWithCountdown } from "@/lib/dispute-hooks";
 import { useRole } from "@/providers/role-context";
 import {
-  ConnectProvider,
   DisputeDetail,
   DisputesList,
-  EmbeddedDisputes,
   EvidenceForm,
   type EvidenceFormUpdateArgs,
 } from "@fantastic.dev/better-stripe/react";
@@ -327,37 +326,6 @@ function HeadlessDisputes({
   );
 }
 
-function EmbeddedSellerDisputes({
-  stripeAccountId,
-  userId,
-}: {
-  stripeAccountId: string;
-  userId: string;
-}) {
-  const publishableKey = useQuery(api.queries.getPublishableKey);
-  const createSession = useAction(api.actions.createDisputeSession);
-
-  if (!publishableKey) {
-    return <Skeleton className="h-64 w-full" />;
-  }
-
-  return (
-    <Card size="inset" data-testid="embedded-disputes">
-      <h2 className="mb-3 text-lg font-semibold">
-        Embedded disputes (Stripe Connect)
-      </h2>
-      <ConnectProvider
-        publishableKey={publishableKey}
-        fetchClientSecret={async () =>
-          (await createSession({ userId, stripeAccountId })).clientSecret
-        }
-      >
-        <EmbeddedDisputes />
-      </ConnectProvider>
-    </Card>
-  );
-}
-
 export function SellerDisputes() {
   const { currentUser } = useRole();
   const account = useQuery(api.queries.getAccountByUserId, {
@@ -406,28 +374,15 @@ export function SellerDisputes() {
 
       <SellerCosts kind="dispute" />
 
-      <Tabs defaultValue="headless">
-        <TabsList>
-          <TabsTrigger value="headless">Headless components</TabsTrigger>
-          <TabsTrigger value="embedded">Embedded (Connect)</TabsTrigger>
-        </TabsList>
-        <TabsContent value="headless">
-          <div className="pt-4">
-            <HeadlessDisputes
-              stripeAccountId={stripeAccountId}
-              userId={currentUser.id}
-            />
-          </div>
-        </TabsContent>
-        <TabsContent value="embedded">
-          <div className="pt-4">
-            <EmbeddedSellerDisputes
-              stripeAccountId={stripeAccountId}
-              userId={currentUser.id}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <IntegrationExamples
+        headless={
+          <HeadlessDisputes
+            stripeAccountId={stripeAccountId}
+            userId={currentUser.id}
+          />
+        }
+        embedded={<ConnectExample kind="disputes" />}
+      />
     </div>
   );
 }

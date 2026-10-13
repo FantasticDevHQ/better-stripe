@@ -32,6 +32,8 @@ registerRoutes(http, components.betterStripe, {
       "customer.subscription.deleted",
     ].includes(event.type),
   onEvent: async (ctx, event) => {
+    // Marketplace settlement reads platform charges; the component already handles connected-account events.
+    if ("account" in event && event.account) return;
     if (
       "data" in event &&
       "id" in event.data.object &&

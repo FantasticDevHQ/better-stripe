@@ -36,8 +36,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 });
 const date = (time: number | null) =>
   time === null ? "Not supplied by Stripe" : dateFormatter.format(time);
-const upcomingStatus = (status: string) =>
-  status === "pending" || status === "in_transit";
 
 function PayoutTable({ payouts, empty }: { payouts: Payout[]; empty: string }) {
   return (
@@ -103,7 +101,16 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
       scopeKey={userId}
       load={(cursor) => load({ userId, cursor })}
     >
-      {({ data, error, isPending: busy, refresh, loadMore, nextPayout }) => (
+      {({
+        data,
+        error,
+        isPending: busy,
+        refresh,
+        loadMore,
+        nextPayout,
+        upcomingPayouts,
+        previousPayouts,
+      }) => (
         <div className="space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -182,7 +189,7 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
                 </CardHeader>
                 <CardContent>
                   <PayoutTable
-                    payouts={data.upcoming}
+                    payouts={upcomingPayouts}
                     empty="No upcoming payouts scheduled."
                   />
                 </CardContent>
@@ -193,9 +200,7 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
                 </CardHeader>
                 <CardContent>
                   <PayoutTable
-                    payouts={data.payouts.filter(
-                      (payout) => !upcomingStatus(payout.status),
-                    )}
+                    payouts={previousPayouts}
                     empty="No previous payouts yet."
                   />
                   {data.nextCursor && (

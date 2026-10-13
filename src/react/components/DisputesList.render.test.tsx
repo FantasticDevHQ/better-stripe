@@ -242,3 +242,24 @@ describe("DisputesList", () => {
     expect(html).not.toContain("No disputes");
   });
 });
+it.each(["won", "lost", "under_review"] as const)(
+  "hides stale evidence deadlines for %s disputes",
+  (status) => {
+    const html = renderToStaticMarkup(
+      createElement(DisputesList, {
+        disputes: [
+          makeDispute({
+            status,
+            countdown: {
+              dueBy: "2030-01-01T00:00:00Z",
+              daysRemaining: 9,
+              isOverdue: false,
+            },
+          }),
+        ],
+      }),
+    );
+    expect(html).toContain(status);
+    expect(html).not.toContain("Evidence due in");
+  },
+);

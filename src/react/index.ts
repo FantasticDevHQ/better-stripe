@@ -163,7 +163,10 @@ export type {
   DisputesListRow,
   DisputesListRowContext,
 } from "./components/DisputesList.js";
-export { DisputeDetail } from "./components/DisputeDetail.js";
+export {
+  DisputeDetail,
+  canRespondToDispute,
+} from "./components/DisputeDetail.js";
 export type {
   DisputeDetailProps,
   DisputeDetailRenderProps,

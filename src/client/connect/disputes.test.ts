@@ -73,6 +73,21 @@ describe("buildDisputeEvidence (BTS-31)", () => {
     });
   });
 
+  it("sends communication prose as text while preserving other context", () => {
+    expect(
+      buildDisputeEvidence({
+        additionalInfo: "Delivered",
+        customerCommunication: "Customer confirmed receipt",
+      }),
+    ).toEqual({
+      uncategorized_text:
+        "Delivered\n\nCustomer communication:\nCustomer confirmed receipt",
+    });
+    expect(buildDisputeEvidence({ customerCommunication: "file_123" })).toEqual(
+      { customer_communication: "file_123" },
+    );
+  });
+
   it("omits unset categories", () => {
     expect(buildDisputeEvidence({ productDescription: "X" })).toEqual({
       product_description: "X",

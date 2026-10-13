@@ -35,3 +35,16 @@ it("uses repeatable, account-scoped fixture keys and only Stripe test methods", 
     ),
   ).toBe(true);
 });
+it("waits up to five minutes for asynchronous recipient verification without retrying permanent errors", async () => {
+  const { shouldRetryFixtureStep } = await import("./lib/sandboxFixturePlan");
+  expect(
+    shouldRetryFixtureStep("Test recipient transfers are not ready yet.", 12),
+  ).toBe(true);
+  expect(
+    shouldRetryFixtureStep("Test recipient transfers are not ready yet.", 60),
+  ).toBe(false);
+  expect(
+    shouldRetryFixtureStep("Stripe's test dispute is not ready yet.", 12),
+  ).toBe(false);
+  expect(shouldRetryFixtureStep("Invalid Stripe API key", 0)).toBe(false);
+});

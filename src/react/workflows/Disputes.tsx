@@ -4,7 +4,10 @@ import {
   DisputesList,
   type DisputesListRow,
 } from "../components/DisputesList.js";
-import { DisputeDetail } from "../components/DisputeDetail.js";
+import {
+  DisputeDetail,
+  canRespondToDispute,
+} from "../components/DisputeDetail.js";
 import {
   EvidenceForm,
   type EvidenceFormUpdateArgs,
@@ -118,45 +121,51 @@ function DisputesBody(props: HeadlessDisputesProps) {
       ) : (
         <>
           <DisputeDetail dispute={detail} isLoading={!detail} />
-          {props.acceptDispute &&
-            (state.acceptStatus === "confirming" ? (
-              <div>
-                <p>
-                  Accepting permanently closes this dispute. This cannot be
-                  undone.
-                </p>
-                <button
-                  type="button"
-                  disabled={state.isPending}
-                  onClick={() => {
-                    void state.accept();
-                  }}
-                >
-                  Yes, accept dispute
-                </button>
-                <button type="button" onClick={state.cancelAccept}>
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled={state.isPending || state.acceptStatus === "accepted"}
-                onClick={state.requestAccept}
-              >
-                {state.isPending
-                  ? "Accepting…"
-                  : state.acceptStatus === "accepted"
-                    ? "Dispute accepted"
-                    : "Accept dispute"}
-              </button>
-            ))}
-          {state.acceptError && <p role="alert">{state.acceptError}</p>}
-          <EvidenceForm
-            key={state.selectedId}
-            stripeDisputeId={state.selectedId}
-            onUpdateDispute={props.onUpdateEvidence}
-          />
+          {canRespondToDispute(detail?.status) && (
+            <>
+              {props.acceptDispute &&
+                (state.acceptStatus === "confirming" ? (
+                  <div>
+                    <p>
+                      Accepting permanently closes this dispute. This cannot be
+                      undone.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={state.isPending}
+                      onClick={() => {
+                        void state.accept();
+                      }}
+                    >
+                      Yes, accept dispute
+                    </button>
+                    <button type="button" onClick={state.cancelAccept}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={
+                      state.isPending || state.acceptStatus === "accepted"
+                    }
+                    onClick={state.requestAccept}
+                  >
+                    {state.isPending
+                      ? "Accepting…"
+                      : state.acceptStatus === "accepted"
+                        ? "Dispute accepted"
+                        : "Accept dispute"}
+                  </button>
+                ))}
+              {state.acceptError && <p role="alert">{state.acceptError}</p>}
+              <EvidenceForm
+                key={state.selectedId}
+                stripeDisputeId={state.selectedId}
+                onUpdateDispute={props.onUpdateEvidence}
+              />
+            </>
+          )}
         </>
       )}
     </section>

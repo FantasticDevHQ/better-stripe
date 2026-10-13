@@ -1,6 +1,7 @@
 import type { ActionCtx } from "../_generated/server";
 import { api, internal } from "../_generated/api";
 import { FIXTURE_SELLERS, fixtureKey } from "./sandboxFixturePlan";
+import { canReceiveStorePayments } from "./storeRecipient";
 import { getStripeClient } from "./stripeClient";
 
 export async function ensure<T extends { id: string }>(
@@ -49,6 +50,19 @@ export async function fixturePayment(
   const raw = getStripeClient();
   const { sellers, customer, affiliate } = await participants(ctx);
   const seller = sellers.find((s) => s.email === email)!;
+  const recipients = [
+    seller.stripeAccountId!,
+    ...(referred ? [affiliate.stripeAccountId!] : []),
+  ];
+  for (const id of recipients) {
+    const account = await raw.v2.core.accounts.retrieve(id, {
+      include: ["configuration.recipient"],
+    });
+    if (!canReceiveStorePayments(account))
+      throw new Error(
+        "Test recipient transfers are not ready yet. Waiting for Stripe verification.",
+      );
+  }
   const key = fixtureKey(seller.stripeAccountId!, scenario);
   const payment = await ensure(
     ctx,

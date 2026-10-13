@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActionCtx } from "./_generated/server";
 import {
   ensure,
@@ -8,6 +8,7 @@ import {
 
 const stripe = vi.hoisted(() => ({
   paymentIntents: { retrieve: vi.fn(), search: vi.fn(), create: vi.fn() },
+  v2: { core: { accounts: { retrieve: vi.fn() } } },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => stripe }));
 
@@ -35,6 +36,58 @@ const users = [
 ];
 
 describe("sandbox resource retries", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    stripe.v2.core.accounts.retrieve.mockResolvedValue({
+      configuration: {
+        recipient: {
+          capabilities: {
+            stripe_balance: { stripe_transfers: { status: "active" } },
+          },
+        },
+      },
+    });
+  });
+  it.each(["seller", "affiliate"])(
+    "waits for %s transfer capabilities before creating a fixture payment",
+    async (pending) => {
+      const { ctx, runQuery, runMutation } = context();
+      runQuery.mockResolvedValueOnce(users).mockResolvedValueOnce(null);
+      stripe.paymentIntents.search.mockResolvedValue({ data: [] });
+      stripe.paymentIntents.create.mockResolvedValue({ id: "pi_unready" });
+      stripe.v2.core.accounts.retrieve.mockImplementation(
+        async (id: string) => ({
+          configuration: {
+            recipient: {
+              capabilities: {
+                stripe_balance: {
+                  stripe_transfers: {
+                    status:
+                      id ===
+                      (pending === "seller" ? "acct_maya" : "acct_affiliate")
+                        ? "pending"
+                        : "active",
+                  },
+                },
+              },
+            },
+          },
+        }),
+      );
+      await expect(
+        fixturePayment(
+          ctx,
+          "maya@example.com",
+          "sale:0",
+          10000,
+          "pm_card_visa",
+          true,
+        ),
+      ).rejects.toThrow("transfers are not ready yet");
+      expect(stripe.paymentIntents.create).not.toHaveBeenCalled();
+      expect(runMutation).not.toHaveBeenCalled();
+    },
+  );
   it("retrieves a saved resource without recovering or creating it", async () => {
     const { ctx, runQuery, runMutation } = context();
     runQuery.mockResolvedValue("pi_saved");

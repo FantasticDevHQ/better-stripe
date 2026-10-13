@@ -64,3 +64,25 @@ Connect and hosted Stripe UI remain available only where Stripe supports them.
 - Checkout tests complete referred guest purchases through all five integrations
   in a Stripe sandbox and verify webhook receipts and settlement.
 - `pnpm run check:all` enforces all repository gates, including Shadscan at 100.
+
+## Follow-up audit
+
+The final sandbox QA and follow-up audit checked every example route and its
+adapters against the public React exports. Checkout delegates through the
+session and PaymentIntent adapters. The remaining local state controls the
+app's command menu, mobile sidebar, URL parameters, or selected demo price.
+Financial actions use package workflow controllers or components.
+
+The follow-up removed payout-status filtering from the example. Both native
+`Payouts` and its render-prop example now consume the package's
+`upcomingPayouts`, `previousPayouts`, and `nextPayout`. Regression tests cover
+mixed payout statuses and arrival ordering. Dispute lists and detail views hide
+stale evidence deadlines after a dispute leaves a response-required status.
+
+Live browser checks cover reset/reseed, all persona routes, integration tabs,
+five checkout integrations, saved-card add/remove and persistence, product
+editing, subscription pause/resume, invoice estimates, balance-payment consent,
+affiliate link copying, dispute evidence, and partial/remaining-balance refunds.
+The tests use Stripe sandbox objects and await action results or webhook state.
+Native public-entry tests also render the workflows without example providers,
+CSS classes, inline styles, or example URLs.

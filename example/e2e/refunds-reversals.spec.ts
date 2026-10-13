@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
@@ -13,6 +14,8 @@ import { expect, test } from "@playwright/test";
  * Live layer: when `E2E_LIVE_BACKEND=1` points at a seeded Convex + Stripe test
  * deployment, assert the refund/reversal controls and figures render.
  */
+
+test.use({ video: "on" });
 
 const LIVE = !!process.env.E2E_LIVE_BACKEND;
 const SCREENSHOT_DIR = "/tmp/bts-example/refunds";
@@ -65,5 +68,64 @@ test.describe("live refunds and reversals UI", () => {
       path: `${SCREENSHOT_DIR}/refunds-reversals-live.png`,
       fullPage: true,
     });
+  });
+});
+
+test("seller issues a partial refund then refunds the remaining balance", async ({
+  page,
+}) => {
+  test.skip(
+    !LIVE || process.env.E2E_REFUND_SANDBOX !== "1",
+    "Requires disposable sandbox payments",
+  );
+  test.setTimeout(120000);
+  function query(name: string, args = {}) {
+    return JSON.parse(
+      execFileSync(
+        "pnpm",
+        ["exec", "convex", "run", name, JSON.stringify(args)],
+        { encoding: "utf8", timeout: 60000 },
+      ),
+    );
+  }
+  expect(query("queries:getStripeMode")).toBe("test");
+  const seller = query("users:list").find(
+    (user: { email: string }) => user.email === "maya@example.com",
+  );
+  const sales = query("storeSaleSettlement:listSellerSales", {
+    sellerId: seller._id,
+  });
+  const sale = sales.find(
+    (sale: { status: string; paymentIntentId: string }) =>
+      sale.status === "settled" &&
+      !query("queries:getPaymentByStripeId", {
+        stripePaymentIntentId: sale.paymentIntentId,
+      }).refundedAmount,
+  );
+  expect(sale).toBeTruthy();
+  await page.addInitScript((sellerId) => {
+    localStorage.setItem("betterlearn-role", "seller");
+    localStorage.setItem("betterstripe-seller", sellerId);
+  }, seller._id);
+  await page.goto(`/seller/refunds?payment_intent=${sale.paymentIntentId}`);
+  await page.getByTestId("refund-partial-amount-input").fill("1.00");
+  await page.getByTestId("refund-partial-button").click();
+  await expect(page.getByTestId("refund-result")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("refund-payment-refunded")).toContainText(
+    "$1.00",
+    { timeout: 30000 },
+  );
+  await page.getByTestId("refund-full-button").click();
+  await expect(page.getByTestId("refund-payment-refund-status")).toContainText(
+    "full",
+    { timeout: 30000 },
+  );
+  await expect(page.getByTestId("refund-history-count")).toHaveText("2");
+  await expect(page.getByTestId("refunds-error")).toHaveCount(0);
+  await page.screenshot({
+    path: test.info().outputPath("partial-and-full-refund.png"),
+    fullPage: true,
   });
 });

@@ -21,6 +21,8 @@ import { expect, test } from "@playwright/test";
  *    live run, per the standing convention.
  */
 
+test.use({ video: "on" });
+
 const LIVE = !!process.env.E2E_LIVE_BACKEND;
 
 /** The seeded seller persona whose store owns the demo disputes (BTS-41). */
@@ -58,7 +60,7 @@ test.describe("live seller disputes flow", () => {
     "Requires a seeded deployment + a triggered test dispute: E2E_LIVE_BACKEND=1 VITE_CONVEX_URL=… (see README)",
   );
 
-  test("seller opens a dispute, submits evidence, and sees reversal/auto-cancel", async ({
+  test("seller saves a draft and submits evidence to Stripe", async ({
     page,
   }) => {
     test.setTimeout(180_000);
@@ -70,7 +72,10 @@ test.describe("live seller disputes flow", () => {
     // Disputes page: the seeded/triggered dispute shows in the headless list
     // with its status and (when a deadline exists) a due-by countdown badge.
     await page.goto("/seller/disputes");
-    const firstDispute = page.locator("[data-dispute-id]").first();
+    const firstDispute = page
+      .locator("[data-dispute-id]")
+      .filter({ hasText: "needs_response" })
+      .first();
     await expect(firstDispute).toBeVisible({ timeout: 60_000 });
 
     // Open the dispute → DisputeDetail (deadline) + EvidenceForm render.
@@ -87,15 +92,53 @@ test.describe("live seller disputes flow", () => {
     ]) {
       await page.getByLabel(label).fill(`E2E evidence: ${label}.`);
     }
-    await page.getByRole("button", { name: "Submit evidence" }).click();
+    await page.getByRole("button", { name: "Save draft", exact: true }).click();
+    await expect(
+      page.getByText("Evidence draft saved", { exact: true }),
+    ).toBeVisible({ timeout: 30000 });
+    await page
+      .getByRole("button", { name: "Submit evidence", exact: true })
+      .click();
+    await expect(
+      page.getByText("Evidence submitted", { exact: true }),
+    ).toBeVisible({ timeout: 30000 });
 
     // Evidence submitted against the Stripe sandbox — no error surfaces.
-    await expect(page.getByText(/error/i)).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
 
     // Observe the downstream effects of a fraud/lost dispute: the clawback
     // reverses the funded transfer and the buyer's subscription auto-cancels.
     // These are asserted against the seller's earnings/subscriptions views,
     // which the webhook-driven ledger updates. See README for the trigger and
     // the exact assertions once a live deployment is wired.
+  });
+});
+
+test("resolved disputes keep their ledger visible without response actions", async ({
+  page,
+}) => {
+  test.skip(!LIVE, "Requires seeded sandbox disputes");
+  await page.addInitScript(SET_SELLER_ROLE);
+  await page.goto("/seller/disputes");
+  await page
+    .locator("[data-dispute-id]")
+    .filter({ hasText: "won" })
+    .first()
+    .click();
+  const detail = page.getByTestId("dispute-detail");
+  await expect(detail.getByText("won", { exact: true })).toBeVisible();
+  await expect(
+    detail.getByText("Chargeback clawback", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    detail.getByRole("button", { name: "Accept dispute", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    detail.getByRole("button", { name: "Submit evidence", exact: true }),
+  ).toHaveCount(0);
+  await expect(detail.getByText(/Evidence due in/)).toHaveCount(0);
+  await page.screenshot({
+    path: test.info().outputPath("resolved-dispute.png"),
+    fullPage: true,
   });
 });

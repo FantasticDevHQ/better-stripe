@@ -30,6 +30,7 @@ export type PayoutsRenderProps = {
   isPending: boolean;
   nextPayout: PayoutRow | undefined;
   previousPayouts: PayoutRow[];
+  upcomingPayouts: PayoutRow[];
   refresh: () => void;
   loadMore: () => Promise<void>;
 };
@@ -101,6 +102,7 @@ function PayoutsBody({ load, scopeKey, children }: HeadlessPayoutsProps) {
     isPending: resource.isLoading || more.isPending,
     error: resource.error ?? more.error,
     nextPayout: sortedUpcoming[0],
+    upcomingPayouts: sortedUpcoming,
     previousPayouts: data?.payouts.filter((row) => !upcoming(row)) ?? [],
     refresh: resource.refresh,
     loadMore,
@@ -155,6 +157,7 @@ function NativePayouts({
   error,
   nextPayout,
   previousPayouts,
+  upcomingPayouts,
   refresh,
   loadMore,
 }: PayoutsRenderProps) {
@@ -186,7 +189,7 @@ function NativePayouts({
           </dl>
           <h3>Upcoming payouts</h3>
           <PayoutHistory
-            rows={data.upcoming}
+            rows={upcomingPayouts}
             emptyLabel="No upcoming payouts scheduled."
           />
           <h3>Previous payouts</h3>

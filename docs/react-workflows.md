@@ -167,6 +167,9 @@ mounts. Setup/testing tasks call the operations you explicitly bind.
 `pending`. Payout rows include `id`, `amount`, `currency`, `status`, `arrivalDate`,
 and `created`. The component shows available and pending balances, the next
 known payout and arrival date, upcoming payouts, and paginated previous payouts.
+Render props expose `upcomingPayouts` sorted by arrival date,
+`previousPayouts`, and `nextPayout`. Use these package-owned classifications
+in custom UI; completed or failed payouts are excluded from upcoming payouts.
 If Stripe has not provided an upcoming payout, the UI says so rather than
 inventing a date.
 

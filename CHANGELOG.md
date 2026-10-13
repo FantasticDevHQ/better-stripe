@@ -14,6 +14,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.6.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.6.0...v0.6.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* complete large split reversals and keep public docs current ([#127](https://github.com/FantasticDevHQ/better-stripe/issues/127)) ([e7cc0a9](https://github.com/FantasticDevHQ/better-stripe/commit/e7cc0a9b0ea01f4993447f9d73edebe71b364081))
+
 ## [0.6.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.5.0...v0.6.0) (2026-10-12)
 
 

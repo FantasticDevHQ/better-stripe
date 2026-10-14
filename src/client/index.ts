@@ -1,3 +1,13 @@
+import type { HttpRouter } from "convex/server";
+import { registerClientRoutes } from "./previewRoutes.js";
+import {
+  resolveStripeApiVersion,
+  type SupportedStripeApiVersion,
+} from "./apiVersion.js";
+export {
+  STRIPE_CUSTOMER_PREVIEW_API_VERSION,
+  type SupportedStripeApiVersion,
+} from "./apiVersion.js";
 export type {
   CheckoutSessionReadOptions,
   SubscriptionReadOptions,
@@ -184,6 +194,7 @@ function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
 
 export class BetterStripe {
   public component: Component;
+  readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
   private _hooks?: AsyncHooks;
@@ -192,6 +203,7 @@ export class BetterStripe {
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
     this.component = component;
+    this.stripeApiVersion = resolveStripeApiVersion(options?.stripeApiVersion);
     this._apiKey = options?.STRIPE_SECRET_KEY;
     this._triggers = options?.triggers;
     this._hooks = options?.hooks;
@@ -240,8 +252,15 @@ export class BetterStripe {
     return key;
   }
 
-  private stripe(apiVersion?: string): Stripe {
-    return getStripeClient(this.apiKey, apiVersion);
+  registerRoutes(
+    http: HttpRouter,
+    config?: Parameters<typeof registerClientRoutes>[2],
+  ) {
+    return registerClientRoutes(this, http, config);
+  }
+
+  private stripe(): Stripe {
+    return getStripeClient(this.apiKey, this.stripeApiVersion);
   }
 
   // Static defaults (preserved for backwards compatibility)
@@ -1427,13 +1446,12 @@ export class BetterStripe {
 
   async createWebhookEndpoint(
     ctx: RunCtx,
-    opts: {
-      url: string;
-      description?: string;
-      enabledEvents?: string[];
-    },
+    opts: webhookEndpointsImpl.WebhookEndpointOptions,
   ): Promise<{ id: string; secret: string; url: string }> {
-    return webhookEndpointsImpl.createWebhookEndpoint(this.stripe(), ctx, opts);
+    return webhookEndpointsImpl.createWebhookEndpoint(this.stripe(), ctx, {
+      ...opts,
+      apiVersion: this.stripeApiVersion,
+    });
   }
 
   async listEventDestinations(ctx: RunCtx, opts?: { limit?: number }) {
@@ -1442,13 +1460,7 @@ export class BetterStripe {
 
   async setupEventDestination(
     ctx: RunCtx,
-    opts: {
-      url: string;
-      name?: string;
-      description?: string;
-      enabledEvents?: string[];
-      eventPayload?: "snapshot" | "thin";
-    },
+    opts: webhookEndpointsImpl.EventDestinationOptions,
   ): Promise<{
     id: string;
     secret: string;
@@ -1456,7 +1468,10 @@ export class BetterStripe {
     enabledEvents: string[];
     created: boolean;
   }> {
-    return webhookEndpointsImpl.setupEventDestination(this.stripe(), ctx, opts);
+    return webhookEndpointsImpl.setupEventDestination(this.stripe(), ctx, {
+      ...opts,
+      apiVersion: this.stripeApiVersion,
+    });
   }
 
   // WEBHOOK EVENT QUERIES

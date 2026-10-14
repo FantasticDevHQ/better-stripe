@@ -1,3 +1,4 @@
+import { STRIPE_CUSTOMER_PREVIEW_API_VERSION } from "../apiVersion.js";
 import type Stripe from "stripe";
 
 import { deriveAccountStatus } from "../core/accountStatus.js";
@@ -74,16 +75,19 @@ export async function handleV2Event(
     return null;
   }
 
-  const retrieveParams = {
-    include: [
-      "configuration.merchant",
-      "configuration.recipient",
-      "configuration.customer",
-      "identity",
-      "requirements",
-    ] satisfies NonNullable<
-      Parameters<Stripe["v2"]["core"]["accounts"]["retrieve"]>[1]
-    >["include"],
+  const retrieveParams: NonNullable<
+    Parameters<Stripe["v2"]["core"]["accounts"]["retrieve"]>[1]
+  > = {
+    include:
+      whCtx.config?.stripeApiVersion === STRIPE_CUSTOMER_PREVIEW_API_VERSION
+        ? ["configuration.customer", "identity"]
+        : [
+            "configuration.merchant",
+            "configuration.recipient",
+            "configuration.customer",
+            "identity",
+            "requirements",
+          ],
   };
   // Preserve the verified notification's account/organization context when
   // fetching the latest resource; otherwise organization keys can fetch from

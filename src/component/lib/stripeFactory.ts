@@ -1,6 +1,10 @@
 import Stripe from "stripe";
 
-import { STRIPE_API_VERSION } from "../../client/constants.js";
+import {
+  resolveStripeApiVersion,
+  type SupportedStripeApiVersion,
+} from "../../client/apiVersion.js";
+import type { StripeApiVersion } from "../../client/stripe-types.js";
 
 /**
  * Keyed cache for Stripe SDK instances.
@@ -14,14 +18,18 @@ const _clients = new Map<string, Stripe>();
 
 /**
  * Get or create a Stripe SDK instance for the given API key.
- * Uses the component's pinned API version.
+ * Defaults to GA; an explicitly selected supported preview gets its own cache entry.
  */
-export function getStripe(apiKey: string): Stripe {
-  const cacheKey = `${apiKey}:${STRIPE_API_VERSION}`;
+export function getStripe(
+  apiKey: string,
+  apiVersion?: SupportedStripeApiVersion,
+): Stripe {
+  const version = resolveStripeApiVersion(apiVersion);
+  const cacheKey = `${apiKey}:${version}`;
   let client = _clients.get(cacheKey);
   if (!client) {
     client = new Stripe(apiKey, {
-      apiVersion: STRIPE_API_VERSION,
+      apiVersion: version as StripeApiVersion,
       typescript: true,
     });
     _clients.set(cacheKey, client);

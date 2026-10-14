@@ -1,0 +1,26 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/costRecovery.test.ts (2 tests | 1 failed) 23ms
+   × uses the real component through the public recovery client without any provider key 22ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/costRecovery.test.ts > uses the real component through the public recovery client without any provider key
+TypeError: recovery.getClaim is not a function
+ ❯ src/client/costRecovery.test.ts:36:25
+     34|     revision: 1,
+     35|   });
+     36|   expect(await recovery.getClaim(ctx,{claimKey:"fee:ch_original"})).to…
+       |                         ^
+     37|   const result = await recovery.reserve(ctx, {
+     38|     ...scope,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  23:59:36
+   Duration  470ms (transform 57%, import 36%, tests 6%, worker 1%)
+

@@ -2,19 +2,19 @@
 > @fantastic.dev/better-stripe@0.11.0 check:all <repo>
 > repo-gates check-all
 
-✓ build               (0.8s)
-✓ lint                (7.3s)
+✓ build               (0.7s)
+✓ lint                (7.4s)
 ✓ check:design-system (2.1s)
 ✓ format:check        (4.4s)
-✓ typecheck           (2.6s)
+✓ typecheck           (2.5s)
 ✓ codegen:check       (0.3s)
 ✓ check:size          (0.4s)
 ✓ check:debt          (0.3s)
 ✓ check:circular      (0.4s)
-✓ check:secrets       (0.3s)
+✓ check:secrets       (0.4s)
 ✓ check:shadscan      (2.3s)
-✓ test                (32.8s)
-✓ check:coverage      (36.4s)
+✓ test                (32.0s)
+✓ check:coverage      (37.1s)
 ✓ check:agents        (0.3s)
 ✓ check:ci-parity     (0.3s)
 

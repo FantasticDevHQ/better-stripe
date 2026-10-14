@@ -1,6 +1,6 @@
 # BTS-146 durable recovery ledger verification
 
-Source 9b520e76a600c5421da5216ebc10feebcaf8f052.
+Final source ff5d1c3a265e881c8ffb22617aeaba943edf06bd. Deployed concurrency scenarios ran on 9b520e76a600c5421da5216ebc10feebcaf8f052; the follow-up adds indexed claim lookup and reconciliation guidance. The final head passed all gates/public client tests and was redeployed. A missing-claim lookup was invoked successfully on the deployment; the CLI emits no value for null.
 
 - All 15 repository gates passed in 90.9 seconds, coverage 70.9%. No gate policy, floors or budgets changed. Twelve focused tests passed, including a real component through the public client without provider I/O.
 - Real Convex component tests cover immutable source economics and scope/currency binding; stale and conflicting observations; 126 claims with an unseen credit and exact maintained totals; bounded reservations and group-wide budgets; concurrent external boundaries; replay/release/collection; source credits during and after sealing; positive/negative partial refund rollback; paginated history; and reset inclusion.

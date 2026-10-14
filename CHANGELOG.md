@@ -14,6 +14,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.9.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.8.1...v0.9.0) (2026-10-14)
+
+
+### Features
+
+* configure store pricing and affiliate commissions ([#137](https://github.com/FantasticDevHQ/better-stripe/issues/137)) ([aa7181e](https://github.com/FantasticDevHQ/better-stripe/commit/aa7181ecc23b5c38f3eb0f6480399cf5736332f6))
+
 ## [0.8.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.8.0...v0.8.1) (2026-10-13)
 
 ### Bug Fixes

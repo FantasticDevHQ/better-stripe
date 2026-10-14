@@ -9,10 +9,13 @@ function publicChangelog(source) {
       /\[([^\]]*)\]\(https?:\/\/(?:www\.)?linear\.app\/[^\s)]*\)/gi,
       "$1",
     )
+    .replace(
+      /[ \t]*\([ \t]*https?:\/\/(?:www\.)?linear\.app\/[^\s)]*[ \t]*\)/gi,
+      "",
+    )
     .replace(/https?:\/\/(?:www\.)?linear\.app\/[^\s)]*/gi, "")
     .replace(/[ \t]*\([ \t]*BTS(?:-\d+)?[ \t]*\)/gi, "")
-    .replace(/[ \t]*\bBTS(?:-\d+)?\b/gi, "")
-    .replace(/[ \t]*\([ \t]*\)/g, "");
+    .replace(/[ \t]*\bBTS(?:-\d+)?\b/gi, "");
 }
 
 export async function formatReleaseChangelog({

@@ -11,21 +11,23 @@ import { componentRef } from "../webhooks/helpers.js";
 // Price methods
 // =============================================================================
 
+export type CreatePriceOptions = {
+  stripeProductId: string;
+  unitAmount: number;
+  currency?: string;
+  type: "one_time" | "recurring";
+  interval?: "day" | "week" | "month" | "year";
+  intervalCount?: number;
+  nickname?: string;
+  metadata?: Record<string, string>;
+  idempotencyKey?: string;
+};
+
 export async function createPrice(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: {
-    stripeProductId: string;
-    unitAmount: number;
-    currency?: string;
-    type: "one_time" | "recurring";
-    interval?: "day" | "week" | "month" | "year";
-    intervalCount?: number;
-    nickname?: string;
-    metadata?: Record<string, string>;
-    idempotencyKey?: string;
-  },
+  opts: CreatePriceOptions,
 ) {
   // Validate the product exists in the component DB *before* writing to Stripe.
   // Creating the price first and throwing afterwards would orphan a price in

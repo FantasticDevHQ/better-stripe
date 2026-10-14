@@ -335,6 +335,24 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
 | `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
+### Upcoming invoice preview
+
+Authorize the customer account and subscription in your host action, then call
+`stripe.getUpcomingInvoicePreview(ctx, { customerAccount, stripeSubscriptionId })`.
+The method verifies that the subscription belongs to that account and uses your
+configured Stripe API version. It retrieves every invoice line, returns integer
+minor-unit amounts and millisecond timestamps, and preserves Stripe errors,
+including unavailable previews. Failed pagination throws instead of returning a
+partial estimate. `nextBillingAt` uses Stripe's next payment attempt, trial end,
+or earliest subscription-item renewal date, in that order.
+
+Pass the result through an authenticated callback to the React `InvoiceEstimate`
+component. It displays the provider `total` without summing line amounts. Totals
+can include discounts, tax or credits; `amountDue` can differ from `total` because
+of customer balances. Previews are estimates, not payable invoices. Application
+recovery costs and credits remain host-owned policy. See Stripe's
+[invoice preview documentation](https://docs.stripe.com/api/invoices/create_preview).
+
 ### Invoice, Payment Method, and Payout
 
 | Method                                                                               | Description                                                                                |
@@ -344,6 +362,7 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `listInvoices(ctx, { stripeAccountId?, userId?, subscriptionId?, status?, limit? })` | List invoices with optional filters                                                        |
 | `listInvoicesByUser(ctx, { userId })`                                                | List all invoices for a user                                                               |
 | `getInvoiceFromStripe(ctx, { stripeInvoiceId })`                                     | Fetch latest invoice data directly from Stripe                                             |
+| `getUpcomingInvoicePreview(ctx, { customerAccount, stripeSubscriptionId })`          | Preview the next invoice with complete lines, provider totals and millisecond dates        |
 | `listPaymentMethods(ctx, { stripeCustomerId, type? })`                               | List saved payment methods                                                                 |
 | `attachPaymentMethod(ctx, { paymentMethodId, stripeCustomerId })`                    | Attach a payment method to a customer account                                              |
 | `detachPaymentMethod(ctx, { paymentMethodId })`                                      | Detach a payment method                                                                    |

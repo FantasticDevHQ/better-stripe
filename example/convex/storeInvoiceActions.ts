@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
-import { getStripeClient } from "./lib/stripeClient";
+import { stripe } from "./stripe";
 
 export interface StoreInvoiceEstimate {
   currency: string;
@@ -38,14 +38,10 @@ export const estimate = action({
     );
     if (!seller.stripeAccountId || !seller.storePlan)
       throw new Error("Choose a store plan before estimating an invoice.");
-    const preview = await getStripeClient().invoices.createPreview({
-      customer_account: seller.stripeAccountId,
-      subscription: seller.storePlan.stripeSubscriptionId,
+    const preview = await stripe.getUpcomingInvoicePreview(ctx, {
+      customerAccount: seller.stripeAccountId,
+      stripeSubscriptionId: seller.storePlan.stripeSubscriptionId,
     });
-    if (preview.lines.has_more)
-      throw new Error(
-        "View this invoice's complete itemization in Stripe's billing portal.",
-      );
     const costs = await ctx.runQuery(api.sellerCostBilling.list, args);
     const adjustments = costs
       .filter(
@@ -66,9 +62,9 @@ export const estimate = action({
       currency: preview.currency,
       total:
         preview.total + adjustments.reduce((sum, line) => sum + line.amount, 0),
-      nextBillingAt: seller.storePlan.paidThrough,
+      nextBillingAt: preview.nextBillingAt,
       lines: [
-        ...preview.lines.data.map((line) => ({
+        ...preview.lines.map((line) => ({
           id: line.id,
           description: line.description ?? "Store subscription",
           amount: line.amount,

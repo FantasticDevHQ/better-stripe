@@ -4,8 +4,8 @@ import { convexTest } from "convex-test";
 import { expect, it, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
-const raw = vi.hoisted(() => ({ invoices: { createPreview: vi.fn() } }));
-vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
+const preview = vi.hoisted(() => vi.fn());
+vi.mock("./stripe", () => ({ stripe: { getUpcomingInvoicePreview: preview } }));
 const modules = import.meta.glob("./**/*.*s");
 it("itemizes outstanding costs and credits without adding already-invoiced costs twice", async () => {
   const t = convexTest(schema, modules);
@@ -56,13 +56,11 @@ it("itemizes outstanding costs and credits without adding already-invoiced costs
     amountDue: -50,
     sourceType: "dispute",
   });
-  raw.invoices.createPreview.mockResolvedValue({
+  preview.mockResolvedValue({
     currency: "usd",
     total: 4900,
-    lines: {
-      has_more: false,
-      data: [{ id: "il_plan", description: "Growth monthly", amount: 4900 }],
-    },
+    nextBillingAt: 1794551000000,
+    lines: [{ id: "il_plan", description: "Growth monthly", amount: 4900 }],
   });
   const invoice = await t.action(api.storeInvoiceActions.estimate, {
     sellerId,
@@ -72,8 +70,8 @@ it("itemizes outstanding costs and credits without adding already-invoiced costs
   expect(
     invoice.lines.map((line) => line.amount).sort((a, b) => a - b),
   ).toEqual([-50, 100, 4900]);
-  expect(raw.invoices.createPreview).toHaveBeenCalledWith({
-    customer_account: "acct_store",
-    subscription: "sub_store",
+  expect(preview).toHaveBeenCalledWith(expect.anything(), {
+    customerAccount: "acct_store",
+    stripeSubscriptionId: "sub_store",
   });
 });

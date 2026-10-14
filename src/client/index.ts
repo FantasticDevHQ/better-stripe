@@ -1,3 +1,8 @@
+import * as invoicePreviewImpl from "./billing/invoicePreview.js";
+export type {
+  UpcomingInvoicePreview,
+  UpcomingInvoicePreviewOptions,
+} from "./billing/invoicePreview.js";
 import type { HttpRouter } from "convex/server";
 import { registerClientRoutes } from "./previewRoutes.js";
 import {
@@ -495,17 +500,7 @@ export class BetterStripe {
 
   // PRODUCT METHODS
 
-  async createProduct(
-    ctx: RunCtx,
-    opts: {
-      name: string;
-      description?: string;
-      active?: boolean;
-      accountId?: string;
-      metadata?: Record<string, string>;
-      idempotencyKey?: string;
-    },
-  ) {
+  async createProduct(ctx: RunCtx, opts: productsImpl.CreateProductOptions) {
     return productsImpl.createProduct(this.stripe(), this.component, ctx, {
       ...opts,
       // Stamp the per-store descriptor at create so it covers the first invoice
@@ -583,20 +578,7 @@ export class BetterStripe {
 
   // PRICE METHODS
 
-  async createPrice(
-    ctx: RunCtx,
-    opts: {
-      stripeProductId: string;
-      unitAmount: number;
-      currency?: string;
-      type: "one_time" | "recurring";
-      interval?: "day" | "week" | "month" | "year";
-      intervalCount?: number;
-      nickname?: string;
-      metadata?: Record<string, string>;
-      idempotencyKey?: string;
-    },
-  ) {
+  async createPrice(ctx: RunCtx, opts: pricesImpl.CreatePriceOptions) {
     return pricesImpl.createPrice(this.stripe(), this.component, ctx, opts);
   }
 
@@ -1042,6 +1024,14 @@ export class BetterStripe {
 
   async getStripeMode(ctx: RunCtx): Promise<StripeMode> {
     return configImpl.getStripeMode(this.component, ctx);
+  }
+
+  /** Authorize the customer in the host; validates subscription ownership. */
+  async getUpcomingInvoicePreview(
+    _ctx: RunCtx,
+    opts: invoicePreviewImpl.UpcomingInvoicePreviewOptions,
+  ) {
+    return invoicePreviewImpl.getUpcomingInvoicePreview(this.stripe(), opts);
   }
 
   async getInvoiceFromStripe(ctx: RunCtx, opts: { stripeInvoiceId: string }) {

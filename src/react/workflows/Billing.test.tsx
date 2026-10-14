@@ -34,7 +34,7 @@ it("loads an itemized estimate only when requested and displays the server total
     nextBillingAt: 1800000000000,
     lines: [
       { id: "plan", description: "Store plan", amount: 2900 },
-      { id: "cost", description: "Refund costs", amount: 800 },
+      { id: "cost", description: "Refund costs", amount: 700 },
     ],
   });
   render(<InvoiceEstimate scopeKey="seller" load={load} />);

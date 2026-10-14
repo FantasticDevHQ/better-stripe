@@ -1,0 +1,294 @@
+
+> @fantastic.dev/better-stripe@0.10.1 check:coverage <repo>
+> repo-gates check-coverage
+
+
+> @fantastic.dev/better-stripe@0.10.1 test:coverage <repo>
+> vitest run --coverage
+
+
+ RUN  v5.0.3 <repo>
+      Coverage enabled with v8
+
+
+ Test Files  196 passed (196)
+      Tests  1750 passed (1750)
+   Start at  20:15:11
+   Duration  134.34s (environment 43%, import 19%, transform 17%, tests 16%, worker 4%, setup 2%)
+
+    Isolate  196 workers spawned · ~641ms startup each (spawn + environment, per file)
+             at least ~62.14s faster with isolate: false — reuses workers across files instead of one per file
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   69.11 |    61.49 |   62.75 |   69.74 |                   
+ example/convex    |   61.43 |    58.01 |   60.82 |   61.98 |                   
+  actions.ts       |   62.69 |    16.66 |   34.09 |   62.69 | ...47,663-672,696 
+  adminTesting.ts  |     100 |    95.65 |     100 |     100 | 352               
+  ...teDefaults.ts |      80 |     92.2 |   88.88 |   83.78 | 92-95,125,128     
+  ...liateSplit.ts |     100 |     87.5 |     100 |     100 | 78                
+  authz.ts         |   95.45 |    93.87 |     100 |     100 | 140,224,268       
+  ...utExamples.ts |      64 |    53.57 |      50 |   69.56 | 20-25,49,77,102   
+  convex.config.ts |       0 |      100 |     100 |       0 | 9-17              
+  e2eCheckout.ts   |       0 |        0 |       0 |       0 | 9-110             
+  e2eMoney.ts      |   27.27 |     8.57 |   26.66 |   28.33 | ...71-386,415-430 
+  ...edExamples.ts |   58.62 |    58.82 |     100 |   58.62 | ...0,46-68,83-107 
+  http.ts          |       0 |        0 |       0 |       0 | 7-59              
+  marketplace.ts   |   84.28 |    72.97 |      80 |   84.12 | ...26,363,395-413 
+  queries.ts       |    79.2 |    80.95 |   56.09 |   79.38 | ...20,280,290,299 
+  ...entPayouts.ts |    92.3 |    83.33 |     100 |    92.3 | 14                
+  reset.ts         |      70 |      100 |   33.33 |      70 | 49-53,65-67       
+  ...xtureState.ts |    97.5 |    89.65 |    90.9 |   97.43 | 34                
+  ...oxFixtures.ts |       0 |        0 |       0 |       0 | 21-569            
+  ...oxRenewals.ts |       0 |        0 |       0 |       0 | 16-584            
+  seed.ts          |   76.12 |    71.66 |   95.23 |   75.86 | ...19,546-577,599 
+  ...liateRates.ts |   93.33 |    95.89 |     100 |   93.18 | 43,54,57          
+  ...ostActions.ts |   71.79 |     65.3 |      30 |   74.32 | ...45,176-191,213 
+  ...ostBilling.ts |   93.61 |    84.61 |     100 |   93.02 | 24,57,79          
+  setup.ts         |       0 |        0 |       0 |       0 | 20-47             
+  ...nceActions.ts |   80.95 |    68.88 |     100 |   87.17 | 30,52,62,64,97    
+  ...nceFunding.ts |   94.44 |    66.66 |     100 |   94.44 | 34                
+  ...lingEvents.ts |      26 |       16 |      50 |   26.53 | 12,28-86,95-105   
+  ...iceActions.ts |   86.66 |    66.66 |     100 |   86.66 | 40,46             
+  ...lanActions.ts |   50.54 |    53.48 |      50 |    50.6 | ...35-241,248-307 
+  ...lanBilling.ts |      90 |    73.33 |     100 |   92.85 | 22,97             
+  ...lanPricing.ts |      95 |    94.36 |     100 |   94.54 | 61,114,190        
+  ...Settlement.ts |   84.44 |    76.74 |   88.88 |   85.88 | ...50,295-305,330 
+  storefront.ts    |   42.85 |    53.12 |   23.52 |   46.66 | ...12,121,155-177 
+ ...ple/convex/lib |   93.33 |    90.71 |   95.55 |   94.24 |                   
+  ...eResources.ts |   97.14 |    95.65 |    92.3 |   96.55 | 71                
+  ...CostLedger.ts |    92.3 |       50 |     100 |     100 | 25                
+  sellerCosts.ts   |    92.3 |    84.21 |     100 |    92.3 | 13,33             
+  storeCheckout.ts |   83.33 |    82.35 |     100 |   83.33 | 46,62,74          
+  storePlans.ts    |    90.9 |    95.23 |     100 |      95 | 66                
+  stripeClient.ts  |       0 |      100 |       0 |       0 | 4                 
+ example/src       |       0 |      100 |       0 |       0 |                   
+  App.tsx          |       0 |      100 |       0 |       0 | 40-51             
+  main.tsx         |       0 |      100 |     100 |       0 | 14-16             
+ ...src/components |   78.66 |    68.48 |   80.83 |    78.6 |                   
+  ...t-control.tsx |   69.56 |    70.96 |   66.66 |   76.19 | 59,90-104,161,213 
+  ...providers.tsx |   95.23 |    67.85 |     100 |   94.73 | 29                
+  app-shell.tsx    |       0 |        0 |       0 |       0 | 11-14             
+  ...rm-fields.tsx |       0 |        0 |       0 |       0 | 7-23              
+  ...out-frame.tsx |       0 |        0 |       0 |       0 | 17-41             
+  ...out-types.tsx |   86.66 |    80.76 |     100 |   86.66 | 29,31             
+  ...t-example.tsx |       0 |        0 |       0 |       0 | 15-84             
+  ...-examples.tsx |     100 |       80 |     100 |     100 | 51                
+  nav-sidebar.tsx  |   89.47 |     87.5 |   85.71 |   88.88 | 23,132            
+  ...-examples.tsx |     100 |    75.43 |     100 |     100 | ...28-151,199,241 
+  ...-checkout.tsx |       0 |        0 |       0 |       0 | 17-36             
+  ...t-receipt.tsx |       0 |        0 |       0 |       0 | 12-18             
+  ...-switcher.tsx |    90.9 |       80 |     100 |    90.9 | 39                
+  seller-costs.tsx |     100 |    78.57 |     100 |     100 | 13-17,45          
+  ...-checkout.tsx |       0 |        0 |       0 |       0 | 22-47             
+  ...-controls.tsx |     100 |     87.5 |     100 |     100 | 18                
+  ...-estimate.tsx |     100 |    92.85 |     100 |     100 | 20                
+  ...nt-source.tsx |     100 |    94.11 |     100 |     100 | 36                
+  ...low-table.tsx |     100 |       75 |     100 |     100 | 55-62,75          
+ .../components/ui |   62.06 |    69.38 |   54.16 |   62.06 |                   
+  alert.tsx        |      80 |      100 |      75 |      80 | 67                
+  card.tsx         |      75 |    82.35 |   71.42 |      75 | 79,114            
+  dialog.tsx       |       0 |        0 |       0 |       0 | 9-134             
+  label.tsx        |       0 |        0 |       0 |       0 | 10                
+  select.tsx       |      40 |      100 |   33.33 |      40 | 12,105-177        
+  table.tsx        |      80 |    72.72 |      75 |      80 | 41,125            
+ example/src/lib   |   77.27 |      100 |   83.33 |   73.68 |                   
+  dispute-hooks.ts |       0 |      100 |     100 |       0 | 18-24             
+  ...navigation.ts |    92.3 |      100 |      50 |      90 | 43                
+  stripe-hooks.ts  |       0 |      100 |     100 |       0 | 16-21             
+ example/src/pages |   14.49 |    19.54 |   23.33 |   14.92 |                   
+  affiliate.tsx    |   31.25 |    48.57 |   38.88 |   32.25 | 25,132-257        
+  ...ut-status.tsx |       0 |        0 |       0 |       0 | 16-123            
+  checkout.tsx     |       0 |        0 |       0 |       0 | 14-40             
+  landing.tsx      |       0 |        0 |       0 |       0 | 19-84             
+ ...rc/pages/admin |       0 |        0 |       0 |       0 |                   
+  ...ingActions.ts |       0 |      100 |     100 |       0 | 8                 
+  index.tsx        |       0 |        0 |       0 |       0 | 17-108            
+  products.tsx     |       0 |        0 |       0 |       0 | 42-539            
+  setup.tsx        |       0 |        0 |       0 |       0 | 40-500            
+  store-plans.tsx  |       0 |        0 |       0 |       0 | 24-165            
+  ...criptions.tsx |       0 |        0 |       0 |       0 | 26-102            
+  testing.tsx      |       0 |        0 |       0 |       0 | 35-288            
+  webhooks.tsx     |       0 |        0 |       0 |       0 | 36-158            
+ ...ages/dashboard |       0 |        0 |       0 |       0 |                   
+  billing.tsx      |       0 |        0 |       0 |       0 | 34-560            
+  index.tsx        |       0 |        0 |       0 |       0 | 14-49             
+  invoices.tsx     |       0 |        0 |       0 |       0 | 9-30              
+  ...t-methods.tsx |       0 |        0 |       0 |       0 | 25-161            
+ ...src/pages/demo |       0 |        0 |       0 |       0 |                   
+  allocation.tsx   |       0 |      100 |       0 |       0 | 4-52              
+  ...on-charge.tsx |       0 |        0 |       0 |       0 | 16-223            
+  ...-earnings.tsx |       0 |        0 |       0 |       0 | 28-179            
+  subscribe.tsx    |       0 |        0 |       0 |       0 | 11-43             
+ ...es/marketplace |       0 |        0 |       0 |       0 |                   
+  split.tsx        |       0 |        0 |       0 |       0 | 52-184            
+ ...c/pages/seller |       0 |        0 |       0 |       0 |                   
+  account.tsx      |       0 |        0 |       0 |       0 | 29-188            
+  disputes.tsx     |       0 |        0 |       0 |       0 | 55-322            
+  index.tsx        |       0 |        0 |       0 |       0 | 24-151            
+  ...e-account.tsx |       0 |        0 |       0 |       0 | 52-518            
+  onboarding.tsx   |       0 |        0 |       0 |       0 | 43-300            
+  payouts.tsx      |       0 |        0 |       0 |       0 | 27-251            
+  plan.tsx         |       0 |        0 |       0 |       0 | 18-131            
+  products.tsx     |       0 |        0 |       0 |       0 | 47-551            
+  refunds.tsx      |       0 |        0 |       0 |       0 | 32-398            
+  sales.tsx        |       0 |        0 |       0 |       0 | 10-36             
+ .../src/providers |   86.48 |    73.07 |      84 |   89.85 |                   
+  app-theme.tsx    |     100 |    71.42 |     100 |     100 | 15,38-40          
+  role-context.tsx |   78.04 |       75 |   71.42 |   82.05 | ...22-123,125-143 
+  use-theme.ts     |      80 |       50 |     100 |     100 | 11                
+ src               |       0 |      100 |       0 |       0 |                   
+  test.ts          |       0 |      100 |       0 |       0 | 5                 
+ src/client        |    65.1 |    83.33 |   49.34 |   64.93 |                   
+  index.ts         |    59.2 |    73.91 |   46.15 |    59.5 | ...1610,1714,1730 
+  previewRoutes.ts |     100 |    83.33 |     100 |     100 | 12                
+ ...client/billing |   97.53 |    95.43 |   98.18 |   97.47 |                   
+  checkout.ts      |   98.93 |    97.39 |     100 |    98.9 | 96                
+  ...ionRouting.ts |    62.5 |       60 |     100 |    62.5 | 18-22             
+  subscriptions.ts |   98.43 |    96.33 |   97.22 |   98.41 | 126,490           
+ ...client/connect |    93.8 |    87.63 |   90.69 |   93.27 |                   
+  disputes.ts      |   93.02 |    91.48 |    87.5 |    92.3 | 69-70,184         
+  ...entMethods.ts |   85.71 |      100 |      80 |   85.71 | 27                
+  ...utSnapshot.ts |   90.32 |    93.02 |     100 |   89.28 | 51,95,125         
+  payouts.ts       |   94.44 |    91.66 |      80 |   93.75 | 89                
+  refunds.ts       |   94.44 |    83.33 |      75 |   94.28 | 200,235           
+  transfers.ts     |   94.79 |    82.71 |     100 |   94.38 | 80-88,196,305,424 
+ src/client/core   |   98.86 |    92.64 |     100 |   98.81 |                   
+  accountStatus.ts |   97.05 |     87.5 |     100 |   96.77 | 55                
+  accounts.ts      |     100 |    93.33 |     100 |     100 | ...70,450,526,583 
+  fees.ts          |   97.36 |    91.66 |     100 |   97.29 | 200,258           
+ ...lient/products |    93.2 |    86.45 |      95 |   96.77 |                   
+  prices.ts        |   93.93 |    90.62 |     100 |     100 | 67,92-93          
+  products.ts      |   92.85 |    84.37 |    90.9 |   95.31 | 129,183,325       
+ ...ent/settlement |   85.78 |    85.13 |      96 |   86.18 |                   
+  allocation.ts    |   94.87 |    91.89 |     100 |   94.73 | 44,75             
+  commissions.ts   |   82.05 |    73.33 |     100 |   83.78 | ...94,101,119-120 
+  execution.ts     |      96 |    95.45 |     100 |   95.83 | 101               
+  ...nciliation.ts |   78.78 |    83.72 |    87.5 |   76.66 | ...-32,59,106-111 
+  settleSale.ts    |      80 |    77.77 |     100 |   88.88 | 46                
+  verifiedSale.ts  |   81.81 |    87.87 |     100 |   81.39 | ...92,101,133,154 
+ src/client/utils  |     100 |    94.11 |     100 |     100 |                   
+  owner.ts         |     100 |     90.9 |     100 |     100 | 28                
+  ...kEndpoints.ts |     100 |    93.05 |     100 |     100 | 259-269           
+ ...lient/webhooks |   95.02 |    82.11 |     100 |   96.86 |                   
+  handler.ts       |   97.89 |       85 |     100 |   97.87 | 155,286           
+  helpers.ts       |   97.22 |    91.07 |     100 |     100 | ...51,258-260,295 
+  processors.ts    |   92.46 |    78.05 |     100 |   95.05 | ...19,834-840,846 
+  v2.ts            |     100 |    97.43 |     100 |     100 | 130               
+ src/component     |       0 |      100 |     100 |       0 |                   
+  convex.config.ts |       0 |      100 |     100 |       0 | 4                 
+ ...ponent/billing |   90.38 |    85.89 |   89.13 |   92.56 |                   
+  mutations.ts     |   92.59 |       70 |     100 |   92.59 | 47,149            
+  queries.ts       |   88.79 |    88.23 |   87.17 |   91.66 | ...52-356,369-372 
+ ...ponent/connect |   96.67 |     90.9 |    97.4 |   97.47 |                   
+  mutations.ts     |   96.62 |    89.36 |     100 |   97.24 | 273,375,568,592   
+  queries.ts       |   96.05 |    92.47 |   95.45 |   97.16 | 85-89,444         
+ ...component/core |   89.39 |    84.61 |      85 |   89.06 |                   
+  mutations.ts     |   84.21 |       75 |      80 |   83.78 | 69-83             
+  queries.ts       |   95.23 |      100 |      90 |      95 | 14                
+ src/component/lib |     100 |    94.73 |     100 |     100 |                   
+  reversals.ts     |     100 |    97.05 |     100 |     100 | 74                
+  stripeFactory.ts |     100 |       50 |     100 |     100 | 30                
+ ...onent/products |   83.07 |       75 |      80 |   83.07 |                   
+  mutations.ts     |   92.85 |       75 |     100 |   92.85 | 29                
+  queries.ts       |   76.74 |       75 |      75 |   76.74 | ...11,117-120,132 
+ ...ent/settlement |   88.46 |     92.1 |   85.71 |   90.19 |                   
+  mutations.ts     |   97.22 |    97.22 |     100 |   97.22 | 25                
+  queries.ts       |      50 |        0 |      50 |   55.55 | 24-31             
+ ...onent/webhooks |     100 |     87.5 |     100 |     100 |                   
+  mutations.ts     |     100 |    78.57 |     100 |     100 | 91-143            
+ ...act/components |   49.42 |    49.57 |   42.99 |   49.75 |                   
+  ...oseButton.tsx |    9.09 |        0 |       0 |      10 | 56-81             
+  ...CloseCard.tsx |    12.5 |        0 |       0 |    12.5 | 49-72             
+  ...ateButton.tsx |      10 |        0 |       0 |   11.11 | 50-73             
+  ...reateCard.tsx |      10 |        0 |       0 |      10 | 63-114            
+  ...ginButton.tsx |   11.11 |        0 |       0 |   11.11 | 42-64             
+  ...LoginCard.tsx |    12.5 |        0 |       0 |    12.5 | 53-83             
+  ...ingButton.tsx |      10 |        0 |       0 |   11.11 | 50-73             
+  ...rdingCard.tsx |   83.33 |       40 |     100 |   83.33 | 86                
+  AddCardForm.tsx  |    3.57 |        0 |       0 |    3.84 | 30-67             
+  ...ortalLink.tsx |    4.16 |        0 |       0 |    4.16 | 35-83             
+  ...llingView.tsx |      90 |     92.1 |   71.42 |   89.47 | 180-182           
+  ...nProvider.tsx |   16.66 |        0 |       0 |   16.66 | 48-65             
+  ...erWithKey.tsx |      10 |        0 |       0 |      10 | 52-89             
+  ...outStatus.tsx |    12.5 |        0 |       0 |    12.5 | 41-69             
+  ...tProvider.tsx |     100 |    91.66 |     100 |     100 | 64                
+  ...uirements.tsx |    6.25 |        0 |       0 |    6.66 | 58-154            
+  ...atusBadge.tsx |   33.33 |        0 |       0 |      40 | 47-52             
+  ...hodDialog.tsx |   14.28 |        0 |       0 |   16.66 | 41-49             
+  DisputesList.tsx |     100 |    92.85 |     100 |     100 | 47,67             
+  ...gsSummary.tsx |     100 |    96.42 |     100 |     100 | 89                
+  EvidenceForm.tsx |   87.09 |     87.5 |    62.5 |   92.85 | 108,158           
+  ...lSelector.tsx |    12.5 |        0 |       0 |   16.66 | 31-38             
+  ...odActions.tsx |      20 |        0 |       0 |      20 | 41-54             
+  ...thodsList.tsx |   11.11 |        0 |       0 |   11.11 | 49-72             
+  ...tSchedule.tsx |     100 |    86.04 |     100 |     100 | 88,93,96,120-121  
+  PriceCard.tsx    |   83.33 |      100 |      50 |   83.33 | 75                
+  PricePicker.tsx  |    9.09 |        0 |       0 |    9.09 | 47-83             
+  ...Breakdown.tsx |     100 |       96 |     100 |     100 | 74                
+  ...eProvider.tsx |   28.57 |      100 |      25 |   28.57 | 60-75             
+  ...erWithKey.tsx |    7.69 |        0 |       0 |    7.69 | 27-83             
+  ...onActions.tsx |   88.88 |    89.47 |     100 |   88.88 | 62                
+  ...ptionCard.tsx |   85.71 |       90 |     100 |   85.71 | 72                
+  ...LineItems.tsx |    9.09 |        0 |       0 |   11.11 | 33-50             
+ src/react/hooks   |   40.21 |     50.9 |   63.04 |    40.1 |                   
+  ...outSession.ts |    6.25 |        0 |       0 |    6.25 | 7-106             
+  ...irmPayment.ts |       4 |        0 |       0 |       4 | 30-104            
+  ...hodActions.ts |    1.69 |        0 |       0 |    1.69 | 69-202            
+  ...entMethods.ts |   83.33 |      100 |   66.66 |     100 |                   
+  ...ripeConfig.ts |   16.66 |        0 |       0 |   16.66 | 19-30             
+  ...bscription.ts |   71.42 |     87.5 |     100 |   71.42 | 45-46             
+  ...scriptions.ts |   16.66 |        0 |       0 |   16.66 | 15-27             
+ src/react/lib     |     100 |    96.29 |     100 |     100 |                   
+  ...ement-keys.ts |     100 |    85.71 |     100 |     100 | 65                
+  price-helpers.ts |     100 |    95.45 |     100 |     100 | 67                
+ ...eact/workflows |   77.38 |    66.81 |   75.76 |    81.3 |                   
+  Account.tsx      |   53.48 |    43.47 |   43.75 |   60.52 | ...87,109,127-177 
+  ...outEditor.tsx |   92.85 |    80.32 |      95 |   97.22 | 144               
+  ...ateEditor.tsx |    91.3 |     82.6 |     100 |     100 | 33-38,62-68       
+  Billing.tsx      |   70.45 |       64 |   77.77 |   78.37 | ...66,187-191,206 
+  BillingPlans.tsx |   55.55 |       55 |      60 |      60 | ...5-57,87,96,112 
+  Checkout.tsx     |   89.28 |    90.24 |   71.42 |    92.3 | 78,139            
+  ...utChooser.tsx |     100 |    78.57 |     100 |     100 | 29,68-69          
+  ...koutForms.tsx |   88.23 |    71.66 |   94.44 |    87.5 | ...39,250,252,257 
+  ...ardButton.tsx |      90 |    83.33 |   83.33 |   94.44 | 23                
+  Collection.tsx   |   85.71 |     87.5 |     100 |     100 | 50-51             
+  Collections.tsx  |   82.05 |    62.85 |   78.78 |   82.05 | 187-202,209       
+  Connect.tsx      |      70 |       50 |   71.42 |   68.42 | 85-89,98-99       
+  Costs.tsx        |   65.21 |       76 |      50 |   66.66 | 77-98,112,128     
+  Disputes.tsx     |   78.12 |       55 |   76.92 |   82.14 | 36,65-66,99,137   
+  Earnings.tsx     |   92.85 |    58.82 |     100 |   92.85 | 54                
+  Financials.tsx   |   88.23 |       80 |     100 |   92.85 | 36                
+  ...ionSwitch.tsx |   90.47 |    81.81 |     100 |     100 | 40-45             
+  Onboarding.tsx   |   62.79 |    58.18 |      60 |   66.66 | ...20-129,148-160 
+  Overview.tsx     |    92.3 |    69.23 |     100 |     100 | ...4,53-56,59-117 
+  Pagination.tsx   |   95.23 |    83.33 |     100 |     100 | 69-75             
+  ...ntMethods.tsx |   60.86 |    33.33 |      50 |      65 | 57-111            
+  ...ntReceipt.tsx |   83.33 |    91.66 |     100 |     100 | 38                
+  Payouts.tsx      |   97.36 |    89.28 |     100 |     100 | 47,81-83,95,108   
+  ...ingEditor.tsx |   88.88 |    85.71 |     100 |   93.54 | 54,59             
+  Products.tsx     |   60.91 |    58.82 |   56.75 |   61.72 | ...75,314,343-364 
+  ...rralLinks.tsx |   78.57 |    68.42 |   83.33 |   84.61 | 7,35              
+  Refunds.tsx      |      75 |    66.66 |   66.66 |      75 | ...03,161,185-209 
+  Setup.tsx        |      50 |       25 |   66.66 |   57.89 | 39-58,138-153     
+  Storefront.tsx   |   91.66 |    62.96 |     100 |     100 | ...,97-98,105-115 
+  ...nOverview.tsx |    90.9 |    92.85 |     100 |     100 | 32                
+  ...criptions.tsx |   55.71 |    54.41 |   42.85 |   63.33 | ...49-214,232-241 
+  Tasks.tsx        |      70 |    63.63 |   52.94 |   81.81 | ...01-114,149-185 
+  filters.ts       |   33.33 |      100 |      50 |   33.33 | 10-13             
+  ...flowAction.ts |   97.67 |    78.94 |     100 |     100 | 35-43,60-64       
+  ...owResource.ts |     100 |    92.85 |     100 |     100 | 53                
+ src/testing       |      50 |    21.42 |      60 |      50 |                   
+  fixtures.ts      |       0 |        0 |       0 |       0 | 17-90             
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 69.11% ( 5210/7538 )
+Branches     : 61.49% ( 4281/6961 )
+Functions    : 62.75% ( 1365/2175 )
+Lines        : 69.74% ( 4942/7086 )
+================================================================================
+Coverage OK — 1 package(s) meet their floor; lowest lines: coverage/coverage-summary.json 69.74%
+SCORE: coverage — lowest coverage/coverage-summary.json 69.7% lines (1 pkgs ≥ floor)

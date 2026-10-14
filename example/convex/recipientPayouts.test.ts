@@ -8,7 +8,18 @@ const raw = vi.hoisted(() => ({
   balance: { retrieve: vi.fn() },
   payouts: { list: vi.fn() },
 }));
-vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
+vi.mock("./stripe", async () => {
+  const { getPayoutSnapshot } =
+    await import("../../src/client/connect/payoutSnapshot");
+  return {
+    stripe: {
+      getPayoutSnapshot: (
+        _ctx: unknown,
+        opts: { stripeAccountId: string; cursor?: string },
+      ) => getPayoutSnapshot(raw as unknown as import("stripe").default, opts),
+    },
+  };
+});
 const modules = import.meta.glob("./**/*.*s");
 beforeEach(() => {
   vi.resetAllMocks();

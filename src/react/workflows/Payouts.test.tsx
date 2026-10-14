@@ -110,3 +110,36 @@ it("keeps completed payouts out of upcoming and sorts the remaining arrivals", a
   );
   expect(screen.getAllByText("po_paid")).toHaveLength(1);
 });
+it("distinguishes an unavailable account from an empty balance and labels upcoming previews", async () => {
+  const load = vi.fn().mockResolvedValue({
+    status: "not_ready",
+    reason: "account_unavailable",
+    balances: [],
+    upcoming: [],
+    payouts: [],
+    nextCursor: null,
+    upcomingComplete: true,
+  });
+  const { unmount } = render(<Payouts scopeKey="unavailable" load={load} />);
+  expect((await screen.findByRole("alert")).textContent).toContain(
+    "not available",
+  );
+  expect(screen.queryByText("Not scheduled")).toBeNull();
+  unmount();
+  render(
+    <Payouts
+      scopeKey="preview"
+      load={async () => ({
+        status: "ready",
+        balances: [],
+        upcoming: [],
+        payouts: [],
+        nextCursor: null,
+        upcomingComplete: false,
+      })}
+    />,
+  );
+  expect(
+    await screen.findByText(/Upcoming payouts are a bounded preview/),
+  ).toBeTruthy();
+});

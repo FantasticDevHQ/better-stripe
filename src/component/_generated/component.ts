@@ -1763,6 +1763,106 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    settlement: {
+      mutations: {
+        claimCommissionInvoice: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            affiliateAccountId?: string;
+            firstPaidInvoiceId: string;
+            invoiceId: string;
+            subscriptionId: string;
+            term: "forever" | "one_time";
+          },
+          {
+            claimKey: string;
+            eligible: boolean;
+            firstPaidInvoiceId: string;
+            replay: boolean;
+            term: "forever" | "one_time";
+          },
+          Name
+        >;
+        reserveSettlementAllocation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            adjustmentAmount?: number;
+            currency: string;
+            gross: number;
+            paymentId?: string;
+            paymentIntentId?: string;
+            platformNet: number;
+            processingFee: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            transfers: Array<{
+              amount: number;
+              destinationAccountId: string;
+              role: "store" | "affiliate" | "other";
+            }>;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentAmount?: number;
+            currency: string;
+            gross: number;
+            paymentId?: string;
+            paymentIntentId?: string;
+            platformNet: number;
+            processingFee: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            transfers: Array<{
+              amount: number;
+              destinationAccountId: string;
+              role: "store" | "affiliate" | "other";
+            }>;
+          },
+          Name
+        >;
+      };
+      queries: {
+        getCommissionTerm: FunctionReference<
+          "query",
+          "internal",
+          { subscriptionId: string },
+          {
+            affiliateAccountId?: string;
+            firstPaidInvoiceId: string;
+            subscriptionId: string;
+            term: "forever" | "one_time";
+          } | null,
+          Name
+        >;
+        getSettlementAllocation: FunctionReference<
+          "query",
+          "internal",
+          { sourceChargeId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentAmount?: number;
+            currency: string;
+            gross: number;
+            paymentId?: string;
+            paymentIntentId?: string;
+            platformNet: number;
+            processingFee: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            transfers: Array<{
+              amount: number;
+              destinationAccountId: string;
+              role: "store" | "affiliate" | "other";
+            }>;
+          } | null,
+          Name
+        >;
+      };
+    };
     webhooks: {
       mutations: {
         insertWebhookEvent: FunctionReference<

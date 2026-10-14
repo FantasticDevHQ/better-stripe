@@ -511,14 +511,7 @@ export async function upsertSubscription(
     accountId?: string;
     userId: string;
     orgId?: string;
-    status:
-      | "active"
-      | "trialing"
-      | "past_due"
-      | "canceled"
-      | "incomplete"
-      | "unpaid"
-      | "paused";
+    status: SubscriptionStatus;
     priceId?: string;
     quantity?: number;
     currentPeriodStart?: string;

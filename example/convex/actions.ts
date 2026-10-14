@@ -477,6 +477,7 @@ export const updateSubscriptionTrialEnd = action({
  */
 export const createAffiliateSplitCheckout = action({
   args: {
+    requestId: v.optional(v.string()),
     userId: v.optional(v.id("users")),
     stripePriceId: v.string(),
     referralCode: v.optional(v.string()),

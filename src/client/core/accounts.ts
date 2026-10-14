@@ -1,3 +1,14 @@
+import { idempotencyOptions } from "./idempotency.js";
+export type CreateAccountOptions = {
+  userId: string;
+  email?: string;
+  name?: string;
+  country?: string;
+  orgId?: string;
+  metadata?: Record<string, string>;
+  /** Stable account-provisioning key; use a different key for a different account. */
+  idempotencyKey?: string;
+};
 import type Stripe from "stripe";
 
 import type { Component, RunCtx } from "../helpers.js";
@@ -31,14 +42,7 @@ export async function createAccount(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: {
-    userId: string;
-    email?: string;
-    name?: string;
-    country?: string;
-    orgId?: string;
-    metadata?: Record<string, string>;
-  },
+  opts: CreateAccountOptions,
 ) {
   const metadata = {
     ...(opts.metadata ?? {}),
@@ -56,7 +60,10 @@ export async function createAccount(
     };
   }
 
-  const account = await stripe.v2.core.accounts.create(createParams);
+  const requestOptions = idempotencyOptions(opts.idempotencyKey);
+  const account = requestOptions
+    ? await stripe.v2.core.accounts.create(createParams, requestOptions)
+    : await stripe.v2.core.accounts.create(createParams);
 
   await runMutationOrThrow(
     ctx,
@@ -191,14 +198,7 @@ export async function getOrCreateAccount(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: {
-    userId: string;
-    email?: string;
-    name?: string;
-    country?: string;
-    orgId?: string;
-    metadata?: Record<string, string>;
-  },
+  opts: CreateAccountOptions,
 ) {
   const existing = opts.orgId
     ? await ctx.runQuery(
@@ -238,14 +238,7 @@ export async function ensureCustomerAccount(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: {
-    userId: string;
-    email?: string;
-    name?: string;
-    country?: string;
-    orgId?: string;
-    metadata?: Record<string, string>;
-  },
+  opts: CreateAccountOptions,
 ): Promise<{
   stripeAccountId: string;
   accountId: string | null;

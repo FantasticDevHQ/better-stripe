@@ -1,3 +1,4 @@
+import { allocateSale } from "@fantastic.dev/better-stripe";
 export type StorePlanId = "starter" | "growth" | "pro";
 export const STORE_PLANS = [
   {
@@ -63,10 +64,6 @@ export function settleStoreSale(args: {
       feeBasisPoints > 10000)
   )
     throw new Error("Invalid store plan sale fee.");
-  const sellingFee =
-    feeBasisPoints === null
-      ? processingFee
-      : Math.max(processingFee, Math.round((gross * feeBasisPoints) / 10000));
   const affiliateBasisPoints =
     args.affiliateBasisPoints ?? plan.affiliateBasisPoints;
   if (
@@ -75,28 +72,34 @@ export function settleStoreSale(args: {
     affiliateBasisPoints > 10000
   )
     throw new Error("Invalid affiliate payout percentage.");
-  const fixed = args.affiliateFixedAmount;
-  validateFixedAffiliateAmount(fixed);
-  const net = gross - sellingFee;
-  const affiliateNet = args.referred
-    ? fixed != null
-      ? Math.min(
-          net,
-          Math.floor(
-            (Math.round(fixed * 100) *
-              stripeCurrencyScale(args.currency ?? "usd")) /
-              100,
-          ),
-        )
-      : Math.floor((net * affiliateBasisPoints) / 10000)
-    : 0;
+  validateFixedAffiliateAmount(args.affiliateFixedAmount);
+  const allocation = allocateSale({
+    gross,
+    processingFee,
+    feeBasisPoints,
+    creatorAccountId: "store",
+    affiliate: args.referred
+      ? {
+          destinationAccountId: "affiliate",
+          ...(args.affiliateFixedAmount != null
+            ? {
+                fixedAmount: Math.floor(
+                  (Math.round(args.affiliateFixedAmount * 100) *
+                    stripeCurrencyScale(args.currency ?? "usd")) /
+                    100,
+                ),
+              }
+            : { basisPoints: affiliateBasisPoints }),
+        }
+      : undefined,
+  });
   return {
     gross,
     processingFee,
-    sellingFee,
-    platformNet: sellingFee - processingFee,
-    sellerNet: net - affiliateNet,
-    affiliateNet,
+    sellingFee: allocation.sellingFee,
+    platformNet: allocation.platformNet,
+    sellerNet: allocation.creatorNet,
+    affiliateNet: allocation.affiliateNet,
   };
 }
 export function storePlanLookupKey(planId: StorePlanId) {

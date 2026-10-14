@@ -1,3 +1,37 @@
+export type {
+  CheckoutSessionReadOptions,
+  SubscriptionReadOptions,
+  CouponReadOptions,
+} from "./billing/providerReads.js";
+import * as providerReads from "./billing/providerReads.js";
+export type { CreateAccountOptions } from "./core/accounts.js";
+import { buildAsyncHookRoutes } from "./webhooks/asyncHooks.js";
+import * as saleContextImpl from "./settlement/verifiedSale.js";
+import * as settlementImpl from "./settlement/settleSale.js";
+import * as commissionImpl from "./settlement/commissions.js";
+import * as payoutSnapshotImpl from "./connect/payoutSnapshot.js";
+export { allocateSale } from "./settlement/allocation.js";
+export type {
+  SaleAllocation,
+  SaleAllocationOptions,
+} from "./settlement/allocation.js";
+export type {
+  VerifiedSale,
+  VerifiedSaleOptions,
+} from "./settlement/verifiedSale.js";
+export type { SettleSaleOptions } from "./settlement/settleSale.js";
+export type { SettlementResult } from "./settlement/execution.js";
+export type {
+  CommissionTerm,
+  CommissionSelectionOptions,
+  CommissionSelection,
+  CommissionDecision,
+} from "./settlement/commissions.js";
+export type {
+  RecipientPayoutSnapshot,
+  RecipientPayoutRow,
+  PayoutSnapshotOptions,
+} from "./connect/payoutSnapshot.js";
 import { internalActionGeneric, internalMutationGeneric } from "convex/server";
 import { v } from "convex/values";
 import Stripe from "stripe";
@@ -146,9 +180,7 @@ function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
   };
 }
 
-// =============================================================================
 // BETTER STRIPE CLIENT
-// =============================================================================
 
 export class BetterStripe {
   public component: Component;
@@ -212,9 +244,7 @@ export class BetterStripe {
     return getStripeClient(this.apiKey, apiVersion);
   }
 
-  // ============================================================================
   // Static defaults (preserved for backwards compatibility)
-  // ============================================================================
 
   static DEFAULT_ACCOUNT_CONFIGURATION =
     accountsImpl.DEFAULT_ACCOUNT_CONFIGURATION;
@@ -222,21 +252,9 @@ export class BetterStripe {
   static DEFAULT_CUSTOMER_CONFIGURATION =
     accountsImpl.DEFAULT_CUSTOMER_CONFIGURATION;
 
-  // ============================================================================
   // ACCOUNT METHODS
-  // ============================================================================
 
-  async createAccount(
-    ctx: RunCtx,
-    opts: {
-      userId: string;
-      email?: string;
-      name?: string;
-      country?: string;
-      orgId?: string;
-      metadata?: Record<string, string>;
-    },
-  ) {
+  async createAccount(ctx: RunCtx, opts: accountsImpl.CreateAccountOptions) {
     return accountsImpl.createAccount(this.stripe(), this.component, ctx, opts);
   }
 
@@ -276,14 +294,7 @@ export class BetterStripe {
 
   async getOrCreateAccount(
     ctx: RunCtx,
-    opts: {
-      userId: string;
-      email?: string;
-      name?: string;
-      country?: string;
-      orgId?: string;
-      metadata?: Record<string, string>;
-    },
+    opts: accountsImpl.CreateAccountOptions,
   ) {
     return accountsImpl.getOrCreateAccount(
       this.stripe(),
@@ -453,14 +464,7 @@ export class BetterStripe {
    */
   async ensureCustomerAccount(
     ctx: RunCtx,
-    opts: {
-      userId: string;
-      email?: string;
-      name?: string;
-      country?: string;
-      orgId?: string;
-      metadata?: Record<string, string>;
-    },
+    opts: accountsImpl.CreateAccountOptions,
   ) {
     return accountsImpl.ensureCustomerAccount(
       this.stripe(),
@@ -470,9 +474,7 @@ export class BetterStripe {
     );
   }
 
-  // ============================================================================
   // PRODUCT METHODS
-  // ============================================================================
 
   async createProduct(
     ctx: RunCtx,
@@ -559,9 +561,7 @@ export class BetterStripe {
     return productsImpl.deleteProduct(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // PRICE METHODS
-  // ============================================================================
 
   async createPrice(
     ctx: RunCtx,
@@ -649,13 +649,12 @@ export class BetterStripe {
     return pricesImpl.listStripePrices(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // CHECKOUT METHODS
-  // ============================================================================
 
   async createCheckoutSession(
     ctx: RunCtx,
     opts: {
+      idempotencyKey?: string;
       userId: string;
       orgId?: string;
       stripePriceId: string;
@@ -744,9 +743,7 @@ export class BetterStripe {
     return checkoutImpl.updateCheckoutSession(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // SUBSCRIPTION METHODS
-  // ============================================================================
 
   /**
    * Create a subscription directly for a V2 buyer (`customer_account`), off the
@@ -943,14 +940,7 @@ export class BetterStripe {
       accountId?: string;
       userId: string;
       orgId?: string;
-      status:
-        | "active"
-        | "trialing"
-        | "past_due"
-        | "canceled"
-        | "incomplete"
-        | "unpaid"
-        | "paused";
+      status: SubscriptionStatus;
       priceId?: string;
       quantity?: number;
       currentPeriodStart?: string;
@@ -970,9 +960,7 @@ export class BetterStripe {
     return subscriptionsImpl.getTrialStatus(this.component, ctx, opts);
   }
 
-  // ============================================================================
   // INVOICE METHODS
-  // ============================================================================
 
   async listInvoices(
     ctx: RunCtx,
@@ -1039,9 +1027,7 @@ export class BetterStripe {
     return invoicesImpl.getInvoiceFromStripe(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // PAYMENT METHOD METHODS
-  // ============================================================================
 
   async listPaymentMethods(
     ctx: RunCtx,
@@ -1072,9 +1058,7 @@ export class BetterStripe {
     return paymentMethodsImpl.setDefaultPaymentMethod(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // ACCOUNT LINK METHODS
-  // ============================================================================
 
   async createAccountLink(
     ctx: RunCtx,
@@ -1150,9 +1134,7 @@ export class BetterStripe {
     return accountLinksImpl.getCountrySpecs(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // PAYOUT METHODS
-  // ============================================================================
 
   async createPayout(
     ctx: RunCtx,
@@ -1253,6 +1235,50 @@ export class BetterStripe {
    * (`{ available, pending, currency }`, minor units) per currency — each entry
    * feeds the headless `PayoutSchedule` component's `balance` prop directly.
    */
+  async getCheckoutSessionFromStripe(
+    _ctx: RunCtx,
+    opts: providerReads.CheckoutSessionReadOptions,
+  ) {
+    return providerReads.getCheckoutSessionFromStripe(this.stripe(), opts);
+  }
+  async getSubscriptionFromStripe(
+    _ctx: RunCtx,
+    opts: providerReads.SubscriptionReadOptions,
+  ) {
+    return providerReads.getSubscriptionFromStripe(this.stripe(), opts);
+  }
+  async getCouponFromStripe(
+    _ctx: RunCtx,
+    opts: providerReads.CouponReadOptions,
+  ) {
+    return providerReads.getCouponFromStripe(this.stripe(), opts);
+  }
+  async getVerifiedSale(
+    _ctx: RunCtx,
+    opts: saleContextImpl.VerifiedSaleOptions,
+  ) {
+    return saleContextImpl.getVerifiedSale(this.stripe(), opts);
+  }
+  async settleSale(ctx: RunCtx, opts: settlementImpl.SettleSaleOptions) {
+    return settlementImpl.settleSale(this.stripe(), this.component, ctx, opts);
+  }
+  async selectCommissionInvoice(
+    ctx: RunCtx,
+    opts: commissionImpl.CommissionSelectionOptions,
+  ) {
+    return commissionImpl.selectCommissionInvoice(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+  async getPayoutSnapshot(
+    _ctx: RunCtx,
+    opts: payoutSnapshotImpl.PayoutSnapshotOptions,
+  ) {
+    return payoutSnapshotImpl.getPayoutSnapshot(this.stripe(), opts);
+  }
   async getAccountBalance(_ctx: RunCtx, opts: { stripeAccountId: string }) {
     return payoutsImpl.getAccountBalance(this.stripe(), opts);
   }
@@ -1268,9 +1294,7 @@ export class BetterStripe {
     return payoutsImpl.listPayouts(this.component, ctx, opts);
   }
 
-  // ============================================================================
   // REFUND METHODS
-  // ============================================================================
 
   /**
    * Issue a refund (BTS-34). `refundApplicationFee` and `reverseTransfer`
@@ -1325,9 +1349,7 @@ export class BetterStripe {
     return refundsImpl.listRefunds(this.component, ctx, opts);
   }
 
-  // ============================================================================
   // DISPUTE METHODS
-  // ============================================================================
 
   async getDisputeByStripeId(
     ctx: RunCtx,
@@ -1397,9 +1419,7 @@ export class BetterStripe {
     return disputesImpl.closeDispute(this.stripe(), this.component, ctx, opts);
   }
 
-  // ============================================================================
   // WEBHOOK ENDPOINT MANAGEMENT
-  // ============================================================================
 
   async listWebhookEndpoints(ctx: RunCtx, opts?: { limit?: number }) {
     return webhookEndpointsImpl.listWebhookEndpoints(this.stripe(), ctx, opts);
@@ -1439,9 +1459,7 @@ export class BetterStripe {
     return webhookEndpointsImpl.setupEventDestination(this.stripe(), ctx, opts);
   }
 
-  // ============================================================================
   // WEBHOOK EVENT QUERIES
-  // ============================================================================
 
   async listWebhookEvents(
     ctx: RunCtx,
@@ -1462,17 +1480,13 @@ export class BetterStripe {
     }>;
   }
 
-  // ============================================================================
   // DATA MANAGEMENT
-  // ============================================================================
 
   async clearAll(ctx: RunCtx): Promise<{ cleared: number; tables: string[] }> {
     return dataImpl.clearAll(this.component, ctx);
   }
 
-  // ============================================================================
   // SYNC METHODS
-  // ============================================================================
 
   async syncAllAccounts(ctx: RunCtx) {
     return accountsImpl.syncAllAccounts(this.stripe(), this.component, ctx);
@@ -1490,9 +1504,7 @@ export class BetterStripe {
     );
   }
 
-  // ============================================================================
   // WEBHOOK HANDLER EXPORT (BetterAuth-style)
-  // ============================================================================
 
   /**
    * Build the two webhook handler function definitions for the app to export
@@ -1811,38 +1823,7 @@ export class BetterStripe {
         ),
     };
 
-    /** One routing entry per async hook — identical mapping to the old API. */
-    const ASYNC: Record<
-      AsyncHookName,
-      ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined
-    > = {
-      afterAccountUpdated: hooks?.onAccountUpdated as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterCheckoutCompleted: hooks?.onCheckoutCompleted as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterSubscriptionUpdated: hooks?.onSubscriptionUpdated as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterSubscriptionCanceled: hooks?.onSubscriptionCanceled as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterTrialEnding: hooks?.onTrialEnding as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterInvoicePaid: hooks?.onInvoicePaid as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterInvoicePaymentFailed: hooks?.onInvoicePaymentFailed as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterPaymentSucceeded: hooks?.onPaymentSucceeded as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterPaymentFailed: hooks?.onPaymentFailed as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterPayoutCompleted: hooks?.onPayoutCompleted as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterRefundCreated: hooks?.onRefundCreated as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterDisputeCreated: hooks?.onDisputeCreated as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-      afterDisputeClosed: hooks?.onDisputeClosed as
-        ((ctx: AsyncHookCtx, doc: unknown) => Promise<void>) | undefined,
-    };
+    const ASYNC = buildAsyncHookRoutes(hooks);
 
     const syncWebhook = internalMutationGeneric({
       args: { dispatcher: v.string(), data: v.any() },

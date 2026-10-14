@@ -1,3 +1,5 @@
+import { recoverSettlementTransfers } from "../settlement/reconciliation.js";
+import { executeResolvedTransfers } from "../settlement/execution.js";
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
@@ -303,6 +305,7 @@ export async function reverseTransfers(
     throw new Error("reverseTransfers: amount must be a non-negative integer");
   }
 
+  await recoverSettlementTransfers(stripe, component, ctx, opts.sourceChargeId);
   if (opts.operationId) {
     const claim = (await runMutationOrThrow(
       ctx,
@@ -421,6 +424,7 @@ export async function reverseTransfersForRefund(
     return { reversals: [] };
   }
 
+  await recoverSettlementTransfers(stripe, component, ctx, opts.sourceChargeId);
   const claim = (await runMutationOrThrow(
     ctx,
     componentRef(component, "connect/mutations/claimReversalSlices"),
@@ -460,48 +464,15 @@ export async function createSplitTransfers(
 ): Promise<SplitResult> {
   const result = computeSplit(opts.amount, opts.feeConfig, opts.split);
 
-  // Ledger-level idempotency (BTS-24): skip any (charge, destination, role) leg
-  // already recorded, so a webhook retry — even after a partial run — never
-  // double-transfers. Complements the deterministic Stripe idempotency key.
-  const existing = ((await ctx.runQuery(
-    componentRef(component, "connect/queries/listTransfersByCharge"),
-    { sourceChargeId: opts.sourceChargeId },
-  )) ?? []) as LedgerTransfer[];
-  const done = new Set(
-    existing.map((t) => `${t.destinationAccountId}:${t.role ?? ""}`),
-  );
-
-  for (const t of result.transfers) {
-    if (t.amount <= 0) continue;
-    if (done.has(`${t.destinationAccountId}:${t.role}`)) continue;
-    const transfer = await stripe.transfers.create(
-      {
-        amount: t.amount,
-        currency: opts.currency,
-        destination: t.destinationAccountId,
-        source_transaction: opts.sourceChargeId,
-        metadata: { bsRole: t.role, bsSourceCharge: opts.sourceChargeId },
-      },
-      // Deterministic key so a webhook retry can't double-transfer (BTS-24).
-      {
-        idempotencyKey: `bs_split_${opts.sourceChargeId}_${t.destinationAccountId}_${t.role}`,
-      },
-    );
-    await runMutationOrThrow(
-      ctx,
-      componentRef(component, "connect/mutations/upsertTransfer"),
-      {
-        stripeTransferId: transfer.id,
-        sourceChargeId: opts.sourceChargeId,
-        destinationAccountId: t.destinationAccountId,
-        amount: t.amount,
-        currency: opts.currency,
-        role: t.role,
-        status: "paid" as const,
-        paymentId: opts.paymentId,
-      },
-    );
-  }
+  await executeResolvedTransfers(stripe, component, ctx, {
+    sourceChargeId: opts.sourceChargeId,
+    gross: opts.amount,
+    currency: opts.currency,
+    processingFee: 0,
+    platformNet: result.platformRetained,
+    transfers: result.transfers,
+    paymentId: opts.paymentId,
+  });
 
   return result;
 }

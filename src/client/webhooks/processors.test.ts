@@ -1,8 +1,4 @@
 // @vitest-environment edge-runtime
-/**
- * Drives Stripe event normalization through processEvent and checks the payloads
- * passed to component mutations, including owner, fee, and trial fields.
- */
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,7 +8,6 @@ import { processEvent } from "./processors.js";
 
 const TO_REF = Symbol.for("toReferencePath");
 
-/** Fake component exposing every query/mutation ref processors.ts resolves. */
 function makeComponent() {
   const refs = (namespace: string, names: string[]) =>
     Object.fromEntries(
@@ -44,12 +39,16 @@ function makeCtx(opts?: { query?: unknown; queryThrows?: boolean }) {
   const runQuery = vi.fn();
   if (opts?.queryThrows) runQuery.mockRejectedValue(new Error("not found"));
   else runQuery.mockResolvedValue(opts?.query ?? null);
-  // `claimReversalSlices` returns the slices the reversal engines execute
-  // (BTS-63). Fake only its storage: the slice math is the REAL shared
-  // computeReversalSlices, applied to this ctx's ledger legs.
+  // Fake claim storage; use the shared reversal sizing math.
   const runMutation = vi.fn(
     async (ref: Record<symbol, string>, args: Record<string, unknown>) => {
       const path = ref?.[TO_REF] ?? "";
+      if (
+        String(path).endsWith(
+          "settlement/mutations/reserveSettlementAllocation",
+        )
+      )
+        return args;
       if (!String(path).endsWith("connect/mutations/claimReversalSlices")) {
         return undefined;
       }
@@ -107,7 +106,9 @@ function makeStripe() {
       update: vi.fn().mockResolvedValue({}),
       retrieve: vi.fn(),
     },
+    charges: { retrieve: vi.fn().mockResolvedValue({ created: 1 }) },
     transfers: {
+      list: vi.fn().mockResolvedValue({ data: [], has_more: false }),
       create: vi.fn(async (_params: unknown) => ({
         id: `tr_${++trCreateSeq}`,
       })),
@@ -146,7 +147,6 @@ function makeStripe() {
       retrieve: vi.fn(),
       update: vi.fn().mockResolvedValue({}),
     },
-    charges: { retrieve: vi.fn() },
   };
 }
 

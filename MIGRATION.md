@@ -133,3 +133,15 @@ changes. Further consumer guidance: [Stripe API changelog](https://docs.stripe.c
 [event destinations](https://docs.stripe.com/event-destinations).
 The docs.stripe.com changelog page returned HTTP 403 in this execution
 environment.
+
+## Upcoming settlement API extraction
+
+Deploy the regenerated component bindings with the package upgrade. Existing
+transfers remain in the same ledger; new immutable allocation and commission
+claims use additional component tables. The example's old subscription claims
+must be migrated before replaying history; see [settlement migration](docs/settlement.md).
+
+React `Checkout` now preserves `requestId` on retry instead of creating a new
+one. Forward it to server request options. Use a different `orderKey` for a new
+purchase and persist `requestId` for recovery across reloads. Existing callback
+implementations remain compatible when they ignore the optional identity.

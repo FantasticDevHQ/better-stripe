@@ -14,6 +14,7 @@ import type * as affiliateDefaults from "../affiliateDefaults.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
 import type * as checkoutExamples from "../checkoutExamples.js";
+import type * as commissionMigration from "../commissionMigration.js";
 import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as embeddedExamples from "../embeddedExamples.js";
@@ -70,6 +71,7 @@ const fullApi: ApiFromModules<{
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
   checkoutExamples: typeof checkoutExamples;
+  commissionMigration: typeof commissionMigration;
   e2eCheckout: typeof e2eCheckout;
   e2eMoney: typeof e2eMoney;
   embeddedExamples: typeof embeddedExamples;

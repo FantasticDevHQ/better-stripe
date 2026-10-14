@@ -4,18 +4,79 @@ import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
 import componentSchema from "../../dist/component/schema.js";
-import { api, internal } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 const raw = vi.hoisted(() => ({
+  charges: { retrieve: vi.fn() },
   paymentIntents: { retrieve: vi.fn() },
   subscriptions: { retrieve: vi.fn() },
-  invoices: { list: vi.fn() },
+  invoices: { list: vi.fn(), retrieve: vi.fn() },
+  invoicePayments: { list: vi.fn() },
   transfers: { list: vi.fn(), create: vi.fn() },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
+vi.mock("./stripe", async () => {
+  const { getVerifiedSale } =
+    await import("../../src/client/settlement/verifiedSale");
+  const { selectCommissionInvoice } =
+    await import("../../src/client/settlement/commissions");
+  const { settleSale } = await import("../../src/client/settlement/settleSale");
+  const { components } = await import("./_generated/api");
+  const sdk = raw as unknown as import("stripe").default;
+  return {
+    stripe: {
+      getVerifiedSale: async (
+        _ctx: unknown,
+        opts: Parameters<typeof getVerifiedSale>[1],
+      ) => {
+        if (opts.invoiceId)
+          raw.invoices.retrieve.mockResolvedValue({
+            id: opts.invoiceId,
+            status: "paid",
+            amount_paid: 10000,
+            currency: "usd",
+            parent: {
+              subscription_details: { subscription: opts.subscriptionId },
+            },
+          });
+        raw.invoicePayments.list.mockImplementation(async (params) => ({
+          data: [
+            {
+              status: "paid",
+              payment: { payment_intent: params.payment.payment_intent },
+            },
+          ],
+          has_more: false,
+        }));
+        if (opts.subscriptionId) {
+          const sub = await raw.subscriptions.retrieve(opts.subscriptionId);
+          if (!sub.items)
+            raw.subscriptions.retrieve.mockResolvedValue({
+              ...sub,
+              items: {
+                data: [
+                  { price: { id: "price_default", product: "prod_default" } },
+                ],
+              },
+            });
+        }
+        return getVerifiedSale(sdk, opts);
+      },
+      selectCommissionInvoice: (
+        ctx: Parameters<typeof selectCommissionInvoice>[2],
+        opts: Parameters<typeof selectCommissionInvoice>[3],
+      ) => selectCommissionInvoice(sdk, components.betterStripe, ctx, opts),
+      settleSale: (
+        ctx: Parameters<typeof settleSale>[2],
+        opts: Parameters<typeof settleSale>[3],
+      ) => settleSale(sdk, components.betterStripe, ctx, opts),
+    },
+  };
+});
 const modules = import.meta.glob("./**/*.*s");
 const componentModules = import.meta.glob("../../dist/component/**/*.js");
 beforeEach(() => {
   vi.resetAllMocks();
+  raw.charges.retrieve.mockResolvedValue({ created: 1 });
   raw.transfers.list.mockResolvedValue({ data: [] });
   raw.transfers.create.mockImplementation(async (args) => ({
     id: `tr_${args.destination}`,
@@ -29,6 +90,22 @@ async function setup(
 ) {
   const t = convexTest(schema, modules);
   t.registerComponent("betterStripe", componentSchema, componentModules);
+  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+    stripeProductId: "prod_default",
+    accountId: "acct_store",
+    name: "Membership",
+    active: true,
+  });
+  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+    stripePriceId: "price_default",
+    stripeProductId: "prod_default",
+    productId: "product",
+    unitAmount: 10000,
+    currency: "usd",
+    type: "recurring",
+    interval: "month",
+    active: true,
+  });
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Seller",
@@ -66,6 +143,8 @@ async function setup(
     },
     latest_charge: {
       id: "ch_sale",
+      amount: 10000,
+      currency: "usd",
       amount_refunded: 0,
       balance_transaction: fee === null ? null : { currency: "usd", fee },
     },

@@ -1,4 +1,4 @@
-import { commissionTerm } from "./lib/affiliateCommission";
+import { stripe } from "./stripe";
 import { collectCostsForSale } from "./lib/sellerCostLedger";
 import { v } from "convex/values";
 import {
@@ -8,7 +8,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal, components } from "./_generated/api";
-import { getStripeClient } from "./lib/stripeClient";
+
 import { settleStoreSale, type StorePlanId } from "./lib/storePlans";
 import {
   storeSaleFields,
@@ -17,45 +17,14 @@ import {
 import type { Doc } from "./_generated/dataModel";
 
 export const reserve = internalMutation({
-  args: { ...storeSaleFields, firstPaidInvoiceId: v.optional(v.string()) },
+  args: storeSaleFields,
   returns: storeSaleDocValidator,
-  handler: async (ctx, { firstPaidInvoiceId, ...args }) => {
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("storeSales")
       .withIndex("by_charge", (q) => q.eq("chargeId", args.chargeId))
       .first();
     if (existing) return existing;
-    if (args.stripeSubscriptionId) {
-      if (!args.sourceInvoiceId)
-        throw new Error("Subscription settlement requires an invoice.");
-      const prior = await ctx.db
-        .query("subscriptionCommissions")
-        .withIndex("by_subscription", (q) =>
-          q.eq("stripeSubscriptionId", args.stripeSubscriptionId!),
-        )
-        .first();
-      const term =
-        prior?.affiliateCommissionTerm ??
-        args.affiliateCommissionTerm ??
-        "forever";
-      if (!prior)
-        await ctx.db.insert("subscriptionCommissions", {
-          stripeSubscriptionId: args.stripeSubscriptionId,
-          affiliateCommissionTerm: term,
-          firstInvoiceId: firstPaidInvoiceId ?? args.sourceInvoiceId,
-          affiliateAccountId: args.affiliateAccountId,
-        });
-      args.affiliateCommissionTerm = term;
-      if (
-        term === "one_time" &&
-        (prior?.firstInvoiceId ??
-          firstPaidInvoiceId ??
-          args.sourceInvoiceId) !== args.sourceInvoiceId
-      ) {
-        args.sellerNet += args.affiliateNet;
-        args.affiliateNet = 0;
-      }
-    }
     const amounts = [
       args.gross,
       args.processingFee,
@@ -99,30 +68,6 @@ export const getByCharge = internalQuery({
       .withIndex("by_charge", (q) => q.eq("chargeId", args.chargeId))
       .first(),
 });
-export const subscriptionCommission = internalQuery({
-  args: { stripeSubscriptionId: v.string() },
-  returns: v.union(
-    v.object({
-      affiliateCommissionTerm: commissionTerm,
-      firstInvoiceId: v.string(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, args) => {
-    const row = await ctx.db
-      .query("subscriptionCommissions")
-      .withIndex("by_subscription", (q) =>
-        q.eq("stripeSubscriptionId", args.stripeSubscriptionId),
-      )
-      .first();
-    return row
-      ? {
-          affiliateCommissionTerm: row.affiliateCommissionTerm,
-          firstInvoiceId: row.firstInvoiceId,
-        }
-      : null;
-  },
-});
 export const recordTransfer = internalMutation({
   args: {
     saleId: v.id("storeSales"),
@@ -140,20 +85,6 @@ export const recordTransfer = internalMutation({
       : sale.sellerAccountId;
     if (!destinationAccountId || amount <= 0)
       throw new Error("Invalid transfer leg.");
-    await ctx.runMutation(
-      components.betterStripe.connect.mutations.upsertTransfer,
-      {
-        stripeTransferId: args.transferId,
-        sourceChargeId: sale.chargeId,
-        sourceInvoiceId: sale.sourceInvoiceId,
-        destinationAccountId,
-        amount,
-        currency: sale.currency,
-        role: args.role,
-        status: "paid",
-        metadata: { storePlanId: sale.planId },
-      },
-    );
     await ctx.db.patch(
       "storeSales",
       sale._id,
@@ -203,38 +134,32 @@ export const settle = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    const raw = getStripeClient();
-    const payment = await raw.paymentIntents.retrieve(args.paymentIntentId, {
-      expand: ["latest_charge.balance_transaction"],
-    });
-    const subscription = args.subscriptionId
-      ? await raw.subscriptions.retrieve(args.subscriptionId)
-      : null;
-    const metadata = subscription?.metadata ?? payment.metadata;
-    if (metadata.storeBilling !== "sale_v1" || payment.status !== "succeeded")
-      return null;
-    const charge = payment.latest_charge;
-    if (!charge || typeof charge === "string")
-      throw new Error("Charge details are not ready; retry settlement.");
-    const prior: Doc<"storeSales"> | null = await ctx.runQuery(
-      internal.storeSaleSettlement.getByCharge,
-      { chargeId: charge.id },
-    );
-    if (prior?.status === "settled" || prior?.status === "refunded")
-      return null;
-    if (charge.amount_refunded > 0)
-      throw new Error(
-        "Refunded charge requires settlement review before paying recipients.",
-      );
-    const balance = charge.balance_transaction;
-    if (!balance || typeof balance === "string")
+    const verified = await stripe.getVerifiedSale(ctx, args);
+    if (verified.status === "not_payable") return null;
+    if (verified.status !== "ready")
       throw new Error(
         "Stripe processing fees are not available yet; retry settlement.",
       );
-    if (balance.currency !== payment.currency)
-      throw new Error(
-        "Settlement currency must match the store sale currency.",
-      );
+    const metadata = verified.metadata;
+    if (metadata.storeBilling !== "sale_v1") return null;
+    const prior: Doc<"storeSales"> | null = await ctx.runQuery(
+      internal.storeSaleSettlement.getByCharge,
+      { chargeId: verified.chargeId },
+    );
+    if (prior?.status === "settled" || prior?.status === "refunded")
+      return null;
+    const commission =
+      args.subscriptionId && args.invoiceId
+        ? await stripe.selectCommissionInvoice(ctx, {
+            subscriptionId: args.subscriptionId,
+            invoiceId: args.invoiceId,
+            affiliateAccountId: metadata.affiliateAccountId || undefined,
+            term:
+              metadata.affiliateCommissionTerm === "one_time"
+                ? "one_time"
+                : "forever",
+          })
+        : null;
     const seller = await ctx.runQuery(internal.storePlanBilling.getSeller, {
       sellerId:
         metadata.sellerId as import("./_generated/dataModel").Id<"users">,
@@ -246,8 +171,7 @@ export const settle = internalAction({
     const planId = (seller.storePlan?.planId ?? metadata.planId) as StorePlanId;
     const plans = await ctx.runQuery(internal.storePlanPricing.read, {});
     const configuredPlan = plans.find((plan) => plan.id === planId);
-    const stripePriceId =
-      subscription?.items?.data[0]?.price.id ?? metadata.stripePriceId;
+    const stripePriceId = verified.stripePriceId;
     const affiliateRate = await ctx.runQuery(
       internal.sellerAffiliateRates.resolve,
       {
@@ -257,57 +181,24 @@ export const settle = internalAction({
       },
     );
     const economics = settleStoreSale({
-      gross: payment.amount_received,
-      processingFee: balance.fee,
+      gross: verified.gross,
+      processingFee: verified.processingFee,
       planId,
-      referred: !!metadata.affiliateAccountId,
+      referred: commission
+        ? commission.eligible
+        : !!metadata.affiliateAccountId,
       feeBasisPoints: configuredPlan?.feeBasisPoints,
       affiliateBasisPoints: affiliateRate.effectiveBasisPoints,
       affiliateFixedAmount: affiliateRate.effectiveFixedAmount,
-      currency: payment.currency,
+      currency: verified.currency,
     });
-    const savedCommission = args.subscriptionId
-      ? await ctx.runQuery(
-          internal.storeSaleSettlement.subscriptionCommission,
-          { stripeSubscriptionId: args.subscriptionId },
-        )
-      : null;
-    let firstPaidInvoiceId: string | undefined =
-      savedCommission?.firstInvoiceId;
-    if (
-      args.subscriptionId &&
-      !savedCommission &&
-      metadata.affiliateCommissionTerm === "one_time"
-    ) {
-      const invoices = await raw.invoices.list({
-        subscription: args.subscriptionId,
-        status: "paid",
-        limit: 100,
-      });
-      if (invoices.has_more)
-        throw new Error(
-          "Review subscription invoice history before one-time settlement.",
-        );
-      firstPaidInvoiceId = invoices.data
-        .filter((invoice) => invoice.amount_paid > 0)
-        .sort(
-          (a, b) =>
-            (a.status_transitions.paid_at ?? a.created) -
-            (b.status_transitions.paid_at ?? b.created),
-        )[0]?.id;
-      if (!firstPaidInvoiceId)
-        throw new Error("Paid invoice is not available; retry settlement.");
-    }
     const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.storeSaleSettlement.reserve,
       {
         ...economics,
-        firstPaidInvoiceId,
         stripeSubscriptionId: args.subscriptionId,
         affiliateCommissionTerm:
-          metadata.affiliateCommissionTerm === "one_time"
-            ? "one_time"
-            : "forever",
+          commission?.status === "ready" ? commission.term : "forever",
         affiliateBasisPoints:
           affiliateRate.effectiveFixedAmount == null
             ? affiliateRate.effectiveBasisPoints
@@ -317,75 +208,60 @@ export const settle = internalAction({
         stripeProductId: affiliateRate.stripeProductId,
         stripePriceId: affiliateRate.stripePriceId,
         planId,
-        chargeId: charge.id,
-        paymentIntentId: payment.id,
+        chargeId: verified.chargeId,
+        paymentIntentId: verified.paymentIntentId,
         sellerId: seller.sellerId,
         sellerAccountId: seller.stripeAccountId,
-        currency: payment.currency,
+        currency: verified.currency,
         affiliateAccountId: metadata.affiliateAccountId || undefined,
         sourceInvoiceId: args.invoiceId,
       },
     );
-    const existing = await raw.transfers.list({
-      transfer_group: charge.id,
-      limit: 100,
-    });
     const legs = [
       {
         role: "store" as const,
         amount: sale.sellerNet,
         destination: sale.sellerAccountId,
-        id: sale.sellerTransferId,
       },
       {
         role: "affiliate" as const,
         amount: sale.affiliateNet,
         destination: sale.affiliateAccountId,
-        id: sale.affiliateTransferId,
       },
     ];
-    for (const leg of legs) {
-      if (!leg.destination || leg.amount === 0 || leg.id) continue;
-      // Reconcile Stripe before retrying, even after its idempotency cache expires.
-      const recovered = existing.data.find(
-        (t) =>
-          t.metadata.storeSaleChargeId === charge.id &&
-          t.metadata.role === leg.role &&
-          t.amount === leg.amount &&
-          (typeof t.destination === "string"
-            ? t.destination
-            : t.destination?.id) === leg.destination,
-      );
-      const transfer =
-        recovered ??
-        (await raw.transfers.create(
-          {
+    const settlement = await stripe.settleSale(ctx, {
+      ...args,
+      allocation: {
+        gross: sale.gross,
+        currency: sale.currency,
+        processingFee: sale.processingFee,
+        platformNet: sale.platformNet,
+        adjustmentAmount: sale.costRecoveryAmount ?? 0,
+        transfers: legs
+          .filter((leg) => leg.destination)
+          .map((leg) => ({
+            destinationAccountId: leg.destination!,
+            role: leg.role,
             amount: leg.amount,
-            currency: sale.currency,
-            destination: leg.destination,
-            source_transaction: charge.id,
-            transfer_group: charge.id,
-            metadata: {
-              storeSaleChargeId: charge.id,
-              role: leg.role,
-              storePlanId: sale.planId,
-            },
-          },
-          { idempotencyKey: `example_store_sale_${charge.id}_${leg.role}` },
-        ));
+          })),
+      },
+    });
+    if (!("executedTransfers" in settlement))
+      throw new Error("Settlement is not ready.");
+    for (const transfer of settlement.executedTransfers) {
       await ctx.runMutation(internal.storeSaleSettlement.recordTransfer, {
         saleId: sale._id,
-        role: leg.role,
-        transferId: transfer.id,
+        role: transfer.role as "store" | "affiliate",
+        transferId: transfer.stripeTransferId,
       });
     }
     await ctx.runMutation(
       components.betterStripe.connect.mutations.upsertPayment,
       {
-        stripePaymentIntentId: payment.id,
+        stripePaymentIntentId: verified.paymentIntentId,
         userId: metadata.userId ?? "",
-        amount: payment.amount_received,
-        currency: payment.currency,
+        amount: verified.gross,
+        currency: verified.currency,
         status: "succeeded",
         destinationAccountId: sale.sellerAccountId,
         chargeType: "separate",

@@ -67,7 +67,9 @@ function checkLibraryComponent(componentRoot = root) {
   const generatedPath = join(componentDir, "_generated", "component.ts");
   const generated = readFileSync(generatedPath, "utf8");
 
-  const MODULES = ["billing", "connect", "core", "products", "webhooks"];
+  const MODULES = readdirSync(componentDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+    .map((entry) => entry.name);
   const KINDS = [
     ["queries", "queries.ts", "query"],
     ["mutations", "mutations.ts", "mutation"],

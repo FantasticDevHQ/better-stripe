@@ -6,11 +6,34 @@ Built for Convex + Next.js applications. Follows the conventions established by 
 
 ## Accounts v2 customer preview
 
-Non-Connect merchants can opt into customer-only Accounts v2 with
-`stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION` on `BetterStripe`.
-The sandbox owner must enable Stripe's preview first. Use the instance
-`stripe.registerRoutes` method to inherit the same API version for webhook
-processing. Connect users retain the GA default when this option is omitted.
+Choose the setup that matches your Stripe account:
+
+| Integration                                                                           | Enable “Reusable payment methods for Global Payouts” for Accounts v2 access? | BetterStripe API version                                     |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Connect platform, including ordinary connected-account payouts and marketplace splits | No. Accounts v2 is GA for Connect.                                           | Omit `stripeApiVersion` to keep the GA default.              |
+| Non-Connect merchant using customer-only Accounts v2 for checkout and billing         | Yes, in each intended sandbox/account.                                       | Set `stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION`. |
+
+For the non-Connect setup, the account owner enables that exact toggle under
+[Account previews and features](https://dashboard.stripe.com/settings/previews)
+→ **Product previews**. If it is missing or disabled, check with the account
+owner and request access through [Stripe's customer-account guide](https://docs.stripe.com/accounts-v2/use-accounts-as-customers).
+The Dashboard does not always explain why a toggle is disabled. Do not enable
+Connect just to bypass the customer-preview requirement.
+
+The exported preview constant currently selects `2026-09-30.preview`, which
+passed our live non-Connect checkout and billing tests. A newer version selected
+in Stripe's API documentation does not enable account features or change this
+package's supported-version list. Both account enablement and a supported
+preview request version are necessary. Use `stripe.registerRoutes` to inherit
+the client's version for webhook processing, and pin snapshot destinations to
+the same version.
+
+The table covers **Accounts v2 access**. Actually reusing saved payment methods
+for **Global Payouts** is a separate preview feature with its own eligibility,
+even for Connect users. See [Stripe's credential-reuse guide](https://docs.stripe.com/global-payouts/credential-reuse).
+Enabling this toggle also synchronizes existing Customers into customer-configured
+Accounts and changes customer creation in Stripe-hosted integrations. Review
+those migration effects before enabling it on an existing account.
 See the [customer preview setup and webhook migration guide](docs/accounts-v2-preview.md).
 
 ## Status

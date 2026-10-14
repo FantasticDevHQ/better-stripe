@@ -1,4 +1,5 @@
 import { subscriptionRouting } from "../billing/subscriptionRouting.js";
+import { cancelsAtPeriodEnd } from "../billing/subscriptionCancellation.js";
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
@@ -245,7 +246,7 @@ async function upsertSubscriptionFromStripe(
     quantity: firstItem?.quantity ?? undefined,
     currentPeriodStart: epochToIso(periodStart),
     currentPeriodEnd: epochToIso(periodEnd),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    cancelAtPeriodEnd: cancelsAtPeriodEnd(subscription),
     isCollectionPaused: !!subscription.pause_collection,
     canceledAt: epochToIso(subscription.canceled_at),
     isTrialing: trial.isTrialing,

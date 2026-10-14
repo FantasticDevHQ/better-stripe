@@ -159,3 +159,12 @@ destinations whose immutable version or preview event scope differs require a
 replacement path and signing-secret cutover; they are not silently reused.
 See [preview setup and migration](docs/accounts-v2-preview.md). No Connect
 onboarding or payout-retention policy changes are part of this opt-in.
+
+## Portal cancellation synchronization
+
+Stripe Billing Portal can schedule period-end cancellation using `cancel_at`
+while `cancel_at_period_end` remains false. BetterStripe normalizes the stored
+`cancelAtPeriodEnd` to true when that timestamp matches the current billing
+period end, so subscription components offer reactivation after portal changes.
+Webhook processing and explicit subscription synchronization use the same rule.
+A cancellation timestamp at another date is not classified as period-end cancellation.

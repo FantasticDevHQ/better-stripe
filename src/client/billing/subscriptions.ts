@@ -1,4 +1,5 @@
 import { subscriptionRouting } from "./subscriptionRouting.js";
+import { cancelsAtPeriodEnd } from "./subscriptionCancellation.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
 import type Stripe from "stripe";
 
@@ -212,7 +213,7 @@ export async function createSubscription(
         firstItem?.current_period_start ?? undefined,
       ),
       currentPeriodEnd: epochToIso(firstItem?.current_period_end ?? undefined),
-      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      cancelAtPeriodEnd: cancelsAtPeriodEnd(sub),
       canceledAt: epochToIso(sub.canceled_at),
       isTrialing: sub.status === "trialing",
       trialStart: epochToIso(sub.trial_start),
@@ -584,7 +585,7 @@ export async function syncAllSubscriptions(
           quantity: firstItem?.quantity ?? undefined,
           currentPeriodStart: epochToIso(periodStart),
           currentPeriodEnd: epochToIso(periodEnd),
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          cancelAtPeriodEnd: cancelsAtPeriodEnd(sub),
           isCollectionPaused: !!sub.pause_collection,
           canceledAt: epochToIso(sub.canceled_at),
           isTrialing: sub.status === "trialing",

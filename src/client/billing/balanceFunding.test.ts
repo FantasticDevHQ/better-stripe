@@ -238,3 +238,20 @@ describe("explicit balance funding", () => {
     await expect(enable()).rejects.toBe(failure);
   });
 });
+it("requires an explicit runtime request identity and desired state for JavaScript callers", async () => {
+  await expect(
+    prepareBalanceFunding(stripe, version, {
+      ...scope,
+      consent: true,
+      idempotencyKey: undefined as unknown as string,
+    }),
+  ).rejects.toThrow(/required/);
+  await expect(
+    setBalanceFunding(stripe, version, {
+      preparation,
+      enabled: undefined as unknown as boolean,
+      idempotencyKey: "request-1",
+    }),
+  ).rejects.toThrow(/required/);
+  expect(raw.subscriptions.retrieve).not.toHaveBeenCalled();
+});

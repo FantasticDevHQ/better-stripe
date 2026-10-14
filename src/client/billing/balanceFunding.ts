@@ -44,6 +44,10 @@ function request(version: string, key: string, phase: string) {
     throw new Error(
       "Balance funding requires explicit Stripe preview API configuration.",
     );
+  if (typeof key !== "string")
+    throw new Error(
+      "An explicit idempotency key is required for balance funding.",
+    );
   idempotencyOptions(key);
   return idempotencyOptions(`${key}:${phase}`)!;
 }
@@ -123,6 +127,10 @@ export async function setBalanceFunding(
   version: string,
   opts: SetBalanceFundingOptions,
 ): Promise<{ enabled: boolean }> {
+  if (typeof opts.enabled !== "boolean")
+    throw new Error(
+      "An explicit enabled state is required for balance funding.",
+    );
   const requestOptions = request(
     version,
     opts.idempotencyKey,

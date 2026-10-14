@@ -103,6 +103,7 @@ export async function processEvent(
     case "payout.updated":
     case "payout.paid":
     case "payout.failed":
+    case "payout.canceled":
       await handlePayoutEvent(whCtx, obj as Stripe.Payout, event.account);
       break;
     case "refund.created":

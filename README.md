@@ -689,7 +689,8 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `customer.subscription.created`, `.updated`, `.deleted`, `.trial_will_end`
 - `invoice.created`, `.finalized`, `.paid`, `.payment_failed`
 - `payment_intent.succeeded`, `.payment_failed`, `.canceled`
-- `payout.created`, `.updated`, `.paid`, `.failed`
+- `payout.created`, `.updated`, `.paid`, `.failed`, `.canceled`
+
 - `refund.created`, `.updated`, `.failed`
 - `application_fee.refunded` -- keeps `feeCollectedAmount`/`feeRefundedAmount` accurate on the linked payment
 - `charge.dispute.created`, `.updated`, `.closed`, `.funds_withdrawn`, `.funds_reinstated`
@@ -697,6 +698,18 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - `price.created`, `.updated`
 
 Note: Subscription and invoice events use v1 Billing API event names even when the billing entity is a V2 account referenced via `customer_account`.
+
+Dedicated payout cancellations use the same signed V1 endpoint, payout record
+and connected-account association as other payout events. Generic `onEvent`
+and `events["payout.canceled"]` callbacks run after reconciliation. Cancellation
+does not invoke the paid/completed convenience hook. Normal verified replay is
+deduplicated by the existing event ledger.
+
+When upgrading from 0.11.0 or earlier, add `payout.canceled` to the existing V1
+endpoint's selected events. New endpoints created with the corrected package's
+defaults include it. Updating the library alone does not edit an existing provider
+endpoint or recover already missed events. Consumers must adopt a published
+version containing this correction; a merged source fix is not a package release.
 
 ## Trigger API
 

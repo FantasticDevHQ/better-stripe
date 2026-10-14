@@ -44,13 +44,28 @@ recovery. The example also demonstrates optional balance-funded subscriptions
 using Stripe's Accounts v2 preview. See the setup guide for consent requirements,
 renewal tests, and payment-recovery limitations.
 
-The example also compares headless APIs, package React components, Stripe Connect
+The example compares via API views, BetterStripe React components, Stripe Connect
 embeds, and hosted billing where supported. Its checkout chooser demonstrates
 Hosted Checkout, Embedded Checkout, custom Checkout Sessions with Payment Element,
 Payment Intents with Payment Element, and the preview Embedded Checkout Form,
 with pros and cons for each. `createCheckoutSession` accepts `uiMode` values
 `"redirect"`, `"embedded"`, `"custom"`, and `"form"`; the latter two map to Stripe's
 `elements` and preview `form` modes. See [the integration examples](example/README.md#compare-integration-styles).
+
+Admins can configure store-plan monthly prices and sale fees. Monthly price changes
+create new Stripe Prices; existing store subscriptions keep their current price.
+Affiliate payouts accept percentages or fixed amounts in the sale currency, with
+optional price, product, store, plan, and platform defaults. Unconfigured payouts
+are zero. Subscription commission terms are **Forever** or **One-time**, with
+Forever as the default. The example saves the selected term in Stripe subscription
+metadata and its Convex ledger, then applies it when paid invoices settle.
+See [affiliate configuration and testing](example/README.md#seller-product-and-subscription-affiliate-payouts).
+
+The public React exports include `AffiliatePayoutEditor`, `PlanPricingEditor`,
+`Pagination`, and `useCursorPagination`. The example supplies styling through
+render props; its backend owns authorization, rule inheritance, and transfers.
+See [the workflow reference](docs/react-workflows.md#percentage-or-fixed-affiliate-payouts)
+and [the UI reuse audit](docs/react-workflows-audit.md).
 
 Run `pnpm run check:all` before submitting changes. It runs the build, lint,
 formatting, typechecks, codegen drift check, tests, and repository quality gates

@@ -83,7 +83,14 @@ Only a server-confirmed payment or checkout session should grant access to the
 product. Use `PaymentReceipt` or `CheckoutStatus` with webhook-backed query data;
 a browser return URL alone does not prove payment.
 
-## Headless or Stripe embedded
+## Via API, BetterStripe components, or Stripe embedded
+
+The switch labels are **via API**, **BetterStripe components**, **Stripe embedded**,
+and **Stripe hosted**. BetterStripe components are the unstyled exports from this
+package; Stripe embedded views mount Stripe's Connect UI. The internal mode keys
+remain `headless`, `components`, `embedded`, and `hosted` for compatibility, including
+existing `?example=headless` links. The package's native components accept render
+props so the example can match the API view's cards and layout.
 
 `Account`, `Onboarding`, `Disputes`, `Refunds`, `Earnings`, and `Payouts` accept
 `presentation="embedded"` with Connect session props. Their default headless
@@ -285,7 +292,7 @@ uses the current subscription price on renewals and preserves settled economics.
 ## Percentage or fixed affiliate payouts
 
 `AffiliatePayoutEditor` is the unstyled editor used inline by the example's seller
-product and price rows and admin store-plan cards. Supply `scopeKey`, nullable
+product and price rows and admin store-plan rows. Supply `scopeKey`, nullable
 `affiliateBasisPoints`, optional nullable `affiliateFixedAmount`, effective values,
 `version`, `currency`, and `onSave`. Fixed amounts are major currency units,
 not cents. The save callback receives both nullable fields and `expectedVersion`;

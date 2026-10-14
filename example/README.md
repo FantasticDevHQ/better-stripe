@@ -1002,12 +1002,12 @@ keep their recorded economics. The seller Billing cards read the saved pricing.
 Admin updates reject invalid amounts, non-admin personas, and stale versions.
 
 The reusable unstyled `PlanPricingEditor` in `better-stripe/react` owns decimal
-input validation and save/pending/error handling; the example supplies card,
+input validation and save/pending/error handling; the example supplies table,
 input, and button styling. The example backend authorizes the admin persona,
 creates the Stripe Price, and publishes catalog and fee settings atomically.
 Like the rest of this demo, personas use mock users rather than production auth.
 
-Each Store plans card has a separate affiliate payout editor for percentages or
+Each Store plans row has a separate affiliate payout editor for percentages or
 fixed amounts. Unconfigured payouts default to 0%. Payout-only edits keep
 the monthly Stripe Price and subscriptions unchanged. Future settlements resolve
 the seller's price, product, and plan defaults; settled sales and refunds retain
@@ -1030,7 +1030,8 @@ conversion. Fixed amounts are capped at the proceeds after fees, so seller
 proceeds cannot go negative. Fractions below a currency's minor unit round down.
 Stripe processing is always covered by the seller.
 
-Changes apply to future purchases and subscription renewals. Settled sales retain
+Payout amount changes apply to future purchases and subscription renewals. Commission
+term changes apply to new subscriptions only. Settled sales retain
 the recorded rule, source, product/price IDs, and splits. Subscription settlement
 uses the current Stripe subscription price rather than stale checkout metadata.
 Legacy payments without product metadata inherit the plan default. The backend
@@ -1089,3 +1090,31 @@ Forever. Payout amounts still resolve from the current price/product settings on
 each invoice. Refunds follow the existing commission reversal rules and do not
 reset the first invoice. One-time purchases have only one commission regardless
 of the selected subscription term.
+
+Run the subscription-term browser checks from `example/`:
+
+```sh
+E2E_LIVE_BACKEND=1 E2E_HEADLESS=1 pnpm exec playwright test e2e/affiliate-terms.spec.ts --workers=1
+```
+
+These checks configure both terms, complete real subscription checkouts, verify
+the first paid invoice's ledger, and check the controls in via API, BetterStripe
+components, and admin views. They restore temporary rules; sandbox subscriptions
+and transactions remain. They do not advance a billing cycle.
+
+For renewal verification, use [Stripe test clocks](https://docs.stripe.com/billing/testing/test-clocks)
+with a sandbox customer and subscription carrying the same seller, price,
+affiliate, `storeBilling`, and `affiliateCommissionTerm` metadata as Checkout.
+Keep a nonzero payout rule configured during the test. Wait for the first invoice
+to settle, then advance the clock through the next billing period and await the
+paid-invoice webhook. Forever must create another affiliate transfer; One-time
+must create none and retain those proceeds in the seller transfer. Verify actual
+Stripe fees and all transfer amounts, then restore the payout settings. Failed
+payments must create no commission, and retries must not duplicate transfers.
+
+The first One-time settlement checks Stripe's paid invoice history, skipping
+zero-dollar invoices, so out-of-order webhooks cannot award a renewal the first
+commission. Once stored, the database claim identifies that invoice on later
+settlements. An unclaimed One-time subscription with more than 100 paid invoices
+requires review instead of guessing; existing subscriptions without a term keep
+Forever.

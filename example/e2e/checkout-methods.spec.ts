@@ -69,15 +69,17 @@ async function fillPayment(page: Page) {
   }
   throw new Error("No Stripe card input became available");
 }
-for (const [mode, role] of [
-  ["embedded", "visitor"],
-  ["custom", "visitor"],
-  ["payment-intent", "visitor"],
-  ["form", "visitor"],
-  ["redirect", "visitor"],
-  ["payment-intent", "customer"],
+for (const [mode, role, referralCode] of [
+  ["embedded", "visitor", "avery"],
+  ["custom", "visitor", "avery"],
+  ["payment-intent", "visitor", "avery"],
+  ["form", "visitor", "avery"],
+  ["redirect", "visitor", "avery"],
+  ["payment-intent", "customer", "avery"],
+  ["custom", "customer", "avery"],
+  ["custom", "customer", "invalid-code"],
 ] as const) {
-  test(`${mode} completes a referred ${role === "visitor" ? "guest" : "customer"} purchase in Stripe sandbox`, async ({
+  test(`${mode} completes a ${referralCode === "avery" ? "referred" : "direct"} ${role === "visitor" ? "guest" : "customer"} purchase in Stripe sandbox`, async ({
     page,
   }) => {
     test.skip(!live, "Requires seeded Stripe sandbox");
@@ -98,7 +100,9 @@ for (const [mode, role] of [
       (role) => localStorage.setItem("betterlearn-role", role),
       role,
     );
-    await page.goto(`/checkout?priceId=${price}&ref=avery&checkout=${mode}`);
+    await page.goto(
+      `/checkout?priceId=${price}&ref=${referralCode}&checkout=${mode}`,
+    );
     if (mode === "redirect")
       await page
         .getByRole("button", { name: "Continue to Stripe Checkout" })
@@ -162,9 +166,36 @@ for (const [mode, role] of [
       )
       .toBe("settled");
     const settlement = convex("storeSaleSettlement:getByCharge", { chargeId });
-    expect(settlement.affiliateNet).toBeGreaterThan(0);
+    const expectedFee = Math.max(
+      settlement.processingFee,
+      Math.round(
+        settlement.gross *
+          { starter: 0.09, growth: 0.049, pro: 0 }[
+            settlement.planId as "starter" | "growth" | "pro"
+          ],
+      ),
+    );
+    expect(settlement.sellingFee).toBe(expectedFee);
+    expect(settlement.platformNet).toBe(expectedFee - settlement.processingFee);
+    expect(settlement.affiliateNet).toBe(
+      referralCode === "avery"
+        ? Math.floor((settlement.gross - expectedFee) * 0.2)
+        : 0,
+    );
+    expect(settlement.sellerNet).toBe(
+      settlement.gross -
+        expectedFee -
+        settlement.affiliateNet -
+        (settlement.costRecoveryAmount ?? 0),
+    );
     expect(settlement.sellerTransferId).toMatch(/^tr_/);
-    expect(settlement.affiliateTransferId).toMatch(/^tr_/);
+    if (referralCode === "avery")
+      expect(settlement.affiliateTransferId).toMatch(/^tr_/);
+    else expect(settlement.affiliateTransferId).toBeUndefined();
+    await test.info().attach("settlement", {
+      body: JSON.stringify(settlement, null, 2),
+      contentType: "application/json",
+    });
     expect(settlement.gross).toBe(
       settlement.processingFee +
         settlement.platformNet +

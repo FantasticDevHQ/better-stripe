@@ -72,6 +72,10 @@ Use `renderForm` on the custom and PaymentIntent modes to render your own email
 input, `paymentElement`, error, and submit button. The preview `form` mode renders
 Stripe's form and does not use that renderer. `children` replaces the outer
 checkout frame and receives `content`, `isLoading`, `error`, and `retry`.
+Respect `state.emailReadOnly` on your email input. Custom Checkout uses the
+email Stripe supplied when the session loaded and skips `updateEmail` for that
+session. Guest sessions without an email collect it before confirmation and
+keep it editable if a payment attempt fails.
 The lower-level `CheckoutElementsForm`, `PaymentIntentForm`, and `CheckoutForm`
 are also exported for an existing client secret.
 

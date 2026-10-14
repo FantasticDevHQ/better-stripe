@@ -24,6 +24,8 @@ import { StripeProvider } from "../components/StripeProvider.js";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 export type CheckoutFormState = {
   email: string;
+  /** Stripe supplied this email when the session loaded; do not edit it. */
+  emailReadOnly?: boolean;
   setEmail: (email: string) => void;
   emailInputId: string;
   isPending: boolean;
@@ -44,6 +46,7 @@ export type CheckoutFormProps = CheckoutFormOptions & {
 };
 function NativeForm({
   email,
+  emailReadOnly,
   setEmail,
   emailInputId,
   paymentElement,
@@ -65,6 +68,7 @@ function NativeForm({
         required
         autoComplete="email"
         value={email}
+        readOnly={emailReadOnly}
         onChange={(event) => setEmail(event.target.value)}
       />
       {paymentElement}
@@ -86,31 +90,48 @@ export function CheckoutElementsForm(props: CheckoutFormProps) {
     </CheckoutSessionProvider>
   );
 }
-function SessionForm({
-  email: initialEmail = "",
-  returnUrl,
-  onNavigate,
-  renderForm,
-}: CheckoutFormProps) {
+function SessionForm(props: CheckoutFormProps) {
   const checkout = useCheckout();
-  const [email, setEmail] = useState(initialEmail);
-  const emailInputId = useId();
-  const action = useWorkflowAction(async () => {
-    if (checkout.type !== "success") throw new Error("Checkout is not ready.");
-    const updated = await checkout.checkout.updateEmail(email);
-    if (updated.type === "error") throw new Error(updated.error.message);
-    const confirmed = await checkout.checkout.confirm();
-    if (confirmed.type === "error") throw new Error(confirmed.error.message);
-    onNavigate(
-      returnUrl.replace("{CHECKOUT_SESSION_ID}", checkout.checkout.id),
-    );
-  });
   if (checkout.type === "loading")
     return <p role="status">Loading checkout…</p>;
   if (checkout.type === "error")
     return <p role="alert">{checkout.error.message}</p>;
+  return (
+    <ReadySessionForm
+      key={checkout.checkout.id}
+      {...props}
+      checkout={checkout.checkout}
+    />
+  );
+}
+function ReadySessionForm({
+  checkout,
+  email: initialEmail = "",
+  returnUrl,
+  onNavigate,
+  renderForm,
+}: CheckoutFormProps & {
+  checkout: Extract<
+    ReturnType<typeof useCheckout>,
+    { type: "success" }
+  >["checkout"];
+}) {
+  // Snapshot once per session: a guest update must not lock their input on retry.
+  const [sessionEmail] = useState(() => checkout.email);
+  const [email, setEmail] = useState(sessionEmail ?? initialEmail);
+  const emailInputId = useId();
+  const action = useWorkflowAction(async () => {
+    if (!sessionEmail) {
+      const updated = await checkout.updateEmail(email);
+      if (updated.type === "error") throw new Error(updated.error.message);
+    }
+    const confirmed = await checkout.confirm();
+    if (confirmed.type === "error") throw new Error(confirmed.error.message);
+    onNavigate(returnUrl.replace("{CHECKOUT_SESSION_ID}", checkout.id));
+  });
   const state: CheckoutFormState = {
-    email,
+    email: sessionEmail ?? email,
+    emailReadOnly: !!sessionEmail,
     setEmail,
     emailInputId,
     paymentElement: <PaymentElement />,

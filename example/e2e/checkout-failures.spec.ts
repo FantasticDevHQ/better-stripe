@@ -2,7 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { convex, fillPayment } from "./checkout-test-helpers";
 
 // Stripe's documented sandbox cards. No payment requests are mocked.
-test.use({ headless: false, video: "on", screenshot: "only-on-failure" });
+test.use({
+  headless: process.env.E2E_HEADLESS === "1",
+  video: "on",
+  screenshot: "only-on-failure",
+});
 test.beforeEach(async ({ page }) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(180000);
@@ -107,9 +111,15 @@ async function expectPaidAndSplit(page: Page, mode: string) {
     .toBe("settled");
   const sale = convex("storeSaleSettlement:getByCharge", { chargeId });
   expect(sale.affiliateNet).toBe(
-    Math.floor(
-      ((sale.gross - sale.sellingFee) * sale.affiliateBasisPoints) / 10000,
-    ),
+    sale.affiliateFixedAmount != null
+      ? Math.min(
+          sale.gross - sale.sellingFee,
+          Math.round(sale.affiliateFixedAmount * 100),
+        )
+      : Math.floor(
+          ((sale.gross - sale.sellingFee) * (sale.affiliateBasisPoints ?? 0)) /
+            10000,
+        ),
   );
   expect(sale.gross).toBe(
     sale.processingFee +
@@ -122,6 +132,7 @@ async function expectPaidAndSplit(page: Page, mode: string) {
     body: JSON.stringify({ mode, sale }, null, 2),
     contentType: "application/json",
   });
+  return sale;
 }
 for (const [mode, card, message] of [
   ["embedded", "4000000000000002", /card.*declined/i],
@@ -147,7 +158,13 @@ for (const [mode, card, message] of [
         mode === "custom" ? "5555555555554444" : "4242424242424242",
       );
       await submit(page, mode);
-      await expectPaidAndSplit(page, mode);
+      const sale = await expectPaidAndSplit(page, mode);
+      const transfers = convex("queries:listTransfersByCharge", {
+        sourceChargeId: sale.chargeId,
+      });
+      expect(
+        transfers.filter((row: { role: string }) => row.role === "affiliate"),
+      ).toHaveLength(sale.affiliateNet > 0 ? 1 : 0);
     });
   });
 }

@@ -462,4 +462,19 @@ it("shows the originating store on affiliate sales, including older split transf
   expect(
     rows.find((row) => row.sourceChargeId === "ch_unknown")?.storeName,
   ).toBeNull();
+  const first = await t.query(api.queries.paginateAffiliateSales, {
+    accountId: "acct_affiliate",
+    paginationOpts: { numItems: 2, cursor: null },
+  });
+  expect(first.page).toHaveLength(2);
+  expect(first.isDone).toBe(false);
+  const last = await t.query(api.queries.paginateAffiliateSales, {
+    accountId: "acct_affiliate",
+    paginationOpts: { numItems: 2, cursor: first.continueCursor },
+  });
+  expect(last.isDone).toBe(true);
+  expect(last.page).toHaveLength(1);
+  const paged = [...first.page, ...last.page];
+  expect(new Set(paged.map((row) => row.stripeTransferId)).size).toBe(3);
+  expect(paged).toEqual(rows);
 });

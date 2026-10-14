@@ -103,12 +103,15 @@
     "@stripe/react-connect-js": "^3.4.4",
     "@stripe/react-stripe-js": "^7.0.0",
     "@stripe/stripe-js": "^10.0.0",
+    "convex-helpers": "^0.1.128",
     "stripe": "~23.0.0"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^5.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@fantastic.dev/repo-gates": "^0.4.0",
+    "@shadcn/lint": "0.1.5",
+    "@shadscan/cli": "0.7.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -127,9 +130,7 @@
     "pretty-quick": "^4.2.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.71.1",
-    "vitest": "^5.0.3",
-    "@shadcn/lint": "0.1.5",
-    "@shadscan/cli": "0.7.0"
+    "vitest": "^5.0.3"
   },
   "peerDependencies": {
     "convex": "^1.29.3",

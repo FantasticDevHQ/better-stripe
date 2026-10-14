@@ -1,7 +1,11 @@
 import { v } from "convex/values";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 
 import { components } from "./_generated/api";
-import { query } from "./_generated/server";
+import { query, type QueryCtx } from "./_generated/server";
 import { stripe } from "./stripe";
 
 // `stripe.listTransfersByCharge` resolves through the untyped `componentRef`
@@ -311,62 +315,95 @@ export const getAccountEarnings = query({
     ),
 });
 
-/** Store labels for current sales and legacy separate-charge split transfers. */
+const affiliateSaleValidator = v.object({
+  stripeTransferId: v.string(),
+  sourceChargeId: v.optional(v.string()),
+  storeName: v.union(v.string(), v.null()),
+  amount: v.number(),
+  currency: v.string(),
+});
+
+async function affiliateSale(
+  ctx: QueryCtx,
+  accountId: string,
+  transfer: {
+    stripeTransferId: string;
+    sourceChargeId?: string;
+    amount: number;
+    reversedAmount?: number;
+    currency: string;
+  },
+) {
+  let seller = null;
+  if (transfer.sourceChargeId) {
+    const sale = await ctx.db
+      .query("storeSales")
+      .withIndex("by_charge", (q) => q.eq("chargeId", transfer.sourceChargeId!))
+      .first();
+    if (sale?.affiliateAccountId === accountId)
+      seller = await ctx.db.get("users", sale.sellerId);
+    if (!seller) {
+      const legs = await ctx.runQuery(
+        components.betterStripe.connect.queries.listTransfersByCharge,
+        { sourceChargeId: transfer.sourceChargeId, limit: 10 },
+      );
+      const store = legs.find((leg) => leg.role === "store");
+      if (store)
+        seller = await ctx.db
+          .query("users")
+          .withIndex("by_stripe_account", (q) =>
+            q.eq("stripeAccountId", store.destinationAccountId),
+          )
+          .first();
+    }
+  }
+  return {
+    stripeTransferId: transfer.stripeTransferId,
+    sourceChargeId: transfer.sourceChargeId,
+    storeName:
+      seller?.role === "seller" ? (seller.storeName ?? seller.name) : null,
+    amount: transfer.amount - (transfer.reversedAmount ?? 0),
+    currency: transfer.currency,
+  };
+}
+
+/** Store labels for the bounded earnings preview, retained for existing consumers. */
 export const listAffiliateSales = query({
   args: { accountId: v.string() },
-  returns: v.array(
-    v.object({
-      stripeTransferId: v.string(),
-      sourceChargeId: v.optional(v.string()),
-      storeName: v.union(v.string(), v.null()),
-      amount: v.number(),
-      currency: v.string(),
-    }),
-  ),
+  returns: v.array(affiliateSaleValidator),
   handler: async (ctx, args) => {
     const earnings = await ctx.runQuery(
       components.betterStripe.connect.queries.getAccountEarnings,
       { destinationAccountId: args.accountId },
     );
     return Promise.all(
-      earnings.transfers.map(async (transfer) => {
-        let seller = null;
-        if (transfer.sourceChargeId) {
-          const sale = await ctx.db
-            .query("storeSales")
-            .withIndex("by_charge", (q) =>
-              q.eq("chargeId", transfer.sourceChargeId!),
-            )
-            .first();
-          if (sale?.affiliateAccountId === args.accountId)
-            seller = await ctx.db.get("users", sale.sellerId);
-          if (!seller) {
-            const legs = await ctx.runQuery(
-              components.betterStripe.connect.queries.listTransfersByCharge,
-              { sourceChargeId: transfer.sourceChargeId, limit: 10 },
-            );
-            const store = legs.find((leg) => leg.role === "store");
-            if (store)
-              seller = await ctx.db
-                .query("users")
-                .withIndex("by_stripe_account", (q) =>
-                  q.eq("stripeAccountId", store.destinationAccountId),
-                )
-                .first();
-          }
-        }
-        return {
-          stripeTransferId: transfer.stripeTransferId,
-          sourceChargeId: transfer.sourceChargeId,
-          storeName:
-            seller?.role === "seller"
-              ? (seller.storeName ?? seller.name)
-              : null,
-          amount: transfer.amount - (transfer.reversedAmount ?? 0),
-          currency: transfer.currency,
-        };
-      }),
+      earnings.transfers.map((transfer) =>
+        affiliateSale(ctx, args.accountId, transfer),
+      ),
     );
+  },
+});
+
+/** Paginate the full affiliate transfer history, including older sales. */
+export const paginateAffiliateSales = query({
+  args: { accountId: v.string(), paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(affiliateSaleValidator),
+  handler: async (ctx, args) => {
+    const result = await ctx.runQuery(
+      components.betterStripe.connect.queries.paginateTransfersByAccount,
+      {
+        destinationAccountId: args.accountId,
+        paginationOpts: args.paginationOpts,
+      },
+    );
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map((transfer) =>
+          affiliateSale(ctx, args.accountId, transfer),
+        ),
+      ),
+    };
   },
 });
 

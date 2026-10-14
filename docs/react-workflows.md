@@ -236,3 +236,18 @@ available and pending Stripe balances shown by `Payouts`.
 shared by its account pages and native `Onboarding`. Supply `countries` to limit
 or expand the UI for your platform. This default is not a complete list of
 Stripe-supported countries; your server must validate account eligibility.
+
+## Cursor pagination
+
+Use `useCursorPagination(accountId)` to keep a page number, current cursor, and
+Previous/Next history. Pass `cursor` to your backend's paginated query and call
+`next(result.continueCursor)` only when `result.isDone` is false. Changing the
+scope key resets the history to page 1.
+
+`Pagination` renders unstyled Previous/Next buttons and an announced page number,
+or accepts a render function for your design system. Supply `canPrevious`,
+`canNext`, `isLoading`, `onPrevious`, and `onNext`. Navigation is disabled while
+loading. The example's affiliate sales page uses this with the component query
+`connect.queries.paginateTransfersByAccount`, which returns newest-first cursor
+pages scoped to the recipient account. Earnings totals still use aggregate
+queries independently of pagination.

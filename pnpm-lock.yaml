@@ -20,6 +20,9 @@ importers:
       '@stripe/stripe-js':
         specifier: ^10.0.0
         version: 10.0.0
+      convex-helpers:
+        specifier: ^0.1.128
+        version: 0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5)
       react:
         specifier: ^18.3.1 || ^19.0.0
         version: 19.3.0
@@ -2131,6 +2134,28 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  convex-helpers@0.1.128:
+    resolution: {integrity: sha512-5n7uKsJrYnnybvuSAWgDQ9d5Avqk4CzFsJ22SXow4tHmVxSUH6qiJCeomWWxcLSfN9t9jpKIXNJiGJrjddS4ng==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.46.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0 || ^7.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
 
   convex-test@0.0.60:
     resolution: {integrity: sha512-qCAFx+CO6bmpXNc9s1jZvw8NJPS4yM074ib87PUY675FsiaRRW4ALotEB+RbVCYDRMYxh623KMnYZBlrMJIv1Q==}
@@ -6125,6 +6150,15 @@ snapshots:
   content-type@2.1.0: {}
 
   convert-source-map@2.0.0: {}
+
+  convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5):
+    dependencies:
+      convex: 1.46.0(react@19.3.0)
+    optionalDependencies:
+      hono: 4.13.13
+      react: 19.3.0
+      typescript: '@typescript/typescript6@6.0.2'
+      zod: 4.6.5
 
   convex-test@0.0.60(convex@1.46.0(react@19.3.0)):
     dependencies:

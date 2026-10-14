@@ -1,4 +1,10 @@
 import { v } from "convex/values";
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 
 import type { Doc } from "../_generated/dataModel";
 import { query } from "../_generated/server";
@@ -341,6 +347,23 @@ export const listTransfersByAccount = query({
       )
       .take(args.limit ?? 50);
   },
+});
+
+/** Newest transfers for a recipient, with bounded cursor pagination. */
+export const paginateTransfersByAccount = query({
+  args: {
+    destinationAccountId: v.string(),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(transferDocValidator),
+  handler: (ctx, args) =>
+    paginator(ctx.db, schema)
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.destinationAccountId),
+      )
+      .order("desc")
+      .paginate(args.paginationOpts),
 });
 
 // =============================================================================

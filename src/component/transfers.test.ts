@@ -469,3 +469,51 @@ describe("claimReversalSlices (BTS-63)", () => {
     expect(rival.slices).toEqual([]);
   });
 });
+
+it("paginates an account's newest transfers beyond 50 without duplicates or other accounts", async () => {
+  const t = convexTest(schema, modules);
+  for (let i = 0; i < 57; i++) {
+    await t.mutation(api.connect.mutations.upsertTransfer, {
+      stripeTransferId: `tr_page_${i}`,
+      destinationAccountId: "acct_pages",
+      amount: 100,
+      currency: "usd",
+      status: "paid",
+    });
+  }
+  await t.mutation(api.connect.mutations.upsertTransfer, {
+    stripeTransferId: "tr_foreign",
+    destinationAccountId: "acct_other",
+    amount: 200,
+    currency: "usd",
+    status: "paid",
+  });
+  let cursor: string | null = null;
+  const ids: string[] = [];
+  const sizes: number[] = [];
+  for (;;) {
+    const result: {
+      page: { stripeTransferId: string }[];
+      isDone: boolean;
+      continueCursor: string;
+    } = await t.query(api.connect.queries.paginateTransfersByAccount, {
+      destinationAccountId: "acct_pages",
+      paginationOpts: { numItems: 10, cursor },
+    });
+    sizes.push(result.page.length);
+    ids.push(...result.page.map((row) => row.stripeTransferId));
+    if (result.isDone) break;
+    cursor = result.continueCursor;
+  }
+  expect(sizes).toEqual([10, 10, 10, 10, 10, 7]);
+  expect(ids).toEqual(
+    Array.from({ length: 57 }, (_, i) => `tr_page_${56 - i}`),
+  );
+  expect(new Set(ids).size).toBe(57);
+  const empty = await t.query(api.connect.queries.paginateTransfersByAccount, {
+    destinationAccountId: "acct_empty",
+    paginationOpts: { numItems: 10, cursor: null },
+  });
+  expect(empty.page).toEqual([]);
+  expect(empty.isDone).toBe(true);
+});

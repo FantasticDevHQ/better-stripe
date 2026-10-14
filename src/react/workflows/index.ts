@@ -236,3 +236,5 @@ export type {
   PaymentDetailsPayment,
   PaymentDetailsState,
 } from "./Financials.js";
+export { Pagination, useCursorPagination } from "./Pagination.js";
+export type { PaginationProps } from "./Pagination.js";

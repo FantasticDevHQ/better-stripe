@@ -894,6 +894,13 @@ uses the package's React components, styled by the example app. **Stripe embedde
 and **Stripe hosted** use Stripe's UI. Existing `example=headless` links and the
 `headless` package mode value remain compatible; only the visible name changed.
 
+Affiliate Referred sales uses server-side cursor pagination with 10 rows per
+page, newest first. Previous/Next controls use the package's `Pagination` and
+`useCursorPagination`; changing affiliate accounts resets the cursor history.
+`paginateAffiliateSales` enriches each page with store names and commissions after
+reversals. It reads `paginateTransfersByAccount`, so older sales remain reachable
+beyond the bounded earnings preview.
+
 ### Choose a checkout type
 
 Open any seller product's checkout to compare these integrations. Each option

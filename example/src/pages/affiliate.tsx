@@ -1,6 +1,8 @@
 import {
   useReferralLinks,
   ReferredSales,
+  Pagination,
+  useCursorPagination,
   Earnings,
   EarningsSummary,
   type EarningsRenderProps,
@@ -126,10 +128,16 @@ export function Affiliate({
 
 export function AffiliateSales() {
   const { currentUser } = useRole();
+  const pagination = useCursorPagination(
+    currentUser.stripeAccountId ?? currentUser.id,
+  );
   const sales = useQuery(
-    api.queries.listAffiliateSales,
+    api.queries.paginateAffiliateSales,
     currentUser.stripeAccountId
-      ? { accountId: currentUser.stripeAccountId }
+      ? {
+          accountId: currentUser.stripeAccountId,
+          paginationOpts: { numItems: 10, cursor: pagination.cursor },
+        }
       : "skip",
   );
   return (
@@ -145,9 +153,57 @@ export function AffiliateSales() {
       ) : (
         <Card>
           <CardContent padding="section">
-            <ReferredSales rows={sales}>
+            <ReferredSales rows={sales?.page}>
               {(state) => <WorkflowTable {...state} />}
             </ReferredSales>
+            <Pagination
+              page={pagination.page}
+              canPrevious={pagination.canPrevious}
+              canNext={sales !== undefined && !sales.isDone}
+              isLoading={sales === undefined}
+              onPrevious={pagination.previous}
+              onNext={() => {
+                if (sales && !sales.isDone)
+                  pagination.next(sales.continueCursor);
+              }}
+            >
+              {({
+                pageLabel,
+                previousLabel,
+                nextLabel,
+                previousDisabled,
+                nextDisabled,
+                previous,
+                next,
+              }) => (
+                <nav
+                  aria-label="Referred sales pagination"
+                  className="mt-4 flex items-center justify-between gap-3"
+                >
+                  <Button
+                    variant="outline"
+                    disabled={previousDisabled}
+                    onClick={previous}
+                  >
+                    {previousLabel}
+                  </Button>
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="text-sm text-muted-foreground"
+                  >
+                    {pageLabel}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={nextDisabled}
+                    onClick={next}
+                  >
+                    {nextLabel}
+                  </Button>
+                </nav>
+              )}
+            </Pagination>
           </CardContent>
         </Card>
       )}

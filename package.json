@@ -58,6 +58,7 @@
     "dist",
     "src",
     "docs/react-workflows.md",
+    "docs/settlement.md",
     "docs/react-workflows-audit.md",
     "CHANGELOG.md",
     "MIGRATION.md"

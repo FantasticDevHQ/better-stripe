@@ -10,6 +10,7 @@
  * tree rendering without throwing via react-dom/server, the disputes_list vs
  * payment_disputes mount switch, and the headless overrides.
  */
+import * as barrel from "../index.js";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -136,8 +137,7 @@ describe("EmbeddedDisputes", () => {
 });
 
 describe("react barrel exports", () => {
-  it("exports ConnectProvider and EmbeddedDisputes", async () => {
-    const barrel = await import("../index.js");
+  it("exports ConnectProvider and EmbeddedDisputes", () => {
     expect(barrel.ConnectProvider).toBe(ConnectProvider);
     expect(barrel.EmbeddedDisputes).toBe(EmbeddedDisputes);
   });

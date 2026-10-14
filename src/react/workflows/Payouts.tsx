@@ -1,4 +1,8 @@
 "use client";
+import type {
+  RecipientPayoutSnapshot,
+  RecipientPayoutRow,
+} from "../../client/connect/payoutSnapshot.js";
 import { useState, type ReactNode } from "react";
 import { Connect, type ConnectProps } from "./Connect.js";
 import { useWorkflowAction } from "./useWorkflowAction.js";
@@ -9,20 +13,14 @@ import {
   type WorkflowColumn,
 } from "./Collection.js";
 import { formatPrice } from "../lib/price-helpers.js";
-export type PayoutRow = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  /** Unix milliseconds. */ arrivalDate: number | null;
-  created: number;
-};
-export type PayoutSnapshot = {
-  balances: { currency: string; available: number; pending: number }[];
-  payouts: PayoutRow[];
-  upcoming: PayoutRow[];
-  nextCursor: string | null;
-};
+export type PayoutRow = RecipientPayoutRow;
+export type PayoutSnapshot = Pick<
+  RecipientPayoutSnapshot,
+  "balances" | "payouts" | "upcoming" | "nextCursor"
+> &
+  Partial<
+    Pick<RecipientPayoutSnapshot, "status" | "reason" | "upcomingComplete">
+  >;
 export type PayoutsRenderProps = {
   data: PayoutSnapshot | undefined;
   error: string | null;
@@ -169,7 +167,10 @@ function NativePayouts({
       </button>
       {error && <p role="alert">{error}</p>}
       {isLoading && !data && <p role="status">Loading payouts…</p>}
-      {data && (
+      {data?.status === "not_ready" && (
+        <p role="alert">Stripe account data is not available yet.</p>
+      )}
+      {data && data.status !== "not_ready" && (
         <>
           <dl>
             {data.balances.map((balance) => (
@@ -188,6 +189,11 @@ function NativePayouts({
             </dd>
           </dl>
           <h3>Upcoming payouts</h3>
+          {data.upcomingComplete === false && (
+            <p>
+              Upcoming payouts are a bounded preview. More may be scheduled.
+            </p>
+          )}
           <PayoutHistory
             rows={upcomingPayouts}
             emptyLabel="No upcoming payouts scheduled."

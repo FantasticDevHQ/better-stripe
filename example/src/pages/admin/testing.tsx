@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTaskRunner } from "@fantastic.dev/better-stripe/react";
 
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,19 @@ export function AdminTesting() {
           )}
         </p>
       </div>
+
+      <Button
+        nativeButton={false}
+        role="link"
+        render={
+          <Link
+            to="/demo/allocation"
+            aria-label="Explore fee-first allocation"
+          />
+        }
+      >
+        Explore fee-first allocation
+      </Button>
 
       {/* Environment Guard */}
       <Card>

@@ -214,3 +214,17 @@ describe("checkExampleApp", () => {
     expect(result.message).toContain("lib/marketplace.ts");
   });
 });
+it("checks exported functions in newly added component domains", () => {
+  const root = makeFixtureRoot();
+  mkdirSync(join(root, "src", "component", "settlement"), { recursive: true });
+  mkdirSync(join(root, "src", "component", "_generated"), { recursive: true });
+  writeFileSync(
+    join(root, "src", "component", "settlement", "mutations.ts"),
+    "export const reserveSettlementAllocation = mutation({});\n",
+  );
+  writeFileSync(
+    join(root, "src", "component", "_generated", "component.ts"),
+    "export type ComponentApi = {};\n",
+  );
+  expect(checkLibraryComponent(root).ok).toBe(false);
+});

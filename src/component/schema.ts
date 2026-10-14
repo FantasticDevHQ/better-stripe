@@ -1,3 +1,8 @@
+import {
+  allocationsTable,
+  commissionTermsTable,
+  commissionDecisionsTable,
+} from "./settlement/schema";
 import { defineSchema } from "convex/server";
 
 import {
@@ -19,6 +24,9 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  settlementAllocations: allocationsTable,
+  commissionTerms: commissionTermsTable,
+  commissionDecisions: commissionDecisionsTable,
   // Core
   accounts: accountsTable,
 

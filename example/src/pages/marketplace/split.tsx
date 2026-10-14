@@ -56,8 +56,9 @@ function SplitCheckoutForm({
       orderKey={`${userId}:${priceId}:${referralCode ?? ""}`}
       publishableKey={publishableKey}
       returnUrl={buildSplitCheckoutReturnUrl(window.location.origin)}
-      createSession={() =>
+      createSession={({ requestId }) =>
         createCheckout({
+          requestId,
           userId: userId
             ? (userId as import("../../../convex/_generated/dataModel").Id<"users">)
             : undefined,

@@ -111,6 +111,7 @@ describe("storefront checkout", () => {
   it("routes a real product price to its seller and binds the active customer", async () => {
     const { t, ids } = await setup();
     await t.action(api.actions.createCheckoutSession, {
+      requestId: "order-retry-123",
       userId: ids.customer,
       stripePriceId: "price_store",
       returnUrl: "http://localhost:5173/checkout/status",
@@ -118,6 +119,7 @@ describe("storefront checkout", () => {
     expect(mock.createCheckoutSession).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
+        idempotencyKey: `example_checkout_${ids.customer}_price_store_embedded_order-retry-123`,
         userId: ids.customer,
         accountId: "acct_customer",
         amount: 12900,

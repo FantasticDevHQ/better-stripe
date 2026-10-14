@@ -1,5 +1,5 @@
 "use client";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { EmbeddedCheckout } from "../components/EmbeddedCheckout.js";
 import { useWorkflowResource } from "./useWorkflowResource.js";
 import {
@@ -36,6 +36,8 @@ type Common = CheckoutFormOptions & {
   publishableKey: string;
   /** Changes when the price, signed-in customer, or referral attribution changes. */
   orderKey: string;
+  /** Optional durable logical-order identity, persisted by the host app. */
+  requestId?: string;
   returnUrl: string;
   onNavigate?: (url: string) => void;
   children?: (state: CheckoutRenderProps) => ReactNode;
@@ -57,11 +59,16 @@ export type CheckoutProps = Common &
   );
 /** All checkout integrations share one unstyled lifecycle. Callbacks must authenticate and validate prices on the server. */
 export function Checkout(props: CheckoutProps) {
-  return <CheckoutBody key={`${props.orderKey}:${props.mode}`} {...props} />;
+  return (
+    <CheckoutBody
+      key={`${props.orderKey}:${props.mode}:${props.requestId ?? ""}`}
+      {...props}
+    />
+  );
 }
 function CheckoutBody(props: CheckoutProps) {
+  const [requestId] = useState(() => props.requestId ?? crypto.randomUUID());
   const state = useWorkflowResource(async () => {
-    const requestId = crypto.randomUUID();
     const result =
       props.mode === "payment-intent"
         ? await props.createPaymentIntent({ requestId })

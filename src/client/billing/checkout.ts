@@ -1,3 +1,4 @@
+import { idempotencyOptions } from "../core/idempotency.js";
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
@@ -110,6 +111,7 @@ export async function createCheckoutSession(
   component: Component,
   ctx: RunCtx,
   opts: {
+    idempotencyKey?: string;
     userId: string;
     orgId?: string;
     stripePriceId: string;
@@ -338,7 +340,10 @@ export async function createCheckoutSession(
     await assertPlatformPrice(stripe, component, ctx, finalPriceId);
   }
 
-  const session = await stripe.checkout.sessions.create(finalSessionParams);
+  const requestOptions = idempotencyOptions(opts.idempotencyKey);
+  const session = requestOptions
+    ? await stripe.checkout.sessions.create(finalSessionParams, requestOptions)
+    : await stripe.checkout.sessions.create(finalSessionParams);
 
   await runMutationOrThrow(
     ctx,

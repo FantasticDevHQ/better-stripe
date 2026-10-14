@@ -29,10 +29,11 @@ export function SessionCheckout({
       email={currentUser.email}
       returnUrl={buildCheckoutReturnUrl(window.location.origin)}
       renderForm={(state) => <CheckoutFormFields {...state} />}
-      createSession={({ mode }) =>
+      createSession={({ mode, requestId }) =>
         create({
           userId,
           uiMode: mode,
+          requestId,
           referralCode,
           stripePriceId: priceId,
           returnUrl:

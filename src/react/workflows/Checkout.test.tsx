@@ -83,6 +83,9 @@ it("exposes creation errors and retries without losing the selected integration"
   await userEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByText("Stripe iframe");
   await waitFor(() => expect(createSession).toHaveBeenCalledTimes(2));
+  expect(createSession.mock.calls[1][0].requestId).toBe(
+    createSession.mock.calls[0][0].requestId,
+  );
 });
 it("rejects missing session secrets and initializes Payment Intents through their own callback", async () => {
   const { unmount } = render(
@@ -115,4 +118,31 @@ it("rejects missing session secrets and initializes Payment Intents through thei
   expect(createPaymentIntent).toHaveBeenCalledWith({
     requestId: expect.any(String),
   });
+});
+
+it("keeps an explicit request identity through rerenders and replaces generated identity for a new order", async () => {
+  const createSession = vi
+    .fn()
+    .mockResolvedValue({ stripeSessionId: "cs_test", clientSecret: "secret" });
+  const props = {
+    mode: "embedded" as const,
+    orderKey: "order_one",
+    publishableKey: "pk_test",
+    returnUrl: "https://app.test/receipt",
+    createSession,
+  };
+  const { rerender } = render(
+    <Checkout {...props} requestId="persisted-order" />,
+  );
+  await screen.findByText("Stripe iframe");
+  expect(createSession.mock.calls[0][0].requestId).toBe("persisted-order");
+  rerender(<Checkout {...props} requestId="persisted-order" />);
+  expect(createSession).toHaveBeenCalledTimes(1);
+  rerender(<Checkout {...props} orderKey="order_two" />);
+  await waitFor(() => expect(createSession).toHaveBeenCalledTimes(2));
+  const second = createSession.mock.calls[1][0].requestId;
+  expect(second).not.toBe("persisted-order");
+  rerender(<Checkout {...props} orderKey="order_three" />);
+  await waitFor(() => expect(createSession).toHaveBeenCalledTimes(3));
+  expect(createSession.mock.calls[2][0].requestId).not.toBe(second);
 });

@@ -1192,3 +1192,31 @@ Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, 
 ## License
 
 MIT
+
+## Verified settlement and payout APIs
+
+`getVerifiedSale`, `allocateSale`, `selectCommissionInvoice`, and `settleSale`
+provide verified fees, fee-first allocations, durable subscription commission
+terms, and recoverable execution through the component's existing transfer ledger.
+`getPayoutSnapshot` supplies per-currency balances, real cursor history, and
+explicitly bounded upcoming payout data. See [settlement and payout contracts](docs/settlement.md)
+for authorization, recovery, migration, and provider limitations.
+
+Account creation (`createAccount`, `getOrCreateAccount`, `ensureCustomerAccount`)
+and `createCheckoutSession` accept an optional `idempotencyKey`. Use one stable
+account-creation key per logical account and a distinct key per checkout order.
+React `Checkout` preserves its request ID through retries; your server must
+forward that identity as the SDK request option. Persist it in the host order
+for recovery across reloads. Omission retains the previous SDK behavior.
+
+Keys must be nonempty, at most 255 characters, and contain no sensitive data.
+Reuse a key only with identical parameters. Stripe v1 Checkout keys can be pruned
+after 24 hours; Accounts v2 deduplicates within 30 days. Maintain durable order and
+account mappings beyond those windows, and reconcile ambiguous provider results
+before retrying an expired key. See [v1 idempotency](https://docs.stripe.com/api/idempotent_requests)
+and [v2 request semantics](https://docs.stripe.com/api-v2-overview).
+
+`getCheckoutSessionFromStripe`, `getSubscriptionFromStripe`, and `getCouponFromStripe` read
+current provider objects rather than cached component records. They are server
+APIs: authorize each resource and return only the fields your browser needs.
+Subscription upserts accept Stripe's `incomplete_expired` terminal status.

@@ -66,8 +66,9 @@ function DestinationChargeCheckoutForm({
       orderKey={`${userId}:${stripePriceId}:${destinationAccountId}`}
       publishableKey={publishableKey}
       returnUrl={returnUrl}
-      createSession={() =>
+      createSession={({ requestId }) =>
         createCheckout({
+          requestId,
           userId,
           stripePriceId,
           destinationAccountId,

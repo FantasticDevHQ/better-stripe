@@ -52,8 +52,11 @@ function Purchase({ publishableKey, priceId, createSession }) {
 
 The callback returns `{ stripeSessionId, clientSecret?, url? }`. It must return
 `url` for `redirect` and `clientSecret` for the other session modes. Use the
-request ID for server idempotency. A user-triggered retry creates a new request
-ID; also enforce application-level duplicate-order protection on the server.
+request ID for server idempotency. Retries and rerenders preserve the same ID.
+Changing `orderKey` or checkout mode starts a new logical request. Pass a persisted
+`requestId` prop to preserve identity across unmounts or page reloads. Forward it
+to your authenticated server and Stripe request options; also enforce durable
+application-level duplicate-order protection.
 
 | Mode             | Stripe integration                    | Tradeoff                                                               |
 | ---------------- | ------------------------------------- | ---------------------------------------------------------------------- |

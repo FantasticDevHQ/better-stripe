@@ -5,6 +5,7 @@ import { isAffiliateReferral } from "../affiliateSplit";
 import { checkoutModeForPrice } from "./marketplace";
 import type { ActionCtx } from "../_generated/server";
 export const checkoutArgs = {
+  requestId: v.optional(v.string()),
   userId: v.optional(v.id("users")),
   stripePriceId: v.string(),
   referralCode: v.optional(v.string()),
@@ -66,7 +67,15 @@ export async function createStoreCheckout(
     sellerId: identity.sellerId,
     stripePriceId: args.stripePriceId,
   });
+  if (
+    args.requestId !== undefined &&
+    !/^[a-zA-Z0-9-]{8,64}$/.test(args.requestId)
+  )
+    throw new Error("Invalid checkout request ID.");
   return stripe.createCheckoutSession(ctx, {
+    idempotencyKey: args.requestId
+      ? `example_checkout_${identity.userId || "guest"}_${args.stripePriceId}_${args.uiMode ?? "embedded"}_${args.requestId}`
+      : undefined,
     userId: identity.userId,
     accountId: account?.stripeAccountId,
     customerEmail: identity.email,

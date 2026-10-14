@@ -28,7 +28,11 @@ function makeComponent(): Component {
 function plainCtx() {
   return {
     runQuery: vi.fn().mockResolvedValue(null),
-    runMutation: vi.fn().mockResolvedValue(undefined),
+    runMutation: vi.fn(async (ref: Record<symbol, string>, args: unknown) =>
+      ref[TO_REF].endsWith("settlement/mutations/reserveSettlementAllocation")
+        ? args
+        : undefined,
+    ),
   } as unknown as RunCtx & {
     runQuery: ReturnType<typeof vi.fn>;
     runMutation: ReturnType<typeof vi.fn>;
@@ -47,6 +51,8 @@ function makeCtx(transfers: unknown[]) {
   const runMutation = vi.fn(
     async (refObj: Record<symbol, string>, args: Record<string, unknown>) => {
       const path = refObj[TO_REF].replace(/^betterStripe\//, "");
+      if (path === "settlement/mutations/reserveSettlementAllocation")
+        return args;
       if (path !== "connect/mutations/claimReversalSlices") return undefined;
       const legs = transfers as {
         stripeTransferId: string;
@@ -88,7 +94,9 @@ function makeCtx(transfers: unknown[]) {
 let trSeq = 0;
 function makeStripe() {
   return {
+    charges: { retrieve: vi.fn().mockResolvedValue({ created: 1 }) },
     transfers: {
+      list: vi.fn().mockResolvedValue({ data: [], has_more: false }),
       createReversal: vi.fn().mockResolvedValue({ id: "trr_1" }),
       create: vi.fn(async (_params: unknown) => ({ id: `tr_new_${++trSeq}` })),
     },
@@ -342,8 +350,8 @@ describe("createSplitTransfers engine (BTS-22)", () => {
       destination: "acct_aff",
     });
     // ledger rows
-    expect(ctx.runMutation).toHaveBeenCalledTimes(2);
-    expect(ctx.runMutation.mock.calls[0][1]).toMatchObject({
+    expect(ctx.runMutation).toHaveBeenCalledTimes(3);
+    expect(ctx.runMutation.mock.calls[1][1]).toMatchObject({
       sourceChargeId: "ch_1",
       destinationAccountId: "acct_store",
       amount: 8000,
@@ -372,7 +380,7 @@ describe("createSplitTransfers engine (BTS-22)", () => {
     });
 
     expect(stripe.transfers.create).toHaveBeenCalledTimes(3);
-    expect(ctx.runMutation).toHaveBeenCalledTimes(3);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(4);
   });
 
   it("skips zero-amount transfers", async () => {
@@ -403,6 +411,7 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
         destinationAccountId: "acct_store",
         role: "store",
         amount: 8000,
+        currency: "usd",
       },
     ]);
 
@@ -431,12 +440,14 @@ describe("createSplitTransfers idempotency (BTS-24)", () => {
         destinationAccountId: "acct_store",
         role: "store",
         amount: 8000,
+        currency: "usd",
       },
       {
         stripeTransferId: "tr_aff",
         destinationAccountId: "acct_aff",
         role: "affiliate",
         amount: 1000,
+        currency: "usd",
       },
     ]);
 

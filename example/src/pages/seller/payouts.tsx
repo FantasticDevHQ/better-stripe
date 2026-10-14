@@ -133,9 +133,23 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {data?.status === "not_ready" && (
+            <Alert>
+              <AlertDescription>
+                Stripe account data is not available yet.
+              </AlertDescription>
+            </Alert>
+          )}
+          {data?.upcomingComplete === false && (
+            <Alert>
+              <AlertDescription>
+                Upcoming payouts are a bounded preview. More may be scheduled.
+              </AlertDescription>
+            </Alert>
+          )}
           {!data ? (
             !error && <Skeleton className="h-40 w-full" />
-          ) : (
+          ) : data.status === "not_ready" ? null : (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 {(["available", "pending"] as const).map((kind) => (

@@ -351,6 +351,7 @@ const checkoutSessionResultValidator = v.object({
  */
 export const createDestinationChargeCheckout = action({
   args: {
+    requestId: v.optional(v.string()),
     userId: v.string(),
     stripePriceId: v.string(),
     destinationAccountId: v.string(),
@@ -360,6 +361,9 @@ export const createDestinationChargeCheckout = action({
   returns: checkoutSessionResultValidator,
   handler: async (ctx, args) =>
     stripe.createCheckoutSession(ctx, {
+      idempotencyKey: args.requestId
+        ? `destination_${args.userId}_${args.requestId}`
+        : undefined,
       userId: args.userId,
       stripePriceId: args.stripePriceId,
       mode: "payment",

@@ -1,8 +1,7 @@
 import { v } from "convex/values";
-import type Stripe from "stripe";
+import { stripe } from "./stripe";
 import { action, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getStripeClient } from "./lib/stripeClient";
 
 export const account = internalQuery({
   args: { userId: v.id("users") },
@@ -25,6 +24,9 @@ const payout = v.object({
   created: v.number(),
 });
 const fields = {
+  status: v.union(v.literal("ready"), v.literal("not_ready")),
+  reason: v.optional(v.string()),
+  upcomingComplete: v.boolean(),
   balances: v.array(
     v.object({
       currency: v.string(),
@@ -37,16 +39,6 @@ const fields = {
   nextCursor: v.union(v.string(), v.null()),
 };
 const resultValidator = v.object(fields);
-function row(p: Stripe.Payout) {
-  return {
-    id: p.id,
-    amount: p.amount,
-    currency: p.currency,
-    status: p.status,
-    arrivalDate: p.arrival_date ? p.arrival_date * 1000 : null,
-    created: p.created * 1000,
-  };
-}
 /** Live recipient data. History is cursor-paginated rather than capped at 50 rows. */
 export const load = action({
   args: { userId: v.id("users"), cursor: v.optional(v.string()) },
@@ -58,43 +50,9 @@ export const load = action({
     const accountId = await ctx.runQuery(internal.recipientPayouts.account, {
       userId: args.userId,
     });
-    const raw = getStripeClient();
-    const options = { stripeAccount: accountId };
-    const [balance, history, pending, transit] = await Promise.all([
-      raw.balance.retrieve({}, options),
-      raw.payouts.list({ limit: 100, starting_after: args.cursor }, options),
-      raw.payouts.list({ limit: 100, status: "pending" }, options),
-      raw.payouts.list({ limit: 100, status: "in_transit" }, options),
-    ]);
-    const balances = new Map<
-      string,
-      { currency: string; available: number; pending: number }
-    >();
-    for (const kind of ["available", "pending"] as const)
-      for (const entry of balance[kind]) {
-        const current = balances.get(entry.currency) ?? {
-          currency: entry.currency,
-          available: 0,
-          pending: 0,
-        };
-        current[kind] += entry.amount;
-        balances.set(entry.currency, current);
-      }
-    const upcoming = [
-      ...new Map(
-        [...pending.data, ...transit.data]
-          .filter(
-            (payout) =>
-              payout.status === "pending" || payout.status === "in_transit",
-          )
-          .map((payout) => [payout.id, row(payout)]),
-      ).values(),
-    ].sort((a, b) => (a.arrivalDate ?? Infinity) - (b.arrivalDate ?? Infinity));
-    return {
-      balances: [...balances.values()],
-      payouts: history.data.map(row),
-      upcoming,
-      nextCursor: history.has_more ? (history.data.at(-1)?.id ?? null) : null,
-    };
+    return stripe.getPayoutSnapshot(ctx, {
+      stripeAccountId: accountId,
+      cursor: args.cursor,
+    });
   },
 });

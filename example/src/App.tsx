@@ -1,3 +1,4 @@
+import { AllocationPreview } from "@/pages/demo/allocation";
 import { IntegrationExamples } from "@/components/integration-examples";
 import { ConnectExample } from "@/components/connect-example";
 import {
@@ -89,6 +90,8 @@ export default function App() {
               />
             }
           />
+
+          <Route path="/demo/allocation" element={<AllocationPreview />} />
 
           {/* Marketplace demos */}
           <Route path="/marketplace/split" element={<LegacySplit />} />

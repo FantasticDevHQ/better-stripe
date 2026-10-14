@@ -1070,3 +1070,22 @@ Temporary payout rules are restored in cleanup; sandbox transactions remain.
 Stores whose Stripe recipient capabilities are not active are correctly excluded.
 Use `e2e/checkout-methods.spec.ts` to cover all five checkout presentations and
 `e2e/seller-affiliate-rates.spec.ts` for fixed product/subscription price payouts.
+
+### Affiliate commission terms
+
+The reusable `AffiliatePayoutEditor` supports **Forever**, **One-time**, and an
+inherited term alongside percentage or fixed payouts. Terms inherit from price →
+product → store → plan → platform; the fallback is Forever for compatibility.
+An explicit 0% still disables commissions.
+
+Subscription Checkout saves the resolved `affiliateCommissionTerm` in Stripe
+subscription metadata. The example also stores the term and first successfully
+paid invoice in `subscriptionCommissions`, indexed by Stripe subscription ID.
+One-time pays commission on that invoice only; Forever pays again on renewals.
+Failed payments do not consume the first commission, and settlement retries reuse
+the recorded amounts. Term changes apply to new subscriptions; existing
+subscriptions retain their saved term. Older subscriptions without a term retain
+Forever. Payout amounts still resolve from the current price/product settings on
+each invoice. Refunds follow the existing commission reversal rules and do not
+reset the first invoice. One-time purchases have only one commission regardless
+of the selected subscription term.

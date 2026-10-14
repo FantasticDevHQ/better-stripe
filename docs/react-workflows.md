@@ -304,3 +304,12 @@ Affiliate payout sources can be `global`, `store`, `plan`, `product`, `price`, o
 `none`. Unset app rules fall back to zero. The example resolves price → product →
 store-wide → plan → platform-wide → 0, and distinguishes explicit zero from null
 inheritance. Both global controls use the same package editor as the row controls.
+
+`AffiliatePayoutEditor` also exposes an optional `affiliateCommissionTerm`
+(`"forever"`, `"one_time"`, or `null` to inherit) and
+`effectiveCommissionTerm`. Its render state includes `term` and `setTerm`, and
+`onSave` receives the selected term together with the payout amount. Clear
+removes both overrides. The example saves the resolved subscription term in
+Stripe metadata at checkout and claims the first paid invoice atomically in its
+Convex ledger; the UI component does not itself create transfers or process
+renewals.

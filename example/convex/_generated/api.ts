@@ -18,6 +18,7 @@ import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as embeddedExamples from "../embeddedExamples.js";
 import type * as http from "../http.js";
+import type * as lib_affiliateCommission from "../lib/affiliateCommission.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as lib_sandboxFixturePlan from "../lib/sandboxFixturePlan.js";
 import type * as lib_sandboxFixtureResources from "../lib/sandboxFixtureResources.js";
@@ -73,6 +74,7 @@ const fullApi: ApiFromModules<{
   e2eMoney: typeof e2eMoney;
   embeddedExamples: typeof embeddedExamples;
   http: typeof http;
+  "lib/affiliateCommission": typeof lib_affiliateCommission;
   "lib/marketplace": typeof lib_marketplace;
   "lib/sandboxFixturePlan": typeof lib_sandboxFixturePlan;
   "lib/sandboxFixtureResources": typeof lib_sandboxFixtureResources;

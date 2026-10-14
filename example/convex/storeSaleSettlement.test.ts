@@ -8,6 +8,7 @@ import { api, internal, components } from "./_generated/api";
 const raw = vi.hoisted(() => ({
   paymentIntents: { retrieve: vi.fn() },
   subscriptions: { retrieve: vi.fn() },
+  invoices: { list: vi.fn() },
   transfers: { list: vi.fn(), create: vi.fn() },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));

@@ -73,15 +73,18 @@ it("resolves price, product, then plan rates and enforces seller ownership, vali
   ).rejects.toThrow(/percentage/i);
   await t.mutation(api.sellerAffiliateRates.save, {
     ...product,
+    affiliateCommissionTerm: "one_time",
     affiliateBasisPoints: 1500,
     expectedVersion: 0,
   });
   expect(await t.query(api.sellerAffiliateRates.get, price)).toMatchObject({
     effectiveBasisPoints: 1500,
+    effectiveCommissionTerm: "one_time",
     source: "product",
   });
   await t.mutation(api.sellerAffiliateRates.save, {
     ...price,
+    affiliateCommissionTerm: "forever",
     affiliateBasisPoints: 1250,
     expectedVersion: 0,
   });
@@ -90,7 +93,11 @@ it("resolves price, product, then plan rates and enforces seller ownership, vali
       sellerId,
       stripePriceId: "price_month",
     }),
-  ).toMatchObject({ effectiveBasisPoints: 1250, source: "price" });
+  ).toMatchObject({
+    effectiveBasisPoints: 1250,
+    effectiveCommissionTerm: "forever",
+    source: "price",
+  });
   await expect(
     t.mutation(api.sellerAffiliateRates.save, {
       ...price,
@@ -100,16 +107,19 @@ it("resolves price, product, then plan rates and enforces seller ownership, vali
   ).rejects.toThrow(/changed/i);
   await t.mutation(api.sellerAffiliateRates.save, {
     ...price,
+    affiliateCommissionTerm: null,
     affiliateBasisPoints: null,
     expectedVersion: 1,
   });
   expect(await t.query(api.sellerAffiliateRates.get, price)).toMatchObject({
     effectiveBasisPoints: 1500,
+    effectiveCommissionTerm: "one_time",
     source: "product",
     version: 2,
   });
   await t.mutation(api.sellerAffiliateRates.save, {
     ...product,
+    affiliateCommissionTerm: null,
     affiliateBasisPoints: null,
     expectedVersion: 1,
   });

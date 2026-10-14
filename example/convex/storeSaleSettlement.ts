@@ -1,3 +1,4 @@
+import { commissionTerm } from "./lib/affiliateCommission";
 import { collectCostsForSale } from "./lib/sellerCostLedger";
 import { v } from "convex/values";
 import {
@@ -16,14 +17,45 @@ import {
 import type { Doc } from "./_generated/dataModel";
 
 export const reserve = internalMutation({
-  args: storeSaleFields,
+  args: { ...storeSaleFields, firstPaidInvoiceId: v.optional(v.string()) },
   returns: storeSaleDocValidator,
-  handler: async (ctx, args) => {
+  handler: async (ctx, { firstPaidInvoiceId, ...args }) => {
     const existing = await ctx.db
       .query("storeSales")
       .withIndex("by_charge", (q) => q.eq("chargeId", args.chargeId))
       .first();
     if (existing) return existing;
+    if (args.stripeSubscriptionId) {
+      if (!args.sourceInvoiceId)
+        throw new Error("Subscription settlement requires an invoice.");
+      const prior = await ctx.db
+        .query("subscriptionCommissions")
+        .withIndex("by_subscription", (q) =>
+          q.eq("stripeSubscriptionId", args.stripeSubscriptionId!),
+        )
+        .first();
+      const term =
+        prior?.affiliateCommissionTerm ??
+        args.affiliateCommissionTerm ??
+        "forever";
+      if (!prior)
+        await ctx.db.insert("subscriptionCommissions", {
+          stripeSubscriptionId: args.stripeSubscriptionId,
+          affiliateCommissionTerm: term,
+          firstInvoiceId: firstPaidInvoiceId ?? args.sourceInvoiceId,
+          affiliateAccountId: args.affiliateAccountId,
+        });
+      args.affiliateCommissionTerm = term;
+      if (
+        term === "one_time" &&
+        (prior?.firstInvoiceId ??
+          firstPaidInvoiceId ??
+          args.sourceInvoiceId) !== args.sourceInvoiceId
+      ) {
+        args.sellerNet += args.affiliateNet;
+        args.affiliateNet = 0;
+      }
+    }
     const amounts = [
       args.gross,
       args.processingFee,
@@ -66,6 +98,30 @@ export const getByCharge = internalQuery({
       .query("storeSales")
       .withIndex("by_charge", (q) => q.eq("chargeId", args.chargeId))
       .first(),
+});
+export const subscriptionCommission = internalQuery({
+  args: { stripeSubscriptionId: v.string() },
+  returns: v.union(
+    v.object({
+      affiliateCommissionTerm: commissionTerm,
+      firstInvoiceId: v.string(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("subscriptionCommissions")
+      .withIndex("by_subscription", (q) =>
+        q.eq("stripeSubscriptionId", args.stripeSubscriptionId),
+      )
+      .first();
+    return row
+      ? {
+          affiliateCommissionTerm: row.affiliateCommissionTerm,
+          firstInvoiceId: row.firstInvoiceId,
+        }
+      : null;
+  },
 });
 export const recordTransfer = internalMutation({
   args: {
@@ -210,10 +266,48 @@ export const settle = internalAction({
       affiliateFixedAmount: affiliateRate.effectiveFixedAmount,
       currency: payment.currency,
     });
+    const savedCommission = args.subscriptionId
+      ? await ctx.runQuery(
+          internal.storeSaleSettlement.subscriptionCommission,
+          { stripeSubscriptionId: args.subscriptionId },
+        )
+      : null;
+    let firstPaidInvoiceId: string | undefined =
+      savedCommission?.firstInvoiceId;
+    if (
+      args.subscriptionId &&
+      !savedCommission &&
+      metadata.affiliateCommissionTerm === "one_time"
+    ) {
+      const invoices = await raw.invoices.list({
+        subscription: args.subscriptionId,
+        status: "paid",
+        limit: 100,
+      });
+      if (invoices.has_more)
+        throw new Error(
+          "Review subscription invoice history before one-time settlement.",
+        );
+      firstPaidInvoiceId = invoices.data
+        .filter((invoice) => invoice.amount_paid > 0)
+        .sort(
+          (a, b) =>
+            (a.status_transitions.paid_at ?? a.created) -
+            (b.status_transitions.paid_at ?? b.created),
+        )[0]?.id;
+      if (!firstPaidInvoiceId)
+        throw new Error("Paid invoice is not available; retry settlement.");
+    }
     const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.storeSaleSettlement.reserve,
       {
         ...economics,
+        firstPaidInvoiceId,
+        stripeSubscriptionId: args.subscriptionId,
+        affiliateCommissionTerm:
+          metadata.affiliateCommissionTerm === "one_time"
+            ? "one_time"
+            : "forever",
         affiliateBasisPoints:
           affiliateRate.effectiveFixedAmount == null
             ? affiliateRate.effectiveBasisPoints

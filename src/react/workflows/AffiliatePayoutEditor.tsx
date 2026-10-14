@@ -1,13 +1,17 @@
 "use client";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useWorkflowAction } from "./useWorkflowAction.js";
+export type AffiliateCommissionTerm = "forever" | "one_time";
 export type AffiliatePayoutUpdate = {
+  affiliateCommissionTerm?: AffiliateCommissionTerm | null;
   affiliateBasisPoints: number | null;
   /** Major units of the sale currency, for example 5 means EUR 5 on a EUR sale. */
   affiliateFixedAmount: number | null;
   expectedVersion: number;
 };
 export type AffiliatePayoutEditorState = {
+  term: AffiliateCommissionTerm | "inherit";
+  setTerm: (term: AffiliateCommissionTerm | "inherit") => void;
   value: string;
   mode: "percentage" | "fixed";
   currencySymbol: string;
@@ -22,8 +26,10 @@ export type AffiliatePayoutEditorState = {
 };
 export type AffiliatePayoutEditorProps = {
   scopeKey: string;
+  affiliateCommissionTerm?: AffiliateCommissionTerm | null;
   affiliateBasisPoints: number | null;
   affiliateFixedAmount?: number | null;
+  effectiveCommissionTerm?: AffiliateCommissionTerm;
   effectiveBasisPoints: number;
   effectiveFixedAmount?: number | null;
   source?: "plan" | "product" | "price" | "store" | "global" | "none";
@@ -32,6 +38,22 @@ export type AffiliatePayoutEditorProps = {
   onSave: (update: AffiliatePayoutUpdate) => Promise<unknown>;
   children?: (state: AffiliatePayoutEditorState) => ReactNode;
 };
+function initialFields(props: AffiliatePayoutEditorProps) {
+  return {
+    scope: `${props.scopeKey}:${props.version}`,
+    term: props.affiliateCommissionTerm ?? ("inherit" as const),
+    mode:
+      props.affiliateFixedAmount != null
+        ? ("fixed" as const)
+        : ("percentage" as const),
+    value:
+      props.affiliateFixedAmount != null
+        ? String(props.affiliateFixedAmount)
+        : props.affiliateBasisPoints == null
+          ? ""
+          : String(props.affiliateBasisPoints / 100),
+  };
+}
 /** Unstyled inline payout editor. Clear saves inheritance; explicit zero disables payouts. */
 export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
   const id = useId();
@@ -49,19 +71,7 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
     formatter.formatToParts(0).find((part) => part.type === "currency")
       ?.value ?? currency;
   const scope = `${props.scopeKey}:${props.version}`;
-  const initial = {
-    scope,
-    mode:
-      props.affiliateFixedAmount != null
-        ? ("fixed" as const)
-        : ("percentage" as const),
-    value:
-      props.affiliateFixedAmount != null
-        ? String(props.affiliateFixedAmount)
-        : props.affiliateBasisPoints == null
-          ? ""
-          : String(props.affiliateBasisPoints / 100),
-  };
+  const initial = initialFields(props);
   const [fields, setFields] = useState(initial);
   if (fields.scope !== scope) setFields(initial);
   const action = useWorkflowAction(async (clear = false) => {
@@ -78,6 +88,8 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
         "Enter a non-negative amount with at most two decimals, or a percentage from 0 to 100.",
       );
     await props.onSave({
+      affiliateCommissionTerm:
+        clear || fields.term === "inherit" ? null : fields.term,
       affiliateBasisPoints:
         fields.mode === "percentage" && amount !== null
           ? Math.round(amount * 100)
@@ -87,7 +99,9 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
     });
     if (clear)
       setFields((previous) =>
-        previous.scope === scope ? { ...previous, value: "" } : previous,
+        previous.scope === scope
+          ? { ...previous, value: "", term: "inherit" }
+          : previous,
       );
     return clear
       ? "Affiliate payout cleared. Using the inherited default."
@@ -96,9 +110,10 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
   const state: AffiliatePayoutEditorState = {
     ...fields,
     currencySymbol,
+    setTerm: (term) => setFields((previous) => ({ ...previous, term })),
     setValue: (value) => setFields((previous) => ({ ...previous, value })),
     setMode: (mode) => setFields((previous) => ({ ...previous, mode })),
-    effectiveLabel: `Effective payout: ${props.effectiveFixedAmount != null ? formatter.format(props.effectiveFixedAmount) : `${props.effectiveBasisPoints / 100}%`}${props.source && props.source !== "none" ? ` from ${props.source === "plan" ? "store plan" : props.source}` : ""}.`,
+    effectiveLabel: `Commission term: ${(props.effectiveCommissionTerm ?? "forever") === "forever" ? "Forever" : "One-time"}. Effective payout: ${props.effectiveFixedAmount != null ? formatter.format(props.effectiveFixedAmount) : `${props.effectiveBasisPoints / 100}%`}${props.source && props.source !== "none" ? ` from ${props.source === "plan" ? "store plan" : props.source}` : ""}.`,
     save: () => action.run(false),
     clear: () => action.run(true),
     isPending: action.isPending,
@@ -139,6 +154,21 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
       >
         {currencySymbol}
       </button>
+      <label htmlFor={`${id}-term`}>Commission term</label>
+      <select
+        id={`${id}-term`}
+        value={state.term}
+        disabled={state.isPending}
+        onChange={(event) =>
+          state.setTerm(
+            event.target.value as AffiliateCommissionTerm | "inherit",
+          )
+        }
+      >
+        <option value="inherit">Inherited term</option>
+        <option value="forever">Forever</option>
+        <option value="one_time">One-time</option>
+      </select>
       <button type="submit" disabled={state.isPending}>
         Save
       </button>

@@ -1,3 +1,7 @@
+import {
+  commissionTerm,
+  optionalCommissionTerm,
+} from "./lib/affiliateCommission";
 import { v } from "convex/values";
 import { query, mutation, type QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
@@ -25,6 +29,9 @@ export async function platformPayout(ctx: QueryCtx) {
     .withIndex("by_seller", (q) => q.eq("sellerId", undefined))
     .first();
   return {
+    affiliateCommissionTerm: row?.affiliateCommissionTerm ?? null,
+    effectiveCommissionTerm:
+      row?.affiliateCommissionTerm ?? ("forever" as const),
     affiliateBasisPoints: row?.affiliateBasisPoints ?? null,
     affiliateFixedAmount: row?.affiliateFixedAmount ?? null,
     effectiveBasisPoints: row?.affiliateBasisPoints ?? 0,
@@ -47,6 +54,11 @@ export async function storePayout(ctx: QueryCtx, seller: Doc<"users">) {
     : null;
   const effective = hasPayout(store) ? store : hasPayout(plan) ? plan : null;
   return {
+    affiliateCommissionTerm: store?.affiliateCommissionTerm ?? null,
+    effectiveCommissionTerm:
+      store?.affiliateCommissionTerm ??
+      plan?.affiliateCommissionTerm ??
+      global.effectiveCommissionTerm,
     affiliateBasisPoints: store?.affiliateBasisPoints ?? null,
     affiliateFixedAmount: store?.affiliateFixedAmount ?? null,
     effectiveBasisPoints: effective
@@ -64,6 +76,8 @@ export async function storePayout(ctx: QueryCtx, seller: Doc<"users">) {
   };
 }
 const state = v.object({
+  affiliateCommissionTerm: optionalCommissionTerm,
+  effectiveCommissionTerm: commissionTerm,
   affiliateBasisPoints: v.union(v.number(), v.null()),
   affiliateFixedAmount: v.union(v.number(), v.null()),
   effectiveBasisPoints: v.number(),
@@ -85,6 +99,7 @@ export const save = mutation({
   args: {
     actorId: v.id("users"),
     sellerId: v.optional(v.id("users")),
+    affiliateCommissionTerm: optionalCommissionTerm,
     affiliateBasisPoints: v.union(v.number(), v.null()),
     affiliateFixedAmount: v.union(v.number(), v.null()),
     expectedVersion: v.number(),
@@ -121,6 +136,10 @@ export const save = mutation({
       );
     const next = {
       sellerId: args.sellerId,
+      affiliateCommissionTerm:
+        args.affiliateCommissionTerm === undefined
+          ? current?.affiliateCommissionTerm
+          : args.affiliateCommissionTerm,
       affiliateBasisPoints: rate,
       affiliateFixedAmount: args.affiliateFixedAmount,
       version: args.expectedVersion + 1,

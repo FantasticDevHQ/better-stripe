@@ -253,6 +253,7 @@ export type {
 } from "./AffiliateRateEditor.js";
 export { AffiliatePayoutEditor } from "./AffiliatePayoutEditor.js";
 export type {
+  AffiliateCommissionTerm,
   AffiliatePayoutEditorProps,
   AffiliatePayoutEditorState,
   AffiliatePayoutUpdate,

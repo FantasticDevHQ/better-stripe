@@ -30,6 +30,7 @@ it("defaults to zero and inherits platform, plan and store overrides; clear rest
   ).toMatchObject({ effectiveBasisPoints: 0 });
   await t.mutation(api.affiliateDefaults.save, {
     actorId: adminId,
+    affiliateCommissionTerm: "one_time",
     affiliateBasisPoints: 1200,
     affiliateFixedAmount: null,
     expectedVersion: 0,
@@ -40,7 +41,11 @@ it("defaults to zero and inherits platform, plan and store overrides; clear rest
   });
   expect(
     await t.query(internal.sellerAffiliateRates.resolve, { sellerId }),
-  ).toMatchObject({ effectiveBasisPoints: 1200, source: "global" });
+  ).toMatchObject({
+    effectiveBasisPoints: 1200,
+    source: "global",
+    effectiveCommissionTerm: "one_time",
+  });
   await t.mutation(api.affiliateDefaults.save, {
     actorId: sellerId,
     sellerId,
@@ -60,7 +65,11 @@ it("defaults to zero and inherits platform, plan and store overrides; clear rest
   });
   expect(
     await t.query(internal.sellerAffiliateRates.resolve, { sellerId }),
-  ).toMatchObject({ effectiveBasisPoints: 1200, source: "global" });
+  ).toMatchObject({
+    effectiveBasisPoints: 1200,
+    source: "global",
+    effectiveCommissionTerm: "one_time",
+  });
   await expect(
     t.mutation(api.affiliateDefaults.save, {
       actorId: sellerId,

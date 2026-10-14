@@ -1,3 +1,7 @@
+import {
+  commissionTerm,
+  optionalCommissionTerm,
+} from "./lib/affiliateCommission";
 import { storePayout, payoutSource } from "./affiliateDefaults";
 import { validateFixedAffiliateAmount } from "./lib/storePlans";
 import { v } from "convex/values";
@@ -15,6 +19,8 @@ const target = {
   stripePriceId: v.optional(v.string()),
 };
 const stateValidator = v.object({
+  affiliateCommissionTerm: optionalCommissionTerm,
+  effectiveCommissionTerm: commissionTerm,
   affiliateBasisPoints: v.union(v.number(), v.null()),
   effectiveBasisPoints: v.number(),
   affiliateFixedAmount: v.union(v.number(), v.null()),
@@ -86,6 +92,11 @@ async function readState(
       ? productOverride
       : null;
   return {
+    affiliateCommissionTerm: own?.affiliateCommissionTerm ?? null,
+    effectiveCommissionTerm:
+      priceOverride?.affiliateCommissionTerm ??
+      productOverride?.affiliateCommissionTerm ??
+      base.effectiveCommissionTerm,
     affiliateFixedAmount: own?.affiliateFixedAmount ?? null,
     effectiveFixedAmount: effective
       ? (effective.affiliateFixedAmount ?? null)
@@ -121,6 +132,7 @@ export const resolve = internalQuery({
 export const save = mutation({
   args: {
     ...target,
+    affiliateCommissionTerm: optionalCommissionTerm,
     affiliateBasisPoints: v.union(v.number(), v.null()),
     affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
     expectedVersion: v.number(),
@@ -154,6 +166,10 @@ export const save = mutation({
       sellerId: args.sellerId,
       stripeProductId: args.stripeProductId,
       stripePriceId: args.stripePriceId,
+      affiliateCommissionTerm:
+        args.affiliateCommissionTerm === undefined
+          ? current?.affiliateCommissionTerm
+          : args.affiliateCommissionTerm,
       affiliateBasisPoints: rate,
       affiliateFixedAmount: args.affiliateFixedAmount ?? null,
       version: state.version + 1,

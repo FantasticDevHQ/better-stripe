@@ -1,3 +1,7 @@
+import {
+  commissionTerm,
+  optionalCommissionTerm,
+} from "./lib/affiliateCommission";
 import { platformPayout } from "./affiliateDefaults";
 import { v } from "convex/values";
 import {
@@ -12,6 +16,7 @@ import { validateFixedAffiliateAmount, STORE_PLANS } from "./lib/storePlans";
 import { storePlanIdValidator } from "./lib/storePlanValidators";
 import { getStripeClient } from "./lib/stripeClient";
 const settings = {
+  affiliateCommissionTerm: optionalCommissionTerm,
   monthlyAmount: v.number(),
   feeBasisPoints: v.union(v.number(), v.null()),
   affiliateBasisPoints: v.optional(v.union(v.number(), v.null())),
@@ -27,6 +32,7 @@ const planValidator = v.object({
   id: storePlanIdValidator,
   name: v.string(),
   ...settings,
+  effectiveCommissionTerm: commissionTerm,
   effectiveBasisPoints: v.number(),
   effectiveFixedAmount: v.union(v.number(), v.null()),
   feeLabel: v.string(),
@@ -67,6 +73,9 @@ async function plans(ctx: QueryCtx) {
       name: plan.name,
       monthlyAmount: override?.monthlyAmount ?? plan.monthlyAmount,
       feeBasisPoints,
+      affiliateCommissionTerm: override?.affiliateCommissionTerm ?? null,
+      effectiveCommissionTerm:
+        override?.affiliateCommissionTerm ?? global.effectiveCommissionTerm,
       affiliateBasisPoints: override?.affiliateBasisPoints ?? null,
       effectiveBasisPoints:
         override?.affiliateBasisPoints ??
@@ -130,6 +139,10 @@ export const publish = internalMutation({
       planId: args.planId,
       monthlyAmount: args.monthlyAmount,
       feeBasisPoints: args.feeBasisPoints,
+      affiliateCommissionTerm:
+        args.affiliateCommissionTerm === undefined
+          ? current?.affiliateCommissionTerm
+          : args.affiliateCommissionTerm,
       affiliateBasisPoints:
         args.affiliateBasisPoints === undefined
           ? (current?.affiliateBasisPoints ?? null)

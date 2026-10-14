@@ -62,6 +62,10 @@ export async function createStoreCheckout(
       "The affiliate account is not ready. Try a direct store purchase.",
     );
   }
+  const payout = await ctx.runQuery(internal.sellerAffiliateRates.resolve, {
+    sellerId: identity.sellerId,
+    stripePriceId: args.stripePriceId,
+  });
   return stripe.createCheckoutSession(ctx, {
     userId: identity.userId,
     accountId: account?.stripeAccountId,
@@ -82,6 +86,7 @@ export async function createStoreCheckout(
       productName: product.name,
       stripeProductId: price.stripeProductId,
       stripePriceId: args.stripePriceId,
+      affiliateCommissionTerm: payout.effectiveCommissionTerm,
       storeBilling: "sale_v1",
       sellerId: identity.sellerId,
       planId: identity.planId,

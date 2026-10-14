@@ -139,6 +139,8 @@ export function AdminStorePlans() {
                               ? null
                               : (plan.affiliateBasisPoints ?? null)
                           }
+                          affiliateCommissionTerm={plan.affiliateCommissionTerm}
+                          effectiveCommissionTerm={plan.effectiveCommissionTerm}
                           affiliateFixedAmount={plan.affiliateFixedAmount}
                           effectiveBasisPoints={plan.effectiveBasisPoints}
                           effectiveFixedAmount={plan.effectiveFixedAmount}

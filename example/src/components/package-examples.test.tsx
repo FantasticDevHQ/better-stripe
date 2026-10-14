@@ -92,6 +92,9 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   await userEvent.click(screen.getByRole("button", { name: "Select price" }));
   expect(screen.getByRole("status")).toHaveTextContent("price_tee");
   const control = within(screen.getByTestId("affiliate-rate-price_tee"));
+  expect(
+    control.getByRole("combobox", { name: "Commission term" }),
+  ).toHaveTextContent("Inherited term");
   await userEvent.click(
     control.getByRole("button", { name: "Fixed amount in USD" }),
   );
@@ -107,6 +110,7 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
       stripePriceId: "price_tee",
       affiliateBasisPoints: null,
       affiliateFixedAmount: 5.25,
+      affiliateCommissionTerm: null,
       expectedVersion: 0,
     }),
   );

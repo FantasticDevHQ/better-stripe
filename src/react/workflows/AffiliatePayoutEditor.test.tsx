@@ -22,6 +22,7 @@ it("saves either a percentage or a currency amount and clears inheritance", asyn
   expect(save).toHaveBeenLastCalledWith({
     affiliateBasisPoints: 1250,
     affiliateFixedAmount: null,
+    affiliateCommissionTerm: null,
     expectedVersion: 0,
   });
   await userEvent.click(
@@ -31,6 +32,7 @@ it("saves either a percentage or a currency amount and clears inheritance", asyn
   expect(save).toHaveBeenLastCalledWith({
     affiliateBasisPoints: null,
     affiliateFixedAmount: 12.5,
+    affiliateCommissionTerm: null,
     expectedVersion: 0,
   });
   await userEvent.click(
@@ -39,6 +41,7 @@ it("saves either a percentage or a currency amount and clears inheritance", asyn
   expect(save).toHaveBeenLastCalledWith({
     affiliateBasisPoints: null,
     affiliateFixedAmount: null,
+    affiliateCommissionTerm: null,
     expectedVersion: 0,
   });
   expect((input as HTMLInputElement).value).toBe("");
@@ -58,4 +61,30 @@ it("rejects excessive percentages and invalid decimals", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
   expect(screen.getByRole("alert").textContent).toMatch(/100/);
   expect(save).not.toHaveBeenCalled();
+});
+it("saves a one-time subscription commission and clears its term to inheritance", async () => {
+  const save = vi.fn().mockResolvedValue(undefined);
+  render(
+    <AffiliatePayoutEditor
+      scopeKey="term"
+      affiliateBasisPoints={1000}
+      effectiveBasisPoints={1000}
+      version={0}
+      onSave={save}
+    />,
+  );
+  await userEvent.selectOptions(
+    screen.getByLabelText("Commission term"),
+    "one_time",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  expect(save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ affiliateCommissionTerm: "one_time" }),
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: "Clear affiliate payout" }),
+  );
+  expect(save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ affiliateCommissionTerm: null }),
+  );
 });

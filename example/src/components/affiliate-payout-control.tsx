@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { X } from "lucide-react";
 import { useQuery, useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -85,6 +92,27 @@ export function AffiliatePayoutControl(props: AffiliatePayoutEditorProps) {
               <X aria-hidden="true" className="size-4" />
             </Button>
           </div>
+          <Select
+            items={[
+              { value: "inherit", label: "Inherited term" },
+              { value: "forever", label: "Forever" },
+              { value: "one_time", label: "One-time" },
+            ]}
+            value={state.term}
+            disabled={state.isPending}
+            onValueChange={(value) =>
+              state.setTerm(value as "inherit" | "forever" | "one_time")
+            }
+          >
+            <SelectTrigger aria-label="Commission term">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inherit">Inherited term</SelectItem>
+              <SelectItem value="forever">Forever</SelectItem>
+              <SelectItem value="one_time">One-time</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="text-xs text-muted-foreground">
             {state.effectiveLabel}
           </p>

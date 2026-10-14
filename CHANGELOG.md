@@ -16,10 +16,9 @@
 
 ## [0.10.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.9.0...v0.10.0) (2026-10-14)
 
-
 ### Features
 
-* expose reusable settlement, payouts, and resilient billing APIs ([#139](https://github.com/FantasticDevHQ/better-stripe/issues/139)) ([a88e9ea](https://github.com/FantasticDevHQ/better-stripe/commit/a88e9eae5aa12e32c108ea16c19f5b6e8870f7e4))
+- expose reusable settlement, payouts, and resilient billing APIs ([#139](https://github.com/FantasticDevHQ/better-stripe/issues/139)) ([a88e9ea](https://github.com/FantasticDevHQ/better-stripe/commit/a88e9eae5aa12e32c108ea16c19f5b6e8870f7e4))
 
 ## [0.9.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.8.1...v0.9.0) (2026-10-14)
 

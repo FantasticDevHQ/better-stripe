@@ -933,12 +933,17 @@ chooser. They do not submit refunds or dispute evidence.
 
 The failure checks use a normal browser and Stripe's documented test cards:
 
-| Scenario           | Test card             | Expected behavior                                     |
-| ------------------ | --------------------- | ----------------------------------------------------- |
-| Success            | `4242 4242 4242 4242` | Confirm payment and settle the seller/affiliate split |
-| Decline            | `4000 0000 0000 0002` | Display the error, then allow retry with a good card  |
-| Insufficient funds | `4000 0000 0000 9995` | Display the decline without completing checkout       |
-| 3D Secure          | `4000 0084 0000 0027` | Complete authentication, or fail it and retry         |
+| Scenario                | Test card             | Expected behavior                                             |
+| ----------------------- | --------------------- | ------------------------------------------------------------- |
+| Visa success            | `4242 4242 4242 4242` | Confirm payment and settle the seller/affiliate split         |
+| Mastercard success      | `5555 5555 5555 4444` | Complete a custom Checkout retry                              |
+| Decline                 | `4000 0000 0000 0002` | Display the error, then allow retry with a good card          |
+| Insufficient funds      | `4000 0000 0000 9995` | Display the decline without completing checkout               |
+| Expired card            | `4000 0000 0000 0069` | Display the expired-card error and allow retry                |
+| Incorrect CVC           | `4000 0000 0000 0127` | Display the security-code error and allow retry               |
+| 3D Secure completion    | `4000 0084 0000 0027` | Complete the authentication challenge                         |
+| 3D Secure cancellation  | `4000 0000 0000 3220` | Cancel the challenge, then retry with a good card             |
+| Decline after 3D Secure | `4000 0084 0000 1629` | Complete authentication, display the decline, and allow retry |
 
 Use a future expiry such as `12/34` and a three-digit CVC in the browser.
 Do not submit raw card numbers through server APIs; use Stripe's test

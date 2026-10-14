@@ -151,11 +151,24 @@ for (const [mode, card, message] of [
 }
 for (const [mode, outcome] of [
   ["custom", "complete"],
-  ["payment-intent", "fail"],
+  ["payment-intent", "cancel"],
+  ["payment-intent", "decline"],
 ] as const) {
   test(`${mode} handles 3D Secure ${outcome}`, async ({ page }) => {
+    page.on("dialog", async (dialog) => {
+      expect(["confirm", "beforeunload"]).toContain(dialog.type());
+      console.log("Stripe sandbox confirmation:", dialog.message());
+      await dialog.accept();
+    });
     await openCheckout(page, mode);
-    await fillPayment(page, "4000008400000027");
+    await fillPayment(
+      page,
+      outcome === "complete"
+        ? "4000008400000027"
+        : outcome === "decline"
+          ? "4000008400001629"
+          : "4000000000003220",
+    );
     await submit(page, mode);
     await test.step(`It should show the Stripe authentication challenge and ${outcome}`, async () => {
       await expect
@@ -164,12 +177,13 @@ for (const [mode, outcome] of [
             for (const frame of page.frames()) {
               const button = frame.getByRole("button", {
                 name:
-                  outcome === "complete"
-                    ? /^(Complete|Complete authentication)$/i
-                    : /^(Fail|Fail authentication)$/i,
+                  outcome === "cancel"
+                    ? /^cancel$/i
+                    : /^(Complete|Complete authentication)$/i,
               });
               if (await button.isVisible().catch(() => false)) {
-                await button.click();
+                if (mode === "custom") await button.click();
+                else await button.press("Enter");
                 return true;
               }
             }
@@ -179,8 +193,20 @@ for (const [mode, outcome] of [
         )
         .toBe(true);
     });
-    if (outcome === "fail") {
-      await expectError(page, /authenticat/i);
+    if (outcome !== "complete") {
+      // Match the app error, never explanatory text inside the challenge.
+      await expect(page.getByRole("alert")).toContainText(
+        outcome === "decline" ? /declin/i : /cancel|authenticat|declin/i,
+        { timeout: 45000 },
+      );
+      await expect(
+        page.getByRole("button", { name: "Pay", exact: true }),
+      ).toBeEnabled();
+      expect(page.url()).not.toContain("/checkout/status");
+      await page.screenshot({
+        path: test.info().outputPath("authentication-error.png"),
+        fullPage: true,
+      });
       await fillPayment(page);
       await submit(page, mode);
     }

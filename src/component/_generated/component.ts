@@ -1787,6 +1787,29 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        claim: FunctionReference<
+          "query",
+          "internal",
+          { claimKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          } | null,
+          Name
+        >;
         group: FunctionReference<
           "query",
           "internal",

@@ -33,6 +33,9 @@ it("uses the real component through the public recovery client without any provi
     amountDue: 320,
     revision: 1,
   });
+  expect(
+    await recovery.getClaim(ctx, { claimKey: "fee:ch_original" }),
+  ).toMatchObject({ revision: 1, amountDue: 320 });
   const result = await recovery.reserve(ctx, {
     ...scope,
     groupKey: "invoice:in_1",

@@ -77,3 +77,12 @@ export const reservation = query({
       .withIndex("by_key", (q) => q.eq("operationKey", args.operationKey))
       .unique(),
 });
+export const claim = query({
+  args: { claimKey: v.string() },
+  returns: v.union(claimDoc, v.null()),
+  handler: (ctx, args) =>
+    ctx.db
+      .query("recoveryClaims")
+      .withIndex("by_key", (q) => q.eq("claimKey", args.claimKey))
+      .unique(),
+});

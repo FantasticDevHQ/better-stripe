@@ -378,7 +378,10 @@ Claims retain their original charge, account, scope, currency, gross and provide
 fee. Replays of the same revision must have the same amount; lower revisions are
 ignored. The host must assign durable, monotonically increasing observation
 revisions from authoritative reconciliation, not an unordered event arrival
-counter. Later provider observations update cumulative `amountDue`, including
+counter. Use `getClaim(ctx, { claimKey })` to capture the prior revision before
+reading provider state, then propose the next revision. On a conflicting revision,
+retry the full provider reconciliation, rather than incrementing the revision of
+an already-stale snapshot. Later provider observations update cumulative `amountDue`, including
 signed credits, without erasing collected or reserved history. Claim keys beginning
 with `rollback:` are reserved by the package.
 
@@ -411,7 +414,7 @@ reverse a transfer. Invoice funding requires a provider-aware adapter; this
 settlement rollback helper does not infer invoice payment allocations.
 
 Use `balance(ctx, scope)` for exact maintained totals and
-`listClaims(ctx, { ...scope, limit, cursor })` for paginated history. `getGroup` and
+`listClaims(ctx, { ...scope, limit, cursor })` for paginated history. `getClaim`, `getGroup` and
 `getReservation` resume durable workflows. Integrate these server callbacks with
 the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
 consent, provider fee policy and entitlement changes in the host; provider invoice

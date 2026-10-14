@@ -137,6 +137,9 @@ export class CostRecoveryClient {
       paginationOpts: { numItems: limit ?? 25, cursor: cursor ?? null },
     });
   }
+  getClaim(ctx: RunCtx, opts: { claimKey: string }) {
+    return this.query<RecoveryClaim | null>(ctx, "claim", opts);
+  }
   getGroup(ctx: RunCtx, opts: { groupKey: string }) {
     return this.query<RecoveryGroup | null>(ctx, "group", opts);
   }

@@ -335,6 +335,66 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
 | `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
+### Optional balance-funded subscriptions
+
+Balance funding requires an eligible connected account and Stripe's Accounts v2
+balance-payment preview. It is separate from non-Connect customer-only Accounts
+v2 eligibility. Keep your normal client on GA; construct a separate client with
+`stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION` for this optional feature.
+`getBalanceFundingCapability()` reports whether that client is explicitly
+configured. It does not claim the account has provider approval; Stripe validates
+eligibility when preparing the payment method.
+
+After authenticating the seller, authorizing the subscription, and recording
+explicit recurring-debit consent in your own database:
+
+```ts
+const preparation = await balanceStripe.prepareBalanceFunding(ctx, {
+  customerAccount: authorizedSellerAccountId,
+  stripeSubscriptionId: authorizedSubscriptionId,
+  consent: true,
+  idempotencyKey: durablePreparationRequestId,
+});
+// Persist this immutable server-side record BEFORE enabling balance payments.
+await savePreparationAndConsent(preparation);
+await balanceStripe.setBalanceFunding(ctx, {
+  preparation,
+  enabled: true,
+  consent: true,
+  idempotencyKey: durableEnableRequestId,
+});
+// Opt-out restores the previous default method and payment-method types.
+await balanceStripe.setBalanceFunding(ctx, {
+  preparation: await loadPersistedPreparation(),
+  enabled: false,
+  idempotencyKey: durableDisableRequestId,
+});
+```
+
+`prepareBalanceFunding` creates/attaches a `stripe_balance` method and captures
+the prior subscription settings without changing them. `setBalanceFunding`
+checks subscription ownership and payment-method ownership, then changes the
+settings or recognizes that the requested state already exists. Null prior
+settings restore inheritance from the customer's settings. External source
+changes cause an error instead of being overwritten. Provider errors are
+preserved. Never accept restoration records or account IDs from an unauthenticated
+browser as authority.
+
+Serialize changes per subscription in the host. Persist the operation identity
+before the provider call, reuse it after a timeout or host write failure, and use
+a new identity for each later enable/disable cycle. The example's durable pending
+operation prevents an opposite change from racing an unfinished operation; retry
+the pending change first. Preserve the preparation through retries. Keys must be
+nonempty, contain no line breaks, and be at most 247 characters because the package
+adds phase suffixes. Stripe's idempotency retention window still applies.
+
+Only eligible processing earnings can fund these subscriptions; top-ups cannot.
+Insufficient available balance in the invoice currency fails payment and does not
+automatically charge a saved card. Handle `invoice.payment_failed` in your host
+and offer an explicit alternate-method recovery flow. These operations neither
+pay an overdue invoice nor change payout schedules. See Stripe's
+[balance-payment eligibility, approval and recovery guidance](https://docs.stripe.com/payments/pay-with-balance).
+
 ### Upcoming invoice preview
 
 Authorize the customer account and subscription in your host action, then call

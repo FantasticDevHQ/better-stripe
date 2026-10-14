@@ -879,6 +879,15 @@ pending/error handling. Seller/admin subscription actions and catalog mutations
 remain in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
 See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).
 
+Affiliate Referral earnings also shares its four metric cards, commission
+explanation, account details, and loading/zero states between Headless and
+Components. Components uses `EarningsSummary` render props for populated earnings;
+`Earnings` supplies the shared metrics and loading/zero presentation.
+
+Seller Earnings uses the same styled `EarningsSummary`, `PayoutSchedule`, and
+`PayoutHistory` in Headless and Components. Both tabs read the selected store's
+recipient balance and payouts, rather than substituting transfer-ledger totals.
+
 ### Choose a checkout type
 
 Open any seller product's checkout to compare these integrations. Each option

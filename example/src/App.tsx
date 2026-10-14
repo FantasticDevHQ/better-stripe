@@ -3,7 +3,6 @@ import { ConnectExample } from "@/components/connect-example";
 import {
   ProductComponents,
   SubscriptionComponents,
-  EarningsComponents,
   PayoutComponents,
   HostedBillingExample,
 } from "@/components/package-examples";
@@ -59,7 +58,7 @@ export default function App() {
             element={
               <IntegrationExamples
                 headless={<Affiliate />}
-                components={<EarningsComponents />}
+                components={<Affiliate integration="components" />}
                 embedded={<ConnectExample kind="balances" />}
               />
             }
@@ -85,7 +84,7 @@ export default function App() {
             element={
               <IntegrationExamples
                 headless={<StoreEarnings />}
-                components={<EarningsComponents />}
+                components={<StoreEarnings />}
                 embedded={<ConnectExample kind="balances" />}
               />
             }

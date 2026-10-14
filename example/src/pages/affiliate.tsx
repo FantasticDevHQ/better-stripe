@@ -2,6 +2,8 @@ import {
   useReferralLinks,
   ReferredSales,
   Earnings,
+  EarningsSummary,
+  type EarningsRenderProps,
 } from "@fantastic.dev/better-stripe/react";
 import { WorkflowTable } from "@/components/workflow-table";
 import type { ReactNode } from "react";
@@ -32,7 +34,43 @@ function MissingAccount() {
   );
 }
 
-export function Affiliate() {
+function AffiliateEarningsCards({
+  metrics,
+  isLoading,
+  payouts,
+}: EarningsRenderProps) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {metrics.map(({ label, formattedValue }) => (
+        <Card key={label} variant={label === "Net" ? "muted" : "default"}>
+          <CardHeader>
+            <CardTitle variant="metric">{label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-3xl font-semibold tracking-tight tabular-nums"
+            >
+              {isLoading ? "…" : formattedValue}
+            </p>
+            {label === "Paid out" && !isLoading && payouts.length === 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No payouts yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+export function Affiliate({
+  integration = "headless",
+}: {
+  integration?: "headless" | "components";
+}) {
   const { currentUser } = useRole();
   const earnings = useEarnings(currentUser.stripeAccountId);
   return (
@@ -49,36 +87,33 @@ export function Affiliate() {
       ) : (
         <>
           <Earnings {...earnings}>
-            {({ metrics, isLoading }) => (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {metrics.map(({ label, formattedValue }) => (
-                  <Card
-                    key={label}
-                    variant={label === "Net" ? "muted" : "default"}
-                  >
-                    <CardHeader>
-                      <CardTitle variant="metric">{label}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p
-                        role="status"
-                        aria-live="polite"
-                        className="text-3xl font-semibold tracking-tight tabular-nums"
-                      >
-                        {isLoading ? "…" : formattedValue}
-                      </p>
-                      {label === "Paid out" &&
-                        !earnings.isLoading &&
-                        earnings.payouts.length === 0 && (
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            No payouts yet
-                          </p>
-                        )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            {(state) =>
+              integration === "components" &&
+              !state.isLoading &&
+              (earnings.gross !== 0 || state.payouts.length > 0) ? (
+                <EarningsSummary {...earnings}>
+                  {({ grossLabel, reversedLabel, netLabel, paidOutLabel }) => {
+                    const values = {
+                      gross: grossLabel,
+                      reversed: reversedLabel,
+                      net: netLabel,
+                      paidOut: paidOutLabel,
+                    };
+                    return (
+                      <AffiliateEarningsCards
+                        {...state}
+                        metrics={state.metrics.map((metric) => ({
+                          ...metric,
+                          formattedValue: values[metric.key],
+                        }))}
+                      />
+                    );
+                  }}
+                </EarningsSummary>
+              ) : (
+                <AffiliateEarningsCards {...state} />
+              )
+            }
           </Earnings>
           <p className="break-all text-sm text-muted-foreground">
             Stripe account: {currentUser.stripeAccountId}

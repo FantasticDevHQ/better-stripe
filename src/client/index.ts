@@ -1,3 +1,10 @@
+import * as balanceFundingImpl from "./billing/balanceFunding.js";
+export type {
+  BalanceFundingCapability,
+  BalanceFundingPreparation,
+  PrepareBalanceFundingOptions,
+  SetBalanceFundingOptions,
+} from "./billing/balanceFunding.js";
 import * as invoicePreviewImpl from "./billing/invoicePreview.js";
 export type {
   UpcomingInvoicePreview,
@@ -52,10 +59,7 @@ import { v } from "convex/values";
 import Stripe from "stripe";
 
 import type { ComponentApi } from "../component/_generated/component.js";
-import type {
-  InvoiceStatus,
-  SubscriptionStatus,
-} from "../component/billing/validators.js";
+import type { SubscriptionStatus } from "../component/billing/validators.js";
 import type {
   DisputeStatus,
   PayoutStatus,
@@ -628,19 +632,7 @@ export class BetterStripe {
 
   async upsertPrice(
     ctx: RunCtx,
-    opts: {
-      stripePriceId: string;
-      productId: string;
-      stripeProductId: string;
-      nickname?: string;
-      unitAmount: number;
-      currency: string;
-      active: boolean;
-      type: "one_time" | "recurring";
-      interval?: "day" | "week" | "month" | "year";
-      intervalCount?: number;
-      metadata?: Record<string, unknown>;
-    },
+    opts: Parameters<typeof pricesImpl.upsertPrice>[2],
   ) {
     return pricesImpl.upsertPrice(this.component, ctx, opts);
   }
@@ -998,22 +990,7 @@ export class BetterStripe {
 
   async upsertInvoice(
     ctx: RunCtx,
-    opts: {
-      stripeInvoiceId: string;
-      userId: string;
-      orgId?: string;
-      accountId?: string;
-      subscriptionId?: string;
-      status: InvoiceStatus;
-      currency: string;
-      amountDue: number;
-      amountPaid: number;
-      hostedInvoiceUrl?: string;
-      invoicePdf?: string;
-      periodStart?: string;
-      periodEnd?: string;
-      metadata?: Record<string, unknown>;
-    },
+    opts: Parameters<typeof invoicesImpl.upsertInvoice>[2],
   ) {
     return invoicesImpl.upsertInvoice(this.component, ctx, opts);
   }
@@ -1024,6 +1001,34 @@ export class BetterStripe {
 
   async getStripeMode(ctx: RunCtx): Promise<StripeMode> {
     return configImpl.getStripeMode(this.component, ctx);
+  }
+
+  getBalanceFundingCapability() {
+    return balanceFundingImpl.getBalanceFundingCapability(
+      this.stripeApiVersion,
+    );
+  }
+
+  async prepareBalanceFunding(
+    _ctx: RunCtx,
+    opts: balanceFundingImpl.PrepareBalanceFundingOptions,
+  ) {
+    return balanceFundingImpl.prepareBalanceFunding(
+      this.stripe(),
+      this.stripeApiVersion,
+      opts,
+    );
+  }
+
+  async setBalanceFunding(
+    _ctx: RunCtx,
+    opts: balanceFundingImpl.SetBalanceFundingOptions,
+  ) {
+    return balanceFundingImpl.setBalanceFunding(
+      this.stripe(),
+      this.stripeApiVersion,
+      opts,
+    );
   }
 
   /** Authorize the customer in the host; validates subscription ownership. */

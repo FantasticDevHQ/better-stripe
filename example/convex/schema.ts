@@ -49,6 +49,9 @@ export default defineSchema({
     paymentMethodId: v.string(),
     previousPaymentMethodId: v.optional(v.string()),
     previousPaymentMethodTypes: v.optional(v.array(v.string())),
+    operationVersion: v.optional(v.number()),
+    operationPending: v.optional(v.boolean()),
+    targetEnabled: v.optional(v.boolean()),
     consentAt: v.number(),
   }).index("by_seller", ["sellerId"]),
   affiliateDefaults: defineTable({

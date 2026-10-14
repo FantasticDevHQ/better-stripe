@@ -323,3 +323,15 @@ removes both overrides. The example saves the resolved subscription term in
 Stripe metadata at checkout and claims the first paid invoice atomically in its
 Convex ledger; the UI component does not itself create transfers or process
 renewals.
+
+### Balance funding server adapter
+
+`BalancePaymentSource` and `useBalanceFunding` call host-owned authenticated
+callbacks. Their server adapter can now use the client's
+`prepareBalanceFunding` and `setBalanceFunding` operations. Persist the immutable
+restoration record and explicit consent before enabling, serialize operations per
+subscription, and retain request identities through retries. Opt-out restores the
+original method and types; it does not retry an unpaid invoice or automatically
+fall back to a card. The example demonstrates durable preparation and pending
+operation records in `storeBalanceFunding.ts` with a separate preview client.
+See the [README balance-funding workflow](../README.md#optional-balance-funded-subscriptions).

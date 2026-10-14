@@ -108,3 +108,12 @@ describe("scheduleAsyncHook — invoice.payment_failed (BTS-33)", () => {
     );
   });
 });
+
+describe("scheduleAsyncHook — payout cancellation", () => {
+  it("does not schedule the paid convenience hook for cancellation", async () => {
+    const whCtx = makeWhCtx({ doc: { status: "canceled" } });
+    await scheduleAsyncHook(whCtx, "payout.canceled", "po_canceled");
+    expect(whCtx.ctx.runQuery).not.toHaveBeenCalled();
+    expect(whCtx.ctx.scheduler?.runAfter).not.toHaveBeenCalled();
+  });
+});

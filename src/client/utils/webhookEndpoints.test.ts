@@ -51,6 +51,11 @@ const asStripe = (s: ReturnType<typeof makeStripe>) =>
 const ctx = {} as RunCtx;
 
 describe("event constant exports", () => {
+  it("selects dedicated payout cancellations by default", () => {
+    expect(BETTER_STRIPE_WEBHOOK_EVENTS).toContain("payout.canceled");
+    expect(ALL_BETTER_STRIPE_EVENTS).toContain("payout.canceled");
+  });
+
   it("ALL_BETTER_STRIPE_EVENTS is the concatenation of V1 then V2 events", () => {
     expect(ALL_BETTER_STRIPE_EVENTS).toEqual([
       ...BETTER_STRIPE_WEBHOOK_EVENTS,

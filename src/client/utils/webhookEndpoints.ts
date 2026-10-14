@@ -39,6 +39,7 @@ export const BETTER_STRIPE_WEBHOOK_EVENTS = [
   "payout.updated",
   "payout.paid",
   "payout.failed",
+  "payout.canceled",
   // Refunds
   "refund.created",
   "refund.updated",

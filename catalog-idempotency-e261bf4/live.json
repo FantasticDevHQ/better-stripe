@@ -1,0 +1,12 @@
+{
+  "commit": "e261bf46d6baf5e5210be6eacc989e32f29b23c8",
+  "sandbox": true,
+  "realProvider": true,
+  "realComponentStore": true,
+  "productPersistenceRecovery": true,
+  "pricePersistenceRecovery": true,
+  "newVersionCreatesDistinctImmutablePrice": true,
+  "existingSubscriptionKeepsOldPrice": true,
+  "noChargeTrial": true,
+  "fixturesCleaned": true
+}

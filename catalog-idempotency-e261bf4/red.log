@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/products/catalog-idempotency.test.ts (2 tests | 1 failed) 213ms
+   × reuses provider products/prices after persistence failure and keeps old subscription prices 204ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/products/catalog-idempotency.test.ts > reuses provider products/prices after persistence failure and keeps old subscription prices
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/client/products/catalog-idempotency.test.ts:40:25
+     38|   await expect(stripe.createProduct(ctx, productOptions)).rejects.toTh…
+     39|   const product = await stripe.createProduct(ctx, productOptions);
+     40|   expect(products.size).toBe(1);
+       |                         ^
+     41|   expect(productCreate.mock.calls[1][1]).toEqual({ idempotencyKey: pro…
+     42|   expect(product.productId).not.toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  21:36:08
+   Duration  1.25s (transform 55%, import 25%, tests 20%)
+

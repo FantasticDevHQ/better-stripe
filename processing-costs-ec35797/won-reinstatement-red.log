@@ -1,0 +1,37 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/settlement/processingCosts.test.ts (13 tests | 1 failed) 13ms
+   × waits for a won dispute's principal reinstatement instead of reporting the old withdrawal as owed 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/settlement/processingCosts.test.ts > waits for a won dispute's principal reinstatement instead of reporting the old withdrawal as owed
+AssertionError: expected { status: 'ready', …(15) } to match object { status: 'not_ready', …(1) }
+(16 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "dispute_reinstatement_unavailable",
+-   "status": "not_ready",
++   "status": "ready",
+  }
+
+ ❯ src/client/settlement/processingCosts.test.ts:299:79
+    297| it("waits for a won dispute's principal reinstatement instead of repor…
+    298|   raw.disputes.list.mockImplementation(() => page([dispute("won", [tra…
+    299|   expect(await getProcessingCostContext(stripe, { paymentIntentId: "pi…
+       |                                                                               ^
+    300|     status: "not_ready", reason: "dispute_reinstatement_unavailable",
+    301|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  22:50:05
+   Duration  144ms (transform 48%, tests 27%, import 18%, worker 6%)
+

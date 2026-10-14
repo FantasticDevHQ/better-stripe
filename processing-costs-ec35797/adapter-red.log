@@ -1,0 +1,75 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |example| example/convex/sellerCostActions.test.ts (5 tests | 4 failed) 66ms
+   × records actual non-refundable costs and adds them to the monthly invoice once 23ms
+   × waits for Stripe refund costs rather than recording an estimate 15ms
+   × turns returned Stripe fees into a credit after the seller was already billed 2ms
+   × retries when the actual refund fee is delayed 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/sellerCostActions.test.ts > records actual non-refundable costs and adds them to the monthly invoice once
+ FAIL  |example| example/convex/sellerCostActions.test.ts > turns returned Stripe fees into a credit after the seller was already billed
+TypeError: Cannot read properties of undefined (reading 'retrieve')
+ ❯ handler example/convex/sellerCostActions.ts:14:46
+     12|     const observedAt = Date.now();
+     13|     const raw = getStripeClient();
+     14|     const payment = await raw.paymentIntents.retrieve(args.paymentInte…
+       |                                              ^
+     15|       expand: ["latest_charge.balance_transaction"],
+     16|     });
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2040:57
+ ❯ runWithGlobalOverrides node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1667:35
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2040:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:36
+ ❯ invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:513:24
+ ❯ func.invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:601:5
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2055:129
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |example| example/convex/sellerCostActions.test.ts > waits for Stripe refund costs rather than recording an estimate
+AssertionError: expected [Function] to throw error matching /not available/ but got 'Cannot read properties of undefined (…'
+
+- Expected:
+/not available/
+
++ Received:
+"Cannot read properties of undefined (reading 'retrieve')"
+
+ ❯ example/convex/sellerCostActions.test.ts:95:4
+     93|       paymentIntentId: "pi_sale",
+     94|     }),
+     95|   ).rejects.toThrow(/not available/);
+       |    ^
+     96|   expect(await t.query(api.sellerCostBilling.list, { sellerId })).toHa…
+     97|     0,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |example| example/convex/sellerCostActions.test.ts > retries when the actual refund fee is delayed
+TypeError: Cannot read properties of undefined (reading 'retrieve')
+ ❯ handler example/convex/sellerCostActions.ts:14:46
+     12|     const observedAt = Date.now();
+     13|     const raw = getStripeClient();
+     14|     const payment = await raw.paymentIntents.retrieve(args.paymentInte…
+       |                                              ^
+     15|       expand: ["latest_charge.balance_transaction"],
+     16|     });
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2040:57
+ ❯ runWithGlobalOverrides node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1667:35
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2040:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:36
+ ❯ invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:513:24
+ ❯ func.invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:601:5
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2055:129
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 1 passed (5)
+   Start at  22:50:28
+   Duration  693ms (transform 54%, import 27%, tests 11%, environment 7%, worker 1%)
+

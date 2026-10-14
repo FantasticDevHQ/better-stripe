@@ -1,0 +1,25 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/settlement/processingCosts.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/settlement/processingCosts.test.ts [ src/client/settlement/processingCosts.test.ts ]
+Error: Cannot find module './processingCosts.js' imported from <repo>/src/client/settlement/processingCosts.test.ts
+ ❯ src/client/settlement/processingCosts.test.ts:3:1
+      1| import type Stripe from "stripe";
+      2| import { beforeEach, describe, expect, it, vi } from "vitest";
+      3| import { getProcessingCostContext } from "./processingCosts.js";
+       | ^
+      4|
+      5| const transaction = (
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:40:18
+   Duration  120ms (worker 97%, environment 3%)
+

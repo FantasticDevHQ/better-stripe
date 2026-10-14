@@ -1,0 +1,31 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "publicClient": true,
+  "apiVersion": "2026-09-30.preview",
+  "noPackageMoneyMovement": true,
+  "refunds": {
+    "providerCount": 101,
+    "returnedCount": 101,
+    "refundedMinorUnits": 101,
+    "originalFeeMinorUnits": 320,
+    "netFeeMinorUnits": 320,
+    "providerTotalsMatch": true,
+    "millisecondDates": true
+  },
+  "won": {
+    "principalMinorUnits": 0,
+    "disputeFeeAdjustment": 1500,
+    "netFeeMinorUnits": 1559,
+    "providerTransactionsMatch": true
+  },
+  "lost": {
+    "principalMinorUnits": 1000,
+    "disputeFeeAdjustment": 1500,
+    "netFeeMinorUnits": 1559,
+    "providerTransactionsMatch": true
+  },
+  "status": "passed",
+  "remainingSuccessfulChargeRefunded": true,
+  "disputeEvidenceFinalized": 2
+}

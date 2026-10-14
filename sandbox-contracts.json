@@ -1,0 +1,33 @@
+{
+  "sandbox": true,
+  "checkoutRetry": {
+    "sameSession": true,
+    "sessionId": "cs_test_a1wJx4ZaMzCczEmrVawtJFtxb3aAUkCApBq3a0odRRzHCF1tQqgB6mAGvy"
+  },
+  "authoritativeCheckout": {
+    "expandedProduct": true,
+    "status": "open"
+  },
+  "authoritativeSubscription": {
+    "id": "sub_1UQPJT6JR7kThJogoNSfeqqE",
+    "status": "active",
+    "invoiceStatus": "paid"
+  },
+  "couponError": {
+    "code": "resource_missing",
+    "statusCode": 404
+  },
+  "payout": {
+    "status": "ready",
+    "balances": [
+      {
+        "available": 0,
+        "pending": 144469,
+        "currency": "usd"
+      }
+    ],
+    "historyCount": 1,
+    "nextCursor": "po_1UQGHi8nH9jL5c4a8wFUuH4W",
+    "upcomingComplete": true
+  }
+}

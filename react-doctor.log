@@ -1,0 +1,16 @@
+✔ Select projects › @fantastic.dev/better-stripe, example
+Scanning changes: codex/public-settlement-and-payout-apis → origin/main
+
+✔ Scanned 60 files in 12.9s
+
+React Doctor — better-stripe
+Score: 86 / 100 Great
+
+2 issues
+Performance: 2 warnings
+
+⚠ await inside a loop ×2
+  react-doctor/async-await-in-loop
+  src/client/settlement/execution.ts:107
+  src/client/settlement/reconciliation.ts:117
+  Full diagnostics written to <temporary-diagnostics>

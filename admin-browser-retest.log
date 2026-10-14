@@ -1,0 +1,12 @@
+
+Running 1 test using 1 worker
+
+(node:14733) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14915) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `pnpm --trace-warnings ...` to show where the warning was created)
+(node:14980) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/affiliate-terms.spec.ts:134:1 › term controls show readable labels in API, package components and admin (11.7s)
+
+  1 passed (19.9s)

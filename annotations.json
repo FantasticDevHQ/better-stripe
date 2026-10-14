@@ -1,0 +1,35 @@
+[
+  {
+    "test": "Subscription commission terms",
+    "assertion": "Both sandbox checkouts settle with 10% commission",
+    "result": "passed",
+    "evidence": "subscription-checkout.webm"
+  },
+  {
+    "test": "Test clock renewals",
+    "assertion": "One-time renewal pays 0; Forever renewal pays 445 minor units",
+    "result": "passed",
+    "evidence": "sandbox-renewals.json"
+  },
+  {
+    "test": "Payout layout parity",
+    "assertion": "Seller and affiliate API/component cards and positions match",
+    "result": "passed",
+    "evidence": [
+      "seller-payouts.webm",
+      "affiliate-payouts.webm"
+    ]
+  },
+  {
+    "test": "Allocation preview",
+    "assertion": "Creator 5460, affiliate 1820, collaborator 1820, fees 900",
+    "result": "passed",
+    "evidence": "allocation-preview.webm"
+  },
+  {
+    "test": "Custom payout threshold",
+    "assertion": "No numeric floor exposed; retention boundary decision pending",
+    "result": "untested",
+    "evidence": "payout-boundary.json"
+  }
+]

@@ -1,0 +1,48 @@
+[
+  {
+    "account": "acct_1UQ78o7xOsB2U2nM",
+    "sandbox": true,
+    "schedule": {
+      "interval": "daily"
+    },
+    "status": "enabled",
+    "minimumBalanceByCurrency": null,
+    "available": [
+      {
+        "amount": 0,
+        "currency": "usd"
+      }
+    ],
+    "pending": [
+      {
+        "amount": 478460,
+        "currency": "usd"
+      }
+    ],
+    "numericPayoutFloor": "not_exposed_by_balance_settings",
+    "customThresholdEnforcement": "requires_controlled_release_boundary"
+  },
+  {
+    "account": "acct_1UQ7968nH9jL5c4a",
+    "sandbox": true,
+    "schedule": {
+      "interval": "daily"
+    },
+    "status": "enabled",
+    "minimumBalanceByCurrency": null,
+    "available": [
+      {
+        "amount": 0,
+        "currency": "usd"
+      }
+    ],
+    "pending": [
+      {
+        "amount": 142244,
+        "currency": "usd"
+      }
+    ],
+    "numericPayoutFloor": "not_exposed_by_balance_settings",
+    "customThresholdEnforcement": "requires_controlled_release_boundary"
+  }
+]

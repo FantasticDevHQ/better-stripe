@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 <workspace>
+
+
+ Test Files  6 passed (6)
+      Tests  18 passed (18)
+   Start at  17:19:29
+   Duration  1.09s (transform 52%, import 40%, environment 3%, tests 3%, worker 2%)
+

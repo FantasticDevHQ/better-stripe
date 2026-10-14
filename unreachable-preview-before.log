@@ -1,0 +1,42 @@
+
+Running 1 test using 1 worker
+
+(node:51260) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › e2e/settlement-preview.spec.ts:3:1 › public allocation helper renders a reconciled fee-first split (9.2s)
+
+
+  1) [chromium] › e2e/settlement-preview.spec.ts:3:1 › public allocation helper renders a reconciled fee-first split 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-slot="card"]').filter({ has: getByRole('heading', { name: 'Fee-first allocation preview' }) })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('[data-slot="card"]').filter({ has: getByRole('heading', { name: 'Fee-first allocation preview' }) }) with timeout 5000ms
+      - waiting for locator('[data-slot="card"]').filter({ has: getByRole('heading', { name: 'Fee-first allocation preview' }) })
+
+
+      15 |       has: page.getByRole("heading", { name: "Fee-first allocation preview" }),
+      16 |     });
+    > 17 |   await expect(preview).toBeVisible();
+         |                         ^
+      18 |   for (const label of [
+      19 |     "Creator",
+      20 |     "Collaborator",
+        at <workspace>/example/e2e/settlement-preview.spec.ts:17:25
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../../../../../../tmp/better-stripe-allocation-preview/settlement-preview-public--bfdc5--reconciled-fee-first-split-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../../../../tmp/better-stripe-allocation-preview/settlement-preview-public--bfdc5--reconciled-fee-first-split-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/settlement-preview.spec.ts:3:1 › public allocation helper renders a reconciled fee-first split 
+undefined
+<workspace>/example:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: playwright test e2e/settlement-preview.spec.ts --workers=1 --output=/tmp/better-stripe-allocation-preview

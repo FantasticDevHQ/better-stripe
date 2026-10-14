@@ -1,0 +1,28 @@
+
+> @fantastic.dev/better-stripe@0.10.1 check:all <repo>
+> repo-gates check-all
+
+✓ build               (1.2s)
+✓ lint                (14.5s)
+✓ check:design-system (2.6s)
+✓ format:check        (8.5s)
+✓ typecheck           (5.6s)
+✓ codegen:check       (0.4s)
+✓ check:size          (0.5s)
+✓ check:debt          (0.4s)
+✓ check:circular      (0.5s)
+✓ check:secrets       (0.9s)
+✓ check:shadscan      (7.1s)
+✓ test                (117.0s)
+✗ check:coverage      (181.4s)
+✓ check:agents        (9.2s)
+✓ check:ci-parity     (4.1s)
+
+1 gate(s) failed: check:coverage
+
+── check:coverage ──
+     × saves either a percentage or a currency amount and clears inheritance 5349ms
+   FAIL  |react| src/react/workflows/AffiliatePayoutEditor.test.tsx > saves either a percentage or a currency amount and clears inheritance
+  Error: Test timed out in 5000ms.
+  ↳ re-run: pnpm run check:coverage  (or CHECK_ALL_VERBOSE=1 pnpm run check:all)
+ ELIFECYCLE  Command failed with exit code 1.

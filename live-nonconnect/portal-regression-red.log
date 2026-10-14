@@ -1,5 +1,5 @@
 
- RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/embedded-component-examples/better-stripe
+ RUN  v5.0.3 <repo>
 
  ❯ |client| src/client/webhooks/processors.test.ts (107 tests | 1 failed) 289ms
    ❯ processEvent — subscriptions (15)

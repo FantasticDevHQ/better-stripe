@@ -1,0 +1,17 @@
+PASS live provider cancellation uses timestamp and false raw flag
+[better-stripe] ← V1 event received: customer.subscription.created (evt_1UQS1bL9QFmKeSCOVhhn42qy)
+[better-stripe]   ↳ processed customer.subscription.created
+PASS provider-signed resend requested
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQS1bL9QFmKeSCO82qu1cT2)
+[better-stripe]   ↳ processed customer.subscription.updated
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQS1bL9QFmKeSCO82qu1cT2)
+[better-stripe]   ↳ deduplicated (already processed)
+PASS signed webhook normalizes timestamp cancellation into component record
+PASS provider-signed resend requested
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQS1eL9QFmKeSCOdxTT3xRE)
+[better-stripe]   ↳ processed customer.subscription.updated
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQS1eL9QFmKeSCOdxTT3xRE)
+[better-stripe]   ↳ deduplicated (already processed)
+PASS signed webhook clears normalized state after package reactivation
+PASS updated snapshot deliveries are verified and preview-versioned
+PASS no-charge trial fixtures and temporary destination cleaned up

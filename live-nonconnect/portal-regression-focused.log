@@ -1,5 +1,5 @@
 
- RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/embedded-component-examples/better-stripe
+ RUN  v5.0.3 <repo>
 
 
  Test Files  1 passed (1)

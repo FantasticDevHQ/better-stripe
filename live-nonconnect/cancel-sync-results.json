@@ -1,0 +1,69 @@
+{
+  "commit": "6aaccee5d12df7800ae9213a4b30201dc209ed5f",
+  "run": "nonconnect-1791983714004",
+  "storage": "real convex-test component store, isolated local HTTP receiver",
+  "results": [
+    {
+      "name": "live provider cancellation uses timestamp and false raw flag",
+      "status": "passed"
+    },
+    {
+      "name": "provider-signed resend requested",
+      "status": "passed",
+      "eventId": "evt_1UQS1bL9QFmKeSCO82qu1cT2"
+    },
+    {
+      "name": "signed webhook normalizes timestamp cancellation into component record",
+      "status": "passed"
+    },
+    {
+      "name": "provider-signed resend requested",
+      "status": "passed",
+      "eventId": "evt_1UQS1eL9QFmKeSCOdxTT3xRE"
+    },
+    {
+      "name": "signed webhook clears normalized state after package reactivation",
+      "status": "passed"
+    },
+    {
+      "name": "updated snapshot deliveries are verified and preview-versioned",
+      "status": "passed"
+    },
+    {
+      "name": "no-charge trial fixtures and temporary destination cleaned up",
+      "status": "passed"
+    }
+  ],
+  "deliveries": [
+    {
+      "type": "customer.subscription.created",
+      "id": "evt_1UQS1bL9QFmKeSCOVhhn42qy",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQS1bL9QFmKeSCO82qu1cT2",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQS1bL9QFmKeSCO82qu1cT2",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQS1eL9QFmKeSCOdxTT3xRE",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQS1eL9QFmKeSCOdxTT3xRE",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    }
+  ]
+}

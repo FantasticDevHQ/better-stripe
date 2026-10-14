@@ -1,0 +1,58 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |example| example/convex/storeBalanceActions.test.ts (4 tests | 3 failed) 360ms
+   × persists restoration data before enabling and restores it on opt-out 235ms
+   × reuses pending request identity after provider failure and prevents opposite updates racing it 56ms
+   × uses a new operation identity when balance payments are re-enabled 45ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/storeBalanceActions.test.ts > persists restoration data before enabling and restores it on opt-out
+ FAIL  |example| example/convex/storeBalanceActions.test.ts > uses a new operation identity when balance payments are re-enabled
+Error: Invalid API Key provided: sk_test_unit
+ ❯ generateV1Error node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/Error.ts:33:12
+ ❯ node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/RequestSender.ts:227:23
+ ❯ SubscriptionResource._makeRequest node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/StripeResource.ts:95:27
+ ❯ SubscriptionResource.retrieve node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/resources/Subscriptions.ts:164:17
+ ❯ handler example/convex/storeBalanceActions.ts:54:41
+     52|       throw new Error("Activate a store plan first.");
+     53|     const raw = getStripeClient();
+     54|     const sub = await raw.subscriptions.retrieve(
+       |                                         ^
+     55|       seller.storePlan.stripeSubscriptionId,
+     56|     );
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:513:18
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2055:35
+ ❯ runActionWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2053:16
+ ❯ Object.actionFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2134:28
+ ❯ action node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  |example| example/convex/storeBalanceActions.test.ts > reuses pending request identity after provider failure and prevents opposite updates racing it
+AssertionError: expected [Function] to throw error matching /Preview/ but got 'Invalid API Key provided: sk_test_unit'
+
+- Expected:
+/Preview/
+
++ Received:
+"Invalid API Key provided: sk_test_unit"
+
+ ❯ example/convex/storeBalanceActions.test.ts:58:98
+     56|   const {t,sellerId}=await setup();
+     57|   client.setBalanceFunding.mockRejectedValueOnce(new Error("Preview un…
+     58|   await expect(t.action(api.storeBalanceActions.setFunding,{sellerId,e…
+       |                                                                                                  ^
+     59|   expect(await t.query(api.storeBalanceFunding.state,{sellerId})).toMa…
+     60|   await expect(t.action(api.storeBalanceActions.setFunding,{sellerId,e…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed (4)
+   Start at  22:14:15
+   Duration  1.09s (transform 39%, tests 38%, import 17%, environment 5%)
+

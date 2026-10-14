@@ -1,0 +1,24 @@
+{
+  "runId": "bts-138-20261014",
+  "startedAt": "2026-10-14T15:20:48.420Z",
+  "webhooks": {
+    "snapshotEvents": 29,
+    "thinEvents": 12
+  },
+  "funded": {
+    "actor": {
+      "accountId": "<provider-id>",
+      "clockId": "<provider-id>",
+      "periodEnd": 1794669653,
+      "sellerId": "<fixture-id>",
+      "subscriptionId": "<provider-id>"
+    },
+    "sources": {
+      "disputePaymentId": "<provider-id>",
+      "refundPaymentId": "<provider-id>"
+    }
+  },
+  "status": "failed",
+  "error": "Error: Real refund/dispute cost webhooks timed out: {\"available\":18200,\"clockStatus\":\"ready\",\"clockTime\":1791991253,\"costs\":[{\"amountDue\":88,\"collected\":0,\"invoiced\":0,\"outstanding\":88,\"paymentIntentId\":\"<provider-id>\",\"sourceType\":\"refund\"}],\"debits\":[],\"hasAccess\":true,\"invoice\":{\"amountPaid\":900,\"amountRemaining\":0,\"id\":\"<provider-id>\",\"lines\":[{\"amount\":900,\"description\":\"1 × BetterStripe Starter store plan (at $9.00 / month)\"}],\"reason\":\"subscription_create\",\"status\":\"paid\",\"total\":900},\"localStatus\":\"active\",\"payment\":{\"declineCode\":\"\",\"errorCode\":\"\",\"errorMessage\":\"\",\"id\":\"<provider-id>\",\"method\":\"card\",\"status\":\"succeeded\"},\"periodEnd\":1794669653,\"subscriptionStatus\":\"active\"}",
+  "finishedAt": "2026-10-14T15:24:46.820Z"
+}

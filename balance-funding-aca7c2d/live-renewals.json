@@ -1,0 +1,26 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedExampleAdapter": true,
+  "scope": "balance-funded renewal only; refund/dispute cost fixture gap tracked in BTS-139/BTS-140",
+  "funded": {
+    "totalMinorUnits": 900,
+    "currency": "usd",
+    "providerPaymentMethod": "stripe_balance",
+    "paidOnce": true,
+    "repeatedPaidInvoiceNoDuplicateDebit": true,
+    "accessActive": true,
+    "subscriptionCanceled": true
+  },
+  "insufficient": {
+    "totalMinorUnits": 900,
+    "currency": "usd",
+    "providerPaymentMethod": "stripe_balance",
+    "insufficientFunds": true,
+    "noBalanceDebit": true,
+    "noAutomaticCardFallback": true,
+    "storeAccessClosed": true,
+    "subscriptionCanceled": true
+  },
+  "status": "passed"
+}

@@ -1,0 +1,10 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedExampleAdapter": true,
+  "optOutRestoresOriginalDefaultAndTypes": true,
+  "repeatedOptOutSafe": true,
+  "newCycleUsesNewDurableIdentity": true,
+  "repeatedCycleRestoresOriginal": true,
+  "trialOrSubscriptionCanceled": true
+}

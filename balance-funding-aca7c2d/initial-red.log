@@ -1,0 +1,25 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/billing/balanceFunding.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/billing/balanceFunding.test.ts [ src/client/billing/balanceFunding.test.ts ]
+Error: Cannot find module './balanceFunding.js' imported from <repo>/src/client/billing/balanceFunding.test.ts
+ ❯ src/client/billing/balanceFunding.test.ts:3:1
+      1| import type Stripe from "stripe";
+      2| import { beforeEach, describe, expect, it, vi } from "vitest";
+      3| import {
+       | ^
+      4|   getBalanceFundingCapability,
+      5|   prepareBalanceFunding,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  22:11:46
+   Duration  123ms (worker 97%, environment 3%)
+

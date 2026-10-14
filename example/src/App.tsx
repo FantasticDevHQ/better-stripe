@@ -3,7 +3,6 @@ import { ConnectExample } from "@/components/connect-example";
 import {
   ProductComponents,
   SubscriptionComponents,
-  PayoutComponents,
   HostedBillingExample,
 } from "@/components/package-examples";
 import { AppShell } from "@/components/app-shell";
@@ -156,7 +155,7 @@ export default function App() {
             element={
               <IntegrationExamples
                 headless={<Payouts />}
-                components={<PayoutComponents />}
+                components={<Payouts />}
                 embedded={<ConnectExample kind="payouts" />}
               />
             }
@@ -166,7 +165,7 @@ export default function App() {
             element={
               <IntegrationExamples
                 headless={<Payouts />}
-                components={<PayoutComponents />}
+                components={<Payouts />}
                 embedded={<ConnectExample kind="payouts" />}
               />
             }

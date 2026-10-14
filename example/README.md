@@ -901,6 +901,11 @@ page, newest first. Previous/Next controls use the package's `Pagination` and
 reversals. It reads `paginateTransfersByAccount`, so older sales remain reachable
 beyond the bounded earnings preview.
 
+Affiliate and seller Payouts share the same card layout in via API and
+BetterStripe components: Available, Pending, Next payout, Upcoming payouts, and
+Previous payouts. Both use the package's `Payouts` workflow and `PayoutHistory`
+with the example's styled render props, including Refresh and Load more actions.
+
 ### Choose a checkout type
 
 Open any seller product's checkout to compare these integrations. Each option

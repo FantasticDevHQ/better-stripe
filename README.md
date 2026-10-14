@@ -6,7 +6,7 @@ No live keys or live payments were used. Financial outputs contain sandbox objec
 
 ## Passing checks
 
-- `VITEST_MAX_WORKERS=4 pnpm run check:all`: all 15 gates passed (gates.log). No floors, budgets, timeouts or policies were lowered. Final exact-head rerun is included separately when complete.
+- `VITEST_MAX_WORKERS=4 pnpm run check:all`: all 15 gates passed (gates.log). No floors, budgets, timeouts or policies were lowered. Exact-head GitHub CI also passed all 15 gates in 107.3s: https://github.com/FantasticDevHQ/better-stripe/actions/runs/38551745469 (ci-gates-head.log).
 - Focused package tests: verified processing costs, allocation rounding/caps, immutable transfer claims, provider-success/persistence-failure recovery, legacy ungrouped transfers, refund recovery, commission selection, payout pagination and unavailable-account states.
 - Account/Checkout idempotency: concurrent provider account reuse; recovery after persistence failure; different-order keys; parameter conflicts; stable React request IDs through retries/rerenders; storefront forwarding.
 - Real sandbox Checkout action called twice with the same request ID returned the same session. Public package authoritative reads verified expanded product and paid subscription invoice; missing coupon preserved resource_missing/404. Payout snapshot returned a real next cursor. See sandbox-contracts.json.

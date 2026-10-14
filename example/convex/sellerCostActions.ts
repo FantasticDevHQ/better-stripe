@@ -1,3 +1,4 @@
+import { stripe } from "./stripe";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
@@ -10,71 +11,35 @@ export const reconcile = internalAction({
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
     const observedAt = Date.now();
-    const raw = getStripeClient();
-    const payment = await raw.paymentIntents.retrieve(args.paymentIntentId, {
-      expand: ["latest_charge.balance_transaction"],
-    });
-    const charge = payment.latest_charge;
-    if (!charge || typeof charge === "string") return null;
+    const cost = await stripe.getProcessingCostContext(ctx, args);
+    if (cost.status === "not_ready") {
+      if (
+        cost.reason === "payment_not_succeeded" ||
+        cost.reason === "charge_unavailable"
+      )
+        return null;
+      throw new Error(
+        `Stripe processing costs are not available yet (${cost.reason}).`,
+      );
+    }
     const sale = await ctx.runQuery(internal.storeSaleSettlement.getByCharge, {
-      chargeId: charge.id,
+      chargeId: cost.chargeId,
     });
     if (!sale) {
-      if (
-        payment.metadata?.storeBilling === "sale_v1" &&
-        payment.status === "succeeded"
-      )
+      if (cost.metadata.storeBilling === "sale_v1")
         throw new Error(
           "Sale settlement is not ready for cost reconciliation.",
         );
       return null;
     }
-    const balance = charge.balance_transaction;
-    if (!balance || typeof balance === "string")
-      throw new Error("Stripe processing costs are not available yet.");
-    const refunds = await raw.refunds.list({
-      payment_intent: payment.id,
-      limit: 100,
-      expand: ["data.balance_transaction"],
-    });
-    let refundFeeCredits = 0;
-    for (const refund of refunds.data) {
-      if (refund.status !== "succeeded") continue;
-      const transaction = refund.balance_transaction;
-      if (!transaction || typeof transaction === "string")
-        throw new Error("Stripe refund costs are not available yet.");
-      refundFeeCredits += transaction.fee;
-    }
-    const disputes = await raw.disputes.list({
-      payment_intent: payment.id,
-      limit: 100,
-    });
-    const disputePrincipal = disputes.data.reduce(
-      (sum, dispute) =>
-        sum +
-        Math.max(
-          0,
-          -dispute.balance_transactions.reduce(
-            (total, t) => total + t.amount,
-            0,
-          ),
-        ),
+    if (sale.currency !== cost.currency || sale.gross !== cost.gross)
+      throw new Error("Stripe cost context does not match the original sale.");
+    const disputeFees = Math.max(0, cost.disputeFeeAdjustment);
+    const principalReturned = cost.principalReturned;
+    const processingFee = Math.max(
       0,
+      cost.processingFee + cost.refundFeeAdjustment,
     );
-    const disputeFees = Math.max(
-      0,
-      disputes.data.reduce(
-        (sum, dispute) =>
-          sum +
-          dispute.balance_transactions.reduce((total, t) => total + t.fee, 0),
-        0,
-      ),
-    );
-    const principalReturned = Math.min(
-      sale.gross,
-      charge.amount_refunded + disputePrincipal,
-    );
-    const processingFee = Math.max(0, balance.fee + refundFeeCredits);
     const processingLoss = stripeCostDeficit({
       gross: sale.gross,
       sellingFee: sale.sellingFee,
@@ -89,10 +54,10 @@ export const reconcile = internalAction({
     );
     await ctx.runMutation(internal.sellerCostBilling.record, {
       sellerId: sale.sellerId,
-      sourceChargeId: charge.id,
-      paymentIntentId: payment.id,
+      sourceChargeId: cost.chargeId,
+      paymentIntentId: cost.paymentIntentId,
       currency: sale.currency,
-      sourceType: disputes.data.length ? "dispute" : "refund",
+      sourceType: cost.disputes.length ? "dispute" : "refund",
       amountDue: processingLoss + disputeFees + adjustmentRollback,
       processingLoss,
       disputeFees,

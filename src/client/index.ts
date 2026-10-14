@@ -1,3 +1,12 @@
+import type { SubscriptionStatus } from "../component/billing/validators.js";
+import * as processingCostsImpl from "./settlement/processingCosts.js";
+export type {
+  ProcessingCostContext,
+  ProcessingCostOptions,
+  ProcessingCostTransaction,
+  ProcessingCostRecord,
+  ProcessingCostNotReadyReason,
+} from "./settlement/processingCosts.js";
 import * as balanceFundingImpl from "./billing/balanceFunding.js";
 export type {
   BalanceFundingCapability,
@@ -59,7 +68,6 @@ import { v } from "convex/values";
 import Stripe from "stripe";
 
 import type { ComponentApi } from "../component/_generated/component.js";
-import type { SubscriptionStatus } from "../component/billing/validators.js";
 import type {
   DisputeStatus,
   PayoutStatus,
@@ -930,23 +938,7 @@ export class BetterStripe {
 
   async upsertSubscription(
     ctx: RunCtx,
-    opts: {
-      stripeSubscriptionId: string;
-      accountId?: string;
-      userId: string;
-      orgId?: string;
-      status: SubscriptionStatus;
-      priceId?: string;
-      quantity?: number;
-      currentPeriodStart?: string;
-      currentPeriodEnd?: string;
-      cancelAtPeriodEnd: boolean;
-      canceledAt?: string;
-      isTrialing: boolean;
-      trialStart?: string;
-      trialEnd?: string;
-      metadata?: Record<string, unknown>;
-    },
+    opts: Parameters<typeof subscriptionsImpl.upsertSubscription>[2],
   ) {
     return subscriptionsImpl.upsertSubscription(this.component, ctx, opts);
   }
@@ -1269,6 +1261,13 @@ export class BetterStripe {
   ) {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
   }
+  async getProcessingCostContext(
+    _ctx: RunCtx,
+    opts: processingCostsImpl.ProcessingCostOptions,
+  ) {
+    return processingCostsImpl.getProcessingCostContext(this.stripe(), opts);
+  }
+
   async getVerifiedSale(
     _ctx: RunCtx,
     opts: saleContextImpl.VerifiedSaleOptions,

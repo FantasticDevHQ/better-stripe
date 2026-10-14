@@ -335,6 +335,38 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
 | `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
+### Refund and dispute processing costs
+
+`getProcessingCostContext(ctx, { paymentIntentId, stripeAccountId? })` reads
+provider costs for an authorized payment, including refunded and disputed
+charges. Authorize both the payment and optional connected-account namespace in
+your host. The client preserves its configured API version and provider errors;
+it does not settle a sale, move money, create debt or decide which costs a seller
+owes. The example's cost adapter uses this method while keeping its billing policy
+in the application.
+
+A `ready` result contains every refund and dispute, source-linked balance
+transactions, signed fee adjustments and provider amounts in integer minor units.
+Dates are milliseconds. `processingFee` is the original charge balance
+transaction's total provider-reported fee, which can include application fees on
+direct charges. Each transaction exposes `feeDetails` so your approved policy can
+distinguish processor, application and other fees. A null breakdown means provider
+details were unavailable; the reported total remains authoritative. Negative fee
+adjustments remain credits. Failed refunds include their failure reversal instead
+of counting their principal as returned.
+
+`principalReturned` caps the combined economic refund/dispute principal at the
+original gross amount. Raw signed provider transactions remain intact, including
+any overlapping debits, and are not a seller debt calculation. A won dispute with
+an unreinstated principal withdrawal is `not_ready`. Pending refunds, missing cost
+transactions or different settlement currencies also return an explicit
+`not_ready` reason instead of estimated or mixed-currency totals. Provider
+pagination errors throw rather than returning partial data. Retry delayed
+provider data; resolve currency conversion through an explicit host policy.
+
+See Stripe's [balance transaction fields](https://docs.stripe.com/api/balance_transactions/object)
+and [refund failure reversals](https://docs.stripe.com/api/refunds/object).
+
 ### Optional balance-funded subscriptions
 
 Balance funding requires an eligible connected account and Stripe's Accounts v2

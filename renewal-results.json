@@ -1,0 +1,24 @@
+[
+  {
+    "affiliateCommissionTerm": "one_time",
+    "currency": "usd",
+    "gross": 4900,
+    "sellingFee": 441,
+    "processingFee": 172,
+    "platformNet": 269,
+    "affiliateNet": 0,
+    "sellerNet": 4459,
+    "status": "settled"
+  },
+  {
+    "affiliateCommissionTerm": "forever",
+    "currency": "usd",
+    "gross": 4900,
+    "sellingFee": 441,
+    "processingFee": 172,
+    "platformNet": 269,
+    "affiliateNet": 445,
+    "sellerNet": 4014,
+    "status": "settled"
+  }
+]

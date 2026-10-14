@@ -16,10 +16,9 @@
 
 ## [0.11.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.10.2...v0.11.0) (2026-10-14)
 
-
 ### Features
 
-* add retry-safe catalog creation request keys ([#145](https://github.com/FantasticDevHQ/better-stripe/issues/145)) ([45b0d52](https://github.com/FantasticDevHQ/better-stripe/commit/45b0d52dfcb6577cf5df339721ed9eed34a83a1d))
+- add retry-safe catalog creation request keys ([#145](https://github.com/FantasticDevHQ/better-stripe/issues/145)) ([45b0d52](https://github.com/FantasticDevHQ/better-stripe/commit/45b0d52dfcb6577cf5df339721ed9eed34a83a1d))
 
 ## [0.10.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.10.1...v0.10.2) (2026-10-14)
 

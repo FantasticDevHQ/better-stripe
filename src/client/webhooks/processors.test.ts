@@ -353,6 +353,27 @@ describe("processEvent — subscriptions", () => {
     },
   };
 
+  it.each([
+    [1702592000, true],
+    [1702500000, false],
+    [null, false],
+  ])(
+    "normalizes portal cancel_at=%s against the billing period",
+    async (cancelAt, expected) => {
+      const whCtx = makeWhCtx();
+      await processEvent(
+        whCtx,
+        event("customer.subscription.updated", {
+          ...baseSub,
+          cancel_at: cancelAt,
+        }),
+      );
+      expect(dispatchedPayload(whCtx.ctx).data.cancelAtPeriodEnd).toBe(
+        expected,
+      );
+    },
+  );
+
   it("normalizes a created subscription with identifiers, trial, period, and price", async () => {
     const whCtx = makeWhCtx();
     await processEvent(whCtx, event("customer.subscription.created", baseSub));

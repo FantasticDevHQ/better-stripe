@@ -1,3 +1,5 @@
+import { STRIPE_CUSTOMER_PREVIEW_API_VERSION } from "../apiVersion.js";
+import { throwStripeError } from "../errors.js";
 import type Stripe from "stripe";
 
 import type { RunCtx } from "../helpers.js";
@@ -73,6 +75,13 @@ export const BETTER_STRIPE_V2_WEBHOOK_EVENTS = [
   "v2.core.account_link.returned",
 ] as const;
 
+/** Minimal customer lifecycle subscription for non-Connect preview merchants. */
+export const BETTER_STRIPE_CUSTOMER_ACCOUNT_EVENTS = [
+  "v2.core.account.created",
+  "v2.core.account[configuration.customer].updated",
+  "v2.core.account[identity].updated",
+] as const;
+
 export type BetterStripeV2WebhookEvent =
   (typeof BETTER_STRIPE_V2_WEBHOOK_EVENTS)[number];
 
@@ -103,14 +112,19 @@ export async function listWebhookEndpoints(
   }));
 }
 
+export type WebhookEndpointOptions = {
+  url: string;
+  description?: string;
+  enabledEvents?: string[];
+};
+export type EventDestinationOptions = WebhookEndpointOptions & {
+  name?: string;
+  eventPayload?: "snapshot" | "thin";
+};
 export async function createWebhookEndpoint(
   stripe: Stripe,
   _ctx: RunCtx,
-  opts: {
-    url: string;
-    description?: string;
-    enabledEvents?: string[];
-  },
+  opts: WebhookEndpointOptions & { apiVersion?: string },
 ): Promise<{ id: string; secret: string; url: string }> {
   // Remove existing endpoint with same URL (secret is only available on create)
   const existing = await stripe.webhookEndpoints.list({ limit: 100 });
@@ -121,6 +135,12 @@ export async function createWebhookEndpoint(
 
   const endpoint = await stripe.webhookEndpoints.create({
     url: opts.url,
+    ...(opts.apiVersion
+      ? {
+          api_version:
+            opts.apiVersion as Stripe.WebhookEndpointCreateParams.ApiVersion,
+        }
+      : {}),
     enabled_events: (opts.enabledEvents ??
       BETTER_STRIPE_WEBHOOK_EVENTS) as Stripe.WebhookEndpointCreateParams.EnabledEvent[],
     description:
@@ -189,14 +209,7 @@ export async function listEventDestinations(
 export async function setupEventDestination(
   stripe: Stripe,
   _ctx: RunCtx,
-  opts: {
-    url: string;
-    name?: string;
-    description?: string;
-    enabledEvents?: string[];
-    /** 'snapshot' for V1 events, 'thin' for V2 events. Defaults to 'thin'. */
-    eventPayload?: "snapshot" | "thin";
-  },
+  opts: EventDestinationOptions & { apiVersion?: string },
 ): Promise<{
   id: string;
   secret: string;
@@ -208,7 +221,9 @@ export async function setupEventDestination(
   const events =
     opts.enabledEvents ??
     (payloadType === "thin"
-      ? [...BETTER_STRIPE_V2_WEBHOOK_EVENTS]
+      ? opts.apiVersion === STRIPE_CUSTOMER_PREVIEW_API_VERSION
+        ? [...BETTER_STRIPE_CUSTOMER_ACCOUNT_EVENTS]
+        : [...BETTER_STRIPE_V2_WEBHOOK_EVENTS]
       : [...BETTER_STRIPE_WEBHOOK_EVENTS]);
   const name =
     opts.name ??
@@ -227,6 +242,36 @@ export async function setupEventDestination(
     (d) =>
       d.webhook_endpoint?.url === opts.url && d.event_payload === payloadType,
   );
+
+  if (
+    match &&
+    payloadType === "snapshot" &&
+    opts.apiVersion &&
+    match.snapshot_api_version !== opts.apiVersion
+  )
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "Existing snapshot destination API version differs. Create a replacement destination with the selected version and configure its signing secret before retiring the old destination.",
+    );
+
+  if (match && opts.apiVersion === STRIPE_CUSTOMER_PREVIEW_API_VERSION) {
+    const scopes = new Set(
+      (match.events_from ?? []).map((scope) =>
+        scope === "self"
+          ? "@self"
+          : scope === "other_accounts"
+            ? "@accounts"
+            : scope,
+      ),
+    );
+    const required =
+      payloadType === "thin" ? ["@self", "@accounts"] : ["@self"];
+    if (required.some((scope) => !scopes.has(scope)))
+      throwStripeError(
+        "INVALID_CONFIGURATION",
+        "Existing destination event scope differs. Create a replacement with the customer preview scopes before retiring the old destination.",
+      );
+  }
 
   if (match) {
     const updated = await stripe.v2.core.eventDestinations.update(match.id, {
@@ -256,7 +301,17 @@ export async function setupEventDestination(
     type: "webhook_endpoint",
     event_payload: payloadType,
     enabled_events: events,
-    events_from: payloadType === "thin" ? ["self", "other_accounts"] : ["self"],
+    ...(payloadType === "snapshot" && opts.apiVersion
+      ? { snapshot_api_version: opts.apiVersion }
+      : {}),
+    events_from:
+      opts.apiVersion === STRIPE_CUSTOMER_PREVIEW_API_VERSION
+        ? payloadType === "thin"
+          ? ["@self", "@accounts"]
+          : ["@self"]
+        : payloadType === "thin"
+          ? ["self", "other_accounts"]
+          : ["self"],
     webhook_endpoint: { url: opts.url },
     include: ["webhook_endpoint.signing_secret", "webhook_endpoint.url"],
   });

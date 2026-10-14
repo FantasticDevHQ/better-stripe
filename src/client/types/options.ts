@@ -1,3 +1,4 @@
+import type { SupportedStripeApiVersion } from "../apiVersion.js";
 import type {
   StripeEventHandler,
   StripeEventHandlers,
@@ -51,6 +52,8 @@ export type FeeOverride = PlatformFeeConfig;
 // ---------------------------------------------------------------------------
 
 export type BetterStripeOptions = {
+  /** Defaults to GA. Non-Connect Accounts v2 customers require explicit preview opt-in. */
+  stripeApiVersion?: SupportedStripeApiVersion;
   STRIPE_SECRET_KEY?: string;
   /** Sync triggers — run in the same transaction as component DB writes */
   triggers?: SyncTriggers;

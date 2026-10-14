@@ -11,10 +11,16 @@ describe("Stripe version pin", () => {
     expect(Stripe.API_VERSION).toBe(STRIPE_API_VERSION);
   });
 
-  it.each([getStripeClient, getStripe])(
+  it.each(
+    [getStripeClient, getStripe].flatMap((factory) =>
+      [undefined, "2026-09-30.preview" as const].map(
+        (version) => [factory, version] as const,
+      ),
+    ),
+  )(
     "pins outgoing API requests from each factory",
-    async (factory) => {
-      const stripe = factory("sk_test_version_transport_only");
+    async (factory, selectedVersion) => {
+      const stripe = factory("sk_test_version_transport_only", selectedVersion);
       let version: string | undefined;
       // Factories deliberately expose no transport override. Replace only the
       // SDK's transport slot, leaving its request serializer/headers untouched.
@@ -41,7 +47,7 @@ describe("Stripe version pin", () => {
         },
       });
       await stripe.products.retrieve("prod_local");
-      expect(version).toBe(STRIPE_API_VERSION);
+      expect(version).toBe(selectedVersion ?? STRIPE_API_VERSION);
     },
   );
 });

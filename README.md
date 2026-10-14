@@ -4,6 +4,15 @@ A reusable [Convex component](https://docs.convex.dev/components) for the Stripe
 
 Built for Convex + Next.js applications. Follows the conventions established by [`@convex-dev/stripe`](https://github.com/get-convex/stripe) and [`@convex-dev/better-auth`](https://github.com/get-convex/better-auth).
 
+## Accounts v2 customer preview
+
+Non-Connect merchants can opt into customer-only Accounts v2 with
+`stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION` on `BetterStripe`.
+The sandbox owner must enable Stripe's preview first. Use the instance
+`stripe.registerRoutes` method to inherit the same API version for webhook
+processing. Connect users retain the GA default when this option is omitted.
+See the [customer preview setup and webhook migration guide](docs/accounts-v2-preview.md).
+
 ## Status
 
 **Version**: `0.10.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.

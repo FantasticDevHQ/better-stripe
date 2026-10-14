@@ -145,3 +145,17 @@ React `Checkout` now preserves `requestId` on retry instead of creating a new
 one. Forward it to server request options. Use a different `orderKey` for a new
 purchase and persist `requestId` for recovery across reloads. Existing callback
 implementations remain compatible when they ignore the optional identity.
+
+## Customer-only Accounts v2 preview configuration
+
+The default API version remains `2026-09-30.endive`. Non-Connect merchants can
+explicitly select `STRIPE_CUSTOMER_PREVIEW_API_VERSION` after the sandbox owner
+enables Stripe's preview. Constructor options are validated; instance webhook
+registration inherits the selected key/version and rejects conflicts. Existing
+standalone route registration remains supported.
+
+Destination creation now uses the client's selected snapshot version. Existing
+destinations whose immutable version or preview event scope differs require a
+replacement path and signing-secret cutover; they are not silently reused.
+See [preview setup and migration](docs/accounts-v2-preview.md). No Connect
+onboarding or payout-retention policy changes are part of this opt-in.

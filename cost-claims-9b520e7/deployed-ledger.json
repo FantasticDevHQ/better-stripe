@@ -1,0 +1,18 @@
+{
+  "deployedDevelopmentComponent": true,
+  "bookkeepingOnly": true,
+  "noProviderCalls": true,
+  "concurrentBoundariesSerialized": true,
+  "retryKeptSameReservation": true,
+  "completionRetryNoDuplicateCollection": true,
+  "signedCreditReconciled": true,
+  "finalBalance": {
+    "amountDue": 0,
+    "collectedAmount": 0,
+    "reservedAmount": 0,
+    "outstanding": 0
+  },
+  "nonBillableQaScopeHasNoPendingObligation": true,
+  "staleReplayIgnored": true,
+  "status": "passed"
+}

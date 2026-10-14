@@ -1,0 +1,127 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/cost-recovery.test.ts (6 tests | 6 failed) 10ms
+   × preserves identity, ignores stale observations and rejects conflicting replays 7ms
+   × nets unseen credits and isolates currencies/scopes beyond one history page 1ms
+   × reserves in bounded batches and seals only a fully prepared group 1ms
+   × serializes provider boundaries and recovers the same reservation after a worker dies 0ms
+   × handles source credits while reserved without making them spendable at a different boundary 0ms
+   × restores signed recovered costs proportionally when the funding sale is returned 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > preserves identity, ignores stale observations and rejects conflicting replays
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:34:25
+     32| it("preserves identity, ignores stale observations and rejects conflic…
+     33|   const t = convexTest(schema, modules);
+     34|   const first = await t.mutation(m("claims:record"), observation("a", …
+       |                         ^
+     35|   expect(
+     36|     await t.mutation(m("claims:record"), observation("a", 900, 1)),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > nets unseen credits and isolates currencies/scopes beyond one history page
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:60:13
+     58|   const t = convexTest(schema, modules);
+     59|   for (let i = 0; i < 125; i++)
+     60|     await t.mutation(m("claims:record"), observation(`a${i}`, 10));
+       |             ^
+     61|   await t.mutation(m("claims:record"), observation("credit", -1200));
+     62|   await t.mutation(m("claims:record"), {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > reserves in bounded batches and seals only a fully prepared group
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:88:13
+     86|   const t = convexTest(schema, modules);
+     87|   for (let i = 0; i < 110; i++)
+     88|     await t.mutation(m("claims:record"), observation(`a${i}`, 10));
+       |             ^
+     89|   const first = await t.mutation(m("reservations:reserve"), reserve("b…
+     90|   expect(first.reservation.amount).toBe(1000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > serializes provider boundaries and recovers the same reservation after a worker dies
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:141:11
+    139| it("serializes provider boundaries and recovers the same reservation a…
+    140|   const t = convexTest(schema, modules);
+    141|   await t.mutation(m("claims:record"), observation("a", 500));
+       |           ^
+    142|   const first = await t.mutation(m("reservations:reserve"), reserve("s…
+    143|   expect(await t.mutation(m("reservations:reserve"), reserve("same")))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > handles source credits while reserved without making them spendable at a different boundary
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:167:11
+    165| it("handles source credits while reserved without making them spendabl…
+    166|   const t = convexTest(schema, modules);
+    167|   await t.mutation(m("claims:record"), observation("a", 500));
+       |           ^
+    168|   await t.mutation(m("reservations:reserve"), reserve("debit"));
+    169|   await t.mutation(m("claims:record"), observation("a", 0, 2));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > restores signed recovered costs proportionally when the funding sale is returned
+Error: Could not find module for: "costRecovery/claims"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/cost-recovery.test.ts:192:11
+    190| it("restores signed recovered costs proportionally when the funding sa…
+    191|   const t = convexTest(schema, modules);
+    192|   await t.mutation(m("claims:record"), observation("a", 501));
+       |           ^
+    193|   await t.mutation(m("reservations:reserve"), reserve("debit"));
+    194|   await t.mutation(m("reservations:seal"), { groupKey: "group" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+   Start at  23:25:21
+   Duration  302ms (transform 44%, import 25%, environment 23%, tests 6%, worker 2%)
+

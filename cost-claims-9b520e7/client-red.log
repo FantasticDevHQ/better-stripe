@@ -1,0 +1,26 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/costRecovery.test.ts (2 tests | 1 failed) 5ms
+   × uses the real component through the public recovery client without any provider key 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/costRecovery.test.ts > uses the real component through the public recovery client without any provider key
+TypeError: Cannot read properties of undefined (reading 'recordClaim')
+ ❯ src/client/costRecovery.test.ts:14:17
+     12|  const recovery=stripe.costRecovery;
+     13|  const scope={accountId:"acct_owner",scopeKey:"store",currency:"usd"};
+     14|  await recovery.recordClaim(ctx,{...scope,claimKey:"fee:ch_original",s…
+       |                 ^
+     15|  const result=await recovery.reserve(ctx,{...scope,groupKey:"invoice:i…
+     16|  expect(result.reservation.amount).toBe(320);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  23:31:01
+   Duration  1.91s (transform 90%, import 10%)
+

@@ -1,0 +1,6 @@
+
+> @fantastic.dev/better-stripe@0.11.0 codegen:check <repo>
+> node scripts/check-codegen-drift.mjs
+
+✓ codegen drift check: src/component/_generated/component.ts is in sync with src/component/**/*.{queries,mutations,actions}.ts
+✓ codegen drift check: example/convex/_generated/api.ts is in sync with example/convex/**/*.ts

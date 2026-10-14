@@ -1,0 +1,169 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/cost-recovery.test.ts (10 tests | 9 failed) 123ms
+   × nets unseen credits and isolates currencies/scopes beyond one history page 58ms
+   × reserves in bounded batches and seals only a fully prepared group 25ms
+   × serializes provider boundaries and recovers the same reservation after a worker dies 1ms
+   × handles source credits while reserved without making them spendable at a different boundary 1ms
+   × restores signed recovered costs proportionally when the funding sale is returned 1ms
+   × permits only one concurrent external recovery boundary 4ms
+   × holds a credit created after sealing until the original debit is resolved 1ms
+   × enforces a group-wide budget across batches and rounds signed credit rollback symmetrically 2ms
+   × does not let an empty old group clear another group's lock, and reset includes new tables 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > nets unseen credits and isolates currencies/scopes beyond one history page
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:71:13
+     69|     scopeKey: "other",
+     70|   });
+     71|   const r = await t.mutation(m("reservations:reserve"), reserve("batch…
+       |             ^
+     72|   expect(r.reservation.amount).toBe(50);
+     73|   expect((await t.query(q("balance"), scope)).outstanding).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > reserves in bounded batches and seals only a fully prepared group
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:91:17
+     89|   for (let i = 0; i < 110; i++)
+     90|     await t.mutation(m("claims:record"), observation(`a${i}`, 10));
+     91|   const first = await t.mutation(m("reservations:reserve"), reserve("b…
+       |                 ^
+     92|   expect(first.reservation.amount).toBe(1000);
+     93|   await expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > serializes provider boundaries and recovers the same reservation after a worker dies
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:144:17
+    142|   const t = convexTest(schema, modules);
+    143|   await t.mutation(m("claims:record"), observation("a", 500));
+    144|   const first = await t.mutation(m("reservations:reserve"), reserve("s…
+       |                 ^
+    145|   expect(await t.mutation(m("reservations:reserve"), reserve("same")))…
+    146|     first,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > handles source credits while reserved without making them spendable at a different boundary
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:170:3
+    168|   const t = convexTest(schema, modules);
+    169|   await t.mutation(m("claims:record"), observation("a", 500));
+    170|   await t.mutation(m("reservations:reserve"), reserve("debit"));
+       |   ^
+    171|   await t.mutation(m("claims:record"), observation("a", 0, 2));
+    172|   await expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > restores signed recovered costs proportionally when the funding sale is returned
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:195:3
+    193|   const t = convexTest(schema, modules);
+    194|   await t.mutation(m("claims:record"), observation("a", 501));
+    195|   await t.mutation(m("reservations:reserve"), reserve("debit"));
+       |   ^
+    196|   await t.mutation(m("reservations:seal"), { groupKey: "group" });
+    197|   await t.mutation(m("completion:finish"), {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > permits only one concurrent external recovery boundary
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/component/cost-recovery.test.ts:228:59
+    226|     t.mutation(m("reservations:reserve"), reserve("two", "two")),
+    227|   ]);
+    228|   expect(results.filter((r) => r.status === "fulfilled")).toHaveLength…
+       |                                                           ^
+    229|   expect(results.filter((r) => r.status === "rejected")).toHaveLength(…
+    230|   expect(await t.query(q("balance"), scope)).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > holds a credit created after sealing until the original debit is resolved
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:239:3
+    237|   const t = convexTest(schema, modules);
+    238|   await t.mutation(m("claims:record"), observation("a", 500));
+    239|   await t.mutation(m("reservations:reserve"), reserve("debit"));
+       |   ^
+    240|   await t.mutation(m("reservations:seal"), { groupKey: "group" });
+    241|   await t.mutation(m("claims:record"), observation("a", 0, 2));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > enforces a group-wide budget across batches and rounds signed credit rollback symmetrically
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:274:6
+    272|   const opts = { ...reserve("batch1", "limited", 1), maxDebit: 15 };
+    273|   expect(
+    274|     (await t.mutation(m("reservations:reserve"), opts)).reservation.am…
+       |      ^
+    275|   ).toBe(10);
+    276|   expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  |component| src/component/cost-recovery.test.ts > does not let an empty old group clear another group's lock, and reset includes new tables
+Error: Validator error: Unexpected field `sourceProcessingFee` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/cost-recovery.test.ts:319:3
+    317| it("does not let an empty old group clear another group's lock, and re…
+    318|   const t = convexTest(schema, modules);
+    319|   await t.mutation(m("reservations:reserve"), {
+       |   ^
+    320|     ...reserve("empty", "empty"),
+    321|     maxDebit: 0,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 1 passed (10)
+   Start at  23:34:56
+   Duration  497ms (transform 44%, tests 32%, import 12%, environment 10%, worker 1%)
+

@@ -1,0 +1,6 @@
+▌ Developing against deployment:
+▌ [Development] dojo:better-stripe-example:<dev-owner> (dev) (dashboard: https://dashboard.convex.dev/t/dojo/better-stripe-example/<example-dev-deployment>)
+▌ └─ https://<example-dev-deployment>.convex.cloud
+- Preparing Convex functions...
+
+✔ 23:48:11 Convex functions ready! (4.54s)

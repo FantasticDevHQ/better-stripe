@@ -1053,3 +1053,20 @@ override and restores inheritance, rather than restoring a built-in percentage.
 The admin plan catalog uses rows with status, monthly price, sale fee, affiliate
 payout, and Save pricing actions. Affiliate Save and Clear remain independent of
 monthly price edits; existing store subscriptions retain their monthly prices.
+
+### Affiliate commission regression checks
+
+With a seeded Stripe sandbox and the example running on localhost:5173, run:
+
+```sh
+E2E_LIVE_BACKEND=1 pnpm exec playwright test e2e/affiliate-commissions.spec.ts --workers=1
+```
+
+Run this from `example/`. It checks every available store's copied referral link,
+Visitor/Customer attribution, percentage overrides at global/store/product/price
+scope, invalid and missing referrals, explicit zero, and capped fixed payouts.
+It completes real sandbox payments and checks the settlement and transfer ledger.
+Temporary payout rules are restored in cleanup; sandbox transactions remain.
+Stores whose Stripe recipient capabilities are not active are correctly excluded.
+Use `e2e/checkout-methods.spec.ts` to cover all five checkout presentations and
+`e2e/seller-affiliate-rates.spec.ts` for fixed product/subscription price payouts.

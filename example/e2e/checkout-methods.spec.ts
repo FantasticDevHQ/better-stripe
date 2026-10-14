@@ -1,83 +1,22 @@
-import { execFileSync } from "node:child_process";
-import { expect, test, type Page } from "@playwright/test";
+import { convex, fillPayment } from "./checkout-test-helpers";
+import { expect, test } from "@playwright/test";
 test.use({
   headless: process.env.E2E_HEADLESS === "1",
   video: "on",
   screenshot: "only-on-failure",
 });
 const live = !!process.env.E2E_LIVE_BACKEND;
-function convex(name: string, args = {}) {
-  return JSON.parse(
-    execFileSync(
-      "pnpm",
-      ["exec", "convex", "run", name, JSON.stringify(args)],
-      { encoding: "utf8", timeout: 60000 },
-    ),
-  );
-}
-async function fillPayment(page: Page) {
-  const deadline = Date.now() + 45000;
-  let filledOnce = false;
-  while (Date.now() < deadline) {
-    let foundCard = false;
-    for (const frame of page.frames()) {
-      const choose = frame.getByRole("button", {
-        name: "Pay with card",
-        exact: true,
-      });
-      if (
-        (await choose.count().catch(() => 0)) &&
-        !(await frame
-          .locator("#cardNumber")
-          .count()
-          .catch(() => 0))
-      )
-        await choose.dispatchEvent("click").catch((error) => {
-          if (!frame.isDetached()) throw error;
-        });
-      const card = frame.getByRole("button", { name: "Card", exact: true });
-      if (await card.isVisible().catch(() => false)) await card.click();
-      const country = frame
-        .getByRole("combobox", { name: /^Country(?: or region)?$/i })
-        .first();
-      if (await country.isVisible().catch(() => false))
-        await country.selectOption({ label: "United States" });
-      for (const [selector, value] of [
-        [
-          '#checkout-email, #payment-email, #email, input[name="email"]',
-          "checkout-example@example.com",
-        ],
-        ['#cardNumber, input[name="number"]', "4242424242424242"],
-        ['#cardExpiry, input[name="expiry"]', "1234"],
-        ['#cardCvc, input[name="cvc"]', "123"],
-        ['#billingName, input[name="name"]', "Sandbox Test Buyer"],
-        [
-          '#billingPostalCode, input[name="postalCode"], input[autocomplete="postal-code"]',
-          "10001",
-        ],
-      ]) {
-        const input = frame.locator(selector).first();
-        if (await input.isVisible().catch(() => false)) {
-          if (await input.isEditable()) await input.fill(value);
-          if (selector.includes("cardNumber")) foundCard = true;
-        }
-      }
-    }
-    if (foundCard && filledOnce) return;
-    filledOnce = foundCard;
-    await page.waitForTimeout(500);
-  }
-  throw new Error("No Stripe card input became available");
-}
-for (const [mode, role] of [
-  ["embedded", "visitor"],
-  ["custom", "visitor"],
-  ["payment-intent", "visitor"],
-  ["form", "visitor"],
-  ["redirect", "visitor"],
-  ["payment-intent", "customer"],
+for (const [mode, role, referralCode] of [
+  ["embedded", "visitor", "avery"],
+  ["custom", "visitor", "avery"],
+  ["payment-intent", "visitor", "avery"],
+  ["form", "visitor", "avery"],
+  ["redirect", "visitor", "avery"],
+  ["payment-intent", "customer", "avery"],
+  ["custom", "customer", "avery"],
+  ["custom", "customer", "invalid-code"],
 ] as const) {
-  test(`${mode} completes a referred ${role === "visitor" ? "guest" : "customer"} purchase in Stripe sandbox`, async ({
+  test(`${mode} completes a ${referralCode === "avery" ? "referred" : "direct"} ${role === "visitor" ? "guest" : "customer"} purchase in Stripe sandbox`, async ({
     page,
   }) => {
     test.skip(!live, "Requires seeded Stripe sandbox");
@@ -98,7 +37,9 @@ for (const [mode, role] of [
       (role) => localStorage.setItem("betterlearn-role", role),
       role,
     );
-    await page.goto(`/checkout?priceId=${price}&ref=avery&checkout=${mode}`);
+    await page.goto(
+      `/checkout?priceId=${price}&ref=${referralCode}&checkout=${mode}`,
+    );
     if (mode === "redirect")
       await page
         .getByRole("button", { name: "Continue to Stripe Checkout" })
@@ -162,9 +103,55 @@ for (const [mode, role] of [
       )
       .toBe("settled");
     const settlement = convex("storeSaleSettlement:getByCharge", { chargeId });
-    expect(settlement.affiliateNet).toBeGreaterThan(0);
+    const plan = convex("storePlanPricing:list", {}).find(
+      (row: { id: string }) => row.id === settlement.planId,
+    );
+    const expectedFee = Math.max(
+      settlement.processingFee,
+      Math.round((settlement.gross * (plan.feeBasisPoints ?? 0)) / 10000),
+    );
+    const affiliateRate = convex("sellerAffiliateRates:get", {
+      sellerId: settlement.sellerId,
+      stripeProductId: settlement.stripeProductId,
+      stripePriceId: settlement.stripePriceId,
+    });
+    expect(settlement.affiliateFixedAmount ?? null).toBe(
+      affiliateRate.effectiveFixedAmount,
+    );
+    if (affiliateRate.effectiveFixedAmount == null)
+      expect(settlement.affiliateBasisPoints).toBe(
+        affiliateRate.effectiveBasisPoints,
+      );
+    expect(settlement.sellingFee).toBe(expectedFee);
+    expect(settlement.platformNet).toBe(expectedFee - settlement.processingFee);
+    expect(settlement.affiliateNet).toBe(
+      referralCode === "avery"
+        ? affiliateRate.effectiveFixedAmount != null
+          ? Math.min(
+              settlement.gross - expectedFee,
+              Math.round(affiliateRate.effectiveFixedAmount * 100),
+            )
+          : Math.floor(
+              ((settlement.gross - expectedFee) *
+                affiliateRate.effectiveBasisPoints) /
+                10000,
+            )
+        : 0,
+    );
+    expect(settlement.sellerNet).toBe(
+      settlement.gross -
+        expectedFee -
+        settlement.affiliateNet -
+        (settlement.costRecoveryAmount ?? 0),
+    );
     expect(settlement.sellerTransferId).toMatch(/^tr_/);
-    expect(settlement.affiliateTransferId).toMatch(/^tr_/);
+    if (settlement.affiliateNet > 0)
+      expect(settlement.affiliateTransferId).toMatch(/^tr_/);
+    else expect(settlement.affiliateTransferId).toBeUndefined();
+    await test.info().attach("settlement", {
+      body: JSON.stringify(settlement, null, 2),
+      contentType: "application/json",
+    });
     expect(settlement.gross).toBe(
       settlement.processingFee +
         settlement.platformNet +

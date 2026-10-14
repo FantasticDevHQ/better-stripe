@@ -82,6 +82,7 @@ describe("seller store plans", () => {
         processingFee: 404,
         planId,
         referred: true,
+        affiliateBasisPoints: 2000,
       });
       expect(
         sale.sellerNet +
@@ -112,4 +113,86 @@ describe("seller store plans", () => {
       }),
     ).toThrow();
   });
+});
+
+it("uses configured sale fees while keeping the Stripe processing floor and exact splits", () => {
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "starter",
+      feeBasisPoints: 750,
+      affiliateBasisPoints: 2000,
+      referred: true,
+    }),
+  ).toMatchObject({
+    sellingFee: 750,
+    platformNet: 430,
+    affiliateNet: 1850,
+    sellerNet: 7400,
+  });
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "starter",
+      feeBasisPoints: 100,
+      referred: false,
+    }),
+  ).toMatchObject({ sellingFee: 320, platformNet: 0, sellerNet: 9680 });
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "growth",
+      feeBasisPoints: null,
+      referred: true,
+    }).platformNet,
+  ).toBe(0);
+});
+
+it.each([
+  ["starter", 1000, 910, 8190],
+  ["growth", 2500, 2377, 7133],
+  ["pro", 3500, 3388, 6292],
+] as const)(
+  "applies the configured affiliate rate on %s after sale fees",
+  (planId, affiliateBasisPoints, affiliateNet, sellerNet) => {
+    const sale = settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId,
+      referred: true,
+      affiliateBasisPoints,
+    });
+    expect(sale).toMatchObject({ affiliateNet, sellerNet });
+    expect(
+      sale.processingFee +
+        sale.platformNet +
+        sale.affiliateNet +
+        sale.sellerNet,
+    ).toBe(10000);
+  },
+);
+it("supports zero and full affiliate shares, ignores direct sales, and rejects invalid rates", () => {
+  const base = {
+    gross: 10000,
+    processingFee: 320,
+    planId: "growth" as const,
+    referred: true,
+  };
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 0 }).affiliateNet,
+  ).toBe(0);
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 10000 }),
+  ).toMatchObject({ affiliateNet: 9510, sellerNet: 0 });
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 10000, referred: false })
+      .affiliateNet,
+  ).toBe(0);
+  for (const rate of [-1, 10001, 12.5])
+    expect(() =>
+      settleStoreSale({ ...base, affiliateBasisPoints: rate }),
+    ).toThrow(/affiliate/i);
 });

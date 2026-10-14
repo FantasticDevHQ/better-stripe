@@ -1,3 +1,7 @@
+import {
+  commissionTerm,
+  optionalCommissionTerm,
+} from "./lib/affiliateCommission";
 import { sellerCostFields, costBillFields } from "./lib/sellerCostValidators";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
@@ -47,11 +51,42 @@ export default defineSchema({
     previousPaymentMethodTypes: v.optional(v.array(v.string())),
     consentAt: v.number(),
   }).index("by_seller", ["sellerId"]),
+  affiliateDefaults: defineTable({
+    sellerId: v.optional(v.id("users")),
+    affiliateCommissionTerm: optionalCommissionTerm,
+    affiliateBasisPoints: v.union(v.number(), v.null()),
+    affiliateFixedAmount: v.union(v.number(), v.null()),
+    version: v.number(),
+  }).index("by_seller", ["sellerId"]),
+  sellerAffiliateRates: defineTable({
+    sellerId: v.id("users"),
+    stripeProductId: v.string(),
+    stripePriceId: v.optional(v.string()),
+    affiliateCommissionTerm: optionalCommissionTerm,
+    affiliateBasisPoints: v.union(v.number(), v.null()),
+    affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
+    version: v.number(),
+  }).index("by_target", ["sellerId", "stripeProductId", "stripePriceId"]),
+  storePlanSettings: defineTable({
+    planId: storePlanIdValidator,
+    monthlyAmount: v.number(),
+    feeBasisPoints: v.union(v.number(), v.null()),
+    affiliateCommissionTerm: optionalCommissionTerm,
+    affiliateBasisPoints: v.optional(v.union(v.number(), v.null())),
+    affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
+    version: v.number(),
+  }).index("by_plan", ["planId"]),
   storePlanCatalog: defineTable({
     planId: storePlanIdValidator,
     stripeProductId: v.string(),
     stripePriceId: v.string(),
   }).index("by_plan", ["planId"]),
+  subscriptionCommissions: defineTable({
+    stripeSubscriptionId: v.string(),
+    affiliateCommissionTerm: commissionTerm,
+    firstInvoiceId: v.string(),
+    affiliateAccountId: v.optional(v.string()),
+  }).index("by_subscription", ["stripeSubscriptionId"]),
   storeSales: defineTable(storeSaleRecordFields)
     .index("by_charge", ["chargeId"])
     .index("by_seller", ["sellerId"]),

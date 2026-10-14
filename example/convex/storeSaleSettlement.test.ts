@@ -4,10 +4,11 @@ import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
 import componentSchema from "../../dist/component/schema.js";
-import { api, internal } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 const raw = vi.hoisted(() => ({
   paymentIntents: { retrieve: vi.fn() },
   subscriptions: { retrieve: vi.fn() },
+  invoices: { list: vi.fn() },
   transfers: { list: vi.fn(), create: vi.fn() },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
@@ -43,6 +44,14 @@ async function setup(
       },
     }),
   );
+  if (referred)
+    await t.run((ctx) =>
+      ctx.db.insert("affiliateDefaults", {
+        affiliateBasisPoints: 2000,
+        affiliateFixedAmount: null,
+        version: 1,
+      }),
+    );
   const payment = {
     id: "pi_sale",
     status: "succeeded",
@@ -274,4 +283,199 @@ it("retries settlement itself when Stripe fees arrive after the webhook", async 
   } finally {
     vi.useRealTimers();
   }
+});
+it("applies admin-configured sale fees and keeps settled economics unchanged on retry", async () => {
+  const { t, sellerId } = await setup("starter", true);
+  const settingsId = await t.run((ctx) =>
+    ctx.db.insert("storePlanSettings", {
+      planId: "starter",
+      monthlyAmount: 1200,
+      feeBasisPoints: 750,
+      version: 1,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  const [sale] = await t.query(api.storeSaleSettlement.listSellerSales, {
+    sellerId,
+  });
+  expect(sale).toMatchObject({
+    sellingFee: 750,
+    processingFee: 320,
+    platformNet: 430,
+    sellerNet: 7400,
+    affiliateNet: 1850,
+  });
+  await t.run((ctx) =>
+    ctx.db.patch("storePlanSettings", settingsId, {
+      feeBasisPoints: 9000,
+      version: 2,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    (await t.query(api.storeSaleSettlement.listSellerSales, { sellerId }))[0],
+  ).toEqual(sale);
+  expect(raw.transfers.create).toHaveBeenCalledTimes(2);
+});
+it("uses the plan's affiliate rate and records it without recalculating settled sales", async () => {
+  const { t, sellerId } = await setup("growth", true);
+  const settingsId = await t.run((ctx) =>
+    ctx.db.insert("storePlanSettings", {
+      planId: "growth",
+      monthlyAmount: 4900,
+      feeBasisPoints: 490,
+      affiliateBasisPoints: 1250,
+      version: 1,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  const [sale] = await t.query(api.storeSaleSettlement.listSellerSales, {
+    sellerId,
+  });
+  expect(sale).toMatchObject({
+    affiliateBasisPoints: 1250,
+    affiliateNet: 1188,
+    sellerNet: 8322,
+    platformNet: 170,
+    processingFee: 320,
+  });
+  await t.run((ctx) =>
+    ctx.db.patch("storePlanSettings", settingsId, {
+      affiliateBasisPoints: 9500,
+      version: 2,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    (await t.query(api.storeSaleSettlement.listSellerSales, { sellerId }))[0],
+  ).toEqual(sale);
+  expect(raw.transfers.create).toHaveBeenCalledWith(
+    expect.objectContaining({ destination: "acct_affiliate", amount: 1188 }),
+    expect.anything(),
+  );
+  expect(raw.transfers.create).toHaveBeenCalledTimes(2);
+});
+
+it("uses the current subscription price override on renewals and preserves earlier sales", async () => {
+  const { t, sellerId, payment } = await setup("growth", true);
+  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+    stripeProductId: "prod_store",
+    accountId: "acct_store",
+    name: "Membership",
+    active: true,
+  });
+  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+    stripePriceId: "price_month",
+    stripeProductId: "prod_store",
+    productId: "product",
+    currency: "usd",
+    unitAmount: 10000,
+    type: "recurring",
+    interval: "month",
+    active: true,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    affiliateBasisPoints: 1500,
+    expectedVersion: 0,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: 1250,
+    expectedVersion: 0,
+  });
+  raw.subscriptions.retrieve.mockResolvedValue({
+    metadata: { ...payment.metadata, stripePriceId: "price_old" },
+    items: { data: [{ price: { id: "price_month" } }] },
+  });
+  raw.transfers.create.mockImplementation(async (args) => ({
+    id: `tr_${args.source_transaction}_${args.destination}`,
+    ...args,
+  }));
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_first",
+  });
+  const original = await t.query(internal.storeSaleSettlement.getByCharge, {
+    chargeId: "ch_sale",
+  });
+  expect(original).toMatchObject({
+    affiliateBasisPoints: 1250,
+    affiliateNet: 1188,
+    sellerNet: 8322,
+    affiliateRateSource: "price",
+    stripePriceId: "price_month",
+    stripeProductId: "prod_store",
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: 1000,
+    expectedVersion: 1,
+  });
+  raw.paymentIntents.retrieve.mockResolvedValue({
+    ...payment,
+    id: "pi_next",
+    latest_charge: { ...payment.latest_charge, id: "ch_next" },
+  });
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_next",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_next",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_next",
+    }),
+  ).toMatchObject({
+    affiliateBasisPoints: 1000,
+    affiliateNet: 951,
+    sellerNet: 8559,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: null,
+    affiliateFixedAmount: 12.29,
+    expectedVersion: 2,
+  });
+  raw.paymentIntents.retrieve.mockResolvedValue({
+    ...payment,
+    id: "pi_fixed",
+    latest_charge: { ...payment.latest_charge, id: "ch_fixed" },
+  });
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_fixed",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_fixed",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_fixed",
+    }),
+  ).toMatchObject({
+    affiliateFixedAmount: 12.29,
+    affiliateNet: 1229,
+    sellerNet: 8281,
+    affiliateRateSource: "price",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_sale",
+    }),
+  ).toEqual(original);
 });

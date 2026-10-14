@@ -1,5 +1,9 @@
+import {
+  ProductAffiliateSettings,
+  GlobalAffiliateSettings,
+} from "@/components/affiliate-payout-control";
 import { useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, useConvex } from "convex/react";
 import {
   PriceCard,
   SubscriptionCard,
@@ -18,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export function ProductComponents() {
+  const convex = useConvex();
   const { currentUser, currentRole } = useRole();
   const [selected, select] = useState<string>();
   const all = useQuery(
@@ -36,8 +41,14 @@ export function ProductComponents() {
       <h1 className="text-2xl font-bold">Products</h1>
       <p className="text-sm text-muted-foreground">
         PriceCard renders the same catalog prices through the package's render
-        prop. Create and edit products in Headless.
+        prop. Create and edit products in the via API tab.
       </p>
+      {currentRole === "seller" && (
+        <GlobalAffiliateSettings
+          actorId={currentUser.id}
+          sellerId={currentUser.id}
+        />
+      )}
       {!products ? (
         <p role="status">Loading products…</p>
       ) : !products.length ? (
@@ -65,6 +76,25 @@ export function ProductComponents() {
                         <p className="text-sm text-muted-foreground">
                           {price.active ? "Active" : "Archived"}
                         </p>
+                        {currentRole === "seller" && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">
+                              Affiliate payout
+                            </p>
+                            <ProductAffiliateSettings
+                              sellerId={currentUser.id}
+                              stripeProductId={product.stripeProductId}
+                              stripePriceId={price.stripePriceId}
+                              currency={price.currency}
+                              onSave={(values) =>
+                                convex.mutation(api.sellerAffiliateRates.save, {
+                                  ...values,
+                                  sellerId: currentUser.id as Id<"users">,
+                                })
+                              }
+                            />
+                          </div>
+                        )}
                         <Button
                           variant="outline"
                           onClick={() => select(price.stripePriceId)}
@@ -113,8 +143,8 @@ export function SubscriptionComponents() {
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">Subscriptions</h1>
       <p className="text-sm text-muted-foreground">
-        SubscriptionCard displays current Stripe subscription state. Use
-        Headless for subscription actions.
+        SubscriptionCard displays current Stripe subscription state. Use the via
+        API tab for subscription actions.
       </p>
       {!rows ? (
         <p role="status">Loading subscriptions…</p>

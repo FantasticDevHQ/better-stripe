@@ -1,3 +1,5 @@
+import { commissionTerm } from "./affiliateCommission";
+import { payoutSource } from "../affiliateDefaults";
 import { v } from "convex/values";
 export const storePlanIdValidator = v.union(
   v.literal("starter"),
@@ -23,7 +25,14 @@ export const storeSaleFields = {
   sellingFee: v.number(),
   platformNet: v.number(),
   sellerNet: v.number(),
+  affiliateCommissionTerm: v.optional(commissionTerm),
+  stripeSubscriptionId: v.optional(v.string()),
   affiliateNet: v.number(),
+  affiliateBasisPoints: v.optional(v.number()),
+  affiliateFixedAmount: v.optional(v.number()),
+  affiliateRateSource: v.optional(payoutSource),
+  stripeProductId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
   currency: v.string(),
   affiliateAccountId: v.optional(v.string()),
   sourceInvoiceId: v.optional(v.string()),

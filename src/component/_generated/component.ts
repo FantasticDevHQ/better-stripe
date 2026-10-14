@@ -611,6 +611,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationAccountId?: string;
             feeCollectedAmount?: number;
             feeRefundedAmount?: number;
+            isCollectionPaused?: boolean;
             isTrialing: boolean;
             metadata?: any;
             orgId?: string;
@@ -1337,6 +1338,46 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceChargeId?: string;
             stripeTransferId: string;
           }>,
+          Name
+        >;
+        paginateTransfersByAccount: FunctionReference<
+          "query",
+          "internal",
+          {
+            destinationAccountId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              currency: string;
+              destinationAccountId: string;
+              metadata?: any;
+              paymentId?: string;
+              reinstatement?: boolean;
+              reversalClaimedAmount?: number;
+              reversalStatus?: "partially_reversed" | "fully_reversed";
+              reversedAmount?: number;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              status: "pending" | "paid" | "failed" | "reversed";
+              stripeTransferId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };

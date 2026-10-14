@@ -198,3 +198,23 @@ it("expires the paid period at the Stripe test clock when a renewal is unpaid", 
     await t.query(api.storePlanBilling.getState, { sellerId }),
   ).toMatchObject({ hasAccess: false, storePlan: { status: "past_due" } });
 });
+it("recognizes an existing subscription price after the admin publishes a newer catalog price", async () => {
+  const { t, sellerId, sub } = await setup();
+  Object.assign(sub.items.data[0].price, {
+    metadata: { storePlanId: "growth" },
+  });
+  await t.mutation(internal.storePlanBilling.saveCatalogPrice, {
+    planId: "growth",
+    stripeProductId: "prod_plans",
+    stripePriceId: "price_new",
+  });
+  await t.action(internal.storePlanActions.refreshSubscription, {
+    subscriptionId: sub.id,
+  });
+  expect(
+    await t.query(api.storePlanBilling.getState, { sellerId }),
+  ).toMatchObject({
+    hasAccess: true,
+    storePlan: { planId: "growth", stripeSubscriptionId: sub.id },
+  });
+});

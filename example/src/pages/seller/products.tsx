@@ -1,3 +1,7 @@
+import {
+  ProductAffiliateSettings,
+  GlobalAffiliateSettings,
+} from "@/components/affiliate-payout-control";
 import { formatAmount } from "@/lib/format-amount";
 import { Fragment } from "react";
 import { useProductManager } from "@fantastic.dev/better-stripe/react";
@@ -33,9 +37,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useRole } from "@/providers/role-context";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, useConvex } from "convex/react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 
+import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 
 export function SellerProducts() {
@@ -47,6 +52,7 @@ export function SellerProducts() {
     api.queries.listProductsWithPricesByAccount,
     account?.stripeAccountId ? { accountId: account.stripeAccountId } : "skip",
   );
+  const convex = useConvex();
   const createProduct = useAction(api.actions.createProductForAccount);
   const createPrice = useAction(api.actions.createPrice);
   const deactivatePrice = useAction(api.actions.deactivatePrice);
@@ -158,14 +164,17 @@ export function SellerProducts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-64 flex-1">
           <h1 className="text-2xl font-bold">My Products</h1>
           <p className="text-muted-foreground text-sm">
-            Create products and prices for your store.
+            Create products and prices for your store. Affiliate price overrides
+            take priority over product defaults and store plans. Fixed payouts
+            use each sale’s currency and are capped at proceeds after fees.
+            Clear inherits the default; zero disables payouts.
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button className="shrink-0" onClick={() => setShowCreateDialog(true)}>
           <Plus data-icon="inline-start" className="mr-2 h-4 w-4" />
           Create Product
         </Button>
@@ -230,6 +239,10 @@ export function SellerProducts() {
           </DialogContent>
         </Dialog>
       </div>
+      <GlobalAffiliateSettings
+        actorId={currentUser.id}
+        sellerId={currentUser.id}
+      />
 
       {error && (
         <Alert variant="destructive">
@@ -245,6 +258,7 @@ export function SellerProducts() {
               <TableHead>Product</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Prices</TableHead>
+              <TableHead>Affiliate payout</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -302,6 +316,19 @@ export function SellerProducts() {
                     {product.prices.length} price
                     {product.prices.length !== 1 ? "s" : ""}
                   </TableCell>
+                  <TableCell>
+                    <ProductAffiliateSettings
+                      sellerId={currentUser.id}
+                      stripeProductId={product.stripeProductId}
+                      currency={product.prices[0]?.currency}
+                      onSave={(values) =>
+                        convex.mutation(api.sellerAffiliateRates.save, {
+                          ...values,
+                          sellerId: currentUser.id as Id<"users">,
+                        })
+                      }
+                    />
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -328,7 +355,7 @@ export function SellerProducts() {
                 {/* Expanded Prices */}
                 {expandedProduct === product._id && (
                   <TableRow key={`${product._id}-prices`}>
-                    <TableCell colSpan={4} variant="expanded">
+                    <TableCell colSpan={5} variant="expanded">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h4 className="text-muted-foreground text-sm font-medium">
@@ -455,6 +482,9 @@ export function SellerProducts() {
                                 <TableHead size="sm">Interval</TableHead>
                                 <TableHead size="sm">Type</TableHead>
                                 <TableHead size="sm">Status</TableHead>
+                                <TableHead size="sm">
+                                  Affiliate payout
+                                </TableHead>
                                 <TableHead size="sm" className="text-right">
                                   Actions
                                 </TableHead>
@@ -489,6 +519,24 @@ export function SellerProducts() {
                                     >
                                       {price.active ? "Active" : "Archived"}
                                     </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <ProductAffiliateSettings
+                                      sellerId={currentUser.id}
+                                      stripeProductId={product.stripeProductId}
+                                      stripePriceId={price.stripePriceId}
+                                      currency={price.currency}
+                                      onSave={(values) =>
+                                        convex.mutation(
+                                          api.sellerAffiliateRates.save,
+                                          {
+                                            ...values,
+                                            sellerId:
+                                              currentUser.id as Id<"users">,
+                                          },
+                                        )
+                                      }
+                                    />
                                   </TableCell>
                                   <TableCell className="text-right">
                                     {price.active && (
@@ -525,7 +573,7 @@ export function SellerProducts() {
             ))}
             {products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} size="empty" className="text-center">
+                <TableCell colSpan={5} size="empty" className="text-center">
                   <Alert>
                     <AlertDescription>
                       No data yet. Create a product to start selling.

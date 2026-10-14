@@ -11,6 +11,9 @@ export const clearAppDb = internalMutation({
     const tables = [
       "users",
       "storeSales",
+      "subscriptionCommissions",
+      "sellerAffiliateRates",
+      "affiliateDefaults",
       "sellerCosts",
       "storeCostBills",
       "storeBalanceFunding",

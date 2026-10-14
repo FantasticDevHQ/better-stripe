@@ -10,6 +10,7 @@
 
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
+import type * as affiliateDefaults from "../affiliateDefaults.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
 import type * as checkoutExamples from "../checkoutExamples.js";
@@ -17,6 +18,7 @@ import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as embeddedExamples from "../embeddedExamples.js";
 import type * as http from "../http.js";
+import type * as lib_affiliateCommission from "../lib/affiliateCommission.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as lib_sandboxFixturePlan from "../lib/sandboxFixturePlan.js";
 import type * as lib_sandboxFixtureResources from "../lib/sandboxFixtureResources.js";
@@ -36,6 +38,7 @@ import type * as sandboxFixtureState from "../sandboxFixtureState.js";
 import type * as sandboxFixtures from "../sandboxFixtures.js";
 import type * as sandboxRenewals from "../sandboxRenewals.js";
 import type * as seed from "../seed.js";
+import type * as sellerAffiliateRates from "../sellerAffiliateRates.js";
 import type * as sellerCostActions from "../sellerCostActions.js";
 import type * as sellerCostBilling from "../sellerCostBilling.js";
 import type * as setup from "../setup.js";
@@ -45,6 +48,7 @@ import type * as storeBillingEvents from "../storeBillingEvents.js";
 import type * as storeInvoiceActions from "../storeInvoiceActions.js";
 import type * as storePlanActions from "../storePlanActions.js";
 import type * as storePlanBilling from "../storePlanBilling.js";
+import type * as storePlanPricing from "../storePlanPricing.js";
 import type * as storeSaleSettlement from "../storeSaleSettlement.js";
 import type * as storefront from "../storefront.js";
 import type * as stripe from "../stripe.js";
@@ -62,6 +66,7 @@ import { anyApi, componentsGeneric } from "convex/server";
 const fullApi: ApiFromModules<{
   actions: typeof actions;
   adminTesting: typeof adminTesting;
+  affiliateDefaults: typeof affiliateDefaults;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
   checkoutExamples: typeof checkoutExamples;
@@ -69,6 +74,7 @@ const fullApi: ApiFromModules<{
   e2eMoney: typeof e2eMoney;
   embeddedExamples: typeof embeddedExamples;
   http: typeof http;
+  "lib/affiliateCommission": typeof lib_affiliateCommission;
   "lib/marketplace": typeof lib_marketplace;
   "lib/sandboxFixturePlan": typeof lib_sandboxFixturePlan;
   "lib/sandboxFixtureResources": typeof lib_sandboxFixtureResources;
@@ -88,6 +94,7 @@ const fullApi: ApiFromModules<{
   sandboxFixtures: typeof sandboxFixtures;
   sandboxRenewals: typeof sandboxRenewals;
   seed: typeof seed;
+  sellerAffiliateRates: typeof sellerAffiliateRates;
   sellerCostActions: typeof sellerCostActions;
   sellerCostBilling: typeof sellerCostBilling;
   setup: typeof setup;
@@ -97,6 +104,7 @@ const fullApi: ApiFromModules<{
   storeInvoiceActions: typeof storeInvoiceActions;
   storePlanActions: typeof storePlanActions;
   storePlanBilling: typeof storePlanBilling;
+  storePlanPricing: typeof storePlanPricing;
   storeSaleSettlement: typeof storeSaleSettlement;
   storefront: typeof storefront;
   stripe: typeof stripe;

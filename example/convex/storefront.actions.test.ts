@@ -14,7 +14,8 @@ vi.mock("./stripe", () => ({
   },
 }));
 import { stripe } from "./stripe";
-import { api } from "./_generated/api";
+import componentSchema from "../../dist/component/schema.js";
+import { api, components } from "./_generated/api";
 import schema from "./schema";
 const modules = import.meta.glob("./**/*.*s");
 const mock = vi.mocked(stripe);
@@ -57,6 +58,26 @@ beforeEach(() => {
 });
 async function setup() {
   const t = convexTest(schema, modules);
+  t.registerComponent(
+    "betterStripe",
+    componentSchema,
+    import.meta.glob("../../dist/component/**/*.js"),
+  );
+  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+    stripeProductId: "prod_store",
+    name: "Ceramics",
+    active: true,
+    accountId: "acct_seller",
+  });
+  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+    stripePriceId: "price_store",
+    stripeProductId: "prod_store",
+    productId: "product",
+    active: true,
+    type: "one_time",
+    unitAmount: 12900,
+    currency: "usd",
+  });
   const ids = await t.run(async (ctx) => ({
     customer: await ctx.db.insert("users", {
       name: "Customer",
@@ -102,6 +123,8 @@ describe("storefront checkout", () => {
         amount: 12900,
         metadata: expect.objectContaining({
           storeBilling: "sale_v1",
+          stripeProductId: "prod_store",
+          stripePriceId: "price_store",
           sellerId: ids.seller,
           planId: "growth",
           affiliateAccountId: "",
@@ -123,6 +146,8 @@ describe("storefront checkout", () => {
         amount: 12900,
         metadata: expect.objectContaining({
           storeBilling: "sale_v1",
+          stripeProductId: "prod_store",
+          stripePriceId: "price_store",
           planId: "growth",
           affiliateAccountId: "acct_affiliate",
         }),
@@ -177,6 +202,8 @@ it("creates Payment Intents from server prices with the same referral settlement
       currency: "usd",
       metadata: expect.objectContaining({
         storeBilling: "sale_v1",
+        stripeProductId: "prod_store",
+        stripePriceId: "price_store",
         sellerId: ids.seller,
         userId: ids.customer,
         affiliateAccountId: "acct_affiliate",
@@ -203,4 +230,38 @@ it("rejects recurring prices for the one-time Payment Intent example", async () 
     }),
   ).rejects.toThrow(/one-time/);
   expect(intentRaw.paymentIntents.create).not.toHaveBeenCalled();
+});
+
+it("snapshots the inherited commission term into subscription checkout metadata", async () => {
+  const { t, ids } = await setup();
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId: ids.seller,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_store",
+    affiliateBasisPoints: 1000,
+    affiliateCommissionTerm: "one_time",
+    expectedVersion: 0,
+  });
+  mock.getPriceByStripeId.mockResolvedValue({
+    active: true,
+    type: "recurring",
+    stripeProductId: "prod_store",
+    unitAmount: 12900,
+    currency: "usd",
+  } as never);
+  await t.action(api.actions.createCheckoutSession, {
+    stripePriceId: "price_store",
+    referralCode: "avery",
+    returnUrl: "http://localhost:5173/checkout/status",
+  });
+  expect(mock.createCheckoutSession).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      mode: "subscription",
+      metadata: expect.objectContaining({
+        affiliateCommissionTerm: "one_time",
+        affiliateAccountId: "acct_affiliate",
+      }),
+    }),
+  );
 });

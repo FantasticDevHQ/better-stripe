@@ -72,6 +72,10 @@ Use `renderForm` on the custom and PaymentIntent modes to render your own email
 input, `paymentElement`, error, and submit button. The preview `form` mode renders
 Stripe's form and does not use that renderer. `children` replaces the outer
 checkout frame and receives `content`, `isLoading`, `error`, and `retry`.
+Respect `state.emailReadOnly` on your email input. Custom Checkout uses the
+email Stripe supplied when the session loaded and skips `updateEmail` for that
+session. Guest sessions without an email collect it before confirmation and
+keep it editable if a payment attempt fails.
 The lower-level `CheckoutElementsForm`, `PaymentIntentForm`, and `CheckoutForm`
 are also exported for an existing client secret.
 
@@ -79,7 +83,14 @@ Only a server-confirmed payment or checkout session should grant access to the
 product. Use `PaymentReceipt` or `CheckoutStatus` with webhook-backed query data;
 a browser return URL alone does not prove payment.
 
-## Headless or Stripe embedded
+## Via API, BetterStripe components, or Stripe embedded
+
+The switch labels are **via API**, **BetterStripe components**, **Stripe embedded**,
+and **Stripe hosted**. BetterStripe components are the unstyled exports from this
+package; Stripe embedded views mount Stripe's Connect UI. The internal mode keys
+remain `headless`, `components`, `embedded`, and `hosted` for compatibility, including
+existing `?example=headless` links. The package's native components accept render
+props so the example can match the API view's cards and layout.
 
 `Account`, `Onboarding`, `Disputes`, `Refunds`, `Earnings`, and `Payouts` accept
 `presentation="embedded"` with Connect session props. Their default headless
@@ -232,3 +243,80 @@ available and pending Stripe balances shown by `Payouts`.
 shared by its account pages and native `Onboarding`. Supply `countries` to limit
 or expand the UI for your platform. This default is not a complete list of
 Stripe-supported countries; your server must validate account eligibility.
+
+## Cursor pagination
+
+Use `useCursorPagination(accountId)` to keep a page number, current cursor, and
+Previous/Next history. Pass `cursor` to your backend's paginated query and call
+`next(result.continueCursor)` only when `result.isDone` is false. Changing the
+scope key resets the history to page 1.
+
+`Pagination` renders unstyled Previous/Next buttons and an announced page number,
+or accepts a render function for your design system. Supply `canPrevious`,
+`canNext`, `isLoading`, `onPrevious`, and `onNext`. Navigation is disabled while
+loading. The example's affiliate sales page uses this with the component query
+`connect.queries.paginateTransfersByAccount`, which returns newest-first cursor
+pages scoped to the recipient account. Earnings totals still use aggregate
+queries independently of pagination.
+
+## Store-plan pricing editor
+
+`PlanPricingEditor` accepts a `plan` with `id`, `name`, `monthlyAmount` in minor
+units, nullable `feeBasisPoints`, and `version`, plus `onSave(update)`. The update
+contains `monthlyAmount`, `feeBasisPoints`, and `expectedVersion`. Blank fees
+mean processing-only. Native fields are unstyled; use the render prop to supply
+your design system. Server-side authorization, fee floors, Stripe Price creation,
+and conflict checks belong in your backend. Existing subscription migration is
+an application policy, not an automatic side effect of this editor.
+
+`PlanPricingEditor` also supports optional `affiliateBasisPoints` on the plan and
+save update, defaulting to 0. Its render state exposes `affiliateShare` and
+`setAffiliateShare`. The native field is labeled Affiliate payout (%), accepts
+0 through 100 with at most two decimal places, and saves integer basis points.
+Omitting the field in an older backend request preserves an existing configured
+rate. The example applies this rate after sale fees and records it with each
+settled sale.
+
+## Product and subscription affiliate-rate editor
+
+`AffiliateRateEditor` accepts `scopeKey`, nullable `affiliateBasisPoints`,
+`effectiveBasisPoints`, `source` of global/store/plan/product/price/none, `version`, and `onSave`.
+Its save update contains nullable `affiliateBasisPoints` and `expectedVersion`.
+Blank input means inherit, zero disables commission, and percentages support
+0 to 100 with two decimal places. Use its native unstyled form or render state
+`percentage`, `setPercentage`, `effectiveLabel`, `save`, `isPending`, `error`,
+and `message` to supply styled controls. The backend must verify ownership and
+resolve price overrides before product overrides and plan defaults. The example
+uses the current subscription price on renewals and preserves settled economics.
+
+## Percentage or fixed affiliate payouts
+
+`AffiliatePayoutEditor` is the unstyled editor used inline by the example's seller
+product and price rows and admin store-plan rows. Supply `scopeKey`, nullable
+`affiliateBasisPoints`, optional nullable `affiliateFixedAmount`, effective values,
+`version`, `currency`, and `onSave`. Fixed amounts are major currency units,
+not cents. The save callback receives both nullable fields and `expectedVersion`;
+only one payout field is non-null. Blank means inherit; explicit zero disables.
+
+The native form includes a number input, `%`/currency-symbol toggle, Save, and X.
+X saves null for both fields to clear the override. `currency` defaults to USD
+and controls the display symbol. A render prop exposes `value`, `mode`, `setValue`,
+`setMode`, `currencySymbol`, `effectiveLabel`, `save`, `clear`, `isPending`, `error`,
+and `message` so applications can supply their own markup. Server code must
+resolve defaults, validate ownership and versions, convert major amounts into
+Stripe minor units, and cap fixed payouts at proceeds after fees. The example
+uses a nominal fixed amount per sale currency; it does not perform FX conversion.
+
+Affiliate payout sources can be `global`, `store`, `plan`, `product`, `price`, or
+`none`. Unset app rules fall back to zero. The example resolves price → product →
+store-wide → plan → platform-wide → 0, and distinguishes explicit zero from null
+inheritance. Both global controls use the same package editor as the row controls.
+
+`AffiliatePayoutEditor` also exposes an optional `affiliateCommissionTerm`
+(`"forever"`, `"one_time"`, or `null` to inherit) and
+`effectiveCommissionTerm`. Its render state includes `term` and `setTerm`, and
+`onSave` receives the selected term together with the payout amount. Clear
+removes both overrides. The example saves the resolved subscription term in
+Stripe metadata at checkout and claims the first paid invoice atomically in its
+Convex ledger; the UI component does not itself create transfers or process
+renewals.

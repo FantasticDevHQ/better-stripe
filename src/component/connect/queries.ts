@@ -1,4 +1,10 @@
 import { v } from "convex/values";
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 
 import type { Doc } from "../_generated/dataModel";
 import { query } from "../_generated/server";
@@ -343,6 +349,23 @@ export const listTransfersByAccount = query({
   },
 });
 
+/** Newest transfers for a recipient, with bounded cursor pagination. */
+export const paginateTransfersByAccount = query({
+  args: {
+    destinationAccountId: v.string(),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(transferDocValidator),
+  handler: (ctx, args) =>
+    paginator(ctx.db, schema)
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.destinationAccountId),
+      )
+      .order("desc")
+      .paginate(args.paginationOpts),
+});
+
 // =============================================================================
 // REVERSAL-CLAIM RECLAIM (BTS-74) — ops diagnostics for wedged legs
 // =============================================================================
@@ -442,7 +465,7 @@ export const listWedgedReversalClaims = query({
  * Exact earnings totals for one connected account (BTS-64): `gross` (sum of all
  * transfer amounts, incl. reinstatements — the earnings view) and `reversed`
  * (sum of all `reversedAmount`), iterated to completion so totals are never
- * capped. `transfers` is a bounded preview (`previewLimit ?? 50` rows) for
+ * capped. `transfers` is a newest-first bounded preview (`previewLimit ?? 50` rows) for
  * drill-down; use `gross`/`reversed`/`transferCount` for the money figures.
  */
 export const getAccountEarnings = query({
@@ -467,7 +490,8 @@ export const getAccountEarnings = query({
       .query("transfers")
       .withIndex("by_destination_account_id", (q) =>
         q.eq("destinationAccountId", args.destinationAccountId),
-      )) {
+      )
+      .order("desc")) {
       gross += tr.amount;
       reversed += tr.reversedAmount ?? 0;
       transferCount += 1;

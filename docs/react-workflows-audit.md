@@ -30,6 +30,9 @@ uses render props or companion hooks to apply shadcn styling.
 | Affiliate earnings                        | `Earnings`, `EarningsSummary`                                                                                                                          |
 | Affiliate referred sales                  | `ReferredSales`, store attribution and commission                                                                                                      |
 | Affiliate links                           | `useReferralLinks`, `ReferralLinks`, `ClipboardButton`                                                                                                 |
+| Seller affiliate payout rules             | `AffiliatePayoutEditor` with amount, percentage/currency mode, inherited term, Save/Clear, and async feedback                                          |
+| Admin store plans                         | `PlanPricingEditor` and `AffiliatePayoutEditor`; the app binds Stripe pricing and inherited commission policy                                          |
+| Affiliate sales pagination                | `Pagination` and `useCursorPagination`; the backend supplies indexed cursors                                                                           |
 | Admin overview                            | `Overview`                                                                                                                                             |
 | Admin subscriptions                       | `Subscriptions`, `useSubscriptionFilter`                                                                                                               |
 | Admin webhooks                            | `WebhookEvents`, `useWebhookFilters`                                                                                                                   |
@@ -86,3 +89,19 @@ affiliate link copying, dispute evidence, and partial/remaining-balance refunds.
 The tests use Stripe sandbox objects and await action results or webhook state.
 Native public-entry tests also render the workflows without example providers,
 CSS classes, inline styles, or example URLs.
+
+## Pricing and affiliate updates
+
+Seller product/price rows, store-wide defaults, admin plan rows, and platform-wide
+defaults all use the public `AffiliatePayoutEditor`. It owns percentage/fixed
+amount validation, commission-term selection, clear/inherit behavior, edit
+versions, pending state, and errors. `PlanPricingEditor` owns the monthly-price
+and sale-fee form. The example binds both to Convex functions and supplies shadcn
+markup. Rule resolution, Stripe metadata, first-invoice claims, fee accounting,
+and transfer execution remain backend application policy.
+
+Browser regression checks cover equal cards/layouts in API and package views,
+referral-sales pagination, inline payout controls, and plan pricing. Sandbox QA
+covers all five checkout integrations, declined-card retries, inherited and fixed
+commissions, and Forever/One-time subscription renewals using Stripe test clocks.
+Existing subscriptions keep their monthly price and saved commission term.

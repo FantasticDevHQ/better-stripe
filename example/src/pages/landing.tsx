@@ -33,8 +33,9 @@ export function Landing() {
       {isAffiliateReferral(referral) && (
         <Alert>
           <AlertDescription>
-            Referred by Avery Affiliate. Avery earns 20% of the sale after the
-            platform fee, at no extra cost to you.
+            Referred by Avery Affiliate. Avery earns a commission based on the
+            seller's affiliate settings after the sale fee, at no extra cost to
+            you.
           </AlertDescription>
         </Alert>
       )}

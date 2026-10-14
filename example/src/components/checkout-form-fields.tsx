@@ -19,6 +19,7 @@ export function CheckoutFormFields(state: CheckoutFormState) {
           autoComplete="email"
           required
           value={state.email}
+          readOnly={state.emailReadOnly}
           onChange={(event) => state.setEmail(event.target.value)}
         />
       </div>

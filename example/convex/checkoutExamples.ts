@@ -89,6 +89,8 @@ export const createPaymentIntent = action({
           planId: identity.planId,
           affiliateAccountId: referred ? identity.affiliateAccountId! : "",
           productName: product.name,
+          stripeProductId: price.stripeProductId,
+          stripePriceId: args.stripePriceId,
           checkoutType: "payment_intent",
         },
       },

@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { getFunctionName } from "convex/server";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
@@ -6,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   account: "acct_seller",
   rows: undefined as unknown,
   load: vi.fn(),
+  mutation: vi.fn().mockResolvedValue(null),
   earnings: {
     gross: 2500,
     net: 2000,
@@ -18,8 +20,22 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("convex/react", () => ({
   useAction: () => mocks.load,
-  useQuery: (_fn: unknown, args: unknown) =>
-    args === "skip" ? undefined : mocks.rows,
+  useConvex: () => ({ mutation: mocks.mutation }),
+  useQuery: (_fn: Parameters<typeof getFunctionName>[0], args: unknown) =>
+    args === "skip"
+      ? undefined
+      : ["affiliateDefaults:get", "sellerAffiliateRates:get"].includes(
+            getFunctionName(_fn),
+          )
+        ? {
+            affiliateBasisPoints: null,
+            affiliateFixedAmount: null,
+            effectiveBasisPoints: 2000,
+            effectiveFixedAmount: null,
+            source: "plan",
+            version: 0,
+          }
+        : mocks.rows,
 }));
 vi.mock("@/providers/role-context", () => ({
   useRole: () => ({
@@ -59,6 +75,7 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   mocks.rows = [
     {
       name: "Classic Tee",
+      stripeProductId: "prod_tee",
       prices: [
         {
           stripePriceId: "price_tee",
@@ -74,6 +91,29 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   expect(screen.getByText("$29.00")).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Select price" }));
   expect(screen.getByRole("status")).toHaveTextContent("price_tee");
+  const control = within(screen.getByTestId("affiliate-rate-price_tee"));
+  expect(
+    control.getByRole("combobox", { name: "Commission term" }),
+  ).toHaveTextContent("Inherited term");
+  await userEvent.click(
+    control.getByRole("button", { name: "Fixed amount in USD" }),
+  );
+  await userEvent.type(
+    control.getByRole("spinbutton", { name: "Affiliate payout" }),
+    "5.25",
+  );
+  await userEvent.click(control.getByRole("button", { name: /^Save$/ }));
+  await waitFor(() =>
+    expect(mocks.mutation).toHaveBeenCalledWith(expect.anything(), {
+      sellerId: "seller_id",
+      stripeProductId: "prod_tee",
+      stripePriceId: "price_tee",
+      affiliateBasisPoints: null,
+      affiliateFixedAmount: 5.25,
+      affiliateCommissionTerm: null,
+      expectedVersion: 0,
+    }),
+  );
 });
 it("displays current subscription state through SubscriptionCard", () => {
   mocks.rows = [

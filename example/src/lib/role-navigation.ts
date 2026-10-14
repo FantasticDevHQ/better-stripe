@@ -31,6 +31,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   admin: [
     { label: "Overview", to: "/admin", end: true },
     { label: "Products", to: "/admin/products" },
+    { label: "Store plans", to: "/admin/store-plans" },
     { label: "Subscriptions", to: "/admin/subscriptions" },
     { label: "Webhooks", to: "/admin/webhooks" },
     { label: "Testing", to: "/admin/testing" },

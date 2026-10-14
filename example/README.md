@@ -69,7 +69,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
   processing; Pro takes processing only. The platform keeps the difference
   and never subsidizes processing. New sales wait for actual Stripe fees,
   then transfer the remainder to the seller and, for referrals, the affiliate.
-  The affiliate receives 20% of the remainder after the inclusive sale fee.
+  The affiliate receives the effective percentage of the remainder or a fixed amount capped at that remainder after the inclusive sale fee. Unconfigured affiliate payouts default to 0%.
   Existing customer renewals continue using the seller's current or last paid
   tier, even if the store has closed to new purchases. Use Stripe's billing
   portal for paid plan changes, payment details, invoices, and cancellation.
@@ -113,7 +113,7 @@ Use the role switcher in the header to explore five perspectives:
 - **Affiliate**: Avery has a separate Stripe account, referral links, and an earnings ledger at `/affiliate`. Customers do not receive affiliate payouts.
 - **Admin**: manage the platform's catalog, subscriptions, webhooks, testing, and setup.
 
-A referred sale takes the configured platform fee first, pays Avery 20% of the remainder, and pays the seller the rest, including any final rounding cent. A direct sale pays the seller the entire remainder. `/stores?store=<seller-account>&ref=avery` keeps attribution through checkout and role switching.
+A referred sale takes the configured platform fee first, pays Avery the effective percentage of the remainder or a fixed amount capped at that remainder, and pays the seller the rest, including any final rounding cent. A direct sale pays the seller the entire remainder. `/stores?store=<seller-account>&ref=avery` keeps attribution through checkout and role switching.
 
 The old `/marketplace/split` and `/demo/destination-charge` links redirect to the storefront. `/demo/subscribe` now lists the active seller's subscriptions; `/demo/store-earnings` reads that seller's balance and payouts. Customers purchase recurring plans from the store catalog.
 
@@ -434,7 +434,7 @@ The live marketplace suite checks every role's pages, guest referred checkout, d
 
 Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring plans open subscription checkout; one-time prices open payment checkout. The return page displays the purchased product. Customer billing is scoped to that customer's ID, while seller subscriptions and earnings use the store selected in the seller sidebar.
 
-Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives 20% of the remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
+Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives the effective percentage of the remainder or a fixed amount capped at that remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
 
 The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials. See [October 13 QA](QA-2026-10-13.md) for amounts, evidence, and coverage limits.
 
@@ -838,7 +838,7 @@ and [the page audit](../docs/react-workflows-audit.md) for the complete mapping.
 The example is a developer reference. Supported workflows expose a presentation
 switch without changing the active persona, store, referral code, or account:
 
-| Workflow                              | Headless example                                            | Package components                  | Stripe UI alternative                                          |
+| Workflow                              | via API example                                             | Package components                  | Stripe UI alternative                                          |
 | ------------------------------------- | ----------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | Seller and affiliate earnings         | Custom earnings cards and ledger                            | `EarningsSummary`                   | Connect Balances                                               |
 | Seller and affiliate payouts          | Live balances, upcoming payouts, paginated history          | `PayoutSchedule`                    | Connect Payouts                                                |
@@ -864,16 +864,47 @@ The marketplace uses **separate charges and transfers**: the platform owns the
 charge and transfers earnings to seller and affiliate accounts. Connect Payments
 and Disputes show connected-account charges and supported destination charges;
 they do not turn the platform's separate-charge ledger into seller-owned charges.
-Use Headless to manage those marketplace purchases. The embedded example explains
+Use via API to manage those marketplace purchases. The embedded example explains
 this boundary and reports account/session eligibility errors with a Retry action.
 Do not compare an empty connected-account payment list with the platform ledger
 as though they were the same dataset.
 
 Products and subscription catalogs have no Connect embedded management component.
-The Components views demonstrate the package's compact React displays against the same
-catalog and subscription data. Catalog mutations and subscription actions remain
-in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
+The BetterStripe components views demonstrate the package's compact React displays against the same
+catalog and subscription data. Customer Subscriptions uses the same layout,
+current plan, lifecycle controls, billing portal, and recent invoices in both tabs.
+The via API view calls `useSubscriptionManager`; BetterStripe components renders `SubscriptionManager`
+with the shared styled render function. Both use the package's validation and
+pending/error handling. Seller/admin subscription actions and catalog mutations
+remain in via API. The Billing Portal is a separate Stripe-hosted page, not an iframe.
 See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).
+
+Affiliate Referral earnings also shares its four metric cards, commission
+explanation, account details, and loading/zero states between via API and
+BetterStripe components. The latter uses `EarningsSummary` render props for populated earnings;
+`Earnings` supplies the shared metrics and loading/zero presentation.
+
+Seller Earnings uses the same styled `EarningsSummary`, `PayoutSchedule`, and
+`PayoutHistory` in via API and BetterStripe components. Both tabs read the selected store's
+recipient balance and payouts, rather than substituting transfer-ledger totals.
+
+The integration tabs distinguish UI ownership: **via API** uses BetterStripe
+hooks and API-backed workflows with app-rendered UI; **BetterStripe components**
+uses the package's React components, styled by the example app. **Stripe embedded**
+and **Stripe hosted** use Stripe's UI. Existing `example=headless` links and the
+`headless` package mode value remain compatible; only the visible name changed.
+
+Affiliate Referred sales uses server-side cursor pagination with 10 rows per
+page, newest first. Previous/Next controls use the package's `Pagination` and
+`useCursorPagination`; changing affiliate accounts resets the cursor history.
+`paginateAffiliateSales` enriches each page with store names and commissions after
+reversals. It reads `paginateTransfersByAccount`, so older sales remain reachable
+beyond the bounded earnings preview.
+
+Affiliate and seller Payouts share the same card layout in via API and
+BetterStripe components: Available, Pending, Next payout, Upcoming payouts, and
+Previous payouts. Both use the package's `Payouts` workflow and `PayoutHistory`
+with the example's styled render props, including Refresh and Load more actions.
 
 ### Choose a checkout type
 
@@ -917,15 +948,173 @@ After sandbox setup and fixture seeding, run the opt-in browser checks from
 `example/` with the app running:
 
 ```sh
-E2E_LIVE_BACKEND=1 E2E_HEADLESS=1 pnpm exec playwright test \
-  e2e/integration-examples.spec.ts e2e/checkout-methods.spec.ts --workers=1
+E2E_LIVE_BACKEND=1 pnpm exec playwright test \
+  e2e/integration-examples.spec.ts e2e/checkout-methods.spec.ts \
+  e2e/checkout-failures.spec.ts --workers=1
 ```
 
 The checkout checks create real Stripe sandbox purchases for all five types,
 including guest referral attribution. They wait for webhook confirmation and
 verify settled seller and affiliate transfers and that actual Stripe fees,
 platform revenue, commissions, seller earnings, and recovered costs reconcile.
-These purchases remain in your sandbox. Omit `E2E_HEADLESS=1` to watch checkout
-in a browser; use `E2E_PORT` when your dev server uses a different port. The
+These purchases remain in your sandbox. Checkout runs in a normal browser and
+records video; use `E2E_PORT` when your dev server uses a different port. The
 component checks initialize each scoped Stripe embed and exercise the checkout
 chooser. They do not submit refunds or dispute evidence.
+
+The failure checks use a normal browser and Stripe's documented test cards:
+
+| Scenario                | Test card             | Expected behavior                                             |
+| ----------------------- | --------------------- | ------------------------------------------------------------- |
+| Visa success            | `4242 4242 4242 4242` | Confirm payment and settle the seller/affiliate split         |
+| Mastercard success      | `5555 5555 5555 4444` | Complete a custom Checkout retry                              |
+| Decline                 | `4000 0000 0000 0002` | Display the error, then allow retry with a good card          |
+| Insufficient funds      | `4000 0000 0000 9995` | Display the decline without completing checkout               |
+| Expired card            | `4000 0000 0000 0069` | Display the expired-card error and allow retry                |
+| Incorrect CVC           | `4000 0000 0000 0127` | Display the security-code error and allow retry               |
+| 3D Secure completion    | `4000 0084 0000 0027` | Complete the authentication challenge                         |
+| 3D Secure cancellation  | `4000 0000 0000 3220` | Cancel the challenge, then retry with a good card             |
+| Decline after 3D Secure | `4000 0084 0000 1629` | Complete authentication, display the decline, and allow retry |
+
+Use a future expiry such as `12/34` and a three-digit CVC in the browser.
+Do not submit raw card numbers through server APIs; use Stripe's test
+PaymentMethod IDs for server-side fixtures. Read [Stripe's testing overview](https://docs.stripe.com/testing/overview),
+[test card guide](https://docs.stripe.com/testing), and [Billing testing guide](https://docs.stripe.com/billing/testing)
+for additional cases such as asynchronous refunds, disputes, and renewal test clocks.
+
+Custom Checkout treats a session-provided email as read-only. A guest without a
+session email can enter one and edit it after a failed payment. Affiliate
+earnings previews show the newest 50 transfers; aggregate totals still include
+the complete ledger.
+
+### Configure store-plan pricing
+
+As Admin, open **Store plans** to set Starter, Growth, and Pro monthly USD prices
+and sale fee percentages. The defaults remain $9/9%, $49/4.9%, and $99/Stripe
+processing only. Leave the sale fee blank for processing only. All sale fees keep
+the processing-cost floor, so the platform never absorbs Stripe processing.
+
+Saving a monthly-price change creates a new immutable Stripe monthly Price for
+future subscriptions. Existing subscribers keep their existing monthly Price,
+including at renewal. Their previous prices remain active and recognized by the
+billing webhook. Sale fee changes apply to future settlements; settled sales
+keep their recorded economics. The seller Billing cards read the saved pricing.
+Admin updates reject invalid amounts, non-admin personas, and stale versions.
+
+The reusable unstyled `PlanPricingEditor` in `better-stripe/react` owns decimal
+input validation and save/pending/error handling; the example supplies table,
+input, and button styling. The example backend authorizes the admin persona,
+creates the Stripe Price, and publishes catalog and fee settings atomically.
+Like the rest of this demo, personas use mock users rather than production auth.
+
+Each Store plans row has a separate affiliate payout editor for percentages or
+fixed amounts. Unconfigured payouts default to 0%. Payout-only edits keep
+the monthly Stripe Price and subscriptions unchanged. Future settlements resolve
+the seller's price, product, and plan defaults; settled sales and refunds retain
+the original amounts.
+
+### Seller product and subscription affiliate payouts
+
+Seller → Products shows an inline affiliate payout editor on each product and
+expanded price row, including recurring subscription prices. The BetterStripe
+components tab also includes the inline editor on each price card. Enter a number,
+choose `%` or the price currency symbol, then Save. X clears and saves inheritance;
+zero explicitly disables the payout. Admin → Store plans uses the same editor for
+plan defaults. Clearing a plan override inherits the global payout, or 0% if unset.
+
+Price overrides win over product defaults, then the store-wide payout, store-plan override, and platform-wide payout. With no configured rule, the payout is 0%. Percentages
+apply after the inclusive sale fee. Fixed amounts use major units of the sale's
+currency: 5 means USD 5 on a USD price or EUR 5 on a EUR price. Product and plan
+defaults use that same nominal amount in each sale currency, without currency
+conversion. Fixed amounts are capped at the proceeds after fees, so seller
+proceeds cannot go negative. Fractions below a currency's minor unit round down.
+Stripe processing is always covered by the seller.
+
+Payout amount changes apply to future purchases and subscription renewals. Commission
+term changes apply to new subscriptions only. Settled sales retain
+the recorded rule, source, product/price IDs, and splits. Subscription settlement
+uses the current Stripe subscription price rather than stale checkout metadata.
+Legacy payments without product metadata inherit the plan default. The backend
+checks product ownership, integer percentage basis points, non-negative fixed
+amounts with up to two decimals, and edit versions. This example uses selectable
+mock personas; production apps must derive authorization from authenticated users.
+
+The unstyled `AffiliatePayoutEditor` in `better-stripe/react` owns the input,
+mode toggle, validation, Save/Clear actions, and feedback. The example supplies
+its design-system markup with the render prop. `AffiliateRateEditor` remains
+available for percentage-only forms.
+
+### Optional affiliate defaults
+
+Seller → Products has an optional store-wide affiliate payout. Admin → Store plans
+has an optional platform-wide payout and inline overrides for each plan. All start
+unset. The effective fallback is zero, including for referred purchases. Explicit
+zero disables payouts even when a parent setting is configured. Clear removes the
+override and restores inheritance, rather than restoring a built-in percentage.
+The admin plan catalog uses rows with status, monthly price, sale fee, affiliate
+payout, and Save pricing actions. Affiliate Save and Clear remain independent of
+monthly price edits; existing store subscriptions retain their monthly prices.
+
+### Affiliate commission regression checks
+
+With a seeded Stripe sandbox and the example running on localhost:5173, run:
+
+```sh
+E2E_LIVE_BACKEND=1 pnpm exec playwright test e2e/affiliate-commissions.spec.ts --workers=1
+```
+
+Run this from `example/`. It checks every available store's copied referral link,
+Visitor/Customer attribution, percentage overrides at global/store/product/price
+scope, invalid and missing referrals, explicit zero, and capped fixed payouts.
+It completes real sandbox payments and checks the settlement and transfer ledger.
+Temporary payout rules are restored in cleanup; sandbox transactions remain.
+Stores whose Stripe recipient capabilities are not active are correctly excluded.
+Use `e2e/checkout-methods.spec.ts` to cover all five checkout presentations and
+`e2e/seller-affiliate-rates.spec.ts` for fixed product/subscription price payouts.
+
+### Affiliate commission terms
+
+The reusable `AffiliatePayoutEditor` supports **Forever**, **One-time**, and an
+inherited term alongside percentage or fixed payouts. Terms inherit from price →
+product → store → plan → platform; the fallback is Forever for compatibility.
+An explicit 0% still disables commissions.
+
+Subscription Checkout saves the resolved `affiliateCommissionTerm` in Stripe
+subscription metadata. The example also stores the term and first successfully
+paid invoice in `subscriptionCommissions`, indexed by Stripe subscription ID.
+One-time pays commission on that invoice only; Forever pays again on renewals.
+Failed payments do not consume the first commission, and settlement retries reuse
+the recorded amounts. Term changes apply to new subscriptions; existing
+subscriptions retain their saved term. Older subscriptions without a term retain
+Forever. Payout amounts still resolve from the current price/product settings on
+each invoice. Refunds follow the existing commission reversal rules and do not
+reset the first invoice. One-time purchases have only one commission regardless
+of the selected subscription term.
+
+Run the subscription-term browser checks from `example/`:
+
+```sh
+E2E_LIVE_BACKEND=1 E2E_HEADLESS=1 pnpm exec playwright test e2e/affiliate-terms.spec.ts --workers=1
+```
+
+These checks configure both terms, complete real subscription checkouts, verify
+the first paid invoice's ledger, and check the controls in via API, BetterStripe
+components, and admin views. They restore temporary rules; sandbox subscriptions
+and transactions remain. They do not advance a billing cycle.
+
+For renewal verification, use [Stripe test clocks](https://docs.stripe.com/billing/testing/test-clocks)
+with a sandbox customer and subscription carrying the same seller, price,
+affiliate, `storeBilling`, and `affiliateCommissionTerm` metadata as Checkout.
+Keep a nonzero payout rule configured during the test. Wait for the first invoice
+to settle, then advance the clock through the next billing period and await the
+paid-invoice webhook. Forever must create another affiliate transfer; One-time
+must create none and retain those proceeds in the seller transfer. Verify actual
+Stripe fees and all transfer amounts, then restore the payout settings. Failed
+payments must create no commission, and retries must not duplicate transfers.
+
+The first One-time settlement checks Stripe's paid invoice history, skipping
+zero-dollar invoices, so out-of-order webhooks cannot award a renewal the first
+commission. Once stored, the database claim identifies that invoice on later
+settlements. An unclaimed One-time subscription with more than 100 paid invoices
+requires review instead of guessing; existing subscriptions without a term keep
+Forever.

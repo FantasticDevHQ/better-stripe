@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 const mocks = vi.hoisted(() => ({
+  sessionEmail: null as string | null,
   updateEmail: vi.fn(),
   confirm: vi.fn(),
   submit: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock("@stripe/react-stripe-js/checkout", () => ({
     type: "success",
     checkout: {
       id: "cs_test",
+      email: mocks.sessionEmail,
       canConfirm: false,
       updateEmail: mocks.updateEmail,
       confirm: mocks.confirm,
@@ -36,6 +38,7 @@ import { CheckoutElementsForm, PaymentIntentForm } from "./CheckoutForms.js";
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.sessionEmail = null;
   mocks.updateEmail.mockResolvedValue({ type: "success" });
   mocks.confirm.mockResolvedValue({
     type: "error",
@@ -53,6 +56,27 @@ const props = {
   email: "buyer@example.com",
   onNavigate: vi.fn(),
 };
+it("confirms a session with a server-set email without attempting to update it", async () => {
+  mocks.sessionEmail = "account@example.com";
+  mocks.updateEmail.mockResolvedValue({
+    type: "error",
+    error: { message: "You cannot update the email" },
+  });
+  mocks.confirm.mockResolvedValue({ type: "success" });
+  const navigate = vi.fn();
+  render(<CheckoutElementsForm {...props} onNavigate={navigate} />);
+  const input = screen.getByRole("textbox", {
+    name: "Email for your receipt",
+  }) as HTMLInputElement;
+  expect(input.value).toBe("account@example.com");
+  expect(input.readOnly).toBe(true);
+  await userEvent.click(screen.getByRole("button", { name: "Pay" }));
+  expect(mocks.updateEmail).not.toHaveBeenCalled();
+  expect(mocks.confirm).toHaveBeenCalledOnce();
+  expect(navigate).toHaveBeenCalledWith(
+    "https://app.test/receipt?session_id=cs_test",
+  );
+});
 it("sends the email before confirming, including when canConfirm is initially false", async () => {
   render(<CheckoutElementsForm {...props} />);
   await userEvent.click(screen.getByRole("button", { name: "Pay" }));
@@ -69,6 +93,22 @@ it("does not confirm after Stripe rejects the email", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Pay" }));
   expect(screen.getByRole("alert").textContent).toContain("Invalid email");
   expect(mocks.confirm).not.toHaveBeenCalled();
+});
+it("keeps a guest email editable after a declined payment", async () => {
+  mocks.updateEmail.mockImplementation(async (email: string) => {
+    mocks.sessionEmail = email;
+    return { type: "success" };
+  });
+  render(<CheckoutElementsForm {...props} />);
+  await userEvent.click(screen.getByRole("button", { name: "Pay" }));
+  await screen.findByText("Card declined");
+  const input = screen.getByRole("textbox", { name: "Email for your receipt" });
+  expect((input as HTMLInputElement).readOnly).toBe(false);
+  await userEvent.clear(input);
+  await userEvent.type(input, "other@example.com");
+  await userEvent.click(screen.getByRole("button", { name: "Pay" }));
+  expect(mocks.updateEmail).toHaveBeenLastCalledWith("other@example.com");
+  expect(mocks.confirm).toHaveBeenCalledTimes(2);
 });
 it("disables confirmation while Stripe is processing and supports a new attempt after failure", async () => {
   let resolve!: (value: unknown) => void;

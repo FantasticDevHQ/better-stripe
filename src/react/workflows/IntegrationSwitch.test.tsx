@@ -34,3 +34,28 @@ it("allows an uncontrolled choice without requiring a router", async () => {
   expect(screen.getByText("Stripe component")).toBeTruthy();
   expect(screen.queryByText("API controls")).toBeNull();
 });
+it("names API, BetterStripe components, and Stripe UI distinctly while preserving mode values", async () => {
+  const changed = vi.fn();
+  render(
+    <IntegrationSwitch
+      views={{
+        headless: <p>API controls</p>,
+        components: <p>Package UI</p>,
+        embedded: <p>Stripe embed</p>,
+        hosted: <p>Stripe portal</p>,
+      }}
+      onValueChange={changed}
+    />,
+  );
+  expect(screen.getByRole("button", { name: "via API" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Stripe embedded" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Stripe hosted" })).toBeTruthy();
+  await userEvent.click(
+    screen.getByRole("button", { name: "BetterStripe components" }),
+  );
+  expect(changed).toHaveBeenLastCalledWith("components");
+  expect(screen.getByText("Package UI")).toBeTruthy();
+  await userEvent.click(screen.getByRole("button", { name: "via API" }));
+  expect(changed).toHaveBeenLastCalledWith("headless");
+  expect(screen.queryByRole("button", { name: "Headless" })).toBeNull();
+});

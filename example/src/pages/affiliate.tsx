@@ -1,7 +1,11 @@
 import {
   useReferralLinks,
   ReferredSales,
+  Pagination,
+  useCursorPagination,
   Earnings,
+  EarningsSummary,
+  type EarningsRenderProps,
 } from "@fantastic.dev/better-stripe/react";
 import { WorkflowTable } from "@/components/workflow-table";
 import type { ReactNode } from "react";
@@ -32,7 +36,43 @@ function MissingAccount() {
   );
 }
 
-export function Affiliate() {
+function AffiliateEarningsCards({
+  metrics,
+  isLoading,
+  payouts,
+}: EarningsRenderProps) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {metrics.map(({ label, formattedValue }) => (
+        <Card key={label} variant={label === "Net" ? "muted" : "default"}>
+          <CardHeader>
+            <CardTitle variant="metric">{label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-3xl font-semibold tracking-tight tabular-nums"
+            >
+              {isLoading ? "…" : formattedValue}
+            </p>
+            {label === "Paid out" && !isLoading && payouts.length === 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No payouts yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+export function Affiliate({
+  integration = "headless",
+}: {
+  integration?: "headless" | "components";
+}) {
   const { currentUser } = useRole();
   const earnings = useEarnings(currentUser.stripeAccountId);
   return (
@@ -40,8 +80,10 @@ export function Affiliate() {
       <div>
         <h1 className="text-3xl font-bold">Referral earnings</h1>
         <p className="mt-2 text-muted-foreground">
-          {currentUser.name} earns 20% of referred sales after the sale fee. The
-          customer receives the purchase; the seller receives the remaining 80%.
+          {currentUser.name} earns the seller's configured affiliate commission,
+          calculated after the sale fee. Product and subscription price
+          overrides take priority over the store plan default. The customer
+          receives the purchase; the seller receives the remainder.
         </p>
       </div>
       {!currentUser.stripeAccountId ? (
@@ -49,36 +91,33 @@ export function Affiliate() {
       ) : (
         <>
           <Earnings {...earnings}>
-            {({ metrics, isLoading }) => (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {metrics.map(({ label, formattedValue }) => (
-                  <Card
-                    key={label}
-                    variant={label === "Net" ? "muted" : "default"}
-                  >
-                    <CardHeader>
-                      <CardTitle variant="metric">{label}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p
-                        role="status"
-                        aria-live="polite"
-                        className="text-3xl font-semibold tracking-tight tabular-nums"
-                      >
-                        {isLoading ? "…" : formattedValue}
-                      </p>
-                      {label === "Paid out" &&
-                        !earnings.isLoading &&
-                        earnings.payouts.length === 0 && (
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            No payouts yet
-                          </p>
-                        )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            {(state) =>
+              integration === "components" &&
+              !state.isLoading &&
+              (earnings.gross !== 0 || state.payouts.length > 0) ? (
+                <EarningsSummary {...earnings}>
+                  {({ grossLabel, reversedLabel, netLabel, paidOutLabel }) => {
+                    const values = {
+                      gross: grossLabel,
+                      reversed: reversedLabel,
+                      net: netLabel,
+                      paidOut: paidOutLabel,
+                    };
+                    return (
+                      <AffiliateEarningsCards
+                        {...state}
+                        metrics={state.metrics.map((metric) => ({
+                          ...metric,
+                          formattedValue: values[metric.key],
+                        }))}
+                      />
+                    );
+                  }}
+                </EarningsSummary>
+              ) : (
+                <AffiliateEarningsCards {...state} />
+              )
+            }
           </Earnings>
           <p className="break-all text-sm text-muted-foreground">
             Stripe account: {currentUser.stripeAccountId}
@@ -91,10 +130,16 @@ export function Affiliate() {
 
 export function AffiliateSales() {
   const { currentUser } = useRole();
+  const pagination = useCursorPagination(
+    currentUser.stripeAccountId ?? currentUser.id,
+  );
   const sales = useQuery(
-    api.queries.listAffiliateSales,
+    api.queries.paginateAffiliateSales,
     currentUser.stripeAccountId
-      ? { accountId: currentUser.stripeAccountId }
+      ? {
+          accountId: currentUser.stripeAccountId,
+          paginationOpts: { numItems: 10, cursor: pagination.cursor },
+        }
       : "skip",
   );
   return (
@@ -110,9 +155,57 @@ export function AffiliateSales() {
       ) : (
         <Card>
           <CardContent padding="section">
-            <ReferredSales rows={sales}>
+            <ReferredSales rows={sales?.page}>
               {(state) => <WorkflowTable {...state} />}
             </ReferredSales>
+            <Pagination
+              page={pagination.page}
+              canPrevious={pagination.canPrevious}
+              canNext={sales !== undefined && !sales.isDone}
+              isLoading={sales === undefined}
+              onPrevious={pagination.previous}
+              onNext={() => {
+                if (sales && !sales.isDone)
+                  pagination.next(sales.continueCursor);
+              }}
+            >
+              {({
+                pageLabel,
+                previousLabel,
+                nextLabel,
+                previousDisabled,
+                nextDisabled,
+                previous,
+                next,
+              }) => (
+                <nav
+                  aria-label="Referred sales pagination"
+                  className="mt-4 flex items-center justify-between gap-3"
+                >
+                  <Button
+                    variant="outline"
+                    disabled={previousDisabled}
+                    onClick={previous}
+                  >
+                    {previousLabel}
+                  </Button>
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="text-sm text-muted-foreground"
+                  >
+                    {pageLabel}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={nextDisabled}
+                    onClick={next}
+                  >
+                    {nextLabel}
+                  </Button>
+                </nav>
+              )}
+            </Pagination>
           </CardContent>
         </Card>
       )}

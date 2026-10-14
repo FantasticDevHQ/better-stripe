@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { idempotencyOptions } from "../core/idempotency.js";
 
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
@@ -23,6 +24,7 @@ export async function createPrice(
     intervalCount?: number;
     nickname?: string;
     metadata?: Record<string, string>;
+    idempotencyKey?: string;
   },
 ) {
   // Validate the product exists in the component DB *before* writing to Stripe.
@@ -54,7 +56,10 @@ export async function createPrice(
     };
   }
 
-  const price = await stripe.prices.create(priceParams);
+  const requestOptions = idempotencyOptions(opts.idempotencyKey);
+  const price = requestOptions
+    ? await stripe.prices.create(priceParams, requestOptions)
+    : await stripe.prices.create(priceParams);
 
   await runMutationOrThrow(
     ctx,

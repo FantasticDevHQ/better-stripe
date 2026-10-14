@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { idempotencyOptions } from "../core/idempotency.js";
 
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
@@ -63,6 +64,7 @@ export async function createProduct(
     active?: boolean;
     accountId?: string;
     metadata?: Record<string, string>;
+    idempotencyKey?: string;
     /** Platform default statement-descriptor suffix (BetterStripe option). */
     defaultStatementDescriptorSuffix?: string;
   },
@@ -74,7 +76,7 @@ export async function createProduct(
     opts.defaultStatementDescriptorSuffix,
   );
 
-  const product = await stripe.products.create({
+  const params: Stripe.ProductCreateParams = {
     name: opts.name,
     description: opts.description ?? undefined,
     active: opts.active ?? true,
@@ -82,7 +84,11 @@ export async function createProduct(
     ...(statementDescriptor
       ? { statement_descriptor: statementDescriptor }
       : {}),
-  });
+  };
+  const requestOptions = idempotencyOptions(opts.idempotencyKey);
+  const product = requestOptions
+    ? await stripe.products.create(params, requestOptions)
+    : await stripe.products.create(params);
 
   await runMutationOrThrow(
     ctx,

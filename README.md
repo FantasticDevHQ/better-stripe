@@ -1234,9 +1234,16 @@ terms, and recoverable execution through the component's existing transfer ledge
 explicitly bounded upcoming payout data. See [settlement and payout contracts](docs/settlement.md)
 for authorization, recovery, migration, and provider limitations.
 
-Account creation (`createAccount`, `getOrCreateAccount`, `ensureCustomerAccount`)
-and `createCheckoutSession` accept an optional `idempotencyKey`. Use one stable
+Account creation (`createAccount`, `getOrCreateAccount`, `ensureCustomerAccount`),
+`createCheckoutSession`, `createProduct`, and `createPrice` accept an optional `idempotencyKey`. Use one stable
 account-creation key per logical account and a distinct key per checkout order.
+For catalog edits, persist a request key for the logical product or immutable
+price version. Retry identical parameters with the same key after a provider or
+component persistence failure. Use a new key when the price amount or other
+creation parameters change. Creating a new Price does not migrate existing
+subscriptions; they retain their prior price until the host explicitly changes
+them. Never reuse a version key for different parameters.
+
 React `Checkout` preserves its request ID through retries; your server must
 forward that identity as the SDK request option. Persist it in the host order
 for recovery across reloads. Omission retains the previous SDK behavior.

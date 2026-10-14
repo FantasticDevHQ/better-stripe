@@ -107,7 +107,9 @@ async function expectPaidAndSplit(page: Page, mode: string) {
     .toBe("settled");
   const sale = convex("storeSaleSettlement:getByCharge", { chargeId });
   expect(sale.affiliateNet).toBe(
-    Math.floor((sale.gross - sale.sellingFee) * 0.2),
+    Math.floor(
+      ((sale.gross - sale.sellingFee) * sale.affiliateBasisPoints) / 10000,
+    ),
   );
   expect(sale.gross).toBe(
     sale.processingFee +

@@ -24,6 +24,7 @@ export const storeSaleFields = {
   platformNet: v.number(),
   sellerNet: v.number(),
   affiliateNet: v.number(),
+  affiliateBasisPoints: v.optional(v.number()),
   currency: v.string(),
   affiliateAccountId: v.optional(v.string()),
   sourceInvoiceId: v.optional(v.string()),

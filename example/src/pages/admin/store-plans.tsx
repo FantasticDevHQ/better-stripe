@@ -18,7 +18,8 @@ export function AdminStorePlans() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Store plans</h1>
         <p className="text-muted-foreground">
-          Set monthly USD prices and sale fees for Starter, Growth, and Pro.
+          Set monthly USD prices, sale fees, and affiliate payouts for Starter,
+          Growth, and Pro.
         </p>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -54,8 +55,10 @@ export function AdminStorePlans() {
                   {({
                     monthlyPrice,
                     saleFee,
+                    affiliateShare,
                     setMonthlyPrice,
                     setSaleFee,
+                    setAffiliateShare,
                     save,
                     isPending,
                     error,
@@ -105,6 +108,30 @@ export function AdminStorePlans() {
                           Leave blank for Stripe processing only. Otherwise, the
                           seller pays the greater of this percentage or actual
                           processing.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`${plan.id}-affiliate`}>
+                          Affiliate payout (%)
+                        </Label>
+                        <Input
+                          id={`${plan.id}-affiliate`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          required
+                          inputMode="decimal"
+                          value={affiliateShare}
+                          disabled={isPending}
+                          onChange={(event) =>
+                            setAffiliateShare(event.target.value)
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Share of a referred sale after the sale fee. The
+                          seller receives the remainder. Applies to future
+                          settlements.
                         </p>
                       </div>
                       {error && (

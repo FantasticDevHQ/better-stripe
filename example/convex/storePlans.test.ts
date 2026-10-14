@@ -148,3 +148,49 @@ it("uses configured sale fees while keeping the Stripe processing floor and exac
     }).platformNet,
   ).toBe(0);
 });
+
+it.each([
+  ["starter", 1000, 910, 8190],
+  ["growth", 2500, 2377, 7133],
+  ["pro", 3500, 3388, 6292],
+] as const)(
+  "applies the configured affiliate rate on %s after sale fees",
+  (planId, affiliateBasisPoints, affiliateNet, sellerNet) => {
+    const sale = settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId,
+      referred: true,
+      affiliateBasisPoints,
+    });
+    expect(sale).toMatchObject({ affiliateNet, sellerNet });
+    expect(
+      sale.processingFee +
+        sale.platformNet +
+        sale.affiliateNet +
+        sale.sellerNet,
+    ).toBe(10000);
+  },
+);
+it("supports zero and full affiliate shares, ignores direct sales, and rejects invalid rates", () => {
+  const base = {
+    gross: 10000,
+    processingFee: 320,
+    planId: "growth" as const,
+    referred: true,
+  };
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 0 }).affiliateNet,
+  ).toBe(0);
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 10000 }),
+  ).toMatchObject({ affiliateNet: 9510, sellerNet: 0 });
+  expect(
+    settleStoreSale({ ...base, affiliateBasisPoints: 10000, referred: false })
+      .affiliateNet,
+  ).toBe(0);
+  for (const rate of [-1, 10001, 12.5])
+    expect(() =>
+      settleStoreSale({ ...base, affiliateBasisPoints: rate }),
+    ).toThrow(/affiliate/i);
+});

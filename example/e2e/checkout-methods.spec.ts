@@ -103,20 +103,22 @@ for (const [mode, role, referralCode] of [
       )
       .toBe("settled");
     const settlement = convex("storeSaleSettlement:getByCharge", { chargeId });
+    const plan = convex("storePlanPricing:list", {}).find(
+      (row: { id: string }) => row.id === settlement.planId,
+    );
     const expectedFee = Math.max(
       settlement.processingFee,
-      Math.round(
-        settlement.gross *
-          { starter: 0.09, growth: 0.049, pro: 0 }[
-            settlement.planId as "starter" | "growth" | "pro"
-          ],
-      ),
+      Math.round((settlement.gross * (plan.feeBasisPoints ?? 0)) / 10000),
     );
+    expect(settlement.affiliateBasisPoints).toBe(plan.affiliateBasisPoints);
     expect(settlement.sellingFee).toBe(expectedFee);
     expect(settlement.platformNet).toBe(expectedFee - settlement.processingFee);
     expect(settlement.affiliateNet).toBe(
       referralCode === "avery"
-        ? Math.floor((settlement.gross - expectedFee) * 0.2)
+        ? Math.floor(
+            ((settlement.gross - expectedFee) * plan.affiliateBasisPoints) /
+              10000,
+          )
         : 0,
     );
     expect(settlement.sellerNet).toBe(

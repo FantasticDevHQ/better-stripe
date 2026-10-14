@@ -195,11 +195,13 @@ export const settle = internalAction({
       planId,
       referred: !!metadata.affiliateAccountId,
       feeBasisPoints: configuredPlan?.feeBasisPoints,
+      affiliateBasisPoints: configuredPlan?.affiliateBasisPoints,
     });
     const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.storeSaleSettlement.reserve,
       {
         ...economics,
+        affiliateBasisPoints: configuredPlan?.affiliateBasisPoints ?? 2000,
         planId,
         chargeId: charge.id,
         paymentIntentId: payment.id,

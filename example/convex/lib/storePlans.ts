@@ -3,6 +3,7 @@ export const STORE_PLANS = [
   {
     id: "starter",
     name: "Starter",
+    affiliateBasisPoints: 2000,
     monthlyAmount: 900,
     feeBasisPoints: 900,
     feeLabel: "9% per sale or actual Stripe processing, whichever is higher",
@@ -10,6 +11,7 @@ export const STORE_PLANS = [
   {
     id: "growth",
     name: "Growth",
+    affiliateBasisPoints: 2000,
     monthlyAmount: 4900,
     feeBasisPoints: 490,
     feeLabel: "4.9% per sale or actual Stripe processing, whichever is higher",
@@ -17,6 +19,7 @@ export const STORE_PLANS = [
   {
     id: "pro",
     name: "Pro",
+    affiliateBasisPoints: 2000,
     monthlyAmount: 9900,
     feeBasisPoints: null,
     feeLabel: "Stripe processing only, no platform transaction fee",
@@ -34,6 +37,7 @@ export function settleStoreSale(args: {
   planId: StorePlanId;
   referred: boolean;
   feeBasisPoints?: number | null;
+  affiliateBasisPoints?: number;
 }) {
   const { gross, processingFee, planId } = args;
   if (
@@ -61,8 +65,18 @@ export function settleStoreSale(args: {
     feeBasisPoints === null
       ? processingFee
       : Math.max(processingFee, Math.round((gross * feeBasisPoints) / 10000));
+  const affiliateBasisPoints =
+    args.affiliateBasisPoints ?? plan.affiliateBasisPoints;
+  if (
+    !Number.isSafeInteger(affiliateBasisPoints) ||
+    affiliateBasisPoints < 0 ||
+    affiliateBasisPoints > 10000
+  )
+    throw new Error("Invalid affiliate payout percentage.");
   const net = gross - sellingFee;
-  const affiliateNet = args.referred ? Math.floor(net * 0.2) : 0;
+  const affiliateNet = args.referred
+    ? Math.floor((net * affiliateBasisPoints) / 10000)
+    : 0;
   return {
     gross,
     processingFee,

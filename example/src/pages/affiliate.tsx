@@ -80,8 +80,9 @@ export function Affiliate({
       <div>
         <h1 className="text-3xl font-bold">Referral earnings</h1>
         <p className="mt-2 text-muted-foreground">
-          {currentUser.name} earns 20% of referred sales after the sale fee. The
-          customer receives the purchase; the seller receives the remaining 80%.
+          {currentUser.name} earns a commission based on the seller's store
+          plan, calculated after the sale fee. The customer receives the
+          purchase; the seller receives the remainder.
         </p>
       </div>
       {!currentUser.stripeAccountId ? (

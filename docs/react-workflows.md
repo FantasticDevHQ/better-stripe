@@ -261,3 +261,11 @@ mean processing-only. Native fields are unstyled; use the render prop to supply
 your design system. Server-side authorization, fee floors, Stripe Price creation,
 and conflict checks belong in your backend. Existing subscription migration is
 an application policy, not an automatic side effect of this editor.
+
+`PlanPricingEditor` also supports optional `affiliateBasisPoints` on the plan and
+save update, defaulting to 2000. Its render state exposes `affiliateShare` and
+`setAffiliateShare`. The native field is labeled Affiliate payout (%), accepts
+0 through 100 with at most two decimal places, and saves integer basis points.
+Omitting the field in an older backend request preserves an existing configured
+rate. The example applies this rate after sale fees and records it with each
+settled sale.

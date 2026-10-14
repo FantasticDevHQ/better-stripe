@@ -312,3 +312,45 @@ it("applies admin-configured sale fees and keeps settled economics unchanged on 
   ).toEqual(sale);
   expect(raw.transfers.create).toHaveBeenCalledTimes(2);
 });
+it("uses the plan's affiliate rate and records it without recalculating settled sales", async () => {
+  const { t, sellerId } = await setup("growth", true);
+  const settingsId = await t.run((ctx) =>
+    ctx.db.insert("storePlanSettings", {
+      planId: "growth",
+      monthlyAmount: 4900,
+      feeBasisPoints: 490,
+      affiliateBasisPoints: 1250,
+      version: 1,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  const [sale] = await t.query(api.storeSaleSettlement.listSellerSales, {
+    sellerId,
+  });
+  expect(sale).toMatchObject({
+    affiliateBasisPoints: 1250,
+    affiliateNet: 1188,
+    sellerNet: 8322,
+    platformNet: 170,
+    processingFee: 320,
+  });
+  await t.run((ctx) =>
+    ctx.db.patch("storePlanSettings", settingsId, {
+      affiliateBasisPoints: 9500,
+      version: 2,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    (await t.query(api.storeSaleSettlement.listSellerSales, { sellerId }))[0],
+  ).toEqual(sale);
+  expect(raw.transfers.create).toHaveBeenCalledWith(
+    expect.objectContaining({ destination: "acct_affiliate", amount: 1188 }),
+    expect.anything(),
+  );
+  expect(raw.transfers.create).toHaveBeenCalledTimes(2);
+});

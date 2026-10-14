@@ -13,6 +13,7 @@ import { getStripeClient } from "./lib/stripeClient";
 const settings = {
   monthlyAmount: v.number(),
   feeBasisPoints: v.union(v.number(), v.null()),
+  affiliateBasisPoints: v.optional(v.number()),
 };
 const edit = {
   adminId: v.id("users"),
@@ -30,7 +31,14 @@ const planValidator = v.object({
 export function validatePricing(
   monthlyAmount: number,
   feeBasisPoints: number | null,
+  affiliateBasisPoints = 2000,
 ) {
+  if (
+    !Number.isSafeInteger(affiliateBasisPoints) ||
+    affiliateBasisPoints < 0 ||
+    affiliateBasisPoints > 10000
+  )
+    throw new Error("Affiliate payout must be between 0 and 100%.");
   if (!Number.isSafeInteger(monthlyAmount) || monthlyAmount <= 0)
     throw new Error("Monthly price must be a positive number of cents.");
   if (
@@ -53,6 +61,7 @@ async function plans(ctx: QueryCtx) {
       name: plan.name,
       monthlyAmount: override?.monthlyAmount ?? plan.monthlyAmount,
       feeBasisPoints,
+      affiliateBasisPoints: override?.affiliateBasisPoints ?? 2000,
       version: override?.version ?? 0,
       feeLabel:
         feeBasisPoints === null || feeBasisPoints === 0
@@ -86,7 +95,11 @@ export const publish = internalMutation({
   handler: async (ctx, args) => {
     if ((await ctx.db.get("users", args.adminId))?.role !== "admin")
       throw new Error("Only an admin can change store plan pricing.");
-    validatePricing(args.monthlyAmount, args.feeBasisPoints);
+    validatePricing(
+      args.monthlyAmount,
+      args.feeBasisPoints,
+      args.affiliateBasisPoints,
+    );
     const current = await ctx.db
       .query("storePlanSettings")
       .withIndex("by_plan", (q) => q.eq("planId", args.planId))
@@ -99,6 +112,8 @@ export const publish = internalMutation({
       planId: args.planId,
       monthlyAmount: args.monthlyAmount,
       feeBasisPoints: args.feeBasisPoints,
+      affiliateBasisPoints:
+        args.affiliateBasisPoints ?? current?.affiliateBasisPoints ?? 2000,
       version: args.expectedVersion + 1,
     };
     if (current) await ctx.db.patch("storePlanSettings", current._id, next);
@@ -124,7 +139,11 @@ export const update = action({
     await ctx.runQuery(internal.storePlanPricing.authorize, {
       adminId: args.adminId,
     });
-    validatePricing(args.monthlyAmount, args.feeBasisPoints);
+    validatePricing(
+      args.monthlyAmount,
+      args.feeBasisPoints,
+      args.affiliateBasisPoints,
+    );
     const configured = await ctx.runQuery(internal.storePlanPricing.read, {});
     const plan = configured.find((row) => row.id === args.planId)!;
     if (plan.version !== args.expectedVersion)

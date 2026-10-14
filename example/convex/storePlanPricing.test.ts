@@ -108,3 +108,60 @@ it("updates the Stripe price for future subscriptions without changing or archiv
     5900,
   );
 });
+it("saves an affiliate percentage independently per plan without creating a new monthly Stripe price", async () => {
+  const t = convexTest(schema, modules);
+  const adminId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Admin",
+      email: "admin@example.com",
+      role: "admin",
+    }),
+  );
+  for (const planId of ["starter", "growth", "pro"] as const)
+    await t.mutation(internal.storePlanBilling.saveCatalogPrice, {
+      planId,
+      stripeProductId: `prod_${planId}`,
+      stripePriceId: `price_${planId}`,
+    });
+  raw.prices.create.mockClear();
+  await expect(
+    t.action(api.storePlanPricing.update, {
+      adminId,
+      planId: "growth",
+      monthlyAmount: 4900,
+      feeBasisPoints: 490,
+      affiliateBasisPoints: 10001,
+      expectedVersion: 0,
+    }),
+  ).rejects.toThrow(/affiliate/i);
+  await t.action(api.storePlanPricing.update, {
+    adminId,
+    planId: "growth",
+    monthlyAmount: 4900,
+    feeBasisPoints: 490,
+    affiliateBasisPoints: 1250,
+    expectedVersion: 0,
+  });
+  expect(
+    (await t.query(api.storePlanPricing.list, {})).map(
+      (plan) => plan.affiliateBasisPoints,
+    ),
+  ).toEqual([2000, 1250, 2000]);
+  expect(raw.prices.create).not.toHaveBeenCalled();
+  expect(
+    (await t.query(internal.storePlanBilling.readCatalog, {})).find(
+      (plan) => plan.planId === "growth",
+    )?.stripePriceId,
+  ).toBe("price_growth");
+  // Old clients that omit the newly added field must preserve the configured rate.
+  await t.action(api.storePlanPricing.update, {
+    adminId,
+    planId: "growth",
+    monthlyAmount: 4900,
+    feeBasisPoints: 490,
+    expectedVersion: 1,
+  });
+  expect(
+    (await t.query(api.storePlanPricing.list, {}))[1].affiliateBasisPoints,
+  ).toBe(1250);
+});

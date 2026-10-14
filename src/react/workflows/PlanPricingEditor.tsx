@@ -6,18 +6,22 @@ export type PlanPricing = {
   name: string;
   monthlyAmount: number;
   feeBasisPoints: number | null;
+  affiliateBasisPoints?: number;
   version: number;
 };
 export type PlanPricingUpdate = {
   monthlyAmount: number;
   feeBasisPoints: number | null;
+  affiliateBasisPoints?: number;
   expectedVersion: number;
 };
 export type PlanPricingEditorState = {
   monthlyPrice: string;
   saleFee: string;
+  affiliateShare: string;
   setMonthlyPrice: (value: string) => void;
   setSaleFee: (value: string) => void;
+  setAffiliateShare: (value: string) => void;
   save: () => Promise<unknown>;
   isPending: boolean;
   error: string | null;
@@ -38,6 +42,7 @@ export function PlanPricingEditor({
   const scope = `${plan.id}:${plan.version}`;
   const initial = {
     scope,
+    affiliateShare: String((plan.affiliateBasisPoints ?? 2000) / 100),
     monthlyPrice: (plan.monthlyAmount / 100).toFixed(2),
     saleFee:
       plan.feeBasisPoints === null ? "" : String(plan.feeBasisPoints / 100),
@@ -66,9 +71,22 @@ export function PlanPricingEditor({
       throw new Error(
         "Enter a sale fee from 0 to 100%, with at most two decimal places, or leave it blank for Stripe processing only.",
       );
+    const affiliateBasisPoints = Math.round(
+      Number(fields.affiliateShare) * 100,
+    );
+    if (
+      !/^\d+(\.\d{1,2})?$/.test(fields.affiliateShare.trim()) ||
+      !Number.isSafeInteger(affiliateBasisPoints) ||
+      affiliateBasisPoints < 0 ||
+      affiliateBasisPoints > 10000
+    )
+      throw new Error(
+        "Enter an affiliate payout from 0 to 100%, with at most two decimal places.",
+      );
     await onSave({
       monthlyAmount,
       feeBasisPoints,
+      affiliateBasisPoints,
       expectedVersion: plan.version,
     });
     return "Pricing saved. Existing subscriptions keep their monthly price.";
@@ -79,6 +97,8 @@ export function PlanPricingEditor({
       setFields((previous) => ({ ...previous, monthlyPrice })),
     setSaleFee: (saleFee) =>
       setFields((previous) => ({ ...previous, saleFee })),
+    setAffiliateShare: (affiliateShare) =>
+      setFields((previous) => ({ ...previous, affiliateShare })),
     save: action.run,
     isPending: action.isPending,
     error: action.error,
@@ -113,6 +133,18 @@ export function PlanPricingEditor({
       <p>
         Leave the sale fee blank for Stripe processing only. The seller always
         covers actual Stripe processing costs.
+      </p>
+      <label htmlFor={`${id}-affiliate`}>Affiliate payout (%)</label>
+      <input
+        id={`${id}-affiliate`}
+        inputMode="decimal"
+        value={state.affiliateShare}
+        disabled={state.isPending}
+        onChange={(event) => state.setAffiliateShare(event.target.value)}
+      />
+      <p>
+        Percentage of a referred sale after the sale fee. The seller receives
+        the remainder.
       </p>
       {state.error && <p role="alert">{state.error}</p>}
       {state.message && <p role="status">{state.message}</p>}

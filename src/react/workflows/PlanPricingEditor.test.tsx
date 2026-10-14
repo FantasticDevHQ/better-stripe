@@ -28,6 +28,7 @@ it("validates money and percentages before saving minor units", async () => {
   expect(save).toHaveBeenCalledWith({
     monthlyAmount: 1234,
     feeBasisPoints: 750,
+    affiliateBasisPoints: 2000,
     expectedVersion: 0,
   });
   expect(screen.getByRole("status").textContent).toContain("saved");
@@ -41,6 +42,38 @@ it("validates money and percentages before saving minor units", async () => {
   expect(save).toHaveBeenLastCalledWith({
     monthlyAmount: 1234,
     feeBasisPoints: null,
+    affiliateBasisPoints: 2000,
     expectedVersion: 0,
   });
+});
+it("validates affiliate payout percentages and saves basis points", async () => {
+  const save = vi.fn().mockResolvedValue(undefined);
+  render(
+    <PlanPricingEditor
+      plan={{
+        id: "growth",
+        name: "Growth",
+        monthlyAmount: 4900,
+        feeBasisPoints: 490,
+        affiliateBasisPoints: 2000,
+        version: 1,
+      }}
+      onSave={save}
+    />,
+  );
+  const share = screen.getByLabelText("Affiliate payout (%)");
+  await userEvent.clear(share);
+  await userEvent.type(share, "12.5");
+  await userEvent.click(screen.getByRole("button", { name: "Save pricing" }));
+  expect(save).toHaveBeenLastCalledWith({
+    monthlyAmount: 4900,
+    feeBasisPoints: 490,
+    affiliateBasisPoints: 1250,
+    expectedVersion: 1,
+  });
+  await userEvent.clear(share);
+  await userEvent.type(share, "100.001");
+  await userEvent.click(screen.getByRole("button", { name: "Save pricing" }));
+  expect(save).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("alert").textContent).toMatch(/affiliate/i);
 });

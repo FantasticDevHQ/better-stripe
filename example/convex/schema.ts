@@ -51,6 +51,7 @@ export default defineSchema({
     planId: storePlanIdValidator,
     monthlyAmount: v.number(),
     feeBasisPoints: v.union(v.number(), v.null()),
+    affiliateBasisPoints: v.optional(v.number()),
     version: v.number(),
   }).index("by_plan", ["planId"]),
   storePlanCatalog: defineTable({

@@ -1,0 +1,34 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/embedded-component-examples/better-stripe
+
+ ❯ |client| src/client/webhooks/processors.test.ts (107 tests | 1 failed) 289ms
+   ❯ processEvent — subscriptions (15)
+     × normalizes portal cancel_at=1702592000 against the billing period 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/webhooks/processors.test.ts > processEvent — subscriptions > normalizes portal cancel_at=1702592000 against the billing period
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/client/webhooks/processors.test.ts:366:65
+    364|       cancel_at: cancelAt,
+    365|     }));
+    366|     expect(dispatchedPayload(whCtx.ctx).data.cancelAtPeriodEnd).toBe(e…
+       |                                                                 ^
+    367|   });
+    368|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 106 passed (107)
+   Start at  19:57:26
+   Duration  1.89s (transform 48%, import 22%, tests 18%, environment 11%, worker 1%)
+

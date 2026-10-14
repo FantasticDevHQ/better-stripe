@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/embedded-component-examples/better-stripe
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  20:06:07
+   Duration  618ms (transform 70%, import 27%, tests 2%, worker 1%)
+

@@ -1,0 +1,175 @@
+{
+  "commit": "aefaca1717ae812c9f2146dc67703383538da2db",
+  "run": "nonconnect-1791981799330",
+  "storage": "real convex-test component store, isolated local HTTP receiver",
+  "results": [
+    {
+      "name": "snapshot destination created with preview settings",
+      "status": "passed"
+    },
+    {
+      "name": "thin destination created with preview settings",
+      "status": "passed"
+    },
+    {
+      "name": "customer-only buyer creation and provisioning retry",
+      "status": "passed"
+    },
+    {
+      "name": "provider confirms customer configuration only",
+      "status": "passed"
+    },
+    {
+      "name": "package product and one-time/recurring prices",
+      "status": "passed"
+    },
+    {
+      "name": "embedded checkout creation, buyer binding and idempotent retry",
+      "status": "passed"
+    },
+    {
+      "name": "custom checkout creation, buyer binding and idempotent retry",
+      "status": "passed"
+    },
+    {
+      "name": "form checkout creation, buyer binding and idempotent retry",
+      "status": "passed"
+    },
+    {
+      "name": "redirect checkout creation, buyer binding and idempotent retry",
+      "status": "passed"
+    },
+    {
+      "name": "hosted subscription checkout with successful test card and receipt redirect",
+      "status": "passed"
+    },
+    {
+      "name": "authoritative receipt confirms paid and customer-account binding",
+      "status": "passed"
+    },
+    {
+      "name": "Stripe-signed subscription webhook synchronizes actual component record",
+      "status": "passed"
+    },
+    {
+      "name": "package creates customer-account portal and portal loads",
+      "status": "passed"
+    },
+    {
+      "name": "package subscription cancellation at period end",
+      "status": "passed"
+    },
+    {
+      "name": "cancellation webhook updates component",
+      "status": "passed"
+    },
+    {
+      "name": "package subscription reactivation",
+      "status": "passed"
+    },
+    {
+      "name": "reactivation webhook updates component",
+      "status": "passed"
+    },
+    {
+      "name": "package refund of paid subscription charge",
+      "status": "passed"
+    },
+    {
+      "name": "Stripe-signed refund event processed",
+      "status": "passed"
+    },
+    {
+      "name": "Stripe-signed thin customer lifecycle event processed",
+      "status": "passed"
+    },
+    {
+      "name": "delivered snapshot payload version matches preview",
+      "status": "passed"
+    },
+    {
+      "name": "cleanup: QA subscription canceled, open sessions expired, catalog archived, temporary destinations removed",
+      "status": "passed"
+    }
+  ],
+  "deliveries": [
+    {
+      "type": "v2.core.account.created",
+      "id": "evt_test_65VZpU1ES8qZBCNmSvX16TRhAr6hSQWVPrYLV7yT3VwSxk",
+      "apiVersion": "unversioned",
+      "status": 200
+    },
+    {
+      "type": "v2.core.account[identity].updated",
+      "id": "evt_test_65VZpU1QEeF6fCxTRvX16TRhAr6hSQWVPrYLV7yT3VwOOu",
+      "apiVersion": "unversioned",
+      "status": 200
+    },
+    {
+      "type": "v2.core.account[configuration.customer].updated",
+      "id": "evt_test_65VZpU221oESfDFzBvX16TRhAr6hSQWVPrYLV7yT3VwRaC",
+      "apiVersion": "unversioned",
+      "status": 200
+    },
+    {
+      "type": "v2.core.account[configuration.customer].updated",
+      "id": "evt_test_65VZpUEgUWmOdkJvIvX16TRhAr6hSQWVPrYLV7yT3VwSaG",
+      "apiVersion": "unversioned",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.created",
+      "id": "evt_1UQRWvL9QFmKeSCOlcYZAGwW",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "payment_intent.succeeded",
+      "id": "evt_3UQRWrL9QFmKeSCO1m3yp4Nk",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "checkout.session.completed",
+      "id": "evt_1UQRWvL9QFmKeSCOQckrFxwi",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "invoice.paid",
+      "id": "evt_1UQRWuL9QFmKeSCOJBYpLFC7",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQRXAL9QFmKeSCO4ZTnvrIQ",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.updated",
+      "id": "evt_1UQRXCL9QFmKeSCO0qZ2urNy",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "refund.created",
+      "id": "evt_3UQRWrL9QFmKeSCO1gcQuQ3s",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "refund.updated",
+      "id": "evt_3UQRWrL9QFmKeSCO1vjQsjh8",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    },
+    {
+      "type": "customer.subscription.deleted",
+      "id": "evt_1UQRXKL9QFmKeSCOFKdrPnnD",
+      "apiVersion": "2026-09-30.preview",
+      "status": 200
+    }
+  ]
+}

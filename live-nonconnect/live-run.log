@@ -1,0 +1,53 @@
+PASS snapshot destination created with preview settings
+PASS thin destination created with preview settings
+PASS customer-only buyer creation and provisioning retry
+[better-stripe] ← V2 event received: v2.core.account.created (evt_test_65VZpU1ES8qZBCNmSvX16TRhAr6hSQWVPrYLV7yT3VwSxk)
+PASS provider confirms customer configuration only
+[better-stripe]   ↳ account acct_1UQRWeL9QFa2JkeK: status=complete, missing=0, configs=customer
+[better-stripe]   ↳ processed v2.core.account.created
+[better-stripe] ← V2 event received: v2.core.account[identity].updated (evt_test_65VZpU1QEeF6fCxTRvX16TRhAr6hSQWVPrYLV7yT3VwOOu)
+[better-stripe]   ↳ account acct_1UQRWeL9QFa2JkeK: status=complete, missing=0, configs=customer
+[better-stripe]   ↳ processed v2.core.account[identity].updated
+PASS package product and one-time/recurring prices
+[better-stripe] ← V2 event received: v2.core.account[configuration.customer].updated (evt_test_65VZpU221oESfDFzBvX16TRhAr6hSQWVPrYLV7yT3VwRaC)
+[better-stripe]   ↳ account acct_1UQRWeL9QFa2JkeK: status=complete, missing=0, configs=customer
+[better-stripe]   ↳ processed v2.core.account[configuration.customer].updated
+PASS embedded checkout creation, buyer binding and idempotent retry
+PASS custom checkout creation, buyer binding and idempotent retry
+PASS form checkout creation, buyer binding and idempotent retry
+PASS redirect checkout creation, buyer binding and idempotent retry
+CHECKOUT_FIELDS 0
+[better-stripe] ← V2 event received: v2.core.account[configuration.customer].updated (evt_test_65VZpUEgUWmOdkJvIvX16TRhAr6hSQWVPrYLV7yT3VwSaG)
+[better-stripe]   ↳ account acct_1UQRWeL9QFa2JkeK: status=complete, missing=0, configs=customer
+[better-stripe]   ↳ processed v2.core.account[configuration.customer].updated
+[better-stripe] ← V1 event received: invoice.paid (evt_1UQRWuL9QFmKeSCOJBYpLFC7)
+[better-stripe] ← V1 event received: customer.subscription.created (evt_1UQRWvL9QFmKeSCOlcYZAGwW)
+[better-stripe]   ↳ processed customer.subscription.created
+[better-stripe] ← V1 event received: payment_intent.succeeded (evt_3UQRWrL9QFmKeSCO1m3yp4Nk)
+[better-stripe]   ↳ processed payment_intent.succeeded
+[better-stripe] ← V1 event received: checkout.session.completed (evt_1UQRWvL9QFmKeSCOQckrFxwi)
+[better-stripe]   ↳ processed checkout.session.completed
+[better-stripe]   ↳ processed invoice.paid
+PASS hosted subscription checkout with successful test card and receipt redirect
+PASS authoritative receipt confirms paid and customer-account binding
+PASS Stripe-signed subscription webhook synchronizes actual component record
+PASS package creates customer-account portal and portal loads
+PASS package subscription cancellation at period end
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQRXAL9QFmKeSCO4ZTnvrIQ)
+[better-stripe]   ↳ processed customer.subscription.updated
+PASS cancellation webhook updates component
+PASS package subscription reactivation
+[better-stripe] ← V1 event received: customer.subscription.updated (evt_1UQRXCL9QFmKeSCO0qZ2urNy)
+[better-stripe]   ↳ processed customer.subscription.updated
+PASS reactivation webhook updates component
+PASS package refund of paid subscription charge
+[better-stripe] ← V1 event received: refund.created (evt_3UQRWrL9QFmKeSCO1gcQuQ3s)
+[better-stripe]   ↳ processed refund.created
+PASS Stripe-signed refund event processed
+PASS Stripe-signed thin customer lifecycle event processed
+PASS delivered snapshot payload version matches preview
+[better-stripe] ← V1 event received: refund.updated (evt_3UQRWrL9QFmKeSCO1vjQsjh8)
+[better-stripe]   ↳ processed refund.updated
+[better-stripe] ← V1 event received: customer.subscription.deleted (evt_1UQRXKL9QFmKeSCOFKdrPnnD)
+[better-stripe]   ↳ processed customer.subscription.deleted
+PASS cleanup: QA subscription canceled, open sessions expired, catalog archived, temporary destinations removed

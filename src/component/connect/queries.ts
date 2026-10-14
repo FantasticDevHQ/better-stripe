@@ -442,7 +442,7 @@ export const listWedgedReversalClaims = query({
  * Exact earnings totals for one connected account (BTS-64): `gross` (sum of all
  * transfer amounts, incl. reinstatements — the earnings view) and `reversed`
  * (sum of all `reversedAmount`), iterated to completion so totals are never
- * capped. `transfers` is a bounded preview (`previewLimit ?? 50` rows) for
+ * capped. `transfers` is a newest-first bounded preview (`previewLimit ?? 50` rows) for
  * drill-down; use `gross`/`reversed`/`transferCount` for the money figures.
  */
 export const getAccountEarnings = query({
@@ -467,7 +467,8 @@ export const getAccountEarnings = query({
       .query("transfers")
       .withIndex("by_destination_account_id", (q) =>
         q.eq("destinationAccountId", args.destinationAccountId),
-      )) {
+      )
+      .order("desc")) {
       gross += tr.amount;
       reversed += tr.reversedAmount ?? 0;
       transferCount += 1;

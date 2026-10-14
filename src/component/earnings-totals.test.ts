@@ -50,6 +50,18 @@ describe("getAccountEarnings — exact totals past the 50-row cap (BTS-64)", () 
     expect(result.transferCount).toBe(120);
     // The preview is still bounded (drill-down rows), but the totals are exact.
     expect(result.transfers.length).toBe(50);
+    expect(result.transfers[0].stripeTransferId).toBe("tr_big_119");
+    expect(
+      result.transfers.some((row) => row.stripeTransferId === "tr_big_0"),
+    ).toBe(false);
+    const newest = await t.query(api.connect.queries.getAccountEarnings, {
+      destinationAccountId: "acct_big",
+      previewLimit: 1,
+    });
+    expect(newest.transfers.map((row) => row.stripeTransferId)).toEqual([
+      "tr_big_119",
+    ]);
+    expect(newest.gross).toBe(12000);
   });
 
   it("returns exact totals and all rows for a small account (regression)", async () => {
@@ -208,6 +220,7 @@ describe("aggregate read-limit failures (BTS-116)", () => {
       "Too many documents read in a single function execution",
     );
     const rows = {
+      order: () => rows,
       async *[Symbol.asyncIterator]() {
         yield { amount: 100, reversedAmount: 10, status: "paid" };
         throw readLimit;

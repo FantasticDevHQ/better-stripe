@@ -917,15 +917,36 @@ After sandbox setup and fixture seeding, run the opt-in browser checks from
 `example/` with the app running:
 
 ```sh
-E2E_LIVE_BACKEND=1 E2E_HEADLESS=1 pnpm exec playwright test \
-  e2e/integration-examples.spec.ts e2e/checkout-methods.spec.ts --workers=1
+E2E_LIVE_BACKEND=1 pnpm exec playwright test \
+  e2e/integration-examples.spec.ts e2e/checkout-methods.spec.ts \
+  e2e/checkout-failures.spec.ts --workers=1
 ```
 
 The checkout checks create real Stripe sandbox purchases for all five types,
 including guest referral attribution. They wait for webhook confirmation and
 verify settled seller and affiliate transfers and that actual Stripe fees,
 platform revenue, commissions, seller earnings, and recovered costs reconcile.
-These purchases remain in your sandbox. Omit `E2E_HEADLESS=1` to watch checkout
-in a browser; use `E2E_PORT` when your dev server uses a different port. The
+These purchases remain in your sandbox. Checkout runs in a normal browser and
+records video; use `E2E_PORT` when your dev server uses a different port. The
 component checks initialize each scoped Stripe embed and exercise the checkout
 chooser. They do not submit refunds or dispute evidence.
+
+The failure checks use a normal browser and Stripe's documented test cards:
+
+| Scenario           | Test card             | Expected behavior                                     |
+| ------------------ | --------------------- | ----------------------------------------------------- |
+| Success            | `4242 4242 4242 4242` | Confirm payment and settle the seller/affiliate split |
+| Decline            | `4000 0000 0000 0002` | Display the error, then allow retry with a good card  |
+| Insufficient funds | `4000 0000 0000 9995` | Display the decline without completing checkout       |
+| 3D Secure          | `4000 0084 0000 0027` | Complete authentication, or fail it and retry         |
+
+Use a future expiry such as `12/34` and a three-digit CVC in the browser.
+Do not submit raw card numbers through server APIs; use Stripe's test
+PaymentMethod IDs for server-side fixtures. Read [Stripe's testing overview](https://docs.stripe.com/testing/overview),
+[test card guide](https://docs.stripe.com/testing), and [Billing testing guide](https://docs.stripe.com/billing/testing)
+for additional cases such as asynchronous refunds, disputes, and renewal test clocks.
+
+Custom Checkout treats a session-provided email as read-only. A guest without a
+session email can enter one and edit it after a failed payment. Affiliate
+earnings previews show the newest 50 transfers; aggregate totals still include
+the complete ledger.

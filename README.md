@@ -1172,6 +1172,7 @@ Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, 
 - [Convex Component Authoring](https://docs.convex.dev/components/authoring)
 - [Stripe Webhook Event Reference](https://docs.stripe.com/api/events/types)
 - [Stripe Testing Guide](https://docs.stripe.com/testing)
+- [Example checkout tests](example/README.md#test-the-integration-examples), including successful payments, declines, insufficient funds, and 3D Secure
 
 ## License
 

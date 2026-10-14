@@ -43,6 +43,14 @@ async function setup(
       },
     }),
   );
+  if (referred)
+    await t.run((ctx) =>
+      ctx.db.insert("affiliateDefaults", {
+        affiliateBasisPoints: 2000,
+        affiliateFixedAmount: null,
+        version: 1,
+      }),
+    );
   const payment = {
     id: "pi_sale",
     status: "succeeded",

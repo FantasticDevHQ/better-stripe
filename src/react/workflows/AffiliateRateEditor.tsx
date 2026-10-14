@@ -18,7 +18,7 @@ export type AffiliateRateEditorProps = {
   scopeKey: string;
   affiliateBasisPoints: number | null;
   effectiveBasisPoints: number;
-  source: "plan" | "product" | "price";
+  source: "plan" | "product" | "price" | "store" | "global" | "none";
   version: number;
   onSave: (update: AffiliateRateUpdate) => Promise<unknown>;
   children?: (state: AffiliateRateEditorState) => ReactNode;

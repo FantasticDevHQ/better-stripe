@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 export type AffiliatePayoutUpdate = {
   affiliateBasisPoints: number | null;
@@ -26,7 +26,7 @@ export type AffiliatePayoutEditorProps = {
   affiliateFixedAmount?: number | null;
   effectiveBasisPoints: number;
   effectiveFixedAmount?: number | null;
-  source?: "plan" | "product" | "price";
+  source?: "plan" | "product" | "price" | "store" | "global" | "none";
   currency?: string;
   version: number;
   onSave: (update: AffiliatePayoutUpdate) => Promise<unknown>;
@@ -36,14 +36,18 @@ export type AffiliatePayoutEditorProps = {
 export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
   const id = useId();
   const currency = (props.currency ?? "usd").toUpperCase();
-  const formatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    currencyDisplay: "narrowSymbol",
-  });
-  const currencySymbol = formatter
-    .formatToParts(0)
-    .find((part) => part.type === "currency")!.value;
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        currencyDisplay: "narrowSymbol",
+      }),
+    [currency],
+  );
+  const currencySymbol =
+    formatter.formatToParts(0).find((part) => part.type === "currency")
+      ?.value ?? currency;
   const scope = `${props.scopeKey}:${props.version}`;
   const initial = {
     scope,
@@ -94,7 +98,7 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
     currencySymbol,
     setValue: (value) => setFields((previous) => ({ ...previous, value })),
     setMode: (mode) => setFields((previous) => ({ ...previous, mode })),
-    effectiveLabel: `Effective payout: ${props.effectiveFixedAmount != null ? formatter.format(props.effectiveFixedAmount) : `${props.effectiveBasisPoints / 100}%`}${props.source ? ` from ${props.source === "plan" ? "store plan" : props.source}` : ""}.`,
+    effectiveLabel: `Effective payout: ${props.effectiveFixedAmount != null ? formatter.format(props.effectiveFixedAmount) : `${props.effectiveBasisPoints / 100}%`}${props.source && props.source !== "none" ? ` from ${props.source === "plan" ? "store plan" : props.source}` : ""}.`,
     save: () => action.run(false),
     clear: () => action.run(true),
     isPending: action.isPending,
@@ -144,7 +148,17 @@ export function AffiliatePayoutEditor(props: AffiliatePayoutEditorProps) {
         disabled={state.isPending}
         onClick={() => void state.clear()}
       >
-        X
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
       </button>
       <p>
         {state.effectiveLabel} Blank inherits the default. Fixed payouts are

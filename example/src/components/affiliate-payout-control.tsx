@@ -1,4 +1,5 @@
-import { useQuery } from "convex/react";
+import { X } from "lucide-react";
+import { useQuery, useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ export function AffiliatePayoutControl(props: AffiliatePayoutEditorProps) {
       {(state) => (
         <form
           aria-label="Affiliate payout"
-          className="min-w-64 space-y-1"
+          className="min-w-64 space-y-1 whitespace-normal"
           onSubmit={(event) => {
             event.preventDefault();
             void state.save();
@@ -74,14 +75,14 @@ export function AffiliatePayoutControl(props: AffiliatePayoutEditorProps) {
             </Button>
             <Button
               type="button"
-              size="sm"
-              variant="ghost"
+              size="icon-sm"
+              variant="outline"
               aria-label="Clear affiliate payout"
               title="Clear override and inherit default"
               disabled={state.isPending}
               onClick={() => void state.clear()}
             >
-              X
+              <X aria-hidden="true" className="size-4" />
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -143,6 +144,49 @@ export function ProductAffiliateSettings({
         currency={currency}
         onSave={(values) =>
           onSave({ ...values, stripeProductId, stripePriceId })
+        }
+      />
+    </div>
+  );
+}
+
+export function GlobalAffiliateSettings({
+  actorId,
+  sellerId,
+}: {
+  actorId: string;
+  sellerId?: string;
+}) {
+  const state = useQuery(api.affiliateDefaults.get, {
+    sellerId: sellerId as Id<"users"> | undefined,
+  });
+  const convex = useConvex();
+  if (!state) return <Skeleton className="h-12 w-64" />;
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4"
+      data-testid={
+        sellerId ? "store-affiliate-default" : "platform-affiliate-default"
+      }
+    >
+      <div>
+        <p className="text-sm font-medium">
+          {sellerId ? "Store-wide affiliate payout" : "Global affiliate payout"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Optional. Unset payouts inherit, with 0% when no default is
+          configured.
+        </p>
+      </div>
+      <AffiliatePayoutControl
+        {...state}
+        scopeKey={`default:${sellerId ?? "platform"}`}
+        onSave={(values) =>
+          convex.mutation(api.affiliateDefaults.save, {
+            ...values,
+            actorId: actorId as Id<"users">,
+            sellerId: sellerId as Id<"users"> | undefined,
+          })
         }
       />
     </div>

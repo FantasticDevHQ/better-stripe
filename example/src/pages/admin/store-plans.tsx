@@ -1,11 +1,21 @@
-import { AffiliatePayoutControl } from "@/components/affiliate-payout-control";
+import {
+  AffiliatePayoutControl,
+  GlobalAffiliateSettings,
+} from "@/components/affiliate-payout-control";
 import { EmptyState } from "@/components/empty-state";
 import { PlanPricingEditor } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { useRole } from "@/providers/role-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "../../../convex/_generated/api";
@@ -15,18 +25,19 @@ export function AdminStorePlans() {
   const plans = useQuery(api.storePlanPricing.list, {});
   const update = useAction(api.storePlanPricing.update);
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Store plans</h1>
-        <p className="text-muted-foreground">
-          Set monthly USD prices, sale fees, and affiliate payouts for Starter,
-          Growth, and Pro.
+        <h1 className="text-2xl font-bold">Store plans</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage monthly store subscriptions, sale fees, and affiliate payouts.
         </p>
       </div>
+      <GlobalAffiliateSettings actorId={currentUser.id} />
       <p className="text-sm text-muted-foreground">
         Monthly price changes apply to new subscriptions. Existing subscriptions
-        keep their current price. Sale fee changes apply to future settlements.
-        Sellers always cover actual Stripe processing costs.
+        keep their current price. Sellers always cover actual Stripe processing.
+        Unset plan payouts inherit the global setting, otherwise 0%. Clear
+        removes the override.
       </p>
       {plans === undefined ? (
         <Skeleton className="h-64 w-full" />
@@ -36,14 +47,22 @@ export function AdminStorePlans() {
           example.
         </EmptyState>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-3">
-          {plans.map((plan) => (
-            <Card key={plan.id}>
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
+        <div className="rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Plan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Monthly price (USD)</TableHead>
+                <TableHead>Sale fee (%)</TableHead>
+                <TableHead>Affiliate payout</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {plans.map((plan) => (
                 <PlanPricingEditor
+                  key={plan.id}
                   plan={plan}
                   onSave={(values) =>
                     update({
@@ -65,20 +84,21 @@ export function AdminStorePlans() {
                     error,
                     message,
                   }) => (
-                    <form
-                      aria-label={`${plan.name} pricing`}
-                      className="space-y-4"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void save();
-                      }}
-                    >
-                      <div className="space-y-2">
-                        <Label htmlFor={`${plan.id}-monthly`}>
-                          Monthly price (USD)
-                        </Label>
+                    <TableRow>
+                      <TableCell>
+                        <p className="font-medium">{plan.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Monthly subscription
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge>Active</Badge>
+                      </TableCell>
+                      <TableCell>
                         <Input
-                          id={`${plan.id}-monthly`}
+                          className="w-28"
+                          aria-label={`${plan.name} monthly price (USD)`}
+                          form={`pricing-${plan.id}`}
                           type="number"
                           min="0.01"
                           step="0.01"
@@ -90,11 +110,12 @@ export function AdminStorePlans() {
                             setMonthlyPrice(event.target.value)
                           }
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`${plan.id}-fee`}>Sale fee (%)</Label>
+                      </TableCell>
+                      <TableCell>
                         <Input
-                          id={`${plan.id}-fee`}
+                          className="w-28"
+                          aria-label={`${plan.name} sale fee (%)`}
+                          form={`pricing-${plan.id}`}
                           type="number"
                           min="0"
                           max="100"
@@ -102,75 +123,77 @@ export function AdminStorePlans() {
                           inputMode="decimal"
                           value={saleFee}
                           disabled={isPending}
-                          placeholder="Stripe processing only"
+                          placeholder="Stripe only"
                           onChange={(event) => setSaleFee(event.target.value)}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Leave blank for Stripe processing only. Otherwise, the
-                          seller pays the greater of this percentage or actual
-                          processing.
+                        <p className="mt-1 max-w-48 whitespace-normal text-xs text-muted-foreground">
+                          {plan.feeLabel}
                         </p>
-                      </div>
-                      {error && (
-                        <p role="alert" className="text-sm text-destructive">
-                          {error}
-                        </p>
-                      )}
-                      {message && (
-                        <p
-                          role="status"
-                          className="text-sm text-muted-foreground"
+                      </TableCell>
+                      <TableCell data-testid={`plan-affiliate-${plan.id}`}>
+                        <AffiliatePayoutControl
+                          scopeKey={`plan:${plan.id}`}
+                          version={plan.version}
+                          affiliateBasisPoints={
+                            plan.affiliateFixedAmount != null
+                              ? null
+                              : (plan.affiliateBasisPoints ?? null)
+                          }
+                          affiliateFixedAmount={plan.affiliateFixedAmount}
+                          effectiveBasisPoints={plan.effectiveBasisPoints}
+                          effectiveFixedAmount={plan.effectiveFixedAmount}
+                          currency="usd"
+                          onSave={(values) =>
+                            update({
+                              ...values,
+                              monthlyAmount: plan.monthlyAmount,
+                              feeBasisPoints: plan.feeBasisPoints,
+                              planId: plan.id,
+                              adminId: currentUser.id as Id<"users">,
+                            })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <form
+                          id={`pricing-${plan.id}`}
+                          aria-label={`${plan.name} pricing`}
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void save();
+                          }}
                         >
-                          {message}
-                        </p>
-                      )}
-                      <Button type="submit" disabled={isPending}>
-                        {isPending ? "Saving…" : "Save pricing"}
-                      </Button>
-                    </form>
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={isPending}
+                          >
+                            {isPending ? "Saving…" : "Save pricing"}
+                          </Button>
+                          {error && (
+                            <p
+                              role="alert"
+                              className="max-w-48 whitespace-normal text-xs text-destructive"
+                            >
+                              {error}
+                            </p>
+                          )}
+                          {message && (
+                            <p
+                              role="status"
+                              className="text-xs text-muted-foreground"
+                            >
+                              {message}
+                            </p>
+                          )}
+                        </form>
+                      </TableCell>
+                    </TableRow>
                   )}
                 </PlanPricingEditor>
-                <div
-                  className="mt-4 space-y-2 border-t pt-4"
-                  data-testid={`plan-affiliate-${plan.id}`}
-                >
-                  <p className="text-sm font-medium">
-                    Default affiliate payout
-                  </p>
-                  <AffiliatePayoutControl
-                    scopeKey={`plan:${plan.id}`}
-                    version={plan.version}
-                    affiliateBasisPoints={
-                      plan.affiliateFixedAmount != null
-                        ? null
-                        : (plan.affiliateBasisPoints ?? 2000)
-                    }
-                    affiliateFixedAmount={plan.affiliateFixedAmount}
-                    effectiveBasisPoints={plan.affiliateBasisPoints ?? 2000}
-                    effectiveFixedAmount={plan.affiliateFixedAmount}
-                    currency="usd"
-                    onSave={(values) =>
-                      update({
-                        ...values,
-                        affiliateBasisPoints:
-                          values.affiliateBasisPoints ?? 2000,
-                        monthlyAmount: plan.monthlyAmount,
-                        feeBasisPoints: plan.feeBasisPoints,
-                        planId: plan.id,
-                        adminId: currentUser.id as Id<"users">,
-                      })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Seller price and product overrides take priority. Fixed
-                    defaults use the sale's currency, for example 5 means EUR 5
-                    on a EUR sale. Payouts are capped at proceeds after fees.
-                    Clear restores 20%.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

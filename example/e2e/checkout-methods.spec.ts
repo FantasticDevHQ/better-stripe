@@ -145,7 +145,7 @@ for (const [mode, role, referralCode] of [
         (settlement.costRecoveryAmount ?? 0),
     );
     expect(settlement.sellerTransferId).toMatch(/^tr_/);
-    if (referralCode === "avery")
+    if (settlement.affiliateNet > 0)
       expect(settlement.affiliateTransferId).toMatch(/^tr_/);
     else expect(settlement.affiliateTransferId).toBeUndefined();
     await test.info().attach("settlement", {

@@ -28,7 +28,7 @@ it("validates money and percentages before saving minor units", async () => {
   expect(save).toHaveBeenCalledWith({
     monthlyAmount: 1234,
     feeBasisPoints: 750,
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: 0,
     expectedVersion: 0,
   });
   expect(screen.getByRole("status").textContent).toContain("saved");
@@ -42,7 +42,7 @@ it("validates money and percentages before saving minor units", async () => {
   expect(save).toHaveBeenLastCalledWith({
     monthlyAmount: 1234,
     feeBasisPoints: null,
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: 0,
     expectedVersion: 0,
   });
 });

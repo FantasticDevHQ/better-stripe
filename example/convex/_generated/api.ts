@@ -10,6 +10,7 @@
 
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
+import type * as affiliateDefaults from "../affiliateDefaults.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
 import type * as checkoutExamples from "../checkoutExamples.js";
@@ -64,6 +65,7 @@ import { anyApi, componentsGeneric } from "convex/server";
 const fullApi: ApiFromModules<{
   actions: typeof actions;
   adminTesting: typeof adminTesting;
+  affiliateDefaults: typeof affiliateDefaults;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
   checkoutExamples: typeof checkoutExamples;

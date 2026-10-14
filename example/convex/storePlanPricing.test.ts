@@ -146,7 +146,7 @@ it("saves an affiliate percentage independently per plan without creating a new 
     (await t.query(api.storePlanPricing.list, {})).map(
       (plan) => plan.affiliateBasisPoints,
     ),
-  ).toEqual([2000, 1250, 2000]);
+  ).toEqual([null, 1250, null]);
   expect(raw.prices.create).not.toHaveBeenCalled();
   expect(
     (await t.query(internal.storePlanBilling.readCatalog, {})).find(

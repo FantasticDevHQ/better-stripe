@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { getFunctionName } from "convex/server";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
@@ -20,10 +21,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("convex/react", () => ({
   useAction: () => mocks.load,
   useConvex: () => ({ mutation: mocks.mutation }),
-  useQuery: (_fn: unknown, args: unknown) =>
+  useQuery: (_fn: Parameters<typeof getFunctionName>[0], args: unknown) =>
     args === "skip"
       ? undefined
-      : args && typeof args === "object" && "stripeProductId" in args
+      : ["affiliateDefaults:get", "sellerAffiliateRates:get"].includes(
+            getFunctionName(_fn),
+          )
         ? {
             affiliateBasisPoints: null,
             affiliateFixedAmount: null,
@@ -88,14 +91,15 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   expect(screen.getByText("$29.00")).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Select price" }));
   expect(screen.getByRole("status")).toHaveTextContent("price_tee");
+  const control = within(screen.getByTestId("affiliate-rate-price_tee"));
   await userEvent.click(
-    screen.getByRole("button", { name: "Fixed amount in USD" }),
+    control.getByRole("button", { name: "Fixed amount in USD" }),
   );
   await userEvent.type(
-    screen.getByRole("spinbutton", { name: "Affiliate payout" }),
+    control.getByRole("spinbutton", { name: "Affiliate payout" }),
     "5.25",
   );
-  await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+  await userEvent.click(control.getByRole("button", { name: /^Save$/ }));
   await waitFor(() =>
     expect(mocks.mutation).toHaveBeenCalledWith(expect.anything(), {
       sellerId: "seller_id",

@@ -3,7 +3,7 @@ export const STORE_PLANS = [
   {
     id: "starter",
     name: "Starter",
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: 0,
     monthlyAmount: 900,
     feeBasisPoints: 900,
     feeLabel: "9% per sale or actual Stripe processing, whichever is higher",
@@ -11,7 +11,7 @@ export const STORE_PLANS = [
   {
     id: "growth",
     name: "Growth",
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: 0,
     monthlyAmount: 4900,
     feeBasisPoints: 490,
     feeLabel: "4.9% per sale or actual Stripe processing, whichever is higher",
@@ -19,7 +19,7 @@ export const STORE_PLANS = [
   {
     id: "pro",
     name: "Pro",
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: 0,
     monthlyAmount: 9900,
     feeBasisPoints: null,
     feeLabel: "Stripe processing only, no platform transaction fee",

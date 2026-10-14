@@ -13,14 +13,16 @@ test("admin updates plan pricing, sellers see it, and original sandbox pricing i
   await page.goto("/admin/store-plans");
   const form = page.getByRole("form", { name: "Starter pricing" });
   await expect(form).toBeVisible({ timeout: 15000 });
-  const originalMonthly = await form
-    .getByLabel("Monthly price (USD)")
+  const originalMonthly = await page
+    .getByLabel("Starter monthly price (USD)")
     .inputValue();
-  const originalFee = await form.getByLabel("Sale fee (%)").inputValue();
+  const originalFee = await page
+    .getByLabel("Starter sale fee (%)")
+    .inputValue();
   const updatedPrice = (Number(originalMonthly) + 1).toFixed(2);
   try {
-    await form.getByLabel("Monthly price (USD)").fill(updatedPrice);
-    await form.getByLabel("Sale fee (%)").fill("7.5");
+    await page.getByLabel("Starter monthly price (USD)").fill(updatedPrice);
+    await page.getByLabel("Starter sale fee (%)").fill("7.5");
     await form.getByRole("button", { name: "Save pricing" }).click();
     await expect(form.getByRole("status")).toContainText("Pricing saved", {
       timeout: 30000,
@@ -55,16 +57,18 @@ test("admin updates plan pricing, sellers see it, and original sandbox pricing i
       .getByRole("link", { name: "Store plans", exact: true })
       .click();
     await expect(form).toBeVisible();
-    await form.getByLabel("Monthly price (USD)").fill(originalMonthly);
-    await form.getByLabel("Sale fee (%)").fill(originalFee);
+    await page.getByLabel("Starter monthly price (USD)").fill(originalMonthly);
+    await page.getByLabel("Starter sale fee (%)").fill(originalFee);
     await form.getByRole("button", { name: "Save pricing" }).click();
     await expect(form.getByRole("status")).toContainText("Pricing saved", {
       timeout: 30000,
     });
-    await expect(form.getByLabel("Monthly price (USD)")).toHaveValue(
+    await expect(page.getByLabel("Starter monthly price (USD)")).toHaveValue(
       originalMonthly,
     );
-    await expect(form.getByLabel("Sale fee (%)")).toHaveValue(originalFee);
+    await expect(page.getByLabel("Starter sale fee (%)")).toHaveValue(
+      originalFee,
+    );
     await page.screenshot({
       path: testInfo.outputPath("restored-pricing.png"),
       fullPage: true,

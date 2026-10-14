@@ -1,3 +1,4 @@
+import { storePayout, payoutSource } from "./affiliateDefaults";
 import { validateFixedAffiliateAmount } from "./lib/storePlans";
 import { v } from "convex/values";
 import {
@@ -18,7 +19,7 @@ const stateValidator = v.object({
   effectiveBasisPoints: v.number(),
   affiliateFixedAmount: v.union(v.number(), v.null()),
   effectiveFixedAmount: v.union(v.number(), v.null()),
-  source: v.union(v.literal("plan"), v.literal("product"), v.literal("price")),
+  source: payoutSource,
   version: v.number(),
   stripeProductId: v.optional(v.string()),
   stripePriceId: v.optional(v.string()),
@@ -34,22 +35,9 @@ async function readState(
   const seller = await ctx.db.get("users", args.sellerId);
   if (seller?.role !== "seller" || !seller.stripeAccountId)
     throw new Error("Choose a seller with a Stripe account.");
-  const settings = seller.storePlan
-    ? await ctx.db
-        .query("storePlanSettings")
-        .withIndex("by_plan", (q) => q.eq("planId", seller.storePlan!.planId))
-        .first()
-    : null;
-  const planRate = settings?.affiliateBasisPoints ?? 2000;
+  const base = await storePayout(ctx, seller);
   if (!args.stripeProductId && !args.stripePriceId)
-    return {
-      affiliateBasisPoints: null,
-      affiliateFixedAmount: null,
-      effectiveFixedAmount: settings?.affiliateFixedAmount ?? null,
-      effectiveBasisPoints: planRate,
-      source: "plan" as const,
-      version: 0,
-    };
+    return { ...base, stripeProductId: undefined, stripePriceId: undefined };
   const price = args.stripePriceId
     ? await ctx.runQuery(
         components.betterStripe.products.queries.getPriceByStripeId,
@@ -96,17 +84,21 @@ async function readState(
     ? priceOverride
     : hasRule(productOverride)
       ? productOverride
-      : settings;
+      : null;
   return {
     affiliateFixedAmount: own?.affiliateFixedAmount ?? null,
-    effectiveFixedAmount: effective?.affiliateFixedAmount ?? null,
+    effectiveFixedAmount: effective
+      ? (effective.affiliateFixedAmount ?? null)
+      : base.effectiveFixedAmount,
     affiliateBasisPoints: own?.affiliateBasisPoints ?? null,
-    effectiveBasisPoints: effective?.affiliateBasisPoints ?? planRate,
+    effectiveBasisPoints: effective
+      ? (effective.affiliateBasisPoints ?? 0)
+      : base.effectiveBasisPoints,
     source: hasRule(priceOverride)
       ? ("price" as const)
       : hasRule(productOverride)
         ? ("product" as const)
-        : ("plan" as const),
+        : base.source,
     version: own?.version ?? 0,
     stripeProductId,
     stripePriceId: args.stripePriceId,

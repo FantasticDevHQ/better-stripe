@@ -263,7 +263,7 @@ and conflict checks belong in your backend. Existing subscription migration is
 an application policy, not an automatic side effect of this editor.
 
 `PlanPricingEditor` also supports optional `affiliateBasisPoints` on the plan and
-save update, defaulting to 2000. Its render state exposes `affiliateShare` and
+save update, defaulting to 0. Its render state exposes `affiliateShare` and
 `setAffiliateShare`. The native field is labeled Affiliate payout (%), accepts
 0 through 100 with at most two decimal places, and saves integer basis points.
 Omitting the field in an older backend request preserves an existing configured
@@ -273,7 +273,7 @@ settled sale.
 ## Product and subscription affiliate-rate editor
 
 `AffiliateRateEditor` accepts `scopeKey`, nullable `affiliateBasisPoints`,
-`effectiveBasisPoints`, `source` of plan/product/price, `version`, and `onSave`.
+`effectiveBasisPoints`, `source` of global/store/plan/product/price/none, `version`, and `onSave`.
 Its save update contains nullable `affiliateBasisPoints` and `expectedVersion`.
 Blank input means inherit, zero disables commission, and percentages support
 0 to 100 with two decimal places. Use its native unstyled form or render state
@@ -299,3 +299,8 @@ and `message` so applications can supply their own markup. Server code must
 resolve defaults, validate ownership and versions, convert major amounts into
 Stripe minor units, and cap fixed payouts at proceeds after fees. The example
 uses a nominal fixed amount per sale currency; it does not perform FX conversion.
+
+Affiliate payout sources can be `global`, `store`, `plan`, `product`, `price`, or
+`none`. Unset app rules fall back to zero. The example resolves price → product →
+store-wide → plan → platform-wide → 0, and distinguishes explicit zero from null
+inheritance. Both global controls use the same package editor as the row controls.

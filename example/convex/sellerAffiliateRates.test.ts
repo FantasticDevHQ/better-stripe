@@ -52,8 +52,8 @@ it("resolves price, product, then plan rates and enforces seller ownership, vali
   const price = { ...product, stripePriceId: "price_month" };
   expect(await t.query(api.sellerAffiliateRates.get, price)).toMatchObject({
     affiliateBasisPoints: null,
-    effectiveBasisPoints: 2000,
-    source: "plan",
+    effectiveBasisPoints: 0,
+    source: "none",
     version: 0,
   });
   await expect(
@@ -114,8 +114,8 @@ it("resolves price, product, then plan rates and enforces seller ownership, vali
     expectedVersion: 1,
   });
   expect(await t.query(api.sellerAffiliateRates.get, price)).toMatchObject({
-    effectiveBasisPoints: 2000,
-    source: "plan",
+    effectiveBasisPoints: 0,
+    source: "none",
   });
   await t.mutation(api.sellerAffiliateRates.save, {
     ...price,

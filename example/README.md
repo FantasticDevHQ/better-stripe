@@ -69,7 +69,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
   processing; Pro takes processing only. The platform keeps the difference
   and never subsidizes processing. New sales wait for actual Stripe fees,
   then transfer the remainder to the seller and, for referrals, the affiliate.
-  The affiliate receives the effective percentage of the remainder or a fixed amount capped at that remainder after the inclusive sale fee. Each plan defaults to 20%.
+  The affiliate receives the effective percentage of the remainder or a fixed amount capped at that remainder after the inclusive sale fee. Unconfigured affiliate payouts default to 0%.
   Existing customer renewals continue using the seller's current or last paid
   tier, even if the store has closed to new purchases. Use Stripe's billing
   portal for paid plan changes, payment details, invoices, and cancellation.
@@ -1008,7 +1008,7 @@ creates the Stripe Price, and publishes catalog and fee settings atomically.
 Like the rest of this demo, personas use mock users rather than production auth.
 
 Each Store plans card has a separate affiliate payout editor for percentages or
-fixed amounts. Existing configurations default to 20%. Payout-only edits keep
+fixed amounts. Unconfigured payouts default to 0%. Payout-only edits keep
 the monthly Stripe Price and subscriptions unchanged. Future settlements resolve
 the seller's price, product, and plan defaults; settled sales and refunds retain
 the original amounts.
@@ -1020,9 +1020,9 @@ expanded price row, including recurring subscription prices. The BetterStripe
 components tab also includes the inline editor on each price card. Enter a number,
 choose `%` or the price currency symbol, then Save. X clears and saves inheritance;
 zero explicitly disables the payout. Admin → Store plans uses the same editor for
-plan defaults. Clearing a plan default restores 20%.
+plan defaults. Clearing a plan override inherits the global payout, or 0% if unset.
 
-Price overrides win over product defaults, then store-plan defaults. Percentages
+Price overrides win over product defaults, then the store-wide payout, store-plan override, and platform-wide payout. With no configured rule, the payout is 0%. Percentages
 apply after the inclusive sale fee. Fixed amounts use major units of the sale's
 currency: 5 means USD 5 on a USD price or EUR 5 on a EUR price. Product and plan
 defaults use that same nominal amount in each sale currency, without currency
@@ -1042,3 +1042,14 @@ The unstyled `AffiliatePayoutEditor` in `better-stripe/react` owns the input,
 mode toggle, validation, Save/Clear actions, and feedback. The example supplies
 its design-system markup with the render prop. `AffiliateRateEditor` remains
 available for percentage-only forms.
+
+### Optional affiliate defaults
+
+Seller → Products has an optional store-wide affiliate payout. Admin → Store plans
+has an optional platform-wide payout and inline overrides for each plan. All start
+unset. The effective fallback is zero, including for referred purchases. Explicit
+zero disables payouts even when a parent setting is configured. Clear removes the
+override and restores inheritance, rather than restoring a built-in percentage.
+The admin plan catalog uses rows with status, monthly price, sale fee, affiliate
+payout, and Save pricing actions. Affiliate Save and Clear remain independent of
+monthly price edits; existing store subscriptions retain their monthly prices.

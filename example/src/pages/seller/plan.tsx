@@ -113,9 +113,9 @@ export function SellerPlan() {
                   <p>{plan.feeLabel}</p>
                   <p className="text-sm text-muted-foreground">
                     Default affiliate payout:{" "}
-                    {plan.affiliateFixedAmount != null
-                      ? `${plan.affiliateFixedAmount} in the sale currency, capped at proceeds`
-                      : `${(plan.affiliateBasisPoints ?? 2000) / 100}% after the sale fee`}
+                    {plan.effectiveFixedAmount != null
+                      ? `${plan.effectiveFixedAmount} in the sale currency, capped at proceeds`
+                      : `${plan.effectiveBasisPoints / 100}% after the sale fee`}
                     .
                   </p>
                   <Button

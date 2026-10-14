@@ -82,6 +82,7 @@ describe("seller store plans", () => {
         processingFee: 404,
         planId,
         referred: true,
+        affiliateBasisPoints: 2000,
       });
       expect(
         sale.sellerNet +
@@ -121,6 +122,7 @@ it("uses configured sale fees while keeping the Stripe processing floor and exac
       processingFee: 320,
       planId: "starter",
       feeBasisPoints: 750,
+      affiliateBasisPoints: 2000,
       referred: true,
     }),
   ).toMatchObject({

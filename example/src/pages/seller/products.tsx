@@ -1,4 +1,7 @@
-import { ProductAffiliateSettings } from "@/components/affiliate-payout-control";
+import {
+  ProductAffiliateSettings,
+  GlobalAffiliateSettings,
+} from "@/components/affiliate-payout-control";
 import { formatAmount } from "@/lib/format-amount";
 import { Fragment } from "react";
 import { useProductManager } from "@fantastic.dev/better-stripe/react";
@@ -236,6 +239,10 @@ export function SellerProducts() {
           </DialogContent>
         </Dialog>
       </div>
+      <GlobalAffiliateSettings
+        actorId={currentUser.id}
+        sellerId={currentUser.id}
+      />
 
       {error && (
         <Alert variant="destructive">

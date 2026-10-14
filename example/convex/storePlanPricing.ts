@@ -1,3 +1,4 @@
+import { platformPayout } from "./affiliateDefaults";
 import { v } from "convex/values";
 import {
   action,
@@ -13,7 +14,7 @@ import { getStripeClient } from "./lib/stripeClient";
 const settings = {
   monthlyAmount: v.number(),
   feeBasisPoints: v.union(v.number(), v.null()),
-  affiliateBasisPoints: v.optional(v.number()),
+  affiliateBasisPoints: v.optional(v.union(v.number(), v.null())),
   affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
 };
 const edit = {
@@ -26,18 +27,21 @@ const planValidator = v.object({
   id: storePlanIdValidator,
   name: v.string(),
   ...settings,
+  effectiveBasisPoints: v.number(),
+  effectiveFixedAmount: v.union(v.number(), v.null()),
   feeLabel: v.string(),
   version: v.number(),
 });
 export function validatePricing(
   monthlyAmount: number,
   feeBasisPoints: number | null,
-  affiliateBasisPoints = 2000,
+  affiliateBasisPoints: number | null = 0,
 ) {
   if (
-    !Number.isSafeInteger(affiliateBasisPoints) ||
-    affiliateBasisPoints < 0 ||
-    affiliateBasisPoints > 10000
+    affiliateBasisPoints !== null &&
+    (!Number.isSafeInteger(affiliateBasisPoints) ||
+      affiliateBasisPoints < 0 ||
+      affiliateBasisPoints > 10000)
   )
     throw new Error("Affiliate payout must be between 0 and 100%.");
   if (!Number.isSafeInteger(monthlyAmount) || monthlyAmount <= 0)
@@ -51,6 +55,7 @@ export function validatePricing(
     throw new Error("Sale fee must be between 0 and 100%.");
 }
 async function plans(ctx: QueryCtx) {
+  const global = await platformPayout(ctx);
   const saved = await ctx.db.query("storePlanSettings").take(3);
   return STORE_PLANS.map((plan) => {
     const override = saved.find((row) => row.planId === plan.id);
@@ -62,7 +67,17 @@ async function plans(ctx: QueryCtx) {
       name: plan.name,
       monthlyAmount: override?.monthlyAmount ?? plan.monthlyAmount,
       feeBasisPoints,
-      affiliateBasisPoints: override?.affiliateBasisPoints ?? 2000,
+      affiliateBasisPoints: override?.affiliateBasisPoints ?? null,
+      effectiveBasisPoints:
+        override?.affiliateBasisPoints ??
+        (override?.affiliateFixedAmount != null
+          ? 0
+          : global.effectiveBasisPoints),
+      effectiveFixedAmount:
+        override?.affiliateFixedAmount ??
+        (override?.affiliateBasisPoints != null
+          ? null
+          : global.effectiveFixedAmount),
       affiliateFixedAmount: override?.affiliateFixedAmount ?? null,
       version: override?.version ?? 0,
       feeLabel:
@@ -116,7 +131,9 @@ export const publish = internalMutation({
       monthlyAmount: args.monthlyAmount,
       feeBasisPoints: args.feeBasisPoints,
       affiliateBasisPoints:
-        args.affiliateBasisPoints ?? current?.affiliateBasisPoints ?? 2000,
+        args.affiliateBasisPoints === undefined
+          ? (current?.affiliateBasisPoints ?? null)
+          : args.affiliateBasisPoints,
       affiliateFixedAmount:
         args.affiliateFixedAmount === undefined
           ? args.affiliateBasisPoints === undefined

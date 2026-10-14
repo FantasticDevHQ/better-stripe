@@ -312,7 +312,7 @@ test("inline clear saves inheritance in seller and admin controls", async ({
   await expect(admin.getByRole("status")).toContainText("cleared");
   expect(convex("storePlanPricing:list")[1]).toMatchObject({
     affiliateFixedAmount: null,
-    affiliateBasisPoints: 2000,
+    affiliateBasisPoints: null,
   });
   await page.screenshot({
     path: testInfo.outputPath("admin-cleared.png"),
@@ -329,7 +329,11 @@ test("inline clear saves inheritance in seller and admin controls", async ({
     .click();
   await admin
     .getByRole("spinbutton")
-    .fill(String(plan.affiliateFixedAmount ?? plan.affiliateBasisPoints / 100));
+    .fill(
+      plan.affiliateFixedAmount == null && plan.affiliateBasisPoints == null
+        ? ""
+        : String(plan.affiliateFixedAmount ?? plan.affiliateBasisPoints / 100),
+    );
   await admin.getByRole("button", { name: "Save", exact: true }).click();
   await expect(admin.getByRole("status")).toContainText("saved");
 });

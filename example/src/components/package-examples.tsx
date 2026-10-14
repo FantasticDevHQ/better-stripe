@@ -1,4 +1,7 @@
-import { ProductAffiliateSettings } from "@/components/affiliate-payout-control";
+import {
+  ProductAffiliateSettings,
+  GlobalAffiliateSettings,
+} from "@/components/affiliate-payout-control";
 import { useState } from "react";
 import { useAction, useQuery, useConvex } from "convex/react";
 import {
@@ -40,6 +43,12 @@ export function ProductComponents() {
         PriceCard renders the same catalog prices through the package's render
         prop. Create and edit products in the via API tab.
       </p>
+      {currentRole === "seller" && (
+        <GlobalAffiliateSettings
+          actorId={currentUser.id}
+          sellerId={currentUser.id}
+        />
+      )}
       {!products ? (
         <p role="status">Loading products…</p>
       ) : !products.length ? (

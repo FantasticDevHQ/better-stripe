@@ -6,13 +6,13 @@ export type PlanPricing = {
   name: string;
   monthlyAmount: number;
   feeBasisPoints: number | null;
-  affiliateBasisPoints?: number;
+  affiliateBasisPoints?: number | null;
   version: number;
 };
 export type PlanPricingUpdate = {
   monthlyAmount: number;
   feeBasisPoints: number | null;
-  affiliateBasisPoints?: number;
+  affiliateBasisPoints?: number | null;
   expectedVersion: number;
 };
 export type PlanPricingEditorState = {
@@ -42,7 +42,7 @@ export function PlanPricingEditor({
   const scope = `${plan.id}:${plan.version}`;
   const initial = {
     scope,
-    affiliateShare: String((plan.affiliateBasisPoints ?? 2000) / 100),
+    affiliateShare: String((plan.affiliateBasisPoints ?? 0) / 100),
     monthlyPrice: (plan.monthlyAmount / 100).toFixed(2),
     saleFee:
       plan.feeBasisPoints === null ? "" : String(plan.feeBasisPoints / 100),

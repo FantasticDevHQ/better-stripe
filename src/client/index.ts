@@ -1,3 +1,5 @@
+import { CostRecoveryClient } from "./costRecovery.js";
+export * from "./costRecovery.js";
 import type { SubscriptionStatus } from "../component/billing/validators.js";
 import * as processingCostsImpl from "./settlement/processingCosts.js";
 export type {
@@ -1261,6 +1263,10 @@ export class BetterStripe {
   ) {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
   }
+  get costRecovery() {
+    return new CostRecoveryClient(this.component);
+  }
+
   async getProcessingCostContext(
     _ctx: RunCtx,
     opts: processingCostsImpl.ProcessingCostOptions,

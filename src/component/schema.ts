@@ -1,4 +1,10 @@
 import {
+  claimsTable,
+  balancesTable,
+  groupsTable,
+  reservationsTable,
+} from "./costRecovery/schema";
+import {
   allocationsTable,
   commissionTermsTable,
   commissionDecisionsTable,
@@ -24,6 +30,10 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  recoveryClaims: claimsTable,
+  recoveryBalances: balancesTable,
+  recoveryGroups: groupsTable,
+  recoveryReservations: reservationsTable,
   settlementAllocations: allocationsTable,
   commissionTerms: commissionTermsTable,
   commissionDecisions: commissionDecisionsTable,

@@ -5,11 +5,21 @@ merchants can explicitly opt into `2026-09-30.preview` for customer-configured
 Accounts. The package does not enable Connect or onboard a merchant/recipient
 when creating a buyer with `ensureCustomerAccount`.
 
+Connect users do not need the **Reusable payment methods for Global Payouts**
+toggle merely to use GA Accounts v2, ordinary Connect payouts, or marketplace
+splits. Non-Connect merchants using customer-configured Accounts do need that
+preview enabled, plus the supported preview request version. Actual Global
+Payouts credential reuse has separate preview eligibility for all users; see
+[Stripe's credential-reuse guide](https://docs.stripe.com/global-payouts/credential-reuse).
+Selecting a different API-reference version in Stripe's documentation does not
+enable the account feature or extend BetterStripe's supported-version list.
+
 ## Enable the sandbox feature first
 
 In the intended sandbox, the account owner must enable **Reusable payment
 methods for Global Payouts** under **Account previews and features**. If the toggle
-is unavailable, request access using Stripe's form. This also enables Stripe's
+is unavailable or disabled, check account-owner permissions and request access
+using Stripe's form. A disabled toggle alone does not identify the cause. This also enables Stripe's
 reusable payout credentials preview; it is not a Connect onboarding flow.
 Changing an API version cannot enable the feature on the Stripe account.
 

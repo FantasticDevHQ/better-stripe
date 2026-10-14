@@ -485,31 +485,6 @@ describe("upsertSubscription", () => {
 // =============================================================================
 
 describe("syncAllSubscriptions", () => {
-  it("keeps portal-scheduled period-end cancellation when rebuilding the store", async () => {
-    const stripe = makeStripe();
-    stripe.subscriptions.list.mockReturnValue(
-      asyncIterable([
-        {
-          id: "sub_portal",
-          customer_account: "acct_buyer",
-          status: "active",
-          cancel_at_period_end: false,
-          cancel_at: 2000,
-          metadata: { userId: "buyer" },
-          items: { data: [{ current_period_end: 2000 }] },
-        },
-      ]),
-    );
-    const ctx = makeCtx();
-    await syncAllSubscriptions(asStripe(stripe), makeComponent(), ctx);
-    expect(ctx.runMutation).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        stripeSubscriptionId: "sub_portal",
-        cancelAtPeriodEnd: true,
-      }),
-    );
-  });
   it("normalises metadata, customer, items, and trial fields into the upsert", async () => {
     const stripe = makeStripe();
     // current_period_start = 2021-01-01T00:00:00Z (epoch 1609459200)

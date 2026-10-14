@@ -72,6 +72,10 @@ closed. Existing refund/dispute reversal APIs recover these original legs too.
 Stripe API idempotency is an additional safeguard, not the only recovery record.
 Do not delete financial component records while payments can be retried or reversed.
 
+The Vite example exposes a [fee-first allocation preview](http://localhost:5173/demo/allocation)
+from Admin → Testing Utilities. Its illustrative inputs use the public helper
+and the package React `SplitBreakdown`; they do not alter store settings.
+
 ## Subscription commission terms
 
 ```ts

@@ -38,6 +38,20 @@ function setup(content = raw, pullRequest = pr()) {
   };
 }
 describe("formatReleaseChangelog", () => {
+  it("preserves historical inline and fenced function calls during cleanup", async () => {
+    const history =
+      "## 0.11.0\n\nUse `stage()`, `submit()` and `v.any()` unchanged.\n\n```typescript\nexport const { syncWebhook, asyncWebhook } = stripe.webhookHandlers();\nconst triggers = stripe.triggersApi();\n```\n";
+    const notes =
+      "## 0.12.0\n\n- Add cancellation (https://linear.app/dojoco/issue/BTS-150/cancel).\n\n" +
+      history;
+    const { request, run } = setup(notes);
+    expect(await run()).toBe(true);
+    const update = JSON.parse(request.mock.calls[2][1].body);
+    const output = Buffer.from(update.content, "base64").toString();
+    expect(output).toContain(history);
+    expect(output).toContain("- Add cancellation.");
+    expect(output).not.toContain("linear.app");
+  });
   it("removes internal references while retaining public descriptions and links", async () => {
     const notes = `## [0.12.0](https://example.com/compare) (2026-10-14)
 

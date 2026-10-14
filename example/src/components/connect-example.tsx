@@ -48,7 +48,7 @@ export function ConnectExample({ kind }: { kind: ConnectComponent }) {
             Stripe shows this account's own charges and supported destination
             charges here. The example's marketplace sales use platform charges
             with separate seller and affiliate transfers. Manage those sales,
-            refunds, and disputes in the Headless view.
+            refunds, and disputes in the via API view.
           </AlertDescription>
         </Alert>
       )}
@@ -85,7 +85,7 @@ export function ConnectExample({ kind }: { kind: ConnectComponent }) {
                   {completed && (
                     <p role="status">
                       Account setup completed. Review the latest requirements in
-                      the Headless view.
+                      the via API view.
                     </p>
                   )}
                   {error ? (

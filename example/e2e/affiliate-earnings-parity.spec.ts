@@ -41,7 +41,7 @@ test("affiliate earnings components match headless cards and amounts", async ({
     const layout = await cards.evaluateAll((nodes) =>
       nodes.map((node) => {
         const rect = node.getBoundingClientRect();
-        const style = getComputedStyle(node);
+        const style = node.ownerDocument.defaultView!.getComputedStyle(node);
         return {
           x: rect.x,
           y: rect.y,

@@ -39,7 +39,7 @@ test("seller earnings components match headless balance and payout cards", async
     const layout = await cards.evaluateAll((nodes) =>
       nodes.map((node) => {
         const rect = node.getBoundingClientRect();
-        const style = getComputedStyle(node);
+        const style = node.ownerDocument.defaultView!.getComputedStyle(node);
         return {
           x: rect.x,
           y: rect.y,

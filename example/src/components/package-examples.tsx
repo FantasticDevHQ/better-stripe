@@ -36,7 +36,7 @@ export function ProductComponents() {
       <h1 className="text-2xl font-bold">Products</h1>
       <p className="text-sm text-muted-foreground">
         PriceCard renders the same catalog prices through the package's render
-        prop. Create and edit products in Headless.
+        prop. Create and edit products in the via API tab.
       </p>
       {!products ? (
         <p role="status">Loading products…</p>
@@ -113,8 +113,8 @@ export function SubscriptionComponents() {
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">Subscriptions</h1>
       <p className="text-sm text-muted-foreground">
-        SubscriptionCard displays current Stripe subscription state. Use
-        Headless for subscription actions.
+        SubscriptionCard displays current Stripe subscription state. Use the via
+        API tab for subscription actions.
       </p>
       {!rows ? (
         <p role="status">Loading subscriptions…</p>

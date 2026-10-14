@@ -2,8 +2,8 @@
 import { useState, type ReactNode } from "react";
 export type IntegrationMode = "headless" | "components" | "embedded" | "hosted";
 const labels: Record<IntegrationMode, string> = {
-  headless: "Headless",
-  components: "Components",
+  headless: "via API",
+  components: "BetterStripe components",
   embedded: "Stripe embedded",
   hosted: "Stripe hosted",
 };

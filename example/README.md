@@ -838,7 +838,7 @@ and [the page audit](../docs/react-workflows-audit.md) for the complete mapping.
 The example is a developer reference. Supported workflows expose a presentation
 switch without changing the active persona, store, referral code, or account:
 
-| Workflow                              | Headless example                                            | Package components                  | Stripe UI alternative                                          |
+| Workflow                              | via API example                                             | Package components                  | Stripe UI alternative                                          |
 | ------------------------------------- | ----------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | Seller and affiliate earnings         | Custom earnings cards and ledger                            | `EarningsSummary`                   | Connect Balances                                               |
 | Seller and affiliate payouts          | Live balances, upcoming payouts, paginated history          | `PayoutSchedule`                    | Connect Payouts                                                |
@@ -864,29 +864,35 @@ The marketplace uses **separate charges and transfers**: the platform owns the
 charge and transfers earnings to seller and affiliate accounts. Connect Payments
 and Disputes show connected-account charges and supported destination charges;
 they do not turn the platform's separate-charge ledger into seller-owned charges.
-Use Headless to manage those marketplace purchases. The embedded example explains
+Use via API to manage those marketplace purchases. The embedded example explains
 this boundary and reports account/session eligibility errors with a Retry action.
 Do not compare an empty connected-account payment list with the platform ledger
 as though they were the same dataset.
 
 Products and subscription catalogs have no Connect embedded management component.
-The Components views demonstrate the package's compact React displays against the same
+The BetterStripe components views demonstrate the package's compact React displays against the same
 catalog and subscription data. Customer Subscriptions uses the same layout,
 current plan, lifecycle controls, billing portal, and recent invoices in both tabs.
-Headless calls `useSubscriptionManager`; Components renders `SubscriptionManager`
+The via API view calls `useSubscriptionManager`; BetterStripe components renders `SubscriptionManager`
 with the shared styled render function. Both use the package's validation and
 pending/error handling. Seller/admin subscription actions and catalog mutations
-remain in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
+remain in via API. The Billing Portal is a separate Stripe-hosted page, not an iframe.
 See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).
 
 Affiliate Referral earnings also shares its four metric cards, commission
-explanation, account details, and loading/zero states between Headless and
-Components. Components uses `EarningsSummary` render props for populated earnings;
+explanation, account details, and loading/zero states between via API and
+BetterStripe components. The latter uses `EarningsSummary` render props for populated earnings;
 `Earnings` supplies the shared metrics and loading/zero presentation.
 
 Seller Earnings uses the same styled `EarningsSummary`, `PayoutSchedule`, and
-`PayoutHistory` in Headless and Components. Both tabs read the selected store's
+`PayoutHistory` in via API and BetterStripe components. Both tabs read the selected store's
 recipient balance and payouts, rather than substituting transfer-ledger totals.
+
+The integration tabs distinguish UI ownership: **via API** uses BetterStripe
+hooks and API-backed workflows with app-rendered UI; **BetterStripe components**
+uses the package's React components, styled by the example app. **Stripe embedded**
+and **Stripe hosted** use Stripe's UI. Existing `example=headless` links and the
+`headless` package mode value remain compatible; only the visible name changed.
 
 ### Choose a checkout type
 

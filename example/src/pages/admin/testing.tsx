@@ -68,7 +68,12 @@ export function AdminTesting() {
       <Button
         nativeButton={false}
         role="link"
-        render={<Link to="/demo/allocation" />}
+        render={
+          <Link
+            to="/demo/allocation"
+            aria-label="Explore fee-first allocation"
+          />
+        }
       >
         Explore fee-first allocation
       </Button>

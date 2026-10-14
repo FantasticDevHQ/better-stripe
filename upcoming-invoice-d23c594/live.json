@@ -1,0 +1,19 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "realComponentStore": true,
+  "completePagination": {
+    "embeddedLines": 10,
+    "completeLines": 26,
+    "initialHasMore": true
+  },
+  "authoritativeAmounts": {
+    "total": 3400,
+    "amountDue": 3400,
+    "currency": "usd"
+  },
+  "millisecondProviderBillingDate": true,
+  "ownershipMismatchRejected": true,
+  "noChargeTrial": true,
+  "fixturesCleaned": true
+}

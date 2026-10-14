@@ -1,0 +1,25 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/billing/invoicePreview.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/billing/invoicePreview.test.ts [ src/client/billing/invoicePreview.test.ts ]
+Error: Cannot find module './invoicePreview.js' imported from <repo>/src/client/billing/invoicePreview.test.ts
+ ❯ src/client/billing/invoicePreview.test.ts:3:1
+      1| import type Stripe from "stripe";
+      2| import { describe, expect, it, vi } from "vitest";
+      3| import { getUpcomingInvoicePreview } from "./invoicePreview.js";
+       | ^
+      4|
+      5| const opts = { customerAccount: "acct_buyer", stripeSubscriptionId: "s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  21:57:12
+   Duration  169ms (worker 98%, environment 2%)
+

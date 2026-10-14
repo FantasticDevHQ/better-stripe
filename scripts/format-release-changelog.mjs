@@ -3,6 +3,18 @@
 import { pathToFileURL } from "node:url";
 import { format, resolveConfig } from "prettier";
 
+function publicChangelog(source) {
+  return source
+    .replace(
+      /\[([^\]]*)\]\(https?:\/\/(?:www\.)?linear\.app\/[^\s)]*\)/gi,
+      "$1",
+    )
+    .replace(/https?:\/\/(?:www\.)?linear\.app\/[^\s)]*/gi, "")
+    .replace(/[ \t]*\([ \t]*BTS(?:-\d+)?[ \t]*\)/gi, "")
+    .replace(/[ \t]*\bBTS(?:-\d+)?\b/gi, "")
+    .replace(/[ \t]*\([ \t]*\)/g, "");
+}
+
 export async function formatReleaseChangelog({
   repository,
   prNumber,
@@ -53,7 +65,7 @@ export async function formatReleaseChangelog({
   )
     throw new Error("Release changelog content is unavailable.");
   const original = Buffer.from(file.content, "base64").toString("utf8");
-  const formatted = await format(original, {
+  const formatted = await format(publicChangelog(original), {
     ...(await resolveConfig("CHANGELOG.md")),
     filepath: "CHANGELOG.md",
   });

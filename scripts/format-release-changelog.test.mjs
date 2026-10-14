@@ -38,6 +38,34 @@ function setup(content = raw, pullRequest = pr()) {
   };
 }
 describe("formatReleaseChangelog", () => {
+  it("removes internal references while retaining public descriptions and links", async () => {
+    const notes = `## [0.12.0](https://example.com/compare) (2026-10-14)
+
+### Features
+
+* **billing:** add funding consent (BTS-138) ([#149](https://github.com/FantasticDevHQ/better-stripe/pull/149)) ([16434c4](https://github.com/FantasticDevHQ/better-stripe/commit/16434c4))
+* Add [recipient retries](https://linear.app/dojoco/issue/BTS-149/retry).
+* Fix [BTS-150](https://linear.app/dojoco/issue/BTS-150/cancel) cancellation.
+* Support payout status (https://linear.app/dojoco/issue/BTS-150/cancel).
+`;
+    const { request, run } = setup(notes);
+    expect(await run()).toBe(true);
+    const update = JSON.parse(request.mock.calls[2][1].body);
+    const output = Buffer.from(update.content, "base64").toString();
+    expect(output).not.toMatch(/\bBTS\b|linear\.app/i);
+    expect(output).toContain(
+      "## [0.12.0](https://example.com/compare) (2026-10-14)",
+    );
+    expect(output).toContain(
+      "add funding consent ([#149](https://github.com/FantasticDevHQ/better-stripe/pull/149)) ([16434c4](https://github.com/FantasticDevHQ/better-stripe/commit/16434c4))",
+    );
+    expect(output).toContain("Add recipient retries.");
+    expect(output).toContain("Fix cancellation.");
+    expect(output).toContain("Support payout status.");
+    const repeated = setup(output);
+    expect(await repeated.run()).toBe(false);
+    expect(repeated.request).toHaveBeenCalledTimes(2);
+  });
   it("formats generated markdown and commits only the changelog on the release branch", async () => {
     const { request, run } = setup();
     expect(await run()).toBe(true);

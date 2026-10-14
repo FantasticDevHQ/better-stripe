@@ -1,0 +1,10 @@
+{
+  "source": "official npm registry install",
+  "version": "0.10.2",
+  "gaVersion": "2026-09-30.endive",
+  "previewVersion": "2026-09-30.preview",
+  "instanceWebhookRoute": true,
+  "invalidVersionRejected": true,
+  "reactPayoutsExport": true,
+  "packagedPortalCancellationFix": true
+}

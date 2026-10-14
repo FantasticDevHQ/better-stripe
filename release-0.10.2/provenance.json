@@ -1,0 +1,38 @@
+[
+  {
+    "predicateType": "https://slsa.dev/provenance/v1",
+    "subject": [
+      {
+        "name": "pkg:npm/%40fantastic.dev/better-stripe@0.10.2",
+        "digest": {
+          "sha512": "9d405f22504655e0f894a3b9449f980586a851de03443c625366d4e16f3e56920bca3edf5fb0ca42057e1fa7db2904d42748317e9f8ca962e80a88f85531523c"
+        }
+      }
+    ],
+    "buildDefinition": {
+      "buildType": "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1",
+      "externalParameters": {
+        "workflow": {
+          "ref": "refs/heads/main",
+          "repository": "https://github.com/FantasticDevHQ/better-stripe",
+          "path": ".github/workflows/release.yml"
+        }
+      },
+      "internalParameters": {
+        "github": {
+          "event_name": "push",
+          "repository_id": "1191609145",
+          "repository_owner_id": "308239440"
+        }
+      },
+      "resolvedDependencies": [
+        {
+          "uri": "git+https://github.com/FantasticDevHQ/better-stripe@refs/heads/main",
+          "digest": {
+            "gitCommit": "b5e08e99477a85b604bcd44fb8c0e617e610583f"
+          }
+        }
+      ]
+    }
+  }
+]

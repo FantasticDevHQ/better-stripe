@@ -1,0 +1,10 @@
+{
+  "version": "0.10.2",
+  "dist.integrity": "sha512-nUBfIlBGVeD4lKO5RJ+YBYaoUd4DRDxiU2bU4W8+VpILyj7fX7DKQgV+H6fbKQTUJ0gxfp+MqWLoCoj4VTFSPA==",
+  "dist.attestations": {
+    "url": "https://registry.npmjs.org/-/npm/v1/attestations/@fantastic.dev%2fbetter-stripe@0.10.2",
+    "provenance": {
+      "predicateType": "https://slsa.dev/provenance/v1"
+    }
+  }
+}

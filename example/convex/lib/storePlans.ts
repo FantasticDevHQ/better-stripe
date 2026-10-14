@@ -33,6 +33,7 @@ export function settleStoreSale(args: {
   processingFee: number;
   planId: StorePlanId;
   referred: boolean;
+  feeBasisPoints?: number | null;
 }) {
   const { gross, processingFee, planId } = args;
   if (
@@ -45,13 +46,21 @@ export function settleStoreSale(args: {
     throw new Error("Invalid sale or Stripe processing fee.");
   const plan = STORE_PLANS.find((p) => p.id === planId);
   if (!plan) throw new Error("Unknown store plan.");
+  const feeBasisPoints =
+    args.feeBasisPoints === undefined
+      ? plan.feeBasisPoints
+      : args.feeBasisPoints;
+  if (
+    feeBasisPoints !== null &&
+    (!Number.isSafeInteger(feeBasisPoints) ||
+      feeBasisPoints < 0 ||
+      feeBasisPoints > 10000)
+  )
+    throw new Error("Invalid store plan sale fee.");
   const sellingFee =
-    plan.feeBasisPoints === null
+    feeBasisPoints === null
       ? processingFee
-      : Math.max(
-          processingFee,
-          Math.round((gross * plan.feeBasisPoints) / 10000),
-        );
+      : Math.max(processingFee, Math.round((gross * feeBasisPoints) / 10000));
   const net = gross - sellingFee;
   const affiliateNet = args.referred ? Math.floor(net * 0.2) : 0;
   return {

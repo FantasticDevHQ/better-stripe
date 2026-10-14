@@ -251,3 +251,13 @@ loading. The example's affiliate sales page uses this with the component query
 `connect.queries.paginateTransfersByAccount`, which returns newest-first cursor
 pages scoped to the recipient account. Earnings totals still use aggregate
 queries independently of pagination.
+
+## Store-plan pricing editor
+
+`PlanPricingEditor` accepts a `plan` with `id`, `name`, `monthlyAmount` in minor
+units, nullable `feeBasisPoints`, and `version`, plus `onSave(update)`. The update
+contains `monthlyAmount`, `feeBasisPoints`, and `expectedVersion`. Blank fees
+mean processing-only. Native fields are unstyled; use the render prop to supply
+your design system. Server-side authorization, fee floors, Stripe Price creation,
+and conflict checks belong in your backend. Existing subscription migration is
+an application policy, not an automatic side effect of this editor.

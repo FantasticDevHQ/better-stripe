@@ -27,6 +27,7 @@ export const ensureCatalog = internalAction({
     { planId: StorePlanId; stripeProductId: string; stripePriceId: string }[]
   > => {
     const raw = getStripeClient();
+    const plans = await ctx.runQuery(internal.storePlanPricing.read, {});
     const cached = await ctx.runQuery(
       internal.storePlanBilling.readCatalog,
       {},
@@ -37,9 +38,11 @@ export const ensureCatalog = internalAction({
       new Set(cached.map((p) => p.stripeProductId)).size === cached.length;
     const result = distinct ? [...cached] : [];
     if (result.length === STORE_PLANS.length) return result;
-    for (const plan of STORE_PLANS) {
+    for (const plan of plans) {
       if (result.some((p) => p.planId === plan.id)) continue;
-      const key = storePlanLookupKey(plan.id);
+      const key =
+        storePlanLookupKey(plan.id) +
+        (plan.version ? `_${plan.version}_${plan.monthlyAmount}` : "");
       const found = await raw.prices.list({ lookup_keys: [key], limit: 1 });
       let price = found.data[0];
       if (!price) {
@@ -97,8 +100,10 @@ export const refreshSubscription = internalAction({
       catalog.find((p) => p.stripePriceId === item?.price.id)?.planId ??
       STORE_PLANS.find(
         (p) =>
+          item?.price.metadata?.storePlanId === p.id ||
+          item?.price.lookup_key === storePlanLookupKey(p.id) ||
           item?.price.lookup_key ===
-          storePlanLookupKey(p.id).replace("_v2", "_v1"),
+            storePlanLookupKey(p.id).replace("_v2", "_v1"),
       )?.id;
     if (!planId || sub.items.data.length !== 1 || item.quantity !== 1)
       throw new Error("Unrecognized store plan subscription.");
@@ -269,12 +274,16 @@ export const manage = action({
       (typeof currentPrice.product === "string"
         ? currentPrice.product
         : currentPrice.product.id);
-    if (
-      currentPrice &&
-      currentProduct &&
-      !products.some((p) => p.product === currentProduct)
-    )
-      products.push({ product: currentProduct, prices: [currentPrice.id] });
+    if (currentPrice && currentProduct) {
+      const existingProduct = products.find(
+        (product) => product.product === currentProduct,
+      );
+      if (existingProduct) {
+        if (!existingProduct.prices.includes(currentPrice.id))
+          existingProduct.prices.push(currentPrice.id);
+      } else
+        products.push({ product: currentProduct, prices: [currentPrice.id] });
+    }
     const configuration = await raw.billingPortal.configurations.create({
       business_profile: { headline: "Manage your BetterStripe store plan" },
       features: {

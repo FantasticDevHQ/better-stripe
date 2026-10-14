@@ -986,3 +986,23 @@ Custom Checkout treats a session-provided email as read-only. A guest without a
 session email can enter one and edit it after a failed payment. Affiliate
 earnings previews show the newest 50 transfers; aggregate totals still include
 the complete ledger.
+
+### Configure store-plan pricing
+
+As Admin, open **Store plans** to set Starter, Growth, and Pro monthly USD prices
+and sale fee percentages. The defaults remain $9/9%, $49/4.9%, and $99/Stripe
+processing only. Leave the sale fee blank for processing only. All sale fees keep
+the processing-cost floor, so the platform never absorbs Stripe processing.
+
+Saving a monthly-price change creates a new immutable Stripe monthly Price for
+future subscriptions. Existing subscribers keep their existing monthly Price,
+including at renewal. Their previous prices remain active and recognized by the
+billing webhook. Sale fee changes apply to future settlements; settled sales
+keep their recorded economics. The seller Billing cards read the saved pricing.
+Admin updates reject invalid amounts, non-admin personas, and stale versions.
+
+The reusable unstyled `PlanPricingEditor` in `better-stripe/react` owns decimal
+input validation and save/pending/error handling; the example supplies card,
+input, and button styling. The example backend authorizes the admin persona,
+creates the Stripe Price, and publishes catalog and fee settings atomically.
+Like the rest of this demo, personas use mock users rather than production auth.

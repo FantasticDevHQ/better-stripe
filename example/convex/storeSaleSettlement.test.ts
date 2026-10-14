@@ -275,3 +275,40 @@ it("retries settlement itself when Stripe fees arrive after the webhook", async 
     vi.useRealTimers();
   }
 });
+it("applies admin-configured sale fees and keeps settled economics unchanged on retry", async () => {
+  const { t, sellerId } = await setup("starter", true);
+  const settingsId = await t.run((ctx) =>
+    ctx.db.insert("storePlanSettings", {
+      planId: "starter",
+      monthlyAmount: 1200,
+      feeBasisPoints: 750,
+      version: 1,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  const [sale] = await t.query(api.storeSaleSettlement.listSellerSales, {
+    sellerId,
+  });
+  expect(sale).toMatchObject({
+    sellingFee: 750,
+    processingFee: 320,
+    platformNet: 430,
+    sellerNet: 7400,
+    affiliateNet: 1850,
+  });
+  await t.run((ctx) =>
+    ctx.db.patch("storePlanSettings", settingsId, {
+      feeBasisPoints: 9000,
+      version: 2,
+    }),
+  );
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    (await t.query(api.storeSaleSettlement.listSellerSales, { sellerId }))[0],
+  ).toEqual(sale);
+  expect(raw.transfers.create).toHaveBeenCalledTimes(2);
+});

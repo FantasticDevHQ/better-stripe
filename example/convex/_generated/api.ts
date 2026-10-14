@@ -45,6 +45,7 @@ import type * as storeBillingEvents from "../storeBillingEvents.js";
 import type * as storeInvoiceActions from "../storeInvoiceActions.js";
 import type * as storePlanActions from "../storePlanActions.js";
 import type * as storePlanBilling from "../storePlanBilling.js";
+import type * as storePlanPricing from "../storePlanPricing.js";
 import type * as storeSaleSettlement from "../storeSaleSettlement.js";
 import type * as storefront from "../storefront.js";
 import type * as stripe from "../stripe.js";
@@ -97,6 +98,7 @@ const fullApi: ApiFromModules<{
   storeInvoiceActions: typeof storeInvoiceActions;
   storePlanActions: typeof storePlanActions;
   storePlanBilling: typeof storePlanBilling;
+  storePlanPricing: typeof storePlanPricing;
   storeSaleSettlement: typeof storeSaleSettlement;
   storefront: typeof storefront;
   stripe: typeof stripe;

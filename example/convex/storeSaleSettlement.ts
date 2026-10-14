@@ -187,11 +187,14 @@ export const settle = internalAction({
     // Existing customer renewals use the seller's current paid tier. If the store
     // is suspended, honor already-paid customer orders using its last paid tier.
     const planId = (seller.storePlan?.planId ?? metadata.planId) as StorePlanId;
+    const plans = await ctx.runQuery(internal.storePlanPricing.read, {});
+    const configuredPlan = plans.find((plan) => plan.id === planId);
     const economics = settleStoreSale({
       gross: payment.amount_received,
       processingFee: balance.fee,
       planId,
       referred: !!metadata.affiliateAccountId,
+      feeBasisPoints: configuredPlan?.feeBasisPoints,
     });
     const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.storeSaleSettlement.reserve,

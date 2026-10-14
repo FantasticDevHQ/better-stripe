@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { STORE_PLANS, type StorePlanId } from "../../../convex/lib/storePlans";
+import { type StorePlanId } from "../../../convex/lib/storePlans";
 
 export function SellerPlan() {
   const { currentUser } = useRole();
@@ -21,6 +21,7 @@ export function SellerPlan() {
     api.storePlanBilling.getState,
     sellerId ? { sellerId } : "skip",
   );
+  const plans = useQuery(api.storePlanPricing.list, {});
   const publishableKey = useQuery(api.queries.getPublishableKey);
   const createCheckout = useAction(api.storePlanActions.createCheckout);
   const manage = useAction(api.storePlanActions.manage);
@@ -98,7 +99,7 @@ export function SellerPlan() {
       )}
       {!clientSecret && (
         <div className="grid gap-4 md:grid-cols-3">
-          {STORE_PLANS.map((plan) => (
+          {plans?.map((plan) => (
             <Card key={plan.id}>
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
@@ -137,11 +138,11 @@ export function SellerPlan() {
         />
       )}
       <p className="text-sm text-muted-foreground">
-        Stripe processing is included in the 9% and 4.9% sale fees. If actual
-        processing costs more, you pay that higher amount. The platform keeps
-        the difference and never absorbs processing fees. Pro has no platform
-        transaction fee. Referred sales pay the affiliate 20% of the amount
-        remaining after the sale fee.
+        The seller pays the greater of the configured sale fee or actual Stripe
+        processing. The platform keeps the difference and never absorbs Stripe
+        fees. Referred sales pay the affiliate 20% of the amount remaining after
+        the sale fee. Updated monthly prices apply to new subscriptions;
+        existing subscriptions keep their current price.
       </p>
     </div>
   );

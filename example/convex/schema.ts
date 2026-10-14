@@ -47,6 +47,12 @@ export default defineSchema({
     previousPaymentMethodTypes: v.optional(v.array(v.string())),
     consentAt: v.number(),
   }).index("by_seller", ["sellerId"]),
+  storePlanSettings: defineTable({
+    planId: storePlanIdValidator,
+    monthlyAmount: v.number(),
+    feeBasisPoints: v.union(v.number(), v.null()),
+    version: v.number(),
+  }).index("by_plan", ["planId"]),
   storePlanCatalog: defineTable({
     planId: storePlanIdValidator,
     stripeProductId: v.string(),

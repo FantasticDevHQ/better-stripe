@@ -238,3 +238,10 @@ export type {
 } from "./Financials.js";
 export { Pagination, useCursorPagination } from "./Pagination.js";
 export type { PaginationProps } from "./Pagination.js";
+export { PlanPricingEditor } from "./PlanPricingEditor.js";
+export type {
+  PlanPricing,
+  PlanPricingUpdate,
+  PlanPricingEditorState,
+  PlanPricingEditorProps,
+} from "./PlanPricingEditor.js";

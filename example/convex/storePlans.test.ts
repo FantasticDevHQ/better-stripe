@@ -113,3 +113,38 @@ describe("seller store plans", () => {
     ).toThrow();
   });
 });
+
+it("uses configured sale fees while keeping the Stripe processing floor and exact splits", () => {
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "starter",
+      feeBasisPoints: 750,
+      referred: true,
+    }),
+  ).toMatchObject({
+    sellingFee: 750,
+    platformNet: 430,
+    affiliateNet: 1850,
+    sellerNet: 7400,
+  });
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "starter",
+      feeBasisPoints: 100,
+      referred: false,
+    }),
+  ).toMatchObject({ sellingFee: 320, platformNet: 0, sellerNet: 9680 });
+  expect(
+    settleStoreSale({
+      gross: 10000,
+      processingFee: 320,
+      planId: "growth",
+      feeBasisPoints: null,
+      referred: true,
+    }).platformNet,
+  ).toBe(0);
+});

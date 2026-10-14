@@ -7,6 +7,7 @@ import {
 } from "@/components/package-examples";
 import { AppShell } from "@/components/app-shell";
 import { AdminOverview } from "@/pages/admin/index";
+import { AdminStorePlans } from "@/pages/admin/store-plans";
 import { AdminProducts } from "@/pages/admin/products";
 import { AdminSubscriptions } from "@/pages/admin/subscriptions";
 import { AdminTesting } from "@/pages/admin/testing";
@@ -198,6 +199,7 @@ export default function App() {
 
           {/* Admin routes */}
           <Route path="/admin" element={<AdminOverview />} />
+          <Route path="/admin/store-plans" element={<AdminStorePlans />} />
           <Route
             path="/admin/products"
             element={

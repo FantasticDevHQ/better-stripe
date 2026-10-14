@@ -54,20 +54,20 @@ async function resolveProductStatementDescriptor(
 // Product methods
 // =============================================================================
 
+export type CreateProductOptions = {
+  name: string;
+  description?: string;
+  active?: boolean;
+  accountId?: string;
+  metadata?: Record<string, string>;
+  idempotencyKey?: string;
+};
+
 export async function createProduct(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: {
-    name: string;
-    description?: string;
-    active?: boolean;
-    accountId?: string;
-    metadata?: Record<string, string>;
-    idempotencyKey?: string;
-    /** Platform default statement-descriptor suffix (BetterStripe option). */
-    defaultStatementDescriptorSuffix?: string;
-  },
+  opts: CreateProductOptions & { defaultStatementDescriptorSuffix?: string },
 ) {
   const statementDescriptor = await resolveProductStatementDescriptor(
     component,

@@ -871,8 +871,12 @@ as though they were the same dataset.
 
 Products and subscription catalogs have no Connect embedded management component.
 The Components views demonstrate the package's compact React displays against the same
-catalog and subscription data. Catalog mutations and subscription actions remain
-in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
+catalog and subscription data. Customer Subscriptions uses the same layout,
+current plan, lifecycle controls, billing portal, and recent invoices in both tabs.
+Headless calls `useSubscriptionManager`; Components renders `SubscriptionManager`
+with the shared styled render function. Both use the package's validation and
+pending/error handling. Seller/admin subscription actions and catalog mutations
+remain in Headless. The Billing Portal is a separate Stripe-hosted page, not an iframe.
 See [Stripe's supported Connect embeds](https://docs.stripe.com/connect/supported-embedded-components?platform=web).
 
 ### Choose a checkout type

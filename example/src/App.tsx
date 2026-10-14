@@ -104,7 +104,7 @@ export default function App() {
             element={
               <IntegrationExamples
                 headless={<Billing />}
-                components={<SubscriptionComponents />}
+                components={<Billing integration="components" />}
                 hosted={<HostedBillingExample />}
               />
             }

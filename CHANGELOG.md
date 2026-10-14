@@ -16,10 +16,9 @@
 
 ## [0.10.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.10.1...v0.10.2) (2026-10-14)
 
-
 ### Bug Fixes
 
-* sync portal cancellations and clarify preview setup ([#143](https://github.com/FantasticDevHQ/better-stripe/issues/143)) ([62998ae](https://github.com/FantasticDevHQ/better-stripe/commit/62998aed54946711619a3af82ad44b6cf8406abc))
+- sync portal cancellations and clarify preview setup ([#143](https://github.com/FantasticDevHQ/better-stripe/issues/143)) ([62998ae](https://github.com/FantasticDevHQ/better-stripe/commit/62998aed54946711619a3af82ad44b6cf8406abc))
 
 ## [0.10.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.10.0...v0.10.1) (2026-10-14)
 

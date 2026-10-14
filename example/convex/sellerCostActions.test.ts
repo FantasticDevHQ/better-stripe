@@ -5,13 +5,25 @@ import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 const raw = vi.hoisted(() => ({
-  paymentIntents: { retrieve: vi.fn() },
-  refunds: { list: vi.fn() },
-  disputes: { list: vi.fn() },
   invoices: { retrieve: vi.fn() },
   invoiceItems: { list: vi.fn(), create: vi.fn() },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
+const client = vi.hoisted(() => ({ getProcessingCostContext: vi.fn() }));
+vi.mock("./stripe", () => ({ stripe: client }));
+const costContext = {
+  status: "ready",
+  paymentIntentId: "pi_sale",
+  chargeId: "ch_sale",
+  currency: "usd",
+  gross: 10000,
+  metadata: {},
+  processingFee: 320,
+  refundFeeAdjustment: 0,
+  disputeFeeAdjustment: 0,
+  principalReturned: 10000,
+  disputes: [],
+};
 const modules = import.meta.glob("./**/*.*s");
 beforeEach(() => vi.resetAllMocks());
 async function setup() {
@@ -41,18 +53,7 @@ async function setup() {
       status: "settled",
     }),
   );
-  raw.paymentIntents.retrieve.mockResolvedValue({
-    id: "pi_sale",
-    latest_charge: {
-      id: "ch_sale",
-      amount_refunded: 10000,
-      balance_transaction: { fee: 320 },
-    },
-  });
-  raw.refunds.list.mockResolvedValue({
-    data: [{ status: "succeeded", balance_transaction: { fee: 0 } }],
-  });
-  raw.disputes.list.mockResolvedValue({ data: [] });
+  client.getProcessingCostContext.mockResolvedValue(costContext);
   raw.invoices.retrieve.mockResolvedValue({
     id: "in_monthly",
     customer_account: "acct_store",
@@ -96,8 +97,9 @@ it("records actual non-refundable costs and adds them to the monthly invoice onc
 });
 it("waits for Stripe refund costs rather than recording an estimate", async () => {
   const { t, sellerId } = await setup();
-  raw.refunds.list.mockResolvedValue({
-    data: [{ status: "succeeded", balance_transaction: null }],
+  client.getProcessingCostContext.mockResolvedValue({
+    status: "not_ready",
+    reason: "refund_transaction_unavailable",
   });
   await expect(
     t.action(internal.sellerCostActions.reconcile, {
@@ -117,8 +119,9 @@ it("turns returned Stripe fees into a credit after the seller was already billed
     sellerId,
     invoiceId: "in_monthly",
   });
-  raw.refunds.list.mockResolvedValue({
-    data: [{ status: "succeeded", balance_transaction: { fee: -320 } }],
+  client.getProcessingCostContext.mockResolvedValue({
+    ...costContext,
+    refundFeeAdjustment: -320,
   });
   await t.action(internal.sellerCostActions.reconcile, {
     paymentIntentId: "pi_sale",
@@ -157,8 +160,9 @@ it("retries when the actual refund fee is delayed", async () => {
   vi.useFakeTimers();
   try {
     const { t, sellerId } = await setup();
-    raw.refunds.list.mockResolvedValue({
-      data: [{ status: "succeeded", balance_transaction: null }],
+    client.getProcessingCostContext.mockResolvedValue({
+      status: "not_ready",
+      reason: "refund_transaction_unavailable",
     });
     await t.action(internal.sellerCostActions.reconcileWhenReady, {
       paymentIntentId: "pi_sale",
@@ -166,9 +170,7 @@ it("retries when the actual refund fee is delayed", async () => {
     expect(
       await t.query(api.sellerCostBilling.list, { sellerId }),
     ).toHaveLength(0);
-    raw.refunds.list.mockResolvedValue({
-      data: [{ status: "succeeded", balance_transaction: { fee: 0 } }],
-    });
+    client.getProcessingCostContext.mockResolvedValue(costContext);
     await t.finishAllScheduledFunctions(() => vi.runAllTimers());
     expect(
       (await t.query(api.sellerCostBilling.list, { sellerId }))[0].amountDue,

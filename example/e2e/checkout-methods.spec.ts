@@ -110,15 +110,32 @@ for (const [mode, role, referralCode] of [
       settlement.processingFee,
       Math.round((settlement.gross * (plan.feeBasisPoints ?? 0)) / 10000),
     );
-    expect(settlement.affiliateBasisPoints).toBe(plan.affiliateBasisPoints);
+    const affiliateRate = convex("sellerAffiliateRates:get", {
+      sellerId: settlement.sellerId,
+      stripeProductId: settlement.stripeProductId,
+      stripePriceId: settlement.stripePriceId,
+    });
+    expect(settlement.affiliateFixedAmount ?? null).toBe(
+      affiliateRate.effectiveFixedAmount,
+    );
+    if (affiliateRate.effectiveFixedAmount == null)
+      expect(settlement.affiliateBasisPoints).toBe(
+        affiliateRate.effectiveBasisPoints,
+      );
     expect(settlement.sellingFee).toBe(expectedFee);
     expect(settlement.platformNet).toBe(expectedFee - settlement.processingFee);
     expect(settlement.affiliateNet).toBe(
       referralCode === "avery"
-        ? Math.floor(
-            ((settlement.gross - expectedFee) * plan.affiliateBasisPoints) /
-              10000,
-          )
+        ? affiliateRate.effectiveFixedAmount != null
+          ? Math.min(
+              settlement.gross - expectedFee,
+              Math.round(affiliateRate.effectiveFixedAmount * 100),
+            )
+          : Math.floor(
+              ((settlement.gross - expectedFee) *
+                affiliateRate.effectiveBasisPoints) /
+                10000,
+            )
         : 0,
     );
     expect(settlement.sellerNet).toBe(

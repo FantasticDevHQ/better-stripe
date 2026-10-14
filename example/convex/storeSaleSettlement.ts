@@ -151,9 +151,10 @@ export const settle = internalAction({
     const payment = await raw.paymentIntents.retrieve(args.paymentIntentId, {
       expand: ["latest_charge.balance_transaction"],
     });
-    const metadata = args.subscriptionId
-      ? (await raw.subscriptions.retrieve(args.subscriptionId)).metadata
-      : payment.metadata;
+    const subscription = args.subscriptionId
+      ? await raw.subscriptions.retrieve(args.subscriptionId)
+      : null;
+    const metadata = subscription?.metadata ?? payment.metadata;
     if (metadata.storeBilling !== "sale_v1" || payment.status !== "succeeded")
       return null;
     const charge = payment.latest_charge;
@@ -189,19 +190,38 @@ export const settle = internalAction({
     const planId = (seller.storePlan?.planId ?? metadata.planId) as StorePlanId;
     const plans = await ctx.runQuery(internal.storePlanPricing.read, {});
     const configuredPlan = plans.find((plan) => plan.id === planId);
+    const stripePriceId =
+      subscription?.items?.data[0]?.price.id ?? metadata.stripePriceId;
+    const affiliateRate = await ctx.runQuery(
+      internal.sellerAffiliateRates.resolve,
+      {
+        sellerId: seller.sellerId,
+        stripePriceId,
+        stripeProductId: stripePriceId ? undefined : metadata.stripeProductId,
+      },
+    );
     const economics = settleStoreSale({
       gross: payment.amount_received,
       processingFee: balance.fee,
       planId,
       referred: !!metadata.affiliateAccountId,
       feeBasisPoints: configuredPlan?.feeBasisPoints,
-      affiliateBasisPoints: configuredPlan?.affiliateBasisPoints,
+      affiliateBasisPoints: affiliateRate.effectiveBasisPoints,
+      affiliateFixedAmount: affiliateRate.effectiveFixedAmount,
+      currency: payment.currency,
     });
     const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.storeSaleSettlement.reserve,
       {
         ...economics,
-        affiliateBasisPoints: configuredPlan?.affiliateBasisPoints ?? 2000,
+        affiliateBasisPoints:
+          affiliateRate.effectiveFixedAmount == null
+            ? affiliateRate.effectiveBasisPoints
+            : undefined,
+        affiliateFixedAmount: affiliateRate.effectiveFixedAmount ?? undefined,
+        affiliateRateSource: affiliateRate.source,
+        stripeProductId: affiliateRate.stripeProductId,
+        stripePriceId: affiliateRate.stripePriceId,
         planId,
         chargeId: charge.id,
         paymentIntentId: payment.id,

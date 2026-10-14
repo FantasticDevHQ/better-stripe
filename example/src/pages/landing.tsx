@@ -34,7 +34,8 @@ export function Landing() {
         <Alert>
           <AlertDescription>
             Referred by Avery Affiliate. Avery earns a commission based on the
-            seller's store plan after the sale fee, at no extra cost to you.
+            seller's affiliate settings after the sale fee, at no extra cost to
+            you.
           </AlertDescription>
         </Alert>
       )}

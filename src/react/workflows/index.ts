@@ -245,3 +245,15 @@ export type {
   PlanPricingEditorState,
   PlanPricingEditorProps,
 } from "./PlanPricingEditor.js";
+export { AffiliateRateEditor } from "./AffiliateRateEditor.js";
+export type {
+  AffiliateRateUpdate,
+  AffiliateRateEditorProps,
+  AffiliateRateEditorState,
+} from "./AffiliateRateEditor.js";
+export { AffiliatePayoutEditor } from "./AffiliatePayoutEditor.js";
+export type {
+  AffiliatePayoutEditorProps,
+  AffiliatePayoutEditorState,
+  AffiliatePayoutUpdate,
+} from "./AffiliatePayoutEditor.js";

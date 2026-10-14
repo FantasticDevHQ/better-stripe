@@ -36,6 +36,7 @@ import type * as sandboxFixtureState from "../sandboxFixtureState.js";
 import type * as sandboxFixtures from "../sandboxFixtures.js";
 import type * as sandboxRenewals from "../sandboxRenewals.js";
 import type * as seed from "../seed.js";
+import type * as sellerAffiliateRates from "../sellerAffiliateRates.js";
 import type * as sellerCostActions from "../sellerCostActions.js";
 import type * as sellerCostBilling from "../sellerCostBilling.js";
 import type * as setup from "../setup.js";
@@ -89,6 +90,7 @@ const fullApi: ApiFromModules<{
   sandboxFixtures: typeof sandboxFixtures;
   sandboxRenewals: typeof sandboxRenewals;
   seed: typeof seed;
+  sellerAffiliateRates: typeof sellerAffiliateRates;
   sellerCostActions: typeof sellerCostActions;
   sellerCostBilling: typeof sellerCostBilling;
   setup: typeof setup;

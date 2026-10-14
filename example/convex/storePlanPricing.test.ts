@@ -165,3 +165,53 @@ it("saves an affiliate percentage independently per plan without creating a new 
     (await t.query(api.storePlanPricing.list, {}))[1].affiliateBasisPoints,
   ).toBe(1250);
 });
+
+it("keeps fixed plan payouts through billing edits, and can switch back to a percentage", async () => {
+  const t = convexTest(schema, modules);
+  const adminId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Admin",
+      email: "admin@example.com",
+      role: "admin",
+    }),
+  );
+  const edit = {
+    adminId,
+    planId: "growth" as const,
+    monthlyAmount: 4900,
+    feeBasisPoints: 490,
+    stripeProductId: "prod_growth",
+    stripePriceId: "price_growth",
+  };
+  await t.mutation(internal.storePlanPricing.publish, {
+    ...edit,
+    affiliateFixedAmount: 7.5,
+    expectedVersion: 0,
+  });
+  expect((await t.query(api.storePlanPricing.list, {}))[1]).toMatchObject({
+    affiliateFixedAmount: 7.5,
+  });
+  await t.mutation(internal.storePlanPricing.publish, {
+    ...edit,
+    expectedVersion: 1,
+  });
+  expect((await t.query(api.storePlanPricing.list, {}))[1]).toMatchObject({
+    affiliateFixedAmount: 7.5,
+  });
+  await t.mutation(internal.storePlanPricing.publish, {
+    ...edit,
+    affiliateBasisPoints: 1000,
+    expectedVersion: 2,
+  });
+  expect((await t.query(api.storePlanPricing.list, {}))[1]).toMatchObject({
+    affiliateFixedAmount: null,
+    affiliateBasisPoints: 1000,
+  });
+  await expect(
+    t.mutation(internal.storePlanPricing.publish, {
+      ...edit,
+      affiliateFixedAmount: -1,
+      expectedVersion: 3,
+    }),
+  ).rejects.toThrow(/non-negative/);
+});

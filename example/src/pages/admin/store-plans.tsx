@@ -1,3 +1,4 @@
+import { AffiliatePayoutControl } from "@/components/affiliate-payout-control";
 import { EmptyState } from "@/components/empty-state";
 import { PlanPricingEditor } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
@@ -35,7 +36,7 @@ export function AdminStorePlans() {
           example.
         </EmptyState>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-3">
           {plans.map((plan) => (
             <Card key={plan.id}>
               <CardHeader>
@@ -46,7 +47,9 @@ export function AdminStorePlans() {
                   plan={plan}
                   onSave={(values) =>
                     update({
-                      ...values,
+                      monthlyAmount: values.monthlyAmount,
+                      feeBasisPoints: values.feeBasisPoints,
+                      expectedVersion: values.expectedVersion,
                       planId: plan.id,
                       adminId: currentUser.id as Id<"users">,
                     })
@@ -55,10 +58,8 @@ export function AdminStorePlans() {
                   {({
                     monthlyPrice,
                     saleFee,
-                    affiliateShare,
                     setMonthlyPrice,
                     setSaleFee,
-                    setAffiliateShare,
                     save,
                     isPending,
                     error,
@@ -110,30 +111,6 @@ export function AdminStorePlans() {
                           processing.
                         </p>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`${plan.id}-affiliate`}>
-                          Affiliate payout (%)
-                        </Label>
-                        <Input
-                          id={`${plan.id}-affiliate`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          required
-                          inputMode="decimal"
-                          value={affiliateShare}
-                          disabled={isPending}
-                          onChange={(event) =>
-                            setAffiliateShare(event.target.value)
-                          }
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Share of a referred sale after the sale fee. The
-                          seller receives the remainder. Applies to future
-                          settlements.
-                        </p>
-                      </div>
                       {error && (
                         <p role="alert" className="text-sm text-destructive">
                           {error}
@@ -153,6 +130,44 @@ export function AdminStorePlans() {
                     </form>
                   )}
                 </PlanPricingEditor>
+                <div
+                  className="mt-4 space-y-2 border-t pt-4"
+                  data-testid={`plan-affiliate-${plan.id}`}
+                >
+                  <p className="text-sm font-medium">
+                    Default affiliate payout
+                  </p>
+                  <AffiliatePayoutControl
+                    scopeKey={`plan:${plan.id}`}
+                    version={plan.version}
+                    affiliateBasisPoints={
+                      plan.affiliateFixedAmount != null
+                        ? null
+                        : (plan.affiliateBasisPoints ?? 2000)
+                    }
+                    affiliateFixedAmount={plan.affiliateFixedAmount}
+                    effectiveBasisPoints={plan.affiliateBasisPoints ?? 2000}
+                    effectiveFixedAmount={plan.affiliateFixedAmount}
+                    currency="usd"
+                    onSave={(values) =>
+                      update({
+                        ...values,
+                        affiliateBasisPoints:
+                          values.affiliateBasisPoints ?? 2000,
+                        monthlyAmount: plan.monthlyAmount,
+                        feeBasisPoints: plan.feeBasisPoints,
+                        planId: plan.id,
+                        adminId: currentUser.id as Id<"users">,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Seller price and product overrides take priority. Fixed
+                    defaults use the sale's currency, for example 5 means EUR 5
+                    on a EUR sale. Payouts are capped at proceeds after fees.
+                    Clear restores 20%.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           ))}

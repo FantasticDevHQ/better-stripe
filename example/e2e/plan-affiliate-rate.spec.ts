@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { convex, fillPayment } from "./checkout-test-helpers";
 test.use({ video: "on" });
-test("admin sets a plan affiliate percentage and a sandbox checkout uses it", async ({
+test("admin sets a fixed plan affiliate payout and a sandbox checkout uses it", async ({
   page,
 }, testInfo) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
@@ -29,16 +29,27 @@ test("admin sets a plan affiliate percentage and a sandbox checkout uses it", as
       localStorage.setItem("betterlearn-role", "admin");
   });
   await page.goto("/admin/store-plans");
-  const form = page.getByRole("form", { name: "Growth pricing" });
-  const input = form.getByLabel("Affiliate payout (%)");
+  const form = page.getByTestId("plan-affiliate-growth");
+  const input = form.getByRole("spinbutton", {
+    name: "Affiliate payout",
+    exact: true,
+  });
   await expect(input).toBeVisible();
   const original = await input.inputValue();
+  const wasFixed =
+    (await form
+      .getByRole("button", { name: "Fixed amount in USD" })
+      .getAttribute("aria-pressed")) === "true";
   try {
-    await input.fill("12.5");
-    await form.getByRole("button", { name: "Save pricing" }).click();
-    await expect(form.getByRole("status")).toContainText("Pricing saved", {
-      timeout: 30000,
-    });
+    await form.getByRole("button", { name: "Fixed amount in USD" }).click();
+    await input.fill("7.5");
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(form.getByRole("status")).toContainText(
+      "Affiliate payout saved.",
+      {
+        timeout: 30000,
+      },
+    );
     await page.screenshot({
       path: testInfo.outputPath("admin-affiliate-rate.png"),
       fullPage: true,
@@ -50,9 +61,12 @@ test("admin sets a plan affiliate percentage and a sandbox checkout uses it", as
       .getByRole("link", { name: "Billing", exact: true })
       .click();
     await expect(
-      page.getByText("Affiliate payout: 12.5% after the sale fee.", {
-        exact: true,
-      }),
+      page.getByText(
+        "Default affiliate payout: 7.5 in the sale currency, capped at proceeds.",
+        {
+          exact: true,
+        },
+      ),
     ).toBeVisible();
     await page.getByRole("button", { name: "Visitor", exact: true }).click();
     await expect(page).toHaveURL(/\/stores/);
@@ -81,10 +95,8 @@ test("admin sets a plan affiliate percentage and a sandbox checkout uses it", as
       .poll(() => find()?.status, { timeout: 60000, intervals: [1000, 3000] })
       .toBe("settled");
     const sale = find();
-    expect(sale.affiliateBasisPoints).toBe(1250);
-    expect(sale.affiliateNet).toBe(
-      Math.floor(((sale.gross - sale.sellingFee) * 1250) / 10000),
-    );
+    expect(sale.affiliateFixedAmount).toBe(7.5);
+    expect(sale.affiliateNet).toBe(Math.min(sale.gross - sale.sellingFee, 750));
     expect(sale.gross).toBe(
       sale.processingFee +
         sale.platformNet +
@@ -123,11 +135,20 @@ test("admin sets a plan affiliate percentage and a sandbox checkout uses it", as
       .getByRole("link", { name: "Store plans", exact: true })
       .click();
     await expect(input).toBeVisible();
+    await form
+      .getByRole("button", {
+        name: wasFixed ? "Fixed amount in USD" : "Percentage",
+        exact: true,
+      })
+      .click();
     await input.fill(original);
-    await form.getByRole("button", { name: "Save pricing" }).click();
-    await expect(form.getByRole("status")).toContainText("Pricing saved", {
-      timeout: 30000,
-    });
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(form.getByRole("status")).toContainText(
+      "Affiliate payout saved.",
+      {
+        timeout: 30000,
+      },
+    );
     await expect(input).toHaveValue(original);
     await page.screenshot({
       path: testInfo.outputPath("restored-affiliate-rate.png"),

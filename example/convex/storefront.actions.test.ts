@@ -102,6 +102,8 @@ describe("storefront checkout", () => {
         amount: 12900,
         metadata: expect.objectContaining({
           storeBilling: "sale_v1",
+          stripeProductId: "prod_store",
+          stripePriceId: "price_store",
           sellerId: ids.seller,
           planId: "growth",
           affiliateAccountId: "",
@@ -123,6 +125,8 @@ describe("storefront checkout", () => {
         amount: 12900,
         metadata: expect.objectContaining({
           storeBilling: "sale_v1",
+          stripeProductId: "prod_store",
+          stripePriceId: "price_store",
           planId: "growth",
           affiliateAccountId: "acct_affiliate",
         }),
@@ -177,6 +181,8 @@ it("creates Payment Intents from server prices with the same referral settlement
       currency: "usd",
       metadata: expect.objectContaining({
         storeBilling: "sale_v1",
+        stripeProductId: "prod_store",
+        stripePriceId: "price_store",
         sellerId: ids.seller,
         userId: ids.customer,
         affiliateAccountId: "acct_affiliate",

@@ -269,3 +269,33 @@ save update, defaulting to 2000. Its render state exposes `affiliateShare` and
 Omitting the field in an older backend request preserves an existing configured
 rate. The example applies this rate after sale fees and records it with each
 settled sale.
+
+## Product and subscription affiliate-rate editor
+
+`AffiliateRateEditor` accepts `scopeKey`, nullable `affiliateBasisPoints`,
+`effectiveBasisPoints`, `source` of plan/product/price, `version`, and `onSave`.
+Its save update contains nullable `affiliateBasisPoints` and `expectedVersion`.
+Blank input means inherit, zero disables commission, and percentages support
+0 to 100 with two decimal places. Use its native unstyled form or render state
+`percentage`, `setPercentage`, `effectiveLabel`, `save`, `isPending`, `error`,
+and `message` to supply styled controls. The backend must verify ownership and
+resolve price overrides before product overrides and plan defaults. The example
+uses the current subscription price on renewals and preserves settled economics.
+
+## Percentage or fixed affiliate payouts
+
+`AffiliatePayoutEditor` is the unstyled editor used inline by the example's seller
+product and price rows and admin store-plan cards. Supply `scopeKey`, nullable
+`affiliateBasisPoints`, optional nullable `affiliateFixedAmount`, effective values,
+`version`, `currency`, and `onSave`. Fixed amounts are major currency units,
+not cents. The save callback receives both nullable fields and `expectedVersion`;
+only one payout field is non-null. Blank means inherit; explicit zero disables.
+
+The native form includes a number input, `%`/currency-symbol toggle, Save, and X.
+X saves null for both fields to clear the override. `currency` defaults to USD
+and controls the display symbol. A render prop exposes `value`, `mode`, `setValue`,
+`setMode`, `currencySymbol`, `effectiveLabel`, `save`, `clear`, `isPending`, `error`,
+and `message` so applications can supply their own markup. Server code must
+resolve defaults, validate ownership and versions, convert major amounts into
+Stripe minor units, and cap fixed payouts at proceeds after fees. The example
+uses a nominal fixed amount per sale currency; it does not perform FX conversion.

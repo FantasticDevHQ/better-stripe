@@ -47,11 +47,20 @@ export default defineSchema({
     previousPaymentMethodTypes: v.optional(v.array(v.string())),
     consentAt: v.number(),
   }).index("by_seller", ["sellerId"]),
+  sellerAffiliateRates: defineTable({
+    sellerId: v.id("users"),
+    stripeProductId: v.string(),
+    stripePriceId: v.optional(v.string()),
+    affiliateBasisPoints: v.union(v.number(), v.null()),
+    affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
+    version: v.number(),
+  }).index("by_target", ["sellerId", "stripeProductId", "stripePriceId"]),
   storePlanSettings: defineTable({
     planId: storePlanIdValidator,
     monthlyAmount: v.number(),
     feeBasisPoints: v.union(v.number(), v.null()),
     affiliateBasisPoints: v.optional(v.number()),
+    affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
     version: v.number(),
   }).index("by_plan", ["planId"]),
   storePlanCatalog: defineTable({

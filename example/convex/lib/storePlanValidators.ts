@@ -25,6 +25,12 @@ export const storeSaleFields = {
   sellerNet: v.number(),
   affiliateNet: v.number(),
   affiliateBasisPoints: v.optional(v.number()),
+  affiliateFixedAmount: v.optional(v.number()),
+  affiliateRateSource: v.optional(
+    v.union(v.literal("plan"), v.literal("product"), v.literal("price")),
+  ),
+  stripeProductId: v.optional(v.string()),
+  stripePriceId: v.optional(v.string()),
   currency: v.string(),
   affiliateAccountId: v.optional(v.string()),
   sourceInvoiceId: v.optional(v.string()),

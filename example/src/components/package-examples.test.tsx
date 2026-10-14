@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   account: "acct_seller",
   rows: undefined as unknown,
   load: vi.fn(),
+  mutation: vi.fn().mockResolvedValue(null),
   earnings: {
     gross: 2500,
     net: 2000,
@@ -18,8 +19,20 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("convex/react", () => ({
   useAction: () => mocks.load,
+  useConvex: () => ({ mutation: mocks.mutation }),
   useQuery: (_fn: unknown, args: unknown) =>
-    args === "skip" ? undefined : mocks.rows,
+    args === "skip"
+      ? undefined
+      : args && typeof args === "object" && "stripeProductId" in args
+        ? {
+            affiliateBasisPoints: null,
+            affiliateFixedAmount: null,
+            effectiveBasisPoints: 2000,
+            effectiveFixedAmount: null,
+            source: "plan",
+            version: 0,
+          }
+        : mocks.rows,
 }));
 vi.mock("@/providers/role-context", () => ({
   useRole: () => ({
@@ -59,6 +72,7 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   mocks.rows = [
     {
       name: "Classic Tee",
+      stripeProductId: "prod_tee",
       prices: [
         {
           stripePriceId: "price_tee",
@@ -74,6 +88,24 @@ it("uses PriceCard with the seller catalog and exposes the selected Stripe price
   expect(screen.getByText("$29.00")).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Select price" }));
   expect(screen.getByRole("status")).toHaveTextContent("price_tee");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Fixed amount in USD" }),
+  );
+  await userEvent.type(
+    screen.getByRole("spinbutton", { name: "Affiliate payout" }),
+    "5.25",
+  );
+  await userEvent.click(screen.getByRole("button", { name: /^Save$/ }));
+  await waitFor(() =>
+    expect(mocks.mutation).toHaveBeenCalledWith(expect.anything(), {
+      sellerId: "seller_id",
+      stripeProductId: "prod_tee",
+      stripePriceId: "price_tee",
+      affiliateBasisPoints: null,
+      affiliateFixedAmount: 5.25,
+      expectedVersion: 0,
+    }),
+  );
 });
 it("displays current subscription state through SubscriptionCard", () => {
   mocks.rows = [

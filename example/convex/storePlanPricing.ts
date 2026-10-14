@@ -7,13 +7,14 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { STORE_PLANS } from "./lib/storePlans";
+import { validateFixedAffiliateAmount, STORE_PLANS } from "./lib/storePlans";
 import { storePlanIdValidator } from "./lib/storePlanValidators";
 import { getStripeClient } from "./lib/stripeClient";
 const settings = {
   monthlyAmount: v.number(),
   feeBasisPoints: v.union(v.number(), v.null()),
   affiliateBasisPoints: v.optional(v.number()),
+  affiliateFixedAmount: v.optional(v.union(v.number(), v.null())),
 };
 const edit = {
   adminId: v.id("users"),
@@ -62,6 +63,7 @@ async function plans(ctx: QueryCtx) {
       monthlyAmount: override?.monthlyAmount ?? plan.monthlyAmount,
       feeBasisPoints,
       affiliateBasisPoints: override?.affiliateBasisPoints ?? 2000,
+      affiliateFixedAmount: override?.affiliateFixedAmount ?? null,
       version: override?.version ?? 0,
       feeLabel:
         feeBasisPoints === null || feeBasisPoints === 0
@@ -95,6 +97,7 @@ export const publish = internalMutation({
   handler: async (ctx, args) => {
     if ((await ctx.db.get("users", args.adminId))?.role !== "admin")
       throw new Error("Only an admin can change store plan pricing.");
+    validateFixedAffiliateAmount(args.affiliateFixedAmount);
     validatePricing(
       args.monthlyAmount,
       args.feeBasisPoints,
@@ -114,6 +117,12 @@ export const publish = internalMutation({
       feeBasisPoints: args.feeBasisPoints,
       affiliateBasisPoints:
         args.affiliateBasisPoints ?? current?.affiliateBasisPoints ?? 2000,
+      affiliateFixedAmount:
+        args.affiliateFixedAmount === undefined
+          ? args.affiliateBasisPoints === undefined
+            ? (current?.affiliateFixedAmount ?? null)
+            : null
+          : args.affiliateFixedAmount,
       version: args.expectedVersion + 1,
     };
     if (current) await ctx.db.patch("storePlanSettings", current._id, next);
@@ -139,6 +148,7 @@ export const update = action({
     await ctx.runQuery(internal.storePlanPricing.authorize, {
       adminId: args.adminId,
     });
+    validateFixedAffiliateAmount(args.affiliateFixedAmount);
     validatePricing(
       args.monthlyAmount,
       args.feeBasisPoints,

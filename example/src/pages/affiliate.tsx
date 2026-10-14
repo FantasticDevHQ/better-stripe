@@ -80,9 +80,10 @@ export function Affiliate({
       <div>
         <h1 className="text-3xl font-bold">Referral earnings</h1>
         <p className="mt-2 text-muted-foreground">
-          {currentUser.name} earns a commission based on the seller's store
-          plan, calculated after the sale fee. The customer receives the
-          purchase; the seller receives the remainder.
+          {currentUser.name} earns the seller's configured affiliate commission,
+          calculated after the sale fee. Product and subscription price
+          overrides take priority over the store plan default. The customer
+          receives the purchase; the seller receives the remainder.
         </p>
       </div>
       {!currentUser.stripeAccountId ? (

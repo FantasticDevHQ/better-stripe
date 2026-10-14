@@ -69,7 +69,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
   processing; Pro takes processing only. The platform keeps the difference
   and never subsidizes processing. New sales wait for actual Stripe fees,
   then transfer the remainder to the seller and, for referrals, the affiliate.
-  The affiliate receives the store plan's configured percentage of the remainder after the inclusive sale fee. Each plan defaults to 20%.
+  The affiliate receives the effective percentage of the remainder or a fixed amount capped at that remainder after the inclusive sale fee. Each plan defaults to 20%.
   Existing customer renewals continue using the seller's current or last paid
   tier, even if the store has closed to new purchases. Use Stripe's billing
   portal for paid plan changes, payment details, invoices, and cancellation.
@@ -113,7 +113,7 @@ Use the role switcher in the header to explore five perspectives:
 - **Affiliate**: Avery has a separate Stripe account, referral links, and an earnings ledger at `/affiliate`. Customers do not receive affiliate payouts.
 - **Admin**: manage the platform's catalog, subscriptions, webhooks, testing, and setup.
 
-A referred sale takes the configured platform fee first, pays Avery the plan's configured percentage of the remainder, and pays the seller the rest, including any final rounding cent. A direct sale pays the seller the entire remainder. `/stores?store=<seller-account>&ref=avery` keeps attribution through checkout and role switching.
+A referred sale takes the configured platform fee first, pays Avery the effective percentage of the remainder or a fixed amount capped at that remainder, and pays the seller the rest, including any final rounding cent. A direct sale pays the seller the entire remainder. `/stores?store=<seller-account>&ref=avery` keeps attribution through checkout and role switching.
 
 The old `/marketplace/split` and `/demo/destination-charge` links redirect to the storefront. `/demo/subscribe` now lists the active seller's subscriptions; `/demo/store-earnings` reads that seller's balance and payouts. Customers purchase recurring plans from the store catalog.
 
@@ -434,7 +434,7 @@ The live marketplace suite checks every role's pages, guest referred checkout, d
 
 Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring plans open subscription checkout; one-time prices open payment checkout. The return page displays the purchased product. Customer billing is scoped to that customer's ID, while seller subscriptions and earnings use the store selected in the seller sidebar.
 
-Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives the plan's configured percentage of the remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
+Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives the effective percentage of the remainder or a fixed amount capped at that remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
 
 The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials. See [October 13 QA](QA-2026-10-13.md) for amounts, evidence, and coverage limits.
 
@@ -1007,10 +1007,38 @@ input, and button styling. The example backend authorizes the admin persona,
 creates the Stripe Price, and publishes catalog and fee settings atomically.
 Like the rest of this demo, personas use mock users rather than production auth.
 
-Each Store plans card also has **Affiliate payout (%)**, independently configurable
-from 0 to 100% with two decimal places. This is the affiliate's share of referred
-sale proceeds after the inclusive sale fee. The seller receives the remainder;
-direct sales pay no affiliate. Existing configurations default to 20%. Editing
-only this percentage does not create a new Stripe monthly Price or change any
-subscription. Future settlements use the seller's current store-plan rate and
-record it on the sale; settled sales and refunds retain the original amounts.
+Each Store plans card has a separate affiliate payout editor for percentages or
+fixed amounts. Existing configurations default to 20%. Payout-only edits keep
+the monthly Stripe Price and subscriptions unchanged. Future settlements resolve
+the seller's price, product, and plan defaults; settled sales and refunds retain
+the original amounts.
+
+### Seller product and subscription affiliate payouts
+
+Seller → Products shows an inline affiliate payout editor on each product and
+expanded price row, including recurring subscription prices. The BetterStripe
+components tab also includes the inline editor on each price card. Enter a number,
+choose `%` or the price currency symbol, then Save. X clears and saves inheritance;
+zero explicitly disables the payout. Admin → Store plans uses the same editor for
+plan defaults. Clearing a plan default restores 20%.
+
+Price overrides win over product defaults, then store-plan defaults. Percentages
+apply after the inclusive sale fee. Fixed amounts use major units of the sale's
+currency: 5 means USD 5 on a USD price or EUR 5 on a EUR price. Product and plan
+defaults use that same nominal amount in each sale currency, without currency
+conversion. Fixed amounts are capped at the proceeds after fees, so seller
+proceeds cannot go negative. Fractions below a currency's minor unit round down.
+Stripe processing is always covered by the seller.
+
+Changes apply to future purchases and subscription renewals. Settled sales retain
+the recorded rule, source, product/price IDs, and splits. Subscription settlement
+uses the current Stripe subscription price rather than stale checkout metadata.
+Legacy payments without product metadata inherit the plan default. The backend
+checks product ownership, integer percentage basis points, non-negative fixed
+amounts with up to two decimals, and edit versions. This example uses selectable
+mock personas; production apps must derive authorization from authenticated users.
+
+The unstyled `AffiliatePayoutEditor` in `better-stripe/react` owns the input,
+mode toggle, validation, Save/Clear actions, and feedback. The example supplies
+its design-system markup with the render prop. `AffiliateRateEditor` remains
+available for percentage-only forms.

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Subscriptions } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useQuery } from "convex/react";
@@ -19,6 +20,13 @@ export function StoreSubscribe() {
         Customers subscribed to your store, showing the latest 100 subscriptions
         per plan. To buy a subscription, choose Customer or Visitor and visit
         Stores.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Set affiliate payouts for subscription offerings in{" "}
+        <Link className="underline" to="/seller/products">
+          Products
+        </Link>
+        .
       </p>
       <Card>
         <CardHeader>

@@ -4,7 +4,7 @@ import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
 import componentSchema from "../../dist/component/schema.js";
-import { api, internal } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 const raw = vi.hoisted(() => ({
   paymentIntents: { retrieve: vi.fn() },
   subscriptions: { retrieve: vi.fn() },
@@ -353,4 +353,120 @@ it("uses the plan's affiliate rate and records it without recalculating settled 
     expect.anything(),
   );
   expect(raw.transfers.create).toHaveBeenCalledTimes(2);
+});
+
+it("uses the current subscription price override on renewals and preserves earlier sales", async () => {
+  const { t, sellerId, payment } = await setup("growth", true);
+  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+    stripeProductId: "prod_store",
+    accountId: "acct_store",
+    name: "Membership",
+    active: true,
+  });
+  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+    stripePriceId: "price_month",
+    stripeProductId: "prod_store",
+    productId: "product",
+    currency: "usd",
+    unitAmount: 10000,
+    type: "recurring",
+    interval: "month",
+    active: true,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    affiliateBasisPoints: 1500,
+    expectedVersion: 0,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: 1250,
+    expectedVersion: 0,
+  });
+  raw.subscriptions.retrieve.mockResolvedValue({
+    metadata: { ...payment.metadata, stripePriceId: "price_old" },
+    items: { data: [{ price: { id: "price_month" } }] },
+  });
+  raw.transfers.create.mockImplementation(async (args) => ({
+    id: `tr_${args.source_transaction}_${args.destination}`,
+    ...args,
+  }));
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_sale",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_first",
+  });
+  const original = await t.query(internal.storeSaleSettlement.getByCharge, {
+    chargeId: "ch_sale",
+  });
+  expect(original).toMatchObject({
+    affiliateBasisPoints: 1250,
+    affiliateNet: 1188,
+    sellerNet: 8322,
+    affiliateRateSource: "price",
+    stripePriceId: "price_month",
+    stripeProductId: "prod_store",
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: 1000,
+    expectedVersion: 1,
+  });
+  raw.paymentIntents.retrieve.mockResolvedValue({
+    ...payment,
+    id: "pi_next",
+    latest_charge: { ...payment.latest_charge, id: "ch_next" },
+  });
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_next",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_next",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_next",
+    }),
+  ).toMatchObject({
+    affiliateBasisPoints: 1000,
+    affiliateNet: 951,
+    sellerNet: 8559,
+  });
+  await t.mutation(api.sellerAffiliateRates.save, {
+    sellerId,
+    stripeProductId: "prod_store",
+    stripePriceId: "price_month",
+    affiliateBasisPoints: null,
+    affiliateFixedAmount: 12.29,
+    expectedVersion: 2,
+  });
+  raw.paymentIntents.retrieve.mockResolvedValue({
+    ...payment,
+    id: "pi_fixed",
+    latest_charge: { ...payment.latest_charge, id: "ch_fixed" },
+  });
+  await t.action(internal.storeSaleSettlement.settle, {
+    paymentIntentId: "pi_fixed",
+    subscriptionId: "sub_customer",
+    invoiceId: "in_fixed",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_fixed",
+    }),
+  ).toMatchObject({
+    affiliateFixedAmount: 12.29,
+    affiliateNet: 1229,
+    sellerNet: 8281,
+    affiliateRateSource: "price",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_sale",
+    }),
+  ).toEqual(original);
 });

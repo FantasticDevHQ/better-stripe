@@ -1,5 +1,6 @@
+import { ProductAffiliateSettings } from "@/components/affiliate-payout-control";
 import { useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, useConvex } from "convex/react";
 import {
   PriceCard,
   SubscriptionCard,
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export function ProductComponents() {
+  const convex = useConvex();
   const { currentUser, currentRole } = useRole();
   const [selected, select] = useState<string>();
   const all = useQuery(
@@ -65,6 +67,25 @@ export function ProductComponents() {
                         <p className="text-sm text-muted-foreground">
                           {price.active ? "Active" : "Archived"}
                         </p>
+                        {currentRole === "seller" && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">
+                              Affiliate payout
+                            </p>
+                            <ProductAffiliateSettings
+                              sellerId={currentUser.id}
+                              stripeProductId={product.stripeProductId}
+                              stripePriceId={price.stripePriceId}
+                              currency={price.currency}
+                              onSave={(values) =>
+                                convex.mutation(api.sellerAffiliateRates.save, {
+                                  ...values,
+                                  sellerId: currentUser.id as Id<"users">,
+                                })
+                              }
+                            />
+                          </div>
+                        )}
                         <Button
                           variant="outline"
                           onClick={() => select(price.stripePriceId)}

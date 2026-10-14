@@ -38,6 +38,8 @@ export function settleStoreSale(args: {
   referred: boolean;
   feeBasisPoints?: number | null;
   affiliateBasisPoints?: number;
+  affiliateFixedAmount?: number | null;
+  currency?: string;
 }) {
   const { gross, processingFee, planId } = args;
   if (
@@ -73,9 +75,20 @@ export function settleStoreSale(args: {
     affiliateBasisPoints > 10000
   )
     throw new Error("Invalid affiliate payout percentage.");
+  const fixed = args.affiliateFixedAmount;
+  validateFixedAffiliateAmount(fixed);
   const net = gross - sellingFee;
   const affiliateNet = args.referred
-    ? Math.floor((net * affiliateBasisPoints) / 10000)
+    ? fixed != null
+      ? Math.min(
+          net,
+          Math.floor(
+            (Math.round(fixed * 100) *
+              stripeCurrencyScale(args.currency ?? "usd")) /
+              100,
+          ),
+        )
+      : Math.floor((net * affiliateBasisPoints) / 10000)
     : 0;
   return {
     gross,
@@ -88,4 +101,41 @@ export function settleStoreSale(args: {
 }
 export function storePlanLookupKey(planId: StorePlanId) {
   return `better_stripe_example_store_${planId}_usd_month_v2`;
+}
+
+/** Fixed amounts are major currency units, applied in each sale's currency. */
+export function validateFixedAffiliateAmount(
+  amount: number | null | undefined,
+) {
+  if (
+    amount != null &&
+    (!Number.isFinite(amount) ||
+      amount < 0 ||
+      !Number.isSafeInteger(Math.round(amount * 100)) ||
+      Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001)
+  )
+    throw new Error(
+      "Fixed affiliate payout must be non-negative with at most two decimal places.",
+    );
+}
+export function stripeCurrencyScale(currency: string) {
+  return [
+    "bif",
+    "clp",
+    "djf",
+    "gnf",
+    "jpy",
+    "kmf",
+    "krw",
+    "mga",
+    "pyg",
+    "rwf",
+    "vnd",
+    "vuv",
+    "xaf",
+    "xof",
+    "xpf",
+  ].includes(currency.toLowerCase())
+    ? 1
+    : 100;
 }

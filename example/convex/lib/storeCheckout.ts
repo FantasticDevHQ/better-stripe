@@ -80,6 +80,8 @@ export async function createStoreCheckout(
     metadata: {
       referralCode: isAffiliateReferral(args.referralCode) ? "avery" : "",
       productName: product.name,
+      stripeProductId: price.stripeProductId,
+      stripePriceId: args.stripePriceId,
       storeBilling: "sale_v1",
       sellerId: identity.sellerId,
       planId: identity.planId,

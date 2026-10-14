@@ -112,9 +112,11 @@ export function SellerPlan() {
                   </p>
                   <p>{plan.feeLabel}</p>
                   <p className="text-sm text-muted-foreground">
-                    Affiliate payout:{" "}
-                    {(plan.affiliateBasisPoints ?? 2000) / 100}% after the sale
-                    fee.
+                    Default affiliate payout:{" "}
+                    {plan.affiliateFixedAmount != null
+                      ? `${plan.affiliateFixedAmount} in the sale currency, capped at proceeds`
+                      : `${(plan.affiliateBasisPoints ?? 2000) / 100}% after the sale fee`}
+                    .
                   </p>
                   <Button
                     disabled={
@@ -145,9 +147,10 @@ export function SellerPlan() {
       <p className="text-sm text-muted-foreground">
         The seller pays the greater of the configured sale fee or actual Stripe
         processing. The platform keeps the difference and never absorbs Stripe
-        fees. Referred sales use the affiliate payout percentage shown for the
-        store plan, applied after the sale fee. Updated monthly prices apply to
-        new subscriptions; existing subscriptions keep their current price.
+        fees. The store plan sets the default affiliate payout after sale fees;
+        product and subscription price overrides take priority. Updated monthly
+        prices apply to new subscriptions; existing subscriptions keep their
+        current price.
       </p>
     </div>
   );

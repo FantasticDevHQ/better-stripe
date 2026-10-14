@@ -1592,6 +1592,314 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    costRecovery: {
+      mutations: {
+        finish: FunctionReference<
+          "mutation",
+          "internal",
+          { groupKey: string; limit?: number; outcome: "collect" | "release" },
+          {
+            group: {
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              currency: string;
+              groupKey: string;
+              maxCredit: number;
+              maxDebit: number;
+              pendingOperations: number;
+              scopeKey: string;
+              sourceGross?: number;
+              sourceId: string;
+              sourceKind: "settlement" | "invoice";
+              sourceProcessingFee?: number;
+              status:
+                | "open"
+                | "sealed"
+                | "collecting"
+                | "releasing"
+                | "collected"
+                | "released";
+            };
+            isDone: boolean;
+          },
+          Name
+        >;
+        record: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            currency: string;
+            revision: number;
+            scopeKey: string;
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          Name
+        >;
+        reserve: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            limit?: number;
+            maxCredit: number;
+            maxDebit: number;
+            operationKey: string;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+          },
+          {
+            group: {
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              currency: string;
+              groupKey: string;
+              maxCredit: number;
+              maxDebit: number;
+              pendingOperations: number;
+              scopeKey: string;
+              sourceGross?: number;
+              sourceId: string;
+              sourceKind: "settlement" | "invoice";
+              sourceProcessingFee?: number;
+              status:
+                | "open"
+                | "sealed"
+                | "collecting"
+                | "releasing"
+                | "collected"
+                | "released";
+            };
+            reservation: {
+              _creationTime: number;
+              _id: string;
+              allocations: Array<{
+                amount: number;
+                claimId: string;
+                claimKey: string;
+              }>;
+              amount: number;
+              groupKey: string;
+              limit: number;
+              operationKey: string;
+              status: "reserved" | "collected" | "released" | "empty";
+            };
+          },
+          Name
+        >;
+        rollback: FunctionReference<
+          "mutation",
+          "internal",
+          { groupKey: string; returnedPrincipal: number; revision: number },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          Name
+        >;
+        seal: FunctionReference<
+          "mutation",
+          "internal",
+          { groupKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amount: number;
+            currency: string;
+            groupKey: string;
+            maxCredit: number;
+            maxDebit: number;
+            pendingOperations: number;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+            status:
+              | "open"
+              | "sealed"
+              | "collecting"
+              | "releasing"
+              | "collected"
+              | "released";
+          },
+          Name
+        >;
+      };
+      queries: {
+        balance: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; scopeKey: string },
+          {
+            accountId: string;
+            activeGroupKey?: string;
+            amountDue: number;
+            collectedAmount: number;
+            currency: string;
+            outstanding: number;
+            reservedAmount: number;
+            scopeKey: string;
+          },
+          Name
+        >;
+        claim: FunctionReference<
+          "query",
+          "internal",
+          { claimKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          } | null,
+          Name
+        >;
+        group: FunctionReference<
+          "query",
+          "internal",
+          { groupKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amount: number;
+            currency: string;
+            groupKey: string;
+            maxCredit: number;
+            maxDebit: number;
+            pendingOperations: number;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+            status:
+              | "open"
+              | "sealed"
+              | "collecting"
+              | "releasing"
+              | "collected"
+              | "released";
+          } | null,
+          Name
+        >;
+        listClaims: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scopeKey: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amountDue: number;
+              claimKey: string;
+              collectedAmount: number;
+              currency: string;
+              outstanding: number;
+              reservedAmount: number;
+              revision: number;
+              scopeKey: string;
+              sign: "positive" | "negative" | "zero";
+              sourceChargeId: string;
+              sourceGross: number;
+              sourceProcessingFee: number;
+            }>;
+          },
+          Name
+        >;
+        reservation: FunctionReference<
+          "query",
+          "internal",
+          { operationKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            allocations: Array<{
+              amount: number;
+              claimId: string;
+              claimKey: string;
+            }>;
+            amount: number;
+            groupKey: string;
+            limit: number;
+            operationKey: string;
+            status: "reserved" | "collected" | "released" | "empty";
+          } | null,
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<

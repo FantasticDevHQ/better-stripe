@@ -69,7 +69,7 @@
     "dev": "cd example && pnpm run dev",
     "clean": "rm -rf dist",
     "codegen": "pnpm run codegen:lib && pnpm run codegen:example",
-    "codegen:lib": "convex codegen --component-dir src/component --typecheck disable",
+    "codegen:lib": "cd example && convex codegen --component-dir ../src/component --typecheck disable",
     "codegen:example": "pnpm --filter ./example run codegen",
     "codegen:check": "node scripts/check-codegen-drift.mjs",
     "typecheck": "npm run typecheck:lib && npm run typecheck:example",

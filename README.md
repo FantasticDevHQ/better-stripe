@@ -335,6 +335,91 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 | `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
 | `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
+### Durable recovery claims
+
+`stripe.costRecovery` is a server-only bookkeeping client. It uses the Convex
+component. Its calls do not use Stripe credentials; normal component installation
+configuration still applies. It never moves money. Your host authenticates the
+caller, approves which costs are owed, authorizes the account and recovery scope,
+and verifies provider outcomes before confirming collection. A recovery scope is
+an application-defined liability boundary, such as one store. Amounts are signed
+integer minor units and currencies never mix.
+
+```ts
+const recovery = stripe.costRecovery;
+const scope = {
+  accountId: sellerAccountId,
+  scopeKey: storeId,
+  currency: "usd",
+};
+await recovery.recordClaim(ctx, {
+  ...scope,
+  claimKey: `cost:${chargeId}`,
+  sourceChargeId: chargeId,
+  sourceGross: originalGross,
+  sourceProcessingFee: originalProviderFee,
+  amountDue: approvedCumulativeCost,
+  revision: durableObservationRevision,
+});
+const result = await recovery.reserve(ctx, {
+  ...scope,
+  groupKey: `settlement:${fundingChargeId}`,
+  operationKey: `settlement:${fundingChargeId}:batch:1`,
+  sourceKind: "settlement",
+  sourceId: fundingChargeId,
+  sourceGross: fundingGross,
+  sourceProcessingFee: fundingProviderFee,
+  maxDebit: availableSellerEarnings,
+  maxCredit: approvedCreditBudget,
+});
+```
+
+Claims retain their original charge, account, scope, currency, gross and provider
+fee. Replays of the same revision must have the same amount; lower revisions are
+ignored. The host must assign durable, monotonically increasing observation
+revisions from authoritative reconciliation, not an unordered event arrival
+counter. Use `getClaim(ctx, { claimKey })` to capture the prior revision before
+reading provider state, then propose the next revision. On a conflicting revision,
+retry the full provider reconciliation, rather than incrementing the revision of
+an already-stale snapshot. Later provider observations update cumulative `amountDue`, including
+signed credits, without erasing collected or reserved history. Claim keys beginning
+with `rollback:` are reserved by the package.
+
+Reservations use maintained totals across all claims, so a credit beyond the
+first history page still reduces the recoverable amount. Each call allocates at
+most 100 claims. Repeat with distinct, durable batch operation keys in the same
+group until `seal(ctx, { groupKey })` succeeds. The group's debit/credit budgets
+apply across all batches. A group identifies exactly one external money boundary;
+only one group per account/scope/currency may remain pending. Retry the same batch
+key to recover the same allocation after a timeout or host write failure.
+
+Seal before any provider side effect. New claim observations can require another
+batch before sealing; observations after sealing remain owed or credited for a
+later group. After verifying the provider's final result, call
+`finish(ctx, { groupKey, outcome: "collect" | "release" })`. Completion processes
+at most ten reservations per call, each with at most 100 claims. Repeat while
+`isDone` is false using separate action/job invocations when needed to respect
+Convex transaction limits. Completion is idempotent; a collected group cannot be
+released or reused with another outcome. Do not release an unknown provider
+outcome just because a request timed out. An unpaid invoice must stay reserved
+until its verified payment or cancellation policy resolves it.
+
+For a collected settlement group whose funding sale is later returned, call
+`rollback(ctx, { groupKey, returnedPrincipal, revision })` with the authorized
+cumulative principal. This records a separate, source-linked rollback claim,
+preserves the original costs and collection history, and rounds positive and
+negative amounts symmetrically. Reinstated principal can reduce the rollback
+again with a newer revision. This bookkeeping operation does not refund or
+reverse a transfer. Invoice funding requires a provider-aware adapter; this
+settlement rollback helper does not infer invoice payment allocations.
+
+Use `balance(ctx, scope)` for exact maintained totals and
+`listClaims(ctx, { ...scope, limit, cursor })` for paginated history. `getClaim`, `getGroup` and
+`getReservation` resume durable workflows. Integrate these server callbacks with
+the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
+consent, provider fee policy and entitlement changes in the host; provider invoice
+reconciliation and the example migration are separate work.
+
 ### Refund and dispute processing costs
 
 `getProcessingCostContext(ctx, { paymentIntentId, stripeAccountId? })` reads

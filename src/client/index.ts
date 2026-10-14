@@ -503,6 +503,7 @@ export class BetterStripe {
       active?: boolean;
       accountId?: string;
       metadata?: Record<string, string>;
+      idempotencyKey?: string;
     },
   ) {
     return productsImpl.createProduct(this.stripe(), this.component, ctx, {
@@ -593,6 +594,7 @@ export class BetterStripe {
       intervalCount?: number;
       nickname?: string;
       metadata?: Record<string, string>;
+      idempotencyKey?: string;
     },
   ) {
     return pricesImpl.createPrice(this.stripe(), this.component, ctx, opts);

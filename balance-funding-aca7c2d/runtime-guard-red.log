@@ -1,0 +1,42 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/billing/balanceFunding.test.ts (11 tests | 1 failed) 11ms
+   × requires an explicit runtime request identity and desired state for JavaScript callers 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/billing/balanceFunding.test.ts > requires an explicit runtime request identity and desired state for JavaScript callers
+AssertionError: promise resolved "{ customerAccount: 'acct_store', …(4) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "customerAccount": "acct_store",
++   "paymentMethodId": "pm_balance",
++   "previousPaymentMethodId": "pm_card",
++   "previousPaymentMethodTypes": [
++     "card",
++   ],
++   "stripeSubscriptionId": "sub_store",
+  }
+
+ ❯ src/client/billing/balanceFunding.test.ts:248:4
+    246|       idempotencyKey: undefined as unknown as string,
+    247|     }),
+    248|   ).rejects.toThrow(/required/);
+       |    ^
+    249|   await expect(
+    250|     setBalanceFunding(stripe, version, {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  22:35:27
+   Duration  152ms (transform 55%, import 22%, tests 18%, worker 4%)
+

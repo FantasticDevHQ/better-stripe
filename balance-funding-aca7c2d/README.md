@@ -1,8 +1,8 @@
 # BTS-138 balance funding verification
 
-Source commit aca7c2d48783308175d3b547097232128446bfd3.
+Final source commit 6c508ff3fa3c9b4ba77f65befd224575bcc2f89f. Live provider scenarios ran on aca7c2d48783308175d3b547097232128446bfd3; the follow-up adds runtime omission guards only. The final head passed the full gates and focused regression tests and was redeployed.
 
-- All 15 repository gates passed, coverage 70.0%; no policy/budget changes. 18 focused tests cover provider operations, actual serialized preview headers and phase keys, host durable retries and the React consent workflow.
+- All 15 repository gates passed, coverage 70.0%; no policy/budget changes. 19 focused tests cover provider operations, actual serialized preview headers and phase keys, host durable retries and the React consent workflow.
 - Example backend pushed successfully. Only balance-funding calls use an explicitly selected preview client; normal example/client defaults remain GA.
 - Real deployed example + real Stripe sandbox: funded $9 USD monthly renewal used stripe_balance, debited once and stayed active. Retrying a paid invoice caused no extra debit.
 - Insufficient available USD balance produced insufficient_funds, paid zero, debited zero, closed expired store access, and did not charge the saved card.

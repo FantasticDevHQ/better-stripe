@@ -634,7 +634,7 @@ was recorded. Test payments were refunded and disposable fixtures cleaned up.
 The test used a local ownership fixture for the host callback. It verifies package
 orchestration and actual provider authentication, not production application
 authentication, redirect-return recovery, webhook delivery or Dojo's saved-card UI.
-DOJO-388 and DOJO-2233 retain their separate application acceptance work.
+Consumer applications still need to verify their own authenticated adapters and saved-card UI.
 See [sandbox setup findings](accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15)
 for the account eligibility requirement.
 

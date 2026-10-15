@@ -30,7 +30,7 @@ See [Stripe's customer Account guide](https://docs.stripe.com/accounts-v2/use-ac
 
 ## Connect sandbox setup findings, 2026-10-15
 
-BTS-144 initially encountered
+Saved-card setup verification initially encountered
 `non_connect_platform_accounts_v2_access_blocked` while creating a
 customer-configured Account. Changing between the supported GA and preview
 request versions did not resolve the account eligibility block.

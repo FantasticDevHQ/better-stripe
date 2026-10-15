@@ -16,16 +16,14 @@
 
 ## [0.17.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.17.0...v0.17.1) (2026-10-15)
 
-
 ### Bug Fixes
 
-* **ci:** retry release auto-merge on stale head rejection ([#176](https://github.com/FantasticDevHQ/better-stripe/issues/176)) ([a52cbe8](https://github.com/FantasticDevHQ/better-stripe/commit/a52cbe84480ee1fc804240b04a1200468ca57100))
-* **earnings:** reject unsafe currency summary arithmetic (BTS-164) ([#175](https://github.com/FantasticDevHQ/better-stripe/issues/175)) ([52b6db6](https://github.com/FantasticDevHQ/better-stripe/commit/52b6db6074dc45a7f1d8b2d5f8c62ce3e2261ee8))
-
+- **ci:** retry release auto-merge on stale head rejection ([#176](https://github.com/FantasticDevHQ/better-stripe/issues/176)) ([a52cbe8](https://github.com/FantasticDevHQ/better-stripe/commit/a52cbe84480ee1fc804240b04a1200468ca57100))
+- **earnings:** reject unsafe currency summary arithmetic ([#175](https://github.com/FantasticDevHQ/better-stripe/issues/175)) ([52b6db6](https://github.com/FantasticDevHQ/better-stripe/commit/52b6db6074dc45a7f1d8b2d5f8c62ce3e2261ee8))
 
 ### Documentation
 
-* explain evidence uploads, navigation guards and release auto-merge ([#177](https://github.com/FantasticDevHQ/better-stripe/issues/177)) ([a089e78](https://github.com/FantasticDevHQ/better-stripe/commit/a089e78dc6c04a15cb87b1488dd9eecf8cd7fa45))
+- explain evidence uploads, navigation guards and release auto-merge ([#177](https://github.com/FantasticDevHQ/better-stripe/issues/177)) ([a089e78](https://github.com/FantasticDevHQ/better-stripe/commit/a089e78dc6c04a15cb87b1488dd9eecf8cd7fa45))
 
 ## [0.17.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.16.0...v0.17.0) (2026-10-15)
 

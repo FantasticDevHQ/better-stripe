@@ -53,17 +53,19 @@ export async function getAccountBalance(
   return [...byCurrency.values()];
 }
 
+export type CreatePayoutOptions = {
+  stripeAccountId: string;
+  amount: number;
+  currency?: string;
+  metadata?: Record<string, string>;
+  /** Stripe idempotency key for retry-safe payout creation. */
+  idempotencyKey?: string;
+};
+
 export async function createPayout(
   stripe: Stripe,
   _ctx: RunCtx,
-  opts: {
-    stripeAccountId: string;
-    amount: number;
-    currency?: string;
-    metadata?: Record<string, string>;
-    /** Stripe idempotency key for retry-safe payout creation. */
-    idempotencyKey?: string;
-  },
+  opts: CreatePayoutOptions,
 ) {
   const payout = await stripe.payouts.create(
     {

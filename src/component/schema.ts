@@ -1,3 +1,4 @@
+import { policiesTable, operationsTable } from "./payoutPolicy/schema.js";
 import { currencyTotalsTable } from "./earnings/schema.js";
 import {
   claimsTable,
@@ -31,6 +32,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutPolicies: policiesTable,
+  payoutPolicyOperations: operationsTable,
   currencyTotals: currencyTotalsTable,
   recoveryClaims: claimsTable,
   recoveryBalances: balancesTable,

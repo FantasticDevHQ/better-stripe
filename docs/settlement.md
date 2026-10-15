@@ -156,3 +156,65 @@ It requires a selected retention boundary and migration policy. Applications mus
 not describe a displayed threshold as enforced while Stripe controls automatic
 payouts. A numeric below/exact/above provider-floor demonstration is unavailable
 without a supported provider floor read; surface this capability limitation.
+
+## Recipient-held payout policy controls
+
+`stripe.payoutPolicy` stages versioned, account-wide schedule changes for a
+user-level recipient. The host authenticates `ownerKey`, authorizes the policy,
+and records explicit consent. Thresholds use integer minor units per currency;
+they combine creator and affiliate funds rather than creating category gates.
+The untouched default remains Stripe-managed automatic payouts.
+
+Call `prepare(ctx, { accountId, ownerKey, operationKey, expectedRevision, mode:
+"custom", thresholds: [{ currency: "usd", amount: 1000 }], consent: true })` in
+an authorized action. Revision `-1` means no existing policy. Persisted preparation
+captures the original payout schedule and country holding deadline before any
+provider update. If preparation returns `prepared`, call `apply` with the same
+account, owner and operation key. Replays preserve the immutable request;
+competing operations and stale revisions are rejected. A provider timeout or
+failed confirmation stays pending for reconciliation, rather than being treated
+as a completed schedule change.
+
+These APIs currently require a verified `dashboard: none` account and enabled
+payouts for custom activation. Accounts with Dashboard withdrawal access return
+an explicit control limitation: restricting schedule edits alone cannot prevent
+manual withdrawals. The API never changes dashboard access or loss liability to
+obtain control. Stripe also validates update permissions. Before each subsequent
+payout attempt, `verify` must confirm live manual settings, unchanged country,
+and an unexpired policy; stored `ready` state alone is insufficient.
+
+Initial activation rejects existing nonzero available or pending balances,
+in-flight payouts, and existing manual schedules with `migration_required`.
+The preflight is repeated before an initial schedule update; a delayed activation
+with newly arrived funds is canceled before changing Stripe. This is a bounded
+preflight, not an ownership inference or automatic adoption.
+Already-mixed funds need a reconciled source ledger and explicit adoption before
+custom release can be enabled. Zero-balance activation does not classify later
+unrelated deposits as earnings. Payout claims must use that source ledger and a
+fresh provider balance when the separate release boundary is integrated.
+
+The host must schedule a recurring server job that pages `due(ctx,
+{ cursor: null, numItems: 100 })`, follows its cursor, and calls `expire` for each
+returned account/owner. `expire` reconciles pending operations and restores the
+original automatic schedule when the holding deadline is reached. Unattempted
+expired enables are canceled without changing Stripe. Failed/unknown restores
+remain visible and retryable; alert operators if they cannot complete. Editing
+thresholds never extends the original deadline. Current limits are 10 days for
+Thailand, a conservative 730 days for the US, and 90 days elsewhere; verify
+current provider rules before enabling the feature in production.
+
+For opt-out, prepare a new operation with the latest revision,
+`mode: "stripe_managed"`, and `thresholds: []`, then apply it. Restoration remains
+available after Dashboard control is lost, subject to Stripe permissions. It
+restores only the captured schedule; other balance settings remain untouched.
+
+This is the durable policy/control boundary. Automatic combined payout execution,
+adoption of existing balances, and its UI integration are separate work and are
+not supplied by these schedule APIs. Do not expose a custom minimum as fully
+enforced until those boundaries and the recurring expiry job are installed.
+`verify.providerMinimum` is `null`: the Balance Settings API does not expose a
+numeric payout-floor field, and retained balance reserves are not payout triggers.
+
+Sources: [payout schedules](https://docs.stripe.com/connect/manage-payout-schedule),
+[manual payout holding limits](https://docs.stripe.com/connect/manual-payouts), and
+[Dashboard control limits](https://docs.stripe.com/connect/platform-controls-for-stripe-dashboard-accounts#control-payout-timing).

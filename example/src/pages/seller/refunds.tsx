@@ -1,4 +1,5 @@
 import { SellerCosts } from "@/components/seller-costs";
+import { RefundPreviewSummary } from "@/components/refund-preview-summary";
 import { useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import {
@@ -6,6 +7,8 @@ import {
   RefundHistory,
   useRefunds,
   formatPrice,
+  formatRefundAmount,
+  groupRefundPreview,
 } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -28,13 +31,6 @@ import { useAction, useQuery } from "convex/react";
 import { RotateCcw, Undo2 } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatCurrency(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
-}
 
 function formatDate(timestamp: number) {
   return new Intl.DateTimeFormat("en-US", {
@@ -151,8 +147,8 @@ export function SellerRefunds() {
     stripeAccountId ? refundHistoryArgs : "skip",
   );
 
-  const refundedTotal = useMemo(
-    () => (refunds ?? []).reduce((sum, row) => sum + row.amount, 0),
+  const refundPreview = useMemo(
+    () => groupRefundPreview(refunds ?? []),
     [refunds],
   );
 
@@ -319,23 +315,30 @@ export function SellerRefunds() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <p className="text-muted-foreground text-sm">
+              Up to 25 loaded rows; older refunds may be excluded. Amounts are
+              grouped by currency and provider status. Pending, failed and
+              canceled requests are not completed refunds. This preview is not
+              an account total.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
               <Figure
-                label="Rows"
+                label="Loaded rows"
                 value={refunds === undefined ? "..." : String(refunds.length)}
                 testId="refund-history-count"
               />
               <Figure
-                label="Total"
-                value={formatCurrency(refundedTotal)}
-                testId="refund-history-total"
-              />
-              <Figure
                 label="Scope"
-                value={cleanPaymentIntentId ? "Payment" : "All refunds"}
+                value={
+                  cleanPaymentIntentId ? "Payment preview" : "Account preview"
+                }
                 testId="refund-history-scope"
               />
             </div>
+            <RefundPreviewSummary
+              groups={refundPreview}
+              isLoading={refunds === undefined}
+            />
 
             <RefundHistory rows={refunds}>
               {({ rows, isLoading, isEmpty }) =>
@@ -372,7 +375,10 @@ export function SellerRefunds() {
                             <Badge variant="secondary">{refund.status}</Badge>
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(refund.amount, refund.currency)}
+                            {formatRefundAmount(
+                              refund.amount,
+                              refund.currency,
+                            ) ?? "Amount unavailable"}
                           </TableCell>
                           <TableCell>{refund.reason ?? "unknown"}</TableCell>
                           <TableCell>

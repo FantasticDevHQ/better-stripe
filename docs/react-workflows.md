@@ -373,10 +373,23 @@ reconcile that intent before requesting another. Revalidate authorization,
 original merchant/currency, positive units, remaining refundable limits and
 stable provider idempotency on the server before moving money.
 
-The example's older refund-history aggregate still sums a capped row set and
-formats it as USD. That is a separate outstanding presentation limitation; do
-not port it as an account total. Original-currency input support does not certify
-that aggregate or claim a live refund.
+The Vite refund history is a bounded preview of up to 25 loaded rows, not an
+authoritative account total. `groupRefundPreview(rows)` groups only supplied rows
+by original currency and exact provider status, returning currency, status, nullable
+amount and row count. It never adds currencies or combines pending/failed/canceled
+requests with succeeded refunds. An empty preview has no monetary group; an explicit
+zero remains zero. Invalid or unsupported units and unsafe sums yield an unavailable
+group amount instead of a rounded or invented total.
+
+`formatRefundAmount(amount, currency, locale?)` returns a nullable display string
+using package ordinary provider-unit helpers. It preserves observed fractional
+ISK/UGX refunds; display does not establish eligibility for a new partial input.
+The native `RefundHistory` and the Vite render-prop table use this safe formatter.
+Both helpers are public through `/react`, allowing Dojo to supply translated
+Shadcn labels and empty/unavailable states without rebuilding financial arithmetic.
+Preview grouping performs no reads, writes or provider operations and cannot prove
+bank delivery or complete-account earnings. Authorize and bound the source read in
+the host; keep authoritative full-account aggregates separate.
 
 ## Store-plan pricing editor
 

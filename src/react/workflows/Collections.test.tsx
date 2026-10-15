@@ -84,3 +84,39 @@ it("preserves store attribution in referred sales and refund statuses in history
   expect(screen.getByText("failed")).toBeTruthy();
   expect(screen.getByRole("columnheader", { name: "Created" })).toBeTruthy();
 });
+
+it("renders observed refund units and unavailable data without throwing", () => {
+  render(
+    <RefundHistory
+      rows={[
+        {
+          stripeRefundId: "re_jpy",
+          amount: 500,
+          currency: "jpy",
+          status: "succeeded",
+        },
+        {
+          stripeRefundId: "re_ugx",
+          amount: 101,
+          currency: "ugx",
+          status: "pending",
+        },
+        {
+          stripeRefundId: "re_unknown",
+          amount: 100,
+          currency: "zzz",
+          status: "failed",
+        },
+        {
+          stripeRefundId: "re_invalid",
+          amount: -1,
+          currency: "usd",
+          status: "canceled",
+        },
+      ]}
+    />,
+  );
+  expect(screen.getByText("¥500")).toBeTruthy();
+  expect(screen.getByText("UGX 1.01")).toBeTruthy();
+  expect(screen.getAllByText("Amount unavailable")).toHaveLength(2);
+});

@@ -1,0 +1,321 @@
+[
+  {
+    "_creationTime": 1792088768824.1213,
+    "_id": "kc2fv36ef3mmmevynf3jvgqetd8gbmps",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "changing"
+      }
+    ],
+    "completedTime": 1792088768833.136,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088768824,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088768821.7102,
+    "_id": "kc20ywk4nrsb22zwjv587t8w998gb90x",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "expiry"
+      }
+    ],
+    "completedTime": 1792088768833.136,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088768821,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088768820.0972,
+    "_id": "kc2ac69acna6svvq9z92s3m7918ga4s6",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "recovering"
+      }
+    ],
+    "completedTime": 1792088768833.136,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088768820,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088768818.2031,
+    "_id": "kc2bvxd5qhbe64y6acbkm87ggd8gamc9",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "policies"
+      }
+    ],
+    "completedTime": 1792088768824.592,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088768818,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760365.3823,
+    "_id": "kc22pgg5sy14j0nwc8vw4ejw3x8gbkrz",
+    "args": [
+      {
+        "accountId": "acct_1UQt6h52dBeObPrt",
+        "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb"
+      }
+    ],
+    "completedTime": 1792088763651.723,
+    "name": "payoutWorkers.js:expire",
+    "scheduledTime": 1792088760365,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760356.4612,
+    "_id": "kc22xaqw2dj8gggb7d0typwzax8gb4f6",
+    "args": [
+      {
+        "accountId": "acct_1UQt6h52dBeObPrt",
+        "currency": "usd",
+        "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb"
+      }
+    ],
+    "completedTime": 1792088760371.339,
+    "name": "payoutWorkers.js:attempt",
+    "scheduledTime": 1792088760356,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760345.6562,
+    "_id": "kc2c2evg6esjjvknjyt4s5q23x8gb0ew",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "changing"
+      }
+    ],
+    "completedTime": 1792088760366.265,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088760345,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760342.0703,
+    "_id": "kc2f4xpayvkjzncyhfpvqfmybn8gb4mr",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "expiry"
+      }
+    ],
+    "completedTime": 1792088760366.265,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088760342,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760339.7092,
+    "_id": "kc25tfch4rfkk0qb4z9hp7m9mx8gavmw",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "recovering"
+      }
+    ],
+    "completedTime": 1792088760362.873,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088760339,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088760330.7952,
+    "_id": "kc2a203a5b70fec9jxttwpa1nn8gagmp",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "policies"
+      }
+    ],
+    "completedTime": 1792088760357.526,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088760330,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738178.1921,
+    "_id": "kc20drp8pn8p59nvt12jh1kjvx8gb0qq",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "changing"
+      }
+    ],
+    "completedTime": 1792088738213.234,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088738177,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738177.4492,
+    "_id": "kc2ahan73eejrmbqt7j38bgtc18gaayb",
+    "args": [
+      {
+        "payouts": true,
+        "state": "unknown"
+      }
+    ],
+    "completedTime": 1792088738199.838,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088738177,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738172.8743,
+    "_id": "kc2ca4z7hgj7ryrm85trmw7bc58gatzr",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "expiry"
+      }
+    ],
+    "completedTime": 1792088738199.838,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088738172,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738171.1973,
+    "_id": "kc23v57qdbgwd92bevttz9v44s8ga20c",
+    "args": [
+      {
+        "payouts": true,
+        "state": "pending"
+      }
+    ],
+    "completedTime": 1792088738189.776,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088738171,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738164.1863,
+    "_id": "kc242fj68hmgnn73mcmf05phwh8gbbmp",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "recovering"
+      }
+    ],
+    "completedTime": 1792088738199.838,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088738164,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738164.1802,
+    "_id": "kc2d0nft1xwej74mh7gw1zsebn8gbt73",
+    "args": [
+      {
+        "state": "unknown"
+      }
+    ],
+    "completedTime": 1792088738189.776,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088738164,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738159.4343,
+    "_id": "kc2etjrzsw7hdbhrv8k2zjjahn8gbxjt",
+    "args": [
+      {
+        "cursor": null,
+        "kind": "policies"
+      }
+    ],
+    "completedTime": 1792088738178.131,
+    "name": "payoutWorkers.js:scan",
+    "scheduledTime": 1792088738159,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088738158.3882,
+    "_id": "kc25nt09vpjwp1ntg684rn3q4x8gb75g",
+    "args": [
+      {
+        "state": "pending"
+      }
+    ],
+    "completedTime": 1792088738178.131,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088738158,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088438218.9563,
+    "_id": "kc2d1vza4t9x124raf0xjtbqkd8gbbxq",
+    "args": [
+      {
+        "payouts": true,
+        "state": "unknown"
+      }
+    ],
+    "completedTime": 1792088438281.647,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088438218,
+    "state": {
+      "kind": "success"
+    }
+  },
+  {
+    "_creationTime": 1792088438186.6973,
+    "_id": "kc2b019hxsqcbbmy7f8yn3abbs8gax7b",
+    "args": [
+      {
+        "payouts": true,
+        "state": "pending"
+      }
+    ],
+    "completedTime": 1792088438276.674,
+    "name": "affiliateRecoveryJobs.js:batch",
+    "scheduledTime": 1792088438186,
+    "state": {
+      "kind": "success"
+    }
+  }
+]

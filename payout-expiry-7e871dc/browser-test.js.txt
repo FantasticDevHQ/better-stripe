@@ -1,0 +1,39 @@
+async (page) => {
+ const state=await (await page.request.get('http://127.0.0.1:5191/state')).json();
+ const context=await page.context().browser().newContext({viewport:{width:1440,height:1000},recordVideo:{dir:'/tmp/payout-expiry-evidence',size:{width:1440,height:1000}}});
+ await context.addInitScript(({userId})=>{if(!localStorage.getItem('betterlearn-role'))localStorage.setItem('betterlearn-role','seller');if(!localStorage.getItem('betterstripe-seller'))localStorage.setItem('betterstripe-seller',userId);},state);
+ const p=await context.newPage();const assertions=[],errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const api=async(path,args)=>{const response=await p.request.post('http://127.0.0.1:5191'+path,{data:args??{},timeout:120000});const result=await response.json();if(!response.ok())throw Error(JSON.stringify(result));return result;};
+ const checkpoint=name=>api('/checkpoint',{name});
+ const note=async(text)=>{await p.evaluate(text=>{let e=document.getElementById('qa-note');if(!e){e=document.createElement('div');e.id='qa-note';e.style.cssText='position:fixed;bottom:10px;left:20px;right:20px;background:#101827;color:#fff;padding:12px;border-radius:8px;font:16px sans-serif;z-index:10000';document.body.append(e);}e.textContent=text;},text);await p.waitForTimeout(1300);};
+ let result;
+ try {
+ await p.goto('http://127.0.0.1:5186/seller/payouts');await p.getByRole('combobox',{name:'Automatic payout policy',exact:true}).waitFor({timeout:60000});
+ const cdp=await context.newCDPSession(p);const {windowId}=await cdp.send('Browser.getWindowForTarget');await cdp.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'maximized'}});
+ let proof=await checkpoint('beforeActivation');if(proof.policy!==null||proof.schedule.interval!=='weekly'||proof.payouts.length!==0)throw Error('Pristine weekly recipient precondition failed');
+ await note('Real sandbox + isolated full example. Only the test deadline will be shortened.');
+ const prepared=await api('/prepare');if(prepared.status!=='prepared')throw Error('Package prepare failed');
+ await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await p.getByText(/Payout settings are being verified/).waitFor({timeout:60000});
+ if(await p.getByText('Stripe manages automatic payouts. No additional application minimum is set.',{exact:true}).count())throw Error('Pending activation falsely claims verified defaults');
+ proof=await checkpoint('pendingActivation');if(proof.policy?.mode!=='stripe_managed'||proof.policy?.status!=='changing')throw Error('Expected real pending default-mode activation');
+ assertions.push({test:'Real package prepare remains unverified in example progress',status:'passed'});await note('PASS: pending activation says being verified, without claiming defaults.');await p.screenshot({path:'/tmp/payout-expiry-evidence/pending.png',fullPage:true});
+ await p.getByRole('button',{name:'Retry settings verification',exact:true}).click();await p.getByText('Combined payout minimum',{exact:true}).waitFor({timeout:60000});
+ proof=await checkpoint('activated');if(proof.policy?.mode!=='custom'||proof.policy?.status!=='ready'||proof.schedule.interval!=='manual')throw Error('Browser retry did not verify manual controls');
+ if(proof.policy.holdDeadline!==prepared.operation.observedAt+730*86400000)throw Error('Unexpected initial US holding deadline');
+ assertions.push({test:'Browser retry verifies manual schedule and original 730-day deadline',status:'passed'});await note('PASS: browser retry verified manual scheduling and the initial US deadline.');await p.screenshot({path:'/tmp/payout-expiry-evidence/activated.png',fullPage:true});
+ const fixture=await api('/fixture');if(fixture.fixtureDeadline>=fixture.previousDeadline)throw Error('Fixture did not shorten the deadline');
+ await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await p.getByText(/custom holding deadline has passed/).waitFor({timeout:60000});
+ assertions.push({test:'Expired real policy displays its deadline reason without a financial assessment',status:'passed'});await note('DEADLINE FIXTURE: only this policy deadline was shortened; funds are unchanged.');await p.screenshot({path:'/tmp/payout-expiry-evidence/expired.png',fullPage:true});
+ proof=await checkpoint('expiredBeforeDispatch');if(proof.policy?.holdDeadline!==fixture.fixtureDeadline||proof.schedule.interval!=='manual')throw Error('Expired policy changed provider controls before dispatch');
+ await api('/dispatch');let restored=false;
+ for(let i=0;i<20;i++){proof=await checkpoint('expiryProgress');if(proof.policy?.mode==='stripe_managed'&&proof.policy?.status==='ready'&&proof.schedule.interval==='weekly'){restored=true;break;}await p.waitForTimeout(1000);}
+ if(!restored)throw Error('Expiry dispatcher did not restore the original schedule');
+ if(proof.policy.holdDeadline!==undefined||proof.payouts.length!==0)throw Error('Expiry retained deadline or unexpectedly created a payout');
+ await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await p.getByText('Stripe manages automatic payouts. No additional application minimum is set.',{exact:true}).waitFor({timeout:60000});
+ assertions.push({test:'Actual scheduled expiry verifies weekly restoration and clears the deadline',status:'passed'});await note('PASS: expiry dispatcher restored weekly payouts; no bank payout was created.');await p.screenshot({path:'/tmp/payout-expiry-evidence/restored.png',fullPage:true});
+ const revision=proof.policy.revision,operationKey=proof.policy.operationKey;await api('/dispatch');proof=await checkpoint('expiryReplay');if(proof.policy?.revision!==revision||proof.policy?.operationKey!==operationKey||proof.schedule.interval!=='weekly'||proof.payouts.length!==0)throw Error('Replay changed a completed expiry');
+ assertions.push({test:'Repeated dispatcher preserves the completed expiry operation and zero payouts',status:'passed'});await note('PASS: repeated dispatch keeps the same operation, revision and weekly schedule.');
+ result={status:'passed',assertions,pageErrors:errors};
+ }catch(e){result={status:'failed',error:e.message,assertions,pageErrors:errors};await p.screenshot({path:'/tmp/payout-expiry-evidence/failure.png',fullPage:true}).catch(()=>{});}
+ const video=await p.video().path();await context.close();return {...result,video};
+}

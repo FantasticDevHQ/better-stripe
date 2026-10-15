@@ -643,6 +643,29 @@ pending credits never qualify. `amount` is the amount currently qualified for th
 supported bank payout rail, or zero when held. `providerMinimum: null` means the
 numeric Stripe floor is unknown, not zero.
 
+Detailed assessments also include an optional `accounting` object, in the
+selected currency's minor units:
+
+| Field                  | Meaning                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `carriedForwardAmount` | Positive combined mature unpaid entitlement minus the amount eligible now. Held funds remain owed.                       |
+| `withheldAmount`       | Mature unpaid funds earmarked for confirmed fees and independent liabilities, capped at the funds available to withhold. |
+| `reservedAmount`       | Source allocations reserved for in-flight payouts. These are separate from completed payouts.                            |
+| `releasedAmount`       | Verified paid principal, less verified payout returns.                                                                   |
+
+Each source category also includes `reservedAmount` and `releasedAmount`.
+The component checks source allocation rollups against persisted payout claims
+before reporting these amounts or reserving a new payout. Inconsistent or
+incomplete claim history rejects the assessment. Shared costs are not assigned
+to individual source categories. A refund after a completed bank payout reduces
+future entitlement; it does not erase the paid principal unless Stripe verifies
+that the bank payout itself returned. Full outstanding obligations remain in
+`independentLiabilities` even when funds available to withhold are smaller.
+
+Older detailed results can omit `accounting` and the source payout fields.
+Treat omitted fields as unavailable, never as zero. Minimal held results do not
+include accounting totals.
+
 Below-threshold funds remain owed. `insufficient_available` distinguishes enough
 qualifying earnings from insufficient provider funds on the supported rail. Some
 holds return only `{ status: "held", reason, amount: 0 }`, including incomplete

@@ -40,6 +40,9 @@ tabs. The example installs its automatic worker and expiry dispatcher in
 `convex/crons.ts`. A custom minimum requires explicit consent and verified
 schedule controls. Below-minimum funds stay in the recipient's Stripe balance.
 The next automatic attempt is separate from a bank arrival date.
+Detailed assessments show carried-forward and withheld funds, in-flight payouts
+and verified paid principal net of payout returns. Source rows separate store,
+affiliate and other contributions, with their in-flight and paid amounts.
 
 `convex/recipientPayoutPolicy.ts` derives the demo account and outstanding seller
 costs server-side. It preserves other currency settings and retries a persisted

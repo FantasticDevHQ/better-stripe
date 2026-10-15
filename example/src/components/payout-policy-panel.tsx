@@ -195,12 +195,20 @@ function ProgressView({ state }: { state: PayoutProgressState }) {
             Source contributions are before shared costs and obligations.
             Pending settlement does not count toward the minimum.
           </p>
+          {state.accounting && (
+            <p className="text-sm text-muted-foreground">
+              Carried-forward funds remain owed. In-flight payouts are separate
+              from completed payouts. Paid-out amounts exclude returned payouts.
+            </p>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Source</TableHead>
                 <TableHead>Mature unpaid</TableHead>
                 <TableHead>Pending settlement</TableHead>
+                {state.accounting && <TableHead>In flight</TableHead>}
+                {state.accounting && <TableHead>Paid out</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -215,6 +223,16 @@ function ProgressView({ state }: { state: PayoutProgressState }) {
                   </TableCell>
                   <TableCell variant="amount">{source.matureLabel}</TableCell>
                   <TableCell variant="amount">{source.pendingLabel}</TableCell>
+                  {state.accounting && (
+                    <TableCell variant="amount">
+                      {source.reservedLabel ?? "Not assessed"}
+                    </TableCell>
+                  )}
+                  {state.accounting && (
+                    <TableCell variant="amount">
+                      {source.releasedLabel ?? "Not assessed"}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

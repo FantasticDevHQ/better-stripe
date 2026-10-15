@@ -11,6 +11,12 @@ liabilities on the server before calling it. See the
 for detailed versus unavailable assessments, shared deductions, and the
 difference between an application attempt and a bank arrival.
 
+Detailed previews now include optional `accounting` totals and per-source
+reserved/paid amounts. Regenerate component bindings and deploy the component
+before using them. `PayoutProgress` renders these fields when supplied; older
+results continue to render without them. Custom renderers must treat missing
+fields as unavailable rather than zero. No table migration is required.
+
 ## Package and runtime
 
 Install `@fantastic.dev/better-stripe@0.5.0`. The old

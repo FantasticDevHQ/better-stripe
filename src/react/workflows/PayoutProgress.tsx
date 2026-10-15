@@ -59,6 +59,8 @@ export function PayoutProgress(props: PayoutProgressProps) {
                 <th scope="col">Source</th>
                 <th scope="col">Mature unpaid</th>
                 <th scope="col">Pending settlement</th>
+                {state.accounting && <th scope="col">In flight</th>}
+                {state.accounting && <th scope="col">Paid out</th>}
               </tr>
             </thead>
             <tbody>
@@ -73,11 +75,23 @@ export function PayoutProgress(props: PayoutProgressProps) {
                   </th>
                   <td>{source.matureLabel}</td>
                   <td>{source.pendingLabel}</td>
+                  {state.accounting && (
+                    <td>{source.reservedLabel ?? "Not assessed"}</td>
+                  )}
+                  {state.accounting && (
+                    <td>{source.releasedLabel ?? "Not assessed"}</td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </>
+      )}
+      {state.accounting && (
+        <p>
+          Carried-forward funds remain owed. In-flight payouts are separate from
+          completed payouts. Paid-out amounts exclude returned payouts.
+        </p>
       )}
       {state.nextAttemptAt !== null && (
         <p>

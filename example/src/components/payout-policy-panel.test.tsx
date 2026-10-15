@@ -125,3 +125,32 @@ it("invalidates an old assessment if refreshing it fails", async () => {
   ).toBeDisabled();
   expect(screen.queryByRole("progressbar")).toBeNull();
 });
+it("renders package accounting cards and source payout columns from the assessment", async () => {
+  actions.load.mockResolvedValue({
+    ...view,
+    preview: {
+      ...view.preview,
+      matureUnpaid: 899,
+      independentLiabilities: 100,
+      accounting: {
+        carriedForwardAmount: 899,
+        withheldAmount: 100,
+        releasedAmount: 1000,
+        reservedAmount: 200,
+      },
+      sources: view.preview.sources.map((source) => ({
+        ...source,
+        releasedAmount:
+          source.role === "store" ? 600 : source.role === "affiliate" ? 400 : 0,
+        reservedAmount: source.role === "other" ? 0 : 100,
+      })),
+    },
+  });
+  render(
+    <PayoutPolicyPanel userId={"seller" as Id<"users">} currencies={["usd"]} />,
+  );
+  expect(await screen.findByText("Carried forward")).toBeVisible();
+  expect(screen.getByText("Paid out, net of returns")).toBeVisible();
+  expect(screen.getByRole("columnheader", { name: "Paid out" })).toBeVisible();
+  expect(screen.getByRole("columnheader", { name: "In flight" })).toBeVisible();
+});

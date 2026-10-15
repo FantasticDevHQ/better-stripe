@@ -26,6 +26,12 @@ it("previews combined eligibility and source categories without creating or rese
     pendingCredits: 0,
     threshold: 1000,
     providerMinimum: null,
+    accounting: {
+      carriedForwardAmount: 0,
+      withheldAmount: 0,
+      reservedAmount: 0,
+      releasedAmount: 0,
+    },
     sources: [
       { role: "store", matureUnpaid: 600, pendingCredits: 0 },
       { role: "affiliate", matureUnpaid: 400, pendingCredits: 0 },
@@ -48,6 +54,12 @@ it("shows below-threshold carry forward and independent liabilities", async () =
     matureUnpaid: 899,
     amount: 0,
     independentLiabilities: 100,
+    accounting: {
+      carriedForwardAmount: 899,
+      withheldAmount: 100,
+      reservedAmount: 0,
+      releasedAmount: 0,
+    },
   });
   expect(s.provider.payouts.create).not.toHaveBeenCalled();
 });
@@ -71,6 +83,17 @@ it("subtracts a previously paid claim while verifying its current provider recei
     reason: "below_threshold",
     matureUnpaid: 0,
     amount: 0,
+    accounting: {
+      carriedForwardAmount: 0,
+      withheldAmount: 0,
+      reservedAmount: 0,
+      releasedAmount: 1000,
+    },
+    sources: [
+      { role: "store", releasedAmount: 600, reservedAmount: 0 },
+      { role: "affiliate", releasedAmount: 400, reservedAmount: 0 },
+      { role: "other", releasedAmount: 0, reservedAmount: 0 },
+    ],
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
 });
@@ -145,6 +168,12 @@ it("deducts confirmed payout costs without attributing shared costs to a source 
     reason: "below_threshold",
     matureUnpaid: 950,
     confirmedFees: 150,
+    accounting: {
+      carriedForwardAmount: 950,
+      withheldAmount: 150,
+      reservedAmount: 0,
+      releasedAmount: 0,
+    },
     sources: [
       { role: "store", matureUnpaid: 700 },
       { role: "affiliate", matureUnpaid: 400 },
@@ -259,11 +288,127 @@ it("preserves negative affiliate entitlement when a paid commission is refunded"
     reason: "below_threshold",
     amount: 0,
     matureUnpaid: -100,
+    accounting: {
+      carriedForwardAmount: 0,
+      withheldAmount: 0,
+      reservedAmount: 0,
+      releasedAmount: 1000,
+    },
     sources: [
       { role: "store", matureUnpaid: 0 },
       { role: "affiliate", matureUnpaid: -100 },
       { role: "other", matureUnpaid: 0 },
     ],
+  });
+  expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+});
+it("caps actual withholding at mature unpaid funds when obligations exceed them", async () => {
+  const s = await preview([60, 40]);
+  expect(await s.preview({ independentLiabilities: 1000 })).toMatchObject({
+    matureUnpaid: -900,
+    accounting: {
+      carriedForwardAmount: 0,
+      withheldAmount: 100,
+      reservedAmount: 0,
+      releasedAmount: 0,
+    },
+  });
+});
+it("reports unpaid funds outside the supported-rail cap as carried forward", async () => {
+  const s = await preview([1000, 500]);
+  s.provider.balance.retrieve.mockResolvedValue({
+    available: [
+      { currency: "usd", amount: 1500, source_types: { card: 1000 } },
+    ],
+    pending: [],
+  });
+  expect(await s.preview()).toMatchObject({
+    status: "qualified",
+    amount: 1000,
+    matureUnpaid: 1500,
+    accounting: {
+      carriedForwardAmount: 500,
+      withheldAmount: 0,
+      reservedAmount: 0,
+      releasedAmount: 0,
+    },
+  });
+});
+it("refuses paid allocation totals without corresponding payout claims", async () => {
+  const s = await preview();
+  await s.t.run((ctx) =>
+    ctx.db.insert("payoutSourceAllocations", {
+      accountId: scope.accountId,
+      ownerKey: scope.ownerKey,
+      currency: "usd",
+      stripeTransferId: "tr_0",
+      paidAmount: 600,
+      reservedAmount: 0,
+    }),
+  );
+  await expect(s.preview()).rejects.toThrow(/allocation totals/i);
+  expect(s.provider.payouts.create).not.toHaveBeenCalled();
+});
+it("keeps a submitted payout reserved until Stripe verifies it as paid", async () => {
+  const s = await preview();
+  const create = s.provider.payouts.create.getMockImplementation()!;
+  s.provider.payouts.create.mockImplementation(async (args) => {
+    const payout = await create(args);
+    payout.status = "pending";
+    return payout;
+  });
+  expect(await s.run()).toMatchObject({
+    status: "updated",
+    claim: { status: "submitted" },
+  });
+  expect(await s.preview()).toMatchObject({
+    matureUnpaid: 0,
+    accounting: {
+      releasedAmount: 0,
+      reservedAmount: 1000,
+      carriedForwardAmount: 0,
+      withheldAmount: 0,
+    },
+    sources: [
+      { role: "store", releasedAmount: 0, reservedAmount: 600 },
+      { role: "affiliate", releasedAmount: 0, reservedAmount: 400 },
+      { role: "other", releasedAmount: 0, reservedAmount: 0 },
+    ],
+  });
+  (await s.provider.payouts.retrieve())!.status = "paid";
+  expect(await s.preview()).toMatchObject({
+    accounting: { releasedAmount: 1000, reservedAmount: 0 },
+  });
+  expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+});
+it("removes a verified returned payout from released totals without forfeiting the funds", async () => {
+  const s = await preview();
+  await s.run();
+  Object.assign((await s.provider.payouts.retrieve())!, {
+    status: "failed",
+    failure_balance_transaction: "txn_return",
+  });
+  s.setTransactions([
+    {
+      ...s.transactions()[0],
+      id: "txn_return",
+      source: "po_one",
+      amount: 1000,
+      net: 1000,
+      type: "payout_failure",
+    },
+    ...s.transactions(),
+  ]);
+  expect(await s.preview()).toMatchObject({
+    status: "qualified",
+    amount: 1000,
+    matureUnpaid: 1000,
+    accounting: {
+      releasedAmount: 0,
+      reservedAmount: 0,
+      carriedForwardAmount: 0,
+      withheldAmount: 0,
+    },
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
 });

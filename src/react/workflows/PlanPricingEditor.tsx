@@ -1,10 +1,17 @@
 "use client";
 import { useId, useState, type ReactNode } from "react";
+import {
+  chargeAmountToDecimal,
+  getChargeCurrencyMetadata,
+  parseChargeAmount,
+} from "../../client/charge-currency.js";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 export type PlanPricing = {
   id: string;
   name: string;
   monthlyAmount: number;
+  /** Defaults to USD for existing consumers. Charge/Price currency, not payout units. */
+  currency?: string;
   feeBasisPoints: number | null;
   affiliateBasisPoints?: number | null;
   version: number;
@@ -16,6 +23,8 @@ export type PlanPricingUpdate = {
   expectedVersion: number;
 };
 export type PlanPricingEditorState = {
+  currency: string;
+  inputDecimalPlaces: 0 | 2 | null;
   monthlyPrice: string;
   saleFee: string;
   affiliateShare: string;
@@ -39,24 +48,27 @@ export function PlanPricingEditor({
   children,
 }: PlanPricingEditorProps) {
   const id = useId();
-  const scope = `${plan.id}:${plan.version}`;
+  const currency = (plan.currency ?? "usd").toLowerCase();
+  const metadata = getChargeCurrencyMetadata(currency);
+  const scope = `${plan.id}:${plan.version}:${currency}`;
   const initial = {
     scope,
     affiliateShare: String((plan.affiliateBasisPoints ?? 0) / 100),
-    monthlyPrice: (plan.monthlyAmount / 100).toFixed(2),
+    monthlyPrice: chargeAmountToDecimal(plan.monthlyAmount, currency) ?? "",
     saleFee:
       plan.feeBasisPoints === null ? "" : String(plan.feeBasisPoints / 100),
   };
   const [fields, setFields] = useState(initial);
   if (fields.scope !== scope) setFields(initial);
   const action = useWorkflowAction(async () => {
-    if (!/^\d+(\.\d{1,2})?$/.test(fields.monthlyPrice.trim()))
+    const monthlyAmount = parseChargeAmount(
+      fields.monthlyPrice.trim(),
+      currency,
+    );
+    if (monthlyAmount === null || monthlyAmount <= 0)
       throw new Error(
-        "Enter a positive monthly price with at most two decimal places.",
+        "Enter a positive monthly price in supported currency units.",
       );
-    const monthlyAmount = Math.round(Number(fields.monthlyPrice) * 100);
-    if (!Number.isSafeInteger(monthlyAmount) || monthlyAmount <= 0)
-      throw new Error("Enter a positive monthly price.");
     const feeBasisPoints =
       fields.saleFee.trim() === ""
         ? null
@@ -90,8 +102,10 @@ export function PlanPricingEditor({
       expectedVersion: plan.version,
     });
     return "Pricing saved. Existing subscriptions keep their monthly price.";
-  }, plan.id);
+  }, scope);
   const state: PlanPricingEditorState = {
+    currency,
+    inputDecimalPlaces: metadata?.displayDecimals ?? null,
     ...fields,
     setMonthlyPrice: (monthlyPrice) =>
       setFields((previous) => ({ ...previous, monthlyPrice })),
@@ -114,10 +128,12 @@ export function PlanPricingEditor({
       aria-label={`${plan.name} pricing`}
     >
       <h3>{plan.name}</h3>
-      <label htmlFor={`${id}-monthly`}>Monthly price (USD)</label>
+      <label htmlFor={`${id}-monthly`}>
+        Monthly price ({currency.toUpperCase()})
+      </label>
       <input
         id={`${id}-monthly`}
-        inputMode="decimal"
+        inputMode={state.inputDecimalPlaces === 0 ? "numeric" : "decimal"}
         value={state.monthlyPrice}
         disabled={state.isPending}
         onChange={(event) => state.setMonthlyPrice(event.target.value)}

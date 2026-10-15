@@ -10,7 +10,7 @@ Stripe's `appearance` options and retain Stripe's own styling.
 
 ## Charge and Price currency units
 
-`getChargeCurrencyMetadata`, `parseChargeAmount` and `formatChargeAmount` are
+`getChargeCurrencyMetadata`, `chargeAmountToDecimal`, `parseChargeAmount` and `formatChargeAmount` are
 browser-safe pure helpers exported from the main package and `/react`. They
 apply Stripe charge/Price rules, not payout or Global Payouts rules. See
 [Stripe currencies](https://docs.stripe.com/currencies).
@@ -58,9 +58,9 @@ by the host's error boundary rather than presented as a fabricated amount.
 Metadata describes precision only. Derive selectable presentment currencies
 from the public `getCountrySpecs` result and validate account/payment-method
 support on the server. Do not derive an account's supported currencies from
-`Intl.supportedValuesOf` or this helper. The separate PlanPricingEditor and
-Refunds input migrations remain separate work; their existing
-two-decimal parsers are not changed by this helper release.
+`Intl.supportedValuesOf` or this helper. The separate Refunds input migration
+remains future work; its existing two-decimal parser is not changed by the
+charge helpers or PlanPricingEditor integration.
 
 ## Bind your backend
 
@@ -325,6 +325,31 @@ mean processing-only. Native fields are unstyled; use the render prop to supply
 your design system. Server-side authorization, fee floors, Stripe Price creation,
 and conflict checks belong in your backend. Existing subscription migration is
 an application policy, not an automatic side effect of this editor.
+
+The plan also accepts optional `currency`, defaulting to `usd` for existing
+consumers. The callback shape stays unchanged. Derive its plan, currency and
+version from authorized server data, validate the stored currency/version again
+before creating a price, and enforce country/account/payment-method support on
+the server. React does not change provider prices or authorize a currency.
+
+Initialization uses `chargeAmountToDecimal` to retain exact ASCII decimal
+strings, including the final minor unit at `Number.MAX_SAFE_INTEGER`. Saving
+uses `parseChargeAmount` without floating-point multiplication or rounding.
+JPY/MGA inputs use whole units; ISK/UGX inputs also use whole major units while
+callbacks emit their two-decimal compatibility units. HUF/TWD charge inputs
+retain two decimal places. Unsupported currencies, excess precision, unsafe
+units and nonpositive monthly prices never reach `onSave`. Invalid stored
+amounts initialize blank instead of inventing a valid price.
+
+Headless state exposes `currency` and nullable `inputDecimalPlaces` in addition
+to editable strings. Use them for your currency label, input mode and step, as
+the Vite admin store-plans page does. The example's current backend plans remain
+USD; a host with another supported currency must pass its verified plan currency.
+Fields, pending state, errors and prior success messages reset when plan ID,
+version or currency changes. A late save from the previous scope cannot update
+the new editor. Retries retain the current version; server conflict handling and
+idempotency remain the host's responsibility. Fee and affiliate defaults are
+unchanged.
 
 `PlanPricingEditor` also supports optional `affiliateBasisPoints` on the plan and
 save update, defaulting to 0. Its render state exposes `affiliateShare` and

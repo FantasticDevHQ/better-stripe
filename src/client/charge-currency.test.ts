@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  chargeAmountToDecimal,
   formatChargeAmount,
   getChargeCurrencyMetadata,
   parseChargeAmount,
 } from "./charge-currency.js";
 
 describe("charge currency units", () => {
+  it("produces exact editable decimals in charge units", () => {
+    expect(chargeAmountToDecimal(Number.MAX_SAFE_INTEGER, "usd")).toBe(
+      "90071992547409.91",
+    );
+    expect(chargeAmountToDecimal(500, "jpy")).toBe("500");
+    expect(chargeAmountToDecimal(50000, "isk")).toBe("500");
+    expect(chargeAmountToDecimal(1045, "huf")).toBe("10.45");
+    expect(chargeAmountToDecimal(0, "usd")).toBe("0.00");
+  });
+  it.each([
+    [101, "isk"],
+    [-1, "usd"],
+    [1.5, "usd"],
+    [100, "ZZZ"],
+    [100, "bhd"],
+    [Number.MAX_SAFE_INTEGER + 1, "usd"],
+  ])("refuses invalid initial charge units %s %s", (amount, currency) => {
+    expect(chargeAmountToDecimal(amount, currency)).toBeNull();
+  });
   it.each([
     ["USD", "10.05", 1005, 2, 2],
     ["jpy", "500", 500, 0, 0],

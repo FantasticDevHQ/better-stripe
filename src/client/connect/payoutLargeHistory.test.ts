@@ -58,7 +58,8 @@ it("releases all 205 verified sources despite 101 terminal historical claims", a
     matureUnpaid: 0,
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
-});
+  // Two complete 205-source passes exercise allocation rollups under coverage.
+}, 15_000);
 
 it("preserves a financially bound collection across a crash before attempt, then cancels exactly", async () => {
   const s = await largeHistory();

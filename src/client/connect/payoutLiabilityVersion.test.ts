@@ -217,4 +217,5 @@ it("protects a versioned quote across a larger paginated collection", async () =
     claim: { status: "paid", amount: 1023, independentLiabilities: 2 },
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
-});
+  // This new integration case qualifies the full ledger twice, with a cancellation between.
+}, 15_000);

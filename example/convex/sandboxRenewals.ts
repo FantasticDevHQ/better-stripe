@@ -368,6 +368,7 @@ const snapshotValidator = v.object({
       outstanding: v.number(),
       collected: v.number(),
       invoiced: v.number(),
+      reserved: v.number(),
       sourceType: v.string(),
     }),
   ),
@@ -462,6 +463,7 @@ export const snapshot = internalAction({
         outstanding: cost.outstanding,
         collected: cost.collectedAmount,
         invoiced: cost.invoicedAmount,
+        reserved: cost.reservedAmount ?? cost.invoicedAmount,
         sourceType: cost.sourceType ?? "",
       })),
       invoice: {

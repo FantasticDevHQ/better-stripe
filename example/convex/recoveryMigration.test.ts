@@ -155,52 +155,31 @@ it("replays the opening snapshot after current observations change and refuses s
     t.mutation(internal.recoveryMigration.adoptLegacy, args),
   ).rejects.toThrow(/identity/i);
 });
-it("quarantines all legacy recovery writers after the first adopted claim", async () => {
+it("continues package observations after adoption without resetting historical collection", async () => {
   const { t, sellerId, args } = await setup();
   await t.mutation(internal.recoveryMigration.adoptLegacy, args);
-  await expect(
-    t.mutation(internal.sellerCostBilling.record, {
-      sellerId,
-      sourceChargeId: "ch_original",
-      paymentIntentId: "pi_original",
-      currency: "usd",
-      amountDue: 0,
-      processingLoss: 0,
-      disputeFees: 0,
-      observedAt: 101,
-    }),
-  ).rejects.toThrow(/cutover/i);
-  await expect(
-    t.mutation(internal.sellerCostBilling.claimInvoice, {
-      sellerId,
-      invoiceId: "in_legacy",
-      currency: "usd",
-    }),
-  ).rejects.toThrow(/cutover/i);
-  await expect(
-    t.mutation(internal.storeSaleSettlement.reserve, {
-      sellerId,
-      sellerAccountId: "acct_owner",
-      chargeId: "ch_new",
-      paymentIntentId: "pi_new",
-      currency: "usd",
-      planId: "growth",
-      gross: 10000,
-      processingFee: 320,
-      sellingFee: 490,
-      platformNet: 170,
-      sellerNet: 9510,
-      affiliateNet: 0,
-    }),
-  ).rejects.toThrow(/cutover/i);
+  await t.mutation(internal.sellerCostBilling.record, {
+    sellerId,
+    sourceChargeId: "ch_original",
+    paymentIntentId: "pi_original",
+    currency: "usd",
+    amountDue: 100,
+    processingLoss: 100,
+    disputeFees: 0,
+    observedAt: 101,
+    sourceGross: 10000,
+    sourceProcessingFee: 320,
+    expectedRevision: 0,
+  });
   expect(
     await t.query(components.betterStripe.costRecovery.queries.balance, {
       accountId: "acct_owner",
       scopeKey: `example:store:${sellerId}`,
       currency: "usd",
     }),
-  ).toMatchObject({ amountDue: 320, collectedAmount: 200, outstanding: 120 });
+  ).toMatchObject({ amountDue: 100, collectedAmount: 200, outstanding: -100 });
 });
+
 it("keeps seller history chronological across currencies alongside the migration lookup", async () => {
   const { t, sellerId } = await setup();
   vi.useFakeTimers();

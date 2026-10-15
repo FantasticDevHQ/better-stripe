@@ -814,15 +814,37 @@ The package exposes an explicit opening-collection import for preserving costs
 already collected by an earlier host ledger. The example's internal
 `recoveryMigration.adoptLegacy` adapter checks the original seller/source binding,
 uses a stable import identity, and compares the captured legacy observation before
-writing. The first adoption blocks legacy cost recording, invoice claims and
-payout recovery for that seller until routing is converted. Invoice holds and
-pending payouts with cost recovery must be resolved
-before adoption. Replays preserve the opening snapshot after newer observations.
+writing. Invoice holds and pending legacy payouts with cost recovery must be
+resolved before adoption. Replays preserve the opening snapshot after newer
+observations. The normal sale and invoice actions verify and adopt eligible
+legacy rows before opening a new recovery boundary; unresolved old outcomes
+fail closed and require reconciliation.
 
-The adapter is a migration building block. Disable the old ledger writers and
-complete the payout/invoice routing cutover before invoking it on active stores;
-do not operate both ledgers for the same store. The current integration still
-requires that cutover and the combined renewal verification below.
+New sales reserve package claims in bounded batches before fixing the transfer
+allocation. Verified settlement collects those reservations, including after
+provider or host write retries. A provider attempt that may have sent money
+keeps its reservation; cancellation releases only allocations whose attempt
+has never started. A pending invoice or other sale can hold recovery while a
+new sale pays the seller without an additional recovery deduction. This lets
+new earnings fund a retry of an insufficient-balance invoice.
+
+Monthly invoice adjustments use the package's complete invoice scan and stable
+item identity. Paid invoices collect; void invoices release; unpaid or unknown
+outcomes stay reserved. Source changes create signed outstanding credits or
+costs without rewriting a held boundary. Cost tables read package balances and
+distinguish collected from reserved amounts; invoice estimates use the exact
+maintained currency balance, with an additional-adjustments line when bounded
+history cannot itemize every obligation.
+
+The host keeps source/display metadata and the approved non-refundable fee
+policy. The old invoice claiming and payout allocation implementations are
+removed. Do not run an older example backend concurrently with this cutover.
+Run the combined sandbox renewal acceptance below after changing these flows.
+Returned recovery-funding invoices route to the package's verified funding
+rollback. The original monthly charge, provider fee and recovery allocation stay
+fixed: partial returns reinstate only the corresponding recovery, and uncovered
+processing/dispute costs become separate seller obligations. Ambiguous funding
+allocations fail closed until the host supplies a verified allocation.
 
 ### Testing monthly renewals
 

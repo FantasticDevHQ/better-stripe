@@ -2,11 +2,17 @@
 import { convexTest } from "convex-test";
 import { expect, it } from "vitest";
 import schema from "./schema";
+import componentSchema from "../../dist/component/schema.js";
 import { api, internal } from "./_generated/api";
 const modules = import.meta.glob("./**/*.*s");
 
 it("requires a paid seller plan before accepting customer purchases", async () => {
   const t = convexTest(schema, modules);
+  t.registerComponent(
+    "betterStripe",
+    componentSchema,
+    import.meta.glob("../../dist/component/**/*.js"),
+  );
   await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Seller",
@@ -23,6 +29,11 @@ it("requires a paid seller plan before accepting customer purchases", async () =
 });
 it("does not let customers buy a seller's monthly platform plan", async () => {
   const t = convexTest(schema, modules);
+  t.registerComponent(
+    "betterStripe",
+    componentSchema,
+    import.meta.glob("../../dist/component/**/*.js"),
+  );
   const userId = await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Customer",
@@ -36,6 +47,11 @@ it("does not let customers buy a seller's monthly platform plan", async () => {
 });
 it("stores a settlement once per charge and preserves its original economics on retry", async () => {
   const t = convexTest(schema, modules);
+  t.registerComponent(
+    "betterStripe",
+    componentSchema,
+    import.meta.glob("../../dist/component/**/*.js"),
+  );
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Seller",

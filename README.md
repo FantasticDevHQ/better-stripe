@@ -420,6 +420,13 @@ Use `balance(ctx, scope)` for exact maintained totals and
 the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
 consent, provider fee policy and entitlement changes in the host.
 
+The example uses these package calls for sale reservations, verified collection,
+monthly invoice adjustments and source observations. Its host stores source and
+display metadata; financial totals come from the component. `CostRecovery` accepts
+an optional `reservedAmount` to distinguish reservations from collected money,
+while preserving the legacy `invoicedAmount` input. See the example README for
+cutover constraints and the sandbox renewal acceptance procedure.
+
 ### Importing opening recovery balances
 
 When moving an existing ledger into the component, your server can call

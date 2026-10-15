@@ -10,24 +10,30 @@ export type CostRecoveryRow = {
   amountDue: number;
   collectedAmount: number;
   invoicedAmount: number;
+  reservedAmount?: number;
   outstanding: number;
   currency: string;
 };
 export function CostRecovery(props: ResourceCollectionProps<CostRecoveryRow>) {
+  const reserved = props.rows?.some((row) => row.reservedAmount !== undefined);
   const columns: WorkflowColumn<CostRecoveryRow>[] = [
     { id: "payment", label: "Payment", cell: (row) => row.paymentIntentId },
     ...(
       [
         ["amountDue", "Total cost"],
-        ["collectedAmount", "Deducted from earnings"],
-        ["invoicedAmount", "Added to invoice"],
+        ["collectedAmount", reserved ? "Collected" : "Deducted from earnings"],
+        [
+          reserved ? "reservedAmount" : "invoicedAmount",
+          reserved ? "Reserved" : "Added to invoice",
+        ],
         ["outstanding", "Outstanding"],
       ] as const
     ).map(([field, label]) => ({
       id: field,
       label,
       align: "end" as const,
-      cell: (row: CostRecoveryRow) => formatPrice(row[field], row.currency),
+      cell: (row: CostRecoveryRow) =>
+        formatPrice(row[field] ?? row.invoicedAmount, row.currency),
     })),
   ];
   return (

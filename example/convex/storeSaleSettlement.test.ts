@@ -22,8 +22,10 @@ vi.mock("./stripe", async () => {
   const { settleSale } = await import("../../src/client/settlement/settleSale");
   const { components } = await import("./_generated/api");
   const sdk = raw as unknown as import("stripe").default;
+  const { CostRecoveryClient } = await import("../../src/client/costRecovery");
   return {
     stripe: {
+      costRecovery: new CostRecoveryClient(components.betterStripe, () => sdk),
       getVerifiedSale: async (
         _ctx: unknown,
         opts: Parameters<typeof getVerifiedSale>[1],
@@ -268,6 +270,9 @@ it("recovers seller costs once before transferring earnings and bills only the r
     processingLoss: 10000,
     disputeFees: 0,
     observedAt: 1,
+    sourceGross: 10000,
+    sourceProcessingFee: 320,
+    expectedRevision: -1,
   });
   await t.action(internal.storeSaleSettlement.settle, {
     paymentIntentId: "pi_sale",
@@ -286,28 +291,31 @@ it("recovers seller costs once before transferring earnings and bills only the r
   expect(raw.transfers.create).not.toHaveBeenCalled();
   const [cost] = await t.query(api.sellerCostBilling.list, { sellerId });
   expect(cost).toMatchObject({ collectedAmount: 9510, outstanding: 490 });
-  const bill = await t.mutation(internal.sellerCostBilling.claimInvoice, {
+  await t.mutation(internal.recoveryInvoices.prepare, {
     sellerId,
     invoiceId: "in_next_month",
     currency: "usd",
   });
-  const retry = await t.mutation(internal.sellerCostBilling.claimInvoice, {
+  await t.mutation(internal.recoveryInvoices.prepare, {
     sellerId,
     invoiceId: "in_next_month",
     currency: "usd",
   });
-  expect(bill?.amount).toBe(490);
-  expect(retry?._id).toBe(bill?._id);
+  expect(
+    await t.query(components.betterStripe.costRecovery.queries.group, {
+      groupKey: "example:cost-invoice:in_next_month",
+    }),
+  ).toMatchObject({ amount: 490, status: "sealed" });
   expect(
     (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
   ).toMatchObject({ invoicedAmount: 490, outstanding: 0 });
-  expect(
-    await t.mutation(internal.sellerCostBilling.claimInvoice, {
+  await expect(
+    t.mutation(internal.recoveryInvoices.prepare, {
       sellerId,
       invoiceId: "in_following_month",
       currency: "usd",
     }),
-  ).toBeNull();
+  ).rejects.toThrow(/pending/i);
 });
 
 it("returns credited costs once without exceeding the charge transfer limit", async () => {
@@ -319,17 +327,22 @@ it("returns credited costs once without exceeding the charge transfer limit", as
     currency: "usd",
     processingLoss: 0,
     disputeFees: 0,
+    sourceGross: 10000,
+    sourceProcessingFee: 320,
+    expectedRevision: -1,
   };
   await t.mutation(internal.sellerCostBilling.record, {
     ...costArgs,
     amountDue: -1000,
     observedAt: 2,
   });
-  await t.mutation(internal.sellerCostBilling.record, {
-    ...costArgs,
-    amountDue: 1000,
-    observedAt: 1,
-  });
+  await expect(
+    t.mutation(internal.sellerCostBilling.record, {
+      ...costArgs,
+      amountDue: 1000,
+      observedAt: 1,
+    }),
+  ).rejects.toThrow(/observation changed/);
   await t.action(internal.storeSaleSettlement.settle, {
     paymentIntentId: "pi_sale",
   });

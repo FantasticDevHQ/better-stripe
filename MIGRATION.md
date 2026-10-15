@@ -168,3 +168,9 @@ while `cancel_at_period_end` remains false. BetterStripe normalizes the stored
 period end, so subscription components offer reactivation after portal changes.
 Webhook processing and explicit subscription synchronization use the same rule.
 A cancellation timestamp at another date is not classified as period-end cancellation.
+
+## Component history and currency summaries
+
+See the [read contract guide](docs/read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

@@ -1,5 +1,12 @@
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
+import { PayoutPolicyClient } from "./payoutPolicy.js";
+export * from "./payoutPolicy.js";
+import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
+export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
+import * as intentsImpl from "./billing/intents.js";
+export type * from "./billing/intents.js";
+import { ReadContractClient } from "./readContracts.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -75,7 +82,6 @@ import type { ComponentApi } from "../component/_generated/component.js";
 import type {
   DisputeStatus,
   PayoutStatus,
-  RefundStatus,
 } from "../component/connect/validators.js";
 import type { SplitRecipient } from "../component/lib/fees.js";
 import * as checkoutImpl from "./billing/checkout.js";
@@ -85,16 +91,19 @@ import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import * as refundsImpl from "./connect/refunds.js";
+export type { RefundPageOptions } from "./connect/refunds.js";
 import * as transfersImpl from "./connect/transfers.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
-import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
+import * as fees from "./core/fees.js";
 import { validateStatementDescriptorSuffix } from "./core/descriptors.js";
 export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
 export {
+  type DisputeEvidenceUploadOptions,
+  type DisputeEvidenceFileField,
   buildDisputeEvidence,
   disputeEvidenceCountdown,
 } from "./connect/disputes.js";
@@ -102,7 +111,7 @@ export type { RefundActor } from "./connect/refunds.js";
 import type { RefundActor } from "./connect/refunds.js";
 export type { AccountBalance } from "./connect/payouts.js";
 export type { WedgedReversalClaim } from "./connect/transfers.js";
-import type { Component, RunCtx } from "./helpers.js";
+import type { RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
   V2AccountRetrieveInclude,
@@ -197,16 +206,10 @@ export type {
   WebhookActionCtx,
 } from "./types.js";
 export type BetterStripeComponent = ComponentApi;
-/** Deep-copy a platform fee config so stored/returned values can't be mutated. */
-function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
-  return {
-    ...config,
-    tiers: config.tiers?.map((tier) => ({ ...tier })),
-  };
-}
+
 // BETTER STRIPE CLIENT
-export class BetterStripe {
-  public component: Component;
+
+export class BetterStripe extends ReadContractClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -215,16 +218,16 @@ export class BetterStripe {
   private _statementDescriptorSuffix?: string;
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
-    this.component = component;
+    super(component);
     this.stripeApiVersion = resolveStripeApiVersion(options?.stripeApiVersion);
     this._apiKey = options?.STRIPE_SECRET_KEY;
     this._triggers = options?.triggers;
     this._hooks = options?.hooks;
     if (options?.platformFee !== undefined) {
-      validatePlatformFee(options.platformFee);
+      fees.validatePlatformFee(options.platformFee);
       // Store a defensive copy so later mutation of the caller's object can't
       // silently bypass validation or change runtime behavior.
-      this._platformFee = clonePlatformFee(options.platformFee);
+      this._platformFee = fees.clonePlatformFee(options.platformFee);
     }
     if (options?.statementDescriptorSuffix !== undefined) {
       this._statementDescriptorSuffix = validateStatementDescriptorSuffix(
@@ -243,7 +246,7 @@ export class BetterStripe {
 
   /** The configured default platform fee (the platform's take), if any. */
   get platformFee(): PlatformFeeConfig | undefined {
-    return this._platformFee && clonePlatformFee(this._platformFee);
+    return this._platformFee && fees.clonePlatformFee(this._platformFee);
   }
 
   /**
@@ -251,8 +254,8 @@ export class BetterStripe {
    * default. The fee math itself is applied at charge time (M2).
    */
   resolveFee(override?: FeeOverride): PlatformFeeConfig | undefined {
-    const resolved = resolveFeeConfig(this._platformFee, override);
-    return resolved && clonePlatformFee(resolved);
+    const resolved = fees.resolveFeeConfig(this._platformFee, override);
+    return resolved && fees.clonePlatformFee(resolved);
   }
 
   get apiKey(): string {
@@ -648,34 +651,35 @@ export class BetterStripe {
     return pricesImpl.listStripePrices(this.stripe(), ctx, opts);
   }
 
+  /** Card-only one-time checkout. Host authorizes price and authenticated customer. */
+  async createPaymentIntent(
+    ctx: RunCtx,
+    opts: intentsImpl.CreatePaymentIntentOptions,
+  ) {
+    return intentsImpl.createPaymentIntent(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  /** Provision consented card setup; confirmation and authentication happen in Stripe.js. */
+  async createSetupIntent(
+    ctx: RunCtx,
+    opts: intentsImpl.CreateSetupIntentOptions,
+  ) {
+    return intentsImpl.createSetupIntent(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
   // CHECKOUT METHODS
 
-  async createCheckoutSession(
-    ctx: RunCtx,
-    opts: {
-      idempotencyKey?: string;
-      userId: string;
-      orgId?: string;
-      stripePriceId: string;
-      mode: "payment" | "subscription" | "setup";
-      uiMode?: "embedded" | "redirect" | "custom" | "form";
-      quantity?: number;
-      returnUrl: string;
-      trialDays?: number;
-      accountId?: string;
-      customerEmail?: string;
-      /** Seller/recipient connected account to route funds to (destination charge). */
-      destinationAccountId?: string;
-      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
-      split?: SplitRecipient[];
-      /** Per-call platform fee override; falls back to the configured default. */
-      fee?: FeeOverride;
-      /** Charge total (minor units) for one-time payment fee computation. */
-      amount?: number;
-      metadata?: Record<string, string>;
-      sessionOverrides?: Record<string, unknown>;
-    },
-  ) {
+  async createCheckoutSession(ctx: RunCtx, opts: CreateCheckoutSessionOptions) {
     const { fee, ...rest } = opts;
     return checkoutImpl.createCheckoutSession(
       this.stripe(),
@@ -1140,19 +1144,7 @@ export class BetterStripe {
 
   // PAYOUT METHODS
 
-  async createPayout(
-    ctx: RunCtx,
-    opts: {
-      stripeAccountId: string;
-      amount: number;
-      /** Host-authorized minimum in this payout currency. */
-      minimumAmount?: number;
-      currency?: string;
-      metadata?: Record<string, string>;
-      /** Stripe idempotency key for retry-safe payout creation. */
-      idempotencyKey?: string;
-    },
-  ) {
+  async createPayout(ctx: RunCtx, opts: payoutsImpl.CreatePayoutOptions) {
     return payoutsImpl.createPayout(this.stripe(), ctx, opts, this.component);
   }
 
@@ -1262,6 +1254,10 @@ export class BetterStripe {
   get affiliateRecovery() {
     return new AffiliateRecoveryClient(this.component, () => this.stripe());
   }
+  get payoutPolicy() {
+    return new PayoutPolicyClient(this.component, () => this.stripe());
+  }
+
   get costRecovery() {
     return new CostRecoveryClient(this.component, () => this.stripe());
   }
@@ -1359,14 +1355,13 @@ export class BetterStripe {
 
   async listRefunds(
     ctx: RunCtx,
-    opts?: {
-      stripeAccountId?: string;
-      stripePaymentIntentId?: string;
-      status?: RefundStatus;
-      limit?: number;
-    },
+    opts?: refundsImpl.RefundListOptions,
   ): Promise<StripeComponentRefund[]> {
     return refundsImpl.listRefunds(this.component, ctx, opts);
+  }
+
+  paginateRefunds(ctx: RunCtx, opts: refundsImpl.RefundPageOptions) {
+    return refundsImpl.paginateRefunds(this.component, ctx, opts);
   }
 
   // DISPUTE METHODS
@@ -1401,13 +1396,6 @@ export class BetterStripe {
     return disputesImpl.listDisputes(this.component, ctx, opts);
   }
 
-  /**
-   * Submit or stage dispute evidence. Stripe's `submit` defaults to TRUE, so
-   * this method stages by default: EVERY call sends an explicit
-   * `submit: false` — evidence-bearing or metadata-only — unless you pass
-   * `submit: true` to submit to the bank (one-shot, outcome-affecting;
-   * BTS-61, BTS-72). See {@link disputesImpl.updateDispute}.
-   */
   async updateDispute(
     ctx: RunCtx,
     opts: {
@@ -1416,15 +1404,22 @@ export class BetterStripe {
       metadata?: Record<string, string>;
       submit?: boolean;
       stripeAccountId?: string;
-      /**
-       * Who is acting on the dispute (BTS-107). A platform admin may act on any
-       * dispute; a seller may act only on a dispute for a sale routed to their
-       * own account. Omit for platform-initiated (unrestricted) actions.
-       */
       actor?: RefundActor;
     },
   ): Promise<{ success: true }> {
     return disputesImpl.updateDispute(this.stripe(), this.component, ctx, opts);
+  }
+
+  async uploadDisputeEvidence(
+    ctx: RunCtx,
+    opts: disputesImpl.DisputeEvidenceUploadOptions,
+  ) {
+    return disputesImpl.uploadDisputeEvidence(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   async closeDispute(
@@ -1432,7 +1427,6 @@ export class BetterStripe {
     opts: {
       stripeDisputeId: string;
       stripeAccountId?: string;
-      /** See {@link updateDispute}'s `actor` (BTS-107). Omit for unrestricted. */
       actor?: RefundActor;
     },
   ): Promise<{ success: true }> {

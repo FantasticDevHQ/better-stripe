@@ -59,19 +59,21 @@ export async function getAccountBalance(
   return [...byCurrency.values()];
 }
 
+export type CreatePayoutOptions = {
+  /** Host-authorized minimum in the payout currency. */
+  minimumAmount?: number;
+  stripeAccountId: string;
+  amount: number;
+  currency?: string;
+  metadata?: Record<string, string>;
+  /** Stripe idempotency key for retry-safe payout creation. */
+  idempotencyKey?: string;
+};
+
 export async function createPayout(
   stripe: Stripe,
   ctx: RunCtx,
-  opts: {
-    stripeAccountId: string;
-    amount: number;
-    currency?: string;
-    metadata?: Record<string, string>;
-    /** Host-authorized minimum in the payout currency. Default one minor unit. */
-    minimumAmount?: number;
-    /** Stripe idempotency key for retry-safe payout creation. */
-    idempotencyKey?: string;
-  },
+  opts: CreatePayoutOptions,
   component?: Component,
 ) {
   const release = component

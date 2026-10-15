@@ -808,6 +808,46 @@ unrecovered refund/dispute costs and credits. It excludes costs already reserved
 for an invoice or deducted from earnings. Refund and dispute itemizations are
 under their respective menu pages, with links from estimated adjustment lines.
 
+### Recovery ledger cutover
+
+The package exposes an explicit opening-collection import for preserving costs
+already collected by an earlier host ledger. The example's internal
+`recoveryMigration.adoptLegacy` adapter checks the original seller/source binding,
+uses a stable import identity, and compares the captured legacy observation before
+writing. Invoice holds and pending legacy payouts with cost recovery must be
+resolved before adoption. Replays preserve the opening snapshot after newer
+observations. The normal sale and invoice actions verify and adopt eligible
+legacy rows before opening a new recovery boundary; unresolved old outcomes
+fail closed and require reconciliation.
+
+New sales reserve package claims in bounded batches before fixing the transfer
+allocation. Verified settlement collects those reservations, including after
+provider or host write retries. A provider attempt that may have sent money
+keeps its reservation; cancellation releases only allocations whose attempt
+has never started. A pending invoice or other sale can hold recovery while a
+new sale pays the seller without an additional recovery deduction. This lets
+new earnings fund a retry of an insufficient-balance invoice. A later plan
+invoice likewise defers recovery while another boundary owns the reservation;
+the normal monthly plan can still bill without charging the held cost twice.
+
+Monthly invoice adjustments use the package's complete invoice scan and stable
+item identity. Paid invoices collect; void invoices release; unpaid or unknown
+outcomes stay reserved. Source changes create signed outstanding credits or
+costs without rewriting a held boundary. Cost tables read package balances and
+distinguish collected from reserved amounts; invoice estimates use the exact
+maintained currency balance, with an additional-adjustments line when bounded
+history cannot itemize every obligation.
+
+The host keeps source/display metadata and the approved non-refundable fee
+policy. The old invoice claiming and payout allocation implementations are
+removed. Do not run an older example backend concurrently with this cutover.
+Run the combined sandbox renewal acceptance below after changing these flows.
+Returned recovery-funding invoices route to the package's verified funding
+rollback. The original monthly charge, provider fee and recovery allocation stay
+fixed: partial returns reinstate only the corresponding recovery, and uncovered
+processing/dispute costs become separate seller obligations. Ambiguous funding
+allocations fail closed until the host supplies a verified allocation.
+
 ### Testing monthly renewals
 
 Run `pnpm run e2e:balance-renewals` from the example directory. The script creates
@@ -1177,3 +1217,33 @@ See the [sandbox scenario driver](../docs/affiliate-clawbacks.md#stripe-sandbox-
 for commands, account prerequisites, receipt assertions and blocked-capability
 handling. The [UI recording](../docs/evidence/affiliate-recovery.webm) shows
 simulated fixtures, not live provider evidence.
+The Payment Intent checkout adapter now delegates creation to the public
+`BetterStripe.createPaymentIntent` API after resolving the demo customer, store,
+price and referral context. It preserves sale settlement metadata, guest
+purchases and stable request keys. Amount/currency validation also occurs against
+Stripe's live platform price. Demo personas are not production authentication.
+
+For saved cards, use the exported unstyled `SaveCard` workflow with an authorized
+`createSetupIntent` server callback. The demo's existing tokenization/attach
+screen remains compatible and does not demonstrate completed SetupIntent/SCA
+verification. See the [setup workflow contract](../docs/react-workflows.md#save-a-card-through-setupintent-confirmation)
+for consent, redirect recovery and durable request requirements.
+
+### Live saved-card verification, 2026-10-15
+
+A separate temporary browser fixture exercised the public `SaveCard` component
+and intent APIs against a Connect-enabled Stripe sandbox. Real 3DS failure,
+retry on the same SetupIntent, successful setup and a later off-session saved-card
+payment passed. The later payment was refunded and test fixtures cleaned up.
+This does not turn the demo's tokenization/attach screen into a SetupIntent flow
+or prove production host authentication.
+
+See the [authentication and reuse results](../docs/react-workflows.md#live-authentication-and-reuse-results-2026-10-15),
+[sandbox setup findings](../docs/accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15),
+and [uploaded evidence](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292).
+
+## Component history and currency summaries
+
+See the [read contract guide](../docs/read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

@@ -111,7 +111,7 @@ async function scenario(name: "funded" | "insufficient") {
     );
     evidence.draft = draft;
     assert.equal(
-      draft.costs.reduce((sum, cost) => sum + cost.invoiced, 0),
+      draft.costs.reduce((sum, cost) => sum + cost.reserved, 0),
       costs,
     );
     assert.equal(
@@ -121,7 +121,7 @@ async function scenario(name: "funded" | "insufficient") {
     assert.ok(draft.invoice.lines.some((line) => line.amount === 900));
     assert.ok(
       draft.invoice.lines.some(
-        (line) => line.amount === costs && /costs/.test(line.description),
+        (line) => line.amount === costs && /cost/.test(line.description),
       ),
     );
     call("advance", {
@@ -138,6 +138,14 @@ async function scenario(name: "funded" | "insufficient") {
         "Funded renewal payment",
       );
       evidence.paid = paid;
+      assert.equal(
+        paid.costs.reduce((sum, cost) => sum + cost.collected, 0),
+        costs,
+      );
+      assert.equal(
+        paid.costs.reduce((sum, cost) => sum + cost.reserved, 0),
+        0,
+      );
       assert.equal(paid.invoice.id, draft.invoice.id);
       assert.equal(paid.invoice.amountPaid, total);
       assert.equal(paid.payment.method, "stripe_balance");
@@ -190,7 +198,7 @@ async function scenario(name: "funded" | "insufficient") {
         "An unpaid renewal must close the store after its paid period expires",
       );
       assert.equal(
-        failed.costs.reduce((sum, cost) => sum + cost.invoiced, 0),
+        failed.costs.reduce((sum, cost) => sum + cost.reserved, 0),
         costs,
       );
       console.log(
@@ -225,12 +233,12 @@ async function scenario(name: "funded" | "insufficient") {
         1,
       );
       assert.equal(
-        recovered.costs.reduce((sum, cost) => sum + cost.invoiced, 0),
-        costs,
+        recovered.costs.reduce((sum, cost) => sum + cost.reserved, 0),
+        0,
       );
       assert.equal(
         recovered.costs.reduce((sum, cost) => sum + cost.collected, 0),
-        0,
+        costs,
         "Already invoiced costs must not also be withheld from new earnings",
       );
       if (recovered.subscriptionStatus === "canceled") {

@@ -391,6 +391,40 @@ Preview grouping performs no reads, writes or provider operations and cannot pro
 bank delivery or complete-account earnings. Authorize and bound the source read in
 the host; keep authoritative full-account aggregates separate.
 
+### Complete refund history (added after 0.16.0)
+
+`BetterStripe.paginateRefunds(ctx, opts)` reads authoritative synchronized component
+refund records. `RefundPageOptions` is exported from the main package entrypoint.
+Pass `paginationOpts: { numItems, cursor }` with an integer page size from 1 to 100
+and `null` for the initial cursor. The result has `page`, `isDone` and
+`continueCursor`; feed the returned cursor into the next request until `isDone`.
+Each request performs one bounded helper-compatible component paginate operation
+in newest-first order. Bind the authorized host query with the package React
+`useComponentPaginatedQuery`, matching the catalog and payout readers. Pinned
+ranges may grow beyond the requested page size; reads cap at 200 rows or 1 MB
+and return split hints for the hook. Existing `listRefunds` retains its
+capped-array compatibility.
+
+The host must authenticate the session and derive an authorized account/payment
+scope before exposing this method through its reactive query. Optional
+`stripeAccountId`, `stripePaymentIntentId` and `status` filters all apply together;
+a mismatched account/payment pair returns no records. Do not expose an unscoped
+reader to ordinary sellers, trust browser-supplied account IDs or treat this
+component API as an authentication boundary.
+
+Render returned records with `RefundHistory` or its render prop, retaining their
+original amount, currency, status and charge/payment identifiers. Dojo supplies
+translated Shadcn presentation and its application audit context. Loaded pages
+and the existing 25-row Vite preview are incomplete until pagination finishes;
+neither is a monetary aggregate. Grouped preview amounts remain explicitly
+bounded, and authoritative monetary totals require currency-isolated aggregate
+APIs. This reader performs no Stripe request, refund or ledger write.
+
+This method is absent from public 0.16.0. Source acceptance does not publish it.
+Host applications must wait for a separately verified published artifact and
+package adoption before importing it; source merges alone do not satisfy that
+consumer gate.
+
 ## Store-plan pricing editor
 
 `PlanPricingEditor` accepts a `plan` with `id`, `name`, `monthlyAmount` in minor
@@ -489,3 +523,125 @@ original method and types; it does not retry an unpaid invoice or automatically
 fall back to a card. The example demonstrates durable preparation and pending
 operation records in `storeBalanceFunding.ts` with a separate preview client.
 See the [README balance-funding workflow](../README.md#optional-balance-funded-subscriptions).
+
+## Dispute evidence uploads and onboarding navigation
+
+`EvidenceUpload` is an unstyled control with render props. Its `scopeKey` must
+include the authenticated scope and selected dispute. Bind `onUpload(file)` to
+an authenticated server callback, convert the file to bytes there, and call
+`betterStripe.uploadDisputeEvidence(ctx, { stripeDisputeId, actor, field, file })`.
+The example seller disputes page demonstrates a communication-file attachment.
+The example uses demo personas, so production applications must replace its
+persona authorization with a session-derived actor and dispute ownership check.
+Never accept an actor, connected request account, or attachment file ID from the
+browser as authorization.
+
+The server API accepts nonempty PDF, JPEG or PNG bytes up to 5,000,000 bytes. MIME
+type and file signature must match. Stripe performs full document validation and
+may reject corrupt documents or apply additional dispute/network limits. See
+[Stripe's file upload guide](https://docs.stripe.com/file-upload) and
+[evidence troubleshooting](https://support.stripe.com/questions/evidence-submission-troubleshooting-faq).
+Authorization runs before uploading and again before binding. The API uploads
+with `purpose: "dispute_evidence"`, binds only the returned ID to the chosen
+file evidence field, and explicitly sends `submit: false`. Uploading never sends
+evidence to the bank. Continue using `EvidenceForm.stage()` for prose drafts and
+`EvidenceForm.submit()` for explicit final submission.
+
+`DISPUTE_UPLOAD_FAILED` carries structured provider error details. An attachment
+failure reports `DISPUTE_UPDATE_FAILED`; the uploaded file can remain at Stripe
+without a draft attachment. Keep the local file and prose draft so the user can
+retry. Do not mark an upload as attached until the entire callback succeeds.
+Convex action payload limits can be lower than Stripe's file limit. For larger
+files, authorize and load a private storage reference on the server, then pass
+its bytes to the package. The example byte-action transport is for small files.
+
+`useWorkflowAction(action, scopeKey, onSuccess)` invokes `onSuccess` only after
+checking that the response still belongs to the mounted scope. `useOnboarding`
+uses this lifecycle for both create and continue navigation, including its
+`window.location.assign` fallback. An old response cannot navigate after unmount
+or scope replacement. Current requests preserve shared pending locks and errors.
+`uploadDisputeEvidence`, `EvidenceUpload` and the onboarding navigation fix shipped
+in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
+Version 0.13.0 does not contain them. Consumers must upgrade to
+`@fantastic.dev/better-stripe@0.14.0` or later before using the upload API or relying
+on the package's navigation guard.
+Production storage, session authorization, styling, translations and extended
+hosted onboarding verification remain application responsibilities.
+
+## Save a card through SetupIntent confirmation
+
+`SaveCard` provisions a customer-bound SetupIntent through an authenticated
+`createSetupIntent({ requestId })` callback and mounts Payment Element. It keeps
+creation retries on the same request, blocks duplicate confirmation, exposes
+failures and only calls `onSuccess(setupIntentId)` after Stripe reports
+`succeeded`. Stripe.js handles required authentication and redirects.
+
+```tsx
+<SaveCard
+  publishableKey={publishableKey}
+  scopeKey={`${authenticatedUserId}:${customerAccount}:off_session`}
+  requestId={persistedSaveRequestId}
+  returnUrl="https://app.example/billing/cards"
+  createSetupIntent={createAuthorizedSetupIntent}
+  onSuccess={refreshPaymentMethods}
+/>
+```
+
+The host callback calls `stripe.createSetupIntent(ctx, { userId,
+customerAccount, usage: "off_session", consent: true, idempotencyKey })` with
+server-resolved values. Record consent to the selected usage before mounting
+this workflow. The default confirmation checkbox separately grants permission
+to save and redisplay the card, sent as `allow_redisplay: "always"`. Use
+`renderForm` for your own disclosures, consent copy, Payment Element, pending
+state and errors. `useConfirmPayment().confirmSetup(returnUrl, allowRedisplay)`
+supports `always`, `limited` and `unspecified` when a different redisplay policy
+is required. Off-session usage does not guarantee that future payments will
+never require authentication.
+
+Persist the logical request and immutable customer/usage scope server-side.
+`requestId` and `scopeKey` isolate UI lifecycles; they do not authorize access.
+Handle redirect returns by retrieving the SetupIntent through an authenticated
+server adapter and checking ownership and status before displaying completion.
+Do not infer success from a URL parameter. Do not attach the confirmed method
+again or treat confirmation as changing a subscription default.
+
+Existing `AddCardForm` and `PaymentMethods` tokenization/attach integrations remain
+available. Tokenization plus attachment does not complete SetupIntent or SCA
+verification.
+
+### Live authentication and reuse results, 2026-10-15
+
+The public `SaveCard` workflow and `BetterStripe.createSetupIntent` /
+`BetterStripe.createPaymentIntent` methods were exercised against real Stripe.js
+and Stripe test APIs at commit `332d49c`, merged in
+[PR #166](https://github.com/FantasticDevHQ/better-stripe/pull/166).
+The Connect-enabled sandbox used `2026-09-30.endive` for browser confirmation.
+Separate API checks also passed on `2026-09-30.preview`.
+
+| Check                                                                | Observed result                                                                                                                                                                       |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Explicit consent and repeated provisioning with the same request key | Off-session setup accepted; retries returned the same intent.                                                                                                                         |
+| Card `4000000000003220`, failed 3DS challenge then retry             | A retryable authentication error appeared. Retrying the same SetupIntent and completing 3DS succeeded. Stripe SetupAttempts recorded both outcomes.                                   |
+| Card `4000002500003155`, setup then later off-session payment        | 3DS setup succeeded with `usage: "off_session"` and `allow_redisplay: "always"`. The saved method belonged to the expected V2 customer; the later payment succeeded and was refunded. |
+| Later off-session reuse of card ending `3220`                        | Stripe returned `authentication_required`. Successful setup does not guarantee every later payment can avoid authentication.                                                          |
+| API decline and payment retry checks                                 | Decline returned `card_declined` / `requires_payment_method`; same-key payment provisioning returned the same intent.                                                                 |
+
+Use these public test card numbers only in a Stripe test payment form, with a
+future expiration and test CVC. Use Stripe's test PaymentMethod IDs for API tests.
+See [Stripe's testing guide](https://docs.stripe.com/testing#regulatory-cards).
+
+[Uploaded screenshots and provider records](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292)
+show the challenge, retryable failure and successful reuse. No continuous video
+was recorded. Test payments were refunded and disposable fixtures cleaned up.
+The test used a local ownership fixture for the host callback. It verifies package
+orchestration and actual provider authentication, not production application
+authentication, redirect-return recovery, webhook delivery or Dojo's saved-card UI.
+Consumer applications still need to verify their own authenticated adapters and saved-card UI.
+See [sandbox setup findings](accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15)
+for the account eligibility requirement.
+
+## Component history and currency summaries
+
+See the [read contract guide](read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

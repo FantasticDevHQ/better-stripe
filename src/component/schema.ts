@@ -10,6 +10,13 @@ import {
   affiliateReversalReceiptsTable,
 } from "./settlement/clawbackSchema.js";
 import {
+  feeBalancesTable as payoutFeeBalancesTable,
+  claimsTable as payoutReleaseClaimsTable,
+  sourcesTable as payoutSourceAllocationsTable,
+} from "./payoutRelease/schema.js";
+import { policiesTable, operationsTable } from "./payoutPolicy/schema.js";
+import { currencyTotalsTable } from "./earnings/schema.js";
+import {
   claimsTable,
   balancesTable,
   groupsTable,
@@ -48,6 +55,12 @@ export default defineSchema({
   affiliateOffsets,
   affiliateRecoveryBalances: affiliateBalances,
   affiliateReversalReceipts: affiliateReversalReceiptsTable,
+  payoutFeeBalances: payoutFeeBalancesTable,
+  payoutReleaseClaims: payoutReleaseClaimsTable,
+  payoutSourceAllocations: payoutSourceAllocationsTable,
+  payoutPolicies: policiesTable,
+  payoutPolicyOperations: operationsTable,
+  currencyTotals: currencyTotalsTable,
   recoveryClaims: claimsTable,
   recoveryBalances: balancesTable,
   recoveryGroups: groupsTable,

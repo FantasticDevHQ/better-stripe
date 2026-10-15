@@ -1,6 +1,9 @@
+import { costClaimKey, costScope } from "./lib/sellerRecovery";
+import { stripe } from "./stripe";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { internalMutation, internalQuery, query } from "./_generated/server";
-import { sellerCostDoc, costBillDoc } from "./lib/sellerCostValidators";
+import { internalMutation, query } from "./_generated/server";
+import { sellerCostDoc } from "./lib/sellerCostValidators";
 export const record = internalMutation({
   args: {
     sellerId: v.id("users"),
@@ -12,6 +15,10 @@ export const record = internalMutation({
     processingLoss: v.number(),
     disputeFees: v.number(),
     observedAt: v.number(),
+    sourceGross: v.number(),
+    sourceProcessingFee: v.number(),
+    expectedRevision: v.number(),
+    invoiceRecoveryGroupKey: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -28,23 +35,53 @@ export const record = internalMutation({
         q.eq("sourceChargeId", args.sourceChargeId),
       )
       .first();
-    if (existing && existing.observedAt > args.observedAt) return null;
-    const collectedAmount = existing?.collectedAmount ?? 0;
-    const invoicedAmount = existing?.invoicedAmount ?? 0;
-    const outstanding = args.amountDue - collectedAmount - invoicedAmount;
+    if (
+      existing &&
+      (existing.sellerId !== args.sellerId ||
+        existing.paymentIntentId !== args.paymentIntentId ||
+        existing.currency !== args.currency)
+    )
+      throw new Error("Cost source ownership cannot change.");
+    const seller = await ctx.db.get("users", args.sellerId);
+    if (seller?.role !== "seller" || !seller.stripeAccountId)
+      throw new Error("Original seller account is unavailable.");
+    const scope = costScope(seller._id, seller.stripeAccountId, args.currency);
+    const claimKey = costClaimKey(args.paymentIntentId);
+    const { expectedRevision, ...metadata } = args;
+    let claim = await stripe.costRecovery.getClaim(ctx, { claimKey });
+    if ((claim?.revision ?? -1) !== expectedRevision)
+      throw new Error("Cost observation changed; reconcile again.");
+    if (existing && existing.recoveryVersion !== 1) {
+      await ctx.runMutation(internal.recoveryMigration.adoptLegacy, {
+        costId: existing._id,
+        sourceGross: args.sourceGross,
+        sourceProcessingFee: args.sourceProcessingFee,
+        expectedObservedAt: existing.observedAt,
+      });
+      claim = await stripe.costRecovery.getClaim(ctx, { claimKey });
+    }
+    await stripe.costRecovery.recordClaim(ctx, {
+      ...scope,
+      claimKey,
+      sourceChargeId: args.sourceChargeId,
+      sourceGross: args.sourceGross,
+      sourceProcessingFee: args.sourceProcessingFee,
+      amountDue: args.amountDue,
+      revision: (claim?.revision ?? -1) + 1,
+    });
     if (existing)
       await ctx.db.patch("sellerCosts", existing._id, {
-        ...args,
-        outstanding,
-        open: outstanding !== 0,
+        ...metadata,
+        recoveryVersion: 1,
       });
-    else if (args.amountDue !== 0)
+    else
       await ctx.db.insert("sellerCosts", {
-        ...args,
-        collectedAmount,
-        invoicedAmount,
-        outstanding,
-        open: true,
+        ...metadata,
+        recoveryVersion: 1,
+        collectedAmount: 0,
+        invoicedAmount: 0,
+        outstanding: args.amountDue,
+        open: args.amountDue !== 0,
       });
     return null;
   },
@@ -55,79 +92,39 @@ export const list = query({
   handler: async (ctx, args) => {
     if ((await ctx.db.get("users", args.sellerId))?.role !== "seller")
       throw new Error("Choose a seller to view costs.");
-    return ctx.db
+    const seller = await ctx.db.get("users", args.sellerId);
+    const rows = await ctx.db
       .query("sellerCosts")
       .withIndex("by_seller", (q) => q.eq("sellerId", args.sellerId))
       .order("desc")
       .take(100);
+    return Promise.all(
+      rows.map(async (row) => {
+        if (row.recoveryVersion !== 1) return row;
+        const claim = await stripe.costRecovery.getClaim(ctx, {
+          claimKey: costClaimKey(row.paymentIntentId),
+        });
+        if (!claim || claim.accountId !== seller?.stripeAccountId)
+          throw new Error("Recovery claim ownership is unavailable.");
+        const rollback = await stripe.costRecovery.getClaim(ctx, {
+          claimKey: `rollback:${row.invoiceRecoveryGroupKey ?? `example:cost-settlement:${row.sourceChargeId}`}`,
+        });
+        const amountDue = claim.amountDue + (rollback?.amountDue ?? 0),
+          collectedAmount =
+            claim.collectedAmount + (rollback?.collectedAmount ?? 0),
+          reservedAmount =
+            claim.reservedAmount + (rollback?.reservedAmount ?? 0),
+          outstanding = claim.outstanding + (rollback?.outstanding ?? 0);
+        return {
+          ...row,
+          amountDue,
+          collectedAmount,
+          invoicedAmount: reservedAmount,
+          reservedAmount,
+          outstanding,
+          open: outstanding !== 0,
+        };
+      }),
+    );
   },
-});
-export const claimInvoice = internalMutation({
-  args: {
-    sellerId: v.id("users"),
-    invoiceId: v.string(),
-    currency: v.string(),
-  },
-  returns: v.union(costBillDoc, v.null()),
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("storeCostBills")
-      .withIndex("by_invoice", (q) => q.eq("invoiceId", args.invoiceId))
-      .first();
-    if (existing) {
-      if (existing.sellerId !== args.sellerId)
-        throw new Error("Invoice belongs to another seller.");
-      return existing;
-    }
-    const costs = (
-      await ctx.db
-        .query("sellerCosts")
-        .withIndex("by_seller_open", (q) =>
-          q.eq("sellerId", args.sellerId).eq("open", true),
-        )
-        .take(100)
-    ).filter((cost) => cost.currency === args.currency);
-    if (!costs.length) return null;
-    const allocations = costs.map((cost) => ({
-      costId: cost._id,
-      amount: cost.outstanding,
-    }));
-    const amount = allocations.reduce((sum, item) => sum + item.amount, 0);
-    for (const cost of costs)
-      await ctx.db.patch("sellerCosts", cost._id, {
-        invoicedAmount: cost.invoicedAmount + cost.outstanding,
-        outstanding: 0,
-        open: false,
-      });
-    const id = await ctx.db.insert("storeCostBills", {
-      ...args,
-      amount,
-      allocations,
-      status: "pending",
-    });
-    return (await ctx.db.get("storeCostBills", id))!;
-  },
-});
-export const markAttached = internalMutation({
-  args: {
-    billId: v.id("storeCostBills"),
-    stripeInvoiceItemId: v.optional(v.string()),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.patch("storeCostBills", args.billId, {
-      status: "attached",
-      stripeInvoiceItemId: args.stripeInvoiceItemId,
-    });
-    return null;
-  },
-});
-export const getBill = internalQuery({
-  args: { invoiceId: v.string() },
-  returns: v.union(costBillDoc, v.null()),
-  handler: (ctx, args) =>
-    ctx.db
-      .query("storeCostBills")
-      .withIndex("by_invoice", (q) => q.eq("invoiceId", args.invoiceId))
-      .first(),
 });

@@ -6,6 +6,32 @@ const marker = "bsRecoveryGroup";
 const id = (value: string | { id: string } | null) =>
   typeof value === "string" ? value : value?.id;
 
+type InvoiceReceipt = {
+  group: RecoveryGroup;
+  invoiceItemId: string;
+  invoiceStatus: Stripe.Invoice["status"];
+};
+type BindInvoiceItem = (invoiceItemId: string) => Promise<RecoveryGroup>;
+
+/** Attachment always produces an item; reconciliation can release an unbound void invoice. */
+export function attachRecoveryInvoice(
+  stripe: Stripe,
+  group: RecoveryGroup | null,
+  opts: RecoveryInvoiceOptions,
+  bind: BindInvoiceItem,
+  create?: true,
+): Promise<InvoiceReceipt>;
+export function attachRecoveryInvoice(
+  stripe: Stripe,
+  group: RecoveryGroup | null,
+  opts: RecoveryInvoiceOptions,
+  bind: BindInvoiceItem,
+  create: false,
+): Promise<
+  | InvoiceReceipt
+  | (Omit<InvoiceReceipt, "invoiceItemId"> & { invoiceItemId: null })
+>;
+
 /** One immutable item per sealed group. Host serializes provider operations per group. */
 export async function attachRecoveryInvoice(
   stripe: Stripe,
@@ -66,6 +92,12 @@ export async function attachRecoveryInvoice(
       throw new Error(
         "Bound recovery invoice item is missing; reconcile before retrying.",
       );
+    if (
+      !create &&
+      invoice.status === "void" &&
+      ["sealed", "releasing", "released"].includes(group.status)
+    )
+      return { group, invoiceItemId: null, invoiceStatus: invoice.status };
     if (!create)
       throw new Error(
         "Recovery invoice item is missing; no collection can be confirmed.",

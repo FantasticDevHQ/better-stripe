@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.13.0",
+  "version": "0.22.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -63,7 +63,8 @@
     "docs/accounts-v2-preview.md",
     "docs/react-workflows-audit.md",
     "CHANGELOG.md",
-    "MIGRATION.md"
+    "MIGRATION.md",
+    "docs/read-contracts.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",

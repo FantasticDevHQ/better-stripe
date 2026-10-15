@@ -36,9 +36,24 @@ Accounts and changes customer creation in Stripe-hosted integrations. Review
 those migration effects before enabling it on an existing account.
 See the [customer preview setup and webhook migration guide](docs/accounts-v2-preview.md).
 
+Recipient-held custom payout policies now have versioned preparation, verified
+manual schedule changes, live drift checks, opt-out restoration, and a bounded
+deadline-expiry API. See [policy setup and limits](docs/settlement.md#recipient-held-payout-policy-controls).
+A [recipient funding reader](docs/settlement.md#verified-recipient-funding-receipts)
+verifies original and reversal receipts, maturity, and exact settlement amounts;
+received credit is kept distinct from still-unpaid entitlement.
+A [payout receipt and reconciliation API](docs/settlement.md#verified-payout-receipts-and-reconciliation)
+verifies actual bank-payout debits and returns, adopts an attempted claim's
+provider outcome, and books its net payout fees once.
+The [combined release API](docs/settlement.md#combined-recipient-release) verifies
+complete source and payout history, reserves mature unpaid funds, and creates an
+idempotent bank payout. Install a host job to invoke it and expire due policies.
+Existing unallocated balances, larger histories and other debit allocations still
+require migration; schedule controls alone do not enforce a minimum.
+
 ## Status
 
-**Version**: `0.13.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.22.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
@@ -50,12 +65,12 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
    - `fix: …` makes a patch release.
    - `feat: …` makes a minor release.
    - `feat!: …` (or a `BREAKING CHANGE:` footer) makes a minor release while the package is pre-1.0.
-   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which you can leave open to collect more changes: nothing publishes until that PR is merged.
+   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which auto-merges once its required checks pass.
 
    Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
 
-2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit.
-3. **Merging the release PR** is the release decision. The same run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
+2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit. After formatting, the workflow enables squash auto-merge for the generated release PR using the release GitHub App.
+3. **Auto-merge waits for green checks**. The active `main` ruleset requires `ci`, `Shadscan UI quality gate (100)` and `codegen`, with no bypass actors. Failed or pending required checks prevent merging. Once GitHub merges the generated release PR, the resulting `Release` workflow run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
 
 Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.
 
@@ -119,6 +134,13 @@ existing integration to this API version.
 ### Regenerating codegen
 
 The component ships committed Convex codegen output at `src/component/_generated/{api,component,dataModel,server}.ts` — consumers reach the bindings via the `./_generated/component` subpath export. The example app also commits its own codegen at `example/convex/_generated/`. Running `pnpm dev` (which wraps `convex dev`) regenerates these automatically when the schema or function definitions change, but only against the live dev deployment and only while the dev server is watching.
+
+The example resolves the workspace package through `dist/`. After changing
+component source, regenerate library bindings with `pnpm codegen:lib`, run
+`pnpm build`, then deploy the rebuilt component from the example directory with
+`pnpm exec convex dev --once`. Run `pnpm codegen:example` afterward. Code generation
+alone does not prove that a newly added function is mounted; invoke a representative
+query or action against the development deployment before running financial tests.
 
 If you add, remove, or rename a query/mutation/action on a branch without the dev server watching — or after a rebase — regenerate explicitly before committing:
 
@@ -421,6 +443,37 @@ Use `balance(ctx, scope)` for exact maintained totals and
 the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
 consent, provider fee policy and entitlement changes in the host.
 
+The example uses these package calls for sale reservations, verified collection,
+monthly invoice adjustments and source observations. Its host stores source and
+display metadata; financial totals come from the component. `CostRecovery` accepts
+an optional `reservedAmount` to distinguish reservations from collected money,
+while preserving the legacy `invoicedAmount` input. See the example README for
+cutover constraints and the sandbox renewal acceptance procedure.
+
+### Importing opening recovery balances
+
+When moving an existing ledger into the component, your server can call
+`stripe.costRecovery.importClaim(ctx, { ...observation, operationKey, collectedAmount })`.
+The observation includes the authorized account/scope/currency, original charge,
+gross and processing fee, approved cumulative amount due and a durable revision.
+`collectedAmount` is the signed amount already verified as collected before the
+cutover. The component retains that opening snapshot and computes outstanding as
+amount due minus the imported collection. It does not create a Stripe payment.
+
+Quiesce the old ledger's writers and verify its invoice and payout outcomes first.
+An unpaid invoice is a reservation, not a collection; an unknown provider outcome
+must stay held until reconciled. Do not import those amounts as collected or
+silently release them. Authorize source identity and original provider economics
+in the host before invoking this server-only bookkeeping operation.
+
+Use one stable import operation key per claim. A replay returns the current claim
+even after later observations or collections, without resetting its opening
+amount. Changing the opening snapshot or source binding, reusing an operation key
+for another claim, importing over a normal live claim, or introducing a new
+opening balance while the scope has a pending external recovery group is rejected.
+Signed credit collections and currencies stay separate. New observations continue
+through `recordClaim` with newer durable revisions.
+
 ### Invoice recovery adjustments
 
 After authorizing the seller, invoice and liability scope, reserve with
@@ -454,6 +507,11 @@ attachment and any calls that finish or release it. Never release a reservation
 after a timeout or unknown provider outcome. Draft and open invoices retain their
 reservations, blocking recovery from a second payout. A verified paid invoice
 commits collection; a verified void releases the obligation for a future boundary.
+If an invoice is voided before its adjustment was attached, reconciliation releases
+an unbound sealed group only after scanning every item on that exact invoice.
+The receipt then has `invoiceItemId: null`. A missing previously bound item, or
+an absent adjustment on a paid or unpaid invoice, remains an error and keeps
+reservations held.
 Uncollectible invoices stay reserved unless your explicit host policy passes
 `releaseUncollectible: true`. Do not use that policy while another process might
 retry payment on the original invoice. Subscription cancellation alone does not
@@ -613,12 +671,45 @@ recovery costs and credits remain host-owned policy. See Stripe's
 | `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, metadata?, stripeAccountId?, refundApplicationFee?, reverseTransfer? })` | Issue a refund (provide a payment intent or charge); returns/reverses the platform fee and destination transfer by default; synced via `refund.created`/`.updated` |
 | `getRefundByStripeId(ctx, { stripeRefundId })`                                                                                                           | Get a refund by Stripe refund ID                                                                                                                                   |
 | `listRefunds(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                                                                        | List refunds with optional filters                                                                                                                                 |
+| `paginateRefunds(ctx, { paginationOpts, stripeAccountId?, stripePaymentIntentId?, status? })`                                                            | Added after 0.16.0: bounded newest-first refund cursor pages with conjunctive host-authorized scopes; verify release before adoption                               |
 | `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                                                         | Get a dispute by Stripe dispute ID                                                                                                                                 |
 | `getDisputeWithCountdown(ctx, { stripeDisputeId })`                                                                                                      | Get a dispute plus its evidence-due countdown (`daysRemaining`, `isOverdue`)                                                                                       |
 | `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                                                                       | List disputes with optional filters                                                                                                                                |
+| `uploadDisputeEvidence(ctx, { stripeDisputeId, actor, field, file, stripeAccountId? })`                                                                  | Since 0.14.0: validate and upload file bytes, then attach the returned file ID to an authorized dispute draft; never submits                                       |
 | `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                                                               | Submit/stage dispute evidence (`submit: true` finalizes the response)                                                                                              |
 | `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                                                               | Accept a dispute (concede the chargeback) — irreversible                                                                                                           |
 | `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                                                           | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually)                                         |
+
+`uploadDisputeEvidence` shipped in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
+Call it from an authenticated server adapter with a session-derived actor. A seller
+can upload only for a dispute whose sale belongs to their merchant account.
+
+```ts
+const { stripeFileId } = await stripe.uploadDisputeEvidence(ctx, {
+  stripeDisputeId,
+  actor: { type: "seller", accountId: authorizedSellerAccountId },
+  field: "customer_communication",
+  file: {
+    data: evidenceBytes, // Uint8Array loaded from authorized private storage
+    name: "communication.pdf",
+    type: "application/pdf",
+  },
+});
+```
+
+The API accepts nonempty PDF, JPEG or PNG bytes up to 5,000,000 bytes, with a
+matching MIME type and file signature. Stripe validates the complete document.
+Authorization runs before upload and again before attachment. Only the returned
+provider file ID is bound to the chosen evidence field, with explicit
+`submit: false`. The result contains `stripeFileId` and `stripeDisputeId` after
+attachment succeeds. Use a separate authorized `updateDispute` call with
+`submit: true` when the user explicitly finalizes evidence.
+
+The optional `stripeAccountId` identifies the provider account owning the charge;
+it is distinct from the seller actor. Resolve it server-side. Do not accept
+browser-provided actors or file IDs as authorization. See the
+[upload workflow guide](docs/react-workflows.md#dispute-evidence-uploads-and-onboarding-navigation)
+for errors, retries and storage/transport limits.
 
 Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
 
@@ -1174,6 +1265,16 @@ Existing low-level components remain available below. Props vary by component;
 Stripe iframe styling uses `appearance`, while custom markup uses render props
 or the low-level component's `className`/label props.
 
+### Hosted onboarding navigation
+
+Since 0.14.0, `Onboarding` and `useOnboarding` suppress hosted navigation from
+create/continue responses after unmount or authenticated scope replacement.
+Current-scope responses still navigate through `onNavigate` or the default
+`window.location.assign`. Shared pending locks, duplicate-submit prevention and
+error state remain intact. Set `scopeKey` to identify the authenticated
+account/resource; it controls lifecycle isolation and does not authorize access.
+See the [workflow guide](docs/react-workflows.md#dispute-evidence-uploads-and-onboarding-navigation).
+
 ### Provider
 
 | Component                 | Description                                                                                      |
@@ -1282,11 +1383,12 @@ function BuyerBilling({ userId, customerAccount }: Props) {
 
 The app-owned alternative to [Embedded Disputes](#embedded-disputes-stripe-connect) below — build a custom dispute UI on the read hooks and these components instead of Stripe's hosted ConnectJS components.
 
-| Component       | Description                                                                                                                                                                                                                                        |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DisputesList`  | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`                                                                                                                                            |
-| `DisputeDetail` | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown`                                                                                                                             |
-| `EvidenceForm`  | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
+| Component        | Description                                                                                                                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DisputesList`   | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`                                                                                                                                            |
+| `DisputeDetail`  | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown`                                                                                                                             |
+| `EvidenceUpload` | Since 0.14.0: unstyled file-selection, pending, failure and retry control with render props; bind `onUpload(file)` to an authenticated server adapter that attaches to a draft                                                                     |
+| `EvidenceForm`   | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
 
 ### Embedded Disputes (Stripe Connect)
 
@@ -1559,3 +1661,59 @@ and [v2 request semantics](https://docs.stripe.com/api-v2-overview).
 current provider objects rather than cached component records. They are server
 APIs: authorize each resource and return only the fields your browser needs.
 Subscription upserts accept Stripe's `incomplete_expired` terminal status.
+
+### One-time intents and saved-card setup
+
+`createPaymentIntent(ctx, { userId, customerAccount?, stripePriceId,
+idempotencyKey, receiptEmail?, metadata? })` creates a card-only, platform
+PaymentIntent by default. Set `paymentMethods: "automatic"` to let Stripe select
+compatible methods, as in the example. It retrieves the platform price and expanded product from Stripe,
+rejects inactive products/prices, recurring and nonpositive/nonfixed prices, and
+derives amount and currency from the provider price. It returns only
+`{ paymentIntentId, clientSecret }`. Omit `customerAccount` for a host-authorized
+guest purchase. Existing Checkout Sessions integrations remain available.
+
+`createSetupIntent(ctx, { userId, customerAccount, usage, consent: true,
+idempotencyKey, metadata? })` provisions a card-only SetupIntent for a V2 customer
+account, returning only `{ setupIntentId, clientSecret }`. Explicitly choose
+`on_session` or `off_session` and record consent to that usage before provisioning.
+Confirmation attaches the saved card after required authentication; it does not
+set a subscription default. `SaveCard` from the React entrypoint supplies an
+unstyled Payment Element workflow. See the [React guide](docs/react-workflows.md#save-a-card-through-setupintent-confirmation).
+
+Both APIs require caller idempotency keys. Persist logical request identity and
+immutable inputs on the server, bind keys to the authenticated customer and
+operation, and reuse the same key on retries. Stripe's bounded idempotency window
+is not a durable order store. Authenticate in the host adapter, authorize the
+selected price/product and customer, and supply server-selected metadata. The
+package checks a supplied customer account's persisted `userId` ownership,
+protects its own attribution keys and strips the reserved `bs*` namespace. Never
+accept browser-provided amounts, user IDs or metadata as authorization.
+
+Grant paid access only after the existing verified webhook/settlement flow.
+Creation and browser confirmation are not settlement proof. Customer-account
+operations require Accounts v2 support in the sandbox or merchant account; the
+[customer preview guide](docs/accounts-v2-preview.md) explains eligibility.
+
+#### Live sandbox verification, 2026-10-15
+
+The public intent APIs and `SaveCard` passed real Stripe test-mode verification
+at commit `332d49c`, merged in [PR #166](https://github.com/FantasticDevHQ/better-stripe/pull/166).
+Browser 3DS failure, retry on the same SetupIntent, and successful authentication
+passed. A card saved for `off_session` use then succeeded on a later PaymentIntent;
+all successful test payments were refunded. Provider checks also covered customer
+ownership, redisplay permission, idempotent retries and declines.
+
+The initial `non_connect_platform_accounts_v2_access_blocked` error was resolved
+by enabling Connect in the intended Connect test sandbox. The browser flow used
+`2026-09-30.endive`; separate API checks also passed on `2026-09-30.preview`.
+This does not establish customer-only preview eligibility for another account.
+See the [sandbox setup findings](docs/accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15),
+[authentication and reuse results](docs/react-workflows.md#live-authentication-and-reuse-results-2026-10-15),
+and [uploaded screenshots and provider records](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292).
+
+## Component history and currency summaries
+
+See the [read contract guide](docs/read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

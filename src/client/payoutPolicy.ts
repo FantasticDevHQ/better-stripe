@@ -1,0 +1,452 @@
+import {
+  releaseRecipientPayout,
+  type PayoutReleaseOptions,
+} from "./connect/payoutExecution.js";
+export type * from "./connect/payoutExecution.js";
+import {
+  reconcileRecipientPayout,
+  type PayoutReconciliationOptions,
+} from "./connect/payoutReconciliation.js";
+export type * from "./connect/payoutReconciliation.js";
+import {
+  getRecipientPayoutReceipt,
+  type RecipientPayoutReceiptOptions,
+} from "./connect/payoutReceipt.js";
+export type * from "./connect/payoutReceipt.js";
+import {
+  getTransferFundingReceipt,
+  type TransferReceiptOptions,
+} from "./connect/transferReceipt.js";
+export type * from "./connect/transferReceipt.js";
+import type Stripe from "stripe";
+import type { Infer } from "convex/values";
+import type { Component, RunCtx } from "./helpers.js";
+import { runMutationOrThrow } from "./helpers.js";
+import { componentRef } from "./webhooks/helpers.js";
+import type {
+  policyDoc,
+  operationDoc,
+  schedule,
+} from "../component/payoutPolicy/schema.js";
+import {
+  canonicalSchedule,
+  canonicalThresholds,
+  validateScope,
+} from "../component/payoutPolicy/helpers.js";
+export type PayoutPolicy = Infer<typeof policyDoc>;
+export type PayoutPolicyOperation = Infer<typeof operationDoc>;
+export type PayoutPolicyScope = { accountId: string; ownerKey: string };
+export type PayoutPolicyOptions = PayoutPolicyScope & {
+  operationKey: string;
+  expectedRevision: number;
+  mode: PayoutPolicy["mode"];
+  thresholds: PayoutPolicy["thresholds"];
+  consent?: true;
+};
+export type PayoutPolicyLimitation = {
+  status: "unsupported" | "migration_required";
+  reason:
+    | "provider_permission_denied"
+    | "payout_control_unverified"
+    | "country_unavailable"
+    | "payouts_unavailable"
+    | "existing_balance"
+    | "in_flight_payouts"
+    | "existing_manual_schedule";
+};
+export type PayoutSchedule = Infer<typeof schedule>;
+function readSchedule(settings: Stripe.BalanceSettings): PayoutSchedule {
+  const s = settings.payments.payouts?.schedule;
+  if (
+    !s?.interval ||
+    !["daily", "weekly", "monthly", "manual"].includes(s.interval)
+  )
+    throw new Error("Provider payout schedule is unavailable.");
+  return canonicalSchedule({
+    interval: s.interval as PayoutSchedule["interval"],
+    weeklyDays: s.weekly_payout_days,
+    monthlyDays: s.monthly_payout_days,
+  });
+}
+function permissionDenied(error: unknown): PayoutPolicyLimitation | null {
+  return error instanceof Error &&
+    "type" in error &&
+    error.type === "StripePermissionError"
+    ? { status: "unsupported", reason: "provider_permission_denied" }
+    : null;
+}
+const equal = (a: unknown, b: unknown) =>
+  JSON.stringify(a) === JSON.stringify(b);
+const toProvider = (
+  s: PayoutSchedule,
+): Stripe.BalanceSettingsUpdateParams.Payments.Payouts.Schedule => ({
+  interval: s.interval,
+  ...(s.weeklyDays ? { weekly_payout_days: s.weeklyDays } : {}),
+  ...(s.monthlyDays ? { monthly_payout_days: s.monthlyDays } : {}),
+});
+/** Host authenticates owner/policy/consent. Provider I/O stays in this package. */
+export class PayoutPolicyClient {
+  constructor(
+    private readonly component: Component,
+    private readonly provider: () => Stripe,
+  ) {}
+  release(ctx: RunCtx, opts: PayoutReleaseOptions) {
+    return releaseRecipientPayout(
+      this.provider(),
+      this.component,
+      ctx,
+      opts,
+      () => this.verify(ctx, opts),
+    );
+  }
+  reconcilePayout(ctx: RunCtx, opts: PayoutReconciliationOptions) {
+    return reconcileRecipientPayout(this.provider(), this.component, ctx, opts);
+  }
+  payoutReceipt(opts: RecipientPayoutReceiptOptions) {
+    return getRecipientPayoutReceipt(this.provider(), opts);
+  }
+  transferReceipt(ctx: RunCtx, opts: TransferReceiptOptions) {
+    return getTransferFundingReceipt(
+      this.provider(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+  async get(
+    ctx: RunCtx,
+    scope: PayoutPolicyScope,
+  ): Promise<PayoutPolicy | null> {
+    validateScope(scope);
+    return ctx.runQuery(
+      componentRef(this.component, "payoutPolicy/queries/get"),
+      { accountId: scope.accountId, ownerKey: scope.ownerKey },
+    );
+  }
+  async operation(
+    ctx: RunCtx,
+    args: PayoutPolicyScope & { operationKey: string },
+  ): Promise<PayoutPolicyOperation | null> {
+    validateScope(args);
+    return ctx.runQuery(
+      componentRef(this.component, "payoutPolicy/queries/operation"),
+      {
+        accountId: args.accountId,
+        ownerKey: args.ownerKey,
+        operationKey: args.operationKey,
+      },
+    );
+  }
+  async due(
+    ctx: RunCtx,
+    paginationOpts: { cursor: string | null; numItems: number },
+  ): Promise<{
+    page: PayoutPolicy[];
+    continueCursor: string;
+    isDone: boolean;
+  }> {
+    return ctx.runQuery(
+      componentRef(this.component, "payoutPolicy/queries/due"),
+      { now: Date.now(), paginationOpts },
+    );
+  }
+  private async readControls(
+    scope: PayoutPolicyScope,
+    requireExclusive = true,
+    previousCountry?: string,
+  ): Promise<
+    { country: string; schedule: PayoutSchedule } | PayoutPolicyLimitation
+  > {
+    const stripe = this.provider();
+    const account = await stripe.v2.core.accounts.retrieve(scope.accountId, {
+      include: ["identity"],
+    });
+    if (account.id !== scope.accountId)
+      throw new Error("Provider payout account identity does not match.");
+    if (account.closed || (requireExclusive && account.dashboard !== "none"))
+      return { status: "unsupported", reason: "payout_control_unverified" };
+    const country = account.identity?.country ?? previousCountry;
+    if (!country || !/^[A-Z]{2}$/.test(country))
+      return { status: "unsupported", reason: "country_unavailable" };
+    const settings = await stripe.balanceSettings.retrieve(undefined, {
+      stripeAccount: scope.accountId,
+    });
+    if (requireExclusive && settings.payments.payouts?.status !== "enabled")
+      return { status: "unsupported", reason: "payouts_unavailable" };
+    return {
+      country,
+      schedule: readSchedule(settings),
+    };
+  }
+  private async controls(
+    scope: PayoutPolicyScope,
+    requireExclusive = true,
+    previousCountry?: string,
+  ) {
+    try {
+      return await this.readControls(scope, requireExclusive, previousCountry);
+    } catch (error) {
+      const denied = permissionDenied(error);
+      if (denied) return denied;
+      throw error;
+    }
+  }
+  private async migrationPreflight(
+    scope: PayoutPolicyScope,
+  ): Promise<PayoutPolicyLimitation | null> {
+    const stripe = this.provider();
+    const balance = await stripe.balance.retrieve(undefined, {
+      stripeAccount: scope.accountId,
+    });
+    if (
+      [...balance.available, ...balance.pending].some(
+        (value) => value.amount !== 0,
+      )
+    )
+      return { status: "migration_required", reason: "existing_balance" };
+    for (const status of ["pending", "in_transit"] as const) {
+      const payouts = await stripe.payouts.list(
+        { status, limit: 1 },
+        { stripeAccount: scope.accountId },
+      );
+      if (payouts.has_more || payouts.data.length)
+        return { status: "migration_required", reason: "in_flight_payouts" };
+    }
+    return null;
+  }
+  /** Persist restoration intent first. Existing mixed funds require explicit adoption; never infer ownership. */
+  async prepare(
+    ctx: RunCtx,
+    opts: PayoutPolicyOptions,
+  ): Promise<
+    | { status: "prepared"; operation: PayoutPolicyOperation }
+    | PayoutPolicyLimitation
+  > {
+    const observedAt = Date.now();
+    validateScope(opts);
+    if (opts.mode !== "custom" && opts.mode !== "stripe_managed")
+      throw new Error("Invalid payout policy mode.");
+    if (
+      !Number.isSafeInteger(opts.expectedRevision) ||
+      opts.expectedRevision < -1
+    )
+      throw new Error("Invalid payout policy revision.");
+    if (
+      !opts.operationKey?.trim() ||
+      opts.operationKey.length > 180 ||
+      /[\r\n]/.test(opts.operationKey)
+    )
+      throw new Error("Invalid payout policy operation identity.");
+    if (opts.mode === "custom" && opts.consent !== true)
+      throw new Error(
+        "Explicit consent is required for custom payout scheduling.",
+      );
+    const thresholds = canonicalThresholds(
+      opts.thresholds,
+      opts.mode === "custom",
+    );
+    const prior = await this.operation(ctx, opts);
+    if (prior) {
+      if (
+        prior.mode !== opts.mode ||
+        prior.expectedRevision !== opts.expectedRevision ||
+        !equal(prior.thresholds, thresholds)
+      )
+        throw new Error("Payout policy operation identity cannot be reused.");
+      return { status: "prepared", operation: prior };
+    }
+    const policy = await this.get(ctx, opts);
+    if (policy?.status === "changing")
+      throw new Error("A payout policy operation is pending.");
+    if ((policy?.revision ?? -1) !== opts.expectedRevision)
+      throw new Error("Payout policy revision changed.");
+    const controls = await this.controls(
+      opts,
+      opts.mode === "custom",
+      policy?.country,
+    );
+    if ("status" in controls) return controls;
+    if (opts.mode === "custom" && policy?.mode !== "custom") {
+      if (controls.schedule.interval === "manual")
+        return {
+          status: "migration_required",
+          reason: "existing_manual_schedule",
+        };
+      const migration = await this.migrationPreflight(opts);
+      if (migration) return migration;
+    }
+    const operation = (await runMutationOrThrow(
+      ctx,
+      componentRef(this.component, "payoutPolicy/mutations/prepare"),
+      {
+        accountId: opts.accountId,
+        ownerKey: opts.ownerKey,
+        operationKey: opts.operationKey,
+        expectedRevision: opts.expectedRevision,
+        mode: opts.mode,
+        thresholds,
+        country: controls.country,
+        observedSchedule: controls.schedule,
+        observedAt,
+      },
+    )) as PayoutPolicyOperation;
+    return { status: "prepared", operation };
+  }
+  /** Unknown provider outcomes remain pending; retry uses the persisted target and request identity. */
+  async apply(
+    ctx: RunCtx,
+    args: PayoutPolicyScope & { operationKey: string },
+  ): Promise<
+    | { status: "ready"; operation: PayoutPolicyOperation }
+    | { status: "schedule_drift" }
+    | { status: "canceled"; operation: PayoutPolicyOperation }
+    | PayoutPolicyLimitation
+  > {
+    const operation = await this.operation(ctx, args);
+    if (!operation) throw new Error("Payout policy operation is unavailable.");
+    if (operation.status === "complete") return { status: "ready", operation };
+    if (operation.status === "canceled")
+      return { status: "canceled", operation };
+    const controls = await this.controls(
+      args,
+      operation.mode === "custom",
+      operation.country,
+    );
+    const policy = await this.get(ctx, args);
+    if (
+      operation.mode === "custom" &&
+      !operation.attempted &&
+      policy?.holdDeadline &&
+      policy.holdDeadline <= Date.now() &&
+      !("status" in controls) &&
+      equal(controls.schedule, operation.observedSchedule)
+    ) {
+      const canceled = (await runMutationOrThrow(
+        ctx,
+        componentRef(
+          this.component,
+          "payoutPolicy/mutations/cancelUnattempted",
+        ),
+        { ...args, observedSchedule: controls.schedule },
+      )) as PayoutPolicyOperation;
+      return { status: "canceled", operation: canceled };
+    }
+    if ("status" in controls) return controls;
+    if (operation.mode === "custom" && controls.country !== operation.country)
+      return { status: "schedule_drift" };
+    if (!equal(controls.schedule, operation.targetSchedule)) {
+      if (!equal(controls.schedule, operation.observedSchedule))
+        return { status: "schedule_drift" };
+      if (
+        operation.mode === "custom" &&
+        !operation.attempted &&
+        policy?.mode === "stripe_managed"
+      ) {
+        const migration = await this.migrationPreflight(args);
+        if (migration) {
+          await runMutationOrThrow(
+            ctx,
+            componentRef(
+              this.component,
+              "payoutPolicy/mutations/cancelUnattempted",
+            ),
+            { ...args, observedSchedule: controls.schedule },
+          );
+          return migration;
+        }
+      }
+      await runMutationOrThrow(
+        ctx,
+        componentRef(this.component, "payoutPolicy/mutations/beginAttempt"),
+        args,
+      );
+      try {
+        await this.provider().balanceSettings.update(
+          {
+            payments: {
+              payouts: { schedule: toProvider(operation.targetSchedule) },
+            },
+          },
+          {
+            stripeAccount: args.accountId,
+            idempotencyKey: `bs:payout-policy:${operation.operationKey}`,
+          },
+        );
+      } catch (error) {
+        const denied = permissionDenied(error);
+        if (denied) return denied;
+        throw error;
+      }
+    }
+    const verified = await this.controls(
+      args,
+      operation.mode === "custom",
+      operation.country,
+    );
+    if ("status" in verified) return verified;
+    if (
+      (operation.mode === "custom" && verified.country !== operation.country) ||
+      !equal(verified.schedule, operation.targetSchedule)
+    )
+      return { status: "schedule_drift" };
+    const confirmed = (await runMutationOrThrow(
+      ctx,
+      componentRef(this.component, "payoutPolicy/mutations/confirm"),
+      { ...args, observedSchedule: verified.schedule },
+    )) as PayoutPolicyOperation;
+    return { status: "ready", operation: confirmed };
+  }
+  /** Call before every scheduled payout; stored ready state alone is not proof of live controls. */
+  async verify(
+    ctx: RunCtx,
+    scope: PayoutPolicyScope,
+  ): Promise<
+    | { status: "verified"; policy: PayoutPolicy; providerMinimum: null }
+    | {
+        status:
+          "not_configured" | "pending_operation" | "schedule_drift" | "expired";
+      }
+    | PayoutPolicyLimitation
+  > {
+    const policy = await this.get(ctx, scope);
+    if (policy?.status === "changing") return { status: "pending_operation" };
+    if (!policy || policy.mode !== "custom")
+      return { status: "not_configured" };
+    if (!policy.holdDeadline || policy.holdDeadline <= Date.now())
+      return { status: "expired" };
+    const controls = await this.controls(scope);
+    if ("status" in controls) return controls;
+    if (
+      controls.country !== policy.country ||
+      controls.schedule.interval !== "manual"
+    )
+      return { status: "schedule_drift" };
+    return { status: "verified", policy, providerMinimum: null };
+  }
+  /** A host cron must page due() and call expire(); payout execution is a separate boundary. */
+  async expire(ctx: RunCtx, scope: PayoutPolicyScope) {
+    let policy = await this.get(ctx, scope);
+    if (!policy?.holdDeadline || policy.holdDeadline > Date.now())
+      return { status: "not_due" as const };
+    if (policy.status === "changing") {
+      const result = await this.apply(ctx, {
+        ...scope,
+        operationKey: policy.operationKey,
+      });
+      if (result.status !== "ready") return result;
+      policy = await this.get(ctx, scope);
+    }
+    if (!policy || policy.mode !== "custom")
+      return { status: "not_due" as const };
+    const operationKey = `bs:payout-expiry:${scope.accountId}:${policy.revision}`;
+    const prepared = await this.prepare(ctx, {
+      ...scope,
+      operationKey,
+      expectedRevision: policy.revision,
+      mode: "stripe_managed",
+      thresholds: [],
+    });
+    if (prepared.status !== "prepared") return prepared;
+    return this.apply(ctx, { ...scope, operationKey });
+  }
+}

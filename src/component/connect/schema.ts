@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { defineTable } from "convex/server";
 
 import {
@@ -22,10 +23,14 @@ export const paymentsTable = defineTable(paymentFields)
 /**
  * Payouts to V2 accounts (marketplace).
  */
-export const payoutsTable = defineTable(payoutFields)
+export const payoutsTable = defineTable({
+  ...payoutFields,
+  totalsRecorded: v.optional(v.literal(true)),
+})
   .index("by_stripe_payout_id", ["stripePayoutId"])
   .index("by_account_id", ["accountId"])
   .index("by_status", ["status"])
+  .index("by_account_totals_recorded", ["accountId", "totalsRecorded"])
   .index("by_account_status", ["accountId", "status"]);
 
 /**
@@ -49,6 +54,15 @@ export const refundsTable = defineTable(refundFields)
   .index("by_account_id", ["accountId"])
   .index("by_status", ["status"])
   .index("by_account_id_and_status", ["accountId", "status"])
+  .index("by_account_id_and_stripe_payment_intent_id", [
+    "accountId",
+    "stripePaymentIntentId",
+  ])
+  .index("by_account_id_and_stripe_payment_intent_id_and_status", [
+    "accountId",
+    "stripePaymentIntentId",
+    "status",
+  ])
   .index("by_payment_intent_id_and_status", [
     "stripePaymentIntentId",
     "status",
@@ -63,6 +77,10 @@ export const transfersTable = defineTable({
   ...transferPersistedFields,
 })
   .index("by_stripe_transfer_id", ["stripeTransferId"])
+  .index("by_account_totals_recorded", [
+    "destinationAccountId",
+    "totalsRecorded",
+  ])
   .index("by_destination_account_id", ["destinationAccountId"])
   .index("by_source_charge_id", ["sourceChargeId"]);
 

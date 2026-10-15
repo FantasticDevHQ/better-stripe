@@ -22,8 +22,10 @@ vi.mock("./stripe", async () => {
   const { settleSale } = await import("../../src/client/settlement/settleSale");
   const { components } = await import("./_generated/api");
   const sdk = raw as unknown as import("stripe").default;
+  const { CostRecoveryClient } = await import("../../src/client/costRecovery");
   return {
     stripe: {
+      costRecovery: new CostRecoveryClient(components.betterStripe, () => sdk),
       getVerifiedSale: async (
         _ctx: unknown,
         opts: Parameters<typeof getVerifiedSale>[1],

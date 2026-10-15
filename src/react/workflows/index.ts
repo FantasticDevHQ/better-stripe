@@ -274,3 +274,6 @@ export type {
   AffiliateRecoveryView,
   RecoveryMetric,
 } from "./AffiliateRecovery.js";
+
+export { EvidenceUpload } from "./EvidenceUpload.js";
+export type { EvidenceUploadProps } from "./EvidenceUpload.js";

@@ -117,7 +117,11 @@ balances. Supply a stable `idempotencyKey` and an optional host-authorized
 movement and concurrent payout reservations block release. The configured minimum
 is application policy, not a discovered Stripe regional floor; provider floors
 and balance requirements are still enforced by Stripe. A payout receipt marks
-submission, not arrival in a bank. Stripe-managed automatic bank payouts cannot
+submission, not arrival in a bank. Combined seller/affiliate releases through
+`stripe.payoutPolicy.release` share this recovery reservation. Debt and unresolved
+recovery block both reservation and the final provider attempt. An uncertain payout
+retains the lock until a verified outcome or rejection; an unattempted claim can
+be canceled. Locks are scoped to the recipient and currency. Stripe-managed automatic bank payouts cannot
 be intercepted by this gate; future commissions are offset before their Connect
 transfers leave the platform.
 

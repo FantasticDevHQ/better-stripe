@@ -921,6 +921,8 @@ async function handlePayoutEvent(
       "pending" | "paid" | "failed" | "canceled" | "in_transit",
     arrivalDate: epochToIso(payout.arrival_date),
     method: payout.method ?? undefined,
+    failureCode: payout.failure_code ?? undefined,
+    failureMessage: payout.failure_message ?? undefined,
     metadata: payout.metadata ?? undefined,
   });
 }

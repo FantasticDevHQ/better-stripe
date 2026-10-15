@@ -88,6 +88,13 @@ jobs:
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           node scripts/format-release-changelog.mjs
+      - name: Enable auto-merge for the generated release PR
+        if: steps.release-pr.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
+        run: |
+          node scripts/enable-release-automerge.mjs
 
   publish:
     name: Publish

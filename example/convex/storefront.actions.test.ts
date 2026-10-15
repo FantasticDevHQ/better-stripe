@@ -10,6 +10,7 @@ vi.mock("./stripe", () => ({
     getAccountByUserId: vi.fn(),
     getAccountByStripeId: vi.fn(),
     createCheckoutSession: vi.fn(),
+    createPaymentIntent: vi.fn(),
     resolveFee: vi.fn(() => ({ percent: 2.9, fixed: 30 })),
   },
 }));
@@ -22,9 +23,9 @@ const mock = vi.mocked(stripe);
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_unit");
-  intentRaw.paymentIntents.create.mockResolvedValue({
-    id: "pi_store",
-    client_secret: "test_client_secret",
+  mock.createPaymentIntent.mockResolvedValue({
+    paymentIntentId: "pi_store",
+    clientSecret: "test_client_secret",
   });
   mock.getPriceByStripeId.mockResolvedValue({
     active: true,
@@ -198,10 +199,12 @@ it("creates Payment Intents from server prices with the same referral settlement
     referralCode: "avery",
     requestId: "checkout-request-123",
   });
-  expect(intentRaw.paymentIntents.create).toHaveBeenCalledWith(
+  expect(mock.createPaymentIntent).toHaveBeenCalledWith(
+    expect.anything(),
     expect.objectContaining({
-      amount: 12900,
-      currency: "usd",
+      customerAccount: "acct_customer",
+      stripePriceId: "price_store",
+      idempotencyKey: `example_pi_${ids.customer}_price_store_checkout-request-123`,
       metadata: expect.objectContaining({
         storeBilling: "sale_v1",
         stripeProductId: "prod_store",
@@ -211,9 +214,6 @@ it("creates Payment Intents from server prices with the same referral settlement
         affiliateAccountId: "acct_affiliate",
       }),
     }),
-    {
-      idempotencyKey: `example_pi_${ids.customer}_price_store_checkout-request-123`,
-    },
   );
 });
 it("rejects recurring prices for the one-time Payment Intent example", async () => {

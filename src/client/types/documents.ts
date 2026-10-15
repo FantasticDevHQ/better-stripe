@@ -124,6 +124,8 @@ export type StripeComponentPayout = {
   status: PayoutStatus;
   arrivalDate?: string;
   method?: string;
+  failureCode?: string;
+  failureMessage?: string;
   metadata?: Record<string, unknown>;
 };
 

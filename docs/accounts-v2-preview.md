@@ -16,7 +16,7 @@ enable the account feature or extend BetterStripe's supported-version list.
 
 ## Enable the sandbox feature first
 
-In the intended sandbox, the account owner must enable **Reusable payment
+For a non-Connect merchant, the account owner must enable **Reusable payment
 methods for Global Payouts** under **Account previews and features**. If the toggle
 is unavailable or disabled, check account-owner permissions and request access
 using Stripe's form. A disabled toggle alone does not identify the cause. This also enables Stripe's
@@ -27,6 +27,44 @@ Enabling the preview synchronizes existing Customers with customer-configured
 Accounts and changes how Stripe-hosted integrations create customers. Review
 Stripe's limitations and migration behavior before changing any live account.
 See [Stripe's customer Account guide](https://docs.stripe.com/accounts-v2/use-accounts-as-customers).
+
+## Connect sandbox setup findings, 2026-10-15
+
+Saved-card setup verification initially encountered
+`non_connect_platform_accounts_v2_access_blocked` while creating a
+customer-configured Account. Changing between the supported GA and preview
+request versions did not resolve the account eligibility block.
+
+For the Connect integration under test, enabling Connect in the existing
+standalone test sandbox resolved the block. We used Stripe CLI `1.53.1` and its
+`tools` plugin `0.15.0`. With an authenticated CLI profile for the intended
+sandbox, replace `YOUR_SANDBOX_PROFILE` with its profile name:
+
+```sh
+stripe --project-name YOUR_SANDBOX_PROFILE tools enable_connect --json
+```
+
+Confirm the profile points to the intended standalone sandbox before running it.
+The tool enables Connect in that sandbox and is idempotent. Its help states that
+live accounts and sandboxes controlled by another platform are not eligible.
+Inspect `stripe tools enable_connect --help` for the installed version's behavior.
+See Stripe's [sandbox guide](https://docs.stripe.com/sandboxes) and
+[Connect guide](https://docs.stripe.com/connect).
+
+After enablement, customer-account provisioning, SetupIntent authentication and
+later saved-card payments passed with test credentials. The browser flow used
+`2026-09-30.endive`; separate API checks passed on `2026-09-30.preview` in the
+same Connect-enabled sandbox. These results do not prove non-Connect preview
+eligibility. A merchant using customer-only Accounts must follow the preview
+setup above rather than enabling Connect merely to bypass the block. Neither
+BetterStripe nor a different request version enables Stripe account features.
+
+The [live verification evidence](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292)
+contains screenshots and sanitized provider records. The
+[React guide](react-workflows.md#live-authentication-and-reuse-results-2026-10-15)
+records authentication and reuse outcomes. Successful test payments were refunded,
+unfinished intents canceled, saved test cards detached and fixture products/prices
+archived. No live account configuration or live payment was part of these checks.
 
 ## Configure one client and its webhook route
 

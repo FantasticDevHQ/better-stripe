@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
+import { costScope } from "./lib/sellerRecovery";
 
 export interface StoreInvoiceEstimate {
   currency: string;
@@ -38,12 +39,13 @@ export const estimate = action({
     );
     if (!seller.stripeAccountId || !seller.storePlan)
       throw new Error("Choose a store plan before estimating an invoice.");
+    await ctx.runAction(internal.recoveryInvoices.migrateLegacy, args);
     const preview = await stripe.getUpcomingInvoicePreview(ctx, {
       customerAccount: seller.stripeAccountId,
       stripeSubscriptionId: seller.storePlan.stripeSubscriptionId,
     });
     const costs = await ctx.runQuery(api.sellerCostBilling.list, args);
-    const adjustments = costs
+    const adjustments: StoreInvoiceEstimate["lines"] = costs
       .filter(
         (cost) => cost.currency === preview.currency && cost.outstanding !== 0,
       )
@@ -58,10 +60,22 @@ export const estimate = action({
           sourceType,
         };
       });
+    const balance = await stripe.costRecovery.balance(
+      ctx,
+      costScope(args.sellerId, seller.stripeAccountId, preview.currency),
+    );
+    const remainder =
+      balance.outstanding -
+      adjustments.reduce((sum, line) => sum + line.amount, 0);
+    if (remainder !== 0)
+      adjustments.push({
+        id: "additional-recovery",
+        description: "Additional recovery adjustments",
+        amount: remainder,
+      });
     return {
       currency: preview.currency,
-      total:
-        preview.total + adjustments.reduce((sum, line) => sum + line.amount, 0),
+      total: preview.total + balance.outstanding,
       nextBillingAt: preview.nextBillingAt,
       lines: [
         ...preview.lines.map((line) => ({

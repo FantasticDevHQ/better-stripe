@@ -1124,6 +1124,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
@@ -1207,6 +1209,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               sourceInvoiceId?: string;
               status: "pending" | "paid" | "failed" | "reversed";
               stripeTransferId: string;
+              totalsRecorded?: true;
+            }>;
+          },
+          Name
+        >;
+        getAccountEarningsByCurrency: FunctionReference<
+          "query",
+          "internal",
+          { destinationAccountId: string; previewLimit?: number },
+          {
+            totals: Array<{
+              currency: string;
+              gross: number;
+              net: number;
+              reversed: number;
+              transferCount: number;
+            }>;
+            transfers: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              currency: string;
+              destinationAccountId: string;
+              metadata?: any;
+              paymentId?: string;
+              reinstatement?: boolean;
+              reversalClaimedAmount?: number;
+              reversalStatus?: "partially_reversed" | "fully_reversed";
+              reversedAmount?: number;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              status: "pending" | "paid" | "failed" | "reversed";
+              stripeTransferId: string;
+              totalsRecorded?: true;
             }>;
           },
           Name
@@ -1225,10 +1262,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               arrivalDate?: string;
               currency: string;
+              failureCode?: string;
+              failureMessage?: string;
               metadata?: any;
               method?: string;
               status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
               stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+          },
+          Name
+        >;
+        getAccountPayoutsByCurrency: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; previewLimit?: number },
+          {
+            payouts: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              failureCode?: string;
+              failureMessage?: string;
+              metadata?: any;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+            totals: Array<{
+              currency: string;
+              paidOut: number;
+              payoutCount: number;
             }>;
           },
           Name
@@ -1314,10 +1382,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1332,10 +1403,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1404,6 +1478,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1468,10 +1543,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1535,6 +1613,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1559,6 +1638,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1578,6 +1658,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceChargeId?: string;
             stripeTransferId: string;
           }>,
+          Name
+        >;
+        paginatePayouts: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              failureCode?: string;
+              failureMessage?: string;
+              metadata?: any;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
         paginateTransfersByAccount: FunctionReference<
@@ -1614,6 +1732,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               sourceInvoiceId?: string;
               status: "pending" | "paid" | "failed" | "reversed";
               stripeTransferId: string;
+              totalsRecorded?: true;
             }>;
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
             splitCursor?: string | null;
@@ -1947,6 +2066,47 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        importClaim: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            operationKey: string;
+            revision: number;
+            scopeKey: string;
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          Name
+        >;
         record: FunctionReference<
           "mutation",
           "internal",
@@ -1969,6 +2129,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -2056,6 +2222,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -2132,6 +2304,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -2205,6 +2383,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               claimKey: string;
               collectedAmount: number;
               currency: string;
+              openingCollection?: {
+                amountDue: number;
+                collectedAmount: number;
+                operationKey: string;
+                revision: number;
+              };
               outstanding: number;
               reservedAmount: number;
               revision: number;
@@ -2235,6 +2419,787 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             operationKey: string;
             status: "reserved" | "collected" | "released" | "empty";
           } | null,
+          Name
+        >;
+      };
+    };
+    earnings: {
+      mutations: {
+        backfillCurrencyTotals: FunctionReference<
+          "mutation",
+          "internal",
+          { cursor: string | null; kind: "earnings" | "payouts" },
+          { continueCursor: string; isDone: boolean },
+          Name
+        >;
+      };
+    };
+    payoutPolicy: {
+      mutations: {
+        beginAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        cancelUnattempted: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        confirm: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+      };
+      queries: {
+        due: FunctionReference<
+          "query",
+          "internal",
+          {
+            now: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              country: string;
+              holdDeadline?: number;
+              mode: "stripe_managed" | "custom";
+              operationKey: string;
+              ownerKey: string;
+              previousSchedule?: {
+                interval: "daily" | "weekly" | "monthly" | "manual";
+                monthlyDays?: Array<number>;
+                weeklyDays?: Array<string>;
+              };
+              revision: number;
+              status: "changing" | "ready";
+              thresholds: Array<{ amount: number; currency: string }>;
+            }>;
+          },
+          Name
+        >;
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            country: string;
+            holdDeadline?: number;
+            mode: "stripe_managed" | "custom";
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule?: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "changing" | "ready";
+            thresholds: Array<{ amount: number; currency: string }>;
+          } | null,
+          Name
+        >;
+        operation: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          } | null,
+          Name
+        >;
+      };
+    };
+    payoutRelease: {
+      mutations: {
+        beginAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        cancelUnattempted: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        claim: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            destinationId?: string;
+            expectedRevision: number;
+            independentLiabilities: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerAvailable: number;
+          },
+          | {
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              allocations: Array<{
+                amount: number;
+                role?: "store" | "affiliate" | "other";
+                stripeTransferId: string;
+              }>;
+              amount: number;
+              attemptedAt?: number;
+              currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
+              destinationId?: string;
+              expectedRevision: number;
+              feeRevision?: number;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              operationKey: string;
+              ownerKey: string;
+              providerFee?: number;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
+              returnTransactionId?: string;
+              status:
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
+              stripePayoutId?: string;
+            }
+          | {
+              amount: 0;
+              currency: string;
+              matureUnpaid?: number;
+              pendingCredits?: number;
+              providerMinimum: null;
+              reason:
+                "below_threshold" | "insufficient_available" | "pending_claim";
+              status: "held";
+            },
+          Name
+        >;
+        recordOutcome: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amount: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            operationKey: string;
+            ownerKey: string;
+            providerStatus:
+              "pending" | "in_transit" | "paid" | "failed" | "canceled";
+            returnFee?: number;
+            returnTransactionId?: string;
+            stripePayoutId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        recordRejection: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            code: "balance_insufficient" | "amount_too_small";
+            operationKey: string;
+            ownerKey: string;
+            requestId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        fees: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; ownerKey: string },
+          { amount: number; revision: number },
+          Name
+        >;
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          } | null,
+          Name
+        >;
+        pending: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            ownerKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              allocations: Array<{
+                amount: number;
+                role?: "store" | "affiliate" | "other";
+                stripeTransferId: string;
+              }>;
+              amount: number;
+              attemptedAt?: number;
+              currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
+              destinationId?: string;
+              expectedRevision: number;
+              feeRevision?: number;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              operationKey: string;
+              ownerKey: string;
+              providerFee?: number;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
+              returnTransactionId?: string;
+              status:
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
+              stripePayoutId?: string;
+            }>;
+          },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; ownerKey: string },
+          | { reason: "snapshot_limit"; status: "held" }
+          | {
+              claims: Array<{
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                allocations: Array<{
+                  amount: number;
+                  role?: "store" | "affiliate" | "other";
+                  stripeTransferId: string;
+                }>;
+                amount: number;
+                attemptedAt?: number;
+                currency: string;
+                debitFee?: number;
+                debitTransactionId?: string;
+                destinationId?: string;
+                expectedRevision: number;
+                feeRevision?: number;
+                observations: Array<{
+                  currency: string;
+                  ledgerFingerprint: string;
+                  matureNet: number;
+                  observedAt: number;
+                  pendingCredits: number;
+                  stripeTransferId: string;
+                  transactionIds: Array<string>;
+                }>;
+                operationKey: string;
+                ownerKey: string;
+                providerFee?: number;
+                rejection?: {
+                  code: "balance_insufficient" | "amount_too_small";
+                  requestId: string;
+                };
+                returnTransactionId?: string;
+                status:
+                  | "reserved"
+                  | "submitted"
+                  | "paid"
+                  | "returned"
+                  | "canceled"
+                  | "rejected";
+                stripePayoutId?: string;
+              }>;
+              status: "ready";
+              transfers: Array<{
+                _creationTime: number;
+                _id: string;
+                amount: number;
+                currency: string;
+                destinationAccountId: string;
+                metadata?: any;
+                paymentId?: string;
+                reinstatement?: boolean;
+                reversalClaimedAmount?: number;
+                reversalStatus?: "partially_reversed" | "fully_reversed";
+                reversedAmount?: number;
+                role?: "store" | "affiliate" | "other";
+                sourceChargeId?: string;
+                sourceInvoiceId?: string;
+                status: "pending" | "paid" | "failed" | "reversed";
+                stripeTransferId: string;
+                totalsRecorded?: true;
+              }>;
+            },
           Name
         >;
       };
@@ -2406,6 +3371,133 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             name: string;
             stripeProductId: string;
           }>,
+          Name
+        >;
+        paginatePrices: FunctionReference<
+          "query",
+          "internal",
+          {
+            active?: boolean;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            productId?: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              active: boolean;
+              currency: string;
+              interval?: "day" | "week" | "month" | "year";
+              intervalCount?: number;
+              metadata?: any;
+              nickname?: string;
+              productId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              type: "one_time" | "recurring";
+              unitAmount: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        paginateProducts: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            active?: boolean;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              active: boolean;
+              description?: string;
+              metadata?: any;
+              name: string;
+              stripeProductId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    refundHistory: {
+      queries: {
+        paginateRefunds: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripePaymentIntentId?: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              amount: number;
+              currency: string;
+              failureReason?: string;
+              metadata?: any;
+              reason?:
+                | "duplicate"
+                | "fraudulent"
+                | "requested_by_customer"
+                | "expired_uncaptured_charge";
+              status:
+                | "pending"
+                | "requires_action"
+                | "succeeded"
+                | "failed"
+                | "canceled";
+              stripeChargeId?: string;
+              stripePaymentIntentId?: string;
+              stripeRefundId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };

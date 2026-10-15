@@ -190,3 +190,28 @@ it.each([
     expect(transport).not.toHaveBeenCalled();
   },
 );
+
+it("persists signed failure details and clears them on a later snapshot", async () => {
+  const f = fixture("payout.failed", "failed");
+  f.event.data.object.failure_code = "account_closed";
+  f.event.data.object.failure_message = "Bank account closed";
+  expect((await f.deliver()).status).toBe(200);
+  const failed = await f.payout();
+  expect(failed).toMatchObject({
+    failureCode: "account_closed",
+    failureMessage: "Bank account closed",
+    accountId: "acct_qa_recipient",
+  });
+  expect((await f.deliver()).body).toMatchObject({ deduplicated: true });
+  expect(await f.payout()).toEqual(failed);
+  f.event.id = "evt_failure_cleared";
+  f.event.type = "payout.updated";
+  f.event.data.object.status = "pending";
+  f.event.data.object.failure_code = null;
+  f.event.data.object.failure_message = null;
+  expect((await f.deliver()).status).toBe(200);
+  const cleared = await f.payout();
+  expect(cleared?._id).toBe(failed?._id);
+  expect(cleared).not.toHaveProperty("failureCode");
+  expect(cleared).not.toHaveProperty("failureMessage");
+});

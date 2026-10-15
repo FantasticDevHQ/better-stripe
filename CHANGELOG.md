@@ -26,6 +26,86 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.22.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.21.0...v0.22.0) (2026-10-15)
+
+### Features
+
+- **payouts:** qualify and execute combined recipient releases ([#189](https://github.com/FantasticDevHQ/better-stripe/issues/189)) ([08f4cec](https://github.com/FantasticDevHQ/better-stripe/commit/08f4cecf004635caa42255d4171206e35bda181c))
+
+## [0.21.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.20.1...v0.21.0) (2026-10-15)
+
+### Features
+
+- **payouts:** reconcile verified payout outcomes and fees ([#187](https://github.com/FantasticDevHQ/better-stripe/issues/187)) ([7f14edb](https://github.com/FantasticDevHQ/better-stripe/commit/7f14edb93dcc2c7808f1e3e3f3a8dbe2ff84ad3d))
+
+## [0.20.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.20.0...v0.20.1) (2026-10-15)
+
+### Documentation
+
+- record live saved-card verification and sandbox setup ([#178](https://github.com/FantasticDevHQ/better-stripe/issues/178)) ([18d8b30](https://github.com/FantasticDevHQ/better-stripe/commit/18d8b30cd739c90e68508bd4d119297dc219da5c))
+
+## [0.20.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.19.0...v0.20.0) (2026-10-15)
+
+### Features
+
+- **payouts:** persist source allocations and payout claims ([#184](https://github.com/FantasticDevHQ/better-stripe/issues/184)) ([e99f99e](https://github.com/FantasticDevHQ/better-stripe/commit/e99f99edbec4d1f81988a7854ad26d6fa7ae8a51))
+
+## [0.19.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.18.0...v0.19.0) (2026-10-15)
+
+### Features
+
+- **payouts:** verify recipient transfer funding receipts ([#182](https://github.com/FantasticDevHQ/better-stripe/issues/182)) ([e93d0a7](https://github.com/FantasticDevHQ/better-stripe/commit/e93d0a7a36245b20d568f8c2a3fe117a7f63ea8c))
+
+## [0.18.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.17.1...v0.18.0) (2026-10-15)
+
+### Features
+
+- **payouts:** add durable recipient-held policy controls ([#180](https://github.com/FantasticDevHQ/better-stripe/issues/180)) ([14404c6](https://github.com/FantasticDevHQ/better-stripe/commit/14404c6d3a710c214917657baeb807c180eb1b0f))
+
+## [0.17.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.17.0...v0.17.1) (2026-10-15)
+
+### Bug Fixes
+
+- **ci:** retry release auto-merge on stale head rejection ([#176](https://github.com/FantasticDevHQ/better-stripe/issues/176)) ([a52cbe8](https://github.com/FantasticDevHQ/better-stripe/commit/a52cbe84480ee1fc804240b04a1200468ca57100))
+- **earnings:** reject unsafe currency summary arithmetic ([#175](https://github.com/FantasticDevHQ/better-stripe/issues/175)) ([52b6db6](https://github.com/FantasticDevHQ/better-stripe/commit/52b6db6074dc45a7f1d8b2d5f8c62ce3e2261ee8))
+
+### Documentation
+
+- explain evidence uploads, navigation guards and release auto-merge ([#177](https://github.com/FantasticDevHQ/better-stripe/issues/177)) ([a089e78](https://github.com/FantasticDevHQ/better-stripe/commit/a089e78dc6c04a15cb87b1488dd9eecf8cd7fa45))
+
+## [0.17.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.16.0...v0.17.0) (2026-10-15)
+
+### Features
+
+- **refunds:** expose authoritative cursor history ([#172](https://github.com/FantasticDevHQ/better-stripe/issues/172)) ([5943471](https://github.com/FantasticDevHQ/better-stripe/commit/5943471c406d9202e69691eabbdc1839d5b2b5a3))
+
+### Bug Fixes
+
+- **example:** route seller recovery through verified package ledgers ([#173](https://github.com/FantasticDevHQ/better-stripe/issues/173)) ([f361f2e](https://github.com/FantasticDevHQ/better-stripe/commit/f361f2eb7ba46d98898e928b8bcfe7ef3f42150d))
+
+## [0.16.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.15.0...v0.16.0) (2026-10-15)
+
+### Features
+
+- **reads:** currency summaries and reactive cursor contracts ([#170](https://github.com/FantasticDevHQ/better-stripe/issues/170)) ([5ac85e5](https://github.com/FantasticDevHQ/better-stripe/commit/5ac85e59f1769b6485378971d64888d3f7009c1e))
+
+## [0.15.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.14.0...v0.15.0) (2026-10-15)
+
+### Features
+
+- provision payment and saved-card setup intents ([#166](https://github.com/FantasticDevHQ/better-stripe/issues/166)) ([195e4c6](https://github.com/FantasticDevHQ/better-stripe/commit/195e4c630e6f70907405fd9c8aa0d9cfcf17e6d5))
+
+## [0.14.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.13.0...v0.14.0) (2026-10-15)
+
+### Features
+
+- bind dispute evidence uploads and guard onboarding navigation ([#167](https://github.com/FantasticDevHQ/better-stripe/issues/167)) ([e52cd5d](https://github.com/FantasticDevHQ/better-stripe/commit/e52cd5dfc34d3c83a00d2f1686d07af5370b1e60))
+- **recovery:** preserve verified opening collections ([#163](https://github.com/FantasticDevHQ/better-stripe/issues/163)) ([e613ac0](https://github.com/FantasticDevHQ/better-stripe/commit/e613ac0d52d1d053b4e3a54dd0394ad1e427c729))
+
+### Bug Fixes
+
+- **recovery:** release unbound void invoice reservations ([#165](https://github.com/FantasticDevHQ/better-stripe/issues/165)) ([a73fd89](https://github.com/FantasticDevHQ/better-stripe/commit/a73fd893370688385fcf9dc2a8dd309d2cbd3ead))
+
 ## [0.13.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.12.0...v0.13.0) (2026-10-15)
 
 ### Features

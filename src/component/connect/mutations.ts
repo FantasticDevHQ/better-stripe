@@ -4,7 +4,7 @@ import { claimReversalSlicesDefinition } from "./reversalClaims.js";
 import { v } from "convex/values";
 
 import type { Id } from "../_generated/dataModel";
-import { mutation } from "../_generated/server";
+import { mutation } from "../earnings/triggers.js";
 import { feeRoutingFields } from "../lib/fees";
 import { deriveReversalState } from "../lib/reversals";
 import { paymentSeller } from "../lib/paymentSeller";
@@ -124,6 +124,8 @@ export const upsertPayout = mutation({
     status: payoutStatusValidator,
     arrivalDate: v.optional(v.string()),
     method: v.optional(v.string()),
+    failureCode: v.optional(v.string()),
+    failureMessage: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
   returns: v.null(),
@@ -136,7 +138,11 @@ export const upsertPayout = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch("payouts", existing._id, args);
+      await ctx.db.patch("payouts", existing._id, {
+        ...args,
+        failureCode: args.failureCode,
+        failureMessage: args.failureMessage,
+      });
     } else {
       await ctx.db.insert("payouts", args);
     }
@@ -145,9 +151,7 @@ export const upsertPayout = mutation({
   },
 });
 
-// =============================================================================
 // REFUND MUTATIONS
-// =============================================================================
 
 export const upsertRefund = mutation({
   args: refundFields,
@@ -286,9 +290,7 @@ export const recordPaymentFeeRefund = mutation({
   },
 });
 
-// =============================================================================
 // DISPUTE MUTATIONS
-// =============================================================================
 
 export const upsertDispute = mutation({
   args: disputeFields,
@@ -314,9 +316,7 @@ export const upsertDispute = mutation({
   },
 });
 
-// =============================================================================
 // TRANSFER MUTATIONS (ledger — BTS-12)
-// =============================================================================
 
 export const upsertTransfer = mutation({
   args: transferFields,

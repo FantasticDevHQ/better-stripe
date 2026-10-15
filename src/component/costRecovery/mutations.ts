@@ -1,3 +1,4 @@
+import { importOpeningClaim } from "./imports.js";
 import { getGroup, integer } from "./helpers.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
@@ -6,6 +7,7 @@ import { reserveGroup, sealGroup } from "./reservations.js";
 import { finishGroup } from "./completion.js";
 import {
   observationFields,
+  importArgs,
   claimDoc,
   groupDoc,
   reservationDoc,
@@ -112,4 +114,10 @@ export const bindInvoiceFunding = mutation({
     });
     return (await ctx.db.get("recoveryGroups", group._id))!;
   },
+});
+
+export const importClaim = mutation({
+  args: importArgs,
+  returns: claimDoc,
+  handler: importOpeningClaim,
 });

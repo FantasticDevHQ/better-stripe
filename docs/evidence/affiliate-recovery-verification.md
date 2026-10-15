@@ -27,6 +27,10 @@ real Convex component and an idempotent provider fixture. Its 15 cases verify:
 
 Additional tests cover rounding, multiple invoices, migration, bounded reads,
 immutable original economics, ownership, default/headless UI figures and errors.
+Five combined-payout integration cases also verify debt blocking, currency
+isolation, competing direct/combined reservations, debt arriving before the
+provider attempt, and uncertain payouts retaining locks until verified receipts.
+
 Example tests verify that an unauthenticated demo persona cannot obtain operator
 rights or inspect another affiliate's recovery records.
 

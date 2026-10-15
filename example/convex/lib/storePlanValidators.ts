@@ -40,6 +40,9 @@ export const storeSaleFields = {
 export const storeSaleRecordFields = {
   ...storeSaleFields,
   costRecoveryAmount: v.optional(v.number()),
+  recoveryGroupKey: v.optional(v.string()),
+  recoveryReady: v.optional(v.boolean()),
+  settlementAttempted: v.optional(v.boolean()),
   status: v.union(
     v.literal("pending"),
     v.literal("settled"),

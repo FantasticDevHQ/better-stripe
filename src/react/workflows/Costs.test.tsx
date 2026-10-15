@@ -39,3 +39,24 @@ it("renders chargeback economics and explicitly handles missing charge links", (
   expect(screen.getByText("$80.00")).toBeTruthy();
   expect(screen.getByText("No transfer rows found.")).toBeTruthy();
 });
+it("distinguishes reserved recovery from money already collected", () => {
+  render(
+    <CostRecovery
+      rows={[
+        {
+          paymentIntentId: "pi_reserved",
+          amountDue: 1000,
+          collectedAmount: 400,
+          invoicedAmount: 999,
+          reservedAmount: 300,
+          outstanding: 300,
+          currency: "usd",
+        },
+      ]}
+    />,
+  );
+  expect(screen.getByText("Collected")).toBeTruthy();
+  expect(screen.getByText("Reserved")).toBeTruthy();
+  expect(screen.queryByText("$9.99")).toBeNull();
+  expect(screen.getAllByText("$3.00")).toHaveLength(2);
+});

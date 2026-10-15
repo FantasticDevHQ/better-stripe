@@ -39,6 +39,9 @@ See the [customer preview setup and webhook migration guide](docs/accounts-v2-pr
 Recipient-held custom payout policies now have versioned preparation, verified
 manual schedule changes, live drift checks, opt-out restoration, and a bounded
 deadline-expiry API. See [policy setup and limits](docs/settlement.md#recipient-held-payout-policy-controls).
+A [recipient funding reader](docs/settlement.md#verified-recipient-funding-receipts)
+verifies original and reversal receipts, maturity, and exact settlement amounts;
+received credit is kept distinct from still-unpaid entitlement.
 Automatic combined release and adoption of existing balances still require the
 separate release boundary; schedule controls alone do not enforce a minimum.
 

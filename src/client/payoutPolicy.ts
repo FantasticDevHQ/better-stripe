@@ -1,3 +1,8 @@
+import {
+  getTransferFundingReceipt,
+  type TransferReceiptOptions,
+} from "./connect/transferReceipt.js";
+export type * from "./connect/transferReceipt.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { Component, RunCtx } from "./helpers.js";
@@ -70,6 +75,14 @@ export class PayoutPolicyClient {
     private readonly component: Component,
     private readonly provider: () => Stripe,
   ) {}
+  transferReceipt(ctx: RunCtx, opts: TransferReceiptOptions) {
+    return getTransferFundingReceipt(
+      this.provider(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
   async get(
     ctx: RunCtx,
     scope: PayoutPolicyScope,

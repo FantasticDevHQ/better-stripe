@@ -152,3 +152,50 @@ it("returns a completed empty page on empty history", async () => {
     continueCursor: expect.any(String),
   });
 });
+
+it("pins reactive refund ranges and splits growth before bounded read limits", async () => {
+  const t = await fixture();
+  const scope = { accountId: "acct_a" };
+  const first = await t.query(paginate, {
+    ...scope,
+    paginationOpts: { numItems: 2, cursor: null },
+  });
+  const second = await t.query(paginate, {
+    ...scope,
+    paginationOpts: { numItems: 2, cursor: first.continueCursor },
+  });
+  vi.setSystemTime(1800000010000);
+  await t.mutation(api.connect.mutations.upsertRefund, {
+    stripeRefundId: "re_new",
+    ...scope,
+    amount: 500,
+    currency: "jpy",
+    status: "pending",
+  });
+  const paginationOpts = {
+    numItems: 2,
+    cursor: null,
+    endCursor: first.continueCursor,
+  };
+  const pinned = await t.query(paginate, { ...scope, paginationOpts });
+  expect(pinned.page).toHaveLength(3);
+  expect(
+    new Set([...pinned.page, ...second.page].map((row) => row.stripeRefundId))
+      .size,
+  ).toBe(4);
+  for (let index = 0; index < 205; index++) {
+    vi.setSystemTime(1800000020000 + index * 1000);
+    await t.mutation(api.connect.mutations.upsertRefund, {
+      stripeRefundId: `re_growth_${index}`,
+      ...scope,
+      amount: 500,
+      currency: "jpy",
+      status: "succeeded",
+    });
+  }
+  const grown = await t.query(paginate, { ...scope, paginationOpts });
+  expect(grown.page).toHaveLength(200);
+  expect(grown.pageStatus).toBe("SplitRequired");
+  expect(grown.splitCursor).toBeTruthy();
+  expect(grown.page.every((row) => row.accountId === "acct_a")).toBe(true);
+});

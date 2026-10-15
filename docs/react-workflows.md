@@ -398,8 +398,12 @@ refund records. `RefundPageOptions` is exported from the main package entrypoint
 Pass `paginationOpts: { numItems, cursor }` with an integer page size from 1 to 100
 and `null` for the initial cursor. The result has `page`, `isDone` and
 `continueCursor`; feed the returned cursor into the next request until `isDone`.
-Each request performs exactly one bounded native Convex paginate operation in
-newest-first order. Existing `listRefunds` retains its capped-array compatibility.
+Each request performs one bounded helper-compatible component paginate operation
+in newest-first order. Bind the authorized host query with the package React
+`useComponentPaginatedQuery`, matching the catalog and payout readers. Pinned
+ranges may grow beyond the requested page size; reads cap at 200 rows or 1 MB
+and return split hints for the hook. Existing `listRefunds` retains its
+capped-array compatibility.
 
 The host must authenticate the session and derive an authorized account/payment
 scope before exposing this method through its reactive query. Optional
@@ -416,7 +420,7 @@ neither is a monetary aggregate. Grouped preview amounts remain explicitly
 bounded, and authoritative monetary totals require currency-isolated aggregate
 APIs. This reader performs no Stripe request, refund or ledger write.
 
-Source acceptance does not publish this method. It is absent from public 0.13.0.
+Source acceptance does not publish this method. It is absent from public 0.16.0.
 Host applications must wait for a separately verified published artifact and
 package adoption before importing it; source merges alone do not satisfy that
 consumer gate.

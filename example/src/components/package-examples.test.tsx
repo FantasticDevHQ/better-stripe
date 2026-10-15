@@ -71,6 +71,35 @@ it("renders loading and empty catalog states", () => {
   rerender(<ProductComponents />);
   expect(screen.getByText("No products yet.")).toBeVisible();
 });
+it("keeps zero-decimal and custom prices accurate in the Vite render prop", () => {
+  mocks.role = "admin";
+  mocks.rows = [
+    {
+      name: "JPY catalog",
+      stripeProductId: "prod_jpy",
+      prices: [
+        {
+          stripePriceId: "price_jpy",
+          unitAmount: 500,
+          currency: "jpy",
+          type: "one_time",
+          active: true,
+        },
+        {
+          stripePriceId: "price_custom",
+          unitAmount: null,
+          currency: "usd",
+          type: "one_time",
+          active: true,
+        },
+      ],
+    },
+  ];
+  render(<ProductComponents />);
+  expect(screen.getByText("¥500")).toBeVisible();
+  expect(screen.getByText("Custom price")).toBeVisible();
+  expect(screen.queryByText("$0.00")).not.toBeInTheDocument();
+});
 it("uses PriceCard with the seller catalog and exposes the selected Stripe price", async () => {
   mocks.rows = [
     {

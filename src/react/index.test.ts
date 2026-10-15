@@ -7,6 +7,11 @@ import { describe, expect, it } from "vitest";
 import * as ReactExports from "./index.js";
 
 describe("better-stripe/react barrel export", () => {
+  it("exports shared charge helpers with actual zero-decimal behavior", () => {
+    expect(ReactExports.parseChargeAmount("500", "jpy")).toBe(500);
+    expect(ReactExports.formatChargeAmount(500, "jpy")).toBe("¥500");
+    expect(ReactExports.getChargeCurrencyMetadata("isk")?.apiDecimals).toBe(2);
+  });
   it("exports all documented hook factories", () => {
     const hookFactories = [
       "createUseAccount",

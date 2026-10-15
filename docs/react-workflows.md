@@ -8,6 +8,60 @@ Components render semantic HTML without package CSS. Use their render props or
 companion hooks to supply your own design system. Stripe iframe contents use
 Stripe's `appearance` options and retain Stripe's own styling.
 
+## Charge and Price currency units
+
+`getChargeCurrencyMetadata`, `parseChargeAmount` and `formatChargeAmount` are
+browser-safe pure helpers exported from the main package and `/react`. They
+apply Stripe charge/Price rules, not payout or Global Payouts rules. See
+[Stripe currencies](https://docs.stripe.com/currencies).
+
+```ts
+import {
+  getChargeCurrencyMetadata,
+  parseChargeAmount,
+  formatChargeAmount,
+} from "@fantastic.dev/better-stripe/react";
+
+getChargeCurrencyMetadata("jpy"); // { currency: "jpy", apiDecimals: 0, displayDecimals: 0 }
+parseChargeAmount("500", "jpy"); // 500
+formatChargeAmount(500, "jpy"); // ¥500
+parseChargeAmount("500", "isk"); // 50000, compatibility units
+parseChargeAmount("10.45", "huf"); // 1045, charge fractions are supported
+parseChargeAmount("1.005", "usd"); // null, no rounding
+```
+
+The parser accepts nonnegative ASCII decimals, including zero, and returns a
+safe integer or `null`. Reject a zero refund or non-free product separately in
+the authorized operation. Exponents, separators, signs, excess precision and
+unsafe integers are invalid. ISK/UGX accept whole amounts and use two-decimal
+API compatibility units. Zero-decimal charge currencies include JPY and MGA.
+HUF/TWD charges retain two decimals despite their payout restrictions. Unknown
+currencies and unsupported three/four-decimal precision fail closed; formatting
+invalid amounts throws `RangeError`. The formatter supports signed adjustments
+and preserves negative sub-unit values. Parsing new charge inputs remains
+nonnegative. No helper performs FX or provider writes. Environments without
+`Intl.supportedValuesOf` fail closed with no recognized currencies.
+
+`PriceCard` and `formatPriceWithInterval` use the strict charge/Price rules.
+The legacy `formatPrice` display helper also serves observed account balances
+and signed costs. It preserves fractional ISK/UGX minor units without applying
+whole-charge eligibility, so an observed UGX balance of `101` displays `1.01`.
+It is not a charge validator. No helper establishes payout eligibility or
+Global Payouts units.
+Missing/null amounts display `Custom price`, distinct from a real zero price.
+Pass `customPriceLabel` and `locale` to `PriceCard` for translated presentation,
+or the third argument to `formatPriceWithInterval` for a custom missing-amount
+label. The Vite Products component example keeps the package's formatted price
+inside its Shadcn render prop. Invalid non-null provider values must be handled
+by the host's error boundary rather than presented as a fabricated amount.
+
+Metadata describes precision only. Derive selectable presentment currencies
+from the public `getCountrySpecs` result and validate account/payment-method
+support on the server. Do not derive an account's supported currencies from
+`Intl.supportedValuesOf` or this helper. The separate PlanPricingEditor and
+Refunds input migrations remain separate work; their existing
+two-decimal parsers are not changed by this helper release.
+
 ## Bind your backend
 
 Pass authenticated server callbacks and query results to the components. This

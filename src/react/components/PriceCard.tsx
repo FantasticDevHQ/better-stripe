@@ -23,6 +23,8 @@ export type PriceCardProps = {
   /** i18n overrides */
   currentPlanLabel?: string;
   selectLabel?: string;
+  customPriceLabel?: string;
+  locale?: string;
   /** Render prop for full customization */
   children?: (props: {
     price: PriceCardPrice;
@@ -45,10 +47,16 @@ export function PriceCard({
   onSelect,
   currentPlanLabel = "Current plan",
   selectLabel = "Select",
+  customPriceLabel = "Custom price",
+  locale = "en-US",
   children,
   className,
 }: PriceCardProps) {
-  const formattedPrice = formatPriceWithInterval(price);
+  const formattedPrice = formatPriceWithInterval(
+    price,
+    locale,
+    customPriceLabel,
+  );
 
   if (children) {
     return (

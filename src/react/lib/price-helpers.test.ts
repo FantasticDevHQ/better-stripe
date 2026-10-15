@@ -8,6 +8,10 @@ import {
 } from "./price-helpers.js";
 
 describe("formatPrice", () => {
+  it("keeps fractional compatibility units from observed balances and costs", () => {
+    expect(formatPrice(101, "ugx")).toContain("1.01");
+    expect(formatPrice(-1, "isk")).toBe("-ISK 0.01");
+  });
   it("formats USD cents to dollars", () => {
     expect(formatPrice(2000, "usd")).toBe("$20.00");
   });
@@ -32,6 +36,15 @@ describe("formatPrice", () => {
 });
 
 describe("formatPriceWithInterval", () => {
+  it("supports translated custom prices without fabricating an interval", () => {
+    expect(
+      formatPriceWithInterval(
+        { currency: "usd", type: "recurring", interval: "month", active: true },
+        "en-US",
+        "Contact us",
+      ),
+    ).toBe("Contact us");
+  });
   it("shows amount only for one_time prices", () => {
     const result = formatPriceWithInterval({
       unitAmount: 2900,
@@ -80,7 +93,7 @@ describe("formatPriceWithInterval", () => {
     expect(result).toBe("$50.00 every 3 months");
   });
 
-  it("handles null unitAmount as zero", () => {
+  it("keeps a custom/null amount distinct from a zero price", () => {
     const result = formatPriceWithInterval({
       unitAmount: null,
       currency: "usd",
@@ -89,7 +102,7 @@ describe("formatPriceWithInterval", () => {
       intervalCount: null,
       active: true,
     });
-    expect(result).toBe("$0.00");
+    expect(result).toBe("Custom price");
   });
 });
 

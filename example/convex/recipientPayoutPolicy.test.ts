@@ -354,3 +354,55 @@ it("derives uncollected seller costs on the server before assessing eligibility"
     },
   });
 });
+
+it("preserves unresolved expiry in the public policy view after controls are restored", async () => {
+  vi.useFakeTimers();
+  try {
+    const s = await setup({ amounts: [599, 400] });
+    const scope = { accountId: "acct_recipient", ownerKey: s.userId };
+    const before = (await s.t.query(
+      components.betterStripe.payoutPolicy.queries.get,
+      scope,
+    ))!;
+    vi.advanceTimersByTime(731 * 86400000);
+    await s.t.mutation(
+      components.betterStripe.payoutPolicy.mutations.beginHoldingExpiry,
+      scope,
+    );
+    await s.t.mutation(components.betterStripe.payoutPolicy.mutations.prepare, {
+      ...scope,
+      expectedRevision: 0,
+      operationKey: "expire",
+      mode: "stripe_managed",
+      thresholds: [],
+      country: "US",
+      observedSchedule: { interval: "manual" },
+    });
+    await s.t.mutation(components.betterStripe.payoutPolicy.mutations.confirm, {
+      ...scope,
+      operationKey: "expire",
+      observedSchedule: { interval: "weekly", weeklyDays: ["monday"] },
+    });
+    await s.t.mutation(
+      components.betterStripe.payoutPolicy.mutations.observeHoldingExpiry,
+      {
+        ...scope,
+        expectedRevision: 1,
+        deadline: before.holdDeadline!,
+        observedAt: Date.now(),
+        balances: [{ currency: "usd", available: 999, pending: 0 }],
+      },
+    );
+    expect(await s.t.action(load, s.scope)).toMatchObject({
+      policy: {
+        mode: "stripe_managed",
+        holdingExpiry: {
+          status: "balance_remaining",
+          balances: [{ currency: "usd", available: 999, pending: 0 }],
+        },
+      },
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});

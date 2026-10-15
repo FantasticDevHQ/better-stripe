@@ -102,7 +102,21 @@ export const expire = internalAction({
       ...args,
       currency: "usd",
     });
-    await stripe.payoutPolicy.expire(ctx, args);
+    const result = await stripe.payoutPolicy.expire(ctx, args);
+    if (
+      result.status !== "ready" &&
+      result.status !== "not_due" &&
+      result.status !== "canceled"
+    )
+      console.warn("Holding expiry requires operator recovery", {
+        accountId: args.accountId,
+        ...(result.status === "expiry_unresolved"
+          ? {
+              deadline: result.holdingExpiry.deadline,
+              reason: result.holdingExpiry.status,
+            }
+          : { reason: "reason" in result ? result.reason : result.status }),
+      });
     return null;
   },
 });

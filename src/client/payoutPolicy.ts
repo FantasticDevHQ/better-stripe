@@ -1,3 +1,5 @@
+export { holdingExpiry as payoutHoldingExpiryValidator } from "../component/payoutPolicy/schema.js";
+import { expirePayoutPolicy } from "./connect/payoutExpiry.js";
 import {
   previewRecipientPayout,
   type PayoutPreviewOptions,
@@ -570,28 +572,12 @@ export class PayoutPolicyClient {
   }
   /** A host cron must page due() and call expire(); payout execution is a separate boundary. */
   async expire(ctx: RunCtx, scope: PayoutPolicyScope) {
-    let policy = await this.get(ctx, scope);
-    if (!policy?.holdDeadline || policy.holdDeadline > Date.now())
-      return { status: "not_due" as const };
-    if (policy.status === "changing") {
-      const result = await this.apply(ctx, {
-        ...scope,
-        operationKey: policy.operationKey,
-      });
-      if (result.status !== "ready") return result;
-      policy = await this.get(ctx, scope);
-    }
-    if (!policy || policy.mode !== "custom")
-      return { status: "not_due" as const };
-    const operationKey = `bs:payout-expiry:${scope.accountId}:${policy.revision}`;
-    const prepared = await this.prepare(ctx, {
-      ...scope,
-      operationKey,
-      expectedRevision: policy.revision,
-      mode: "stripe_managed",
-      thresholds: [],
-    });
-    if (prepared.status !== "prepared") return prepared;
-    return this.apply(ctx, { ...scope, operationKey });
+    return expirePayoutPolicy(
+      this.provider(),
+      this.component,
+      ctx,
+      scope,
+      this,
+    );
   }
 }

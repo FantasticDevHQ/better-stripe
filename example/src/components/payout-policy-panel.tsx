@@ -166,6 +166,29 @@ function ProgressView({ state }: { state: PayoutProgressState }) {
         Stripe enforces its payout floor. A numeric provider floor is not
         available.
       </p>
+      {state.recovery?.balances && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Stripe balances at last expiry check. These are not a payable
+            earnings assessment; currencies remain separate.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {state.recovery.balances.map((balance) => (
+              <Card key={balance.currency} size="sm" variant="muted">
+                <CardHeader>
+                  <CardTitle variant="metric">
+                    {balance.currency.toUpperCase()} provider balance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Available: {balance.availableLabel}</p>
+                  <p>Pending: {balance.pendingLabel}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
       {state.progress && (
         <Progress
           aria-label="Combined payout minimum"
@@ -252,8 +275,9 @@ function ProgressView({ state }: { state: PayoutProgressState }) {
       )}
       {state.observedAt !== null && (
         <p className="text-sm text-muted-foreground">
-          Assessed: {date(state.observedAt)} UTC. Payout eligibility is verified
-          again automatically.
+          {state.recovery ? "Last recovery check" : "Assessed"}:{" "}
+          {date(state.observedAt)} UTC. Provider state is verified again
+          automatically.
         </p>
       )}
     </div>

@@ -264,3 +264,45 @@ it("explains the deadline waiver without a minimum progress bar", () => {
   expect(screen.queryByRole("progressbar")).toBeNull();
   expect(screen.getByText("Combined payout minimum")).toBeTruthy();
 });
+
+it("shows expiry recovery after automatic schedule restoration without claiming disbursement", () => {
+  render(
+    <PayoutProgress
+      policy={{
+        ...policy,
+        mode: "stripe_managed",
+        thresholds: [],
+        holdingExpiry: {
+          deadline: policy.holdDeadline,
+          status: "balance_remaining",
+          observedAt: 1800000000000,
+          balances: [{ currency: "usd", available: 999, pending: 25 }],
+        },
+      }}
+      currency="usd"
+    />,
+  );
+  expect(screen.getByRole("status").textContent).toContain(
+    "does not confirm disbursement",
+  );
+  expect(screen.queryByText(/Stripe manages automatic payouts/)).toBeNull();
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.getByText("$9.99")).toBeTruthy();
+  expect(screen.getByText("$0.25")).toBeTruthy();
+});
+it("keeps unavailable expiry balances unverified instead of showing fabricated zero", () => {
+  render(
+    <PayoutProgress
+      policy={{
+        ...policy,
+        mode: "stripe_managed",
+        holdingExpiry: { deadline: policy.holdDeadline, status: "unverified" },
+      }}
+      currency="usd"
+    />,
+  );
+  expect(screen.getByRole("status").textContent).toContain(
+    "verification is unavailable",
+  );
+  expect(screen.queryByText("$0.00")).toBeNull();
+});

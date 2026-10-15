@@ -34,6 +34,22 @@ export const prepareFields = {
   observedSchedule: schedule,
   observedAt: v.optional(v.number()),
 };
+export const expiryBalance = v.object({
+  currency: v.string(),
+  available: v.number(),
+  pending: v.number(),
+});
+export const holdingExpiry = v.object({
+  deadline: v.number(),
+  status: v.union(
+    v.literal("unverified"),
+    v.literal("balance_remaining"),
+    v.literal("claims_unresolved"),
+    v.literal("no_held_balance"),
+  ),
+  observedAt: v.optional(v.number()),
+  balances: v.optional(v.array(expiryBalance)),
+});
 export const policyFields = {
   ...scopeFields,
   revision: v.number(),
@@ -44,6 +60,7 @@ export const policyFields = {
   country: v.string(),
   previousSchedule: v.optional(schedule),
   holdDeadline: v.optional(v.number()),
+  holdingExpiry: v.optional(holdingExpiry),
 };
 export const operationFields = {
   ...prepareFields,

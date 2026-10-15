@@ -234,9 +234,37 @@ consume entitlement.
 Restoring a weekly/monthly schedule at expiry is a control fallback, not proof
 of funded disbursement within the country holding window. Monitor approaching
 deadlines and escalate provider failures, unavailable bank destinations,
-unreconciled history and unresolved claims before expiry. Late funded expiry
-and the operator recovery outcome remain separate acceptance work; do not claim
-a successful bank payout from a schedule update alone.
+unreconciled history and unresolved claims before expiry. After restoration, `expire` separately observes fresh provider balances and checks
+reserved/submitted payout claims under the component transaction. It returns
+`expiry_unresolved` while a balance or claim remains, or when balance verification
+is unavailable. `policy.holdingExpiry` preserves the original deadline, recovery
+status and last observed balances per currency. These are provider balances,
+not a payable earnings assessment; pending and negative amounts are not netted
+across currencies.
+
+An unresolved expiry retains `holdDeadline` even in `stripe_managed` mode so the
+same `due()`/`expire()` loop continues recovery checks. Custom reactivation and
+example reset cannot erase that record. Once a fresh observation has zero
+available and pending balances in every currency and no reserved/submitted
+claim remains, discovery clears the deadline and retains a `no_held_balance`
+observation. That means no balance was held at the observation time, not that a
+bank payout arrived or that off-provider obligations were forgiven.
+
+Existing active policies gain the recovery record at their first due expiry
+under the updated SDK. Already-restored older policies whose deadline was
+removed are not automatically backfilled. Audit their historical policy
+operations and Stripe receipts before treating them as financially settled;
+absence of a recovery field does not prove disbursement.
+
+Alert operators on `expiry_unresolved`. Reconcile unknown payout outcomes through
+the existing worker or receipt APIs using their original operation identity;
+never delete claims or blindly create replacements. Resolve provider capability,
+bank destination and floor failures through supported Stripe configuration.
+Do not add platform funds to cover a recipient shortfall. Continue the expiry
+loop after resolving the cause so fresh observations can close recovery.
+A provider balance read failure does not prevent schedule restoration and never
+fabricates zero. Control-update failures preserve pending intent and remain
+retryable. Do not claim a successful bank payout from a schedule update alone.
 
 For opt-out, prepare a new operation with the latest revision,
 `mode: "stripe_managed"`, and `thresholds: []`, then apply it. Restoration remains

@@ -42,10 +42,23 @@ export type PayoutProgressState = {
   nextAttemptAt: number | null;
   holdDeadline: number | null;
   observedAt: number | null;
+  recovery?: {
+    status: NonNullable<PayoutPolicy["holdingExpiry"]>["status"];
+    balances?: {
+      currency: string;
+      available: number;
+      pending: number;
+      availableLabel: string;
+      pendingLabel: string;
+    }[];
+  };
 };
 export type PayoutProgressProps = {
   policy:
-    | Pick<PayoutPolicy, "mode" | "status" | "thresholds" | "holdDeadline">
+    | Pick<
+        PayoutPolicy,
+        "mode" | "status" | "thresholds" | "holdDeadline" | "holdingExpiry"
+      >
     | null
     | undefined;
   preview?: PayoutPreview | null;
@@ -104,6 +117,33 @@ export function payoutProgressState({
       state.status = "changing";
       state.message =
         "Payout settings are being verified. Eligibility is unavailable until the change completes.";
+    } else if (
+      policy?.holdingExpiry &&
+      policy.holdingExpiry.status !== "no_held_balance"
+    ) {
+      const expiry = policy.holdingExpiry;
+      state.status = "unavailable";
+      state.reason = "holding_expiry_unresolved";
+      state.holdDeadline = expiry.deadline;
+      state.observedAt = expiry.observedAt ?? null;
+      state.message =
+        "The holding deadline has passed. Schedule restoration does not confirm disbursement. " +
+        (expiry.status === "unverified"
+          ? "Stripe balance verification is unavailable. "
+          : "Stripe balances or payout claims still require recovery. ") +
+        "Contact platform support; automatic recovery checks will retry.";
+      state.recovery = {
+        status: expiry.status,
+        ...(expiry.balances
+          ? {
+              balances: expiry.balances.map((b) => ({
+                ...b,
+                availableLabel: formatPrice(b.available, b.currency, locale),
+                pendingLabel: formatPrice(b.pending, b.currency, locale),
+              })),
+            }
+          : {}),
+      };
     } else if (!policy || policy.mode === "stripe_managed") {
       state.status = "stripe_managed";
       state.message =

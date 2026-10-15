@@ -47,6 +47,9 @@ export const load = action({
             ...(policy.holdDeadline === undefined
               ? {}
               : { holdDeadline: policy.holdDeadline }),
+            ...(policy.holdingExpiry === undefined
+              ? {}
+              : { holdingExpiry: policy.holdingExpiry }),
           }
         : null,
       preview,

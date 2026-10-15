@@ -391,7 +391,7 @@ Preview grouping performs no reads, writes or provider operations and cannot pro
 bank delivery or complete-account earnings. Authorize and bound the source read in
 the host; keep authoritative full-account aggregates separate.
 
-### Complete refund history (unreleased source API)
+### Complete refund history (added after 0.16.0)
 
 `BetterStripe.paginateRefunds(ctx, opts)` reads authoritative synchronized component
 refund records. `RefundPageOptions` is exported from the main package entrypoint.
@@ -420,7 +420,7 @@ neither is a monetary aggregate. Grouped preview amounts remain explicitly
 bounded, and authoritative monetary totals require currency-isolated aggregate
 APIs. This reader performs no Stripe request, refund or ledger write.
 
-Source acceptance does not publish this method. It is absent from public 0.16.0.
+This method is absent from public 0.16.0. Source acceptance does not publish it.
 Host applications must wait for a separately verified published artifact and
 package adoption before importing it; source merges alone do not satisfy that
 consumer gate.

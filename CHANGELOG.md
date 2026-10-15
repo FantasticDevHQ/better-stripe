@@ -14,6 +14,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.15.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.14.0...v0.15.0) (2026-10-15)
+
+
+### Features
+
+* provision payment and saved-card setup intents ([#166](https://github.com/FantasticDevHQ/better-stripe/issues/166)) ([195e4c6](https://github.com/FantasticDevHQ/better-stripe/commit/195e4c630e6f70907405fd9c8aa0d9cfcf17e6d5))
+
 ## [0.14.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.13.0...v0.14.0) (2026-10-15)
 
 ### Features

@@ -14,6 +14,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.20.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.20.0...v0.20.1) (2026-10-15)
+
+
+### Documentation
+
+* record live saved-card verification and sandbox setup ([#178](https://github.com/FantasticDevHQ/better-stripe/issues/178)) ([18d8b30](https://github.com/FantasticDevHQ/better-stripe/commit/18d8b30cd739c90e68508bd4d119297dc219da5c))
+
 ## [0.20.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.19.0...v0.20.0) (2026-10-15)
 
 ### Features

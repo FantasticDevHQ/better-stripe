@@ -1,0 +1,22 @@
+The `--diff` flag is deprecated; use `--scope changed` (add `--base <ref>` to pin the base) instead.
+✔ Select projects › @fantastic.dev/better-stripe, example
+Scanning changes: codex/payout-collection-binding → origin/main
+
+✔ Scanned 32 files in 3.8s
+
+React Doctor — better-stripe
+Score: 83 / 100 Needs work
+
+4 issues
+Bugs: 1 warning
+Performance: 3 warnings
+
+⚠ Sequential independent awaits
+  react-doctor/server-sequential-independent-await
+  src/component/payoutSnapshots/financial.ts:26
+⚠ await inside a loop ×3
+  react-doctor/async-await-in-loop
+  src/component/payoutSnapshots/financial.ts:49
+  src/component/payoutSnapshots/queries.ts:50
+  src/component/payoutSnapshots/queries.ts:90
+  Full diagnostics written to /var/folders/f3/_6wf4t2j04d77051fw3p1k4w0000gn/T/react-doctor-78a73e0a-fc7d-4397-b70d-0d37eb4b7ca8

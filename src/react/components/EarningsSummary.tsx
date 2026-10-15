@@ -46,6 +46,8 @@ export type EarningsSummaryProps = {
     net?: string;
     paidOut?: string;
   };
+  /** Override formatting for observed currencies outside the charge formatter. */
+  formatAmount?: (amount: number, currency: string, locale?: string) => string;
   locale?: string;
   className?: string;
   children?: (props: EarningsSummaryRenderProps) => ReactNode;
@@ -70,6 +72,7 @@ export function EarningsSummary({
   noPayoutsLabel = "No payouts yet",
   labels,
   locale,
+  formatAmount = formatPrice,
   className,
   children,
 }: EarningsSummaryProps) {
@@ -93,12 +96,12 @@ export function EarningsSummary({
     ? latestPayoutLabel
         .replace(
           "{amount}",
-          formatPrice(latestPayout.amount, latestPayout.currency, locale),
+          formatAmount(latestPayout.amount, latestPayout.currency, locale),
         )
         .replace("{status}", latestPayout.status)
     : noPayoutsLabel;
 
-  const money = (amount: number) => formatPrice(amount, currency, locale);
+  const money = (amount: number) => formatAmount(amount, currency, locale);
   const renderProps: EarningsSummaryRenderProps = {
     grossLabel: money(gross),
     reversedLabel: money(reversed),

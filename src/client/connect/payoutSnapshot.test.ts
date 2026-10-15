@@ -89,3 +89,30 @@ it("reports bounded upcoming previews and not-ready accounts explicitly", async 
     reason: "account_unavailable",
   });
 });
+
+it("exposes optional provider failure details in history", async () => {
+  const stripe = {
+    balance: { retrieve: async () => ({ available: [], pending: [] }) },
+    payouts: {
+      list: async (args: { status?: string }) => ({
+        data: args.status
+          ? []
+          : [
+              {
+                ...payout("po_failed", "failed"),
+                failure_code: "account_closed",
+                failure_message: "Bank account closed",
+              },
+            ],
+        has_more: false,
+      }),
+    },
+  };
+  const result = await getPayoutSnapshot(stripe as unknown as Stripe, {
+    stripeAccountId: "acct_a",
+  });
+  expect(result.payouts[0]).toMatchObject({
+    failureCode: "account_closed",
+    failureMessage: "Bank account closed",
+  });
+});

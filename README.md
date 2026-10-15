@@ -1586,3 +1586,9 @@ Grant paid access only after the existing verified webhook/settlement flow.
 Creation and browser confirmation are not settlement proof. Customer-account
 operations require Accounts v2 support in the sandbox or merchant account; the
 [customer preview guide](docs/accounts-v2-preview.md) explains eligibility.
+
+## Component history and currency summaries
+
+See the [read contract guide](docs/read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

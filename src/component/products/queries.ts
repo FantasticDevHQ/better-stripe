@@ -1,3 +1,9 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 import { v } from "convex/values";
 
 import { query } from "../_generated/server";
@@ -145,5 +151,77 @@ export const listPricesByProduct = query({
         q.eq("stripeProductId", args.stripeProductId),
       )
       .collect();
+  },
+});
+
+export const paginateProducts = query({
+  args: {
+    accountId: v.optional(v.string()),
+    active: v.optional(v.boolean()),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(productDocValidator),
+  handler: (ctx, args) => {
+    if (
+      !Number.isInteger(args.paginationOpts.numItems) ||
+      args.paginationOpts.numItems < 1 ||
+      args.paginationOpts.numItems > 100
+    )
+      throw new Error("Page size must be an integer from 1 to 100");
+    const { accountId, active } = args;
+    const rows = paginator(ctx.db, schema).query("products");
+    const scoped =
+      accountId !== undefined
+        ? active !== undefined
+          ? rows.withIndex("by_account_active", (q) =>
+              q.eq("accountId", accountId).eq("active", active),
+            )
+          : rows.withIndex("by_account_id", (q) => q.eq("accountId", accountId))
+        : active !== undefined
+          ? rows.withIndex("by_active", (q) => q.eq("active", active))
+          : rows;
+    return scoped
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+  },
+});
+
+export const paginatePrices = query({
+  args: {
+    productId: v.optional(v.string()),
+    active: v.optional(v.boolean()),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(priceDocValidator),
+  handler: (ctx, args) => {
+    if (
+      !Number.isInteger(args.paginationOpts.numItems) ||
+      args.paginationOpts.numItems < 1 ||
+      args.paginationOpts.numItems > 100
+    )
+      throw new Error("Page size must be an integer from 1 to 100");
+    const { productId, active } = args;
+    const rows = paginator(ctx.db, schema).query("prices");
+    const scoped =
+      productId !== undefined
+        ? active !== undefined
+          ? rows.withIndex("by_product_active", (q) =>
+              q.eq("productId", productId).eq("active", active),
+            )
+          : rows.withIndex("by_product_id", (q) => q.eq("productId", productId))
+        : active !== undefined
+          ? rows.withIndex("by_active", (q) => q.eq("active", active))
+          : rows;
+    return scoped
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
   },
 });

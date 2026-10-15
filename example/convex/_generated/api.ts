@@ -37,6 +37,7 @@ import type * as lib_stripeClient from "../lib/stripeClient.js";
 import type * as lib_unsettledCostSource from "../lib/unsettledCostSource.js";
 import type * as marketplace from "../marketplace.js";
 import type * as queries from "../queries.js";
+import type * as readContracts from "../readContracts.js";
 import type * as recipientPayouts from "../recipientPayouts.js";
 import type * as recoveryMigration from "../recoveryMigration.js";
 import type * as reset from "../reset.js";
@@ -99,6 +100,7 @@ const fullApi: ApiFromModules<{
   "lib/unsettledCostSource": typeof lib_unsettledCostSource;
   marketplace: typeof marketplace;
   queries: typeof queries;
+  readContracts: typeof readContracts;
   recipientPayouts: typeof recipientPayouts;
   recoveryMigration: typeof recoveryMigration;
   reset: typeof reset;

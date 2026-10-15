@@ -1,3 +1,8 @@
+import {
+  getAccountEarnings as getAccountEarningsLegacy,
+  getAccountPayouts as getAccountPayoutsLegacy,
+} from "../earnings/legacyReads.js";
+import { currencyTotals, previewSize } from "../earnings/reads.js";
 import { v } from "convex/values";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
@@ -21,9 +26,7 @@ import {
   wedgedReversalClaimValidator,
 } from "./validators";
 
-// =============================================================================
 // PAYMENT QUERIES
-// =============================================================================
 
 export const getPaymentByStripeId = query({
   args: { stripePaymentIntentId: v.string() },
@@ -38,9 +41,7 @@ export const getPaymentByStripeId = query({
   },
 });
 
-// =============================================================================
 // PAYOUT QUERIES
-// =============================================================================
 
 export const getPayout = query({
   args: { payoutId: v.id("payouts") },
@@ -111,9 +112,7 @@ export const listPayouts = query({
   },
 });
 
-// =============================================================================
 // REFUND QUERIES
-// =============================================================================
 
 export const getRefundByStripeId = query({
   args: { stripeRefundId: v.string() },
@@ -196,9 +195,7 @@ export const listRefunds = query({
   },
 });
 
-// =============================================================================
 // DISPUTE QUERIES
-// =============================================================================
 
 export const getDisputeByStripeId = query({
   args: { stripeDisputeId: v.string() },
@@ -279,9 +276,7 @@ export const listDisputes = query({
   },
 });
 
-// =============================================================================
 // TRANSFER QUERIES (ledger — BTS-12)
-// =============================================================================
 
 export const getTransferByStripeId = query({
   args: { stripeTransferId: v.string() },
@@ -366,9 +361,7 @@ export const paginateTransfersByAccount = query({
       .paginate(args.paginationOpts),
 });
 
-// =============================================================================
 // REVERSAL-CLAIM RECLAIM (BTS-74) — ops diagnostics for wedged legs
-// =============================================================================
 
 /**
  * Fetch one reversal operation's claim record (BTS-63/74) by its id, or null.
@@ -447,9 +440,7 @@ export const listWedgedReversalClaims = query({
   },
 });
 
-// =============================================================================
 // EARNINGS AGGREGATES (BTS-64)
-// =============================================================================
 //
 // The row-list queries above `.take(50)`, so summing their rows client-side
 // (as the earnings hooks did) silently understated totals for accounts with
@@ -479,27 +470,7 @@ export const getAccountEarnings = query({
     transferCount: v.number(),
     transfers: v.array(transferDocValidator),
   }),
-  handler: async (ctx, args) => {
-    const previewLimit = args.previewLimit ?? 50;
-    let gross = 0;
-    let reversed = 0;
-    let transferCount = 0;
-    const transfers: Doc<"transfers">[] = [];
-
-    for await (const tr of ctx.db
-      .query("transfers")
-      .withIndex("by_destination_account_id", (q) =>
-        q.eq("destinationAccountId", args.destinationAccountId),
-      )
-      .order("desc")) {
-      gross += tr.amount;
-      reversed += tr.reversedAmount ?? 0;
-      transferCount += 1;
-      if (transfers.length < previewLimit) transfers.push(tr);
-    }
-
-    return { gross, reversed, transferCount, transfers };
-  },
+  handler: getAccountEarningsLegacy,
 });
 
 /**
@@ -515,20 +486,113 @@ export const getAccountPayouts = query({
     payoutCount: v.number(),
     payouts: v.array(payoutDocValidator),
   }),
+  handler: getAccountPayoutsLegacy,
+});
+
+/** Reactive, account-scoped history. A page is never a financial total. */
+export const paginatePayouts = query({
+  args: {
+    accountId: v.string(),
+    status: v.optional(payoutStatusValidator),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(payoutDocValidator),
+  handler: (ctx, args) => {
+    if (
+      !Number.isInteger(args.paginationOpts.numItems) ||
+      args.paginationOpts.numItems < 1 ||
+      args.paginationOpts.numItems > 100
+    )
+      throw new Error("Page size must be an integer from 1 to 100");
+    const rows = paginator(ctx.db, schema).query("payouts");
+    const scoped =
+      args.status === undefined
+        ? rows.withIndex("by_account_id", (q) =>
+            q.eq("accountId", args.accountId),
+          )
+        : rows.withIndex("by_account_status", (q) =>
+            q.eq("accountId", args.accountId).eq("status", args.status!),
+          );
+    return scoped
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+  },
+});
+
+export const getAccountEarningsByCurrency = query({
+  args: {
+    destinationAccountId: v.string(),
+    previewLimit: v.optional(v.number()),
+  },
+  returns: v.object({
+    totals: v.array(
+      v.object({
+        currency: v.string(),
+        gross: v.number(),
+        reversed: v.number(),
+        net: v.number(),
+        transferCount: v.number(),
+      }),
+    ),
+    transfers: v.array(transferDocValidator),
+  }),
   handler: async (ctx, args) => {
-    const previewLimit = args.previewLimit ?? 50;
-    let paidOut = 0;
-    let payoutCount = 0;
-    const payouts: Doc<"payouts">[] = [];
-
-    for await (const p of ctx.db
+    const limit = previewSize(args.previewLimit);
+    const rows = await currencyTotals(
+      ctx,
+      args.destinationAccountId,
+      "earnings",
+    );
+    const transfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.destinationAccountId),
+      )
+      .order("desc")
+      .take(limit);
+    return {
+      totals: rows.map((r) => ({
+        currency: r.currency,
+        gross: r.gross,
+        reversed: r.reversed,
+        net: r.gross - r.reversed,
+        transferCount: r.count,
+      })),
+      transfers,
+    };
+  },
+});
+export const getAccountPayoutsByCurrency = query({
+  args: { accountId: v.string(), previewLimit: v.optional(v.number()) },
+  returns: v.object({
+    totals: v.array(
+      v.object({
+        currency: v.string(),
+        paidOut: v.number(),
+        payoutCount: v.number(),
+      }),
+    ),
+    payouts: v.array(payoutDocValidator),
+  }),
+  handler: async (ctx, args) => {
+    const limit = previewSize(args.previewLimit);
+    const rows = await currencyTotals(ctx, args.accountId, "payouts");
+    const payouts = await ctx.db
       .query("payouts")
-      .withIndex("by_account_id", (q) => q.eq("accountId", args.accountId))) {
-      payoutCount += 1;
-      if (p.status === "paid") paidOut += p.amount;
-      if (payouts.length < previewLimit) payouts.push(p);
-    }
-
-    return { paidOut, payoutCount, payouts };
+      .withIndex("by_account_id", (q) => q.eq("accountId", args.accountId))
+      .order("desc")
+      .take(limit);
+    return {
+      totals: rows.map((r) => ({
+        currency: r.currency,
+        paidOut: r.paidOut,
+        payoutCount: r.count,
+      })),
+      payouts,
+    };
   },
 });

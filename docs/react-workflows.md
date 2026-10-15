@@ -572,3 +572,9 @@ again or treat confirmation as changing a subscription default.
 Existing `AddCardForm` and `PaymentMethods` tokenization/attach integrations remain
 available. Tokenization plus attachment does not complete SetupIntent or SCA
 verification.
+
+## Component history and currency summaries
+
+See the [read contract guide](read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

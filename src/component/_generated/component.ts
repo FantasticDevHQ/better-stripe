@@ -882,6 +882,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
@@ -965,6 +967,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               sourceInvoiceId?: string;
               status: "pending" | "paid" | "failed" | "reversed";
               stripeTransferId: string;
+              totalsRecorded?: true;
+            }>;
+          },
+          Name
+        >;
+        getAccountEarningsByCurrency: FunctionReference<
+          "query",
+          "internal",
+          { destinationAccountId: string; previewLimit?: number },
+          {
+            totals: Array<{
+              currency: string;
+              gross: number;
+              net: number;
+              reversed: number;
+              transferCount: number;
+            }>;
+            transfers: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              currency: string;
+              destinationAccountId: string;
+              metadata?: any;
+              paymentId?: string;
+              reinstatement?: boolean;
+              reversalClaimedAmount?: number;
+              reversalStatus?: "partially_reversed" | "fully_reversed";
+              reversedAmount?: number;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              status: "pending" | "paid" | "failed" | "reversed";
+              stripeTransferId: string;
+              totalsRecorded?: true;
             }>;
           },
           Name
@@ -983,10 +1020,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               arrivalDate?: string;
               currency: string;
+              failureCode?: string;
+              failureMessage?: string;
               metadata?: any;
               method?: string;
               status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
               stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+          },
+          Name
+        >;
+        getAccountPayoutsByCurrency: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; previewLimit?: number },
+          {
+            payouts: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              failureCode?: string;
+              failureMessage?: string;
+              metadata?: any;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+            totals: Array<{
+              currency: string;
+              paidOut: number;
+              payoutCount: number;
             }>;
           },
           Name
@@ -1072,10 +1140,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1090,10 +1161,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1164,6 +1238,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           } | null,
           Name
         >;
@@ -1228,10 +1303,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             arrivalDate?: string;
             currency: string;
+            failureCode?: string;
+            failureMessage?: string;
             metadata?: any;
             method?: string;
             status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
             stripePayoutId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1295,6 +1373,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1319,6 +1398,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceInvoiceId?: string;
             status: "pending" | "paid" | "failed" | "reversed";
             stripeTransferId: string;
+            totalsRecorded?: true;
           }>,
           Name
         >;
@@ -1338,6 +1418,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceChargeId?: string;
             stripeTransferId: string;
           }>,
+          Name
+        >;
+        paginatePayouts: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              failureCode?: string;
+              failureMessage?: string;
+              metadata?: any;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+              totalsRecorded?: true;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
         paginateTransfersByAccount: FunctionReference<
@@ -1374,6 +1492,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               sourceInvoiceId?: string;
               status: "pending" | "paid" | "failed" | "reversed";
               stripeTransferId: string;
+              totalsRecorded?: true;
             }>;
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
             splitCursor?: string | null;
@@ -2064,6 +2183,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    earnings: {
+      mutations: {
+        backfillCurrencyTotals: FunctionReference<
+          "mutation",
+          "internal",
+          { cursor: string | null; kind: "earnings" | "payouts" },
+          { continueCursor: string; isDone: boolean },
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<
@@ -2231,6 +2361,77 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             name: string;
             stripeProductId: string;
           }>,
+          Name
+        >;
+        paginatePrices: FunctionReference<
+          "query",
+          "internal",
+          {
+            active?: boolean;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            productId?: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              active: boolean;
+              currency: string;
+              interval?: "day" | "week" | "month" | "year";
+              intervalCount?: number;
+              metadata?: any;
+              nickname?: string;
+              productId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              type: "one_time" | "recurring";
+              unitAmount: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        paginateProducts: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            active?: boolean;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              active: boolean;
+              description?: string;
+              metadata?: any;
+              name: string;
+              stripeProductId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };

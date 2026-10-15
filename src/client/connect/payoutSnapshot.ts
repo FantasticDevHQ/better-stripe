@@ -8,6 +8,8 @@ export type RecipientPayoutRow = {
   status: string;
   arrivalDate: number | null;
   created: number;
+  failureCode?: string;
+  failureMessage?: string;
 };
 export type RecipientPayoutSnapshot = {
   balances: AccountBalance[];
@@ -31,6 +33,8 @@ const row = (p: Stripe.Payout): RecipientPayoutRow => ({
   status: p.status,
   arrivalDate: p.arrival_date ? p.arrival_date * 1000 : null,
   created: p.created * 1000,
+  ...(p.failure_code != null ? { failureCode: p.failure_code } : {}),
+  ...(p.failure_message != null ? { failureMessage: p.failure_message } : {}),
 });
 /** Account-scoped live balance and cursor history. Upcoming truncation is explicit. */
 export async function getPayoutSnapshot(

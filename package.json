@@ -62,7 +62,8 @@
     "docs/accounts-v2-preview.md",
     "docs/react-workflows-audit.md",
     "CHANGELOG.md",
-    "MIGRATION.md"
+    "MIGRATION.md",
+    "docs/read-contracts.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",

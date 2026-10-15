@@ -198,15 +198,13 @@ package-formatted adjustment rows. `AffiliateRecoveryHistory` displays outcomes
 and receipts. Use them alongside earnings, referred sales and payouts; seller
 cost recovery remains a separate view.
 
-The example adds authenticated affiliate snapshots and an operator recovery
-page. Configure the host JWT issuer in `example/convex/auth.config.ts` and
-provide its token through the Convex frontend auth integration before testing
-live recovery views. The example does not currently configure an issuer.
-Its existing persona picker is not authentication: a real identity's
-`tokenIdentifier` must be provisioned into the user's `authTokenIdentifier`
-field. Affiliate requests cannot select another account; operator permissions
-come from that server-linked user's role. With no authenticated identity, live
-recovery queries return no data and retries are denied.
+The example uses the existing demo persona picker. Recovery reads derive the
+account from the selected affiliate's server-stored user record, and reject
+requests for another affiliate's account or obligation. Admin personas can
+inspect other affiliates and retry recovery only with a Stripe test-mode key.
+These checks bind resources to a claimed demo persona. They do not authenticate
+the caller or prove production ownership. Production hosts must authenticate
+callers and derive their account and operator permissions server-side.
 
 Visit `/demo/affiliate-recovery` for ten **simulated** scenarios covering orders,
 recurring invoices, partial refunds, open/lost/won disputes, overlap, insufficient
@@ -231,23 +229,43 @@ prevents duplicate payment/refund creation. `refund_full` covers a full refund;
 invoice, supply its existing `paymentIntentId`, `invoiceId` and `subscriptionId`
 from the subscription/test-clock fixtures so the driver verifies those links.
 
-`dispute` uses Stripe's dispute-producing test token. Let the real webhook open
-the monetary dispute, then use the documented sandbox dispute evidence/outcome
-controls to exercise lost and won events; inspect actual receipts after each.
-For overlap, refund the same original payment before or after the dispute and
-verify the retained refund amount after a win. Do not manufacture terminal
+`dispute` uses Stripe's dispute-producing test payment method. The provider can
+mark its charge disputed before the fixture settles. In that case the driver
+returns `not_payable` and creates no affiliate transfer, so this is not evidence
+of post-transfer clawback, dispute loss, or restoration. Use a provider-supported
+post-settlement dispute workflow for those checks. Do not manufacture terminal
 webhooks as proof that provider funds were restored.
 
-`paid_out` first returns `operator_step_required`. Complete an account-supported
-external test payout, then rerun with its actual `completedPayoutId` and the same
-payment/run key. The driver verifies the payout's paid status, currency, amount
-and creation order before requesting the refund. Unsupported payout/account
-controls must be reported as blocked, not simulated. The returned provider
-balance and the post-webhook snapshot establish whether recovery succeeded or
-left debt. Run `future_offset` afterward to verify the exact withheld amount.
+`paid_out` uses Stripe's `pm_card_bypassPending` test method and first returns
+`operator_step_required`. Run internal `affiliateRecoverySandbox:externalPayout`
+with the same `runKey`, `affiliateAccountId` and actual affiliate
+`stripeTransferId`. It verifies fixture provenance, checks actual available
+balance and creates an external test payout for that transfer's amount. Replays
+read the existing payout. Wait for actual `paid` status, then rerun `seed` with
+its `completedPayoutId`. The driver verifies paid status, currency, amount and
+creation order before requesting the refund. Unsupported payout/account controls
+must be reported as blocked. Recovery may still succeed using other account
+funds; a paid payout does not itself prove insufficient-balance debt.
+
+If prior sandbox refunds/disputes depleted platform funding, internal
+`affiliateRecoverySandbox:fundPlatform` creates a bounded test payment using
+`runKey` and `amount` of at most 100,000 USD minor units. It returns the actual
+payment and before/after available balances. Balance updates can be asynchronous.
+Retain the funding receipt and do not label it commission recovery.
+
+For isolated recurring sources, run internal
+`affiliateRecoveryBillingSandbox:prepare` with a stable `runKey` and fixed
+`frozenTime` Unix timestamp. Retain those exact arguments on replay. It creates
+an isolated test-clock customer and monthly subscription and returns the actual
+paid `invoiceId`, `paymentIntentId`, `subscriptionId`, `clockId` and `periodEnd`.
+Pass the invoice/payment/subscription references to `seed` with a distinct run
+key per invoice. `affiliateRecoveryBillingSandbox:advance` accepts that fixture's
+`runKey`, `clockId` and a new `frozenTime`; after the clock finishes advancing,
+rerun `prepare` to read the next paid invoice. Existing persona subscriptions
+are not changed by these helpers.
 
 The driver rejects live/missing Stripe keys. It makes real sandbox transactions
-and does not delete their receipts. Record its JSON output and authenticated
+and does not delete their receipts. Record its JSON output and demo-persona
 snapshots as release evidence; an API response alone does not establish a bank
 payout recall.
 
@@ -274,11 +292,8 @@ The recording requires a Playwright-compatible FFmpeg executable.
 
 For account preview prerequisites, see [Accounts v2 setup](accounts-v2-preview.md).
 
-Live deployment and real Stripe sandbox verification remain blocked by missing
-Convex authentication in the selected environment. The deployment is reachable,
-but no development deploy key is bound; existing server-side Stripe credentials
-have not been inspected or replaced. See the verification report for exact
-commands and acceptance traceability. These artifacts do not establish account-specific
+Deployment-backed generation and sandbox verification status are recorded in
+the verification report. The simulated artifacts do not establish account-specific
 negative-balance behavior or successful external-payout recall. Before release,
 verify actual supported Connect accounts, currencies, insufficient-balance and
 restoration behavior in a configured sandbox, and retain the provider receipts.

@@ -38,7 +38,6 @@ export const seed = internalAction({
             amount: 10000,
             currency: "usd",
             confirm: true,
-            allowed_payment_method_types: ["card"],
             automatic_payment_methods: {
               enabled: true,
               allow_redirects: "never",
@@ -46,7 +45,9 @@ export const seed = internalAction({
             payment_method:
               args.scenario === "dispute"
                 ? "pm_card_createDispute"
-                : "pm_card_visa",
+                : args.scenario === "paid_out"
+                  ? "pm_card_bypassPending"
+                  : "pm_card_visa",
             metadata: { bsRecoveryFixture: args.runKey },
           },
           { idempotencyKey: `recovery-fixture:${args.runKey}:payment` },
@@ -156,7 +157,117 @@ export const seed = internalAction({
       balances,
       status: "await_webhook_reconciliation",
       evidence: "actual-stripe-test-responses",
-      note: "Read the authenticated recovery snapshot after webhooks. A receipt is not proof of bank-payout recall.",
+      note: "Read the demo recovery snapshot after webhooks. A receipt is not proof of bank-payout recall.",
+    });
+  },
+});
+
+/** External test payout for this fixture only. It never recalls bank funds. */
+export const externalPayout = internalAction({
+  args: {
+    runKey: v.string(),
+    affiliateAccountId: v.string(),
+    stripeTransferId: v.string(),
+  },
+  returns: v.string(),
+  handler: async (_ctx, args) => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    const provider = getStripeClient();
+    const transfer = await provider.transfers.retrieve(args.stripeTransferId);
+    if (
+      transfer.destination !== args.affiliateAccountId ||
+      typeof transfer.source_transaction !== "string"
+    )
+      throw new Error("An exact fixture recipient transfer is required.");
+    const charge = await provider.charges.retrieve(transfer.source_transaction);
+    if (charge.metadata.bsRecoveryFixture !== args.runKey)
+      throw new Error("The transfer does not belong to this recovery fixture.");
+    const prior = await provider.payouts.list(
+      { limit: 100 },
+      { stripeAccount: args.affiliateAccountId },
+    );
+    const existing = prior.data.find(
+      (row) => row.metadata?.bsRecoveryFixture === args.runKey,
+    );
+    if (existing)
+      return JSON.stringify({
+        id: existing.id,
+        status: existing.status,
+        amount: existing.amount,
+        currency: existing.currency,
+      });
+    if (prior.has_more)
+      throw new Error(
+        "Review payout history before creating another fixture payout.",
+      );
+    const balance = await provider.balance.retrieve(
+      {},
+      { stripeAccount: args.affiliateAccountId },
+    );
+    const amount =
+      balance.available.find((row) => row.currency === transfer.currency)
+        ?.amount ?? 0;
+    if (amount < transfer.amount)
+      return JSON.stringify({
+        status: "operator_step_required",
+        reason: "available_balance_below_original_commission",
+        available: amount,
+        currency: transfer.currency,
+      });
+    const payout = await provider.payouts.create(
+      {
+        amount: transfer.amount,
+        currency: transfer.currency,
+        metadata: { bsRecoveryFixture: args.runKey },
+      },
+      {
+        stripeAccount: args.affiliateAccountId,
+        idempotencyKey: `recovery-fixture:${args.runKey}:external-payout`,
+      },
+    );
+    return JSON.stringify({
+      id: payout.id,
+      status: payout.status,
+      amount: payout.amount,
+      currency: payout.currency,
+    });
+  },
+});
+
+/** Explicit test funding when prior sandbox refunds/disputes depleted the platform. */
+export const fundPlatform = internalAction({
+  args: { runKey: v.string(), amount: v.number() },
+  returns: v.string(),
+  handler: async (_ctx, args) => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    if (
+      !args.runKey.trim() ||
+      !Number.isSafeInteger(args.amount) ||
+      args.amount < 1 ||
+      args.amount > 100000
+    )
+      throw new Error(
+        "A stable key and bounded sandbox funding amount are required.",
+      );
+    const provider = getStripeClient();
+    const before = await provider.balance.retrieve();
+    const payment = await provider.paymentIntents.create(
+      {
+        amount: args.amount,
+        currency: "usd",
+        confirm: true,
+        payment_method: "pm_card_bypassPending",
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+        metadata: { bsRecoveryFunding: args.runKey },
+      },
+      { idempotencyKey: `recovery-fixture:${args.runKey}:platform-funding` },
+    );
+    const after = await provider.balance.retrieve();
+    return JSON.stringify({
+      paymentIntentId: payment.id,
+      before: before.available,
+      after: after.available,
+      evidence: "actual-stripe-test-responses",
     });
   },
 });

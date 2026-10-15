@@ -1195,15 +1195,16 @@ recovery view. Snapshots show debt, withheld/reserved earnings, original
 commissions, reversals and restoration separately. Debt offsets run before
 future commission transfers; dispute wins retain independent refunds.
 
-These live endpoints require an authenticated identity whose `tokenIdentifier`
-is provisioned as `users.authTokenIdentifier`. Configure a trusted JWT issuer in
-`convex/auth.config.ts` and connect its tokens to the frontend Convex client
-before exercising live recovery views; this example has no issuer configured. The existing demo persona picker
-is not authentication and grants no recovery access. `/admin/affiliate-recovery`
-requires the server-linked user's admin role for retries and another affiliate's
-records. `/demo/affiliate-recovery` needs no live account and labels all ten
-scenario snapshots as simulated. Internal cron jobs reconcile pending/unknown
-recovery and payout operations every five minutes, one operation per invocation.
+Live recovery endpoints use the existing demo persona picker. Affiliate reads
+resolve their account from the selected user's server-stored record and reject
+another affiliate's account or obligation. `/admin/affiliate-recovery` requires
+a selected admin persona, and retries additionally require a Stripe test-mode
+key. These are demo resource bindings, not authentication or proof of production
+ownership. Production hosts must authenticate callers and derive affiliate and
+operator permissions server-side. No JWT issuer is needed for this demo.
+`/demo/affiliate-recovery` labels all ten scenario snapshots as simulated.
+Internal cron jobs reconcile pending/unknown recovery and payout operations
+every five minutes, one operation per invocation.
 
 The existing sandbox/browser checks do not establish recovery from a completed
 bank payout. Verify supported Connect account capabilities and actual Stripe
@@ -1215,6 +1216,11 @@ The internal `affiliateRecoverySandbox:seed` action creates actual test-mode
 payment/refund fixtures using a stable run key and existing Connect recipients.
 It supports full/partial refunds, dispute-producing cards, recurring invoice
 sources, future commissions and verification of an actual completed test payout.
+Internal `affiliateRecoveryBillingSandbox:prepare` and `:advance` create isolated
+recurring invoice sources. `affiliateRecoverySandbox:externalPayout` creates a
+fixture-scoped test payout; `:fundPlatform` supplies bounded sandbox funding when
+needed. All helpers reject live keys. A dispute created before settlement returns
+`not_payable` and does not verify post-transfer recovery.
 See the [sandbox scenario driver](../docs/affiliate-clawbacks.md#stripe-sandbox-scenario-driver)
 for commands, account prerequisites, receipt assertions and blocked-capability
 handling. The [UI recording](../docs/evidence/affiliate-recovery.webm) shows

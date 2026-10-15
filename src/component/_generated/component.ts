@@ -8,12 +8,7 @@
  * @module
  */
 
-import type {
-  FunctionReference,
-  FunctionArgs,
-  FunctionReturnType,
-  ApiFromModules,
-} from "convex/server";
+import type { FunctionReference } from "convex/server";
 
 /**
  * A utility for referencing a Convex component's exposed API.
@@ -28,243 +23,501 @@ import type {
  */
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
-    affiliateRecovery: {
-      mutations: {
-        reviewLegacy: FunctionReference<
-          "mutation",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["reviewLegacy"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["reviewLegacy"]
-          >,
-          Name
-        >;
-        reserveOperation: FunctionReference<
-          "mutation",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["reserveOperation"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["reserveOperation"]
-          >,
-          Name
-        >;
-        beginOperation: FunctionReference<
-          "mutation",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["beginOperation"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["beginOperation"]
-          >,
-          Name
-        >;
-        completeOperation: FunctionReference<
-          "mutation",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["completeOperation"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/mutations.js");
-            }>["functions"]["completeOperation"]
-          >,
-          Name
-        >;
-      };
-      queries: {
-        getObligation: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["getObligation"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["getObligation"]
-          >,
-          Name
-        >;
-        chargeObligations: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["chargeObligations"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["chargeObligations"]
-          >,
-          Name
-        >;
-        getEarning: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["getEarning"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["getEarning"]
-          >,
-          Name
-        >;
-        recoverySnapshot: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["recoverySnapshot"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["recoverySnapshot"]
-          >,
-          Name
-        >;
-        operationHistory: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["operationHistory"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["operationHistory"]
-          >,
-          Name
-        >;
-        pendingOperations: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["pendingOperations"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateRecovery/queries.js");
-            }>["functions"]["pendingOperations"]
-          >,
-          Name
-        >;
-      };
-    };
     affiliateEarnings: {
       mutations: {
-        reserveEarning: FunctionReference<
-          "mutation",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateEarnings/mutations.js");
-            }>["functions"]["reserveEarning"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateEarnings/mutations.js");
-            }>["functions"]["reserveEarning"]
-          >,
-          Name
-        >;
         confirmEarning: FunctionReference<
           "mutation",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliateEarnings/mutations.js");
-            }>["functions"]["confirmEarning"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliateEarnings/mutations.js");
-            }>["functions"]["confirmEarning"]
-          >,
+          { earningId: string; stripeTransferId?: string },
+          null,
+          Name
+        >;
+        reserveEarning: FunctionReference<
+          "mutation",
+          "internal",
+          { affiliateAccountId: string; sourceChargeId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            affiliateAccountId: string;
+            currency: string;
+            originalCommission: number;
+            paymentIntentId?: string;
+            releaseAmount: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            status: "reserved" | "paid";
+            stripeTransferId?: string;
+            withheldAmount: number;
+          },
           Name
         >;
       };
     };
     affiliatePayouts: {
+      mutations: {
+        finishPayout: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            operationKey: string;
+            state: "unknown" | "submitted" | "failed";
+            stripePayoutId?: string;
+          },
+          null,
+          Name
+        >;
+        reservePayout: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            affiliateAccountId: string;
+            amount: number;
+            currency: string;
+            minimumAmount: number;
+            now: number;
+            operationKey?: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            affiliateAccountId: string;
+            amount: number;
+            createdAt: number;
+            currency: string;
+            minimumAmount: number;
+            operationKey: string;
+            state: "pending" | "unknown" | "submitted" | "failed";
+            stripePayoutId?: string;
+          } | null,
+          Name
+        >;
+      };
       queries: {
         pendingPayouts: FunctionReference<
           "query",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/queries.js");
-            }>["functions"]["pendingPayouts"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/queries.js");
-            }>["functions"]["pendingPayouts"]
-          >,
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            state: "pending" | "unknown";
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              affiliateAccountId: string;
+              amount: number;
+              createdAt: number;
+              currency: string;
+              minimumAmount: number;
+              operationKey: string;
+              state: "pending" | "unknown" | "submitted" | "failed";
+              stripePayoutId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };
+    };
+    affiliateRecovery: {
       mutations: {
-        reservePayout: FunctionReference<
+        beginOperation: FunctionReference<
           "mutation",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/mutations.js");
-            }>["functions"]["reservePayout"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/mutations.js");
-            }>["functions"]["reservePayout"]
-          >,
+          { operationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            amount: number;
+            attempted: boolean;
+            createdAt: number;
+            error?: string;
+            kind: "recovery" | "restoration";
+            obligationId: string;
+            providerBaseline?: number;
+            receiptId?: string;
+            sourceEventId?: string;
+            state:
+              | "pending"
+              | "unknown"
+              | "insufficient_balance"
+              | "unsupported"
+              | "failed"
+              | "succeeded"
+              | "canceled";
+          },
           Name
         >;
-        finishPayout: FunctionReference<
+        completeOperation: FunctionReference<
           "mutation",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/mutations.js");
-            }>["functions"]["finishPayout"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../affiliatePayouts/mutations.js");
-            }>["functions"]["finishPayout"]
-          >,
+          {
+            confirmedTransferReversed?: number;
+            error?: string;
+            operationId: string;
+            receiptId?: string;
+            state:
+              | "pending"
+              | "unknown"
+              | "insufficient_balance"
+              | "unsupported"
+              | "failed"
+              | "succeeded"
+              | "canceled";
+          },
+          null,
+          Name
+        >;
+        reserveOperation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            kind: "recovery" | "restoration";
+            now: number;
+            obligationId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            amount: number;
+            attempted: boolean;
+            createdAt: number;
+            error?: string;
+            kind: "recovery" | "restoration";
+            obligationId: string;
+            providerBaseline?: number;
+            receiptId?: string;
+            sourceEventId?: string;
+            state:
+              | "pending"
+              | "unknown"
+              | "insufficient_balance"
+              | "unsupported"
+              | "failed"
+              | "succeeded"
+              | "canceled";
+          } | null,
+          Name
+        >;
+        reviewLegacy: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            exposure: {
+              chargeAmount: number;
+              disputeId?: string;
+              disputeState?: "open" | "lost" | "won";
+              finalized: boolean;
+              kind: "refund" | "dispute";
+              principal: number;
+              refundId?: string;
+              refundedPrincipal?: number;
+            };
+            note: string;
+            obligationId: string;
+            receipts: Array<{ amount: number; id: string }>;
+            recoveredAmount: number;
+            restorationIds: Array<string>;
+            restoredAmount: number;
+          },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        chargeObligations: FunctionReference<
+          "query",
+          "internal",
+          { sourceChargeId: string },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accounted?: boolean;
+            activeOperationId?: string;
+            affiliateAccountId: string;
+            chargeAmount: number;
+            creditAmount?: number;
+            currency: string;
+            debtAmount?: number;
+            debtStatus?: "open" | "settled";
+            disputeId?: string;
+            disputeState?: "open" | "lost" | "won";
+            disputedPrincipal: number;
+            earningId?: string;
+            finalizedAmount: number;
+            lastError?: string;
+            lastRefundId?: string;
+            lastState?: string;
+            legacyReceiptIds?: Array<string>;
+            legacyRestorationIds?: Array<string>;
+            lostPrincipal: number;
+            needsReconciliation: boolean;
+            offsetAmount?: number;
+            operationSequence?: number;
+            operatorNote?: string;
+            originalCommission: number;
+            paymentId?: string;
+            paymentIntentId?: string;
+            provisionalAmount: number;
+            recoveredAmount: number;
+            refundedPrincipal: number;
+            releasedCommission?: number;
+            reservedRecovery?: number;
+            reservedRestoration?: number;
+            restoredAmount?: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            storeAccountId?: string;
+            stripeTransferId?: string;
+          }>,
+          Name
+        >;
+        getEarning: FunctionReference<
+          "query",
+          "internal",
+          { affiliateAccountId: string; sourceChargeId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            affiliateAccountId: string;
+            currency: string;
+            originalCommission: number;
+            paymentIntentId?: string;
+            releaseAmount: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            status: "reserved" | "paid";
+            stripeTransferId?: string;
+            withheldAmount: number;
+          } | null,
+          Name
+        >;
+        getObligation: FunctionReference<
+          "query",
+          "internal",
+          { obligationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accounted?: boolean;
+            activeOperationId?: string;
+            affiliateAccountId: string;
+            chargeAmount: number;
+            creditAmount?: number;
+            currency: string;
+            debtAmount?: number;
+            debtStatus?: "open" | "settled";
+            disputeId?: string;
+            disputeState?: "open" | "lost" | "won";
+            disputedPrincipal: number;
+            earningId?: string;
+            finalizedAmount: number;
+            lastError?: string;
+            lastRefundId?: string;
+            lastState?: string;
+            legacyReceiptIds?: Array<string>;
+            legacyRestorationIds?: Array<string>;
+            lostPrincipal: number;
+            needsReconciliation: boolean;
+            offsetAmount?: number;
+            operationSequence?: number;
+            operatorNote?: string;
+            originalCommission: number;
+            paymentId?: string;
+            paymentIntentId?: string;
+            provisionalAmount: number;
+            recoveredAmount: number;
+            refundedPrincipal: number;
+            releasedCommission?: number;
+            reservedRecovery?: number;
+            reservedRestoration?: number;
+            restoredAmount?: number;
+            sourceChargeId: string;
+            sourceInvoiceId?: string;
+            storeAccountId?: string;
+            stripeTransferId?: string;
+          } | null,
+          Name
+        >;
+        operationHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            obligationId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              attempted: boolean;
+              createdAt: number;
+              error?: string;
+              kind: "recovery" | "restoration";
+              obligationId: string;
+              providerBaseline?: number;
+              receiptId?: string;
+              sourceEventId?: string;
+              state:
+                | "pending"
+                | "unknown"
+                | "insufficient_balance"
+                | "unsupported"
+                | "failed"
+                | "succeeded"
+                | "canceled";
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        pendingOperations: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            state: "pending" | "unknown";
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              attempted: boolean;
+              createdAt: number;
+              error?: string;
+              kind: "recovery" | "restoration";
+              obligationId: string;
+              providerBaseline?: number;
+              receiptId?: string;
+              sourceEventId?: string;
+              state:
+                | "pending"
+                | "unknown"
+                | "insufficient_balance"
+                | "unsupported"
+                | "failed"
+                | "succeeded"
+                | "canceled";
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        recoverySnapshot: FunctionReference<
+          "query",
+          "internal",
+          {
+            affiliateAccountId: string;
+            currency: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            balance: {
+              _creationTime: number;
+              _id: string;
+              activePayoutKey?: string;
+              affiliateAccountId: string;
+              currency: string;
+              netPayable: number;
+              offsetAmount: number;
+              originalCommission: number;
+              outstandingDebt: number;
+              pendingPayoutAmount?: number;
+              recoveredAmount: number;
+              reservedRecovery: number;
+              reservedRestoration: number;
+              restorationDue: number;
+              restoredAmount: number;
+              withheldAmount: number;
+            } | null;
+            obligations: {
+              continueCursor: string;
+              isDone: boolean;
+              page: Array<{
+                _creationTime: number;
+                _id: string;
+                accounted?: boolean;
+                activeOperationId?: string;
+                affiliateAccountId: string;
+                chargeAmount: number;
+                creditAmount?: number;
+                currency: string;
+                debtAmount?: number;
+                debtStatus?: "open" | "settled";
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                disputedPrincipal: number;
+                earningId?: string;
+                finalizedAmount: number;
+                lastError?: string;
+                lastRefundId?: string;
+                lastState?: string;
+                legacyReceiptIds?: Array<string>;
+                legacyRestorationIds?: Array<string>;
+                lostPrincipal: number;
+                needsReconciliation: boolean;
+                offsetAmount?: number;
+                operationSequence?: number;
+                operatorNote?: string;
+                originalCommission: number;
+                paymentId?: string;
+                paymentIntentId?: string;
+                provisionalAmount: number;
+                recoveredAmount: number;
+                refundedPrincipal: number;
+                releasedCommission?: number;
+                reservedRecovery?: number;
+                reservedRestoration?: number;
+                restoredAmount?: number;
+                sourceChargeId: string;
+                sourceInvoiceId?: string;
+                storeAccountId?: string;
+                stripeTransferId?: string;
+              }>;
+              pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+              splitCursor?: string | null;
+            };
+          },
           Name
         >;
       };
@@ -998,16 +1251,39 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         claimReversalSlices: FunctionReference<
           "mutation",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../connect/mutations.js");
-            }>["functions"]["claimReversalSlices"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../connect/mutations.js");
-            }>["functions"]["claimReversalSlices"]
-          >,
+          {
+            commissionExposure?: {
+              chargeAmount: number;
+              disputeId?: string;
+              disputeState?: "open" | "lost" | "won";
+              finalized: boolean;
+              kind: "refund" | "dispute";
+              principal: number;
+              refundId?: string;
+              refundedPrincipal?: number;
+            };
+            mode:
+              | { kind: "full" }
+              | { kind: "percent"; percent: number }
+              | { amount: number; kind: "amount" }
+              | {
+                  amountRefunded: number;
+                  chargeAmount: number;
+                  kind: "fraction";
+                };
+            operationId: string;
+            sourceChargeId: string;
+          },
+          {
+            replay: boolean;
+            slices: Array<{
+              commissionTracked?: boolean;
+              confirmed: number;
+              from: number;
+              stripeTransferId: string;
+              to: number;
+            }>;
+          },
           Name
         >;
         recordPaymentFeeRefund: FunctionReference<
@@ -1025,13 +1301,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "mutation",
           "internal",
           {
+            receipt?: {
+              amount: number;
+              operationId: string;
+              stripeReversalId: string;
+            };
             reversedAmount: number;
             stripeTransferId: string;
-            receipt?: {
-              stripeReversalId: string;
-              operationId: string;
-              amount: number;
-            };
           },
           null,
           Name
@@ -1445,16 +1721,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getReversalOp: FunctionReference<
           "query",
           "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../connect/queries.js");
-            }>["functions"]["getReversalOp"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../connect/queries.js");
-            }>["functions"]["getReversalOp"]
-          >,
+          { operationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            commissionExposure?: {
+              chargeAmount: number;
+              disputeId?: string;
+              disputeState?: "open" | "lost" | "won";
+              finalized: boolean;
+              kind: "refund" | "dispute";
+              principal: number;
+              refundId?: string;
+              refundedPrincipal?: number;
+            };
+            operationId: string;
+            slices: Array<{
+              from: number;
+              stripeTransferId: string;
+              to: number;
+            }>;
+            sourceChargeId: string;
+          } | null,
           Name
         >;
         getTransferByStripeId: FunctionReference<
@@ -3695,28 +3983,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     settlement: {
       mutations: {
-        migrateAffiliateObligations: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            paginationOpts: {
-              numItems: number;
-              cursor: string | null;
-              endCursor?: string | null;
-              id?: number;
-              maximumRowsRead?: number;
-              maximumBytesRead?: number;
-            };
-          },
-          {
-            migrated: number;
-            skipped: number;
-            isDone: boolean;
-            continueCursor: string;
-          },
-          Name
-        >;
-
         claimCommissionInvoice: FunctionReference<
           "mutation",
           "internal",
@@ -3733,6 +3999,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             firstPaidInvoiceId: string;
             replay: boolean;
             term: "forever" | "one_time";
+          },
+          Name
+        >;
+        migrateAffiliateObligations: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            migrated: number;
+            skipped: number;
           },
           Name
         >;
@@ -3777,22 +4064,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
-        listAffiliateObligations: FunctionReference<
-          "query",
-          "internal",
-          FunctionArgs<
-            ApiFromModules<{
-              functions: typeof import("../settlement/queries.js");
-            }>["functions"]["listAffiliateObligations"]
-          >,
-          FunctionReturnType<
-            ApiFromModules<{
-              functions: typeof import("../settlement/queries.js");
-            }>["functions"]["listAffiliateObligations"]
-          >,
-          Name
-        >;
-
         getCommissionTerm: FunctionReference<
           "query",
           "internal",
@@ -3827,6 +4098,70 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               role: "store" | "affiliate" | "other";
             }>;
           } | null,
+          Name
+        >;
+        listAffiliateObligations: FunctionReference<
+          "query",
+          "internal",
+          {
+            affiliateAccountId: string;
+            currency: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accounted?: boolean;
+              activeOperationId?: string;
+              affiliateAccountId: string;
+              chargeAmount: number;
+              creditAmount?: number;
+              currency: string;
+              debtAmount?: number;
+              debtStatus?: "open" | "settled";
+              disputeId?: string;
+              disputeState?: "open" | "lost" | "won";
+              disputedPrincipal: number;
+              earningId?: string;
+              finalizedAmount: number;
+              lastError?: string;
+              lastRefundId?: string;
+              lastState?: string;
+              legacyReceiptIds?: Array<string>;
+              legacyRestorationIds?: Array<string>;
+              lostPrincipal: number;
+              needsReconciliation: boolean;
+              offsetAmount?: number;
+              operationSequence?: number;
+              operatorNote?: string;
+              originalCommission: number;
+              paymentId?: string;
+              paymentIntentId?: string;
+              provisionalAmount: number;
+              recoveredAmount: number;
+              refundedPrincipal: number;
+              releasedCommission?: number;
+              reservedRecovery?: number;
+              reservedRestoration?: number;
+              restoredAmount?: number;
+              sourceChargeId: string;
+              sourceInvoiceId?: string;
+              storeAccountId?: string;
+              stripeTransferId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };

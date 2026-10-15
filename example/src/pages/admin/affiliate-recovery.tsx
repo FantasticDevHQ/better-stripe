@@ -1,4 +1,6 @@
 import { EmptyState } from "@/components/empty-state";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useRole } from "@/providers/role-context";
 import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import {
@@ -12,18 +14,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function AdminAffiliateRecovery() {
+  const { currentUser } = useRole();
   const [account, setAccount] = useState("");
   const [currency, setCurrency] = useState("usd");
   const [selected, setSelected] = useState("");
   const validCurrency = /^[a-z]{3}$/.test(currency);
   const snapshots = useCursorPagination(
-    `affiliate-recovery:${account}:${currency}`,
+    `affiliate-recovery:${currentUser.id}:${account}:${currency}`,
   );
-  const attempts = useCursorPagination(`affiliate-attempts:${selected}`);
+  const attempts = useCursorPagination(
+    `affiliate-attempts:${currentUser.id}:${selected}`,
+  );
   const snapshot = useQuery(
     api.affiliateRecovery.snapshot,
     account && validCurrency
       ? {
+          userId: currentUser.id as Id<"users">,
           affiliateAccountId: account,
           currency,
           paginationOpts: { cursor: snapshots.cursor, numItems: 20 },
@@ -34,6 +40,7 @@ export function AdminAffiliateRecovery() {
     api.affiliateRecovery.history,
     selected
       ? {
+          userId: currentUser.id as Id<"users">,
           obligationId: selected,
           paginationOpts: { cursor: attempts.cursor, numItems: 50 },
         }
@@ -44,8 +51,9 @@ export function AdminAffiliateRecovery() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Affiliate commission recovery</h1>
       <p className="text-muted-foreground">
-        Live balances and receipts require an authenticated operator. The demo
-        persona selector does not grant access.
+        Balances and receipts use the selected admin demo persona. This does not
+        prove authenticated production ownership. Retries require Stripe test
+        mode.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -86,7 +94,10 @@ export function AdminAffiliateRecovery() {
               onInspect={setSelected}
               onRetry={async (obligationId) => {
                 setSelected(obligationId);
-                return retry({ obligationId });
+                return retry({
+                  userId: currentUser.id as Id<"users">,
+                  obligationId,
+                });
               }}
               sourceHref={(row) =>
                 row.paymentIntentId

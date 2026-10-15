@@ -8,17 +8,18 @@
  * @module
  */
 
-import type * as affiliateRecovery from "../affiliateRecovery.js";
-import type * as affiliateRecoveryJobs from "../affiliateRecoveryJobs.js";
-import type * as crons from "../crons.js";
-import type * as affiliateRecoverySandbox from "../affiliateRecoverySandbox.js";
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateDefaults from "../affiliateDefaults.js";
+import type * as affiliateRecovery from "../affiliateRecovery.js";
+import type * as affiliateRecoveryBillingSandbox from "../affiliateRecoveryBillingSandbox.js";
+import type * as affiliateRecoveryJobs from "../affiliateRecoveryJobs.js";
+import type * as affiliateRecoverySandbox from "../affiliateRecoverySandbox.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
 import type * as checkoutExamples from "../checkoutExamples.js";
 import type * as commissionMigration from "../commissionMigration.js";
+import type * as crons from "../crons.js";
 import type * as e2eCheckout from "../e2eCheckout.js";
 import type * as e2eMoney from "../e2eMoney.js";
 import type * as embeddedExamples from "../embeddedExamples.js";
@@ -77,17 +78,18 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
-  affiliateRecovery: typeof affiliateRecovery;
-  affiliateRecoveryJobs: typeof affiliateRecoveryJobs;
-  crons: typeof crons;
-  affiliateRecoverySandbox: typeof affiliateRecoverySandbox;
   actions: typeof actions;
   adminTesting: typeof adminTesting;
   affiliateDefaults: typeof affiliateDefaults;
+  affiliateRecovery: typeof affiliateRecovery;
+  affiliateRecoveryBillingSandbox: typeof affiliateRecoveryBillingSandbox;
+  affiliateRecoveryJobs: typeof affiliateRecoveryJobs;
+  affiliateRecoverySandbox: typeof affiliateRecoverySandbox;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
   checkoutExamples: typeof checkoutExamples;
   commissionMigration: typeof commissionMigration;
+  crons: typeof crons;
   e2eCheckout: typeof e2eCheckout;
   e2eMoney: typeof e2eMoney;
   embeddedExamples: typeof embeddedExamples;

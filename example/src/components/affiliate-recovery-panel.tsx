@@ -7,6 +7,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useRole } from "@/providers/role-context";
 import { useQuery } from "convex/react";
 import {
   Pagination,
@@ -21,17 +23,25 @@ export function AffiliateRecoveryPanel({
 }: {
   presentation?: "components" | "headless";
 }) {
-  const pagination = useCursorPagination("affiliate-recovery:usd");
+  const { currentUser } = useRole();
+  const pagination = useCursorPagination(
+    `affiliate-recovery:${currentUser.id}:usd`,
+  );
   const snapshot = useQuery(api.affiliateRecovery.snapshot, {
+    userId: currentUser.id as Id<"users">,
     currency: "usd",
     paginationOpts: { numItems: 20, cursor: pagination.cursor },
   });
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Authenticated commission recovery</CardTitle>
+        <CardTitle>Commission recovery</CardTitle>
       </CardHeader>
       <CardContent>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Demo persona access. This does not prove authenticated production
+          ownership.
+        </p>
         {snapshot && snapshot.obligations.page.length === 0 ? (
           <EmptyState>
             No commission adjustments. Recovery will appear after an attributed
@@ -73,7 +83,10 @@ export function RecoveryPresentation({
       {(state) => (
         <>
           {props.snapshot === null ? (
-            <p>Sign in to view your commission recovery.</p>
+            <p>
+              Select a linked affiliate demo persona to view commission
+              recovery.
+            </p>
           ) : state.isLoading ? (
             <p role="status">Loading commission recovery…</p>
           ) : (

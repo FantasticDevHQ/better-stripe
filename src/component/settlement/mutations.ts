@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { updateObligation } from "../affiliateRecovery/accounting.js";
 import { paginationOptsValidator } from "convex/server";
 import { ensureCommissionObligation } from "./clawbacks.js";
@@ -131,10 +133,12 @@ export const migrateAffiliateObligations = mutation({
     continueCursor: v.string(),
   }),
   handler: async (ctx, args) => {
-    const page = await ctx.db.query("transfers").paginate({
-      ...args.paginationOpts,
-      numItems: Math.min(100, args.paginationOpts.numItems),
-    });
+    const page = await paginator(ctx.db, schema)
+      .query("transfers")
+      .paginate({
+        ...args.paginationOpts,
+        numItems: Math.min(100, args.paginationOpts.numItems),
+      });
     let migrated = 0;
     let skipped = 0;
     for (const transfer of page.page) {

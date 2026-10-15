@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { transferDocValidator } from "../connect/validators.js";
 import { readFees } from "./fees.js";
 import { paginationOptsValidator } from "convex/server";
@@ -43,7 +45,7 @@ export const pending = query({
       args.paginationOpts.numItems > 100
     )
       throw new Error("Invalid payout claim page.");
-    const result = await ctx.db
+    const result = await paginator(ctx.db, schema)
       .query("payoutReleaseClaims")
       .withIndex("by_account_status", (q) =>
         q.eq("accountId", args.accountId).eq("status", "reserved"),

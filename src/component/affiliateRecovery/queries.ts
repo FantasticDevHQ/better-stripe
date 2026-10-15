@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -77,7 +79,7 @@ export const recoverySnapshot = query({
           .eq("currency", args.currency),
       )
       .unique(),
-    obligations: await ctx.db
+    obligations: await paginator(ctx.db, schema)
       .query("affiliateObligations")
       .withIndex("by_affiliate_currency", (q) =>
         q
@@ -103,7 +105,7 @@ export const operationHistory = query({
     }),
   ),
   handler: (ctx, args) =>
-    ctx.db
+    paginator(ctx.db, schema)
       .query("affiliateRecoveryOperations")
       .withIndex("by_obligation", (q) =>
         q.eq("obligationId", args.obligationId),
@@ -126,7 +128,7 @@ export const pendingOperations = query({
     }),
   ),
   handler: (ctx, args) =>
-    ctx.db
+    paginator(ctx.db, schema)
       .query("affiliateRecoveryOperations")
       .withIndex("by_state", (q) => q.eq("state", args.state))
       .paginate({

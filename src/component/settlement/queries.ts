@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -57,7 +59,7 @@ export const listAffiliateObligations = query({
     }),
   ),
   handler: (ctx, args) =>
-    ctx.db
+    paginator(ctx.db, schema)
       .query("affiliateObligations")
       .withIndex("by_affiliate_currency", (q) =>
         q

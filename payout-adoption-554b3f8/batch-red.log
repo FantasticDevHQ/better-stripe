@@ -1,0 +1,29 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |component| src/component/payout-adoption.test.ts (14 tests | 1 failed) 70ms
+   × imports a complete historical batch atomically and rejects stale competing mappings 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > imports a complete historical batch atomically and rejects stale competing mappings
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `adoptHistoricalBatch`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-adoption.test.ts:205:10
+    203|     ],
+    204|   };
+    205|   expect(await t.mutation(batch, input)).toMatchObject({
+       |          ^
+    206|     claims: [{ amount: 600 }, { amount: 400 }],
+    207|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  18:21:44
+   Duration  361ms (transform 42%, tests 26%, import 16%, environment 14%, worker 1%)
+

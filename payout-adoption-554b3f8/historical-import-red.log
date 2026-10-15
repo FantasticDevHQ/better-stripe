@@ -1,0 +1,137 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |component| src/component/payout-adoption.test.ts (12 tests | 7 failed) 43ms
+   × imports historical paid principal and actual fees once 25ms
+   × imports a verified returned payout without recording its principal as paid 1ms
+   × rejects changing source allocations on replay 1ms
+   × rejects another owner before any ledger writes 4ms
+   × rejects an incomplete source snapshot 1ms
+   × requires inactive automatic policy at the observed revision 1ms
+   × retains historical paid allocations even when a later refund leaves debt 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > imports historical paid principal and actual fees once
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `adoptHistorical`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-adoption.test.ts:69:10
+     67| it("imports historical paid principal and actual fees once", async () …
+     68|   const { t, args } = await setup();
+     69|   expect(await t.mutation(adopt, args)).toMatchObject({
+       |          ^
+     70|     historical: true,
+     71|     status: "paid",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > imports a verified returned payout without recording its principal as paid
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `adoptHistorical`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-adoption.test.ts:90:5
+     88|   const { t, args } = await setup();
+     89|   expect(
+     90|     await t.mutation(adopt, {
+       |     ^
+     91|       ...args,
+     92|       payout: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > rejects changing source allocations on replay
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `adoptHistorical`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-adoption.test.ts:106:3
+    104| it("rejects changing source allocations on replay", async () => {
+    105|   const { t, args } = await setup();
+    106|   await t.mutation(adopt, args);
+       |   ^
+    107|   await expect(
+    108|     t.mutation(adopt, {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > rejects another owner before any ledger writes
+AssertionError: expected [Function] to throw error matching /owner/i but got 'Expected a Convex function exported f…'
+
+- Expected:
+/owner/i
+
++ Received:
+"Expected a Convex function exported from module \"payoutRelease/mutations\" as `adoptHistorical`, but there is no such export."
+
+ ❯ src/component/payout-adoption.test.ts:136:4
+    134|   await expect(
+    135|     t.mutation(adopt, { ...args, ownerKey: "other" }),
+    136|   ).rejects.toThrow(/owner/i);
+       |    ^
+    137| });
+    138| it("rejects an incomplete source snapshot", async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > rejects an incomplete source snapshot
+AssertionError: expected [Function] to throw error matching /snapshot/i but got 'Expected a Convex function exported f…'
+
+- Expected:
+/snapshot/i
+
++ Received:
+"Expected a Convex function exported from module \"payoutRelease/mutations\" as `adoptHistorical`, but there is no such export."
+
+ ❯ src/component/payout-adoption.test.ts:142:4
+    140|   await expect(
+    141|     t.mutation(adopt, { ...args, observations: args.observations.slice…
+    142|   ).rejects.toThrow(/snapshot/i);
+       |    ^
+    143| });
+    144| it("requires inactive automatic policy at the observed revision", asyn…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > requires inactive automatic policy at the observed revision
+AssertionError: expected [Function] to throw error matching /revision/i but got 'Expected a Convex function exported f…'
+
+- Expected:
+/revision/i
+
++ Received:
+"Expected a Convex function exported from module \"payoutRelease/mutations\" as `adoptHistorical`, but there is no such export."
+
+ ❯ src/component/payout-adoption.test.ts:148:4
+    146|   await expect(
+    147|     t.mutation(adopt, { ...args, expectedRevision: 1 }),
+    148|   ).rejects.toThrow(/revision/i);
+       |    ^
+    149|   await t.run(async (ctx) => {
+    150|     const p = await ctx.db.query("payoutPolicies").first();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  |component| src/component/payout-adoption.test.ts > retains historical paid allocations even when a later refund leaves debt
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `adoptHistorical`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-adoption.test.ts:169:3
+    167|     ),
+    168|   }));
+    169|   await t.mutation(adopt, { ...args, observations });
+       |   ^
+    170|   expect(
+    171|     await t.run((ctx) => ctx.db.query("payoutSourceAllocations").colle…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 5 passed (12)
+   Start at  18:10:04
+   Duration  320ms (transform 42%, tests 21%, import 19%, environment 17%, worker 1%)
+

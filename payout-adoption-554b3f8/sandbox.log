@@ -1,0 +1,197 @@
+Creating isolated sandbox recipient
+Creating one historical manual sandbox payout without a BetterStripe claim
+Importing and replaying explicit historical source allocations
+Rechecking historical funding after a later refund; paid principal must remain recorded
+Reconciling historical claim and returning remaining QA funds
+{
+  "scenario": "historical_import_and_later_refund",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "554b3f847edb7327d5e6611be498aae7adbd0ff9",
+  "run": "payout-adoption-qa-3c5b3d7d-18d0-45e4-8882-79158ae3b6ba",
+  "accountId": "acct_1UQmst5l4ASTxOg6",
+  "transferCapability": "active",
+  "funding": [
+    {
+      "id": "tr_1UQmtF6JR7kThJogAf2PBjg7",
+      "amount": 600,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQmtI6JR7kThJogcoNHudbK",
+      "amount": 400,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQmu16JR7kThJogtY9sROGl",
+      "amount": 300,
+      "role": "store"
+    }
+  ],
+  "payoutId": "po_1UQmtL5l4ASTxOg6WtqnYX6J",
+  "originalPayoutReceipt": {
+    "status": "ready",
+    "accountId": "acct_1UQmst5l4ASTxOg6",
+    "stripePayoutId": "po_1UQmtL5l4ASTxOg6WtqnYX6J",
+    "amount": 1000,
+    "currency": "usd",
+    "providerStatus": "paid",
+    "automatic": false,
+    "method": "standard",
+    "type": "bank_account",
+    "sourceType": "card",
+    "destinationId": "ba_1UQmsy5l4ASTxOg67ForngZ1",
+    "created": 1792063931,
+    "arrivalDate": 1792022400,
+    "debit": {
+      "id": "txn_1UQmtL5l4ASTxOg665SF8ybl",
+      "amount": -1000,
+      "fee": 0,
+      "net": -1000,
+      "currency": "usd",
+      "status": "available",
+      "created": 1792063931,
+      "availableOn": 1792063931,
+      "type": "payout"
+    },
+    "returnedPrincipal": 0,
+    "returnedNet": 0,
+    "observedAt": 1792063933259
+  },
+  "adopted": {
+    "status": "adopted",
+    "claims": [
+      {
+        "_creationTime": 1792063952638.395,
+        "_id": "n571p8k6beg1phmkqw1kp0b53h8gaqm4",
+        "accountId": "acct_1UQmst5l4ASTxOg6",
+        "allocations": [
+          {
+            "amount": 600,
+            "role": "store",
+            "stripeTransferId": "tr_1UQmtF6JR7kThJogAf2PBjg7"
+          },
+          {
+            "amount": 400,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQmtI6JR7kThJogcoNHudbK"
+          }
+        ],
+        "amount": 1000,
+        "attemptedAt": 1792063931000,
+        "currency": "usd",
+        "debitFee": 0,
+        "debitTransactionId": "txn_1UQmtL5l4ASTxOg665SF8ybl",
+        "destinationId": "ba_1UQmsy5l4ASTxOg67ForngZ1",
+        "expectedRevision": 0,
+        "historical": true,
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQmtF6JR7kThJogAf2PBjg7\",\"acct_1UQmst5l4ASTxOg6\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792063942785,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQmtF6JR7kThJogAf2PBjg7",
+            "transactionIds": [
+              "txn_1UQmtG5l4ASTxOg6Wyajnl80"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQmtI6JR7kThJogcoNHudbK\",\"acct_1UQmst5l4ASTxOg6\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 400,
+            "observedAt": 1792063948149,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQmtI6JR7kThJogcoNHudbK",
+            "transactionIds": [
+              "txn_1UQmtJ5l4ASTxOg6YJ36ghM2"
+            ]
+          }
+        ],
+        "operationKey": "bs:historical:po_1UQmtL5l4ASTxOg6WtqnYX6J",
+        "ownerKey": "payout-adoption-qa-3c5b3d7d-18d0-45e4-8882-79158ae3b6ba",
+        "providerFee": 0,
+        "status": "paid",
+        "stripePayoutId": "po_1UQmtL5l4ASTxOg6WtqnYX6J"
+      }
+    ],
+    "observedAt": 1792063952868
+  },
+  "replayDidNotCreatePayout": true,
+  "laterTransferId": "tr_1UQmu16JR7kThJogtY9sROGl",
+  "refundReversalId": "trr_1UQmu46JR7kThJog7kpigjNs",
+  "afterRefund": {
+    "status": "adopted",
+    "claims": [
+      {
+        "_creationTime": 1792063952638.395,
+        "_id": "n571p8k6beg1phmkqw1kp0b53h8gaqm4",
+        "accountId": "acct_1UQmst5l4ASTxOg6",
+        "allocations": [
+          {
+            "amount": 600,
+            "role": "store",
+            "stripeTransferId": "tr_1UQmtF6JR7kThJogAf2PBjg7"
+          },
+          {
+            "amount": 400,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQmtI6JR7kThJogcoNHudbK"
+          }
+        ],
+        "amount": 1000,
+        "attemptedAt": 1792063931000,
+        "currency": "usd",
+        "debitFee": 0,
+        "debitTransactionId": "txn_1UQmtL5l4ASTxOg665SF8ybl",
+        "destinationId": "ba_1UQmsy5l4ASTxOg67ForngZ1",
+        "expectedRevision": 0,
+        "historical": true,
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQmtF6JR7kThJogAf2PBjg7\",\"acct_1UQmst5l4ASTxOg6\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792063942785,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQmtF6JR7kThJogAf2PBjg7",
+            "transactionIds": [
+              "txn_1UQmtG5l4ASTxOg6Wyajnl80"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQmtI6JR7kThJogcoNHudbK\",\"acct_1UQmst5l4ASTxOg6\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 400,
+            "observedAt": 1792063948149,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQmtI6JR7kThJogcoNHudbK",
+            "transactionIds": [
+              "txn_1UQmtJ5l4ASTxOg6YJ36ghM2"
+            ]
+          }
+        ],
+        "operationKey": "bs:historical:po_1UQmtL5l4ASTxOg6WtqnYX6J",
+        "ownerKey": "payout-adoption-qa-3c5b3d7d-18d0-45e4-8882-79158ae3b6ba",
+        "providerFee": 0,
+        "status": "paid",
+        "stripePayoutId": "po_1UQmtL5l4ASTxOg6WtqnYX6J"
+      }
+    ],
+    "observedAt": 1792064006582
+  },
+  "currentFunding": {
+    "matureReceived": 1200,
+    "historicalPaid": 1000,
+    "unpaidAfterRefund": 200,
+    "providerAvailable": 200
+  },
+  "status": "passed",
+  "finalClaimStatus": "paid",
+  "remainingTestCashReturned": true,
+  "schedulePreserved": true,
+  "accountClosed": true,
+  "payoutCreateCalls": 1
+}

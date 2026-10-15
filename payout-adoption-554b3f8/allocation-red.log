@@ -1,0 +1,173 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutAdoptionAllocation.test.ts (8 tests | 8 failed) 7ms
+   × validates exact historical funding without requiring it to remain unpaid now 4ms
+   × rejects funding from a transfer not mature at the payout date 1ms
+   × rejects paying the same historical source twice 0ms
+   × a returned payout restores source capacity only at actual return maturity 0ms
+   × cannot use a future positive fee adjustment to fund an older payout 0ms
+   × does not net currencies 0ms
+   × requires exact principal allocations 0ms
+   × rejects duplicate payouts or duplicate source allocations 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > validates exact historical funding without requiring it to remain unpaid now
+AssertionError: expected [Function] to not throw an error but 'Error: Not implemented' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"Error: Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:45:9
+     43|       [payout],
+     44|     ),
+     45|   ).not.toThrow();
+       |         ^
+     46| });
+     47| it("rejects funding from a transfer not mature at the payout date", ()…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > rejects funding from a transfer not mature at the payout date
+AssertionError: expected [Function] to throw error matching /funding/i but got 'Not implemented'
+
+- Expected:
+/funding/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:58:5
+     56|       [payout],
+     57|     ),
+     58|   ).toThrow(/funding/i);
+       |     ^
+     59| });
+     60| it("rejects paying the same historical source twice", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > rejects paying the same historical source twice
+AssertionError: expected [Function] to throw error matching /funding/i but got 'Not implemented'
+
+- Expected:
+/funding/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:66:5
+     64|       [payout, { ...payout, stripePayoutId: "po_two", created: 40 }],
+     65|     ),
+     66|   ).toThrow(/funding/i);
+       |     ^
+     67| });
+     68| it("a returned payout restores source capacity only at actual return m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > a returned payout restores source capacity only at actual return maturity
+AssertionError: expected [Function] to throw error matching /funding/i but got 'Not implemented'
+
+- Expected:
+/funding/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:75:5
+     73|       [first, { ...payout, stripePayoutId: "po_two", created: 45 }],
+     74|     ),
+     75|   ).toThrow(/funding/i);
+       |     ^
+     76|   expect(() =>
+     77|     validateHistoricalFunding(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > cannot use a future positive fee adjustment to fund an older payout
+AssertionError: expected [Function] to throw error matching /funding/i but got 'Not implemented'
+
+- Expected:
+/funding/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:104:5
+    102|       [payout],
+    103|     ),
+    104|   ).toThrow(/funding/i);
+       |     ^
+    105| });
+    106| it("does not net currencies", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > does not net currencies
+AssertionError: expected [Function] to throw error matching /currency/i but got 'Not implemented'
+
+- Expected:
+/currency/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:109:5
+    107|   expect(() =>
+    108|     validateHistoricalFunding([{ ...source, currency: "eur" }], [payou…
+    109|   ).toThrow(/currency/i);
+       |     ^
+    110| });
+    111| it("requires exact principal allocations", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > requires exact principal allocations
+AssertionError: expected [Function] to throw error matching /principal/i but got 'Not implemented'
+
+- Expected:
+/principal/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:114:5
+    112|   expect(() =>
+    113|     validateHistoricalFunding([source], [{ ...payout, amount: 999 }]),
+    114|   ).toThrow(/principal/i);
+       |     ^
+    115| });
+    116| it("rejects duplicate payouts or duplicate source allocations", () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAllocation.test.ts > rejects duplicate payouts or duplicate source allocations
+AssertionError: expected [Function] to throw error matching /duplicate/i but got 'Not implemented'
+
+- Expected:
+/duplicate/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutAdoptionAllocation.test.ts:117:71
+    115| });
+    116| it("rejects duplicate payouts or duplicate source allocations", () => {
+    117|   expect(() => validateHistoricalFunding([source], [payout, payout])).…
+       |                                                                       ^
+    118|     /duplicate/i,
+    119|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed (8)
+   Start at  18:13:13
+   Duration  155ms (transform 47%, tests 23%, import 22%, worker 8%)
+

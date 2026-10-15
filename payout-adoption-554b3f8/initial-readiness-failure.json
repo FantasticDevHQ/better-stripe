@@ -1,0 +1,19 @@
+{
+  "scenario": "historical_import_and_later_refund",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "554b3f847edb7327d5e6611be498aae7adbd0ff9",
+  "run": "payout-adoption-qa-9e0fcdf3-89a3-4356-9974-16e82732ec7a",
+  "accountId": "acct_1UQmqz5dBzlOnwLQ",
+  "funding": [],
+  "status": "failed",
+  "error": {
+    "message": "Your destination account needs to have at least one of the following capabilities enabled: transfers, crypto_transfers, or legacy_payments. Or, if you use the /v2/core/accounts API, your destination account needs to have the configurations.recipient.capabilities.stripe_balance.stripe_transfers capability enabled.",
+    "code": "insufficient_capabilities_for_transfer"
+  },
+  "remainingTestCashReturned": true,
+  "schedulePreserved": true,
+  "accountClosed": true,
+  "payoutCreateCalls": 0
+}

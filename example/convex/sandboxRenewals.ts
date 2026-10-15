@@ -1,3 +1,4 @@
+import { purchase } from "./lib/renewalPurchase";
 /** Real Stripe sandbox renewal scenarios. Invoked by scripts/test-balance-renewals.ts. */
 import { v } from "convex/values";
 import {
@@ -243,47 +244,6 @@ export const prepare = internalAction({
     };
   },
 });
-async function purchase(
-  ctx: ActionCtx,
-  sellerId: Id<"users">,
-  kind: string,
-  amount: number,
-  method: string,
-) {
-  const seller = await ctx.runQuery(internal.sandboxRenewals.actor, {
-    sellerId,
-  });
-  const account = await getStripeClient().v2.core.accounts.retrieve(
-    seller.stripeAccountId!,
-    { include: ["configuration.recipient"] },
-  );
-  if (
-    account.configuration?.recipient?.capabilities?.stripe_balance
-      ?.stripe_transfers?.status !== "active"
-  )
-    throw new Error("Test recipient capability pending verification.");
-  const payment = await getStripeClient().paymentIntents.create(
-    {
-      amount,
-      currency: "usd",
-      payment_method: method,
-      confirm: true,
-      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
-      description: `BetterStripe renewal test ${kind}`,
-      metadata: {
-        storeBilling: "sale_v1",
-        sellerId,
-        planId: "starter",
-        renewalTest: seller.email,
-      },
-    },
-    { idempotencyKey: `renewal:${sellerId}:${kind}` },
-  );
-  await ctx.runAction(internal.storeSaleSettlement.settle, {
-    paymentIntentId: payment.id,
-  });
-  return payment.id;
-}
 export const seedCases = internalAction({
   args: { sellerId: v.id("users"), funded: v.boolean() },
   returns: v.object({

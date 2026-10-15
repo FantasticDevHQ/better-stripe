@@ -2,12 +2,20 @@
 import { useState, useId, type ReactNode } from "react";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 import { Connect, type ConnectProps } from "./Connect.js";
+import {
+  getChargeCurrencyMetadata,
+  parseChargeAmount,
+} from "../../client/charge-currency.js";
 export type RefundRequest = {
   stripePaymentIntentId: string;
+  /** Original payment currency's provider units. Legacy name, not universal cents. */
   amountCents?: number;
   reason: "requested_by_customer";
 };
-export type ReversalRequest = { sourceChargeId: string; amountCents?: number };
+export type ReversalRequest = {
+  sourceChargeId: string;
+  /** Original charge provider units. */ amountCents?: number;
+};
 export type RefundResult = { stripeRefundId: string };
 export type ReversalResult = {
   reversals: { stripeTransferId: string; amount: number }[];
@@ -17,26 +25,50 @@ export type RefundActionsProps = {
   scopeKey: string;
   paymentIntentId?: string;
   sourceChargeId?: string;
+  /** Verified currency for paymentIntentId. Omitted = legacy USD; null = unknown. */
+  paymentCurrency?: string | null;
+  /** Verified currency for sourceChargeId, independently of the refund payment. */
+  sourceChargeCurrency?: string | null;
   issueRefund: (args: RefundRequest) => Promise<RefundResult>;
   reverseTransfers?: (args: ReversalRequest) => Promise<ReversalResult>;
 };
-/** Currency input expressed in two decimal minor units. Rejects rounding and scientific notation. */
+/** Exact positive refund amount in the original charge currency's provider units. */
+export function parseRefundAmount(
+  value: string,
+  currency: string,
+): number | null {
+  const amount = parseChargeAmount(value.trim(), currency);
+  return amount !== null && amount > 0 ? amount : null;
+}
+/** Legacy USD-only parser. Use parseRefundAmount for original-currency inputs. */
 export function parseAmountCents(value: string): number | null {
-  if (!/^\d+(?:\.\d{1,2})?$/.test(value.trim())) return null;
-  const [whole, fraction = ""] = value.trim().split(".");
-  const amount = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  return Number.isSafeInteger(amount) && amount > 0 ? amount : null;
+  return parseRefundAmount(value, "usd");
 }
 export function useRefunds(props: RefundActionsProps) {
+  const paymentCurrency =
+    props.paymentCurrency === undefined
+      ? "usd"
+      : (props.paymentCurrency?.toLowerCase() ?? null);
+  const sourceChargeCurrency =
+    props.sourceChargeCurrency === undefined
+      ? "usd"
+      : (props.sourceChargeCurrency?.toLowerCase() ?? null);
+  const scope = JSON.stringify([
+    props.scopeKey,
+    props.paymentIntentId?.trim(),
+    props.sourceChargeId?.trim(),
+    paymentCurrency,
+    sourceChargeCurrency,
+  ]);
   const initial = {
-    scope: props.scopeKey,
+    scope,
     paymentIntentId: props.paymentIntentId ?? "",
     sourceChargeId: props.sourceChargeId ?? "",
     refundAmount: "",
     reversalAmount: "",
   };
   const [fields, setFields] = useState(initial);
-  if (fields.scope !== props.scopeKey) setFields(initial);
+  if (fields.scope !== scope) setFields(initial);
   const [operationType, setOperationType] = useState<"refund" | "reversal">(
     "refund",
   );
@@ -57,24 +89,43 @@ export function useRefunds(props: RefundActionsProps) {
             ? "Enter a PaymentIntent id before issuing a refund."
             : "Enter a source charge id before reversing transfers.",
         );
+      const currency =
+        operation.type === "refund" ? paymentCurrency : sourceChargeCurrency;
+      const boundId =
+        operation.type === "refund"
+          ? props.paymentIntentId
+          : props.sourceChargeId;
+      const hasExplicitCurrency =
+        operation.type === "refund"
+          ? props.paymentCurrency !== undefined
+          : props.sourceChargeCurrency !== undefined;
+      if (
+        operation.kind === "partial" &&
+        hasExplicitCurrency &&
+        id !== boundId?.trim()
+      )
+        throw new Error(
+          "Original currency is not verified for this identifier.",
+        );
       const amount =
         operation.kind === "partial"
-          ? parseAmountCents(
+          ? parseRefundAmount(
               operation.type === "refund"
                 ? fields.refundAmount
                 : fields.reversalAmount,
+              currency ?? "",
             )
           : undefined;
       if (amount === null)
         throw new Error(
-          `Enter a positive partial ${operation.type === "refund" ? "refund" : "reversal"} amount with at most two decimal places.`,
+          `Enter a positive partial ${operation.type === "refund" ? "refund" : "reversal"} amount in supported original currency units.`,
         );
       if (operation.type === "refund")
         return {
           type: "refund" as const,
           value: await props.issueRefund({
             stripePaymentIntentId: id,
-            amountCents: amount,
+            ...(amount === undefined ? {} : { amountCents: amount }),
             reason: "requested_by_customer",
           }),
         };
@@ -84,11 +135,15 @@ export function useRefunds(props: RefundActionsProps) {
         type: "reversal" as const,
         value: await props.reverseTransfers({
           sourceChargeId: id,
-          amountCents: amount,
+          ...(amount === undefined ? {} : { amountCents: amount }),
         }),
       };
     },
-    props.scopeKey,
+    JSON.stringify([
+      scope,
+      fields.paymentIntentId.trim(),
+      fields.sourceChargeId.trim(),
+    ]),
   );
   const set = (
     name:
@@ -97,6 +152,14 @@ export function useRefunds(props: RefundActionsProps) {
   ) => setFields((previous) => ({ ...previous, [name]: value }));
   return {
     ...fields,
+    scope: props.scopeKey,
+    paymentCurrency,
+    sourceChargeCurrency,
+    refundInputDecimalPlaces:
+      getChargeCurrencyMetadata(paymentCurrency ?? "")?.displayDecimals ?? null,
+    reversalInputDecimalPlaces:
+      getChargeCurrencyMetadata(sourceChargeCurrency ?? "")?.displayDecimals ??
+      null,
     setPaymentIntentId: (value: string) => set("paymentIntentId", value),
     setSourceChargeId: (value: string) => set("sourceChargeId", value),
     setRefundAmount: (value: string) => set("refundAmount", value),
@@ -127,6 +190,35 @@ export function Refunds(props: RefundsProps) {
     <RefundsBody key={props.scopeKey} {...props} />
   );
 }
+function RefundAmountInput(props: {
+  id: string;
+  label: string;
+  currency: string | null | undefined;
+  decimalPlaces: number | null;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const step = props.decimalPlaces === 0 ? "1" : "0.01";
+  return (
+    <>
+      <label htmlFor={props.id}>
+        {props.label}
+        {props.currency !== undefined
+          ? ` (${props.currency?.toUpperCase() ?? "currency unavailable"})`
+          : ""}
+      </label>
+      <input
+        id={props.id}
+        type="number"
+        min={step}
+        step={step}
+        inputMode={props.decimalPlaces === 0 ? "numeric" : "decimal"}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+      />
+    </>
+  );
+}
 function RefundsBody(
   props: RefundActionsProps & {
     children?: (state: RefundsRenderProps) => ReactNode;
@@ -145,14 +237,13 @@ function RefundsBody(
         value={state.paymentIntentId}
         onChange={(event) => state.setPaymentIntentId(event.target.value)}
       />
-      <label htmlFor={`${id}-amount`}>Partial refund amount</label>
-      <input
+      <RefundAmountInput
         id={`${id}-amount`}
-        type="number"
-        min="0.01"
-        step="0.01"
+        label="Partial refund amount"
+        currency={props.paymentCurrency}
+        decimalPlaces={state.refundInputDecimalPlaces}
         value={state.refundAmount}
-        onChange={(event) => state.setRefundAmount(event.target.value)}
+        onChange={state.setRefundAmount}
       />
       <button
         type="button"
@@ -184,14 +275,13 @@ function RefundsBody(
             value={state.sourceChargeId}
             onChange={(event) => state.setSourceChargeId(event.target.value)}
           />
-          <label htmlFor={`${id}-reversal`}>Partial reversal amount</label>
-          <input
+          <RefundAmountInput
             id={`${id}-reversal`}
-            type="number"
-            min="0.01"
-            step="0.01"
+            label="Partial reversal amount"
+            currency={props.sourceChargeCurrency}
+            decimalPlaces={state.reversalInputDecimalPlaces}
             value={state.reversalAmount}
-            onChange={(event) => state.setReversalAmount(event.target.value)}
+            onChange={state.setReversalAmount}
           />
           <button
             type="button"

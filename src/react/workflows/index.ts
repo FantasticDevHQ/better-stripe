@@ -34,7 +34,12 @@ export type {
   PayoutSnapshot,
   PayoutRow,
 } from "./Payouts.js";
-export { Refunds, useRefunds, parseAmountCents } from "./Refunds.js";
+export {
+  Refunds,
+  useRefunds,
+  parseAmountCents,
+  parseRefundAmount,
+} from "./Refunds.js";
 export type {
   RefundsProps,
   RefundsRenderProps,

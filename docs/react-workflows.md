@@ -58,9 +58,8 @@ by the host's error boundary rather than presented as a fabricated amount.
 Metadata describes precision only. Derive selectable presentment currencies
 from the public `getCountrySpecs` result and validate account/payment-method
 support on the server. Do not derive an account's supported currencies from
-`Intl.supportedValuesOf` or this helper. The separate Refunds input migration
-remains future work; its existing two-decimal parser is not changed by the
-charge helpers or PlanPricingEditor integration.
+`Intl.supportedValuesOf` or this helper. Refunds and PlanPricingEditor reuse the
+charge helpers for original-currency inputs; neither establishes payout units.
 
 ## Bind your backend
 
@@ -207,7 +206,7 @@ widgets. Use package UI or the hosted Billing Portal for those workflows.
 | Earnings              | `Earnings`, `EarningsSummary`                                                                                  | `earningsFromBalance`                                                        |
 | Payouts               | `Payouts`, `PayoutSchedule`, `PayoutHistory`, `PayoutOverview`                                                 | `getPayoutTotals`                                                            |
 | Sales                 | `Sales`, `ReferredSales`                                                                                       | Server-authoritative economic rows                                           |
-| Refunds               | `Refunds`, `RefundHistory`                                                                                     | `useRefunds`, `parseAmountCents`                                             |
+| Refunds               | `Refunds`, `RefundHistory`                                                                                     | `useRefunds`, `parseRefundAmount`; legacy USD-only `parseAmountCents`        |
 | Disputes              | `Disputes`, `DisputesList`, `DisputeDetail`, `EvidenceForm`, `ChargebackLedger`                                | `useDisputeResponse`                                                         |
 | Onboarding            | `Onboarding`                                                                                                   | `useOnboarding`                                                              |
 | Accounts              | `Account`, `AccountConfigurations`                                                                             | `useAccountManager`                                                          |
@@ -315,6 +314,61 @@ loading. The example's affiliate sales page uses this with the component query
 `connect.queries.paginateTransfersByAccount`, which returns newest-first cursor
 pages scoped to the recipient account. Earnings totals still use aggregate
 queries independently of pagination.
+
+## Original-currency refunds and reversals
+
+`Refunds` and `useRefunds` accept `paymentCurrency` for the selected
+`paymentIntentId` and independent `sourceChargeCurrency` for `sourceChargeId`.
+Derive both from authorized original records. The Vite seller refunds page
+loads the selected payment before parsing a partial refund. Its standalone
+original-charge currency adapter is a separate follow-up; partial reversals remain
+disabled until that context is available. The reusable workflow accepts verified
+source-charge currency independently of payment currency. A charge without verified
+currency can still use its separately authorized full operation, but cannot submit
+an assumed-USD partial amount.
+
+```tsx
+<Refunds
+  scopeKey={authenticatedUser.id}
+  paymentIntentId={selectedPayment.stripePaymentIntentId}
+  paymentCurrency={selectedPayment.currency}
+  sourceChargeId={verifiedOriginalCharge.id}
+  sourceChargeCurrency={verifiedOriginalCharge.currency}
+  issueRefund={authorizedRefund}
+  reverseTransfers={authorizedRecoveryReversal}
+/>
+```
+
+The callbacks remain application-authenticated server bindings. Their optional
+`amountCents` property keeps its legacy name but contains exact provider units
+in the original operation's currency, not universal hundredths. JPY 500 emits
+500; ISK 500 emits 50000; HUF/TWD charges retain fractions. Full operations omit
+the property entirely. Currency parsing does not authorize a refund, calculate
+the remaining refundable balance, reverse ordinary-refund legs a second time,
+cancel a subscription or change access.
+
+Omitting a currency retains the legacy USD contract. Pass explicit `null` while
+original currency is unknown; partial operations then fail safely. An explicit
+currency requires its matching original identifier prop. Editing to another
+identifier cannot reuse the old currency; the host must select/load its verified
+record. Unknown currencies, unsupported precision, unsafe integers, scientific
+notation, excess decimals and nonpositive partial amounts never reach callbacks.
+`parseRefundAmount(value, currency)` exposes this exact positive parser through
+`/react`. `parseAmountCents(value)` remains a USD-only compatibility wrapper.
+
+Headless state exposes both currencies and nullable `refundInputDecimalPlaces`
+and `reversalInputDecimalPlaces`. Use these for translated labels and input
+precision. Fields, pending/error/result state reset by authenticated scope,
+selected identifiers and currencies. Late completion cannot update another
+context. Changing the view does not cancel an already-submitted server operation;
+reconcile that intent before requesting another. Revalidate authorization,
+original merchant/currency, positive units, remaining refundable limits and
+stable provider idempotency on the server before moving money.
+
+The example's older refund-history aggregate still sums a capped row set and
+formats it as USD. That is a separate outstanding presentation limitation; do
+not port it as an account total. Original-currency input support does not certify
+that aggregate or claim a live refund.
 
 ## Store-plan pricing editor
 

@@ -87,36 +87,38 @@ export function AdminAffiliateRecovery() {
           <CardHeader>
             <CardTitle>Recovery and debt</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
-            <AffiliateRecovery
-              className="space-y-4 [&_dl]:grid [&_dl]:gap-4 [&_dl]:sm:grid-cols-2 [&_dl]:lg:grid-cols-3 [&_dd]:text-xl [&_dd]:font-semibold [&_dd]:tabular-nums"
-              currency={currency}
-              snapshot={snapshot}
-              onInspect={setSelected}
-              onRetry={async (obligationId) => {
-                setSelected(obligationId);
-                return retry({
-                  userId: currentUser.id as Id<"users">,
-                  obligationId,
-                });
-              }}
-              sourceHref={(row) =>
-                row.paymentIntentId
-                  ? `https://dashboard.stripe.com/payments/${encodeURIComponent(row.paymentIntentId)}`
-                  : undefined
-              }
-            />
-            {snapshot && (
-              <Pagination
-                page={snapshots.page}
-                canPrevious={snapshots.canPrevious}
-                canNext={!snapshot.obligations.isDone}
-                onPrevious={snapshots.previous}
-                onNext={() =>
-                  snapshots.next(snapshot.obligations.continueCursor)
+          <CardContent>
+            <div className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
+              <AffiliateRecovery
+                className="space-y-4 [&_dl]:grid [&_dl]:gap-4 [&_dl]:sm:grid-cols-2 [&_dl]:lg:grid-cols-3 [&_dd]:text-xl [&_dd]:font-semibold [&_dd]:tabular-nums"
+                currency={currency}
+                snapshot={snapshot}
+                onInspect={setSelected}
+                onRetry={async (obligationId) => {
+                  setSelected(obligationId);
+                  return retry({
+                    userId: currentUser.id as Id<"users">,
+                    obligationId,
+                  });
+                }}
+                sourceHref={(row) =>
+                  row.paymentIntentId
+                    ? `https://dashboard.stripe.com/payments/${encodeURIComponent(row.paymentIntentId)}`
+                    : undefined
                 }
               />
-            )}
+              {snapshot && (
+                <Pagination
+                  page={snapshots.page}
+                  canPrevious={snapshots.canPrevious}
+                  canNext={!snapshot.obligations.isDone}
+                  onPrevious={snapshots.previous}
+                  onNext={() =>
+                    snapshots.next(snapshot.obligations.continueCursor)
+                  }
+                />
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -130,18 +132,20 @@ export function AdminAffiliateRecovery() {
           <CardHeader>
             <CardTitle>Confirmed receipts and failed attempts</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
-            <AffiliateRecoveryHistory
-              operations={history.page}
-              currency={currency}
-            />
-            <Pagination
-              page={attempts.page}
-              canPrevious={attempts.canPrevious}
-              canNext={!history.isDone}
-              onPrevious={attempts.previous}
-              onNext={() => attempts.next(history.continueCursor)}
-            />
+          <CardContent>
+            <div className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
+              <AffiliateRecoveryHistory
+                operations={history.page}
+                currency={currency}
+              />
+              <Pagination
+                page={attempts.page}
+                canPrevious={attempts.canPrevious}
+                canNext={!history.isDone}
+                onPrevious={attempts.previous}
+                onNext={() => attempts.next(history.continueCursor)}
+              />
+            </div>
           </CardContent>
         </Card>
       )}

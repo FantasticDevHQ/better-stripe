@@ -560,9 +560,11 @@ checking that the response still belongs to the mounted scope. `useOnboarding`
 uses this lifecycle for both create and continue navigation, including its
 `window.location.assign` fallback. An old response cannot navigate after unmount
 or scope replacement. Current requests preserve shared pending locks and errors.
-These APIs ship in the release containing the dispute-upload and stale-navigation
-implementation PR. Version 0.13.0 does not contain them. Consumers must upgrade
-to that release before removing their navigation guard or using the upload API.
+`uploadDisputeEvidence`, `EvidenceUpload` and the onboarding navigation fix shipped
+in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
+Version 0.13.0 does not contain them. Consumers must upgrade to
+`@fantastic.dev/better-stripe@0.14.0` or later before using the upload API or relying
+on the package's navigation guard.
 Production storage, session authorization, styling, translations and extended
 hosted onboarding verification remain application responsibilities.
 

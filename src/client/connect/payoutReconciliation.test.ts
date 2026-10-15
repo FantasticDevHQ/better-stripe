@@ -368,3 +368,18 @@ it("does not silently adopt a different source balance rail", async () => {
     reason: "source_allocation_required",
   });
 });
+it("serializes concurrent outcome reconciliation without duplicate fees or principal", async () => {
+  const { t, reconcile, provider } = await setup();
+  const results = await Promise.all([reconcile(), reconcile()]);
+  expect(results.map((result) => result.status)).toEqual([
+    "updated",
+    "updated",
+  ]);
+  expect(
+    await t.run((ctx) => ctx.db.query("payoutSourceAllocations").take(1)),
+  ).toMatchObject([{ paidAmount: 1000, reservedAmount: 0 }]);
+  expect(
+    await t.run((ctx) => ctx.db.query("payoutFeeBalances").take(1)),
+  ).toMatchObject([{ amount: 30, revision: 1 }]);
+  expect(provider.payouts.create).not.toHaveBeenCalled();
+});

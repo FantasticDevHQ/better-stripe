@@ -318,7 +318,7 @@ maturity, then re-reads the payout to detect changes. Expanded transaction
 objects are not trusted in place of scoped retrieval. Automatic and manual
 history can both be inspected; a manual payout receipt does not identify the
 transfers that funded it. Changed snapshots, missing debit/return receipts,
-pending returns, unsupported currency allocation and bank-payout reversals return
+pending debits or returns, unsupported currency allocation and bank-payout reversals return
 `not_ready` without partial financial totals.
 
 A ready receipt preserves `providerStatus`, original `debit`, optional returned

@@ -24,6 +24,7 @@ export type RecipientPayoutReceipt =
       stripePayoutId: string;
       reason:
         | "debit_unavailable"
+        | "debit_pending"
         | "return_unavailable"
         | "return_pending"
         | "provider_changed"
@@ -223,6 +224,11 @@ export async function getRecipientPayoutReceipt(
       ...scope,
       reason: "currency_allocation_required",
     };
+  if (
+    debit.status !== "available" ||
+    debit.availableOn > Math.floor(Date.now() / 1000)
+  )
+    return { status: "not_ready", ...scope, reason: "debit_pending" };
   let credit: PayoutReceiptTransaction | undefined;
   if (payout.status === "failed" || payout.status === "canceled") {
     const creditId = id(payout.failure_balance_transaction);

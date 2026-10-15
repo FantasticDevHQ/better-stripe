@@ -298,3 +298,15 @@ it.each([{ automatic: true }, { method: "instant" }, { type: "card" }])(
     ).rejects.toThrow(/claim/);
   },
 );
+it.each([{ status: "pending" }, { available_on: timestamp + 86400 }])(
+  "does not book a payout debit before its fees and net are available (%j)",
+  async (debit) => {
+    const receipt = await setup({}, debit).read();
+    expect(receipt).toEqual({
+      status: "not_ready",
+      ...scope,
+      reason: "debit_pending",
+    });
+    expect(receipt).not.toHaveProperty("amount");
+  },
+);

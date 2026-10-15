@@ -1,3 +1,4 @@
+import { transferFingerprint as ledgerFingerprint } from "../../component/payoutRelease/helpers.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { transferDocValidator } from "../../component/connect/validators.js";
@@ -80,20 +81,6 @@ function fingerprint(t: Stripe.Transfer) {
     t.currency,
     t.amount_reversed,
     t.metadata?.bsReinstateOf,
-  ]);
-}
-function ledgerFingerprint(t: LedgerTransfer) {
-  return JSON.stringify([
-    t.stripeTransferId,
-    t.destinationAccountId,
-    t.sourceChargeId,
-    t.amount,
-    t.currency,
-    t.role,
-    t.status,
-    t.reversedAmount ?? 0,
-    t.reversalClaimedAmount ?? 0,
-    t.reinstatement ?? false,
   ]);
 }
 /** Recipient-scoped received credit. Previous payouts are deliberately not allocated here. */

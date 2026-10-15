@@ -219,6 +219,33 @@ Sources: [payout schedules](https://docs.stripe.com/connect/manage-payout-schedu
 [manual payout holding limits](https://docs.stripe.com/connect/manual-payouts), and
 [Dashboard control limits](https://docs.stripe.com/connect/platform-controls-for-stripe-dashboard-accounts#control-payout-timing).
 
+### Transactional claim ledger implementation status
+
+The component contains `payoutRelease` claim and source-allocation tables. These
+are server-side building blocks for the release boundary, with no public client
+executor or scheduled bank-payout integration yet. Do not call the claim
+mutation with UI totals or a transfer receipt alone. Its trusted upstream caller
+must establish complete provider history, still-unpaid ownership, adoption of
+prior payouts, independent liabilities, and live payout controls first.
+
+A claim combines mature creator and affiliate entitlement within one currency.
+It deducts persisted paid and reserved allocations, keeps negative entitlement
+after refunds, and caps the allocation by provider availability after independent
+liabilities. Sources and policy revision are checked transactionally. One
+unresolved account claim blocks competing reservations. An attempted claim
+cannot be canceled merely because the provider timed out. Accepted payouts keep
+their allocations reserved until payment is confirmed; a failed or canceled
+payout releases allocations only after its provider return transaction has been
+verified upstream. Return receipt identities cannot be reused across claims.
+
+The current claim snapshot is deliberately bounded to 100 account transfer rows
+and 1,000 receipt IDs per source. Larger or incomplete histories reject the whole
+claim, without using partial totals. A resumable reconciliation/adoption process,
+provider payout creation and receipt verification, payout-fee accounting, and
+recurring release/expiry integration remain required before custom payout
+minimums can be presented as an operational feature. In-memory claim tests are
+not evidence of a completed Stripe bank payout.
+
 ## Verified recipient funding receipts
 
 Use `stripe.payoutPolicy.transferReceipt(ctx, { accountId, stripeTransferId })`

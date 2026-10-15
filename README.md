@@ -477,6 +477,11 @@ attachment and any calls that finish or release it. Never release a reservation
 after a timeout or unknown provider outcome. Draft and open invoices retain their
 reservations, blocking recovery from a second payout. A verified paid invoice
 commits collection; a verified void releases the obligation for a future boundary.
+If an invoice is voided before its adjustment was attached, reconciliation releases
+an unbound sealed group only after scanning every item on that exact invoice.
+The receipt then has `invoiceItemId: null`. A missing previously bound item, or
+an absent adjustment on a paid or unpaid invoice, remains an error and keeps
+reservations held.
 Uncollectible invoices stay reserved unless your explicit host policy passes
 `releaseUncollectible: true`. Do not use that policy while another process might
 retry payment on the original invoice. Subscription cancellation alone does not

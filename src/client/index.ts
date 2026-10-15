@@ -1,3 +1,5 @@
+import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
+export * from "./affiliateRecovery.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -69,7 +71,6 @@ export type {
 import { internalActionGeneric, internalMutationGeneric } from "convex/server";
 import { v } from "convex/values";
 import Stripe from "stripe";
-
 import type { ComponentApi } from "../component/_generated/component.js";
 import type {
   DisputeStatus,
@@ -134,7 +135,6 @@ import type { AsyncHookName, TriggerDispatcherName } from "./types/triggers.js";
 import * as dataImpl from "./utils/data.js";
 import type { StripeMode } from "./utils/stripeDashboardUrl.js";
 import * as webhookEndpointsImpl from "./utils/webhookEndpoints.js";
-
 // Re-export standalone webhook registration
 export { registerRoutes } from "./webhooks.js";
 export {
@@ -143,13 +143,11 @@ export {
   STRIPE_DASHBOARD_BASE_URL,
   StripeDashboardResourcePath,
 } from "./utils/stripeDashboardUrl.js";
-
 // Re-export payment method utilities
 export {
   getPaymentMethodCard,
   getPaymentMethodOwner,
 } from "./connect/paymentMethodUtils.js";
-
 // Re-export webhook event constants and types
 export {
   ALL_BETTER_STRIPE_EVENTS,
@@ -160,7 +158,6 @@ export type {
   BetterStripeV2WebhookEvent,
   BetterStripeWebhookEvent,
 } from "./utils/webhookEndpoints.js";
-
 // Re-export types for consumers
 export type {
   BetterStripeOptions,
@@ -199,9 +196,7 @@ export type {
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";
-
 export type BetterStripeComponent = ComponentApi;
-
 /** Deep-copy a platform fee config so stored/returned values can't be mutated. */
 function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
   return {
@@ -209,9 +204,7 @@ function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
     tiers: config.tiers?.map((tier) => ({ ...tier })),
   };
 }
-
 // BETTER STRIPE CLIENT
-
 export class BetterStripe {
   public component: Component;
   readonly stripeApiVersion: SupportedStripeApiVersion;
@@ -1152,13 +1145,15 @@ export class BetterStripe {
     opts: {
       stripeAccountId: string;
       amount: number;
+      /** Host-authorized minimum in this payout currency. */
+      minimumAmount?: number;
       currency?: string;
       metadata?: Record<string, string>;
       /** Stripe idempotency key for retry-safe payout creation. */
       idempotencyKey?: string;
     },
   ) {
-    return payoutsImpl.createPayout(this.stripe(), ctx, opts);
+    return payoutsImpl.createPayout(this.stripe(), ctx, opts, this.component);
   }
 
   /**
@@ -1263,6 +1258,9 @@ export class BetterStripe {
     opts: providerReads.CouponReadOptions,
   ) {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
+  }
+  get affiliateRecovery() {
+    return new AffiliateRecoveryClient(this.component, () => this.stripe());
   }
   get costRecovery() {
     return new CostRecoveryClient(this.component, () => this.stripe());

@@ -70,6 +70,32 @@ export function AdminTesting() {
         role="link"
         render={
           <Link
+            to="/admin/affiliate-recovery"
+            aria-label="Inspect live affiliate recovery"
+          />
+        }
+      >
+        Inspect live affiliate recovery
+      </Button>
+
+      <Button
+        nativeButton={false}
+        role="link"
+        render={
+          <Link
+            to="/demo/affiliate-recovery"
+            aria-label="Explore commission recovery scenarios"
+          />
+        }
+      >
+        Explore commission recovery scenarios
+      </Button>
+
+      <Button
+        nativeButton={false}
+        role="link"
+        render={
+          <Link
             to="/demo/allocation"
             aria-label="Explore fee-first allocation"
           />

@@ -1,4 +1,15 @@
 import {
+  payoutReleasesTable as affiliatePayoutReleases,
+  operationsTable as affiliateOperations,
+  earningsTable as affiliateEarnings,
+  offsetsTable as affiliateOffsets,
+  balancesTable as affiliateBalances,
+} from "./affiliateRecovery/schema.js";
+import {
+  affiliateObligationsTable,
+  affiliateReversalReceiptsTable,
+} from "./settlement/clawbackSchema.js";
+import {
   claimsTable,
   balancesTable,
   groupsTable,
@@ -30,6 +41,13 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  affiliateObligations: affiliateObligationsTable,
+  affiliateRecoveryOperations: affiliateOperations,
+  affiliatePayoutReleases,
+  affiliateEarnings,
+  affiliateOffsets,
+  affiliateRecoveryBalances: affiliateBalances,
+  affiliateReversalReceipts: affiliateReversalReceiptsTable,
   recoveryClaims: claimsTable,
   recoveryBalances: balancesTable,
   recoveryGroups: groupsTable,

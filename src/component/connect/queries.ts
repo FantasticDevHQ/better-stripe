@@ -407,6 +407,16 @@ export const listWedgedReversalClaims = query({
     // Collect the wedged legs first.
     const wedged: Doc<"transfers">[] = [];
     for await (const tr of ctx.db.query("transfers")) {
+      const tracked =
+        tr.role === "affiliate"
+          ? await ctx.db
+              .query("affiliateObligations")
+              .withIndex("by_transfer", (q) =>
+                q.eq("stripeTransferId", tr.stripeTransferId),
+              )
+              .unique()
+          : null;
+      if (tracked?.accounted) continue;
       if ((tr.reversalClaimedAmount ?? 0) > (tr.reversedAmount ?? 0)) {
         wedged.push(tr);
       }

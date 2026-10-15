@@ -170,7 +170,8 @@ The marketplace economics layer includes platform fees, split transfers, rolling
 - **First subscription charge descriptor** — `createProduct` and `updateProduct` stamp the store's descriptor (or platform fallback) onto store-owned Stripe products. The product descriptor covers the first invoice for direct subscriptions and Checkout subscription mode; the invoice-time descriptor still takes precedence on later invoices. Existing products need `updateProduct` to receive the descriptor, and a later store descriptor change requires refreshing its products. Shared products have one descriptor and should not be reused across stores that need different descriptors.
 - **First-invoice fees** — finalized first invoices bypass the draft update window. At `invoice.paid`, the processor collects the fixed/tiered fee through a partial reversal of the destination transfer. Invoice markers and invoice-tagged reversals prevent duplicate collection, including recovery after a failed marker write. Renewals whose fees were set on the draft invoice are skipped.
 - **Dispute reversal retries** — reversal slices are claimed atomically before any Stripe call. Partial-success retries reuse the recorded amounts and idempotency keys, skip confirmed legs, and reconcile money already moved before a ledger-write failure.
-- **Earnings and split totals** — `useEarnings` reads exact server-side aggregates with bounded drill-down previews. `listTransfersByAccount` remains a preview API; do not sum it for financial totals. `listTransfersByCharge` now returns every original split leg by default, and reversal claims cover all of those legs. An explicit list limit requests a preview. Convex read/write/response limits fail loudly rather than silently truncate financial data.
+- **Affiliate commission recovery** — original commission snapshots, shared refund/dispute exposure, reversal receipts, and a resumable backfill are available. Currency-scoped future-commission offsets, receipt-backed dispute restoration, payout reservations, and reusable recovery views are included. See [affiliate commission clawbacks](docs/affiliate-clawbacks.md).
+- **Earnings and split totals** — `useEarnings` reads exact server-side aggregates with bounded drill-down previews. `listTransfersByAccount` remains a preview API; do not sum it for financial totals. `listTransfersByCharge` now returns every original split leg by default, and reversal claims cover up to 1,000 charge-linked transfer rows, failing explicitly above that bound. An explicit list limit requests a preview. Convex read/write/response limits fail loudly rather than silently truncate financial data.
 
 ## Installation
 
@@ -992,8 +993,8 @@ Payouts are **automatic and rolling** (Stripe-managed schedule, via hosted Expre
 
 The platform is merchant of record, so a chargeback lands on the platform's Stripe account even for a seller's sale. The dispute pipeline (all webhook-driven, on `charge.dispute.*`):
 
-1. **Clawback** — when a dispute opens (`charge.dispute.created`), `reverseTransfers` reverses the split/destination transfers funded by the disputed charge, pro-rata to the disputed amount, so recipients bear their share of the loss. Idempotent via the dispute id.
-2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), `reinstateTransfers` re-creates transfers for the amounts clawed back, paying recipients back from the platform balance (Stripe's own reversal is permanent, so winning means paying again).
+1. **Clawback** — a monetary `charge.dispute.created` event uses the disputed charge's original gross amount to calculate affiliate commission exposure. Inquiry/warning, prevented, and already-won payloads do not trigger recovery. Affiliate legs share the original-principal exposure axis with refunds; seller and other legs retain the existing reversal allocation. The dispute ID identifies the operation, and a missing authoritative charge amount causes recovery to retry.
+2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), the existing `reinstateTransfers` path creates new transfers from the platform balance. Affiliate restoration uses exact reversal/offset receipts, preserves independent successful refunds, and cancels unpaid dispute debt. Failed or uncertain restoration remains visible until reconciled. See [recovery limitations](docs/affiliate-clawbacks.md#verification-and-rollout-evidence).
 3. **Auto-cancel** — on dispute open, the disputed subscription (resolved PaymentIntent → invoice → subscription) is canceled by default (`registerRoutes`'s `autoCancelOnDispute`, default `true`; pairs with `cancelDisputeAtPeriodEnd`, default `false` → cancel-at-period-end, matching the Skool model of "cancel now, remove access at cycle end").
 
 Sellers respond to their own disputes without platform staff involvement, via an embedded Stripe Connect session:
@@ -1010,6 +1011,40 @@ export const createDisputeSession = action({
 
 `stripe.reverseTransfers(ctx, { sourceChargeId, percent?, amount? })` is also exposed directly, for manual clawback outside the automatic dispute flow (e.g. a support-initiated partial reversal). The internal engine additionally accepts an `operationId` for a stable Stripe idempotency key (used by the automatic dispute flow); the public method doesn't expose it yet, so a manual call relies on Stripe's default request idempotency.
 
+For commissions tracked by the recovery ledger, generic manual reversal is
+rejected. Use `createRefund` for a real refund or `stripe.affiliateRecovery.retry`
+for a recovery operation, so existing offsets and uncertain receipts remain
+coordinated.
+
+### Affiliate commission accounting
+
+The component stores each original affiliate transfer's commission and currency,
+links available payment/invoice references, and separates finalized obligations,
+provisional dispute exposure, reserved slices, and confirmed reversals. New
+commission reversal operations reconcile exact Stripe receipts after interrupted
+ledger writes. Percentage and fixed commissions use the original allocated
+amount, with deterministic rounding in integer currency units.
+
+Trusted host APIs under `components.betterStripe.settlement` provide
+`queries.listAffiliateObligations` and
+`mutations.migrateAffiliateObligations`. Authorize account ownership before
+exposing snapshots and restrict migration to operators. Existing rows with
+unattributed reversal balances require reconciliation. See the
+[API and migration guide](docs/affiliate-clawbacks.md#migration-and-trusted-host-apis).
+
+Insufficient-balance debt is offset atomically against eligible future commissions
+in the same currency before transfer creation. Dispute wins restore only actual
+reversals/offsets and retain independent refunds. `stripe.affiliateRecovery`
+provides snapshots, history, operator retry and legacy review; the reusable
+`AffiliateRecovery`/`AffiliateRecoveryHistory` views consume those records.
+
+Affiliate payouts require a stable idempotency key and pass an atomic debt and
+reservation gate. An optional `minimumAmount` applies a host-authorized currency
+minimum; it is not a discovered provider floor. Transfer reversal does not recall
+a completed bank payout, Stripe-managed automatic bank payouts remain outside
+this gate, and Global Payouts is unsupported. See the guide for account capability
+checks, maintenance jobs and live sandbox verification requirements.
+
 ### Refunds and Statement Descriptors
 
 `createRefund(ctx, { stripePaymentIntentId?, stripeChargeId?, amount?, reason?, refundApplicationFee?, reverseTransfer?, ... })` issues a Stripe refund with marketplace semantics, both defaulting **on**:
@@ -1017,7 +1052,7 @@ export const createDisputeSession = action({
 - `refundApplicationFee` — return the platform's application fee pro-rata with the refund (destination charges only; Stripe pro-rates partial refunds automatically).
 - `reverseTransfer` — pull the refunded amount back from the destination account (destination charges only; also pro-rated for partials).
 
-Stripe hard-errors if either flag is sent for a charge that doesn't carry an application fee / destination transfer, so `createRefund` resolves the charge first and only sends each flag when the charge can honor it. **Split (separate-charges) sales carry neither** — those go through the same charge, so their clawback is webhook-driven: on `refund.created`/`.updated`, `reverseTransfersForRefund` reverses each recipient's ledger leg pro-rata to Stripe's cumulative `amount_refunded`, converging correctly across multiple partial refunds (and coexisting with a prior dispute clawback on the same charge). A separate `application_fee.refunded` handler keeps the linked payment's `feeCollectedAmount`/`feeRefundedAmount` in sync. The `refunds` table and the linked `payments` row update as the corresponding webhooks arrive; `createRefund` itself returns only the new refund id.
+Stripe hard-errors if either flag is sent for a charge that doesn't carry an application fee / destination transfer, so `createRefund` resolves the charge first and only sends each flag when the charge can honor it. **Split (separate-charges) sales carry neither** — those go through the same charge, so their clawback is webhook-driven: on `refund.created`/`.updated`, `reverseTransfersForRefund` reverses each recipient's ledger leg pro-rata to the cumulative amount of live refunds whose status is `succeeded`. Pending, action-required, failed, and canceled refunds are excluded; `charge.amount_refunded` alone can include pending refunds. Affiliate legs converge on the larger successful-refund or dispute exposure, capped at the original commission, so the same principal is not recovered twice. A separate `application_fee.refunded` handler keeps the linked payment's `feeCollectedAmount`/`feeRefundedAmount` in sync. The `refunds` table and the linked `payments` row update as the corresponding webhooks arrive; `createRefund` itself returns only the new refund id.
 
 Per-store statement descriptors make destination charges recognizable on a buyer's card statement (`PLATFORMPREFIX* SUFFIX`):
 

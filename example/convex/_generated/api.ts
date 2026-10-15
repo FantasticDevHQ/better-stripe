@@ -8,6 +8,10 @@
  * @module
  */
 
+import type * as affiliateRecovery from "../affiliateRecovery.js";
+import type * as affiliateRecoveryJobs from "../affiliateRecoveryJobs.js";
+import type * as crons from "../crons.js";
+import type * as affiliateRecoverySandbox from "../affiliateRecoverySandbox.js";
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateDefaults from "../affiliateDefaults.js";
@@ -68,6 +72,10 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  affiliateRecovery: typeof affiliateRecovery;
+  affiliateRecoveryJobs: typeof affiliateRecoveryJobs;
+  crons: typeof crons;
+  affiliateRecoverySandbox: typeof affiliateRecoverySandbox;
   actions: typeof actions;
   adminTesting: typeof adminTesting;
   affiliateDefaults: typeof affiliateDefaults;

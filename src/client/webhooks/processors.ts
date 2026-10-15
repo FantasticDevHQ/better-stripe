@@ -1,3 +1,5 @@
+import { reconcileDisputeMoney } from "./disputeRecovery.js";
+import { successfulRefundPrincipal } from "../connect/refundPrincipal.js";
 import { subscriptionRouting } from "../billing/subscriptionRouting.js";
 import { cancelsAtPeriodEnd } from "../billing/subscriptionCancellation.js";
 import type Stripe from "stripe";
@@ -5,8 +7,6 @@ import type Stripe from "stripe";
 import type { SplitRecipient } from "../../component/lib/fees.js";
 import {
   createSplitTransfers,
-  reinstateTransfers,
-  reverseTransfers,
   reverseTransfersForRefund,
 } from "../connect/transfers.js";
 import { validateStatementDescriptorSuffix } from "../core/descriptors.js";
@@ -987,15 +987,24 @@ async function handleRefundEvent(
     componentRef(whCtx.component, "connect/queries/listTransfersByCharge"),
     { sourceChargeId: chargeId },
   )) ?? []) as unknown[];
-  if (legs.length === 0) return; // not a split sale
+  if (legs.length === 0) {
+    const obligations = (await whCtx.ctx.runQuery(
+      componentRef(
+        whCtx.component,
+        "affiliateRecovery/queries/chargeObligations",
+      ),
+      { sourceChargeId: chargeId },
+    )) as unknown[] | null;
+    if (!obligations?.length) return;
+  }
 
-  // Fresh charge read for the authoritative cumulative amount_refunded.
+  // Fetch succeeded refunds: charge.amount_refunded can include pending funds.
   const charge = await whCtx.stripe.charges.retrieve(chargeId);
   await reverseTransfersForRefund(whCtx.stripe, whCtx.component, whCtx.ctx, {
     sourceChargeId: chargeId,
     refundId: refund.id,
     chargeAmount: charge.amount,
-    amountRefunded: charge.amount_refunded ?? refund.amount,
+    amountRefunded: await successfulRefundPrincipal(whCtx.stripe, chargeId),
   });
 }
 
@@ -1052,9 +1061,11 @@ async function handleDisputeEvent(
   // best-effort: this is optional metadata, so a transient charge-lookup failure
   // must never abort the critical dispute side effects (upsert, clawback, cancel).
   let statementDescriptor: string | undefined;
+  let originalCharge: Stripe.Charge | undefined;
   if (lastEvent === "created" && chargeId) {
     try {
-      const charge = await whCtx.stripe.charges.retrieve(chargeId);
+      const charge = (originalCharge =
+        await whCtx.stripe.charges.retrieve(chargeId));
       statementDescriptor =
         charge?.calculated_statement_descriptor ??
         charge?.statement_descriptor ??
@@ -1080,31 +1091,7 @@ async function handleDisputeEvent(
     metadata: dispute.metadata ?? undefined,
   });
 
-  // Clawback (BTS-27): when a dispute is first opened, reverse the transfers
-  // funded by the disputed charge pro-rata to the disputed amount, so recipients
-  // bear their share (losses_collector=application leaves the platform with the
-  // rest). Idempotent via the dispute id; reinstated by BTS-29 if the dispute is
-  // won. Only on `created` — other dispute events don't move funds here.
-  if (lastEvent === "created" && chargeId) {
-    await reverseTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
-      sourceChargeId: chargeId,
-      amount: dispute.amount,
-      operationId: dispute.id,
-    });
-  }
-
-  // Reinstatement (BTS-29): when the dispute is won (or funds are explicitly
-  // reinstated), pay recipients back the amounts clawed back on `created`.
-  const isWon =
-    lastEvent === "funds_reinstated" ||
-    (lastEvent === "closed" && dispute.status === "won");
-  if (isWon && chargeId) {
-    await reinstateTransfers(whCtx.stripe, whCtx.component, whCtx.ctx, {
-      sourceChargeId: chargeId,
-      operationId: dispute.id,
-      currency: dispute.currency,
-    });
-  }
+  await reconcileDisputeMoney(whCtx, dispute, lastEvent, originalCharge);
 
   // Auto-cancel the disputed subscription (BTS-28, default on). Resolve the
   // subscription from the dispute's PaymentIntent (invoice payment → invoice →

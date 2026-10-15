@@ -18,6 +18,9 @@ vi.mock("@/providers/role-context", () => ({
   }),
 }));
 vi.mock("@/lib/stripe-hooks", () => ({ useEarnings: () => mocks.earnings }));
+vi.mock("@/components/affiliate-recovery-panel", () => ({
+  AffiliateRecoveryPanel: () => null,
+}));
 import { Affiliate } from "@/pages/affiliate";
 
 beforeEach(() => {

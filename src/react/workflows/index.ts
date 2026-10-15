@@ -265,3 +265,12 @@ export type {
   AffiliatePayoutEditorState,
   AffiliatePayoutUpdate,
 } from "./AffiliatePayoutEditor.js";
+export {
+  AffiliateRecovery,
+  AffiliateRecoveryHistory,
+} from "./AffiliateRecovery.js";
+export type {
+  AffiliateRecoveryProps,
+  AffiliateRecoveryView,
+  RecoveryMetric,
+} from "./AffiliateRecovery.js";

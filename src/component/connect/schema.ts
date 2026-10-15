@@ -72,9 +72,9 @@ export const transfersTable = defineTable({
  * delivery replays byte-identical Stripe requests instead of recomputing
  * amounts from mutable ledger state.
  */
-export const transferReversalOpsTable = defineTable(
-  transferReversalOpFields,
-).index("by_operation_id", ["operationId"]);
+export const transferReversalOpsTable = defineTable(transferReversalOpFields)
+  .index("by_operation_id", ["operationId"])
+  .index("by_source_charge", ["sourceChargeId"]);
 
 /**
  * Disputes (chargebacks). Same indexing strategy as refunds.

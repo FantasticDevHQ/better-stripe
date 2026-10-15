@@ -8,6 +8,17 @@
  * @module
  */
 
+import type * as connect_reversalClaims from "../connect/reversalClaims.js";
+import type * as connect_reversalReceipts from "../connect/reversalReceipts.js";
+import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js";
+import type * as settlement_clawbacks from "../settlement/clawbacks.js";
+import type * as affiliateRecovery_schema from "../affiliateRecovery/schema.js";
+import type * as affiliateRecovery_accounting from "../affiliateRecovery/accounting.js";
+import type * as affiliateRecovery_mutations from "../affiliateRecovery/mutations.js";
+import type * as affiliateEarnings_mutations from "../affiliateEarnings/mutations.js";
+import type * as affiliateRecovery_queries from "../affiliateRecovery/queries.js";
+import type * as affiliatePayouts_mutations from "../affiliatePayouts/mutations.js";
+import type * as affiliatePayouts_queries from "../affiliatePayouts/queries.js";
 import type * as billing_mutations from "../billing/mutations.js";
 import type * as billing_queries from "../billing/queries.js";
 import type * as billing_validators from "../billing/validators.js";
@@ -45,6 +56,17 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "connect/reversalClaims": typeof connect_reversalClaims;
+  "connect/reversalReceipts": typeof connect_reversalReceipts;
+  "settlement/clawbackSchema": typeof settlement_clawbackSchema;
+  "settlement/clawbacks": typeof settlement_clawbacks;
+  "affiliateRecovery/schema": typeof affiliateRecovery_schema;
+  "affiliateRecovery/accounting": typeof affiliateRecovery_accounting;
+  "affiliateRecovery/mutations": typeof affiliateRecovery_mutations;
+  "affiliateEarnings/mutations": typeof affiliateEarnings_mutations;
+  "affiliateRecovery/queries": typeof affiliateRecovery_queries;
+  "affiliatePayouts/mutations": typeof affiliatePayouts_mutations;
+  "affiliatePayouts/queries": typeof affiliatePayouts_queries;
   "billing/mutations": typeof billing_mutations;
   "billing/queries": typeof billing_queries;
   "billing/validators": typeof billing_validators;

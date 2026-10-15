@@ -8,7 +8,12 @@
  * @module
  */
 
-import type { FunctionReference } from "convex/server";
+import type {
+  FunctionReference,
+  FunctionArgs,
+  FunctionReturnType,
+  ApiFromModules,
+} from "convex/server";
 
 /**
  * A utility for referencing a Convex component's exposed API.
@@ -23,6 +28,247 @@ import type { FunctionReference } from "convex/server";
  */
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
+    affiliateRecovery: {
+      mutations: {
+        reviewLegacy: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["reviewLegacy"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["reviewLegacy"]
+          >,
+          Name
+        >;
+        reserveOperation: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["reserveOperation"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["reserveOperation"]
+          >,
+          Name
+        >;
+        beginOperation: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["beginOperation"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["beginOperation"]
+          >,
+          Name
+        >;
+        completeOperation: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["completeOperation"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/mutations.js");
+            }>["functions"]["completeOperation"]
+          >,
+          Name
+        >;
+      };
+      queries: {
+        getObligation: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["getObligation"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["getObligation"]
+          >,
+          Name
+        >;
+        chargeObligations: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["chargeObligations"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["chargeObligations"]
+          >,
+          Name
+        >;
+        getEarning: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["getEarning"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["getEarning"]
+          >,
+          Name
+        >;
+        recoverySnapshot: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["recoverySnapshot"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["recoverySnapshot"]
+          >,
+          Name
+        >;
+        operationHistory: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["operationHistory"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["operationHistory"]
+          >,
+          Name
+        >;
+        pendingOperations: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["pendingOperations"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateRecovery/queries.js");
+            }>["functions"]["pendingOperations"]
+          >,
+          Name
+        >;
+      };
+    };
+    affiliateEarnings: {
+      mutations: {
+        reserveEarning: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateEarnings/mutations.js");
+            }>["functions"]["reserveEarning"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateEarnings/mutations.js");
+            }>["functions"]["reserveEarning"]
+          >,
+          Name
+        >;
+        confirmEarning: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliateEarnings/mutations.js");
+            }>["functions"]["confirmEarning"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliateEarnings/mutations.js");
+            }>["functions"]["confirmEarning"]
+          >,
+          Name
+        >;
+      };
+    };
+    affiliatePayouts: {
+      queries: {
+        pendingPayouts: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/queries.js");
+            }>["functions"]["pendingPayouts"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/queries.js");
+            }>["functions"]["pendingPayouts"]
+          >,
+          Name
+        >;
+      };
+      mutations: {
+        reservePayout: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/mutations.js");
+            }>["functions"]["reservePayout"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/mutations.js");
+            }>["functions"]["reservePayout"]
+          >,
+          Name
+        >;
+        finishPayout: FunctionReference<
+          "mutation",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/mutations.js");
+            }>["functions"]["finishPayout"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../affiliatePayouts/mutations.js");
+            }>["functions"]["finishPayout"]
+          >,
+          Name
+        >;
+      };
+    };
     billing: {
       mutations: {
         upsertCheckoutSession: FunctionReference<
@@ -752,28 +998,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         claimReversalSlices: FunctionReference<
           "mutation",
           "internal",
-          {
-            mode:
-              | { kind: "full" }
-              | { kind: "percent"; percent: number }
-              | { amount: number; kind: "amount" }
-              | {
-                  amountRefunded: number;
-                  chargeAmount: number;
-                  kind: "fraction";
-                };
-            operationId: string;
-            sourceChargeId: string;
-          },
-          {
-            replay: boolean;
-            slices: Array<{
-              confirmed: number;
-              from: number;
-              stripeTransferId: string;
-              to: number;
-            }>;
-          },
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../connect/mutations.js");
+            }>["functions"]["claimReversalSlices"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../connect/mutations.js");
+            }>["functions"]["claimReversalSlices"]
+          >,
           Name
         >;
         recordPaymentFeeRefund: FunctionReference<
@@ -790,7 +1024,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         recordTransferReversal: FunctionReference<
           "mutation",
           "internal",
-          { reversedAmount: number; stripeTransferId: string },
+          {
+            reversedAmount: number;
+            stripeTransferId: string;
+            receipt?: {
+              stripeReversalId: string;
+              operationId: string;
+              amount: number;
+            };
+          },
           null,
           Name
         >;
@@ -1129,18 +1371,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getReversalOp: FunctionReference<
           "query",
           "internal",
-          { operationId: string },
-          {
-            _creationTime: number;
-            _id: string;
-            operationId: string;
-            slices: Array<{
-              from: number;
-              stripeTransferId: string;
-              to: number;
-            }>;
-            sourceChargeId: string;
-          } | null,
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../connect/queries.js");
+            }>["functions"]["getReversalOp"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../connect/queries.js");
+            }>["functions"]["getReversalOp"]
+          >,
           Name
         >;
         getTransferByStripeId: FunctionReference<
@@ -2172,6 +2412,28 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     settlement: {
       mutations: {
+        migrateAffiliateObligations: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            paginationOpts: {
+              numItems: number;
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumRowsRead?: number;
+              maximumBytesRead?: number;
+            };
+          },
+          {
+            migrated: number;
+            skipped: number;
+            isDone: boolean;
+            continueCursor: string;
+          },
+          Name
+        >;
+
         claimCommissionInvoice: FunctionReference<
           "mutation",
           "internal",
@@ -2232,6 +2494,22 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
+        listAffiliateObligations: FunctionReference<
+          "query",
+          "internal",
+          FunctionArgs<
+            ApiFromModules<{
+              functions: typeof import("../settlement/queries.js");
+            }>["functions"]["listAffiliateObligations"]
+          >,
+          FunctionReturnType<
+            ApiFromModules<{
+              functions: typeof import("../settlement/queries.js");
+            }>["functions"]["listAffiliateObligations"]
+          >,
+          Name
+        >;
+
         getCommissionTerm: FunctionReference<
           "query",
           "internal",

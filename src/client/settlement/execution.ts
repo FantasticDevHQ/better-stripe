@@ -1,3 +1,4 @@
+import { reconcileAffiliateCharge } from "../affiliateRecovery/engine.js";
 import {
   sourceTransfers,
   matchingTransfer,
@@ -60,13 +61,34 @@ export async function executeResolvedTransfers(
     transfers: saved.transfers,
     paymentId: saved.paymentId,
   };
+  const earnings = new Map<string, { _id: string; releaseAmount: number }>();
+  for (const leg of claim.transfers)
+    if (leg.role === "affiliate" && leg.amount > 0) {
+      const earning = (await runMutationOrThrow(
+        ctx,
+        componentRef(component, "affiliateEarnings/mutations/reserveEarning"),
+        {
+          sourceChargeId: claim.sourceChargeId,
+          affiliateAccountId: leg.destinationAccountId,
+        },
+      )) as { _id: string; releaseAmount: number } | undefined;
+      if (earning?._id) earnings.set(leg.destinationAccountId, earning);
+    }
+  const effective = claim.transfers.map((leg) =>
+    leg.role === "affiliate" && earnings.has(leg.destinationAccountId)
+      ? {
+          ...leg,
+          amount: earnings.get(leg.destinationAccountId)!.releaseAmount,
+        }
+      : leg,
+  );
   const existing = ((await ctx.runQuery(
     componentRef(component, "connect/queries/listTransfersByCharge"),
     { sourceChargeId: claim.sourceChargeId },
   )) ?? []) as Ledger[];
   let provider = await sourceTransfers(stripe, claim.sourceChargeId);
   if (
-    claim.transfers.some(
+    effective.some(
       (leg) =>
         leg.amount > 0 &&
         !existing.some(
@@ -87,8 +109,20 @@ export async function executeResolvedTransfers(
     ];
   }
   const executedTransfers: SettlementResult["executedTransfers"] = [];
-  for (const leg of claim.transfers) {
-    if (leg.amount === 0) continue;
+  for (const leg of effective) {
+    const earning =
+      leg.role === "affiliate"
+        ? earnings.get(leg.destinationAccountId)
+        : undefined;
+    if (leg.amount === 0) {
+      if (earning)
+        await runMutationOrThrow(
+          ctx,
+          componentRef(component, "affiliateEarnings/mutations/confirmEarning"),
+          { earningId: earning._id },
+        );
+      continue;
+    }
     const recorded = existing.find(
       (t) =>
         t.destinationAccountId === leg.destinationAccountId &&
@@ -123,6 +157,12 @@ export async function executeResolvedTransfers(
       transferId = transfer.id;
       await recordSettlementTransfer(component, ctx, claim, leg, transfer);
     }
+    if (earning)
+      await runMutationOrThrow(
+        ctx,
+        componentRef(component, "affiliateEarnings/mutations/confirmEarning"),
+        { earningId: earning._id, stripeTransferId: transferId },
+      );
     executedTransfers.push({
       stripeTransferId: transferId,
       destinationAccountId: leg.destinationAccountId,
@@ -130,5 +170,12 @@ export async function executeResolvedTransfers(
       amount: leg.amount,
     });
   }
+  if (earnings.size)
+    await reconcileAffiliateCharge(
+      stripe,
+      component,
+      ctx,
+      claim.sourceChargeId,
+    );
   return { ...claim, status: "settled", executedTransfers };
 }

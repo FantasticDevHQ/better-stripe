@@ -14,6 +14,7 @@ import {
 export default defineSchema({
   // Mock users (no auth — just IDs and roles)
   users: defineTable({
+    authTokenIdentifier: v.optional(v.string()),
     name: v.string(),
     email: v.string(),
     role: v.union(
@@ -37,6 +38,7 @@ export default defineSchema({
     // (e.g. admin, visitor) or before seeding has linked them.
     stripeAccountId: v.optional(v.string()),
   })
+    .index("by_auth_token", ["authTokenIdentifier"])
     .index("by_test_fixture", ["testFixture"])
     .index("by_role", ["role"])
     .index("by_email", ["email"])

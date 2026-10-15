@@ -1132,3 +1132,48 @@ commission. Once stored, the database claim identifies that invoice on later
 settlements. An unclaimed One-time subscription with more than 100 paid invoices
 requires review instead of guessing; existing subscriptions without a term keep
 Forever.
+
+### Affiliate clawback accounting and migration
+
+The package records original affiliate commission obligations across successful
+refunds and monetary disputes. Recovery uses the original transfer amount and
+currency for each charge/invoice, with cumulative refund targets, shared dispute
+exposure, and exact reversal receipts. Pending and failed refunds do not finalize
+commission recovery.
+
+After deploying the additive component schema, an authenticated operator wrapper
+can call `components.betterStripe.settlement.mutations.migrateAffiliateObligations`
+with `{ paginationOpts: { numItems: 100, cursor: null } }`. Continue with each
+returned `continueCursor` until `isDone`; repeated pages are safe. Review `skipped`
+rows and `needsReconciliation` flags against original allocations and provider
+receipts. This is separate from the subscription-term migration above.
+
+Use `components.betterStripe.settlement.queries.listAffiliateObligations` from a
+host query that derives the affiliate account from the authenticated caller and
+passes a currency and pagination options. The earnings, referred-sales and affiliate payout screens include the reusable
+recovery view. Snapshots show debt, withheld/reserved earnings, original
+commissions, reversals and restoration separately. Debt offsets run before
+future commission transfers; dispute wins retain independent refunds.
+
+These live endpoints require an authenticated identity whose `tokenIdentifier`
+is provisioned as `users.authTokenIdentifier`. The existing demo persona picker
+is not authentication and grants no recovery access. `/admin/affiliate-recovery`
+requires the server-linked user's admin role for retries and another affiliate's
+records. `/demo/affiliate-recovery` needs no live account and labels all ten
+scenario snapshots as simulated. Internal cron jobs reconcile pending/unknown
+recovery and payout operations every five minutes, one operation per invocation.
+
+The existing sandbox/browser checks do not establish recovery from a completed
+bank payout. Verify supported Connect account capabilities and actual Stripe
+receipts before claiming live recovery; do not route Global Payouts through
+Connect reversal APIs. See the [full recovery guide](../docs/affiliate-clawbacks.md)
+for field meanings, bounds, webhook subscriptions, migration and rollout limits.
+
+The internal `affiliateRecoverySandbox:seed` action creates actual test-mode
+payment/refund fixtures using a stable run key and existing Connect recipients.
+It supports full/partial refunds, dispute-producing cards, recurring invoice
+sources, future commissions and verification of an actual completed test payout.
+See the [sandbox scenario driver](../docs/affiliate-clawbacks.md#stripe-sandbox-scenario-driver)
+for commands, account prerequisites, receipt assertions and blocked-capability
+handling. The [UI recording](../docs/evidence/affiliate-recovery.webm) shows
+simulated fixtures, not live provider evidence.

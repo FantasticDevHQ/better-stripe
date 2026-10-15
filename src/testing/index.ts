@@ -11,3 +11,5 @@ export {
   mockAccountUpdated,
   mockInvoicePaid,
 } from "./mock-webhooks.js";
+export { affiliateRecoveryScenarios } from "./affiliate-recovery.js";
+export type { AffiliateRecoveryScenario } from "./affiliate-recovery.js";

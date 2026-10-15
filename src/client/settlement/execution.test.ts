@@ -26,6 +26,11 @@ it("recovers provider success after a ledger failure even without an idempotency
     async (r: Record<symbol, string>, args: Record<string, unknown>) => {
       if (r[TO_REF].endsWith("/reserveSettlementAllocation"))
         return claimed ?? (claimed = { ...args });
+      if (
+        r[TO_REF].includes("affiliateRecovery/") ||
+        r[TO_REF].includes("affiliateEarnings/")
+      )
+        return undefined;
       if (fail) {
         fail = false;
         throw new Error("ledger unavailable");

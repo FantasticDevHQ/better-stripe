@@ -16,10 +16,9 @@
 
 ## [0.23.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.22.0...v0.23.0) (2026-10-15)
 
-
 ### Features
 
-* **payouts:** adopt historical funding and activate funded policies ([#192](https://github.com/FantasticDevHQ/better-stripe/issues/192)) ([abc73dc](https://github.com/FantasticDevHQ/better-stripe/commit/abc73dccd6398bc6adfab58255e26bbeaa54ab96))
+- **payouts:** adopt historical funding and activate funded policies ([#192](https://github.com/FantasticDevHQ/better-stripe/issues/192)) ([abc73dc](https://github.com/FantasticDevHQ/better-stripe/commit/abc73dccd6398bc6adfab58255e26bbeaa54ab96))
 
 ## [0.22.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.21.0...v0.22.0) (2026-10-15)
 

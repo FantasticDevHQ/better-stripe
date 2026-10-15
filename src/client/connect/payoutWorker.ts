@@ -1,5 +1,8 @@
 import type { Infer } from "convex/values";
-import type { jobDoc } from "../../component/payoutWorker/schema.js";
+import type {
+  jobDoc,
+  attemptStatus,
+} from "../../component/payoutWorker/schema.js";
 import type { policyDoc } from "../../component/payoutPolicy/schema.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
@@ -138,7 +141,48 @@ export class PayoutWorkerClient {
       throw error;
     }
     const reason =
-      payout.status === "held" ? payout.reason : payout.claim.status;
+      payout.status === "held"
+        ? payout.reason
+        : (payout.claim.rejection?.code ?? payout.claim.status);
     return { status: "completed", job: await finish(reason), payout };
   }
+}
+
+export type PayoutAttempt = Infer<typeof attemptStatus>;
+/** Current lease and generation take precedence over a prior result. Legacy timestamps remain unknown. */
+export function payoutAttemptStatus(
+  job: PayoutWorkerJob | null,
+  now = Date.now(),
+): PayoutAttempt | null {
+  if (!job || (!job.hasOperation && !job.lastReason)) return null;
+  const completed = job.completedGeneration === job.generation;
+  const running = job.hasOperation && (job.leaseUntil ?? 0) > now;
+  const reason =
+    job.hasOperation && !completed
+      ? "pending_claim"
+      : (job.lastReason ?? "pending_claim");
+  const status = running
+    ? "running"
+    : job.hasOperation
+      ? "reconciling"
+      : ["balance_insufficient", "amount_too_small", "rejected"].includes(
+            reason,
+          )
+        ? "rejected"
+        : reason === "paid"
+          ? "paid"
+          : ["worker_error", "returned"].includes(reason)
+            ? "failed"
+            : "held";
+  const at = running
+    ? job.lastAttemptAt
+    : job.hasOperation && !completed
+      ? undefined
+      : job.lastResultAt;
+  return {
+    currency: job.currency,
+    status,
+    reason,
+    ...(at === undefined ? {} : { at }),
+  };
 }

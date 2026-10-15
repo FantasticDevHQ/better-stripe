@@ -13,6 +13,7 @@ export const fields = {
   hasOperation: v.boolean(),
   lastReason: v.optional(v.string()),
   lastAttemptAt: v.optional(v.number()),
+  lastResultAt: v.optional(v.number()),
   completedGeneration: v.optional(v.number()),
   completedOperationKey: v.optional(v.string()),
 };
@@ -24,3 +25,17 @@ export const jobDoc = v.object({
 export const jobsTable = defineTable(fields)
   .index("by_account_currency", ["accountId", "currency"])
   .index("by_operation_pending", ["hasOperation", "nextAttemptAt"]);
+
+export const attemptStatus = v.object({
+  currency: v.string(),
+  status: v.union(
+    v.literal("running"),
+    v.literal("reconciling"),
+    v.literal("rejected"),
+    v.literal("failed"),
+    v.literal("paid"),
+    v.literal("held"),
+  ),
+  reason: v.string(),
+  at: v.optional(v.number()),
+});

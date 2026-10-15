@@ -3,6 +3,7 @@ import { useAction } from "convex/react";
 import { RefreshCw } from "lucide-react";
 import {
   PayoutProgress,
+  PayoutAttemptStatus,
   PayoutSettings,
   useWorkflowResource,
   type PayoutProgressState,
@@ -127,6 +128,8 @@ export function PayoutPolicyPanel({
             preview={data?.preview}
             currency={currency}
             nextAttemptAt={data?.nextAttemptAt}
+            lastAttempt={data?.lastAttempt}
+            timeZone="UTC"
           >
             {(state) => <ProgressView state={state} />}
           </PayoutProgress>
@@ -159,6 +162,22 @@ export function PayoutPolicyPanel({
 function ProgressView({ state }: { state: PayoutProgressState }) {
   return (
     <div className="space-y-4">
+      <PayoutAttemptStatus attempt={state.lastAttempt} timeZone="UTC">
+        {(attempt) => (
+          <Alert
+            variant={attempt.tone === "warning" ? "destructive" : "default"}
+          >
+            <AlertDescription>
+              <p>{attempt.message}</p>
+              {attempt.formattedAt && (
+                <p>
+                  {attempt.timeLabel}: {attempt.formattedAt} UTC
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </PayoutAttemptStatus>
       <p role="status" className="text-sm">
         {state.message}
       </p>

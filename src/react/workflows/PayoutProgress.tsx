@@ -1,4 +1,5 @@
 "use client";
+import { PayoutAttemptStatus } from "./PayoutAttemptStatus.js";
 import { useMemo } from "react";
 import {
   payoutProgressState,
@@ -28,6 +29,11 @@ export function PayoutProgress(props: PayoutProgressProps) {
     <section className={className} data-better-stripe="payout-progress">
       <h2>Automatic payout progress ({currency.toUpperCase()})</h2>
       <p role="status">{state.message}</p>
+      <PayoutAttemptStatus
+        attempt={state.lastAttempt}
+        locale={locale}
+        timeZone={timeZone}
+      />
       <p>Stripe enforces its payout floor; a numeric amount is unavailable.</p>
       {state.recovery?.balances && (
         <div>

@@ -164,6 +164,7 @@ it("leaves Stripe-managed defaults as defaults instead of inventing an assessmen
     policy: null,
     preview: null,
     nextAttemptAt: null,
+    lastAttempt: null,
   });
   expect(s.provider.balance.retrieve).not.toHaveBeenCalled();
 });
@@ -405,4 +406,39 @@ it("preserves unresolved expiry in the public policy view after controls are res
   } finally {
     vi.useRealTimers();
   }
+});
+
+it("forwards the package's actionable rejected-attempt status to the payout view", async () => {
+  const s = await setup();
+  const { PayoutPolicyClient } = await import("@fantastic.dev/better-stripe");
+  const client = new PayoutPolicyClient(
+    components.betterStripe,
+    () => sdk.current,
+  );
+  const ctx = {
+    runQuery: s.t.query.bind(s.t),
+    runMutation: s.t.mutation.bind(s.t),
+  } as unknown as import("../../src/client/helpers.js").RunCtx;
+  s.provider.payouts.create.mockRejectedValueOnce(
+    Object.assign(new Error("insufficient"), {
+      type: "StripeInvalidRequestError",
+      code: "balance_insufficient",
+      requestId: "req_rejected",
+    }),
+  );
+  await client.worker.run(ctx, {
+    accountId: "acct_recipient",
+    ownerKey: s.userId,
+    currency: "usd",
+    independentLiabilities: 0,
+  });
+  expect(await s.t.action(load, s.scope)).toMatchObject({
+    lastAttempt: {
+      currency: "usd",
+      status: "rejected",
+      reason: "balance_insufficient",
+      at: expect.any(Number),
+    },
+    nextAttemptAt: expect.any(Number),
+  });
 });

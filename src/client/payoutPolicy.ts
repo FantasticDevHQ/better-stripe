@@ -1,3 +1,5 @@
+export { payoutAttemptStatus } from "./connect/payoutWorker.js";
+export { attemptStatus as payoutAttemptValidator } from "../component/payoutWorker/schema.js";
 export { holdingExpiry as payoutHoldingExpiryValidator } from "../component/payoutPolicy/schema.js";
 import { expirePayoutPolicy } from "./connect/payoutExpiry.js";
 import {

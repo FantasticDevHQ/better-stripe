@@ -87,10 +87,21 @@ export const attempt = internalAction({
       internal.payoutWorkerScope.liabilities,
       args,
     );
-    await stripe.payoutPolicy.worker.run(ctx, {
+    const result = await stripe.payoutPolicy.worker.run(ctx, {
       ...args,
       independentLiabilities,
     });
+    if (
+      result.status === "completed" &&
+      result.payout.status !== "held" &&
+      result.payout.claim.status === "rejected"
+    )
+      console.warn("Automatic payout rejected by Stripe", {
+        accountId: args.accountId,
+        currency: args.currency,
+        reason: result.payout.claim.rejection?.code ?? "rejected",
+        nextAttemptAt: result.job.nextAttemptAt,
+      });
     return null;
   },
 });

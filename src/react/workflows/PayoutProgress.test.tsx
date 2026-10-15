@@ -306,3 +306,51 @@ it("keeps unavailable expiry balances unverified instead of showing fabricated z
   );
   expect(screen.queryByText("$0.00")).toBeNull();
 });
+
+it("shows a previous Stripe rejection separately from informational eligibility", () => {
+  render(
+    <PayoutProgress
+      policy={policy}
+      preview={{
+        ...preview,
+        status: "qualified",
+        reason: undefined,
+        amount: 999,
+        minimumWaived: true,
+        holdDeadline: policy.holdDeadline,
+      }}
+      currency="usd"
+      lastAttempt={{
+        currency: "usd",
+        status: "rejected",
+        reason: "balance_insufficient",
+        at: 1800000000000,
+      }}
+      nextAttemptAt={1800000300000}
+      timeZone="UTC"
+    />,
+  );
+  expect(
+    screen.getByText(
+      /Stripe rejected the payout because the available balance changed/,
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText(/Next automatic attempt/)).toBeTruthy();
+});
+it("does not display an old paid result or stale retry time while a new check is running", () => {
+  render(
+    <PayoutProgress
+      policy={policy}
+      preview={preview}
+      currency="usd"
+      lastAttempt={{
+        currency: "usd",
+        status: "running",
+        reason: "pending_claim",
+      }}
+      nextAttemptAt={1800000000000}
+    />,
+  );
+  expect(screen.getByText(/automatic payout check is running/)).toBeTruthy();
+  expect(screen.queryByText(/Next automatic attempt/)).toBeNull();
+});

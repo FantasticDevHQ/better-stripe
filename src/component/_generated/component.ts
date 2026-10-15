@@ -4112,6 +4112,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 hasOperation: boolean;
                 lastAttemptAt?: number;
                 lastReason?: string;
+                lastResultAt?: number;
                 leaseUntil?: number;
                 nextAttemptAt: number;
                 operationKey?: string;
@@ -4146,6 +4147,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             hasOperation: boolean;
             lastAttemptAt?: number;
             lastReason?: string;
+            lastResultAt?: number;
             leaseUntil?: number;
             nextAttemptAt: number;
             operationKey?: string;
@@ -4223,6 +4225,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             hasOperation: boolean;
             lastAttemptAt?: number;
             lastReason?: string;
+            lastResultAt?: number;
             leaseUntil?: number;
             nextAttemptAt: number;
             operationKey?: string;
@@ -4310,6 +4313,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               hasOperation: boolean;
               lastAttemptAt?: number;
               lastReason?: string;
+              lastResultAt?: number;
               leaseUntil?: number;
               nextAttemptAt: number;
               operationKey?: string;

@@ -801,3 +801,19 @@ Pending or unknown direct affiliate payouts and recovery operations also block
 reset, preserving the receipts and obligations needed for reconciliation.
 The guard preserves the restoration and payout records until that work is done.
 Read-only cache collections can be cleared with the other development data.
+
+### Observing automatic attempt outcomes
+
+Worker jobs record `lastResultAt` with each completed check and retain a verified
+Stripe rejection code in `lastReason`. `payoutAttemptStatus(job)` distinguishes
+running, reconciling, rejected, failed, held and paid results. Active generations
+take precedence over old successes; missing legacy result times remain unknown.
+Use the exported `payoutAttemptValidator` for a host DTO and keep the operation's
+immutable rejection receipt for audits. The example warns operators on rejected
+payouts before the holding deadline, without logging raw provider errors.
+
+A rejected request releases proven reservations; it does not forfeit unpaid
+entitlement. Refunds/reversals still reduce qualifying funds. Provider floors
+remain provider-enforced and numerically unknown when not exposed. Reassess fresh
+receipts and balances on the next scheduled attempt rather than manually
+recreating uncertain requests.

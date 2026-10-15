@@ -189,6 +189,52 @@ it("requires explicit scheduling consent", async () => {
   ).rejects.toThrow(/consent/i);
   expect(s.balanceSettings.update).not.toHaveBeenCalled();
 });
+it("scopes settings operations to the resolved account when a persona's recipient changes", async () => {
+  const s = await setup({ custom: false, amounts: [] });
+  await s.t.action(save, s.change);
+  const originalScope = { accountId: "acct_recipient", ownerKey: s.userId };
+  const original = await s.t.query(
+    components.betterStripe.payoutPolicy.queries.get,
+    originalScope,
+  );
+  await s.t.action(save, {
+    ...s.change,
+    expectedRevision: 0,
+    mode: "stripe_managed",
+    consent: false,
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch("users", s.userId, { stripeAccountId: "acct_replacement" }),
+  );
+  Object.assign(sdk.current.v2.core.accounts, {
+    retrieve: vi.fn(async (id: string) => ({
+      id,
+      dashboard: "none",
+      identity: { country: "US" },
+    })),
+  });
+  expect(await s.t.action(save, s.change)).toMatchObject({ status: "ready" });
+  const replacement = await s.t.query(
+    components.betterStripe.payoutPolicy.queries.get,
+    { accountId: "acct_replacement", ownerKey: s.userId },
+  );
+  expect(replacement).toMatchObject({ mode: "custom", revision: 0 });
+  expect(replacement!.operationKey).not.toBe(original!.operationKey);
+  expect(
+    await s.t.query(
+      components.betterStripe.payoutPolicy.queries.get,
+      originalScope,
+    ),
+  ).toMatchObject({ mode: "stripe_managed", status: "ready" });
+  expect(
+    await s.t.query(components.betterStripe.payoutPolicy.queries.operation, {
+      ...originalScope,
+      operationKey: original!.operationKey,
+    }),
+  ).toMatchObject({ status: "complete" });
+  expect(s.balanceSettings.update).toHaveBeenCalledTimes(3);
+  expect(s.provider.payouts.create).not.toHaveBeenCalled();
+});
 it("replays a completed change after another currency changes without rolling settings back", async () => {
   const s = await setup({ custom: false, amounts: [] });
   await s.t.action(save, s.change);

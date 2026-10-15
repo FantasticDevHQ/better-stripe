@@ -46,13 +46,21 @@ affiliate and other contributions, with their in-flight and paid amounts.
 
 `convex/recipientPayoutPolicy.ts` derives the demo account and outstanding seller
 costs server-side. It preserves other currency settings and retries a persisted
-schedule operation. Production apps must use authenticated ownership instead of
+schedule operation. New settings operations include the resolved Stripe account
+in their identity so a replaced recipient cannot collide with the old account's
+history. Pending changes retain their stored identity when retried. Production
+apps must use authenticated ownership instead of
 the example's demo persona IDs. Funded or historical accounts can require
 reconciliation before activation. The UI reports that limitation instead of
 guessing allocations. Opt-out restores the recorded original account schedule.
 See [the package settings contract](../docs/react-workflows.md#payout-settings).
 
 ### Reset & Re-seed
+
+The Admin reset button and CLI use the same payout safety check before clearing
+app users or component records. Restore custom payout policies to Stripe-managed
+defaults and reconcile pending payouts first. A refused reset preserves owner
+bindings and schedule restoration records so these operations can still finish.
 
 ```bash
 pnpm exec convex run reset:run   # Clear all data (app DB + better-stripe component DB)

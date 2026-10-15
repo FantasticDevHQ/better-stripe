@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { v } from "convex/values";
 import { mutation } from "../earnings/triggers.js";
 import { readPolicy } from "../payoutPolicy/helpers.js";
@@ -119,7 +121,7 @@ export const advance = mutation({
     const patch: Partial<Snapshot> = { step: h.step + 1 };
     try {
       if (h.phase === "sources") {
-        const page = await ctx.db
+        const page = await paginator(ctx.db, schema)
           .query("transfers")
           .withIndex("by_destination_account_id", (q) =>
             q
@@ -132,7 +134,7 @@ export const advance = mutation({
         patch.sourceCursor = page.continueCursor;
         patch.phase = page.isDone ? "allocations" : "sources";
       } else if (h.phase === "allocations") {
-        const page = await ctx.db
+        const page = await paginator(ctx.db, schema)
           .query("payoutSourceAllocations")
           .withIndex("by_account", (q) => q.eq("accountId", h!.accountId))
           .paginate({ cursor: h.allocationCursor ?? null, numItems: batch });
@@ -141,7 +143,7 @@ export const advance = mutation({
         patch.allocationCursor = page.continueCursor;
         patch.phase = page.isDone ? "fees" : "allocations";
       } else if (h.phase === "fees") {
-        const page = await ctx.db
+        const page = await paginator(ctx.db, schema)
           .query("payoutFeeBalances")
           .withIndex("by_account_currency", (q) =>
             q.eq("accountId", h!.accountId),
@@ -152,7 +154,7 @@ export const advance = mutation({
         patch.feeCursor = page.continueCursor;
         patch.phase = page.isDone ? "claims" : "fees";
       } else if (h.phase === "claims") {
-        const page = await ctx.db
+        const page = await paginator(ctx.db, schema)
           .query("payoutReleaseClaims")
           .withIndex("by_account_status", (q) =>
             q.eq("accountId", h!.accountId),

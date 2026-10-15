@@ -689,6 +689,16 @@ provider-history continuation on larger accounts.
 
 ## Resumable local collections
 
+Worker discovery, policy expiry, pending affiliate reconciliation, seller cost
+history and local collection pages use the component-compatible paginator from
+`convex-helpers`. Convex's native database `.paginate()` is unavailable inside
+components. The public page shape remains `page`, `continueCursor` and `isDone`.
+Treat cursors as opaque and restart cached pages at a null cursor when upgrading
+these readers. Use the package's discard operation for an obsolete read-only
+collection; never erase financially bound or unresolved payout state to restart
+a scan. This change preserves the existing source/history limits and does not
+make larger provider-history qualification complete.
+
 An authorized host worker can collect the local recipient ledger in bounded
 steps, retaining its cursor and step number across restarts:
 

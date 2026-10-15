@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type Stripe from "stripe";
 import schema from "./schema";
 import componentSchema from "../../dist/component/schema.js";
-import { internal, components } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 import type { RunCtx } from "../../src/client/helpers.js";
 import { setup as paymentSetup } from "../../src/client/connect/payoutExecutionTestHelpers.js";
 const sdk = vi.hoisted(() => ({ current: null as unknown as Stripe }));
@@ -171,8 +171,51 @@ it("uncollected seller costs stay withheld even when reserved on an unpaid invoi
     }),
   ).toMatchObject({ lastReason: "below_threshold" });
 });
-it("a refused reset preserves app owner records while custom schedules remain active", async () => {
-  const s = await setup();
-  await expect(s.t.action(internal.reset.run, {})).rejects.toThrow(/restore/i);
-  expect(await s.t.run((ctx) => ctx.db.get("users", s.userId))).not.toBeNull();
-});
+const resetEntrypoints = [
+  ["CLI", internal.reset.run],
+  ["Admin browser", api.actions.resetAll],
+] as const;
+it.each(resetEntrypoints)(
+  "%s reset preserves owner bindings when the payout safety check refuses it",
+  async (_name, reset) => {
+    const s = await setup();
+    await expect(s.t.action(reset, {})).rejects.toThrow(/restore/i);
+    expect(await s.t.run((ctx) => ctx.db.get("users", s.userId))).toMatchObject(
+      {
+        stripeAccountId: "acct_recipient",
+      },
+    );
+    expect(
+      await s.t.query(components.betterStripe.payoutPolicy.queries.get, {
+        accountId: "acct_recipient",
+        ownerKey: s.userId,
+      }),
+    ).toMatchObject({ mode: "custom", status: "ready" });
+  },
+);
+it.each(resetEntrypoints)(
+  "%s reset clears both databases after schedule restoration is verified",
+  async (_name, reset) => {
+    const s = await setup();
+    const scope = { accountId: "acct_recipient", ownerKey: s.userId };
+    await s.t.mutation(components.betterStripe.payoutPolicy.mutations.prepare, {
+      ...scope,
+      expectedRevision: 0,
+      operationKey: "restore",
+      mode: "stripe_managed",
+      country: "US",
+      thresholds: [],
+      observedSchedule: { interval: "manual" },
+    });
+    await s.t.mutation(components.betterStripe.payoutPolicy.mutations.confirm, {
+      ...scope,
+      operationKey: "restore",
+      observedSchedule: { interval: "weekly", weeklyDays: ["monday"] },
+    });
+    await s.t.action(reset, {});
+    expect(await s.t.run((ctx) => ctx.db.get("users", s.userId))).toBeNull();
+    expect(
+      await s.t.query(components.betterStripe.payoutPolicy.queries.get, scope),
+    ).toBeNull();
+  },
+);

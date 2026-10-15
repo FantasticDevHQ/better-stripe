@@ -461,7 +461,9 @@ function ResetCard() {
               Clear all data from the app database (users) and the better-stripe
               component database (accounts, products, prices, subscriptions,
               invoices, payments, payouts, webhook events). Use this when you
-              reset your Stripe sandbox.
+              reset your Stripe sandbox. Restore custom payout policies to
+              Stripe-managed defaults first. Active or unresolved payout state
+              blocks reset and preserves local records.
             </p>
           </div>
           <Button

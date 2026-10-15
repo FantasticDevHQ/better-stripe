@@ -1,3 +1,9 @@
+import { collectAdoptionProof } from "./connect/payoutActivationProof.js";
+import {
+  adoptRecipientPayouts,
+  type PayoutAdoptionOptions,
+} from "./connect/payoutAdoption.js";
+export type * from "./connect/payoutAdoption.js";
 import {
   releaseRecipientPayout,
   type PayoutReleaseOptions,
@@ -32,6 +38,7 @@ import {
   canonicalSchedule,
   canonicalThresholds,
   validateScope,
+  holdingDays,
 } from "../component/payoutPolicy/helpers.js";
 export type PayoutPolicy = Infer<typeof policyDoc>;
 export type PayoutPolicyOperation = Infer<typeof operationDoc>;
@@ -42,14 +49,18 @@ export type PayoutPolicyOptions = PayoutPolicyScope & {
   mode: PayoutPolicy["mode"];
   thresholds: PayoutPolicy["thresholds"];
   consent?: true;
+  /** Explicit funded-account adoption; historical payout mappings must already be imported. */
+  adoptExistingBalance?: true;
 };
 export type PayoutPolicyLimitation = {
   status: "unsupported" | "migration_required";
+  adoptionReason?: string;
   reason:
     | "provider_permission_denied"
     | "payout_control_unverified"
     | "country_unavailable"
     | "payouts_unavailable"
+    | "existing_payout_history"
     | "existing_balance"
     | "in_flight_payouts"
     | "existing_manual_schedule";
@@ -90,6 +101,9 @@ export class PayoutPolicyClient {
     private readonly component: Component,
     private readonly provider: () => Stripe,
   ) {}
+  adoptPayouts(ctx: RunCtx, opts: PayoutAdoptionOptions) {
+    return adoptRecipientPayouts(this.provider(), this.component, ctx, opts);
+  }
   release(ctx: RunCtx, opts: PayoutReleaseOptions) {
     return releaseRecipientPayout(
       this.provider(),
@@ -212,6 +226,15 @@ export class PayoutPolicyClient {
       if (payouts.has_more || payouts.data.length)
         return { status: "migration_required", reason: "in_flight_payouts" };
     }
+    const history = await stripe.payouts.list(
+      { limit: 1 },
+      { stripeAccount: scope.accountId },
+    );
+    if (history.has_more || history.data.length)
+      return {
+        status: "migration_required",
+        reason: "existing_payout_history",
+      };
     return null;
   }
   /** Persist restoration intent first. Existing mixed funds require explicit adoption; never infer ownership. */
@@ -250,7 +273,8 @@ export class PayoutPolicyClient {
       if (
         prior.mode !== opts.mode ||
         prior.expectedRevision !== opts.expectedRevision ||
-        !equal(prior.thresholds, thresholds)
+        !equal(prior.thresholds, thresholds) ||
+        Boolean(prior.adoption) !== Boolean(opts.adoptExistingBalance)
       )
         throw new Error("Payout policy operation identity cannot be reused.");
       return { status: "prepared", operation: prior };
@@ -266,14 +290,48 @@ export class PayoutPolicyClient {
       policy?.country,
     );
     if ("status" in controls) return controls;
+    let adoption: PayoutPolicyOperation["adoption"];
+    if (
+      opts.adoptExistingBalance &&
+      (opts.mode !== "custom" || policy?.mode !== "stripe_managed")
+    )
+      throw new Error("Funded adoption requires an owned automatic policy.");
     if (opts.mode === "custom" && policy?.mode !== "custom") {
       if (controls.schedule.interval === "manual")
         return {
           status: "migration_required",
           reason: "existing_manual_schedule",
         };
-      const migration = await this.migrationPreflight(opts);
-      if (migration) return migration;
+      if (opts.adoptExistingBalance) {
+        const proof = await collectAdoptionProof(
+          this.provider(),
+          this.component,
+          ctx,
+          opts,
+          policy!.revision,
+          thresholds.map((t) => t.currency),
+        );
+        if (proof.status !== "verified")
+          return {
+            status: "migration_required",
+            reason: "existing_balance",
+            adoptionReason: proof.reason,
+          };
+        adoption = proof.proof;
+        if (
+          adoption.oldestHeldAt !== undefined &&
+          adoption.oldestHeldAt + holdingDays(controls.country) * 86400000 <=
+            Date.now()
+        )
+          return {
+            status: "migration_required",
+            reason: "existing_balance",
+            adoptionReason: "holding_deadline_expired",
+          };
+      } else {
+        const migration = await this.migrationPreflight(opts);
+        if (migration) return migration;
+      }
     }
     const operation = (await runMutationOrThrow(
       ctx,
@@ -288,6 +346,7 @@ export class PayoutPolicyClient {
         country: controls.country,
         observedSchedule: controls.schedule,
         observedAt,
+        ...(adoption ? { adoption } : {}),
       },
     )) as PayoutPolicyOperation;
     return { status: "prepared", operation };
@@ -302,6 +361,11 @@ export class PayoutPolicyClient {
     | { status: "canceled"; operation: PayoutPolicyOperation }
     | PayoutPolicyLimitation
   > {
+    args = {
+      accountId: args.accountId,
+      ownerKey: args.ownerKey,
+      operationKey: args.operationKey,
+    };
     const operation = await this.operation(ctx, args);
     if (!operation) throw new Error("Payout policy operation is unavailable.");
     if (operation.status === "complete") return { status: "ready", operation };
@@ -334,6 +398,13 @@ export class PayoutPolicyClient {
     if ("status" in controls) return controls;
     if (operation.mode === "custom" && controls.country !== operation.country)
       return { status: "schedule_drift" };
+    if (
+      operation.adoption &&
+      !operation.attempted &&
+      equal(controls.schedule, operation.targetSchedule)
+    )
+      return { status: "schedule_drift" };
+    let freshAdoption: PayoutPolicyOperation["adoption"];
     if (!equal(controls.schedule, operation.targetSchedule)) {
       if (!equal(controls.schedule, operation.observedSchedule))
         return { status: "schedule_drift" };
@@ -342,7 +413,38 @@ export class PayoutPolicyClient {
         !operation.attempted &&
         policy?.mode === "stripe_managed"
       ) {
-        const migration = await this.migrationPreflight(args);
+        const result = operation.adoption
+          ? await collectAdoptionProof(
+              this.provider(),
+              this.component,
+              ctx,
+              args,
+              policy.revision,
+              operation.thresholds.map((t) => t.currency),
+            )
+          : null;
+        if (result?.status === "verified") freshAdoption = result.proof;
+        const ageExpired =
+          result?.status === "verified" &&
+          result.proof.oldestHeldAt !== undefined &&
+          result.proof.oldestHeldAt +
+            holdingDays(operation.country) * 86400000 <=
+            Date.now();
+        const migration: PayoutPolicyLimitation | null = ageExpired
+          ? {
+              status: "migration_required",
+              reason: "existing_balance",
+              adoptionReason: "holding_deadline_expired",
+            }
+          : result?.status === "held"
+            ? {
+                status: "migration_required",
+                reason: "existing_balance",
+                adoptionReason: result.reason,
+              }
+            : result
+              ? null
+              : await this.migrationPreflight(args);
         if (migration) {
           await runMutationOrThrow(
             ctx,
@@ -358,7 +460,7 @@ export class PayoutPolicyClient {
       await runMutationOrThrow(
         ctx,
         componentRef(this.component, "payoutPolicy/mutations/beginAttempt"),
-        args,
+        { ...args, ...(freshAdoption ? { adoption: freshAdoption } : {}) },
       );
       try {
         await this.provider().balanceSettings.update(

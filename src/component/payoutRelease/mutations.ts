@@ -2,6 +2,10 @@ import {
   reserveRecoveryGuard,
   releaseRecoveryGuard,
 } from "../affiliatePayouts/recipientGuard.js";
+import {
+  historicalBatchArgs,
+  adoptHistoricalBatch as importHistoricalBatch,
+} from "./adoption.js";
 import { readFees, recordFees } from "./fees.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
@@ -340,4 +344,10 @@ export const recordRejection = mutation({
     });
     return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
   },
+});
+
+export const adoptHistoricalBatch = mutation({
+  args: historicalBatchArgs,
+  returns: v.object({ claims: v.array(claimDoc) }),
+  handler: importHistoricalBatch,
 });

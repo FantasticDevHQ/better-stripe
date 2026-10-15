@@ -1,6 +1,8 @@
+import { validateAdoption } from "./adoption.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import {
+  adoptionProof,
   prepareFields,
   operationDoc,
   scopeFields,
@@ -49,6 +51,7 @@ export const prepare = mutation({
         old.mode !== args.mode ||
         old.country !== args.country ||
         old.observedAt !== args.observedAt ||
+        Boolean(old.adoption) !== Boolean(args.adoption) ||
         !same(old.thresholds, args.thresholds) ||
         !same(old.observedSchedule, args.observedSchedule)
       )
@@ -84,6 +87,17 @@ export const prepare = mutation({
       args.observedSchedule.interval === "manual"
     )
       throw new Error("An existing manual schedule requires migration.");
+    let adoptedDeadline: number | undefined;
+    if (args.adoption) {
+      if (args.mode !== "custom" || policy?.mode !== "stripe_managed")
+        throw new Error(
+          "Adoption requires an owned automatic policy before custom activation.",
+        );
+      const anchor = await validateAdoption(ctx, args, args.adoption);
+      adoptedDeadline = anchor + days * 86400000;
+      if (adoptedDeadline <= Date.now())
+        throw new Error("Adoption holding deadline has already expired.");
+    }
     const previousSchedule =
       policy?.mode === "custom"
         ? policy.previousSchedule!
@@ -111,6 +125,7 @@ export const prepare = mutation({
       country: args.country,
       previousSchedule,
       holdDeadline:
+        adoptedDeadline ??
         policy?.holdDeadline ??
         (args.mode === "custom"
           ? (args.observedAt ?? Date.now()) + days * 86400000
@@ -139,6 +154,10 @@ export const confirm = mutation({
     if (!same(canonicalSchedule(args.observedSchedule), op.targetSchedule))
       throw new Error("Provider payout schedule was not confirmed.");
     if (op.status === "complete") return op;
+    if (op.adoption && !op.attempted)
+      throw new Error(
+        "Funded adoption requires a verified provider attempt before confirmation.",
+      );
     if (op.status === "canceled")
       throw new Error("Payout policy operation was canceled.");
     if (
@@ -162,7 +181,11 @@ export const confirm = mutation({
   },
 });
 export const beginAttempt = mutation({
-  args: { ...scopeFields, operationKey: v.string() },
+  args: {
+    ...scopeFields,
+    operationKey: v.string(),
+    adoption: v.optional(adoptionProof),
+  },
   returns: operationDoc,
   handler: async (ctx, args) => {
     const policy = await readPolicy(ctx, args);
@@ -179,8 +202,28 @@ export const beginAttempt = mutation({
       policy.status !== "changing"
     )
       throw new Error("Payout policy operation is not pending.");
-    if (!op.attempted)
-      await ctx.db.patch("payoutPolicyOperations", op._id, { attempted: true });
+    if (!op.attempted) {
+      if (Boolean(op.adoption) !== Boolean(args.adoption))
+        throw new Error(
+          "A fresh adoption proof is required for this operation.",
+        );
+      if (args.adoption) {
+        const anchor = await validateAdoption(ctx, args, args.adoption);
+        const deadline = Math.min(
+          policy.holdDeadline!,
+          anchor + holdingDays(op.country) * 86400000,
+        );
+        if (deadline <= Date.now())
+          throw new Error("Adoption holding deadline has already expired.");
+        await ctx.db.patch("payoutPolicies", policy._id, {
+          holdDeadline: deadline,
+        });
+      }
+      await ctx.db.patch("payoutPolicyOperations", op._id, {
+        attempted: true,
+        ...(args.adoption ? { adoption: args.adoption } : {}),
+      });
+    }
     return (await ctx.db.get("payoutPolicyOperations", op._id))!;
   },
 });

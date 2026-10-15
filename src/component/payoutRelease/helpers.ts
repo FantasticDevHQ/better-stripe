@@ -166,3 +166,24 @@ export async function moveAllocations(
     });
   }
 }
+
+/** Stable financial identity for historical adoption and activation snapshots. */
+export function payoutClaimFingerprint(c: Doc<"payoutReleaseClaims">) {
+  return JSON.stringify([
+    c.accountId,
+    c.ownerKey,
+    c.operationKey,
+    c.historical ?? false,
+    c.currency,
+    c.amount,
+    c.status,
+    c.attemptedAt,
+    c.stripePayoutId,
+    c.destinationId,
+    c.debitTransactionId,
+    c.debitFee,
+    c.providerFee,
+    c.returnTransactionId,
+    c.allocations.map((a) => [a.stripeTransferId, a.amount, a.role]),
+  ]);
+}

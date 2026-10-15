@@ -23,3 +23,7 @@ The readable videos crop only empty capture padding to the active 800x556 region
 ## Limits still open
 
 Core persona reseed is verified, not full catalog/subscription/activity fixture repopulation. Holding-deadline expiry still needs its dedicated provider lifecycle verification. Actual refund/dispute and insufficient-provider-balance scheduled scenarios, larger provider-history qualification/atomic claims and linked Dojo/Fumadocs adoption remain unfinished. This PR does not certify those items or live-money bank delivery. Cached cursors must restart after the reader upgrade; financially bound state must never be erased to restart a scan.
+
+## Release synchronization validation
+
+Main released v0.28.0 during testing. Merge head `265a98e26df90810ad4c7736dfdf87b37c6c8faa` brings in only release manifest, changelog, package version and README version changes. All `src/`, `example/`, `docs/` and migration production/test changes are identical to `185b816`. All 15 gates passed again on the exact merge head with 77.2% line coverage; see `release-head-gates-265a98e.txt`. Provider/UI recordings retain their original tested revision and were not relabeled as a fresh financial run.

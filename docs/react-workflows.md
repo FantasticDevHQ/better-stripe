@@ -687,6 +687,40 @@ Scope and refresh the host data when the recipient or settlement currency
 changes. Keep currencies separate. This display does not configure policies,
 install a scheduler or bypass the release API's capability/history limits.
 
+## Payout settings
+
+`PayoutSettings` and `usePayoutSettings` own minimum entry, explicit custom-hold
+consent, loading/error states and callback locking. They never create a payout.
+`onSave` receives `{ currency, mode, expectedRevision, minimum?, consent }`.
+The minimum uses ordinary Stripe currency units. No provider floor is guessed.
+The host must derive the authenticated account/owner, preserve the policy's
+other currency minimums, and call `payoutPolicy.prepare` and `apply` with a
+stable immutable operation identity. Return `{ status, reason? }`; supported
+statuses are `ready`, `unsupported`, `migration_required`, `schedule_drift` and
+`canceled`.
+
+When a provider outcome is unknown, refresh the policy instead of inventing
+success or creating a new operation. `onRetry` resumes the server's stored
+pending operation; the installed recurring job also resumes it. The editor
+locks changes while `policy.status` is `changing`. Render props expose the same
+state for translated forms and design-system controls.
+
+The example's `recipientPayoutPolicy` actions bind the demo user to its account
+server-side and derive uncollected seller costs through the same query as the
+worker. They preserve other currencies, replay stored changes without rolling
+back newer settings, and restore the original schedule on opt-out. The public
+`payoutPreviewValidator` lets the host validate the package assessment without
+copying its return schema. Production apps must replace demo persona selection
+with authenticated ownership; the demo is not evidence of production auth.
+
+Custom schedules affect the entire recipient account. Configure each settlement
+currency. Choosing Stripe-managed mode restores the original schedule for all
+currencies and removes application minimums. Funded accounts needing historical
+adoption show `migration_required`; this form does not guess their source
+allocations or automatically adopt unallocated money. Install worker recovery
+and deadline-expiry jobs before exposing activation, and use the reset guard
+described in the [settlement guide](settlement.md#development-reset-safeguards).
+
 ## Component history and currency summaries
 
 See the [read contract guide](read-contracts.md) for reactive product, price and payout

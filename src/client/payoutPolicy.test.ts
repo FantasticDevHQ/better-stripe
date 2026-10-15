@@ -126,6 +126,19 @@ it("persists original provider settings, verifies manual schedule and restores o
   });
   expect((await client.get(ctx, scope))!.mode).toBe("stripe_managed");
 });
+it("replays equivalent threshold objects regardless of transport property order", async () => {
+  const { client, ctx, provider } = await setup();
+  expect((await client.prepare(ctx, options)).status).toBe("prepared");
+  expect(
+    (
+      await client.prepare(ctx, {
+        ...options,
+        thresholds: [{ amount: 1000, currency: "usd" }],
+      })
+    ).status,
+  ).toBe("prepared");
+  expect(provider.balanceSettings.update).not.toHaveBeenCalled();
+});
 it("recovers provider success after a failed persistence write without changing the request", async () => {
   const { client, ctx, provider } = await setup();
   await client.prepare(ctx, options);

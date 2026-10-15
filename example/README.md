@@ -32,6 +32,23 @@ Open **http://localhost:5173** and go to **/admin/setup** to finish setup:
 2. Seed demo data (users + Stripe products/prices)
 3. Sync existing Stripe data (products, subscriptions, accounts)
 
+### Automatic payout settings
+
+Seller and affiliate payout pages compose the package's unstyled `PayoutProgress`
+and `PayoutSettings` with the same cards in the via API and BetterStripe components
+tabs. The example installs its automatic worker and expiry dispatcher in
+`convex/crons.ts`. A custom minimum requires explicit consent and verified
+schedule controls. Below-minimum funds stay in the recipient's Stripe balance.
+The next automatic attempt is separate from a bank arrival date.
+
+`convex/recipientPayoutPolicy.ts` derives the demo account and outstanding seller
+costs server-side. It preserves other currency settings and retries a persisted
+schedule operation. Production apps must use authenticated ownership instead of
+the example's demo persona IDs. Funded or historical accounts can require
+reconciliation before activation. The UI reports that limitation instead of
+guessing allocations. Opt-out restores the recorded original account schedule.
+See [the package settings contract](../docs/react-workflows.md#payout-settings).
+
 ### Reset & Re-seed
 
 ```bash

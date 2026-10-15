@@ -1,4 +1,5 @@
 import { AffiliateRecoveryPanel } from "@/components/affiliate-recovery-panel";
+import { PayoutPolicyPanel } from "@/components/payout-policy-panel";
 import { EmptyState } from "@/components/empty-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -174,7 +175,7 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
                       ))}
                       <p className="mt-2 text-sm text-muted-foreground">
                         {kind === "available"
-                          ? "Ready for payout"
+                          ? "Funds available in Stripe"
                           : "Funds still settling"}
                       </p>
                     </CardContent>
@@ -198,6 +199,10 @@ function AccountPayouts({ userId }: { userId: Id<"users"> }) {
                   </CardContent>
                 </Card>
               </div>
+              <PayoutPolicyPanel
+                userId={userId}
+                currencies={data.balances.map((balance) => balance.currency)}
+              />
               <Card>
                 <CardHeader>
                   <CardTitle>Upcoming payouts</CardTitle>

@@ -28,6 +28,13 @@ export type {
 } from "./Connect.js";
 export { Payouts } from "./Payouts.js";
 export { PayoutProgress } from "./PayoutProgress.js";
+export { PayoutSettings, usePayoutSettings } from "./PayoutSettings.js";
+export type {
+  PayoutSettingsProps,
+  PayoutSettingsState,
+  PayoutSettingsChange,
+  PayoutSettingsResult,
+} from "./PayoutSettings.js";
 export type {
   PayoutProgressProps,
   PayoutProgressState,

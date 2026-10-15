@@ -55,7 +55,9 @@ export function canonicalThresholds(
     )
   )
     throw new Error("Invalid custom payout thresholds.");
-  return [...values].sort((a, b) => a.currency.localeCompare(b.currency));
+  return values
+    .map(({ currency, amount }) => ({ currency, amount }))
+    .sort((a, b) => a.currency.localeCompare(b.currency));
 }
 export function validateScope(scope: { accountId: string; ownerKey: string }) {
   if (

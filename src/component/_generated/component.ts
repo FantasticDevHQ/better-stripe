@@ -2790,6 +2790,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        beginHoldingExpiry: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            country: string;
+            holdDeadline?: number;
+            holdingExpiry?: {
+              balances?: Array<{
+                available: number;
+                currency: string;
+                pending: number;
+              }>;
+              deadline: number;
+              observedAt?: number;
+              status:
+                | "unverified"
+                | "balance_remaining"
+                | "claims_unresolved"
+                | "no_held_balance";
+            };
+            mode: "stripe_managed" | "custom";
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule?: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "changing" | "ready";
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
         cancelUnattempted: FunctionReference<
           "mutation",
           "internal",
@@ -2906,6 +2944,55 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        observeHoldingExpiry: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            balances: Array<{
+              available: number;
+              currency: string;
+              pending: number;
+            }>;
+            deadline: number;
+            expectedRevision: number;
+            observedAt: number;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            country: string;
+            holdDeadline?: number;
+            holdingExpiry?: {
+              balances?: Array<{
+                available: number;
+                currency: string;
+                pending: number;
+              }>;
+              deadline: number;
+              observedAt?: number;
+              status:
+                | "unverified"
+                | "balance_remaining"
+                | "claims_unresolved"
+                | "no_held_balance";
+            };
+            mode: "stripe_managed" | "custom";
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule?: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "changing" | "ready";
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
         prepare: FunctionReference<
           "mutation",
           "internal",
@@ -3007,6 +3094,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               accountId: string;
               country: string;
               holdDeadline?: number;
+              holdingExpiry?: {
+                balances?: Array<{
+                  available: number;
+                  currency: string;
+                  pending: number;
+                }>;
+                deadline: number;
+                observedAt?: number;
+                status:
+                  | "unverified"
+                  | "balance_remaining"
+                  | "claims_unresolved"
+                  | "no_held_balance";
+              };
               mode: "stripe_managed" | "custom";
               operationKey: string;
               ownerKey: string;
@@ -3032,6 +3133,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             country: string;
             holdDeadline?: number;
+            holdingExpiry?: {
+              balances?: Array<{
+                available: number;
+                currency: string;
+                pending: number;
+              }>;
+              deadline: number;
+              observedAt?: number;
+              status:
+                | "unverified"
+                | "balance_remaining"
+                | "claims_unresolved"
+                | "no_held_balance";
+            };
             mode: "stripe_managed" | "custom";
             operationKey: string;
             ownerKey: string;
@@ -4063,6 +4178,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               accountId: string;
               country: string;
               holdDeadline?: number;
+              holdingExpiry?: {
+                balances?: Array<{
+                  available: number;
+                  currency: string;
+                  pending: number;
+                }>;
+                deadline: number;
+                observedAt?: number;
+                status:
+                  | "unverified"
+                  | "balance_remaining"
+                  | "claims_unresolved"
+                  | "no_held_balance";
+              };
               mode: "stripe_managed" | "custom";
               operationKey: string;
               ownerKey: string;
@@ -4124,6 +4253,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               accountId: string;
               country: string;
               holdDeadline?: number;
+              holdingExpiry?: {
+                balances?: Array<{
+                  available: number;
+                  currency: string;
+                  pending: number;
+                }>;
+                deadline: number;
+                observedAt?: number;
+                status:
+                  | "unverified"
+                  | "balance_remaining"
+                  | "claims_unresolved"
+                  | "no_held_balance";
+              };
               mode: "stripe_managed" | "custom";
               operationKey: string;
               ownerKey: string;

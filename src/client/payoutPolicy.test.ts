@@ -381,3 +381,191 @@ it("requires adoption for historical payouts even when today's balance is zero",
   expect(provider.balanceSettings.update).not.toHaveBeenCalled();
   expect(await client.get(ctx, scope)).toBeNull();
 });
+
+async function expiredRecipient() {
+  const s = await setup();
+  await s.client.prepare(s.ctx, options);
+  await s.client.apply(s.ctx, { ...scope, operationKey: "enable" });
+  const deadline = Date.now() - 1;
+  await s.t.run(async (ctx) => {
+    const p = (await ctx.db.query("payoutPolicies").first())!;
+    await ctx.db.patch(p._id, { holdDeadline: deadline });
+  });
+  return { ...s, deadline };
+}
+it("keeps funded expiry discoverable after restoring weekly controls until fresh balances clear", async () => {
+  const s = await expiredRecipient();
+  s.provider.balance.retrieve.mockResolvedValue({
+    available: [{ currency: "usd", amount: 999 }],
+    pending: [],
+  });
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "expiry_unresolved",
+  });
+  expect(await s.client.get(s.ctx, scope)).toMatchObject({
+    mode: "stripe_managed",
+    status: "ready",
+    holdDeadline: s.deadline,
+    holdingExpiry: {
+      deadline: s.deadline,
+      status: "balance_remaining",
+      balances: [{ currency: "usd", available: 999, pending: 0 }],
+    },
+  });
+  expect(
+    (await s.client.due(s.ctx, { cursor: null, numItems: 10 })).page,
+  ).toHaveLength(1);
+  await s.client.expire(s.ctx, scope);
+  expect(s.provider.balanceSettings.update).toHaveBeenCalledTimes(2);
+  s.provider.balance.retrieve.mockResolvedValue({
+    available: [{ currency: "usd", amount: 0 }],
+    pending: [],
+  });
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "ready",
+  });
+  expect((await s.client.get(s.ctx, scope))!.holdDeadline).toBeUndefined();
+  expect((await s.client.get(s.ctx, scope))!.holdingExpiry).toMatchObject({
+    status: "no_held_balance",
+    deadline: s.deadline,
+  });
+  expect(
+    (await s.client.due(s.ctx, { cursor: null, numItems: 10 })).page,
+  ).toHaveLength(0);
+});
+it("restores controls even if expiry balance verification is unavailable, without fabricating zero", async () => {
+  const s = await expiredRecipient();
+  s.provider.balance.retrieve.mockRejectedValue(
+    new Error("provider unavailable"),
+  );
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "expiry_unresolved",
+  });
+  const p = await s.client.get(s.ctx, scope);
+  expect(p).toMatchObject({
+    mode: "stripe_managed",
+    holdDeadline: s.deadline,
+    holdingExpiry: { status: "unverified" },
+  });
+  expect(p!.holdingExpiry!.balances).toBeUndefined();
+  expect(
+    (await s.provider.balanceSettings.retrieve()).payments.payouts.schedule
+      .interval,
+  ).toBe("weekly");
+});
+it("does not clear an unknown payout claim at expiry even when Stripe balance is zero", async () => {
+  const s = await expiredRecipient();
+  const id = await s.t.run((ctx) =>
+    ctx.db.insert("payoutReleaseClaims", {
+      ...scope,
+      operationKey: "unknown-payout",
+      expectedRevision: 0,
+      amount: 999,
+      currency: "usd",
+      allocations: [],
+      observations: [],
+      status: "reserved",
+      attemptedAt: Date.now(),
+    }),
+  );
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "expiry_unresolved",
+  });
+  expect((await s.client.get(s.ctx, scope))!.holdingExpiry).toMatchObject({
+    status: "claims_unresolved",
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(id))).toMatchObject({
+    status: "reserved",
+    amount: 999,
+  });
+  await expect(
+    s.client.prepare(s.ctx, {
+      ...options,
+      expectedRevision: 1,
+      operationKey: "reactivate",
+    }),
+  ).rejects.toThrow(/expiry.*recovery/i);
+});
+it("does not net currencies or pending funds when checking expiry recovery", async () => {
+  const s = await expiredRecipient();
+  s.provider.balance.retrieve.mockResolvedValue({
+    available: [
+      { currency: "usd", amount: 100 },
+      { currency: "eur", amount: -100 },
+    ],
+    pending: [{ currency: "usd", amount: 25 }],
+  });
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "expiry_unresolved",
+  });
+  expect((await s.client.get(s.ctx, scope))!.holdingExpiry!.balances).toEqual([
+    { currency: "eur", available: -100, pending: 0 },
+    { currency: "usd", available: 100, pending: 25 },
+  ]);
+});
+
+it("does not label a delayed expiry balance response as a fresh observation", async () => {
+  vi.useFakeTimers();
+  try {
+    const s = await expiredRecipient();
+    s.provider.balance.retrieve.mockImplementation(async () => {
+      vi.advanceTimersByTime(31000);
+      return { available: [{ currency: "usd", amount: 0 }], pending: [] };
+    });
+    expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+      status: "expiry_unresolved",
+    });
+    expect((await s.client.get(s.ctx, scope))!.holdingExpiry).toMatchObject({
+      status: "unverified",
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("retries a lost recovery write without losing its original deadline or restoring twice", async () => {
+  const s = await expiredRecipient();
+  const write = s.ctx.runMutation!;
+  s.ctx.runMutation = (async (ref: Record<symbol, string>, args: never) => {
+    if (ref[symbol].endsWith("/observeHoldingExpiry"))
+      throw new Error("recovery write failed");
+    return write(ref as never, args);
+  }) as never;
+  await expect(s.client.expire(s.ctx, scope)).rejects.toThrow(
+    /recovery write failed/,
+  );
+  expect(await s.client.get(s.ctx, scope)).toMatchObject({
+    mode: "stripe_managed",
+    holdDeadline: s.deadline,
+    holdingExpiry: { status: "unverified" },
+  });
+  s.ctx.runMutation = write;
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "ready",
+  });
+  expect(s.provider.balanceSettings.update).toHaveBeenCalledTimes(2);
+});
+it("concurrent expiry retries preserve one restoration identity and unresolved funds", async () => {
+  const s = await expiredRecipient();
+  s.provider.balance.retrieve.mockResolvedValue({
+    available: [{ currency: "usd", amount: 999 }],
+    pending: [],
+  });
+  const results = await Promise.allSettled([
+    s.client.expire(s.ctx, scope),
+    s.client.expire(s.ctx, scope),
+  ]);
+  expect(results.some((r) => r.status === "fulfilled")).toBe(true);
+  expect(await s.client.expire(s.ctx, scope)).toMatchObject({
+    status: "expiry_unresolved",
+  });
+  expect(await s.client.get(s.ctx, scope)).toMatchObject({
+    mode: "stripe_managed",
+    holdDeadline: s.deadline,
+    holdingExpiry: { status: "balance_remaining" },
+  });
+  const restoreKeys = s.provider.balanceSettings.update.mock.calls
+    .slice(1)
+    .map((c) => (c[1] as { idempotencyKey: string }).idempotencyKey);
+  expect(new Set(restoreKeys).size).toBe(1);
+});

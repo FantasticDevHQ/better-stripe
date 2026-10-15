@@ -47,6 +47,7 @@ import type * as lib_paymentSeller from "../lib/paymentSeller.js";
 import type * as lib_reversals from "../lib/reversals.js";
 import type * as lib_stripeFactory from "../lib/stripeFactory.js";
 import type * as payoutPolicy_adoption from "../payoutPolicy/adoption.js";
+import type * as payoutPolicy_expiry from "../payoutPolicy/expiry.js";
 import type * as payoutPolicy_helpers from "../payoutPolicy/helpers.js";
 import type * as payoutPolicy_mutations from "../payoutPolicy/mutations.js";
 import type * as payoutPolicy_queries from "../payoutPolicy/queries.js";
@@ -132,6 +133,7 @@ const fullApi: ApiFromModules<{
   "lib/reversals": typeof lib_reversals;
   "lib/stripeFactory": typeof lib_stripeFactory;
   "payoutPolicy/adoption": typeof payoutPolicy_adoption;
+  "payoutPolicy/expiry": typeof payoutPolicy_expiry;
   "payoutPolicy/helpers": typeof payoutPolicy_helpers;
   "payoutPolicy/mutations": typeof payoutPolicy_mutations;
   "payoutPolicy/queries": typeof payoutPolicy_queries;

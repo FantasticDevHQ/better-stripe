@@ -29,6 +29,25 @@ export function PayoutProgress(props: PayoutProgressProps) {
       <h2>Automatic payout progress ({currency.toUpperCase()})</h2>
       <p role="status">{state.message}</p>
       <p>Stripe enforces its payout floor; a numeric amount is unavailable.</p>
+      {state.recovery?.balances && (
+        <div>
+          <h3>Stripe balances at last expiry check</h3>
+          <p>
+            Provider balances are not a payable earnings assessment. Currencies
+            remain separate.
+          </p>
+          <dl>
+            {state.recovery.balances.map((balance) => (
+              <div key={balance.currency}>
+                <dt>{balance.currency.toUpperCase()} available</dt>
+                <dd>{balance.availableLabel}</dd>
+                <dt>{balance.currency.toUpperCase()} pending</dt>
+                <dd>{balance.pendingLabel}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
       {state.progress && (
         <progress
           aria-label="Combined payout minimum"
@@ -102,7 +121,12 @@ export function PayoutProgress(props: PayoutProgressProps) {
       {state.holdDeadline !== null && (
         <p>Custom holding deadline: {date(state.holdDeadline)}</p>
       )}
-      {state.observedAt !== null && <p>Assessed: {date(state.observedAt)}</p>}
+      {state.observedAt !== null && (
+        <p>
+          {state.recovery ? "Last recovery check" : "Assessed"}:{" "}
+          {date(state.observedAt)}
+        </p>
+      )}
     </section>
   );
 }

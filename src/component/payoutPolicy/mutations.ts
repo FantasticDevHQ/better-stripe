@@ -1,8 +1,14 @@
+import {
+  beginHoldingExpiry as beginExpiry,
+  observeHoldingExpiry as observeExpiry,
+} from "./expiry.js";
 import { validateAdoption } from "./adoption.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import {
   adoptionProof,
+  expiryBalance,
+  policyDoc,
   prepareFields,
   operationDoc,
   scopeFields,
@@ -69,6 +75,14 @@ export const prepare = mutation({
     )
       throw new Error("Payout policy observation is stale or in the future.");
     const policy = await readPolicy(ctx, args);
+    if (
+      args.mode === "custom" &&
+      policy?.holdingExpiry &&
+      policy.holdingExpiry.status !== "no_held_balance"
+    )
+      throw new Error(
+        "Holding expiry requires recovery before custom activation.",
+      );
     if (policy?.status === "changing")
       throw new Error("A payout policy operation is pending.");
     if ((policy?.revision ?? -1) !== args.expectedRevision)
@@ -177,7 +191,14 @@ export const confirm = mutation({
       thresholds: op.thresholds,
       status: "ready",
       ...(op.mode === "stripe_managed"
-        ? { previousSchedule: undefined, holdDeadline: undefined }
+        ? {
+            previousSchedule: undefined,
+            holdDeadline:
+              policy.holdingExpiry &&
+              policy.holdingExpiry.status !== "no_held_balance"
+                ? policy.holdDeadline
+                : undefined,
+          }
         : {}),
     });
     return (await ctx.db.get("payoutPolicyOperations", op._id))!;
@@ -263,9 +284,33 @@ export const cancelUnattempted = mutation({
     await ctx.db.patch("payoutPolicies", policy._id, {
       status: "ready",
       ...(policy.mode === "stripe_managed"
-        ? { previousSchedule: undefined, holdDeadline: undefined }
+        ? {
+            previousSchedule: undefined,
+            holdDeadline:
+              policy.holdingExpiry &&
+              policy.holdingExpiry.status !== "no_held_balance"
+                ? policy.holdDeadline
+                : undefined,
+          }
         : {}),
     });
     return (await ctx.db.get("payoutPolicyOperations", op._id))!;
   },
+});
+
+export const beginHoldingExpiry = mutation({
+  args: scopeFields,
+  returns: policyDoc,
+  handler: beginExpiry,
+});
+export const observeHoldingExpiry = mutation({
+  args: {
+    ...scopeFields,
+    expectedRevision: v.number(),
+    deadline: v.number(),
+    observedAt: v.number(),
+    balances: v.array(expiryBalance),
+  },
+  returns: policyDoc,
+  handler: observeExpiry,
 });

@@ -683,6 +683,12 @@ does not establish verified controls while status is `changing`.
 During the final day, an assessment with `minimumWaived` explains that only the
 application minimum is waived; its saved threshold remains visible, and the
 minimum progress bar is omitted. Stripe limits and balance checks still apply.
+A policy with unresolved `holdingExpiry` shows recovery status even after
+`mode` becomes `stripe_managed`. `state.recovery` supplies per-currency provider
+balance labels and raw values from the last recovery check. These balances are
+not payable earnings. An unavailable observation has no balance rows, rather
+than fabricated zero. Pending controls still take precedence. The default
+component and example show the original deadline and recovery check time.
 An expired assessment explains the holding deadline and withholds financial
 progress until the schedule is restored and verified.
 For a ready custom policy, an

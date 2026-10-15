@@ -146,3 +146,31 @@ it.each(["pending", "unknown"] as const)(
     ).toHaveLength(1);
   },
 );
+
+it("retains an unresolved holding-expiry record after automatic scheduling was restored", async () => {
+  const t = convexTest(schema, modules);
+  await t.run((ctx) =>
+    ctx.db.insert("payoutPolicies", {
+      ...scope,
+      revision: 1,
+      mode: "stripe_managed",
+      status: "ready",
+      operationKey: "restore",
+      country: "US",
+      thresholds: [],
+      holdDeadline: Date.now() - 1,
+      holdingExpiry: {
+        deadline: Date.now() - 1,
+        status: "balance_remaining",
+        balances: [{ currency: "usd", available: 999, pending: 0 }],
+        observedAt: Date.now(),
+      },
+    }),
+  );
+  await expect(t.mutation(reset, {})).rejects.toThrow(
+    /holding expiry.*recovery/i,
+  );
+  expect(
+    await t.run((ctx) => ctx.db.query("payoutPolicies").first()),
+  ).not.toBeNull();
+});

@@ -45,10 +45,11 @@ received credit is kept distinct from still-unpaid entitlement.
 A [payout receipt and reconciliation API](docs/settlement.md#verified-payout-receipts-and-reconciliation)
 verifies actual bank-payout debits and returns, adopts an attempted claim's
 provider outcome, and books its net payout fees once.
-The component also has an internal transactional claim ledger for reservations
-and paid allocations. Automatic combined release and adoption of existing
-balances still require the separate release boundary; schedule controls and
-claim primitives alone do not enforce a minimum.
+The [combined release API](docs/settlement.md#combined-recipient-release) verifies
+complete source and payout history, reserves mature unpaid funds, and creates an
+idempotent bank payout. Install a host job to invoke it and expire due policies.
+Existing unallocated balances, larger histories and other debit allocations still
+require migration; schedule controls alone do not enforce a minimum.
 
 ## Status
 

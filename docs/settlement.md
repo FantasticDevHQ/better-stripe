@@ -366,7 +366,65 @@ require explicit allocation. Original debit receipts and their fees remain
 immutable. Older returned claims can receive verified fee evidence without
 releasing their principal again.
 
-These APIs reconcile existing claims; full automatic qualification/creation,
-historical source adoption, large-history collection, other account debit
-allocation and recurring/UI integration remain separate work. Do not expose a
-custom minimum as fully enforced solely because reconciliation is available.
+These receipt APIs reconcile existing claims. Use the release API below for
+qualification and creation; receipt reconciliation by itself does not enforce a
+minimum.
+
+## Combined recipient release
+
+After authorized custom policy activation, a host scheduled action can call:
+
+```ts
+const result = await stripe.payoutPolicy.release(ctx, {
+  accountId,
+  ownerKey,
+  operationKey, // stable unique identity for this scheduled operation
+  currency: "usd",
+  independentLiabilities, // authorized outstanding off-provider debts/reserves
+  maxPages: 10,
+});
+```
+
+Authenticate the recipient and policy, and read all known off-provider debts and
+reserves before invoking this server-only method. Never pass an untrusted client
+amount or assume that an omitted debt is zero. Provider source refunds and payout
+fees are already reconciled by the package and must not be counted again in
+`independentLiabilities`. The host must install the recurring release and expiry
+jobs before offering custom scheduling. This method does not install a cron.
+
+The package verifies live manual schedule controls, reads every account source,
+retrieves transfer and payout receipts, and compares the complete settlement
+currency balance history with those verified receipts. Unknown credits, refunds,
+fees and prior payouts return `held/unallocated_history`. A current balance is
+never treated as proof of unpaid ownership. History must reconcile to the live
+available and pending balance; changing or incomplete snapshots stay held.
+
+Mature unpaid creator and affiliate sources qualify together in integer minor
+units. Pending credits do not qualify. Outstanding source reservations, prior
+paid allocations, actual refunds, payout fees and supplied independent liabilities
+reduce eligibility. The cap uses the available card-source balance, since the
+immutable provider request explicitly selects `source_type: "card"` and a
+standard bank payout. Other rails and currencies cannot increase that cap.
+
+A qualifying operation reserves its exact source allocations in a component
+transaction, verifies live controls again, and records the attempted marker before
+calling Stripe. The provider idempotency key and request are fixed by the durable
+claim. Concurrent callers therefore share one financial operation. Subsequent
+calls to an attempted operation only reconcile provider receipts, including when
+the original call timed out. They never blindly recreate an unidentified payout.
+A verified no-object `balance_insufficient` or `amount_too_small` rejection releases
+reservations; unknown errors keep them held. An interrupted unattempted operation
+is canceled on replay, and a new scheduled operation can collect fresh receipts.
+Below-threshold money remains owed. The numeric provider floor remains `null`
+unless a supported provider contract exposes it.
+
+Current atomic collection accepts up to 100 account transfers and 100 historical
+claims. Larger accounts return `held/snapshot_limit`, without paying a partial
+page. Provider history uses a 1–100 page budget, default 10; exhaustion stays held.
+Explicit prior-payout/source adoption, resumable larger-account collection,
+independent provider-debit allocation, recurring example jobs and React controls
+remain integration work. Existing funded accounts still follow the policy
+migration safeguards; do not bypass `migration_required` to activate this API.
+
+Sources: [payout creation and source balance selection](https://docs.stripe.com/api/payouts/create),
+[complete balance history and automatic-only payout filtering](https://docs.stripe.com/api/balance_transactions/list).

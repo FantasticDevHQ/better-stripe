@@ -1,0 +1,37 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/payoutPolicy.test.ts (14 tests | 1 failed) 177ms
+   × requires adoption for historical payouts even when today's balance is zero 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > requires adoption for historical payouts even when today's balance is zero
+AssertionError: expected { status: 'prepared', …(1) } to match object { status: 'migration_required', …(1) }
+(16 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "existing_payout_history",
+-   "status": "migration_required",
++   "status": "prepared",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:330:46
+    328|       }) as never,
+    329|   );
+    330|   expect(await client.prepare(ctx, options)).toMatchObject({
+       |                                              ^
+    331|     status: "migration_required",
+    332|     reason: "existing_payout_history",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 21 passed (22)
+   Start at  18:51:37
+   Duration  474ms (tests 40%, transform 29%, import 19%, environment 10%, worker 1%)
+

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutAdoptionAge.test.ts (7 tests | 1 failed) 5ms
+   × returned bank cash starts a new holding age after the original funds left Stripe 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionAge.test.ts > returned bank cash starts a new holding age after the original funds left Stripe
+AssertionError: expected undefined to be 100000 // Object.is equality
+
+- Expected:
+100000
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAdoptionAge.test.ts:88:5
+     86|       [{ stripeTransferId: "tr_old", amount: 1000, created: 100 }],
+     87|     ),
+     88|   ).toBe(100000);
+       |     ^
+     89| });
+     90|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  18:47:21
+   Duration  129ms (transform 55%, import 22%, tests 15%, worker 8%)
+

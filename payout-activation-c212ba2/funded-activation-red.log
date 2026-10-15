@@ -1,0 +1,55 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutAdoption.test.ts (7 tests | 2 failed) 114ms
+   × explicit funded activation verifies complete history, then releases through the public package 14ms
+   × new unallocated provider history before a delayed attempt cancels activation safely 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAdoption.test.ts > explicit funded activation verifies complete history, then releases through the public package
+AssertionError: expected { status: 'migration_required', …(1) } to match object { status: 'prepared', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "operation": {
+-     "adoption": {
+-       "oldestHeldAt": Any<Number>,
+-     },
+-   },
+-   "status": "prepared",
++   "status": "migration_required",
+  }
+
+ ❯ src/client/connect/payoutAdoption.test.ts:358:49
+    356| it("explicit funded activation verifies complete history, then release…
+    357|   const s = await activation();
+    358|   expect(await s.client.prepare(s.ctx, s.opts)).toMatchObject({
+       |                                                 ^
+    359|     status: "prepared",
+    360|     operation: { adoption: { oldestHeldAt: expect.any(Number) } },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |client| src/client/connect/payoutAdoption.test.ts > new unallocated provider history before a delayed attempt cancels activation safely
+Error: Payout policy operation is unavailable.
+ ❯ PayoutPolicyClient.apply src/client/payoutPolicy.ts:314:27
+    312|   > {
+    313|     const operation = await this.operation(ctx, args);
+    314|     if (!operation) throw new Error("Payout policy operation is unavai…
+       |                           ^
+    315|     if (operation.status === "complete") return { status: "ready", ope…
+    316|     if (operation.status === "canceled")
+ ❯ src/client/connect/payoutAdoption.test.ts:385:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  18:44:44
+   Duration  509ms (transform 38%, tests 27%, import 26%, environment 8%, worker 1%)
+

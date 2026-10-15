@@ -1,0 +1,101 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |component| src/component/payout-policy-adoption.test.ts (5 tests | 5 failed) 31ms
+   × anchors funded activation to the oldest held money rather than activation time 17ms
+   × rejects already-expired holding periods before changing policy 5ms
+   × requires fresh adoption proof before a delayed provider attempt 3ms
+   × rejects changed source state before marking the provider attempt 2ms
+   × fresh checks cannot extend the stored holding deadline 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-policy-adoption.test.ts > anchors funded activation to the oldest held money rather than activation time
+Error: Validator error: Unexpected field `adoption` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-policy-adoption.test.ts:67:3
+     65| it("anchors funded activation to the oldest held money rather than act…
+     66|   const { t, args, proof } = await setup();
+     67|   await t.mutation(m("prepare"), args);
+       |   ^
+     68|   const p = await t.run((ctx) => ctx.db.query("payoutPolicies").first(…
+     69|   expect(p!.holdDeadline).toBe(proof.oldestHeldAt + 730 * 86400000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  |component| src/component/payout-policy-adoption.test.ts > rejects already-expired holding periods before changing policy
+AssertionError: expected [Function] to throw error matching /holding|deadline/i but got 'Validator error: Unexpected field `ad…'
+
+- Expected:
+/holding|deadline/i
+
++ Received:
+"Validator error: Unexpected field `adoption` in object"
+
+ ❯ src/component/payout-policy-adoption.test.ts:73:47
+     71| it("rejects already-expired holding periods before changing policy", a…
+     72|   const { t, args } = await setup("TH");
+     73|   await expect(t.mutation(m("prepare"), args)).rejects.toThrow(
+       |                                               ^
+     74|     /holding|deadline/i,
+     75|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  |component| src/component/payout-policy-adoption.test.ts > requires fresh adoption proof before a delayed provider attempt
+Error: Validator error: Unexpected field `adoption` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-policy-adoption.test.ts:82:3
+     80| it("requires fresh adoption proof before a delayed provider attempt", …
+     81|   const { t, args } = await setup();
+     82|   await t.mutation(m("prepare"), args);
+       |   ^
+     83|   await expect(
+     84|     t.mutation(m("beginAttempt"), { ...scope, operationKey: "custom" }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  |component| src/component/payout-policy-adoption.test.ts > rejects changed source state before marking the provider attempt
+Error: Validator error: Unexpected field `adoption` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-policy-adoption.test.ts:89:3
+     87| it("rejects changed source state before marking the provider attempt",…
+     88|   const { t, args, proof, row } = await setup();
+     89|   await t.mutation(m("prepare"), args);
+       |   ^
+     90|   await t.run((ctx) =>
+     91|     ctx.db.patch("transfers", row._id, { reversedAmount: 10 }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  |component| src/component/payout-policy-adoption.test.ts > fresh checks cannot extend the stored holding deadline
+Error: Validator error: Unexpected field `adoption` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-policy-adoption.test.ts:111:3
+    109| it("fresh checks cannot extend the stored holding deadline", async () …
+    110|   const { t, args, proof } = await setup();
+    111|   await t.mutation(m("prepare"), args);
+       |   ^
+    112|   await t.mutation(m("beginAttempt"), {
+    113|     ...scope,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  18:39:05
+   Duration  343ms (transform 51%, import 20%, environment 15%, tests 13%, worker 2%)
+

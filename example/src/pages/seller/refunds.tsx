@@ -1,10 +1,11 @@
 import { SellerCosts } from "@/components/seller-costs";
 import { useSearchParams } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   PaymentDetails,
   RefundHistory,
   useRefunds,
+  formatPrice,
 } from "@fantastic.dev/better-stripe/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -75,13 +76,36 @@ export function SellerRefunds() {
   const reverseTransfers = useAction(api.actions.reverseSaleTransfers);
 
   const [params] = useSearchParams();
+  const selectionScope = JSON.stringify([
+    params.get("payment_intent"),
+    params.get("charge_id"),
+  ]);
+  const initialSelection = {
+    scope: selectionScope,
+    paymentIntentId: params.get("payment_intent") ?? "",
+    sourceChargeId: params.get("charge_id") ?? "",
+  };
+  const [selection, setSelection] = useState(initialSelection);
+  if (selection.scope !== selectionScope) setSelection(initialSelection);
+  const payment = useQuery(
+    api.queries.getPaymentByStripeId,
+    selection.paymentIntentId.trim()
+      ? { stripePaymentIntentId: selection.paymentIntentId.trim() }
+      : "skip",
+  );
+  const setPaymentIntentId = (paymentIntentId: string) =>
+    setSelection((previous) => ({ ...previous, paymentIntentId }));
+  const setSourceChargeId = (sourceChargeId: string) =>
+    setSelection((previous) => ({ ...previous, sourceChargeId }));
   const {
     paymentIntentId,
-    setPaymentIntentId,
+    paymentCurrency,
+    sourceChargeCurrency,
+    refundInputDecimalPlaces,
+    reversalInputDecimalPlaces,
     refundAmount,
     setRefundAmount,
     sourceChargeId,
-    setSourceChargeId,
     reversalAmount,
     setReversalAmount,
     refundResult,
@@ -92,8 +116,10 @@ export function SellerRefunds() {
     submitReversal,
   } = useRefunds({
     scopeKey: currentUser.id,
-    paymentIntentId: params.get("payment_intent") ?? "",
-    sourceChargeId: params.get("charge_id") ?? "",
+    paymentIntentId: selection.paymentIntentId,
+    sourceChargeId: selection.sourceChargeId,
+    paymentCurrency: payment?.currency ?? null,
+    sourceChargeCurrency: null,
     issueRefund: (args) => issueRefund({ ...args, userId: currentUser.id }),
     reverseTransfers: (args) =>
       reverseTransfers({ ...args, userId: currentUser.id }),
@@ -108,12 +134,6 @@ export function SellerRefunds() {
       }
     : { accountId: stripeAccountId };
 
-  const payment = useQuery(
-    api.queries.getPaymentByStripeId,
-    cleanPaymentIntentId
-      ? { stripePaymentIntentId: cleanPaymentIntentId }
-      : "skip",
-  );
   const refunds = useQuery(
     api.queries.listRefunds,
     stripeAccountId ? refundHistoryArgs : "skip",
@@ -184,13 +204,20 @@ export function SellerRefunds() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="refund-amount">Partial amount</Label>
+                  <Label htmlFor="refund-amount">
+                    Partial amount (
+                    {paymentCurrency?.toUpperCase() ?? "currency unavailable"})
+                  </Label>
                   <Input
                     id="refund-amount"
                     value={refundAmount}
                     onChange={(event) => setRefundAmount(event.target.value)}
-                    placeholder="25.00"
-                    inputMode="decimal"
+                    placeholder={
+                      refundInputDecimalPlaces === 0 ? "25" : "25.00"
+                    }
+                    inputMode={
+                      refundInputDecimalPlaces === 0 ? "numeric" : "decimal"
+                    }
                     data-testid="refund-partial-amount-input"
                   />
                 </div>
@@ -210,7 +237,7 @@ export function SellerRefunds() {
                   type="button"
                   variant="secondary"
                   onClick={() => void submitRefund("partial")}
-                  disabled={busy !== null}
+                  disabled={busy !== null || refundInputDecimalPlaces === null}
                   data-testid="refund-partial-button"
                 >
                   <Undo2 data-icon="inline-start" className="size-4" />
@@ -358,6 +385,10 @@ export function SellerRefunds() {
         </CardHeader>
         <CardContent>
           <div className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              Original charge currency lookup is not configured here. Partial
+              reversals remain disabled until that context is available.
+            </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="reversal-source-charge">Source charge id</Label>
@@ -370,13 +401,22 @@ export function SellerRefunds() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reversal-amount">Partial amount</Label>
+                <Label htmlFor="reversal-amount">
+                  Partial amount (
+                  {sourceChargeCurrency?.toUpperCase() ??
+                    "currency unavailable"}
+                  )
+                </Label>
                 <Input
                   id="reversal-amount"
                   value={reversalAmount}
                   onChange={(event) => setReversalAmount(event.target.value)}
-                  placeholder="10.00"
-                  inputMode="decimal"
+                  placeholder={
+                    reversalInputDecimalPlaces === 0 ? "10" : "10.00"
+                  }
+                  inputMode={
+                    reversalInputDecimalPlaces === 0 ? "numeric" : "decimal"
+                  }
                   data-testid="reversal-partial-amount-input"
                 />
               </div>
@@ -396,7 +436,7 @@ export function SellerRefunds() {
                 type="button"
                 variant="secondary"
                 onClick={() => void submitReversal("partial")}
-                disabled={busy !== null}
+                disabled={busy !== null || reversalInputDecimalPlaces === null}
                 data-testid="reversal-partial-button"
               >
                 <RotateCcw data-icon="inline-start" className="size-4" />
@@ -409,7 +449,12 @@ export function SellerRefunds() {
                 <AlertTitle>Reversal complete</AlertTitle>
                 <AlertDescription>
                   {reversalResult.summary.reversalCount} transfer(s),{" "}
-                  {formatCurrency(reversalResult.summary.totalReversed)}{" "}
+                  {sourceChargeCurrency && reversalInputDecimalPlaces !== null
+                    ? formatPrice(
+                        reversalResult.summary.totalReversed,
+                        sourceChargeCurrency,
+                      )
+                    : "Amount unavailable"}{" "}
                   reversed.
                 </AlertDescription>
               </Alert>

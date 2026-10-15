@@ -1,3 +1,9 @@
+import {
+  reserveAffiliatePayout,
+  completeAffiliatePayout,
+  reconcileAffiliatePayout,
+} from "../affiliateRecovery/payoutGate.js";
+import { classifyRecoveryError } from "../affiliateRecovery/provider.js";
 import type Stripe from "stripe";
 
 import type { PayoutStatus } from "../../component/connect/validators.js";
@@ -54,6 +60,8 @@ export async function getAccountBalance(
 }
 
 export type CreatePayoutOptions = {
+  /** Host-authorized minimum in the payout currency. */
+  minimumAmount?: number;
   stripeAccountId: string;
   amount: number;
   currency?: string;
@@ -64,23 +72,75 @@ export type CreatePayoutOptions = {
 
 export async function createPayout(
   stripe: Stripe,
-  _ctx: RunCtx,
+  ctx: RunCtx,
   opts: CreatePayoutOptions,
+  component?: Component,
 ) {
-  const payout = await stripe.payouts.create(
-    {
-      amount: opts.amount,
-      currency: opts.currency ?? "usd",
-      metadata: opts.metadata ?? undefined,
-    },
-    {
-      stripeAccount: opts.stripeAccountId,
-      ...(opts.idempotencyKey !== undefined
-        ? { idempotencyKey: opts.idempotencyKey }
-        : {}),
-    },
-  );
-  return { stripePayoutId: payout.id };
+  const release = component
+    ? await reserveAffiliatePayout(component, ctx, opts)
+    : null;
+  if (release?.state === "submitted")
+    return { stripePayoutId: release.stripePayoutId! };
+  if (release?.state === "failed")
+    throw new Error(
+      "Affiliate payout failed; use a new authorized operation key.",
+    );
+  try {
+    if (release) {
+      const receiptId = await reconcileAffiliatePayout(stripe, release);
+      if (receiptId) {
+        await completeAffiliatePayout(
+          component!,
+          ctx,
+          release.operationKey,
+          "submitted",
+          receiptId,
+        );
+        return { stripePayoutId: receiptId };
+      }
+    }
+    if (release) {
+      if (Date.now() - release.createdAt >= 23 * 60 * 60 * 1000)
+        throw new Error(
+          "Affiliate payout idempotency window expired; reconcile the provider receipt before retrying.",
+        );
+      // Receipt lookup may yield while a refund records new debt.
+      await reserveAffiliatePayout(component!, ctx, opts);
+    }
+    const payout = await stripe.payouts.create(
+      {
+        amount: opts.amount,
+        currency: opts.currency ?? "usd",
+        metadata: release
+          ? { ...opts.metadata, bsAffiliatePayout: release._id }
+          : (opts.metadata ?? undefined),
+      },
+      {
+        stripeAccount: opts.stripeAccountId,
+        ...(opts.idempotencyKey !== undefined
+          ? { idempotencyKey: opts.idempotencyKey }
+          : {}),
+      },
+    );
+    if (release)
+      await completeAffiliatePayout(
+        component!,
+        ctx,
+        release.operationKey,
+        "submitted",
+        payout.id,
+      );
+    return { stripePayoutId: payout.id };
+  } catch (error) {
+    if (release)
+      await completeAffiliatePayout(
+        component!,
+        ctx,
+        release.operationKey,
+        classifyRecoveryError(error).state === "unknown" ? "unknown" : "failed",
+      );
+    throw error;
+  }
 }
 
 export async function getPayout(

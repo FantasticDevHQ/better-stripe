@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import { setup, scope, component } from "./payoutExecutionTestHelpers.js";
 import { reconcileRecipientPayout } from "./payoutReconciliation.js";
 import { PayoutWorkerClient } from "./payoutWorker.js";
+import { changeBalance } from "../../component/affiliateRecovery/accounting.js";
 afterEach(() => vi.useRealTimers());
 async function worker(amounts?: number[]) {
   const s = await setup(amounts);
@@ -109,6 +110,9 @@ it("a successful payout with a lost response is recovered after opting out witho
     throw new Error("response lost after provider accepted");
   });
   await expect(s.run()).rejects.toThrow(/response lost/);
+  await s.t.run((ctx) =>
+    changeBalance(ctx, scope.accountId, "usd", { outstandingDebt: 100 }),
+  );
   await s.t.run(async (ctx) => {
     const policy = await ctx.db.query("payoutPolicies").first();
     await ctx.db.patch("payoutPolicies", policy!._id, {
@@ -123,4 +127,19 @@ it("a successful payout with a lost response is recovered after opting out witho
     job: { hasOperation: false },
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+});
+it("reports affiliate recovery holds before a fresh attempt without creating a payout", async () => {
+  const s = await worker();
+  await s.t.run((ctx) =>
+    changeBalance(ctx, scope.accountId, "usd", { outstandingDebt: 100 }),
+  );
+  expect(await s.run()).toMatchObject({
+    status: "held",
+    reason: "affiliate_recovery_pending",
+  });
+  expect(await s.client.get(s.ctx, scope)).toMatchObject({
+    lastReason: "affiliate_recovery_pending",
+    hasOperation: false,
+  });
+  expect(s.provider.payouts.create).not.toHaveBeenCalled();
 });

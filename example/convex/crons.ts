@@ -7,4 +7,10 @@ crons.interval(
   internal.payoutWorkers.dispatch,
   {},
 );
+crons.interval(
+  "reconcile affiliate recovery receipts",
+  { minutes: 5 },
+  internal.affiliateRecoveryJobs.start,
+  {},
+);
 export default crons;

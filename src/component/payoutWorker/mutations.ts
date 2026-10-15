@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { readPolicy } from "../payoutPolicy/helpers.js";
 import { claimByKey, add } from "../payoutRelease/helpers.js";
+import { balance as recoveryBalance } from "../affiliateRecovery/accounting.js";
 import { readJob, validate } from "./helpers.js";
 import { scope, jobDoc } from "./schema.js";
 const held = v.object({
@@ -80,6 +81,34 @@ export const begin = mutation({
         hasOperation: false,
       });
       job = (await ctx.db.get("payoutWorkerJobs", id))!;
+    }
+    if (!unresolved) {
+      const recovery = await recoveryBalance(
+        ctx,
+        args.accountId,
+        args.currency,
+      );
+      if (
+        recovery &&
+        (recovery.outstandingDebt > 0 ||
+          recovery.reservedRecovery > 0 ||
+          recovery.reservedRestoration > 0 ||
+          recovery.activePayoutKey)
+      ) {
+        const nextAttemptAt = now + args.cadenceMs;
+        await ctx.db.patch("payoutWorkerJobs", job._id, {
+          operationKey: undefined,
+          hasOperation: false,
+          leaseUntil: undefined,
+          lastReason: "affiliate_recovery_pending",
+          nextAttemptAt,
+        });
+        return {
+          status: "held" as const,
+          reason: "affiliate_recovery_pending",
+          nextAttemptAt,
+        };
+      }
     }
     // A lost response with no claim is safe to resume at the same operation ID.
     // A retained attempted claim always reconciles, including after opt-out.

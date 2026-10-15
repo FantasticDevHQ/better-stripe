@@ -1,4 +1,8 @@
 import {
+  reserveRecoveryGuard,
+  releaseRecoveryGuard,
+} from "../affiliatePayouts/recipientGuard.js";
+import {
   historicalBatchArgs,
   adoptHistoricalBatch as importHistoricalBatch,
 } from "./adoption.js";
@@ -110,6 +114,7 @@ export const claim = mutation({
       sources,
     });
     if (plan.status === "held") return plan;
+    await reserveRecoveryGuard(ctx, args, plan.amount);
     for (const allocation of plan.allocations) {
       const prior = await sourceById(ctx, allocation.stripeTransferId);
       if (prior)
@@ -155,6 +160,7 @@ export const beginAttempt = mutation({
     if (feeRevision !== (claim.feeRevision ?? 0))
       throw new Error("Payout fee revision changed after reservation.");
     await checkSnapshot(ctx, claim.accountId, claim.observations, true);
+    await reserveRecoveryGuard(ctx, claim, claim.amount);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       attemptedAt: Date.now(),
     });
@@ -174,6 +180,7 @@ export const cancelUnattempted = mutation({
       throw new Error("An attempted payout claim cannot be canceled.");
     if (claim.status === "canceled") return claim;
     await moveAllocations(ctx, claim, "release");
+    await releaseRecoveryGuard(ctx, claim);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       status: "canceled",
     });
@@ -257,6 +264,7 @@ export const recordOutcome = mutation({
     if (claim.status === "paid" && args.providerStatus !== "paid" && !returned)
       return claim;
     await recordFees(ctx, claim, args, returned);
+    await releaseRecoveryGuard(ctx, claim);
     if (returned) {
       await moveAllocations(
         ctx,
@@ -329,6 +337,7 @@ export const recordRejection = mutation({
     if (adoptedRejection && adoptedRejection._id !== claim._id)
       throw new Error("Payout rejection receipt is already allocated.");
     await moveAllocations(ctx, claim, "release");
+    await releaseRecoveryGuard(ctx, claim);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       status: "rejected",
       rejection: { requestId: args.requestId, code: args.code },

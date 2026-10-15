@@ -48,4 +48,20 @@ export async function assertPayoutResetSafe(ctx: MutationCtx) {
     );
   if (pending || transit)
     throw new Error("Verify in-flight provider payouts before reset.");
+  const affiliateOperations = await Promise.all(
+    (["pending", "unknown"] as const).flatMap((state) => [
+      ctx.db
+        .query("affiliatePayoutReleases")
+        .withIndex("by_state", (q) => q.eq("state", state))
+        .first(),
+      ctx.db
+        .query("affiliateRecoveryOperations")
+        .withIndex("by_state", (q) => q.eq("state", state))
+        .first(),
+    ]),
+  );
+  if (affiliateOperations.some(Boolean))
+    throw new Error(
+      "Resolve pending or unknown affiliate operations before reset.",
+    );
 }

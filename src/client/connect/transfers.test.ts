@@ -350,8 +350,8 @@ describe("createSplitTransfers engine (BTS-22)", () => {
       destination: "acct_aff",
     });
     // ledger rows
-    expect(ctx.runMutation).toHaveBeenCalledTimes(3);
-    expect(ctx.runMutation.mock.calls[1][1]).toMatchObject({
+    expect(ctx.runMutation).toHaveBeenCalledTimes(4);
+    expect(ctx.runMutation.mock.calls[2][1]).toMatchObject({
       sourceChargeId: "ch_1",
       destinationAccountId: "acct_store",
       amount: 8000,
@@ -380,7 +380,7 @@ describe("createSplitTransfers engine (BTS-22)", () => {
     });
 
     expect(stripe.transfers.create).toHaveBeenCalledTimes(3);
-    expect(ctx.runMutation).toHaveBeenCalledTimes(4);
+    expect(ctx.runMutation).toHaveBeenCalledTimes(5);
   });
 
   it("skips zero-amount transfers", async () => {

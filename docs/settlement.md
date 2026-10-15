@@ -76,6 +76,23 @@ The Vite example exposes a [fee-first allocation preview](http://localhost:5173/
 from Admin → Testing Utilities. Its illustrative inputs use the public helper
 and the package React `SplitBreakdown`; they do not alter store settings.
 
+## Affiliate commission recovery
+
+Refund and monetary-dispute recovery uses each original affiliate transfer's
+allocated commission, including fixed amounts, rather than current payout rules.
+Successful refunds accumulate independently for each original invoice payment;
+refunds do not reset one-time subscription eligibility. Refund and dispute
+exposure share the same original-principal axis, capped at the original commission.
+New affiliate reversal operations retain exact provider receipt references and
+separate reserved funds from confirmed recovery.
+
+The recovery ledger reserves same-currency debt offsets before future affiliate
+transfers leave the platform, including fully withheld commissions with no Stripe
+transfer. Won disputes restore actual reversals/offsets while retaining independent
+refunds. Unknown outcomes retain reservations until exact receipt reconciliation. Before migrating or
+using these records, read the [clawback API, migration and reconciliation guide](affiliate-clawbacks.md).
+Seller cost recovery remains separate from affiliate commission principal.
+
 ## Subscription commission terms
 
 ```ts
@@ -552,6 +569,14 @@ retries; they do not release monetary reservations. A generation check prevents
 an older worker from replacing a newer worker's result. Completion replays keep
 the original next attempt time.
 
+Affiliate clawback debt, pending recoveries/restorations and competing affiliate
+payout reservations hold fresh worker attempts with `affiliate_recovery_pending`.
+The recipient claim boundary checks the same recovery lock again atomically
+before reservation and immediately before the provider attempt. Existing unknown
+attempts continue to reconcile even when new recovery debt arrives. Do not add
+the same affiliate debt to `independentLiabilities` again; that option is for
+separate host liabilities.
+
 The host must page all four queues, using bounded pages and scheduling each
 recipient/currency independently:
 
@@ -632,5 +657,7 @@ payout schedules, unresolved reserved/submitted claims, financially bound
 collections and known pending/in-transit provider payouts. The host must quiesce
 provider writers and verify live provider state before invoking reset. Restore
 schedules through the policy APIs and reconcile unresolved operations first.
+Pending or unknown direct affiliate payouts and recovery operations also block
+reset, preserving the receipts and obligations needed for reconciliation.
 The guard preserves the restoration and payout records until that work is done.
 Read-only cache collections can be cleared with the other development data.

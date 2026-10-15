@@ -2,11 +2,23 @@
 
 ## Unreleased
 
+- Add original affiliate commission obligations, exact reversal receipts,
+  currency-scoped debt offsets before future transfers, receipt-backed dispute
+  restoration, payout release reservations and paginated audit/migration APIs.
+  Add authenticated example views, reusable React recovery components, scheduled
+  reconciliation and simulated scenario/video evidence. Document actual provider
+  restrictions and sandbox verification limits in the [clawback guide](docs/affiliate-clawbacks.md).
+- Base split refund recovery on cumulative succeeded refunds, excluding pending
+  and failed refunds from finalized obligations. Calculate affiliate dispute
+  exposure from original gross charge principal, with deterministic integer
+  rounding and an original-commission cap.
+
 - Return every original split leg by default from `listTransfersByCharge`,
   excluding reinstatement rows before applying any explicit preview limit.
   Split breakdowns and reversal claims now cover sales with more than 50 legs.
-  Queries and atomic claims fail on Convex resource limits rather than silently
-  truncate financial data. `listTransfersByAccount` remains a preview API;
+  Atomic claims fail explicitly above 1,000 charge-linked transfer rows;
+  queries also fail on Convex resource limits rather than silently truncate
+  financial data. `listTransfersByAccount` remains a preview API;
   earnings hooks use exact server-side aggregates.
 - Update the former roadmap to describe the existing product-level first-charge
   descriptors, first-invoice fee recovery, retry-safe reversal claims, and exact

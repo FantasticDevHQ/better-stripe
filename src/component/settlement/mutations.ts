@@ -1,3 +1,8 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
+import { updateObligation } from "../affiliateRecovery/accounting.js";
+import { paginationOptsValidator } from "convex/server";
+import { ensureCommissionObligation } from "./clawbacks.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { allocationFields, commissionFields, termValidator } from "./schema.js";
@@ -114,6 +119,55 @@ export const claimCommissionInvoice = mutation({
       firstPaidInvoiceId: stored.firstPaidInvoiceId,
       claimKey,
       replay: !!existing,
+    };
+  },
+});
+
+/** Explicit, resumable migration. Never fabricate legacy refund provenance. */
+export const migrateAffiliateObligations = mutation({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    migrated: v.number(),
+    skipped: v.number(),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const page = await paginator(ctx.db, schema)
+      .query("transfers")
+      .paginate({
+        ...args.paginationOpts,
+        numItems: Math.min(100, args.paginationOpts.numItems),
+      });
+    let migrated = 0;
+    let skipped = 0;
+    for (const transfer of page.page) {
+      if (transfer.role !== "affiliate" || transfer.reinstatement) continue;
+      const allocation = transfer.sourceChargeId
+        ? await ctx.db
+            .query("settlementAllocations")
+            .withIndex("by_source_charge", (q) =>
+              q.eq("sourceChargeId", transfer.sourceChargeId!),
+            )
+            .unique()
+        : null;
+      if (!allocation) {
+        skipped++;
+        continue;
+      }
+      const obligation = await ensureCommissionObligation(
+        ctx,
+        transfer,
+        allocation.gross,
+      );
+      await updateObligation(ctx, obligation, {});
+      migrated++;
+    }
+    return {
+      migrated,
+      skipped,
+      isDone: page.isDone,
+      continueCursor: page.continueCursor,
     };
   },
 });

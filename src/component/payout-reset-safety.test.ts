@@ -85,3 +85,64 @@ it("cannot bypass a bound collection through wholesale reset", async () => {
     await t.run((ctx) => ctx.db.query("payoutSnapshots").collect()),
   ).toHaveLength(1);
 });
+it.each(["pending", "unknown"] as const)(
+  "retains %s direct affiliate payout attempts",
+  async (state) => {
+    const t = convexTest(schema, modules);
+    await t.run((ctx) =>
+      ctx.db.insert("affiliatePayoutReleases", {
+        affiliateAccountId: scope.accountId,
+        currency: "usd",
+        operationKey: "direct-affiliate",
+        amount: 1000,
+        minimumAmount: 1,
+        createdAt: Date.now(),
+        state,
+      }),
+    );
+    await expect(t.mutation(reset, {})).rejects.toThrow(
+      /affiliate.*operation/i,
+    );
+    expect(
+      await t.run((ctx) => ctx.db.query("affiliatePayoutReleases").collect()),
+    ).toHaveLength(1);
+  },
+);
+it.each(["pending", "unknown"] as const)(
+  "retains %s affiliate recovery attempts",
+  async (state) => {
+    const t = convexTest(schema, modules);
+    await t.run(async (ctx) => {
+      const obligationId = await ctx.db.insert("affiliateObligations", {
+        sourceChargeId: "ch_one",
+        affiliateAccountId: scope.accountId,
+        currency: "usd",
+        chargeAmount: 1000,
+        originalCommission: 100,
+        refundedPrincipal: 1000,
+        disputedPrincipal: 0,
+        lostPrincipal: 0,
+        finalizedAmount: 100,
+        provisionalAmount: 0,
+        recoveredAmount: 0,
+        needsReconciliation: false,
+      });
+      await ctx.db.insert("affiliateRecoveryOperations", {
+        obligationId,
+        kind: "recovery",
+        amount: 100,
+        state,
+        attempted: true,
+        createdAt: Date.now(),
+      });
+    });
+    await expect(t.mutation(reset, {})).rejects.toThrow(
+      /affiliate.*operation/i,
+    );
+    expect(
+      await t.run((ctx) =>
+        ctx.db.query("affiliateRecoveryOperations").collect(),
+      ),
+    ).toHaveLength(1);
+  },
+);

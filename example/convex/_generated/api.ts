@@ -11,6 +11,10 @@
 import type * as actions from "../actions.js";
 import type * as adminTesting from "../adminTesting.js";
 import type * as affiliateDefaults from "../affiliateDefaults.js";
+import type * as affiliateRecovery from "../affiliateRecovery.js";
+import type * as affiliateRecoveryBillingSandbox from "../affiliateRecoveryBillingSandbox.js";
+import type * as affiliateRecoveryJobs from "../affiliateRecoveryJobs.js";
+import type * as affiliateRecoverySandbox from "../affiliateRecoverySandbox.js";
 import type * as affiliateSplit from "../affiliateSplit.js";
 import type * as authz from "../authz.js";
 import type * as checkoutExamples from "../checkoutExamples.js";
@@ -79,6 +83,10 @@ const fullApi: ApiFromModules<{
   actions: typeof actions;
   adminTesting: typeof adminTesting;
   affiliateDefaults: typeof affiliateDefaults;
+  affiliateRecovery: typeof affiliateRecovery;
+  affiliateRecoveryBillingSandbox: typeof affiliateRecoveryBillingSandbox;
+  affiliateRecoveryJobs: typeof affiliateRecoveryJobs;
+  affiliateRecoverySandbox: typeof affiliateRecoverySandbox;
   affiliateSplit: typeof affiliateSplit;
   authz: typeof authz;
   checkoutExamples: typeof checkoutExamples;

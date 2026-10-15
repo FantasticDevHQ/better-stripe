@@ -97,9 +97,26 @@ export async function recoverSettlementTransfers(
     { sourceChargeId },
   )) as ResolvedSettlement | null;
   if (!claim || typeof claim.sourceChargeId !== "string") return;
+  const effective = [];
+  for (const leg of claim.transfers) {
+    const earning =
+      leg.role === "affiliate"
+        ? ((await ctx.runQuery(
+            componentRef(component, "affiliateRecovery/queries/getEarning"),
+            { sourceChargeId, affiliateAccountId: leg.destinationAccountId },
+          )) as { releaseAmount?: number } | null)
+        : null;
+    effective.push({
+      ...leg,
+      amount:
+        typeof earning?.releaseAmount === "number"
+          ? earning.releaseAmount
+          : leg.amount,
+    });
+  }
   let provider = await sourceTransfers(stripe, sourceChargeId);
   if (
-    claim.transfers.some(
+    effective.some(
       (leg) => leg.amount > 0 && !matchingTransfer(provider, claim, leg),
     )
   )
@@ -111,7 +128,8 @@ export async function recoverSettlementTransfers(
         ].map((t) => [t.id, t]),
       ).values(),
     ];
-  for (const leg of claim.transfers) {
+  for (const leg of effective) {
+    if (leg.amount === 0) continue;
     const transfer = matchingTransfer(provider, claim, leg);
     if (transfer)
       await recordSettlementTransfer(component, ctx, claim, leg, transfer);

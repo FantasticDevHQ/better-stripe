@@ -1,3 +1,4 @@
+import { commissionExposureValidator } from "../settlement/clawbackSchema.js";
 import { type Infer, v } from "convex/values";
 
 import { feeRoutingFields, splitRecipientRoleValidator } from "../lib/fees";
@@ -305,6 +306,7 @@ export const transferReversalOpFields = {
   operationId: v.string(),
   sourceChargeId: v.string(),
   slices: v.array(reversalSliceValidator),
+  commissionExposure: v.optional(commissionExposureValidator),
 };
 
 /** Full `transferReversalOps` document, including system fields. */

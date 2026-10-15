@@ -1,3 +1,9 @@
+import { reconcileAffiliateCharge } from "../affiliateRecovery/engine.js";
+import {
+  executeClaimedSlices,
+  type ClaimedSlice,
+  type ReversalClaim,
+} from "./reversalExecution.js";
 import { recoverSettlementTransfers } from "../settlement/reconciliation.js";
 import { executeResolvedTransfers } from "../settlement/execution.js";
 import type Stripe from "stripe";
@@ -19,90 +25,22 @@ type LedgerTransfer = {
   currency?: string;
 };
 
-type ClaimedSlice = {
-  stripeTransferId: string;
-  /** Cumulative reversed amount this slice starts from. */
-  from: number;
-  /** Cumulative reversed amount this slice raises the leg to. */
-  to: number;
-  /** The leg's confirmed `reversedAmount` at claim time. */
-  confirmed: number;
-};
-
-type ReversalClaim = { replay: boolean; slices: ClaimedSlice[] };
-
-/**
- * Execute the slices an operation claimed via `claimReversalSlices` (BTS-63).
- * The claim already reserved this money atomically, so all that's left is
- * moving it: one `bs_rev_<operationId>_<transferId>` reversal per slice, then
- * confirming the new cumulative total in the ledger. A replayed claim always
- * re-sends byte-identical params under the same key, which Stripe answers
- * from its idempotency cache without moving money twice.
- *
- * Because Stripe prunes idempotency keys after ~24h (and a crash can land
- * between the Stripe call and the ledger confirm), a replay first checks the
- * transfer's live `amount_reversed`: if the slice's money already moved, it
- * just confirms the ledger instead of re-sending the reversal.
- *
- * A slice only executes once every predecessor slice on its leg is confirmed
- * (`confirmed ≥ from`). Without that gate, a sibling operation landing behind
- * a transiently-failed claim would execute and confirm PAST the hole; the
- * failed operation's retry would then see `confirmed ≥ to` and silently skip
- * — its money would never move while the ledger says it did. Throwing instead
- * fails this operation's webhook event, and at-least-once delivery retries
- * both operations until the predecessor fills its hole and each claimed slice
- * has actually moved. The ledger's `reversedAmount` therefore always covers a
- * solid, hole-free prefix of the reversed axis — which is exactly what makes
- * the `confirmed`/`amount_reversed` checks above sound.
- */
-async function executeClaimedSlices(
-  stripe: Stripe,
+async function trackedAffiliateTransfers(
   component: Component,
   ctx: RunCtx,
-  operationId: string,
-  claim: ReversalClaim,
-): Promise<{ reversals: { stripeTransferId: string; amount: number }[] }> {
-  const reversals: { stripeTransferId: string; amount: number }[] = [];
-  for (const slice of claim.slices) {
-    if (slice.confirmed >= slice.to) continue; // executed and recorded already
-
-    if (slice.confirmed < slice.from) {
-      throw new Error(
-        `reversal slice [${slice.from},${slice.to}) on ${slice.stripeTransferId} ` +
-          `blocked: predecessor claim unexecuted (confirmed=${slice.confirmed})`,
-      );
-    }
-
-    if (claim.replay) {
-      const transfer = await stripe.transfers.retrieve(slice.stripeTransferId);
-      if ((transfer.amount_reversed ?? 0) >= slice.to) {
-        // The money moved on a previous attempt that died before confirming.
-        await runMutationOrThrow(
-          ctx,
-          componentRef(component, "connect/mutations/recordTransferReversal"),
-          {
-            stripeTransferId: slice.stripeTransferId,
-            reversedAmount: slice.to,
-          },
-        );
-        continue;
-      }
-    }
-
-    const amount = slice.to - slice.from;
-    await stripe.transfers.createReversal(
-      slice.stripeTransferId,
-      { amount },
-      { idempotencyKey: `bs_rev_${operationId}_${slice.stripeTransferId}` },
-    );
-    await runMutationOrThrow(
-      ctx,
-      componentRef(component, "connect/mutations/recordTransferReversal"),
-      { stripeTransferId: slice.stripeTransferId, reversedAmount: slice.to },
-    );
-    reversals.push({ stripeTransferId: slice.stripeTransferId, amount });
-  }
-  return { reversals };
+  sourceChargeId: string,
+) {
+  const rows = (await ctx.runQuery(
+    componentRef(component, "affiliateRecovery/queries/chargeObligations"),
+    { sourceChargeId },
+  )) as { accounted?: boolean; stripeTransferId?: string }[] | null;
+  return new Set(
+    Array.isArray(rows)
+      ? rows
+          .filter((row) => row.accounted && row.stripeTransferId)
+          .map((row) => row.stripeTransferId!)
+      : [],
+  );
 }
 
 /** A wedged reversal claim surfaced by {@link listWedgedReversalClaims}. */
@@ -120,6 +58,7 @@ type ReversalOpRecord = {
   sourceChargeId: string;
   slices: { stripeTransferId: string; from: number; to: number }[];
   _creationTime: number;
+  commissionExposure?: { kind: "refund" | "dispute" };
 };
 
 /** Stripe prunes idempotency keys after ~24h; a release must wait past this. */
@@ -212,19 +151,43 @@ export async function reclaimReversalClaim(
       const leg = (await ctx.runQuery(
         componentRef(component, "connect/queries/getTransferByStripeId"),
         { stripeTransferId: s.stripeTransferId },
-      )) as { reversedAmount?: number } | null;
-      slices.push({ ...s, confirmed: leg?.reversedAmount ?? 0 });
+      )) as { reversedAmount?: number; role?: string } | null;
+      slices.push({
+        ...s,
+        confirmed: leg?.reversedAmount ?? 0,
+        ...(op.commissionExposure
+          ? { commissionTracked: leg?.role === "affiliate" }
+          : {}),
+      });
     }
+    const tracked = op.commissionExposure
+      ? null
+      : await trackedAffiliateTransfers(component, ctx, op.sourceChargeId);
+    const usesRecoveryLedger = !!op.commissionExposure || !!tracked?.size;
     const { reversals } = await executeClaimedSlices(
       stripe,
       component,
       ctx,
       op.operationId,
-      { replay: true, slices },
+      {
+        replay: true,
+        slices: slices.filter(
+          (s) => !s.commissionTracked && !tracked?.has(s.stripeTransferId),
+        ),
+      },
     );
+    if (usesRecoveryLedger)
+      await reconcileAffiliateCharge(stripe, component, ctx, op.sourceChargeId);
     return { mode: "reexecute", reversals };
   }
 
+  if (
+    op.commissionExposure ||
+    (await trackedAffiliateTransfers(component, ctx, op.sourceChargeId)).size
+  )
+    throw new Error(
+      "Affiliate exposure audit claims cannot be released; use affiliateRecovery.retry or reviewLegacy.",
+    );
   // release: age-gate against the idempotency window, then verify live Stripe.
   const minAgeMs = opts.minAgeMs ?? REVERSAL_IDEMPOTENCY_WINDOW_MS;
   const now = opts.now ?? Date.now();
@@ -306,6 +269,13 @@ export async function reverseTransfers(
   }
 
   await recoverSettlementTransfers(stripe, component, ctx, opts.sourceChargeId);
+  if (
+    (await trackedAffiliateTransfers(component, ctx, opts.sourceChargeId)).size
+  )
+    throw new Error(
+      "Use affiliateRecovery.retry for tracked affiliate commission recovery.",
+    );
+
   if (opts.operationId) {
     const claim = (await runMutationOrThrow(
       ctx,
@@ -389,9 +359,9 @@ export async function reverseTransfers(
 }
 
 /**
- * Reverse a split sale's transfers pro-rata to the cumulatively refunded
- * amount (BTS-34) — the refund counterpart of the dispute clawback. Every leg
- * converges on a cumulative reversal TARGET, `round(leg × amountRefunded /
+ * Reverse a split sale's transfers pro-rata to cumulative succeeded refunds.
+ * Affiliate legs retain the larger refund/dispute commission exposure. Other
+ * legs converge on a cumulative reversal TARGET, `round(leg × amountRefunded /
  * chargeAmount)`, and only the delta above the ledger's recorded
  * `reversedAmount` is reversed. Delta-to-target (rather than percent-of-
  * original like {@link reverseTransfers}) is what makes at-least-once webhook
@@ -416,7 +386,7 @@ export async function reverseTransfersForRefund(
     refundId: string;
     /** The original charge amount (minor units). */
     chargeAmount: number;
-    /** Stripe's cumulative `charge.amount_refunded`, including this refund. */
+    /** Cumulative principal of succeeded refunds; exclude pending/failed refunds. */
     amountRefunded: number;
   },
 ): Promise<{ reversals: { stripeTransferId: string; amount: number }[] }> {
@@ -431,6 +401,13 @@ export async function reverseTransfersForRefund(
     {
       operationId: opts.refundId,
       sourceChargeId: opts.sourceChargeId,
+      commissionExposure: {
+        kind: "refund",
+        refundId: opts.refundId,
+        chargeAmount: opts.chargeAmount,
+        principal: opts.amountRefunded,
+        finalized: true,
+      },
       mode: {
         kind: "fraction" as const,
         chargeAmount: opts.chargeAmount,
@@ -438,8 +415,18 @@ export async function reverseTransfersForRefund(
       },
     },
   )) as ReversalClaim;
-  return executeClaimedSlices(stripe, component, ctx, opts.refundId, claim);
+  const result = await executeClaimedSlices(
+    stripe,
+    component,
+    ctx,
+    opts.refundId,
+    { ...claim, slices: claim.slices.filter((s) => !s.commissionTracked) },
+  );
+  await reconcileAffiliateCharge(stripe, component, ctx, opts.sourceChargeId);
+  return result;
 }
+
+export { reverseTransfersForDispute } from "../affiliateRecovery/disputes.js";
 
 /**
  * Webhook-driven split transfer engine (BTS-22). After a charge succeeds for a
@@ -489,7 +476,14 @@ export async function reinstateTransfers(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: { sourceChargeId: string; operationId: string; currency: string },
+  opts: {
+    sourceChargeId: string;
+    operationId: string;
+    currency: string;
+    excludeAffiliates?: boolean;
+    chargeAmount?: number;
+    refundedPrincipal?: number;
+  },
 ): Promise<{ reinstated: { destinationAccountId: string; amount: number }[] }> {
   const transfers = ((await ctx.runQuery(
     componentRef(component, "connect/queries/listTransfersByCharge"),
@@ -498,7 +492,14 @@ export async function reinstateTransfers(
 
   const reinstated: { destinationAccountId: string; amount: number }[] = [];
   for (const t of transfers) {
-    const amount = t.reversedAmount ?? 0;
+    if (opts.excludeAffiliates && t.role === "affiliate") continue;
+    const independentRefund = opts.chargeAmount
+      ? Math.round(
+          t.amount *
+            Math.min(1, (opts.refundedPrincipal ?? 0) / opts.chargeAmount),
+        )
+      : 0;
+    const amount = Math.max(0, (t.reversedAmount ?? 0) - independentRefund);
     if (amount <= 0) continue; // nothing was clawed back from this leg
     // Use the original leg's currency; fall back to the dispute currency for
     // legacy rows that predate the stored currency — never assume USD.

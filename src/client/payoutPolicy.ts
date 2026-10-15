@@ -1,4 +1,9 @@
 import {
+  adoptRecipientPayouts,
+  type PayoutAdoptionOptions,
+} from "./connect/payoutAdoption.js";
+export type * from "./connect/payoutAdoption.js";
+import {
   releaseRecipientPayout,
   type PayoutReleaseOptions,
 } from "./connect/payoutExecution.js";
@@ -90,6 +95,9 @@ export class PayoutPolicyClient {
     private readonly component: Component,
     private readonly provider: () => Stripe,
   ) {}
+  adoptPayouts(ctx: RunCtx, opts: PayoutAdoptionOptions) {
+    return adoptRecipientPayouts(this.provider(), this.component, ctx, opts);
+  }
   release(ctx: RunCtx, opts: PayoutReleaseOptions) {
     return releaseRecipientPayout(
       this.provider(),

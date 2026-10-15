@@ -132,7 +132,7 @@ export async function reconcileRecipientPayout(
   const receipt = await getRecipientPayoutReceipt(stripe, {
     accountId: options.accountId,
     stripePayoutId: payoutId,
-    operationKey: options.operationKey,
+    ...(claim.historical ? {} : { operationKey: options.operationKey }),
   });
   if (receipt.status !== "ready")
     return { status: "held", reason: receipt.reason };
@@ -151,7 +151,11 @@ export async function reconcileRecipientPayout(
     );
   // Current claims use the default card source balance. Other rails need a
   // persisted allocation contract before a provider receipt can be adopted.
-  if (receipt.sourceType !== "card")
+  if (
+    receipt.sourceType !== "card" ||
+    (claim.historical &&
+      (receipt.method !== "standard" || receipt.type !== "bank_account"))
+  )
     return { status: "held", reason: "source_allocation_required" };
   const fee = addSummaryAmounts(receipt.debit.fee, receipt.credit?.fee ?? 0);
   if (fee < 0) return { status: "held", reason: "fee_allocation_required" };

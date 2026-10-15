@@ -19,6 +19,7 @@ export const allocation = v.object({
 });
 export const claimFields = {
   ...scopeFields,
+  historical: v.optional(v.boolean()),
   operationKey: v.string(),
   expectedRevision: v.number(),
   currency: v.string(),

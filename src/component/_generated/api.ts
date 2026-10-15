@@ -37,6 +37,7 @@ import type * as lib_stripeFactory from "../lib/stripeFactory.js";
 import type * as payoutPolicy_helpers from "../payoutPolicy/helpers.js";
 import type * as payoutPolicy_mutations from "../payoutPolicy/mutations.js";
 import type * as payoutPolicy_queries from "../payoutPolicy/queries.js";
+import type * as payoutRelease_adoption from "../payoutRelease/adoption.js";
 import type * as payoutRelease_allocation from "../payoutRelease/allocation.js";
 import type * as payoutRelease_fees from "../payoutRelease/fees.js";
 import type * as payoutRelease_helpers from "../payoutRelease/helpers.js";
@@ -89,6 +90,7 @@ const fullApi: ApiFromModules<{
   "payoutPolicy/helpers": typeof payoutPolicy_helpers;
   "payoutPolicy/mutations": typeof payoutPolicy_mutations;
   "payoutPolicy/queries": typeof payoutPolicy_queries;
+  "payoutRelease/adoption": typeof payoutRelease_adoption;
   "payoutRelease/allocation": typeof payoutRelease_allocation;
   "payoutRelease/fees": typeof payoutRelease_fees;
   "payoutRelease/helpers": typeof payoutRelease_helpers;

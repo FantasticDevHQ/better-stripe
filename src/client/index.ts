@@ -79,7 +79,6 @@ import type { ComponentApi } from "../component/_generated/component.js";
 import type {
   DisputeStatus,
   PayoutStatus,
-  RefundStatus,
 } from "../component/connect/validators.js";
 import type { SplitRecipient } from "../component/lib/fees.js";
 import * as checkoutImpl from "./billing/checkout.js";
@@ -89,6 +88,7 @@ import * as disputesImpl from "./connect/disputes.js";
 import * as paymentMethodsImpl from "./connect/paymentMethods.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import * as refundsImpl from "./connect/refunds.js";
+export type { RefundPageOptions } from "./connect/refunds.js";
 import * as transfersImpl from "./connect/transfers.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
@@ -1360,14 +1360,13 @@ export class BetterStripe extends ReadContractClient {
 
   async listRefunds(
     ctx: RunCtx,
-    opts?: {
-      stripeAccountId?: string;
-      stripePaymentIntentId?: string;
-      status?: RefundStatus;
-      limit?: number;
-    },
+    opts?: refundsImpl.RefundListOptions,
   ): Promise<StripeComponentRefund[]> {
     return refundsImpl.listRefunds(this.component, ctx, opts);
+  }
+
+  paginateRefunds(ctx: RunCtx, opts: refundsImpl.RefundPageOptions) {
+    return refundsImpl.paginateRefunds(this.component, ctx, opts);
   }
 
   // DISPUTE METHODS

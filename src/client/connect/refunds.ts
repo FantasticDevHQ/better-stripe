@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import type { PaginationOptions, PaginationResult } from "convex/server";
 
 import type { RefundStatus } from "../../component/connect/validators.js";
 import { throwStripeError } from "../errors.js";
@@ -11,6 +12,33 @@ import { componentRef } from "../webhooks/helpers.js";
 import { type RefundActor, isRefundAuthorized } from "./refundActor.js";
 
 export type { RefundActor } from "./refundActor.js";
+
+export type RefundListOptions = {
+  stripeAccountId?: string;
+  stripePaymentIntentId?: string;
+  status?: RefundStatus;
+  limit?: number;
+};
+
+export type RefundPageOptions = Omit<RefundListOptions, "limit"> & {
+  paginationOpts: PaginationOptions;
+};
+
+/** The host must authenticate/authorize scopes before exposing this reactive reader. */
+export async function paginateRefunds(
+  component: Component,
+  ctx: RunCtx,
+  opts: RefundPageOptions,
+): Promise<PaginationResult<StripeComponentRefund>> {
+  const { stripeAccountId, ...rest } = opts;
+  return await ctx.runQuery(
+    componentRef(component, "refundHistory/queries/paginateRefunds"),
+    {
+      ...rest,
+      ...(stripeAccountId !== undefined ? { accountId: stripeAccountId } : {}),
+    },
+  );
+}
 
 // =============================================================================
 // Refund methods

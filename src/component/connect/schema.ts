@@ -54,6 +54,15 @@ export const refundsTable = defineTable(refundFields)
   .index("by_account_id", ["accountId"])
   .index("by_status", ["status"])
   .index("by_account_id_and_status", ["accountId", "status"])
+  .index("by_account_id_and_stripe_payment_intent_id", [
+    "accountId",
+    "stripePaymentIntentId",
+  ])
+  .index("by_account_id_and_stripe_payment_intent_id_and_status", [
+    "accountId",
+    "stripePaymentIntentId",
+    "status",
+  ])
   .index("by_payment_intent_id_and_status", [
     "stripePaymentIntentId",
     "status",

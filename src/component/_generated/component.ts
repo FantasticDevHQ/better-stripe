@@ -2436,6 +2436,62 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    refundHistory: {
+      queries: {
+        paginateRefunds: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?:
+              | "pending"
+              | "requires_action"
+              | "succeeded"
+              | "failed"
+              | "canceled";
+            stripePaymentIntentId?: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              amount: number;
+              currency: string;
+              failureReason?: string;
+              metadata?: any;
+              reason?:
+                | "duplicate"
+                | "fraudulent"
+                | "requested_by_customer"
+                | "expired_uncaptured_charge";
+              status:
+                | "pending"
+                | "requires_action"
+                | "succeeded"
+                | "failed"
+                | "canceled";
+              stripeChargeId?: string;
+              stripePaymentIntentId?: string;
+              stripeRefundId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     settlement: {
       mutations: {
         claimCommissionInvoice: FunctionReference<

@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "deployedRebasedSource": "c191ac1877d49064de0d414fc15e559c7329440f",
+  "realStripeFundingSource": "pi_3UQhBf6JR7kThJog1iVZuYgq",
+  "twoAdditionalReplays": true,
+  "totalOwed": 147,
+  "uncoveredProcessing": 59,
+  "reserved": 0,
+  "outstanding": 147
+}

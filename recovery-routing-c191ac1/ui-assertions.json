@@ -1,0 +1,20 @@
+{
+  "source": "c191ac1877d49064de0d414fc15e559c7329440f",
+  "environment": "localhost frontend, deployed Stripe sandbox backend",
+  "test_start": "Verify reusable CostRecovery and Billing estimate",
+  "assertions": [
+    {
+      "assertion": "Real migrated seller history renders Collected and Reserved columns",
+      "result": "passed"
+    },
+    {
+      "assertion": "Billing refresh completes with Estimated total and no alert",
+      "result": "passed"
+    }
+  ],
+  "recording": "ui.webm",
+  "screenshots": [
+    "costs.png",
+    "billing.png"
+  ]
+}

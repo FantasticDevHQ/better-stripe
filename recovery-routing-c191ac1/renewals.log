@@ -1,0 +1,12 @@
+
+> example@0.0.0 e2e:balance-renewals /path/to/better-stripe/example
+> node --import tsx scripts/test-balance-renewals.ts recovery-routing-rebased-20261015
+
+[funded] Creating isolated seller and monthly store plan
+[funded] Renewing $9 plan plus $16.47 actual refund/dispute costs
+[funded] PASS: one $25.47 Stripe balance debit, renewal active, paid retry caused no duplicate debit
+[insufficient] Creating isolated seller and monthly store plan
+[insufficient] Renewing $9 plan plus $16.47 actual refund/dispute costs
+[insufficient] Failure confirmed. Adding real payment earnings and retrying the same invoice
+[insufficient] PASS: insufficient funds caused no debit; retry collected the same invoice once. Access stays closed because Stripe canceled the subscription.
+Evidence saved to qa/2026-10-13/balance-renewals-recovery-routing-rebased-20261015.json

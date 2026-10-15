@@ -1,0 +1,6 @@
+import {execFileSync} from 'node:child_process';import {readFileSync,writeFileSync} from 'node:fs';import assert from 'node:assert/strict';process.chdir('/path/to/better-stripe/example');
+const prior=JSON.parse(readFileSync('/tmp/recovery-routing-invoice-funding-live.json','utf8'));assert.equal(prior.status,'passed');
+function call(name:string,args:any){return JSON.parse(execFileSync('pnpm',['exec','convex','run',name,JSON.stringify(args)],{encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:120000}).trim()||'null');}
+for(let i=0;i<2;i++)call('sellerCostActions:reconcile',{paymentIntentId:prior.fundingPaymentId});
+const row=call('sellerCostBilling:list',{sellerId:prior.actor.sellerId}).find((row:any)=>row.paymentIntentId===prior.fundingPaymentId);assert.equal(row.amountDue,147);assert.equal(row.processingLoss,59);assert.equal(row.outstanding,147);assert.equal(row.reservedAmount,0);
+const report={status:'passed',deployedRebasedSource:'c191ac1877d49064de0d414fc15e559c7329440f',realStripeFundingSource:prior.fundingPaymentId,twoAdditionalReplays:true,totalOwed:row.amountDue,uncoveredProcessing:row.processingLoss,reserved:row.reservedAmount,outstanding:row.outstanding};writeFileSync('/tmp/recovery-routing-invoice-funding-rebased.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

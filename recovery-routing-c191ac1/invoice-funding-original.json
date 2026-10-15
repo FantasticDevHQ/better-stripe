@@ -1,0 +1,28 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedExample": true,
+  "actor": {
+    "sellerId": "jh77kxy9m15ze53ntj3ppwc2s18gaqej",
+    "accountId": "acct_1UQgvZ8QDq59CnAl"
+  },
+  "run": "invoice-funding-cutover-20261015-v2",
+  "sourcePaymentId": "pi_3UQhBQ6JR7kThJog0vG3ykcR",
+  "originalExpense": 88,
+  "invoiceId": "in_1UQhBW6JR7kThJogYNKv2rED",
+  "fundingPaymentId": "pi_3UQhBf6JR7kThJog1iVZuYgq",
+  "partial": {
+    "gross": 988,
+    "returned": 494,
+    "reinstated": 44
+  },
+  "full": {
+    "reinstated": 88,
+    "uncoveredProcessing": 59,
+    "totalOwed": 147,
+    "replayDidNotDuplicate": true
+  },
+  "status": "passed",
+  "noOpenTestInvoice": true,
+  "testActorSubscriptionAlreadyCanceled": true
+}

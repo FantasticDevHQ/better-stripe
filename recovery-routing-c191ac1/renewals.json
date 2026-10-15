@@ -1,0 +1,559 @@
+{
+  "runId": "recovery-routing-rebased-20261015",
+  "startedAt": "2026-10-15T05:35:13.219Z",
+  "webhooks": {
+    "snapshotEvents": 30,
+    "thinEvents": 12
+  },
+  "funded": {
+    "actor": {
+      "accountId": "acct_1UQhJy7aVPKFpnkZ",
+      "clockId": "clock_1UQhJy6JR7kThJogV6qNmNZm",
+      "periodEnd": 1794720918,
+      "sellerId": "jh746d8azfz88ymccknt0q994d8gbna2",
+      "subscriptionId": "sub_1UQhK76JR7kThJog0ZlnXf97"
+    },
+    "sources": {
+      "disputePaymentId": "pi_3UQhKg6JR7kThJog1hAs9cr6",
+      "refundPaymentId": "pi_3UQhKV6JR7kThJog1JelxoVq"
+    },
+    "before": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1792042518,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 88,
+          "paymentIntentId": "pi_3UQhKV6JR7kThJog1JelxoVq",
+          "reserved": 0,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 1559,
+          "paymentIntentId": "pi_3UQhKg6JR7kThJog1hAs9cr6",
+          "reserved": 0,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 900,
+        "amountRemaining": 0,
+        "id": "in_1UQhK76JR7kThJogarmzW6OH",
+        "lines": [
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_create",
+        "status": "paid",
+        "total": 900
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQhK76JR7kThJog0sMfJujY",
+        "method": "card",
+        "status": "succeeded"
+      },
+      "periodEnd": 1794720918,
+      "subscriptionStatus": "active"
+    },
+    "draft": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1794720919,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKV6JR7kThJog1JelxoVq",
+          "reserved": 88,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKg6JR7kThJog1hAs9cr6",
+          "reserved": 1559,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQhKq6JR7kThJogGo50XWMS",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "draft",
+        "total": 2547
+      },
+      "localStatus": "unpaid",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "",
+        "method": "",
+        "status": ""
+      },
+      "periodEnd": 1797312918,
+      "subscriptionStatus": "active"
+    },
+    "paid": {
+      "available": 15653,
+      "clockStatus": "ready",
+      "clockTime": 1794728119,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 88,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKV6JR7kThJog1JelxoVq",
+          "reserved": 0,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 1559,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKg6JR7kThJog1hAs9cr6",
+          "reserved": 0,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [
+        {
+          "amount": -2547,
+          "description": "Stripe balance payment - Subscription update",
+          "fee": 0,
+          "id": "txn_1UQhL97aVPKFpnkZSgEpFlRt",
+          "net": -2547
+        }
+      ],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 2547,
+        "amountRemaining": 0,
+        "id": "in_1UQhKq6JR7kThJogGo50XWMS",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "paid",
+        "total": 2547
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQhL76JR7kThJog0T9m8pOU",
+        "method": "stripe_balance",
+        "status": "succeeded"
+      },
+      "periodEnd": 1797312918,
+      "subscriptionStatus": "active"
+    },
+    "paidRetryResult": "Stripe rejected retry because the invoice is already paid",
+    "paidRetry": {
+      "available": 15653,
+      "clockStatus": "ready",
+      "clockTime": 1794728119,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 88,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKV6JR7kThJog1JelxoVq",
+          "reserved": 0,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 1559,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhKg6JR7kThJog1hAs9cr6",
+          "reserved": 0,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [
+        {
+          "amount": -2547,
+          "description": "Stripe balance payment - Subscription update",
+          "fee": 0,
+          "id": "txn_1UQhL97aVPKFpnkZSgEpFlRt",
+          "net": -2547
+        }
+      ],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 2547,
+        "amountRemaining": 0,
+        "id": "in_1UQhKq6JR7kThJogGo50XWMS",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "paid",
+        "total": 2547
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQhL76JR7kThJog0T9m8pOU",
+        "method": "stripe_balance",
+        "status": "succeeded"
+      },
+      "periodEnd": 1797312918,
+      "subscriptionStatus": "active"
+    }
+  },
+  "insufficient": {
+    "actor": {
+      "accountId": "acct_1UQhLX6UXqNGLiGp",
+      "clockId": "clock_1UQhLX6JR7kThJogwcmu2wNl",
+      "periodEnd": 1794721015,
+      "sellerId": "jh78mvdakar1atbxa8mc4j85298gbeqf",
+      "subscriptionId": "sub_1UQhLg6JR7kThJogKqttXzOY"
+    },
+    "sources": {
+      "disputePaymentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+      "refundPaymentId": "pi_3UQhM16JR7kThJog0cYBdYPh"
+    },
+    "before": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1792042615,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 88,
+          "paymentIntentId": "pi_3UQhM16JR7kThJog0cYBdYPh",
+          "reserved": 0,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 0,
+          "outstanding": 1559,
+          "paymentIntentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+          "reserved": 0,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": true,
+      "invoice": {
+        "amountPaid": 900,
+        "amountRemaining": 0,
+        "id": "in_1UQhLg6JR7kThJogLeKFNjGl",
+        "lines": [
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_create",
+        "status": "paid",
+        "total": 900
+      },
+      "localStatus": "active",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQhLg6JR7kThJog1sMnxZ90",
+        "method": "card",
+        "status": "succeeded"
+      },
+      "periodEnd": 1794721015,
+      "subscriptionStatus": "active"
+    },
+    "draft": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1794721016,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhM16JR7kThJog0cYBdYPh",
+          "reserved": 88,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+          "reserved": 1559,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQhMS6JR7kThJogQaIW1zN9",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "draft",
+        "total": 2547
+      },
+      "localStatus": "unpaid",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "",
+        "method": "",
+        "status": ""
+      },
+      "periodEnd": 1797313015,
+      "subscriptionStatus": "active"
+    },
+    "failed": {
+      "available": 0,
+      "clockStatus": "ready",
+      "clockTime": 1794728216,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhM16JR7kThJog0cYBdYPh",
+          "reserved": 88,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+          "reserved": 1559,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQhMS6JR7kThJogQaIW1zN9",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "open",
+        "total": 2547
+      },
+      "localStatus": "canceled",
+      "payment": {
+        "declineCode": "generic_decline",
+        "errorCode": "insufficient_funds",
+        "errorMessage": "Account acct_1UQhLX6UXqNGLiGp has insufficient funds. Please use a different payment method or try again later.",
+        "id": "pi_3UQhMj6JR7kThJog1yNApnbO",
+        "method": "stripe_balance",
+        "status": "requires_payment_method"
+      },
+      "periodEnd": 1797313015,
+      "subscriptionStatus": "canceled"
+    },
+    "funded": {
+      "available": 18200,
+      "clockStatus": "ready",
+      "clockTime": 1794728216,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 0,
+          "invoiced": 88,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhM16JR7kThJog0cYBdYPh",
+          "reserved": 88,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 0,
+          "invoiced": 1559,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+          "reserved": 1559,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 0,
+        "amountRemaining": 2547,
+        "id": "in_1UQhMS6JR7kThJogQaIW1zN9",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "open",
+        "total": 2547
+      },
+      "localStatus": "canceled",
+      "payment": {
+        "declineCode": "generic_decline",
+        "errorCode": "insufficient_funds",
+        "errorMessage": "Account acct_1UQhLX6UXqNGLiGp has insufficient funds. Please use a different payment method or try again later.",
+        "id": "pi_3UQhMj6JR7kThJog1yNApnbO",
+        "method": "stripe_balance",
+        "status": "requires_payment_method"
+      },
+      "periodEnd": 1797313015,
+      "subscriptionStatus": "canceled"
+    },
+    "recovered": {
+      "available": 15653,
+      "clockStatus": "ready",
+      "clockTime": 1794728216,
+      "costs": [
+        {
+          "amountDue": 88,
+          "collected": 88,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhM16JR7kThJog0cYBdYPh",
+          "reserved": 0,
+          "sourceType": "refund"
+        },
+        {
+          "amountDue": 1559,
+          "collected": 1559,
+          "invoiced": 0,
+          "outstanding": 0,
+          "paymentIntentId": "pi_3UQhMA6JR7kThJog1dUMZ7bS",
+          "reserved": 0,
+          "sourceType": "dispute"
+        }
+      ],
+      "debits": [
+        {
+          "amount": -2547,
+          "description": "Stripe balance payment - Subscription update",
+          "fee": 0,
+          "id": "txn_1UQhNG6UXqNGLiGpylFg02Af",
+          "net": -2547
+        }
+      ],
+      "hasAccess": false,
+      "invoice": {
+        "amountPaid": 2547,
+        "amountRemaining": 0,
+        "id": "in_1UQhMS6JR7kThJogQaIW1zN9",
+        "lines": [
+          {
+            "amount": 1647,
+            "description": "Refund and dispute cost adjustment"
+          },
+          {
+            "amount": 900,
+            "description": "1 × BetterStripe Starter store plan (at $9.00 / month)"
+          }
+        ],
+        "reason": "subscription_cycle",
+        "status": "paid",
+        "total": 2547
+      },
+      "localStatus": "canceled",
+      "payment": {
+        "declineCode": "",
+        "errorCode": "",
+        "errorMessage": "",
+        "id": "pi_3UQhMj6JR7kThJog1yNApnbO",
+        "method": "stripe_balance",
+        "status": "succeeded"
+      },
+      "periodEnd": 1797313015,
+      "subscriptionStatus": "canceled"
+    },
+    "recoveryLimitation": "Stripe canceled this subscription after payment failure. Paying its outstanding invoice does not reactivate a canceled subscription. Configure recovery settings to retain the subscription during retries.",
+    "cleanupError": "Error: Command failed: pnpm exec convex run sandboxRenewals:finish {\"sellerId\":\"jh78mvdakar1atbxa8mc4j85298gbeqf\"}\n✖ Failed to run function \"sandboxRenewals:finish\":\nError: [Request ID: dad044c758761090] Server Error\nUncaught Error: No such subscription: 'sub_1UQhLg6JR7kThJogKqttXzOY'\n    at generateV1Error (../../../node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/Error.ts:48:17)\n    at <anonymous> (../../../node_modules/.pnpm/stripe@23.0.0_@types+node@26.6.4/node_modules/stripe/src/RequestSender.ts:229:20)\n"
+  },
+  "status": "passed",
+  "finishedAt": "2026-10-15T05:38:50.501Z"
+}

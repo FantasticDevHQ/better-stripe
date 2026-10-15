@@ -1,0 +1,16 @@
+The `--diff` flag is deprecated; use `--scope changed` (add `--base <ref>` to pin the base) instead.
+✔ Select projects › @fantastic.dev/better-stripe, example
+Scanning changes: codex/example-recovery-routing → origin/main
+
+✔ Scanned 25 files in 4.1s
+
+React Doctor — better-stripe
+Score: 90 / 100 Great
+
+1 issue
+Bugs: 1 warning
+
+⚠ Sequential independent awaits
+  react-doctor/server-sequential-independent-await
+  convex/lib/saleRecovery.ts:46
+  Full diagnostics written to /tmp/react-doctor-diagnostics

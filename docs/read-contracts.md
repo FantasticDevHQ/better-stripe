@@ -174,6 +174,54 @@ Host apps should translate known codes into safe recovery instructions and a
 settings link. Do not log or blindly render raw provider messages. Authorize
 reads using the recipient's shared connected account.
 
+## Prepared Checkout requests
+
+Use `betterStripe.checkoutRequests.prepare(ctx, options)` when a host purchase
+intent must bind the exact provider request before creation or a plan change's
+cancellation. Preparation performs only reads. It never provisions an account,
+creates a Checkout Session or cancels a subscription. If a buyer needs a V2
+customer account, register the host intent first, provision through the existing
+package account operation with a stable account identity, then prepare using the
+verified account reference.
+
+Preparation returns a serializable versioned snapshot containing the final
+`request`, component correlation `row`, captured rendering `options`, descriptor
+and generated routing metadata. Persist the entire snapshot in the host's owned
+intent before any subsequent provider write. The snapshot includes account or
+customer email, server metadata, quantity, trial behavior, nested overrides and
+resolved fees. Its contents may contain private data; do not return the snapshot
+to a browser or log it.
+
+Call `betterStripe.checkoutRequests.execute(ctx, { prepared, idempotencyKey })`
+with that persisted snapshot and a stable intent-derived key. Execution validates
+its correlation and deterministic rendering against the captured context, then
+sends the stored request unchanged. It does not resolve current fee or descriptor
+defaults. Necessary platform-price checks may still read the provider. If a key
+was explicitly included during preparation, execution must use the same key.
+Retries reuse the exact request and preserve the existing Checkout response shape
+and component upsert. Missing or conflicting keys and inconsistent snapshots
+fail before creation.
+
+The host must authorize the buyer and catalog, bind the complete snapshot and key
+immutably, validate fresh session eligibility and own recovery. Consistency
+validation is not a signature or a replacement for host authorization. Never
+accept a browser-supplied snapshot. An unknown provider outcome remains unknown;
+use authoritative provider reads and saved references rather than blindly
+recreating after an idempotency retention window. This API does not record paid
+facts, award attribution, grant access or cancel a current plan automatically.
+
+For a plan change, authorize and register the intent, prepare and bind a request
+with no new trial, then perform any authorized cancellation before executing the
+persisted request. Preserve cancellation and creation recovery separately. A
+failed or lost response does not establish successful cancellation or payment.
+
+The original `createCheckoutSession` uses the same maintained renderer and
+submission path and retains its existing behavior. The prepared contract adds
+strict correlation checks for the buyer, account and price and preserves
+server-owned metadata and package-generated routing markers. Application React
+callbacks remain authenticated host adapters. The package's unstyled React
+checkout workflow and Vite example can use these callbacks with application styles.
+
 ## Publication and consumer acceptance
 
 A source merge does not activate an API in a published package. DOJO-908,

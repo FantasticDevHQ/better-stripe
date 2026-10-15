@@ -1,9 +1,11 @@
+import * as checkoutImpl from "./billing/checkout.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { PaginationOptions, PaginationResult } from "convex/server";
 import type { Component, RunCtx } from "./helpers.js";
 import type { PayoutStatus } from "../component/connect/validators.js";
 import type {
+  StripeComponentCheckoutSession,
   StripeComponentPayout,
   StripeComponentProduct,
   StripeComponentPrice,
@@ -50,6 +52,27 @@ export class ReadContractClient {
       componentRef(this.component, "connect/queries/paginatePayouts"),
       opts,
     );
+  }
+
+  async getCheckoutSession(
+    ctx: RunCtx,
+    opts: { sessionId: string },
+  ): Promise<StripeComponentCheckoutSession | null> {
+    return checkoutImpl.getCheckoutSession(this.component, ctx, opts);
+  }
+
+  async getCheckoutSessionByStripeId(
+    ctx: RunCtx,
+    opts: { stripeSessionId: string },
+  ): Promise<StripeComponentCheckoutSession | null> {
+    return checkoutImpl.getCheckoutSessionByStripeId(this.component, ctx, opts);
+  }
+
+  async listCheckoutSessionsByUser(
+    ctx: RunCtx,
+    opts: { userId: string; status?: string },
+  ): Promise<StripeComponentCheckoutSession[]> {
+    return checkoutImpl.listCheckoutSessionsByUser(this.component, ctx, opts);
   }
 
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {

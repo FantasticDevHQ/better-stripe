@@ -396,3 +396,19 @@ it("rejects a payout sent to a different bank than the immutable claim", async (
     await s.t.run((ctx) => ctx.db.query("payoutSourceAllocations").collect()),
   ).toMatchObject([{ paidAmount: 0, reservedAmount: 1000 }]);
 });
+it("reconciles an explicitly adopted automatic payout without a package claim marker", async () => {
+  const s = await setup();
+  await s.t.run(async (ctx) => {
+    const c = await ctx.db.query("payoutReleaseClaims").first();
+    await ctx.db.patch("payoutReleaseClaims", c!._id, {
+      historical: true,
+      stripePayoutId: "po_one",
+      destinationId: "ba_one",
+    });
+  });
+  s.setPayout({ automatic: true, metadata: {} as never });
+  expect(await s.reconcile()).toMatchObject({
+    status: "updated",
+    claim: { status: "paid", historical: true },
+  });
+});

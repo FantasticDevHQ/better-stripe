@@ -1,15 +1,8 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { scopeFields } from "../payoutPolicy/schema.js";
-export const observation = v.object({
-  stripeTransferId: v.string(),
-  currency: v.string(),
-  matureNet: v.number(),
-  pendingCredits: v.number(),
-  ledgerFingerprint: v.string(),
-  observedAt: v.number(),
-  transactionIds: v.array(v.string()),
-});
+import { observation } from "./observation.js";
+export { observation } from "./observation.js";
 export const allocation = v.object({
   stripeTransferId: v.string(),
   amount: v.number(),
@@ -19,6 +12,7 @@ export const allocation = v.object({
 });
 export const claimFields = {
   ...scopeFields,
+  historical: v.optional(v.boolean()),
   operationKey: v.string(),
   expectedRevision: v.number(),
   currency: v.string(),

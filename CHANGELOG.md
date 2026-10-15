@@ -16,10 +16,9 @@
 
 ## [0.16.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.15.0...v0.16.0) (2026-10-15)
 
-
 ### Features
 
-* **reads:** currency summaries and reactive cursor contracts ([#170](https://github.com/FantasticDevHQ/better-stripe/issues/170)) ([5ac85e5](https://github.com/FantasticDevHQ/better-stripe/commit/5ac85e59f1769b6485378971d64888d3f7009c1e))
+- **reads:** currency summaries and reactive cursor contracts ([#170](https://github.com/FantasticDevHQ/better-stripe/issues/170)) ([5ac85e5](https://github.com/FantasticDevHQ/better-stripe/commit/5ac85e59f1769b6485378971d64888d3f7009c1e))
 
 ## [0.15.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.14.0...v0.15.0) (2026-10-15)
 

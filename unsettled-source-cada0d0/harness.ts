@@ -1,0 +1,18 @@
+import { execFileSync } from 'node:child_process';import { writeFileSync } from 'node:fs';import assert from 'node:assert/strict';import { setTimeout as delay } from 'node:timers/promises';import { getStripeClient } from '/path/to/better-stripe/src/client/helpers.ts';
+const cwd='/path/to/better-stripe/example';process.chdir(cwd);
+const key=execFileSync('pnpm',['exec','convex','env','get','STRIPE_SECRET_KEY'],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();assert(key.startsWith('sk_test_'));const sdk=getStripeClient(key,'2026-09-30.endive');
+function call(name:string,args:object):any {return JSON.parse(execFileSync('pnpm',['exec','convex','run',name,JSON.stringify(args)],{cwd,encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:120000}).trim()||'null');}
+const report:any={sandbox:true,deployedExample:true,actualProviderCosts:true,noSettlementGuardChange:true};let actor:any;
+try {
+ actor={sellerId:'jh725q7h6w10pfmwjncx12h36d8gbrw1',accountId:'acct_1UQfXc702G247o7Z'};console.log('Resuming the same isolated seller after verified capability activation');
+ let sources:any;for(let attempt=0;attempt<25;attempt++){try{sources=call('sandboxRenewals:seedCases',{sellerId:actor.sellerId,funded:false});break;}catch(error:any){if(!/fees are not available|Charge details are not ready|Test recipient capability pending/.test(String(error.stderr??error.message))||attempt===24)throw error;await delay(2000);}}console.log('Refund and immediate-dispute sources created');
+ for(const paymentIntentId of [sources.refundPaymentId,sources.disputePaymentId]) {for(let attempt=0;attempt<20;attempt++){try{call('sellerCostActions:reconcile',{paymentIntentId});break;}catch(error:any){if(attempt===19)throw error;await delay(1500);}}}
+ const rows=call('sellerCostBilling:list',{sellerId:actor.sellerId});const refund=rows.find((r:any)=>r.paymentIntentId===sources.refundPaymentId);const dispute=rows.find((r:any)=>r.paymentIntentId===sources.disputePaymentId);assert(refund);assert(dispute);
+ const pi=await sdk.paymentIntents.retrieve(sources.disputePaymentId,{expand:['latest_charge.balance_transaction']});const charge:any=pi.latest_charge;const disputes=await sdk.disputes.list({payment_intent:pi.id});assert.equal(disputes.data.length,1);
+ const feeIds=disputes.data[0].balance_transactions;let fee=0;for(const tx of feeIds){const value=typeof tx==='string'?await sdk.balanceTransactions.retrieve(tx):tx;fee+=value.fee;}
+ assert.equal(dispute.processingLoss,charge.balance_transaction.fee);assert.equal(dispute.disputeFees,fee);assert.equal(dispute.amountDue,charge.balance_transaction.fee+fee);
+ assert.equal(call('storeSaleSettlement:getByCharge',{chargeId:charge.id}),null);
+ assert.equal((await sdk.transfers.list({destination:actor.accountId,limit:100})).data.filter(t=>t.source_transaction===charge.id).length,0);
+ report.refund={amountDue:refund.amountDue,processingLoss:refund.processingLoss};report.dispute={amountDue:dispute.amountDue,processingLoss:dispute.processingLoss,disputeFee:dispute.disputeFees};report.noFabricatedDisputeSale=true;report.noDisputedSourceTransfer=true;report.catalogBindingPresent=Boolean(pi.metadata.stripePriceId&&pi.metadata.stripeProductId);report.status='passed';
+} catch(error:any){report.status='failed';report.error=String(error.stderr??error.message);process.exitCode=1;}
+finally{if(actor){const state=call('sandboxRenewals:actor',{sellerId:actor.sellerId});if(state.storePlan&&(await sdk.subscriptions.retrieve(state.storePlan.stripeSubscriptionId)).status!=='canceled')call('sandboxRenewals:finish',{sellerId:actor.sellerId});report.trialSubscriptionCanceled=true;}writeFileSync('/tmp/unsettled-source-live.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));}

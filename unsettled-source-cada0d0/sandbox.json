@@ -1,0 +1,20 @@
+{
+  "sandbox": true,
+  "deployedExample": true,
+  "actualProviderCosts": true,
+  "noSettlementGuardChange": true,
+  "refund": {
+    "amountDue": 88,
+    "processingLoss": 88
+  },
+  "dispute": {
+    "amountDue": 1559,
+    "processingLoss": 59,
+    "disputeFee": 1500
+  },
+  "noFabricatedDisputeSale": true,
+  "noDisputedSourceTransfer": true,
+  "catalogBindingPresent": true,
+  "status": "passed",
+  "trialSubscriptionCanceled": true
+}

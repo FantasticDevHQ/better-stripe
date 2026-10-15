@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  10:49:46
+   Duration  566ms (transform 56%, import 27%, tests 10%, environment 7%, worker 1%)
+

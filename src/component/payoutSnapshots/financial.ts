@@ -1,3 +1,4 @@
+import { assertLiabilityVersion } from "./liabilities.js";
 import type { Infer } from "convex/values";
 import type { MutationCtx, QueryCtx } from "../_generated/server.js";
 import type { Id, Doc } from "../_generated/dataModel.js";
@@ -9,6 +10,7 @@ export type CollectionScope = {
   ownerKey: string;
   snapshotId?: Id<"payoutSnapshots">;
   operationKey?: string;
+  liabilityRevision?: number;
 };
 /** The complete collector baseline is checked again under the claim's OCC transaction. */
 export async function collectedSources(
@@ -16,7 +18,10 @@ export async function collectedSources(
   scope: CollectionScope,
   observations: Infer<typeof observation>[],
 ) {
-  if (!scope.snapshotId) return undefined;
+  if (!scope.snapshotId) {
+    await assertLiabilityVersion(ctx, scope);
+    return undefined;
+  }
   const h = await ctx.db.get("payoutSnapshots", scope.snapshotId);
   const policy = await readPolicy(ctx, scope);
   if (
@@ -33,6 +38,7 @@ export async function collectedSources(
       (h.readOnly ? h.riskRevision : h.boundRiskRevision)
   )
     throw new Error("Financial payout collection changed or is unavailable.");
+  if (h.readOnly) await assertLiabilityVersion(ctx, scope);
   if (
     observations.length !== h.sourceCount ||
     new Set(observations.map((o) => o.stripeTransferId)).size !== h.sourceCount

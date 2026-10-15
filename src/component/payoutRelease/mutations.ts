@@ -49,6 +49,7 @@ export const claim = mutation({
     independentLiabilities: v.number(),
     observations: v.array(observation),
     snapshotId: v.optional(v.id("payoutSnapshots")),
+    liabilityRevision: v.optional(v.number()),
   },
   returns: v.union(claimDoc, held),
   handler: async (ctx, args) => {
@@ -112,7 +113,11 @@ export const claim = mutation({
       ...(args.destinationId ? { destinationId: args.destinationId } : {}),
       allocations: plan.allocations,
       observations: args.observations,
+      independentLiabilities: args.independentLiabilities,
       ...(args.snapshotId ? { snapshotId: args.snapshotId } : {}),
+      ...(args.liabilityRevision === undefined
+        ? {}
+        : { liabilityRevision: args.liabilityRevision }),
       feeRevision: fees?.revision ?? 0,
       status: "reserved",
     });

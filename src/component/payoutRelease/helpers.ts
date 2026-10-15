@@ -185,6 +185,8 @@ export function payoutClaimFingerprint(c: Doc<"payoutReleaseClaims">) {
     c.operationKey,
     c.historical ?? false,
     c.snapshotId,
+    c.liabilityRevision,
+    c.independentLiabilities,
     c.currency,
     c.amount,
     c.status,

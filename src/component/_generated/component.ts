@@ -2689,6 +2689,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        payoutQuote: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; scopeKey: string },
+          { independentLiabilities: number; liabilityRevision: number },
+          Name
+        >;
         reservation: FunctionReference<
           "query",
           "internal",
@@ -3273,6 +3280,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3325,6 +3334,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3376,6 +3387,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3414,6 +3427,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationId?: string;
             expectedRevision: number;
             independentLiabilities: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3446,6 +3460,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3520,6 +3536,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3577,6 +3595,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3637,6 +3657,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3702,6 +3724,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3740,6 +3764,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             expectedRevision: number;
             independentLiabilities: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3809,6 +3834,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 expectedRevision: number;
                 feeRevision?: number;
                 historical?: boolean;
+                independentLiabilities?: number;
+                liabilityRevision?: number;
                 observations: Array<{
                   currency: string;
                   ledgerFingerprint: string;
@@ -4059,6 +4086,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;

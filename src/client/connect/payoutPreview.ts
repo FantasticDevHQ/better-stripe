@@ -14,6 +14,7 @@ export type PayoutPreviewOptions = {
   ownerKey: string;
   currency: string;
   independentLiabilities: number;
+  liabilityRevision?: number;
   maxPages?: number;
 };
 export type PayoutPreview =
@@ -75,6 +76,9 @@ export async function previewRecipientPayout(
         currency: opts.currency,
         expectedRevision: controls.policy.revision,
         observations: proof.observations,
+        ...(opts.liabilityRevision === undefined
+          ? {}
+          : { liabilityRevision: opts.liabilityRevision }),
         ...(proof.collection
           ? { snapshotId: proof.collection.snapshotId }
           : {}),

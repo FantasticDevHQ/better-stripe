@@ -127,6 +127,9 @@ export class PayoutWorkerClient {
             ...scope,
             operationKey,
             independentLiabilities: opts.independentLiabilities,
+            ...(opts.liabilityRevision === undefined
+              ? {}
+              : { liabilityRevision: opts.liabilityRevision }),
             maxPages: opts.maxPages,
           });
     } catch (error) {

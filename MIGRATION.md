@@ -198,3 +198,9 @@ A cancellation timestamp at another date is not classified as period-end cancell
 See the [read contract guide](docs/read-contracts.md) for reactive product, price and payout
 cursors, exact currency summaries, legacy backfill, payout failure details, and
 published-version adoption requirements.
+
+## Versioned payout recovery quotes
+
+Hosts with component recovery balance records must now pass `stripe.costRecovery.payoutQuote(ctx, authorizedScope)` into payout preview/release/worker options. Pass the returned `independentLiabilities` and `liabilityRevision` together for the same authorized account/currency/scope. Calls without a required version fail safely; accounts without recovery records retain the unversioned path. The example adapters are updated. Additional host-owned liabilities still require host authorization and consistency guards; the component version does not cover external databases.
+
+Do not backfill old attempted claims with guessed quotes. Reconcile their existing request, or replay an unattempted operation to cancel its exact reservations, then use a new operation and fresh quote. Obsolete read-only collection fingerprints can be discarded and recollected; financially bound or unresolved claim state must remain intact.

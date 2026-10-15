@@ -241,6 +241,14 @@ export class CostRecoveryClient {
   ) {
     return this.mutate<RecoveryClaim>(ctx, "mutations/rollback", opts);
   }
+  /** Host authorizes the recovery scope; pass this atomic quote unchanged to payout qualification. */
+  payoutQuote(ctx: RunCtx, opts: RecoveryScope) {
+    const { accountId, scopeKey, currency } = opts;
+    return this.query<{
+      independentLiabilities: number;
+      liabilityRevision: number;
+    }>(ctx, "payoutQuote", { accountId, scopeKey, currency });
+  }
   balance(ctx: RunCtx, opts: RecoveryScope) {
     return this.query<RecoveryBalance>(ctx, "balance", opts);
   }

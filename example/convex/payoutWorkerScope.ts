@@ -7,7 +7,10 @@ export const scope = { ...recipient, currency: v.string() };
 /** Demo owner binding. A production host must use its authenticated shared recipient mapping. */
 export const liabilities = internalQuery({
   args: scope,
-  returns: v.number(),
+  returns: v.object({
+    independentLiabilities: v.number(),
+    liabilityRevision: v.number(),
+  }),
   handler: async (ctx, args) => {
     if (!/^[a-z]{3}$/.test(args.currency))
       throw new Error("Invalid payout currency.");
@@ -19,16 +22,11 @@ export const liabilities = internalQuery({
       !["seller", "affiliate"].includes(user.role)
     )
       throw new Error("Automatic payout owner binding is unavailable.");
-    if (user.role !== "seller") return 0;
-    const balance = await stripe.costRecovery.balance(
+    // The component reads this authorized scope's amount and account version atomically.
+    // Outstanding invoice reservations remain owed until collection is verified.
+    return stripe.costRecovery.payoutQuote(
       ctx,
       costScope(user._id, args.accountId, args.currency),
     );
-    // Outstanding invoice reservations remain liabilities until their collection is verified.
-    // Collected recovery is already reflected in the amount transferred to this store.
-    const liability = balance.amountDue - balance.collectedAmount;
-    if (!Number.isSafeInteger(liability))
-      throw new Error("Invalid payout liability amount.");
-    return Math.max(0, liability);
   },
 });

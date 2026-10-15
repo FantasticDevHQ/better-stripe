@@ -14,6 +14,8 @@ export const claimFields = {
   ...scopeFields,
   historical: v.optional(v.boolean()),
   snapshotId: v.optional(v.id("payoutSnapshots")),
+  liabilityRevision: v.optional(v.number()),
+  independentLiabilities: v.optional(v.number()),
   operationKey: v.string(),
   expectedRevision: v.number(),
   currency: v.string(),

@@ -1,3 +1,4 @@
+import { riskRevision } from "../payoutSnapshots/revisions.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
 import { paginationOptsValidator } from "convex/server";
@@ -87,4 +88,24 @@ export const claim = query({
       .query("recoveryClaims")
       .withIndex("by_key", (q) => q.eq("claimKey", args.claimKey))
       .unique(),
+});
+
+/** Amount and account version come from the same database snapshot. Host authorizes this scope. */
+export const payoutQuote = query({
+  args: scopeFields,
+  returns: v.object({
+    independentLiabilities: v.number(),
+    liabilityRevision: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    validateScope(args);
+    const balance = await readBalance(ctx, args);
+    const amount = (balance?.amountDue ?? 0) - (balance?.collectedAmount ?? 0);
+    if (!Number.isSafeInteger(amount))
+      throw new Error("Invalid payout recovery liability.");
+    return {
+      independentLiabilities: Math.max(0, amount),
+      liabilityRevision: await riskRevision(ctx, args.accountId),
+    };
+  },
 });

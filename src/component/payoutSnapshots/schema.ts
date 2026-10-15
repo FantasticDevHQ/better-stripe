@@ -11,6 +11,7 @@ export const riskKind = v.union(
   v.literal("allocation"),
   v.literal("claim"),
   v.literal("fee"),
+  v.literal("liability"),
 );
 export const riskEventsTable = defineTable({
   accountId: v.string(),

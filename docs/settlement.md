@@ -842,3 +842,45 @@ entitlement. Refunds/reversals still reduce qualifying funds. Provider floors
 remain provider-enforced and numerically unknown when not exposed. Reassess fresh
 receipts and balances on the next scheduled attempt rather than manually
 recreating uncertain requests.
+
+### Versioned recovery liabilities
+
+Resolve seller refund/dispute costs and their account version in one component query:
+
+```ts
+const quote = await stripe.costRecovery.payoutQuote(ctx, {
+  accountId,
+  scopeKey: authorizedRecoveryScope,
+  currency,
+});
+await stripe.payoutPolicy.worker.run(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+  ...quote,
+});
+```
+
+Use the same quote with `preview` or `release`. The amount is
+`max(0, amountDue - collectedAmount)` for that authorized recovery scope;
+invoice reservations remain owed until collection is verified. Provider-collected
+costs are not deducted again. Keep the amount and `liabilityRevision` together,
+for the same account, scope and currency. Use an authorized user-level scope
+when costs span communities; the host remains responsible for including all
+other authorized debts/reserves and for versioning state outside this component.
+The package's revision does not version an external host database.
+
+Recovery amount changes enter the payout risk journal. The financial boundary
+rejects an old quote, and a bound claim checks the current risk revision again
+before its attempt. Its own reservation writes are included in the binding.
+A source/fee/recovery change requires a new assessment; unattempted reservations
+are canceled exactly on replay. An attempted or unknown payout still reconciles
+its immutable request. New claims retain the approved `independentLiabilities`
+and `liabilityRevision` for audit.
+
+Legacy unversioned calls remain valid for accounts without recovery balance
+records. Once such records exist, obtain a quote; missing versions fail safely.
+The example's worker and preview adapters do this automatically. Old unattempted
+claims are canceled on replay, rather than retroactively supplied with a guessed
+quote. Restart obsolete read-only collections after upgrading their fingerprint
+format; never clear unresolved financial claims to bypass validation.

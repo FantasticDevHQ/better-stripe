@@ -83,13 +83,13 @@ export const attempt = internalAction({
   args: scope,
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    const independentLiabilities = await ctx.runQuery(
+    const liabilityQuote = await ctx.runQuery(
       internal.payoutWorkerScope.liabilities,
       args,
     );
     const result = await stripe.payoutPolicy.worker.run(ctx, {
       ...args,
-      independentLiabilities,
+      ...liabilityQuote,
     });
     if (
       result.status === "completed" &&

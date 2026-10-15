@@ -36,6 +36,7 @@ export type PayoutProofScope = {
   ownerKey: string;
   currency: string;
   operationKey?: string;
+  liabilityRevision?: number;
 };
 /** Shared provider qualification. It can reconcile existing receipts, but never creates a bank payout. */
 export async function collectPayoutQualification(
@@ -60,7 +61,7 @@ export async function collectPayoutQualification(
     { accountId: opts.accountId, ownerKey: opts.ownerKey },
   )) as Snapshot;
   let collection: CollectionRef | undefined;
-  if (snapshot.status !== "ready") {
+  if (snapshot.status !== "ready" || opts.liabilityRevision !== undefined) {
     const large = await collectLargePayoutInput(component, ctx, opts, maxPages);
     if (large.status !== "ready") return large;
     collection = large.collection;

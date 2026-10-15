@@ -21,6 +21,7 @@ export type PayoutReleaseOptions = {
   currency: string;
   /** Host supplies all authorized off-provider debts/reserves, without double counting provider receipt debits. */
   independentLiabilities: number;
+  liabilityRevision?: number;
   maxPages?: number;
 };
 type Held = { status: "held"; reason: string };
@@ -115,6 +116,9 @@ export async function releaseRecipientPayout(
         providerAvailable: proof.providerAvailable,
         independentLiabilities: opts.independentLiabilities,
         observations: proof.observations,
+        ...(opts.liabilityRevision === undefined
+          ? {}
+          : { liabilityRevision: opts.liabilityRevision }),
         ...(proof.collection
           ? { snapshotId: proof.collection.snapshotId }
           : {}),

@@ -18,6 +18,7 @@ export async function readPayoutPlan(
     observations: Infer<typeof observation>[];
     snapshotId?: Id<"payoutSnapshots">;
     operationKey?: string;
+    liabilityRevision?: number;
     providerAvailable: number;
     independentLiabilities: number;
   },

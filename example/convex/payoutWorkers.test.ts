@@ -156,7 +156,10 @@ it("uncollected seller costs stay withheld even when reserved on an unpaid invoi
       ownerKey: s.userId,
       currency: "usd",
     }),
-  ).toBe(200);
+  ).toMatchObject({
+    independentLiabilities: 200,
+    liabilityRevision: expect.any(Number),
+  });
   await s.t.action(internal.payoutWorkers.attempt, {
     accountId: "acct_recipient",
     ownerKey: s.userId,

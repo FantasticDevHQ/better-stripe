@@ -1,0 +1,34 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |example| example/convex/recipientPayoutPolicy.test.ts (11 tests | 1 failed) 285ms
+   × replays a completed change after another currency changes without rolling settings back 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/recipientPayoutPolicy.test.ts > replays a completed change after another currency changes without rolling settings back
+Error: Payout policy operation identity cannot be reused.
+ ❯ PayoutPolicyClient.prepare src/client/payoutPolicy.ts:322:15
+ ❯ handler example/convex/recipientPayoutPolicy.ts:92:22
+     90|     // Revision fixes the other currencies. Identical retries address …
+     91|     const operationKey = `example:payout-settings:${args.userId}:${arg…
+     92|     const prepared = await stripe.payoutPolicy.prepare(ctx, {
+       |                      ^
+     93|       ...scope,
+     94|       operationKey,
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:513:18
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2055:35
+ ❯ runActionWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2053:16
+ ❯ Object.actionFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2134:28
+ ❯ action node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:20
+ ❯ example/convex/recipientPayoutPolicy.test.ts:195:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  22:39:06
+   Duration  1.24s (transform 56%, tests 25%, import 16%, environment 3%)
+

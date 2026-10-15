@@ -1,0 +1,30 @@
+{
+  "sourceRevision": "3c3e46b822922e3c1005851446bbabe5b41f447a",
+  "sandbox": true,
+  "records": [
+    {
+      "persona": "Jordan Seller",
+      "accountId": "acct_1UQ78i6BzLJ03jfw",
+      "dashboard": "express",
+      "schedule": {
+        "interval": "daily"
+      }
+    },
+    {
+      "persona": "Maya Merchant",
+      "accountId": "acct_1UQ78o7xOsB2U2nM",
+      "dashboard": "none",
+      "schedule": {
+        "interval": "daily"
+      }
+    },
+    {
+      "persona": "Avery Affiliate",
+      "accountId": "acct_1UQ7968nH9jL5c4a",
+      "dashboard": "none",
+      "schedule": {
+        "interval": "daily"
+      }
+    }
+  ]
+}

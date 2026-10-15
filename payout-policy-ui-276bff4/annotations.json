@@ -1,0 +1,56 @@
+{
+  "sourceRevision": "276bff457080d01a979122776019fd623d2b40c7",
+  "annotations": [
+    {
+      "at": "2026-10-15T16:17:30.783Z",
+      "type": "setup",
+      "text": "276bff4 \u2022 real Stripe sandbox \u2022 Jordan seller"
+    },
+    {
+      "at": "2026-10-15T16:17:31.901Z",
+      "type": "test_start",
+      "text": "It should require explicit consent"
+    },
+    {
+      "at": "2026-10-15T16:17:33.150Z",
+      "type": "assertion",
+      "text": "Save disabled until custom-hold consent",
+      "result": "passed"
+    },
+    {
+      "at": "2026-10-15T16:17:35.112Z",
+      "type": "assertion",
+      "text": "Unsupported controls remain explicit",
+      "result": "passed"
+    },
+    {
+      "at": "2026-10-15T16:17:36.287Z",
+      "type": "assertion",
+      "text": "API and Components share the same policy layout",
+      "result": "passed"
+    },
+    {
+      "at": "2026-10-15T16:17:38.720Z",
+      "type": "test_start",
+      "text": "It should reconcile existing funds before activation"
+    },
+    {
+      "at": "2026-10-15T16:17:41.336Z",
+      "type": "assertion",
+      "text": "Funded account remains unactivated pending reconciliation",
+      "result": "passed"
+    },
+    {
+      "at": "2026-10-15T16:17:43.840Z",
+      "type": "assertion",
+      "text": "Affiliate payout policy precedes recovery history",
+      "result": "passed"
+    },
+    {
+      "at": "2026-10-15T16:17:45.067Z",
+      "type": "assertion",
+      "text": "Reusable controls remain readable in dark mode",
+      "result": "passed"
+    }
+  ]
+}

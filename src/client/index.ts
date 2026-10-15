@@ -1,3 +1,7 @@
+import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
+export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
+import * as intentsImpl from "./billing/intents.js";
+export type * from "./billing/intents.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -88,7 +92,7 @@ import * as transfersImpl from "./connect/transfers.js";
 import * as accountLinksImpl from "./core/accountLinks.js";
 import * as accountsImpl from "./core/accounts.js";
 import * as configImpl from "./core/config.js";
-import { resolveFeeConfig, validatePlatformFee } from "./core/fees.js";
+import * as fees from "./core/fees.js";
 import { validateStatementDescriptorSuffix } from "./core/descriptors.js";
 export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
@@ -204,14 +208,6 @@ export type {
 
 export type BetterStripeComponent = ComponentApi;
 
-/** Deep-copy a platform fee config so stored/returned values can't be mutated. */
-function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
-  return {
-    ...config,
-    tiers: config.tiers?.map((tier) => ({ ...tier })),
-  };
-}
-
 // BETTER STRIPE CLIENT
 
 export class BetterStripe {
@@ -230,10 +226,10 @@ export class BetterStripe {
     this._triggers = options?.triggers;
     this._hooks = options?.hooks;
     if (options?.platformFee !== undefined) {
-      validatePlatformFee(options.platformFee);
+      fees.validatePlatformFee(options.platformFee);
       // Store a defensive copy so later mutation of the caller's object can't
       // silently bypass validation or change runtime behavior.
-      this._platformFee = clonePlatformFee(options.platformFee);
+      this._platformFee = fees.clonePlatformFee(options.platformFee);
     }
     if (options?.statementDescriptorSuffix !== undefined) {
       this._statementDescriptorSuffix = validateStatementDescriptorSuffix(
@@ -252,7 +248,7 @@ export class BetterStripe {
 
   /** The configured default platform fee (the platform's take), if any. */
   get platformFee(): PlatformFeeConfig | undefined {
-    return this._platformFee && clonePlatformFee(this._platformFee);
+    return this._platformFee && fees.clonePlatformFee(this._platformFee);
   }
 
   /**
@@ -260,8 +256,8 @@ export class BetterStripe {
    * default. The fee math itself is applied at charge time (M2).
    */
   resolveFee(override?: FeeOverride): PlatformFeeConfig | undefined {
-    const resolved = resolveFeeConfig(this._platformFee, override);
-    return resolved && clonePlatformFee(resolved);
+    const resolved = fees.resolveFeeConfig(this._platformFee, override);
+    return resolved && fees.clonePlatformFee(resolved);
   }
 
   get apiKey(): string {
@@ -657,34 +653,35 @@ export class BetterStripe {
     return pricesImpl.listStripePrices(this.stripe(), ctx, opts);
   }
 
+  /** Card-only one-time checkout. Host authorizes price and authenticated customer. */
+  async createPaymentIntent(
+    ctx: RunCtx,
+    opts: intentsImpl.CreatePaymentIntentOptions,
+  ) {
+    return intentsImpl.createPaymentIntent(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  /** Provision consented card setup; confirmation and authentication happen in Stripe.js. */
+  async createSetupIntent(
+    ctx: RunCtx,
+    opts: intentsImpl.CreateSetupIntentOptions,
+  ) {
+    return intentsImpl.createSetupIntent(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
   // CHECKOUT METHODS
 
-  async createCheckoutSession(
-    ctx: RunCtx,
-    opts: {
-      idempotencyKey?: string;
-      userId: string;
-      orgId?: string;
-      stripePriceId: string;
-      mode: "payment" | "subscription" | "setup";
-      uiMode?: "embedded" | "redirect" | "custom" | "form";
-      quantity?: number;
-      returnUrl: string;
-      trialDays?: number;
-      accountId?: string;
-      customerEmail?: string;
-      /** Seller/recipient connected account to route funds to (destination charge). */
-      destinationAccountId?: string;
-      /** Multiple recipients (store + affiliate[s]); >1 routes via separate charges & transfers. */
-      split?: SplitRecipient[];
-      /** Per-call platform fee override; falls back to the configured default. */
-      fee?: FeeOverride;
-      /** Charge total (minor units) for one-time payment fee computation. */
-      amount?: number;
-      metadata?: Record<string, string>;
-      sessionOverrides?: Record<string, unknown>;
-    },
-  ) {
+  async createCheckoutSession(ctx: RunCtx, opts: CreateCheckoutSessionOptions) {
     const { fee, ...rest } = opts;
     return checkoutImpl.createCheckoutSession(
       this.stripe(),

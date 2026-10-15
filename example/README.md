@@ -1148,3 +1148,15 @@ commission. Once stored, the database claim identifies that invoice on later
 settlements. An unclaimed One-time subscription with more than 100 paid invoices
 requires review instead of guessing; existing subscriptions without a term keep
 Forever.
+
+The Payment Intent checkout adapter now delegates creation to the public
+`BetterStripe.createPaymentIntent` API after resolving the demo customer, store,
+price and referral context. It preserves sale settlement metadata, guest
+purchases and stable request keys. Amount/currency validation also occurs against
+Stripe's live platform price. Demo personas are not production authentication.
+
+For saved cards, use the exported unstyled `SaveCard` workflow with an authorized
+`createSetupIntent` server callback. The demo's existing tokenization/attach
+screen remains compatible and does not demonstrate completed SetupIntent/SCA
+verification. See the [setup workflow contract](../docs/react-workflows.md#save-a-card-through-setupintent-confirmation)
+for consent, redirect recovery and durable request requirements.

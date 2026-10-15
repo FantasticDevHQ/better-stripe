@@ -3,7 +3,6 @@ import { action, query, env } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { stripe } from "./stripe";
 import { assertTestModeStripeKey } from "./authz";
-import { getStripeClient } from "./lib/stripeClient";
 import { isAffiliateReferral } from "./affiliateSplit";
 export const describePrice = query({
   args: { stripePriceId: v.string() },
@@ -75,31 +74,24 @@ export const createPaymentIntent = action({
     const referred = isAffiliateReferral(args.referralCode);
     if (referred && !identity.affiliateAccountId)
       throw new Error("The affiliate account is not ready.");
-    const payment = await getStripeClient().paymentIntents.create(
-      {
-        amount: price.unitAmount!,
-        currency: price.currency,
-        customer_account: customer?.stripeAccountId,
-        receipt_email: identity.email,
-        automatic_payment_methods: { enabled: true },
-        metadata: {
-          userId: identity.userId,
-          storeBilling: "sale_v1",
-          sellerId: identity.sellerId,
-          planId: identity.planId,
-          affiliateAccountId: referred ? identity.affiliateAccountId! : "",
-          productName: product.name,
-          stripeProductId: price.stripeProductId,
-          stripePriceId: args.stripePriceId,
-          checkoutType: "payment_intent",
-        },
+    return await stripe.createPaymentIntent(ctx, {
+      userId: identity.userId,
+      stripePriceId: args.stripePriceId,
+      customerAccount: customer?.stripeAccountId,
+      receiptEmail: identity.email,
+      paymentMethods: "automatic",
+      idempotencyKey: `example_pi_${identity.userId || "guest"}_${args.stripePriceId}_${args.requestId}`,
+      metadata: {
+        userId: identity.userId,
+        storeBilling: "sale_v1",
+        sellerId: identity.sellerId,
+        planId: identity.planId,
+        affiliateAccountId: referred ? identity.affiliateAccountId! : "",
+        productName: product.name,
+        stripeProductId: price.stripeProductId,
+        stripePriceId: args.stripePriceId,
+        checkoutType: "payment_intent",
       },
-      {
-        idempotencyKey: `example_pi_${identity.userId || "guest"}_${args.stripePriceId}_${args.requestId}`,
-      },
-    );
-    if (!payment.client_secret)
-      throw new Error("Stripe did not return a payment secret.");
-    return { paymentIntentId: payment.id, clientSecret: payment.client_secret };
+    });
   },
 });

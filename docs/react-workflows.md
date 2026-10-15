@@ -531,3 +531,44 @@ implementation PR. Version 0.13.0 does not contain them. Consumers must upgrade
 to that release before removing their navigation guard or using the upload API.
 Production storage, session authorization, styling, translations and extended
 hosted onboarding verification remain application responsibilities.
+
+## Save a card through SetupIntent confirmation
+
+`SaveCard` provisions a customer-bound SetupIntent through an authenticated
+`createSetupIntent({ requestId })` callback and mounts Payment Element. It keeps
+creation retries on the same request, blocks duplicate confirmation, exposes
+failures and only calls `onSuccess(setupIntentId)` after Stripe reports
+`succeeded`. Stripe.js handles required authentication and redirects.
+
+```tsx
+<SaveCard
+  publishableKey={publishableKey}
+  scopeKey={`${authenticatedUserId}:${customerAccount}:off_session`}
+  requestId={persistedSaveRequestId}
+  returnUrl="https://app.example/billing/cards"
+  createSetupIntent={createAuthorizedSetupIntent}
+  onSuccess={refreshPaymentMethods}
+/>
+```
+
+The host callback calls `stripe.createSetupIntent(ctx, { userId,
+customerAccount, usage: "off_session", consent: true, idempotencyKey })` with
+server-resolved values. Record consent to the selected usage before mounting
+this workflow. The default confirmation checkbox separately grants permission
+to save and redisplay the card, sent as `allow_redisplay: "always"`. Use
+`renderForm` for your own disclosures, consent copy, Payment Element, pending
+state and errors. `useConfirmPayment().confirmSetup(returnUrl, allowRedisplay)`
+supports `always`, `limited` and `unspecified` when a different redisplay policy
+is required. Off-session usage does not guarantee that future payments will
+never require authentication.
+
+Persist the logical request and immutable customer/usage scope server-side.
+`requestId` and `scopeKey` isolate UI lifecycles; they do not authorize access.
+Handle redirect returns by retrieving the SetupIntent through an authenticated
+server adapter and checking ownership and status before displaying completion.
+Do not infer success from a URL parameter. Do not attach the confirmed method
+again or treat confirmation as changing a subscription default.
+
+Existing `AddCardForm` and `PaymentMethods` tokenization/attach integrations remain
+available. Tokenization plus attachment does not complete SetupIntent or SCA
+verification.

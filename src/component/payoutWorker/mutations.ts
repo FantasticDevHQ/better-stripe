@@ -180,7 +180,9 @@ export const finish = mutation({
     if (claim && claim.currency !== job.currency)
       throw new Error("Worker payout currency changed.");
     const retain =
-      claim?.status === "reserved" || claim?.status === "submitted";
+      args.reason === "collection_pending" ||
+      claim?.status === "reserved" ||
+      claim?.status === "submitted";
     await ctx.db.patch("payoutWorkerJobs", job._id, {
       operationKey: retain ? job.operationKey : undefined,
       hasOperation: retain,

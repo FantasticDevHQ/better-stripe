@@ -18,6 +18,12 @@ const messages: Record<string, string> = {
     "No payout was requested because the supported available Stripe balance is insufficient.",
   schedule_drift:
     "Payout scheduling changed outside the application. Contact platform support to verify controls.",
+  collection_pending:
+    "Complete payout history is still being collected. This collection has not requested a new bank payout; the automatic worker will resume the same collection.",
+  collection_invalidated:
+    "Payout history changed during collection. A fresh assessment is required before funds can qualify.",
+  collection_requires_action:
+    "This account requires a server action to collect its complete payout history.",
   snapshot_limit:
     "History reconciliation is incomplete. No payout was requested from a partial balance.",
   policy_inactive:

@@ -1,4 +1,9 @@
 import {
+  collectedSources,
+  bindCollection,
+  retireCollection,
+} from "../payoutSnapshots/financial.js";
+import {
   reserveRecoveryGuard,
   releaseRecoveryGuard,
 } from "../affiliatePayouts/recipientGuard.js";
@@ -43,6 +48,7 @@ export const claim = mutation({
     providerAvailable: v.number(),
     independentLiabilities: v.number(),
     observations: v.array(observation),
+    snapshotId: v.optional(v.id("payoutSnapshots")),
   },
   returns: v.union(claimDoc, held),
   handler: async (ctx, args) => {
@@ -106,10 +112,13 @@ export const claim = mutation({
       ...(args.destinationId ? { destinationId: args.destinationId } : {}),
       allocations: plan.allocations,
       observations: args.observations,
+      ...(args.snapshotId ? { snapshotId: args.snapshotId } : {}),
       feeRevision: fees?.revision ?? 0,
       status: "reserved",
     });
-    return (await ctx.db.get("payoutReleaseClaims", id))!;
+    const claim = (await ctx.db.get("payoutReleaseClaims", id))!;
+    await bindCollection(ctx, claim);
+    return claim;
   },
 });
 export const beginAttempt = mutation({
@@ -130,11 +139,13 @@ export const beginAttempt = mutation({
       claim.observations,
       true,
       claim.currency,
+      await collectedSources(ctx, claim, claim.observations),
     );
     await reserveRecoveryGuard(ctx, claim, claim.amount);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       attemptedAt: Date.now(),
     });
+    await retireCollection(ctx, claim);
     return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
   },
 });
@@ -151,6 +162,7 @@ export const cancelUnattempted = mutation({
       throw new Error("An attempted payout claim cannot be canceled.");
     if (claim.status === "canceled") return claim;
     await moveAllocations(ctx, claim, "release");
+    await retireCollection(ctx, claim);
     await releaseRecoveryGuard(ctx, claim);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       status: "canceled",

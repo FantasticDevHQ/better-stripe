@@ -13,6 +13,7 @@ export const allocation = v.object({
 export const claimFields = {
   ...scopeFields,
   historical: v.optional(v.boolean()),
+  snapshotId: v.optional(v.id("payoutSnapshots")),
   operationKey: v.string(),
   expectedRevision: v.number(),
   currency: v.string(),

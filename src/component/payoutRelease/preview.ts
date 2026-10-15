@@ -14,6 +14,7 @@ export const previewFields = {
   providerAvailable: v.number(),
   independentLiabilities: v.number(),
   observations: v.array(observation),
+  snapshotId: v.optional(v.id("payoutSnapshots")),
 };
 const held = v.object({
   status: v.literal("held"),

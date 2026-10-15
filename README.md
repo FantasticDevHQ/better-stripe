@@ -1742,3 +1742,5 @@ Holding-expiry recovery remains visible and retryable after schedule restoration
 Automatic payout status is reusable through `payoutAttemptStatus`, `payoutAttemptValidator`, and the React `PayoutAttemptStatus` workflow. Rejection reasons and retry times remain separate from eligibility previews and bank arrival dates. See [React workflow guidance](docs/react-workflows.md).
 
 Payout qualification renews source verification for the selected currency only after a complete matching provider-history check. Slower receipt scans retain the same freshness and local reservation safeguards; partial or changed history stays held. See [settlement guidance](docs/settlement.md).
+
+Automatic combined payouts use a complete paginated ledger collection above 100 historical sources or claims. The collection is checked and bound to the immutable claim before Stripe is contacted; incomplete scans resume without authorizing money. See [settlement guidance](docs/settlement.md#resumable-local-collections).

@@ -1,3 +1,8 @@
+import {
+  collectLargePayoutInput,
+  type CollectionRef,
+  type PayoutInput,
+} from "./payoutCollectedInput.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { Component, RunCtx } from "../helpers.js";
@@ -30,6 +35,7 @@ export type PayoutProofScope = {
   accountId: string;
   ownerKey: string;
   currency: string;
+  operationKey?: string;
 };
 /** Shared provider qualification. It can reconcile existing receipts, but never creates a bank payout. */
 export async function collectPayoutQualification(
@@ -39,20 +45,45 @@ export async function collectPayoutQualification(
   opts: PayoutProofScope,
   maxPages: number,
 ): Promise<
-  | Held
+  | (Held & { collection?: CollectionRef })
   | {
       status: "verified";
+      collection?: CollectionRef;
       observations: Infer<typeof observation>[];
       destinationId: string;
       providerAvailable: number;
       observedAt: number;
     }
 > {
-  const snapshot = (await ctx.runQuery(
+  let snapshot = (await ctx.runQuery(
     componentRef(component, "payoutRelease/queries/snapshot"),
     { accountId: opts.accountId, ownerKey: opts.ownerKey },
   )) as Snapshot;
-  if (snapshot.status !== "ready") return snapshot;
+  let collection: CollectionRef | undefined;
+  if (snapshot.status !== "ready") {
+    const large = await collectLargePayoutInput(component, ctx, opts, maxPages);
+    if (large.status !== "ready") return large;
+    collection = large.collection;
+    snapshot = large;
+  }
+  const result = await qualifyInput(
+    stripe,
+    component,
+    ctx,
+    opts,
+    maxPages,
+    snapshot,
+  );
+  return { ...result, ...(collection ? { collection } : {}) };
+}
+async function qualifyInput(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: PayoutProofScope,
+  maxPages: number,
+  snapshot: PayoutInput,
+): Promise<Awaited<ReturnType<typeof collectPayoutQualification>>> {
   const banks: string[] = [];
   let bankCursor: string | undefined;
   for (let page = 0; ; page++) {
@@ -109,24 +140,33 @@ export async function collectPayoutQualification(
         transactions.push({ ...t, sourceId: result.receipt.stripePayoutId });
   }
   const observations = [];
-  for (const row of snapshot.transfers) {
-    const receipt = await getTransferFundingReceipt(stripe, component, ctx, {
-      accountId: opts.accountId,
-      stripeTransferId: row.stripeTransferId,
-    });
-    if (receipt.status !== "ready")
-      return { status: "held", reason: receipt.reason };
-    observations.push({
-      stripeTransferId: row.stripeTransferId,
-      currency: receipt.settlementCurrency,
-      matureNet: receipt.matureNet,
-      pendingCredits: receipt.pendingCredits,
-      ledgerFingerprint: transferFingerprint(row),
-      observedAt: receipt.observedAt,
-      transactionIds: receipt.transactions.map((t) => t.id),
-    });
-    if (receipt.settlementCurrency === opts.currency)
-      transactions.push(...receipt.transactions);
+  for (let i = 0; i < snapshot.transfers.length; i += 5) {
+    const batch = snapshot.transfers.slice(i, i + 5);
+    const receipts = await Promise.all(
+      batch.map((row) =>
+        getTransferFundingReceipt(stripe, component, ctx, {
+          accountId: opts.accountId,
+          stripeTransferId: row.stripeTransferId,
+        }),
+      ),
+    );
+    for (let j = 0; j < batch.length; j++) {
+      const row = batch[j],
+        receipt = receipts[j];
+      if (receipt.status !== "ready")
+        return { status: "held", reason: receipt.reason };
+      observations.push({
+        stripeTransferId: row.stripeTransferId,
+        currency: receipt.settlementCurrency,
+        matureNet: receipt.matureNet,
+        pendingCredits: receipt.pendingCredits,
+        ledgerFingerprint: transferFingerprint(row),
+        observedAt: receipt.observedAt,
+        transactionIds: receipt.transactions.map((t) => t.id),
+      });
+      if (receipt.settlementCurrency === opts.currency)
+        transactions.push(...receipt.transactions);
+    }
   }
   const history = await verifyPayoutHistory(stripe, {
     accountId: opts.accountId,

@@ -5,6 +5,7 @@ import type { observation } from "./observation.js";
 import { checkSnapshot, sourceById } from "./helpers.js";
 import { readFees } from "./fees.js";
 import { planRecipientPayout, type PayoutFundingSource } from "./allocation.js";
+import { waiveApplicationMinimum } from "./deadline.js";
 import { assertAllocationTotals } from "./allocationTotals.js";
 export async function readPayoutPlan(
   ctx: MutationCtx | QueryCtx,
@@ -45,13 +46,15 @@ export async function readPayoutPlan(
   }
   const fees = await readFees(ctx, args);
   await assertAllocationTotals(ctx, args, sources);
+  const minimumWaived = waiveApplicationMinimum(policy, Date.now());
   const plan = planRecipientPayout({
     currency: args.currency,
-    threshold: minimum.amount,
+    // One minor unit is the positive-money guard, not an asserted provider floor.
+    threshold: minimumWaived ? 1 : minimum.amount,
     providerAvailable: args.providerAvailable,
     independentLiabilities: args.independentLiabilities,
     confirmedFees: fees?.amount ?? 0,
     sources,
   });
-  return { plan, sources, fees, threshold: minimum.amount };
+  return { plan, sources, fees, threshold: minimum.amount, minimumWaived };
 }

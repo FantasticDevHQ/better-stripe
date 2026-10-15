@@ -241,3 +241,26 @@ it("does not display a former custom holding deadline for Stripe-managed payouts
   );
   expect(screen.queryByText(/Custom holding deadline:/)).toBeNull();
 });
+
+it("explains the deadline waiver without a minimum progress bar", () => {
+  render(
+    <PayoutProgress
+      policy={policy}
+      currency="usd"
+      preview={{
+        ...preview,
+        status: "qualified",
+        reason: undefined,
+        amount: 999,
+        minimumWaived: true,
+        holdDeadline: policy.holdDeadline,
+      }}
+    />,
+  );
+  expect(screen.getByRole("status").textContent).toContain("holding deadline");
+  expect(screen.getByRole("status").textContent).toContain(
+    "application minimum is waived",
+  );
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.getByText("Combined payout minimum")).toBeTruthy();
+});

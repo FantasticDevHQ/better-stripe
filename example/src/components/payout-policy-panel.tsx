@@ -326,7 +326,9 @@ function SettingsView({ state }: { state: PayoutSettingsState }) {
               onChange={(event) => state.setConsent(event.target.checked)}
             />
             I agree to hold funds in my Stripe balance until the combined
-            minimum is met, subject to the holding deadline.
+            minimum is met, subject to the holding deadline. The application
+            minimum is waived for final automatic attempts during the last day;
+            Stripe payout limits and balance checks still apply.
           </Label>
           <p className="text-sm text-muted-foreground">
             Custom schedules apply to the entire account. Configure each

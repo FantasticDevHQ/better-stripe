@@ -123,24 +123,36 @@ export function payoutProgressState({
         if (
           preview.currency !== currency ||
           !configured ||
-          configured.amount !== preview.threshold
+          configured.amount !== preview.threshold ||
+          (preview.minimumWaived &&
+            preview.holdDeadline !== policy.holdDeadline)
         )
           throw new Error(
             "Payout progress currency or policy does not match the assessment.",
           );
         state.status = "assessed";
         state.reason = preview.reason ?? null;
-        state.message =
-          preview.status === "qualified"
+        state.message = preview.minimumWaived
+          ? "The holding deadline is approaching. The application minimum is waived for final automatic attempts; provider limits and all balance checks still apply. " +
+            (preview.status === "qualified"
+              ? "The worker will verify eligibility again before any payout."
+              : (reasons[preview.reason ?? ""] ??
+                "Automatic payout remains on hold. Contact support before the deadline."))
+          : preview.status === "qualified"
             ? "The combined balance qualified at the assessment time. The automatic worker will verify it again before any payout."
             : (reasons[preview.reason ?? ""] ??
               "Automatic payout is on hold. Refresh or contact support.");
         state.observedAt = preview.observedAt;
         state.accounting = preview.accounting;
-        state.progress = {
-          value: Math.max(0, Math.min(preview.threshold, preview.matureUnpaid)),
-          max: preview.threshold,
-        };
+        state.progress = preview.minimumWaived
+          ? null
+          : {
+              value: Math.max(
+                0,
+                Math.min(preview.threshold, preview.matureUnpaid),
+              ),
+              max: preview.threshold,
+            };
         const definitions = [
           ["qualifying", "Combined qualifying balance", preview.matureUnpaid],
           ["pending", "Pending settlement", preview.pendingCredits],

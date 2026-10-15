@@ -216,6 +216,28 @@ thresholds never extends the original deadline. Current limits are 10 days for
 Thailand, a conservative 730 days for the US, and 90 days elsewhere; verify
 current provider rules before enabling the feature in production.
 
+During the final 24 hours before the persisted holding deadline, combined release
+waives the optional application minimum. It still verifies source maturity,
+unpaid allocations, live Stripe balance, liabilities, reservations, schedule
+control and provider payout constraints. The one-minor-unit positive amount
+guard is not a claimed Stripe payout floor. The configured minimum and original
+deadline remain unchanged. Preview includes `minimumWaived` and `holdDeadline`
+so hosts can explain eligibility below the saved minimum.
+
+Worker attempts are due at the start of this final window even if an older job
+had a later daily cadence. Within the window, retries are scheduled no more than
+five minutes apart. Hosts must invoke discovery at least that often; stored
+attempt times do not execute themselves. Unknown outcomes retain the same claim
+for reconciliation. A provider floor rejection remains explicit and does not
+consume entitlement.
+
+Restoring a weekly/monthly schedule at expiry is a control fallback, not proof
+of funded disbursement within the country holding window. Monitor approaching
+deadlines and escalate provider failures, unavailable bank destinations,
+unreconciled history and unresolved claims before expiry. Late funded expiry
+and the operator recovery outcome remain separate acceptance work; do not claim
+a successful bank payout from a schedule update alone.
+
 For opt-out, prepare a new operation with the latest revision,
 `mode: "stripe_managed"`, and `thresholds: []`, then apply it. Restoration remains
 available after Dashboard control is lost, subject to Stripe permissions. It

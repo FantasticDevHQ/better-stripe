@@ -1,5 +1,7 @@
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
+import { CheckoutRequestClient } from "./checkoutRequests.js";
+export type { PreparedCheckoutSession } from "./billing/preparedCheckout.js";
 import * as payoutSyncImpl from "./connect/payoutSync.js";
 export type {
   PayoutSyncOptions,
@@ -680,6 +682,14 @@ export class BetterStripe extends ReadContractClient {
   }
 
   // CHECKOUT METHODS
+  get checkoutRequests() {
+    return new CheckoutRequestClient(
+      this.component,
+      () => this.stripe(),
+      (fee) => this.resolveFee(fee),
+      this._statementDescriptorSuffix,
+    );
+  }
 
   async createCheckoutSession(ctx: RunCtx, opts: CreateCheckoutSessionOptions) {
     const { fee, ...rest } = opts;
@@ -697,27 +707,6 @@ export class BetterStripe extends ReadContractClient {
         defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
       },
     );
-  }
-
-  async getCheckoutSession(
-    ctx: RunCtx,
-    opts: { sessionId: string },
-  ): Promise<StripeComponentCheckoutSession | null> {
-    return checkoutImpl.getCheckoutSession(this.component, ctx, opts);
-  }
-
-  async getCheckoutSessionByStripeId(
-    ctx: RunCtx,
-    opts: { stripeSessionId: string },
-  ): Promise<StripeComponentCheckoutSession | null> {
-    return checkoutImpl.getCheckoutSessionByStripeId(this.component, ctx, opts);
-  }
-
-  async listCheckoutSessionsByUser(
-    ctx: RunCtx,
-    opts: { userId: string; status?: string },
-  ): Promise<StripeComponentCheckoutSession[]> {
-    return checkoutImpl.listCheckoutSessionsByUser(this.component, ctx, opts);
   }
 
   async upsertCheckoutSession(

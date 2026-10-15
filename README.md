@@ -47,7 +47,7 @@ separate release boundary; schedule controls alone do not enforce a minimum.
 
 ## Status
 
-**Version**: `0.18.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.19.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 

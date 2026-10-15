@@ -53,7 +53,7 @@ export function AdminStorePlans() {
               <TableRow>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Monthly price (USD)</TableHead>
+                <TableHead>Monthly price</TableHead>
                 <TableHead>Sale fee (%)</TableHead>
                 <TableHead>Affiliate payout</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -75,6 +75,8 @@ export function AdminStorePlans() {
                   }
                 >
                   {({
+                    currency,
+                    inputDecimalPlaces,
                     monthlyPrice,
                     saleFee,
                     setMonthlyPrice,
@@ -97,13 +99,15 @@ export function AdminStorePlans() {
                       <TableCell>
                         <Input
                           className="w-28"
-                          aria-label={`${plan.name} monthly price (USD)`}
+                          aria-label={`${plan.name} monthly price (${currency.toUpperCase()})`}
                           form={`pricing-${plan.id}`}
                           type="number"
-                          min="0.01"
-                          step="0.01"
+                          min={inputDecimalPlaces === 0 ? "1" : "0.01"}
+                          step={inputDecimalPlaces === 0 ? "1" : "0.01"}
                           required
-                          inputMode="decimal"
+                          inputMode={
+                            inputDecimalPlaces === 0 ? "numeric" : "decimal"
+                          }
                           value={monthlyPrice}
                           disabled={isPending}
                           onChange={(event) =>

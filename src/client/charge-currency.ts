@@ -73,6 +73,27 @@ export function parseChargeAmount(
   return units <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(units) : null;
 }
 
+/** Exact ASCII decimal for charge inputs; invalid source units stay unavailable. */
+export function chargeAmountToDecimal(
+  amount: number,
+  currency: string,
+): string | null {
+  const metadata = getChargeCurrencyMetadata(currency);
+  if (
+    !metadata ||
+    !Number.isSafeInteger(amount) ||
+    amount < 0 ||
+    (metadata.displayDecimals === 0 &&
+      amount % 10 ** metadata.apiDecimals !== 0)
+  )
+    return null;
+  const units = BigInt(amount);
+  const scale = 10n ** BigInt(metadata.apiDecimals);
+  const whole = (units / scale).toString();
+  if (metadata.displayDecimals === 0) return whole;
+  return `${whole}.${(units % scale).toString().padStart(metadata.apiDecimals, "0")}`;
+}
+
 /** Format signed integer charge units without floating-point division. */
 export function formatChargeAmount(
   amount: number,

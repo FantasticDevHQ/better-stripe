@@ -284,6 +284,7 @@ export {
 // Complete unstyled workflows
 export * from "./workflows/index.js";
 export {
+  chargeAmountToDecimal,
   getChargeCurrencyMetadata,
   parseChargeAmount,
   formatChargeAmount,

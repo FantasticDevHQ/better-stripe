@@ -1,0 +1,31 @@
+Refreshing checks status every 30 seconds. Press Ctrl+C to quit.
+
+Shadscan UI quality gate (100)	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+ci	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+codegen	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Refreshing checks status every 30 seconds. Press Ctrl+C to quit.
+
+ci	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Refreshing checks status every 30 seconds. Press Ctrl+C to quit.
+
+ci	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Refreshing checks status every 30 seconds. Press Ctrl+C to quit.
+
+ci	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Refreshing checks status every 30 seconds. Press Ctrl+C to quit.
+
+ci	pending	0	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+ci	pass	2m50s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	
+Shadscan UI quality gate (100)	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264111	
+ci	pass	2m50s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716263800	
+codegen	pass	17s	https://github.com/FantasticDevHQ/better-stripe/actions/runs/38820685565/job/116716264163	

@@ -1,0 +1,10 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {getStripeClient} from '/Users/kellykampen/.codex/worktrees/9d5f/better-stripe/dist/client/helpers.js';
+import {getRecipientPayoutReceipt} from '/Users/kellykampen/.codex/worktrees/9d5f/better-stripe/dist/client/connect/payoutReceipt.js';
+const cwd='/tmp/better-stripe-payout-binding-qa',file='/tmp/payout-binding-provider.json',cli='/Users/kellykampen/.codex/worktrees/9d5f/better-stripe/node_modules/.bin/convex';
+const report=JSON.parse(readFileSync(file,'utf8'));assert.equal(report.accountId,'acct_1UQwy7553kfw9JNQ');assert.equal(report.funding.length,205);assert.equal(report.funding.reduce((n,t)=>n+t.amount,0),10250);
+const key=execFileSync(cli,['env','get','STRIPE_SECRET_KEY'],{cwd,env:{...process.env,CONVEX_AGENT_MODE:'',CONVEX_DEPLOYMENT:'anonymous:anonymous-better-stripe-payout-binding-qa'},encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();assert(key.startsWith('sk_test_'));const sdk=getStripeClient(key);
+const actor=await sdk.v2.core.accounts.retrieve(report.accountId);assert.equal(actor.metadata.lifecycleQA,report.run);assert.equal(actor.livemode,false);
+const proof=JSON.parse(readFileSync('/tmp/payout-binding-cron-paid.json','utf8'));const original=new Set(report.historicalPayouts.map(p=>p.id));const payouts=proof.payouts.filter(p=>!original.has(p.id));assert.equal(payouts.length,1);assert.equal(payouts[0].amount,150);const receipt=await getRecipientPayoutReceipt(sdk,{accountId:report.accountId,stripePayoutId:payouts[0].id,operationKey:proof.job.completedOperationKey});assert.equal(receipt.status,'ready');assert.equal(receipt.providerStatus,'paid');writeFileSync('/tmp/payout-binding-final-receipt.json',JSON.stringify(receipt,null,2));console.log({verified:true,payoutId:receipt.stripePayoutId,amount:receipt.amount,debitId:receipt.debit.id,fee:receipt.debit.fee});

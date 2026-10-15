@@ -1,0 +1,30 @@
+{
+  "status": "ready",
+  "accountId": "acct_1UQwy7553kfw9JNQ",
+  "stripePayoutId": "po_1UQxhj553kfw9JNQ0yHydfwz",
+  "operationKey": "bs:auto:nn7dmw24r2q561njn065rrc1a98gb73s:1",
+  "amount": 150,
+  "currency": "usd",
+  "providerStatus": "paid",
+  "automatic": false,
+  "method": "standard",
+  "type": "bank_account",
+  "sourceType": "card",
+  "destinationId": "ba_1UQwyC553kfw9JNQH8XKcRnO",
+  "created": 1792105495,
+  "arrivalDate": 1792108800,
+  "debit": {
+    "id": "txn_1UQxhj553kfw9JNQK8WWD2Ih",
+    "amount": -150,
+    "fee": 0,
+    "net": -150,
+    "currency": "usd",
+    "status": "available",
+    "created": 1792105495,
+    "availableOn": 1792105495,
+    "type": "payout"
+  },
+  "returnedPrincipal": 0,
+  "returnedNet": 0,
+  "observedAt": 1792105559032
+}

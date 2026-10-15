@@ -31,6 +31,7 @@ export const claim = mutation({
     ...identity,
     expectedRevision: v.number(),
     currency: v.string(),
+    destinationId: v.optional(v.string()),
     providerAvailable: v.number(),
     independentLiabilities: v.number(),
     observations: v.array(observation),
@@ -38,11 +39,17 @@ export const claim = mutation({
   returns: v.union(claimDoc, held),
   handler: async (ctx, args) => {
     validateIdentity(args);
+    if (
+      args.destinationId !== undefined &&
+      !/^ba_\w+$/.test(args.destinationId)
+    )
+      throw new Error("Invalid payout bank destination.");
     const existing = await claimByKey(ctx, args);
     if (existing) {
       if (
         existing.currency !== args.currency ||
-        existing.expectedRevision !== args.expectedRevision
+        existing.expectedRevision !== args.expectedRevision ||
+        existing.destinationId !== args.destinationId
       )
         throw new Error("Payout claim identity cannot be reused.");
       return existing;
@@ -122,6 +129,7 @@ export const claim = mutation({
       expectedRevision: args.expectedRevision,
       currency: args.currency,
       amount: plan.amount,
+      ...(args.destinationId ? { destinationId: args.destinationId } : {}),
       allocations: plan.allocations,
       observations: args.observations,
       feeRevision: fees?.revision ?? 0,

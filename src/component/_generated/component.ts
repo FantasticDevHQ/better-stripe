@@ -2494,6 +2494,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2542,6 +2543,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2578,6 +2580,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             accountId: string;
             currency: string;
+            destinationId?: string;
             expectedRevision: number;
             independentLiabilities: number;
             observations: Array<{
@@ -2607,6 +2610,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               currency: string;
               debitFee?: number;
               debitTransactionId?: string;
+              destinationId?: string;
               expectedRevision: number;
               feeRevision?: number;
               observations: Array<{
@@ -2678,6 +2682,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2732,6 +2737,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2789,6 +2795,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2851,6 +2858,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               currency: string;
               debitFee?: number;
               debitTransactionId?: string;
+              destinationId?: string;
               expectedRevision: number;
               feeRevision?: number;
               observations: Array<{
@@ -2902,6 +2910,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 currency: string;
                 debitFee?: number;
                 debitTransactionId?: string;
+                destinationId?: string;
                 expectedRevision: number;
                 feeRevision?: number;
                 observations: Array<{

@@ -99,6 +99,33 @@ export async function releaseRecipientPayout(
     { accountId: opts.accountId, ownerKey: opts.ownerKey },
   )) as Snapshot;
   if (snapshot.status !== "ready") return snapshot;
+  const banks: string[] = [];
+  let bankCursor: string | undefined;
+  for (let page = 0; ; page++) {
+    if (page >= maxPages)
+      return { status: "held", reason: "bank_history_incomplete" };
+    const batch = await stripe.accounts.listExternalAccounts(opts.accountId, {
+      object: "bank_account",
+      limit: 100,
+      ...(bankCursor ? { starting_after: bankCursor } : {}),
+    });
+    for (const bank of batch.data)
+      if (
+        bank.object === "bank_account" &&
+        bank.currency === opts.currency &&
+        bank.default_for_currency &&
+        bank.status !== "errored"
+      )
+        banks.push(bank.id);
+    if (!batch.has_more) break;
+    const next = batch.data[batch.data.length - 1]?.id;
+    if (!next || next === bankCursor)
+      return { status: "held", reason: "bank_history_incomplete" };
+    bankCursor = next;
+  }
+  if (banks.length !== 1 || !/^ba_\w+$/.test(banks[0]))
+    return { status: "held", reason: "bank_destination_unavailable" };
+  const destinationId = banks[0];
   const transactions: TransferReceiptTransaction[] = [];
   for (const claim of snapshot.claims) {
     if (
@@ -154,6 +181,7 @@ export async function releaseRecipientPayout(
       ...identity,
       expectedRevision: controls.policy.revision,
       currency: opts.currency,
+      destinationId,
       providerAvailable: history.providerAvailable,
       independentLiabilities: opts.independentLiabilities,
       observations,
@@ -193,6 +221,7 @@ export async function releaseRecipientPayout(
       {
         amount: claim.amount,
         currency: claim.currency,
+        destination: claim.destinationId,
         method: "standard",
         source_type: "card",
         metadata: { bsPayoutClaim: claim.operationKey },

@@ -68,6 +68,19 @@ async function setup(amounts = [600, 400]) {
   }));
   let payout: Record<string, unknown> | undefined;
   const provider = {
+    accounts: {
+      listExternalAccounts: vi.fn(async () => ({
+        data: [
+          {
+            id: "ba_one",
+            object: "bank_account",
+            currency: "usd",
+            default_for_currency: true,
+          },
+        ],
+        has_more: false,
+      })),
+    },
     transfers: {
       retrieve: vi.fn(async (id: string) => {
         const i = Number(id.slice(3));
@@ -210,6 +223,7 @@ it("automatically releases combined creator and affiliate funds exactly once", a
       currency: "usd",
       method: "standard",
       source_type: "card",
+      destination: "ba_one",
       metadata: { bsPayoutClaim: scope.operationKey },
     },
     {
@@ -450,6 +464,41 @@ it("verified source reversals reduce combined eligibility before reservation", a
     status: "held",
     reason: "below_threshold",
     matureUnpaid: 950,
+  });
+  expect(s.provider.payouts.create).not.toHaveBeenCalled();
+});
+
+it("requires a verified default bank destination before any reservation", async () => {
+  const s = await setup();
+  s.provider.accounts.listExternalAccounts.mockResolvedValue({
+    data: [],
+    has_more: false,
+  });
+  expect(await s.run()).toMatchObject({
+    status: "held",
+    reason: "bank_destination_unavailable",
+  });
+  expect(s.provider.payouts.create).not.toHaveBeenCalled();
+  expect(
+    await s.t.run((ctx) => ctx.db.query("payoutReleaseClaims").collect()),
+  ).toEqual([]);
+});
+it("does not select a partial or ambiguous default-bank page", async () => {
+  const s = await setup();
+  s.provider.accounts.listExternalAccounts.mockResolvedValue({
+    data: [
+      {
+        id: "ba_one",
+        object: "bank_account",
+        currency: "usd",
+        default_for_currency: true,
+      },
+    ],
+    has_more: true,
+  });
+  expect(await s.run({ maxPages: 1 })).toMatchObject({
+    status: "held",
+    reason: "bank_history_incomplete",
   });
   expect(s.provider.payouts.create).not.toHaveBeenCalled();
 });

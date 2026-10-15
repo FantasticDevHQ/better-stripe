@@ -404,7 +404,9 @@ units. Pending credits do not qualify. Outstanding source reservations, prior
 paid allocations, actual refunds, payout fees and supplied independent liabilities
 reduce eligibility. The cap uses the available card-source balance, since the
 immutable provider request explicitly selects `source_type: "card"` and a
-standard bank payout. Other rails and currencies cannot increase that cap.
+standard bank payout. The complete bank-account listing must identify one
+default bank for the settlement currency. Its ID is persisted with the claim,
+passed explicitly to Stripe, and checked again in the payout receipt. Other rails and currencies cannot increase that cap.
 
 A qualifying operation reserves its exact source allocations in a component
 transaction, verifies live controls again, and records the attempted marker before

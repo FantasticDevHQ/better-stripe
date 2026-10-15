@@ -136,6 +136,10 @@ export async function reconcileRecipientPayout(
   });
   if (receipt.status !== "ready")
     return { status: "held", reason: receipt.reason };
+  if (claim.destinationId && receipt.destinationId !== claim.destinationId)
+    throw new Error(
+      "Payout receipt bank destination does not match the durable claim.",
+    );
   if (receipt.amount !== claim.amount || receipt.currency !== claim.currency)
     throw new Error("Payout receipt money does not match the durable claim.");
   if (

@@ -137,7 +137,13 @@ export async function collectPayoutQualification(
   if (history.status !== "verified") return history;
   return {
     status: "verified",
-    observations,
+    // The complete currency history just matched every independently verified
+    // receipt again. Other currencies have not undergone that verification.
+    observations: observations.map((o) =>
+      o.currency === opts.currency
+        ? { ...o, observedAt: history.observedAt }
+        : o,
+    ),
     destinationId,
     providerAvailable: history.providerAvailable,
     observedAt: history.observedAt,

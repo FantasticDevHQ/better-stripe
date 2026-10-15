@@ -725,7 +725,15 @@ assessment with its reason, rather than inventing amounts. Ledger changes during
 the final query reject the assessment and require a refresh.
 
 The preview verifies policy controls again after reading provider data. Source
-and balance observations older than 30 seconds do not qualify. Display
+and balance observations for the selected currency older than 30 seconds do not
+qualify. A complete provider-history check renews that currency's source
+verification time only after all independently fetched receipt fingerprints,
+current balance and stable history head match. Partial, changed, missing or
+unallocated history never renews it. This lets slower receipt scans finish
+without relaxing freshness; local ownership, membership, reversal and reservation
+checks still run atomically afterward. Other currencies keep their original
+observation times and cannot increase or block this currency's assessment merely
+because their receipt observations are older. Display
 `observedAt` as an assessment time; release independently repeats qualification
 and reserves funds atomically. A qualified preview is neither a promised payout
 nor authorization to call Stripe. `job.nextAttemptAt` is the next application

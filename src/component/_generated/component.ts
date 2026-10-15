@@ -2474,6 +2474,378 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutRelease: {
+      mutations: {
+        beginAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        cancelUnattempted: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        claim: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            expectedRevision: number;
+            independentLiabilities: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerAvailable: number;
+          },
+          | {
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              allocations: Array<{
+                amount: number;
+                role?: "store" | "affiliate" | "other";
+                stripeTransferId: string;
+              }>;
+              amount: number;
+              attemptedAt?: number;
+              currency: string;
+              expectedRevision: number;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              operationKey: string;
+              ownerKey: string;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
+              returnTransactionId?: string;
+              status:
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
+              stripePayoutId?: string;
+            }
+          | {
+              amount: 0;
+              currency: string;
+              matureUnpaid?: number;
+              pendingCredits?: number;
+              providerMinimum: null;
+              reason:
+                "below_threshold" | "insufficient_available" | "pending_claim";
+              status: "held";
+            },
+          Name
+        >;
+        recordOutcome: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amount: number;
+            currency: string;
+            operationKey: string;
+            ownerKey: string;
+            providerStatus:
+              "pending" | "in_transit" | "paid" | "failed" | "canceled";
+            returnTransactionId?: string;
+            stripePayoutId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        recordRejection: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            code: "balance_insufficient" | "amount_too_small";
+            operationKey: string;
+            ownerKey: string;
+            requestId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          } | null,
+          Name
+        >;
+        pending: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            ownerKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              allocations: Array<{
+                amount: number;
+                role?: "store" | "affiliate" | "other";
+                stripeTransferId: string;
+              }>;
+              amount: number;
+              attemptedAt?: number;
+              currency: string;
+              expectedRevision: number;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              operationKey: string;
+              ownerKey: string;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
+              returnTransactionId?: string;
+              status:
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
+              stripePayoutId?: string;
+            }>;
+          },
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<

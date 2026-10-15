@@ -42,8 +42,10 @@ deadline-expiry API. See [policy setup and limits](docs/settlement.md#recipient-
 A [recipient funding reader](docs/settlement.md#verified-recipient-funding-receipts)
 verifies original and reversal receipts, maturity, and exact settlement amounts;
 received credit is kept distinct from still-unpaid entitlement.
-Automatic combined release and adoption of existing balances still require the
-separate release boundary; schedule controls alone do not enforce a minimum.
+The component also has an internal transactional claim ledger for reservations
+and paid allocations. Automatic combined release and adoption of existing
+balances still require the separate release boundary; schedule controls and
+claim primitives alone do not enforce a minimum.
 
 ## Status
 

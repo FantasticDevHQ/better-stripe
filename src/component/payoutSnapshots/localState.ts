@@ -171,9 +171,13 @@ export async function cacheClaim(
   }
   if (total !== row.amount || total <= 0)
     throw new CollectionError("allocation_amount_mismatch");
-  for (const a of row.allocations)
-    if (!(await sourceCache(ctx, h, a.stripeTransferId)))
-      await cacheSource(ctx, h, a.stripeTransferId, counts);
+  for (const a of row.allocations) {
+    const source =
+      (await sourceCache(ctx, h, a.stripeTransferId)) ??
+      (await cacheSource(ctx, h, a.stripeTransferId, counts));
+    if ((source.allocationCurrency ?? source.currency) !== row.currency)
+      throw new CollectionError("allocation_currency_changed");
+  }
   const old = await ctx.db
     .query("payoutSnapshotClaims")
     .withIndex("by_snapshot_operation", (q) =>

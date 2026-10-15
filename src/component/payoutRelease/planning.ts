@@ -1,3 +1,5 @@
+import { collectedSources } from "../payoutSnapshots/financial.js";
+import type { Id } from "../_generated/dataModel.js";
 import type { Infer } from "convex/values";
 import type { MutationCtx, QueryCtx } from "../_generated/server.js";
 import type { policyDoc } from "../payoutPolicy/schema.js";
@@ -14,6 +16,9 @@ export async function readPayoutPlan(
     ownerKey: string;
     currency: string;
     observations: Infer<typeof observation>[];
+    snapshotId?: Id<"payoutSnapshots">;
+    operationKey?: string;
+    liabilityRevision?: number;
     providerAvailable: number;
     independentLiabilities: number;
   },
@@ -27,6 +32,7 @@ export async function readPayoutPlan(
     args.observations,
     true,
     args.currency,
+    await collectedSources(ctx, args, args.observations),
   );
   const sources: PayoutFundingSource[] = [];
   for (const observation of args.observations) {
@@ -46,7 +52,7 @@ export async function readPayoutPlan(
     });
   }
   const fees = await readFees(ctx, args);
-  await assertAllocationTotals(ctx, args, sources);
+  if (!args.snapshotId) await assertAllocationTotals(ctx, args, sources);
   const minimumWaived = waiveApplicationMinimum(policy, Date.now());
   const plan = planRecipientPayout({
     currency: args.currency,

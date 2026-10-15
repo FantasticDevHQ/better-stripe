@@ -127,6 +127,9 @@ export class PayoutWorkerClient {
             ...scope,
             operationKey,
             independentLiabilities: opts.independentLiabilities,
+            ...(opts.liabilityRevision === undefined
+              ? {}
+              : { liabilityRevision: opts.liabilityRevision }),
             maxPages: opts.maxPages,
           });
     } catch (error) {
@@ -163,7 +166,7 @@ export function payoutAttemptStatus(
       : (job.lastReason ?? "pending_claim");
   const status = running
     ? "running"
-    : job.hasOperation
+    : job.hasOperation && reason !== "collection_pending"
       ? "reconciling"
       : ["balance_insufficient", "amount_too_small", "rejected"].includes(
             reason,

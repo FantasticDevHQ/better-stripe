@@ -111,12 +111,25 @@ export async function setup(amounts = [600, 400]) {
       }),
     },
     balanceTransactions: {
-      list: vi.fn(async (params: { source?: string; limit?: number }) => ({
-        data: params.source
-          ? transactions.filter((t) => t.source === params.source)
-          : transactions.slice(0, params.limit),
-        has_more: false,
-      })),
+      list: vi.fn(
+        async (params: {
+          source?: string;
+          limit?: number;
+          currency?: string;
+          starting_after?: string;
+        }) => {
+          const rows = transactions.filter(
+            (t) =>
+              (!params.source || t.source === params.source) &&
+              (!params.currency || t.currency === params.currency),
+          );
+          const start = params.starting_after
+            ? rows.findIndex((t) => t.id === params.starting_after) + 1
+            : 0;
+          const data = rows.slice(start, start + (params.limit ?? 100));
+          return { data, has_more: start + data.length < rows.length };
+        },
+      ),
       retrieve: vi.fn(async (id: string) =>
         transactions.find((t) => t.id === id),
       ),

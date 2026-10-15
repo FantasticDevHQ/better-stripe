@@ -479,13 +479,13 @@ is canceled on replay, and a new scheduled operation can collect fresh receipts.
 Below-threshold money remains owed. The numeric provider floor remains `null`
 unless a supported provider contract exposes it.
 
-Current atomic collection accepts up to 100 account transfers and 100 historical
-claims. Larger accounts return `held/snapshot_limit`, without paying a partial
-page. Provider history uses a 1–100 page budget, default 10; exhaustion stays held.
-Use the historical import and funded activation flow below for known old funds.
-Resumable larger-account collection, independent provider-debit allocation,
-recurring example jobs and React controls remain integration work. Unknown funds
-and unsupported accounts keep explicit migration holds.
+The direct component snapshot remains bounded at 100 source/claim rows. The SDK
+switches to a complete paginated manifest above that boundary and binds its
+verified membership to the financial claim. It never pays from a partial page.
+Provider history uses a 1–100 page budget, default 10; exhaustion stays held.
+Use the separate historical import and funded activation contract below for known
+old funds; a local manifest is not historical-adoption proof. Unknown funds and
+unsupported accounts keep explicit migration holds.
 
 Sources: [payout creation and source balance selection](https://docs.stripe.com/api/payouts/create),
 [complete balance history and automatic-only payout filtering](https://docs.stripe.com/api/balance_transactions/list).
@@ -741,9 +741,10 @@ attempt. Bank arrival dates remain separate provider data from
 `getPayoutSnapshot`.
 
 Stripe-managed recipients keep Stripe's default automatic schedule. This preview
-requires a ready custom policy and preserves the current source/history limits,
-region restrictions and supported payout rail. It does not remove the need for
-provider-history continuation on larger accounts.
+requires a ready custom policy, verified complete provider history, the supported
+region/control capabilities and payout rail. The SDK automatically collects a
+paginated local manifest when the small direct snapshot exceeds 100 rows; a
+partial collection never supplies an eligibility amount.
 
 ## Resumable local collections
 
@@ -754,8 +755,8 @@ components. The public page shape remains `page`, `continueCursor` and `isDone`.
 Treat cursors as opaque and restart cached pages at a null cursor when upgrading
 these readers. Use the package's discard operation for an obsolete read-only
 collection; never erase financially bound or unresolved payout state to restart
-a scan. This change preserves the existing source/history limits and does not
-make larger provider-history qualification complete.
+a scan. The automatic SDK qualification path uses these pages when a direct
+snapshot exceeds 100 lifetime source or claim rows.
 
 An authorized host worker can collect the local recipient ledger in bounded
 steps, retaining its cursor and step number across restarts:
@@ -788,15 +789,31 @@ stop collection with an explicit reason.
 
 `local_ready` describes a read-only local manifest. Complete provider receipts,
 provider history and monetary claim binding are still required before a payout.
-These local APIs do not remove the current bounded release/adoption limits by
-themselves. Provider-history continuation and scalable claim execution remain
-under implementation.
+The SDK verifies every source against Stripe, fetching at most five source
+receipts concurrently, and checks the complete selected-currency provider history.
+The monetary transaction then checks the collection's owner, policy, full source
+membership, allocation rollups and current risk revision. A qualifying collection
+is bound to the immutable payout claim, including that claim's own reservation
+writes. The risk revision is checked again before the provider attempt. A later
+reversal, fee or competing claim cannot silently change the request.
+
+`collection_pending` retains the recurring worker operation and resumes its local
+cursor on a subsequent scheduled check. `collection_invalidated` requires a new
+assessment. Preview/qualification on a query-only context returns
+`collection_requires_action` for larger histories; use an authorized server action.
+A bank payout is not created by collecting or previewing. Complete provider history
+still has the caller's `maxPages` budget, and claims must fit Convex's argument,
+transaction and document limits. Budget errors never erase financial records or
+qualify a partial manifest; use operator recovery for an unsupported workload.
 
 After a read-only collection is no longer needed, repeatedly call
 `discardSnapshot(ctx, { accountId, ownerKey, operationKey: collectionKey })` until
 it returns `null`. Cleanup removes only collection caches. Read-only collection
 leases last 24 hours. Financially bound collections reject read-only cleanup and
-expiry; payout claims and their source reservations keep their own lifecycle.
+expiry. Once an attempt is durably marked or an unattempted claim is canceled,
+its cache becomes discardable; the claim retains its own immutable observations
+and reservations. An unknown provider outcome keeps those reservations, even
+when the disposable cache has been removed.
 
 ### Development reset safeguards
 
@@ -825,3 +842,45 @@ entitlement. Refunds/reversals still reduce qualifying funds. Provider floors
 remain provider-enforced and numerically unknown when not exposed. Reassess fresh
 receipts and balances on the next scheduled attempt rather than manually
 recreating uncertain requests.
+
+### Versioned recovery liabilities
+
+Resolve seller refund/dispute costs and their account version in one component query:
+
+```ts
+const quote = await stripe.costRecovery.payoutQuote(ctx, {
+  accountId,
+  scopeKey: authorizedRecoveryScope,
+  currency,
+});
+await stripe.payoutPolicy.worker.run(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+  ...quote,
+});
+```
+
+Use the same quote with `preview` or `release`. The amount is
+`max(0, amountDue - collectedAmount)` for that authorized recovery scope;
+invoice reservations remain owed until collection is verified. Provider-collected
+costs are not deducted again. Keep the amount and `liabilityRevision` together,
+for the same account, scope and currency. Use an authorized user-level scope
+when costs span communities; the host remains responsible for including all
+other authorized debts/reserves and for versioning state outside this component.
+The package's revision does not version an external host database.
+
+Recovery amount changes enter the payout risk journal. The financial boundary
+rejects an old quote, and a bound claim checks the current risk revision again
+before its attempt. Its own reservation writes are included in the binding.
+A source/fee/recovery change requires a new assessment; unattempted reservations
+are canceled exactly on replay. An attempted or unknown payout still reconciles
+its immutable request. New claims retain the approved `independentLiabilities`
+and `liabilityRevision` for audit.
+
+Legacy unversioned calls remain valid for accounts without recovery balance
+records. Once such records exist, obtain a quote; missing versions fail safely.
+The example's worker and preview adapters do this automatically. Old unattempted
+claims are canceled on replay, rather than retroactively supplied with a guessed
+quote. Restart obsolete read-only collections after upgrading their fingerprint
+format; never clear unresolved financial claims to bypass validation.

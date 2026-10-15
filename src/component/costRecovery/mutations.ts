@@ -1,7 +1,7 @@
 import { importOpeningClaim } from "./imports.js";
 import { getGroup, integer } from "./helpers.js";
 import { v } from "convex/values";
-import { mutation } from "../_generated/server.js";
+import { mutation } from "../earnings/triggers.js";
 import { recordClaim, rollbackClaim } from "./claims.js";
 import { reserveGroup, sealGroup } from "./reservations.js";
 import { finishGroup } from "./completion.js";

@@ -120,6 +120,32 @@ function payoutFingerprint(p: Doc<"payouts">) {
 }
 /** Funding, payout claims and allocations commit with their revision counters. */
 export function registerPayoutRevisions(triggers: Triggers<DataModel>) {
+  triggers.register("recoveryBalances", async (ctx, change) => {
+    const fingerprint = (row: Doc<"recoveryBalances"> | null) =>
+      row
+        ? JSON.stringify([
+            row.accountId,
+            row.scopeKey,
+            row.currency,
+            row.amountDue,
+            row.collectedAmount,
+          ])
+        : null;
+    if (fingerprint(change.oldDoc) === fingerprint(change.newDoc)) return;
+    for (const account of new Set([
+      change.oldDoc?.accountId,
+      change.newDoc?.accountId,
+    ]))
+      if (account)
+        await bump(
+          ctx,
+          account,
+          true,
+          "liability",
+          (change.newDoc ?? change.oldDoc)!.scopeKey,
+          change.newDoc === null,
+        );
+  });
   triggers.register("transfers", async (ctx, change) => {
     if (
       change.oldDoc &&

@@ -94,6 +94,12 @@ const reasons: Record<string, string> = {
   observations_stale: "Provider observations expired. Refresh the assessment.",
   expired:
     "The custom holding deadline has passed. Eligibility is unavailable until the payout schedule is restored and verified.",
+  collection_pending:
+    "Complete payout history is still being collected. This collection has not requested a new bank payout; the automatic worker will resume the same collection.",
+  collection_invalidated:
+    "Payout history changed during collection. A fresh assessment is required before funds can qualify.",
+  collection_requires_action:
+    "This account requires a server action to collect its complete payout history.",
   snapshot_limit:
     "This account needs continued history reconciliation before eligibility can be assessed.",
   policy_changed: "Payout settings changed. Refresh the assessment.",

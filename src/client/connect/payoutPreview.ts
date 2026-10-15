@@ -1,3 +1,4 @@
+import { discardQualificationInput } from "./payoutCollectedInput.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { Component, RunCtx } from "../helpers.js";
@@ -13,6 +14,7 @@ export type PayoutPreviewOptions = {
   ownerKey: string;
   currency: string;
   independentLiabilities: number;
+  liabilityRevision?: number;
   maxPages?: number;
 };
 export type PayoutPreview =
@@ -51,29 +53,45 @@ export async function previewRecipientPayout(
     opts,
     maxPages,
   );
-  if (proof.status !== "verified") return held(proof.reason);
-  const latest = await verify();
-  if (latest.status !== "verified" || !("policy" in latest))
-    return held(latest.status);
-  if (latest.policy.revision !== controls.policy.revision)
-    return held("policy_changed");
-  if (
-    proof.observedAt < Date.now() - 30000 ||
-    proof.observations.some(
-      (o) => o.currency === opts.currency && o.observedAt < Date.now() - 30000,
+  try {
+    if (proof.status !== "verified") return held(proof.reason);
+    const latest = await verify();
+    if (latest.status !== "verified" || !("policy" in latest))
+      return held(latest.status);
+    if (latest.policy.revision !== controls.policy.revision)
+      return held("policy_changed");
+    if (
+      proof.observedAt < Date.now() - 30000 ||
+      proof.observations.some(
+        (o) =>
+          o.currency === opts.currency && o.observedAt < Date.now() - 30000,
+      )
     )
-  )
-    return held("observations_stale");
-  return ctx.runQuery(
-    componentRef(component, "payoutRelease/queries/preview"),
-    {
-      accountId: opts.accountId,
-      ownerKey: opts.ownerKey,
-      currency: opts.currency,
-      expectedRevision: controls.policy.revision,
-      observations: proof.observations,
-      providerAvailable: proof.providerAvailable,
-      independentLiabilities: opts.independentLiabilities,
-    },
-  );
+      return held("observations_stale");
+    return await ctx.runQuery(
+      componentRef(component, "payoutRelease/queries/preview"),
+      {
+        accountId: opts.accountId,
+        ownerKey: opts.ownerKey,
+        currency: opts.currency,
+        expectedRevision: controls.policy.revision,
+        observations: proof.observations,
+        ...(opts.liabilityRevision === undefined
+          ? {}
+          : { liabilityRevision: opts.liabilityRevision }),
+        ...(proof.collection
+          ? { snapshotId: proof.collection.snapshotId }
+          : {}),
+        providerAvailable: proof.providerAvailable,
+        independentLiabilities: opts.independentLiabilities,
+      },
+    );
+  } finally {
+    await discardQualificationInput(
+      component,
+      ctx,
+      proof.collection,
+      proof.status === "held" && proof.reason === "collection_pending",
+    );
+  }
 }

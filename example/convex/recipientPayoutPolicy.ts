@@ -18,7 +18,7 @@ export const load = action({
       userId: args.userId,
     });
     const scope = { accountId, ownerKey: args.userId, currency: args.currency };
-    const independentLiabilities = await ctx.runQuery(
+    const liabilityQuote = await ctx.runQuery(
       internal.payoutWorkerScope.liabilities,
       scope,
     );
@@ -29,7 +29,7 @@ export const load = action({
         ? policy.thresholds.some((t) => t.currency === args.currency)
           ? await stripe.payoutPolicy.preview(ctx, {
               ...scope,
-              independentLiabilities,
+              ...liabilityQuote,
             })
           : {
               status: "held" as const,

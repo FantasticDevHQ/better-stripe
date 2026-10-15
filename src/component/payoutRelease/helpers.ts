@@ -72,24 +72,29 @@ export async function checkSnapshot(
   observations: Infer<typeof observation>[],
   fresh: boolean,
   freshCurrency?: string,
+  membership?: Map<string, Doc<"transfers">>,
 ) {
-  const rows = await ctx.db
-    .query("transfers")
-    .withIndex("by_destination_account_id", (q) =>
-      q.eq("destinationAccountId", accountId),
-    )
-    .take(101);
+  const rows = membership
+    ? [...membership.values()]
+    : await ctx.db
+        .query("transfers")
+        .withIndex("by_destination_account_id", (q) =>
+          q.eq("destinationAccountId", accountId),
+        )
+        .take(101);
   if (
-    rows.length > 100 ||
+    (!membership && rows.length > 100) ||
     observations.length !== rows.length ||
     new Set(observations.map((o) => o.stripeTransferId)).size !== rows.length
   )
     throw new Error("Payout source snapshot is incomplete or duplicated.");
   const byId = new Map(rows.map((row) => [row.stripeTransferId, row]));
-  const allocated = await ctx.db
-    .query("payoutSourceAllocations")
-    .withIndex("by_account", (q) => q.eq("accountId", accountId))
-    .take(101);
+  const allocated = membership
+    ? []
+    : await ctx.db
+        .query("payoutSourceAllocations")
+        .withIndex("by_account", (q) => q.eq("accountId", accountId))
+        .take(101);
   if (
     allocated.length > 100 ||
     allocated.some((source) => !byId.has(source.stripeTransferId))
@@ -179,6 +184,9 @@ export function payoutClaimFingerprint(c: Doc<"payoutReleaseClaims">) {
     c.ownerKey,
     c.operationKey,
     c.historical ?? false,
+    c.snapshotId,
+    c.liabilityRevision,
+    c.independentLiabilities,
     c.currency,
     c.amount,
     c.status,

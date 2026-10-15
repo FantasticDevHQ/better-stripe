@@ -183,6 +183,8 @@ export const advance = mutation({
             await cacheSource(ctx, h, event.key, counts);
           else if (event.kind === "claim")
             await cacheClaim(ctx, h, event.key, counts);
+          else if (event.kind === "liability")
+            throw new CollectionError("liability_changed");
           else if (event.kind === "fee")
             await cacheFee(ctx, h, event.key, counts);
           else patch.providerChanged = true;

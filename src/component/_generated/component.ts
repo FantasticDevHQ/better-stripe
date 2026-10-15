@@ -2689,6 +2689,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        payoutQuote: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; scopeKey: string },
+          { independentLiabilities: number; liabilityRevision: number },
+          Name
+        >;
         reservation: FunctionReference<
           "query",
           "internal",
@@ -3273,6 +3280,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3290,6 +3299,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requestId: string;
               };
               returnTransactionId?: string;
+              snapshotId?: string;
               status:
                 | "reserved"
                 | "submitted"
@@ -3324,6 +3334,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3341,6 +3353,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requestId: string;
             };
             returnTransactionId?: string;
+            snapshotId?: string;
             status:
               | "reserved"
               | "submitted"
@@ -3374,6 +3387,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3391,6 +3406,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requestId: string;
             };
             returnTransactionId?: string;
+            snapshotId?: string;
             status:
               | "reserved"
               | "submitted"
@@ -3411,6 +3427,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             destinationId?: string;
             expectedRevision: number;
             independentLiabilities: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3423,6 +3440,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             operationKey: string;
             ownerKey: string;
             providerAvailable: number;
+            snapshotId?: string;
           },
           | {
               _creationTime: number;
@@ -3442,6 +3460,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3459,6 +3479,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requestId: string;
               };
               returnTransactionId?: string;
+              snapshotId?: string;
               status:
                 | "reserved"
                 | "submitted"
@@ -3515,6 +3536,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3532,6 +3555,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requestId: string;
             };
             returnTransactionId?: string;
+            snapshotId?: string;
             status:
               | "reserved"
               | "submitted"
@@ -3571,6 +3595,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3588,6 +3614,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requestId: string;
             };
             returnTransactionId?: string;
+            snapshotId?: string;
             status:
               | "reserved"
               | "submitted"
@@ -3630,6 +3657,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             expectedRevision: number;
             feeRevision?: number;
             historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3647,6 +3676,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               requestId: string;
             };
             returnTransactionId?: string;
+            snapshotId?: string;
             status:
               | "reserved"
               | "submitted"
@@ -3694,6 +3724,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               expectedRevision: number;
               feeRevision?: number;
               historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3711,6 +3743,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 requestId: string;
               };
               returnTransactionId?: string;
+              snapshotId?: string;
               status:
                 | "reserved"
                 | "submitted"
@@ -3731,6 +3764,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             expectedRevision: number;
             independentLiabilities: number;
+            liabilityRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -3742,6 +3776,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             ownerKey: string;
             providerAvailable: number;
+            snapshotId?: string;
           },
           | { amount: 0; reason: string; status: "held" }
           | {
@@ -3799,6 +3834,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 expectedRevision: number;
                 feeRevision?: number;
                 historical?: boolean;
+                independentLiabilities?: number;
+                liabilityRevision?: number;
                 observations: Array<{
                   currency: string;
                   ledgerFingerprint: string;
@@ -3816,6 +3853,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   requestId: string;
                 };
                 returnTransactionId?: string;
+                snapshotId?: string;
                 status:
                   | "reserved"
                   | "submitted"
@@ -3868,6 +3906,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             allocationCount: number;
             allocationCursor?: string;
+            boundOperationKey?: string;
+            boundRiskRevision?: number;
             claimCount: number;
             claimCursor?: string;
             deferredPositiveChanges: boolean;
@@ -3918,6 +3958,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             allocationCount: number;
             allocationCursor?: string;
+            boundOperationKey?: string;
+            boundRiskRevision?: number;
             claimCount: number;
             claimCursor?: string;
             deferredPositiveChanges: boolean;
@@ -3968,6 +4010,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             allocationCount: number;
             allocationCursor?: string;
+            boundOperationKey?: string;
+            boundRiskRevision?: number;
             claimCount: number;
             claimCursor?: string;
             deferredPositiveChanges: boolean;
@@ -4001,6 +4045,165 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sourceFence: number;
             step: number;
           } | null,
+          Name
+        >;
+      };
+      queries: {
+        claims: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            operationKey: string;
+            ownerKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              allocations: Array<{
+                amount: number;
+                role?: "store" | "affiliate" | "other";
+                stripeTransferId: string;
+              }>;
+              amount: number;
+              attemptedAt?: number;
+              currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
+              destinationId?: string;
+              expectedRevision: number;
+              feeRevision?: number;
+              historical?: boolean;
+              independentLiabilities?: number;
+              liabilityRevision?: number;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              operationKey: string;
+              ownerKey: string;
+              providerFee?: number;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
+              returnTransactionId?: string;
+              snapshotId?: string;
+              status:
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
+              stripePayoutId?: string;
+            }>;
+          },
+          Name
+        >;
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocationCount: number;
+            allocationCursor?: string;
+            boundOperationKey?: string;
+            boundRiskRevision?: number;
+            claimCount: number;
+            claimCursor?: string;
+            deferredPositiveChanges: boolean;
+            expectedRevision: number;
+            expiresAt: number;
+            feeCount: number;
+            feeCursor?: string;
+            initialRevision: number;
+            initialRiskRevision: number;
+            observedRevision: number;
+            operationKey: string;
+            ownerKey: string;
+            phase:
+              | "sources"
+              | "allocations"
+              | "fees"
+              | "claims"
+              | "repair"
+              | "check"
+              | "local_ready"
+              | "invalidated"
+              | "discarding";
+            policyMode?: string;
+            policyOperationKey?: string;
+            providerChanged: boolean;
+            readOnly: boolean;
+            reason?: string;
+            riskRevision: number;
+            sourceCount: number;
+            sourceCursor?: string;
+            sourceFence: number;
+            step: number;
+          } | null,
+          Name
+        >;
+        sources: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            operationKey: string;
+            ownerKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              amount: number;
+              currency: string;
+              destinationAccountId: string;
+              metadata?: any;
+              paymentId?: string;
+              reinstatement?: boolean;
+              reversalClaimedAmount?: number;
+              reversalStatus?: "partially_reversed" | "fully_reversed";
+              reversedAmount?: number;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              status: "pending" | "paid" | "failed" | "reversed";
+              stripeTransferId: string;
+              totalsRecorded?: true;
+            }>;
+          },
           Name
         >;
       };

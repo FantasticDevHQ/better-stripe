@@ -11,6 +11,7 @@ export const riskKind = v.union(
   v.literal("allocation"),
   v.literal("claim"),
   v.literal("fee"),
+  v.literal("liability"),
 );
 export const riskEventsTable = defineTable({
   accountId: v.string(),
@@ -32,6 +33,8 @@ export const collectionPhase = v.union(
 );
 export const snapshotFields = {
   readOnly: v.boolean(),
+  boundOperationKey: v.optional(v.string()),
+  boundRiskRevision: v.optional(v.number()),
   accountId: v.string(),
   ownerKey: v.string(),
   operationKey: v.string(),

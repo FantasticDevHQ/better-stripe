@@ -3,6 +3,7 @@ import {
   type PayoutPreviewOptions,
 } from "./connect/payoutPreview.js";
 export type * from "./connect/payoutPreview.js";
+export { previewResult as payoutPreviewValidator } from "../component/payoutRelease/preview.js";
 import { PayoutWorkerClient } from "./connect/payoutWorker.js";
 export type * from "./connect/payoutWorker.js";
 import {
@@ -312,7 +313,10 @@ export class PayoutPolicyClient {
       if (
         prior.mode !== opts.mode ||
         prior.expectedRevision !== opts.expectedRevision ||
-        !equal(prior.thresholds, thresholds) ||
+        !equal(
+          canonicalThresholds(prior.thresholds, prior.mode === "custom"),
+          thresholds,
+        ) ||
         Boolean(prior.adoption) !== Boolean(opts.adoptExistingBalance)
       )
         throw new Error("Payout policy operation identity cannot be reused.");

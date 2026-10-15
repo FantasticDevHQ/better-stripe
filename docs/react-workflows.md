@@ -640,6 +640,87 @@ Consumer applications still need to verify their own authenticated adapters and 
 See [sandbox setup findings](accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15)
 for the account eligibility requirement.
 
+## Combined automatic payout progress
+
+`PayoutProgress` is an unstyled, read-only view of a custom recipient's combined
+eligibility assessment. Load the policy and
+[preview](settlement.md#payout-eligibility-preview) through an authorized server
+adapter. Derive independent liabilities on the server. Read the worker's next
+attempt separately from the provider's actual bank arrival dates.
+
+```tsx
+import { PayoutProgress } from "@fantastic.dev/better-stripe/react";
+
+<PayoutProgress
+  policy={policy}
+  preview={preview}
+  currency="usd"
+  nextAttemptAt={job?.nextAttemptAt}
+  locale="en-US"
+  timeZone="UTC"
+/>;
+```
+
+The default markup uses a single accessible progress indicator, financial
+metrics, source contributions and assessment/attempt/deadline dates. Store and
+affiliate contributions share one minimum. Pending credits are separate, shared
+costs reduce the combined entitlement once, and negative entitlement remains
+visible even though the visual progress indicator stops at zero. A qualified
+assessment is informational; the automatic worker verifies it again before a
+payout. The component has no withdrawal action.
+
+`policy={undefined}` means loading. A null policy or `stripe_managed` mode shows
+Stripe-managed defaults without inventing a numeric provider floor. Changing
+policies suppress prior financial progress. For a ready custom policy, an
+undefined preview means loading; a null or minimal held preview shows an
+unavailable assessment rather than fabricated zero balances. A mismatched
+currency or configured minimum rejects the display.
+
+Use the `children` render prop for translated labels and application cards. It
+receives `status`, `reason`, `metrics`, `sources`, `progress`, `observedAt`,
+`nextAttemptAt` and `holdDeadline`. Metrics include stable keys and raw minor-unit
+amounts as well as formatted values. Render props use the same state calculation
+as the native markup; replace the English message with your own translated copy
+selected by `status` and `reason`.
+
+Scope and refresh the host data when the recipient or settlement currency
+changes. Keep currencies separate. This display does not configure policies,
+install a scheduler or bypass the release API's capability/history limits.
+
+## Payout settings
+
+`PayoutSettings` and `usePayoutSettings` own minimum entry, explicit custom-hold
+consent, loading/error states and callback locking. They never create a payout.
+`onSave` receives `{ currency, mode, expectedRevision, minimum?, consent }`.
+The minimum uses ordinary Stripe currency units. No provider floor is guessed.
+The host must derive the authenticated account/owner, preserve the policy's
+other currency minimums, and call `payoutPolicy.prepare` and `apply` with a
+stable immutable operation identity. Return `{ status, reason? }`; supported
+statuses are `ready`, `unsupported`, `migration_required`, `schedule_drift` and
+`canceled`.
+
+When a provider outcome is unknown, refresh the policy instead of inventing
+success or creating a new operation. `onRetry` resumes the server's stored
+pending operation; the installed recurring job also resumes it. The editor
+locks changes while `policy.status` is `changing`. Render props expose the same
+state for translated forms and design-system controls.
+
+The example's `recipientPayoutPolicy` actions bind the demo user to its account
+server-side and derive uncollected seller costs through the same query as the
+worker. They preserve other currencies, replay stored changes without rolling
+back newer settings, and restore the original schedule on opt-out. The public
+`payoutPreviewValidator` lets the host validate the package assessment without
+copying its return schema. Production apps must replace demo persona selection
+with authenticated ownership; the demo is not evidence of production auth.
+
+Custom schedules affect the entire recipient account. Configure each settlement
+currency. Choosing Stripe-managed mode restores the original schedule for all
+currencies and removes application minimums. Funded accounts needing historical
+adoption show `migration_required`; this form does not guess their source
+allocations or automatically adopt unallocated money. Install worker recovery
+and deadline-expiry jobs before exposing activation, and use the reset guard
+described in the [settlement guide](settlement.md#development-reset-safeguards).
+
 ## Component history and currency summaries
 
 See the [read contract guide](read-contracts.md) for reactive product, price and payout

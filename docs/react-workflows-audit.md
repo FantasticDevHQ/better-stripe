@@ -16,7 +16,7 @@ uses render props or companion hooks to apply shadcn styling.
 | Customer invoices                         | `Invoices`                                                                                                                                             |
 | Customer payment methods                  | `usePaymentMethodsManager`, `PaymentMethods`, `PaymentMethodsList`, `AddCardForm`, Stripe providers                                                    |
 | Seller overview                           | `PayoutOverview`, `AccountCreateCard`, `ConnectStatusBadge`                                                                                            |
-| Seller and affiliate payouts              | `Payouts`, `PayoutHistory`, live balances, upcoming date, history and pagination                                                                       |
+| Seller and affiliate payouts              | `Payouts`, `PayoutHistory`, `PayoutProgress`, `PayoutSettings`, live balances, upcoming date, history and pagination                                   |
 | Seller earnings                           | `EarningsSummary`, `PayoutSchedule`, `PayoutHistory`, `earningsFromBalance`, `useWorkflowResource`                                                     |
 | Seller sales                              | `Sales`                                                                                                                                                |
 | Seller subscriptions                      | `Subscriptions`, `SubscriptionCard`                                                                                                                    |

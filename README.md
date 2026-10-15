@@ -54,6 +54,12 @@ The example installs its five-minute cron in `example/convex/crons.ts`.
 A [payout eligibility preview](docs/settlement.md#payout-eligibility-preview)
 uses the release qualification checks to report combined mature funds, pending
 credits, shared deductions and source categories without creating a bank payout.
+The unstyled React [`PayoutProgress`](docs/react-workflows.md#combined-automatic-payout-progress)
+displays that assessment with one combined minimum and supports custom cards
+and translated copy through render props.
+[`PayoutSettings`](docs/react-workflows.md#payout-settings)
+adds consent, exact minimum entry, pending-state recovery and account-wide opt-out
+through authorized host callbacks. Seller and affiliate payout pages use both.
 [Historical imports and explicit funded activation](docs/settlement.md#historical-import-and-funded-activation)
 verify old payouts, source ownership and holding age before enabling a custom
 schedule. Larger histories and unallocated money still require reconciliation;

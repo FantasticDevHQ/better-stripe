@@ -52,7 +52,10 @@ export const prepare = mutation({
         old.country !== args.country ||
         old.observedAt !== args.observedAt ||
         Boolean(old.adoption) !== Boolean(args.adoption) ||
-        !same(old.thresholds, args.thresholds) ||
+        !same(
+          canonicalThresholds(old.thresholds, old.mode === "custom"),
+          args.thresholds,
+        ) ||
         !same(old.observedSchedule, args.observedSchedule)
       )
         throw new Error("Payout policy operation identity cannot be reused.");

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import {
   payoutPreviewValidator,
   payoutHoldingExpiryValidator,
+  payoutAttemptValidator,
 } from "@fantastic.dev/better-stripe";
 export const policyMode = v.union(
   v.literal("custom"),
@@ -20,6 +21,7 @@ export const progressView = v.object({
   policy: v.union(policyView, v.null()),
   preview: v.union(payoutPreviewValidator, v.null()),
   nextAttemptAt: v.union(v.number(), v.null()),
+  lastAttempt: v.optional(v.union(payoutAttemptValidator, v.null())),
 });
 export const settingsResult = v.object({
   status: v.union(

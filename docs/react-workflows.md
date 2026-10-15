@@ -752,3 +752,22 @@ described in the [settlement guide](settlement.md#development-reset-safeguards).
 See the [read contract guide](read-contracts.md) for reactive product, price and payout
 cursors, exact currency summaries, legacy backfill, payout failure details, and
 published-version adoption requirements.
+
+### Latest automatic payout attempt
+
+`payoutAttemptStatus(job)` projects a package worker job into the public
+`PayoutAttempt` contract. Use `payoutAttemptValidator` in host response validators
+and forward the result as `lastAttempt` to `PayoutProgress`, or render the
+unstyled `PayoutAttemptStatus` workflow directly. Its render prop supplies a
+safe message, tone and localized result time for host cards.
+
+Stripe rejections retain `balance_insufficient` or `amount_too_small` instead of
+a generic rejection. This history is separate from an informational eligibility
+preview; qualification does not promise provider acceptance. A running lease
+or unresolved operation suppresses an older paid result. The workflow hides a
+stale retry date while a check runs. Legacy jobs without a recorded result time
+show no invented timestamp. Result/check times are not bank arrival estimates.
+
+The example uses the same package workflow in API and BetterStripe-component
+views, including seller and affiliate payout panels. No status control is a
+manual withdrawal request. Unknown outcomes reconcile the original operation.

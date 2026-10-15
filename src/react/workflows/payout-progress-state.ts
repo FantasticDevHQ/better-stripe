@@ -1,3 +1,8 @@
+import {
+  payoutAttemptState,
+  type PayoutAttemptState,
+} from "./payout-attempt-state.js";
+import type { PayoutAttempt } from "../../client/connect/payoutWorker.js";
 import type { ReactNode } from "react";
 import type { PayoutPolicy, PayoutPreview } from "../../client/payoutPolicy.js";
 import { formatPrice } from "../lib/price-helpers.js";
@@ -42,6 +47,7 @@ export type PayoutProgressState = {
   nextAttemptAt: number | null;
   holdDeadline: number | null;
   observedAt: number | null;
+  lastAttempt?: PayoutAttemptState;
   recovery?: {
     status: NonNullable<PayoutPolicy["holdingExpiry"]>["status"];
     balances?: {
@@ -62,6 +68,7 @@ export type PayoutProgressProps = {
     | null
     | undefined;
   preview?: PayoutPreview | null;
+  lastAttempt?: PayoutAttempt | null;
   currency: string;
   /** Application worker attempt time, never a bank arrival estimate. */
   nextAttemptAt?: number | null;
@@ -96,8 +103,14 @@ export function payoutProgressState({
   preview,
   currency,
   nextAttemptAt,
+  lastAttempt,
+  timeZone,
   locale = "en-US",
 }: PayoutProgressProps): PayoutProgressState {
+  if (lastAttempt && lastAttempt.currency !== currency)
+    throw new Error(
+      "Payout attempt currency does not match the selected currency.",
+    );
   const amount = (value: number) => formatPrice(value, currency, locale);
   const state: PayoutProgressState = {
     status: "loading",
@@ -111,6 +124,10 @@ export function payoutProgressState({
     holdDeadline:
       policy?.mode === "custom" ? (policy.holdDeadline ?? null) : null,
     observedAt: null,
+    lastAttempt:
+      policy === undefined
+        ? undefined
+        : payoutAttemptState(lastAttempt, locale, timeZone),
   };
   if (policy !== undefined) {
     if (policy?.status === "changing") {
@@ -149,7 +166,10 @@ export function payoutProgressState({
       state.message =
         "Stripe manages automatic payouts. No additional application minimum is set.";
     } else if (preview !== undefined) {
-      state.nextAttemptAt = nextAttemptAt ?? null;
+      state.nextAttemptAt =
+        state.lastAttempt?.status === "running"
+          ? null
+          : (nextAttemptAt ?? null);
       if (!preview || !("currency" in preview)) {
         state.status = "unavailable";
         state.reason = preview?.reason ?? "assessment_unavailable";

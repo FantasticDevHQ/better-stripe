@@ -1,3 +1,4 @@
+import { payoutAttemptStatus } from "@fantastic.dev/better-stripe";
 import { v, type Infer } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
@@ -54,6 +55,7 @@ export const load = action({
         : null,
       preview,
       nextAttemptAt: job?.nextAttemptAt ?? null,
+      lastAttempt: payoutAttemptStatus(job),
     };
   },
 });

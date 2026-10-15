@@ -77,6 +77,7 @@ export const begin = mutation({
           hasOperation: false,
           leaseUntil: undefined,
           lastReason: "policy_inactive",
+          lastResultAt: now,
           nextAttemptAt: nextPayoutAttempt(policy, now, args.cadenceMs),
         });
       return { status: "held" as const, reason: "policy_inactive" };
@@ -113,6 +114,7 @@ export const begin = mutation({
           hasOperation: false,
           leaseUntil: undefined,
           lastReason: "affiliate_recovery_pending",
+          lastResultAt: now,
           nextAttemptAt,
         });
         return {
@@ -189,6 +191,7 @@ export const finish = mutation({
         job.cadenceMs,
       ),
       lastReason: args.reason,
+      lastResultAt: Date.now(),
       completedGeneration: args.generation,
       completedOperationKey: args.operationKey,
     });

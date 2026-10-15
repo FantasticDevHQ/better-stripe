@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type Stripe from "stripe";
 import { setup, scope, component } from "./payoutExecutionTestHelpers.js";
 import { reconcileRecipientPayout } from "./payoutReconciliation.js";
-import { PayoutWorkerClient } from "./payoutWorker.js";
+import { PayoutWorkerClient, payoutAttemptStatus } from "./payoutWorker.js";
 import { changeBalance } from "../../component/affiliateRecovery/accounting.js";
 afterEach(() => vi.useRealTimers());
 async function worker(amounts?: number[]) {
@@ -142,4 +142,60 @@ it("reports affiliate recovery holds before a fresh attempt without creating a p
     hasOperation: false,
   });
   expect(s.provider.payouts.create).not.toHaveBeenCalled();
+});
+
+it.each(["balance_insufficient", "amount_too_small"])(
+  "persists actionable %s rejection and its result time",
+  async (code) => {
+    const s = await worker();
+    s.provider.payouts.create.mockRejectedValueOnce(
+      Object.assign(new Error(code), {
+        type: "StripeInvalidRequestError",
+        code,
+        requestId: "req_rejected",
+      }),
+    );
+    expect(await s.run()).toMatchObject({
+      job: { lastReason: code, lastResultAt: expect.any(Number) },
+      payout: { claim: { status: "rejected", rejection: { code } } },
+    });
+  },
+);
+
+it("does not reuse a prior paid result or timestamp for a newer running generation", async () => {
+  const s = await worker();
+  const result = await s.run();
+  if (result.status !== "completed")
+    throw new Error("Expected completed fixture");
+  const active = {
+    ...result.job,
+    generation: result.job.generation + 1,
+    completedGeneration: result.job.generation,
+    hasOperation: true,
+    operationKey: "new-operation",
+    lastReason: "paid",
+    lastResultAt: 1000,
+    lastAttemptAt: 2000,
+    leaseUntil: 3000,
+  };
+  expect(payoutAttemptStatus(active, 2100)).toEqual({
+    currency: "usd",
+    status: "running",
+    reason: "pending_claim",
+    at: 2000,
+  });
+  expect(payoutAttemptStatus(active, 4000)).toEqual({
+    currency: "usd",
+    status: "reconciling",
+    reason: "pending_claim",
+  });
+});
+it("keeps legacy result times unknown rather than inventing a completion time", async () => {
+  const s = await worker();
+  const result = await s.run();
+  if (result.status !== "completed")
+    throw new Error("Expected completed fixture");
+  expect(
+    payoutAttemptStatus({ ...result.job, lastResultAt: undefined }),
+  ).toEqual({ currency: "usd", status: "paid", reason: "paid" });
 });

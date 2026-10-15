@@ -1738,3 +1738,5 @@ published-version adoption requirements.
 Custom recipient payout minimums are waived during the final day before the verified holding deadline. Provider limits and all financial checks still apply. See [settlement and deadline handling](docs/settlement.md) for worker cadence, retries and expiry limitations.
 
 Holding-expiry recovery remains visible and retryable after schedule restoration. The package preserves unresolved provider balances and payout claims, and prevents reset or custom reactivation from erasing them. See [expiry recovery](docs/settlement.md) for operator handling.
+
+Automatic payout status is reusable through `payoutAttemptStatus`, `payoutAttemptValidator`, and the React `PayoutAttemptStatus` workflow. Rejection reasons and retry times remain separate from eligibility previews and bank arrival dates. See [React workflow guidance](docs/react-workflows.md).

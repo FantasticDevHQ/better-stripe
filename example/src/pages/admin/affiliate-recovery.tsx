@@ -87,8 +87,9 @@ export function AdminAffiliateRecovery() {
           <CardHeader>
             <CardTitle>Recovery and debt</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
             <AffiliateRecovery
+              className="space-y-4 [&_dl]:grid [&_dl]:gap-4 [&_dl]:sm:grid-cols-2 [&_dl]:lg:grid-cols-3 [&_dd]:text-xl [&_dd]:font-semibold [&_dd]:tabular-nums"
               currency={currency}
               snapshot={snapshot}
               onInspect={setSelected}
@@ -129,7 +130,7 @@ export function AdminAffiliateRecovery() {
           <CardHeader>
             <CardTitle>Confirmed receipts and failed attempts</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto [&_caption]:pb-3 [&_caption]:text-left [&_table]:w-full [&_table]:min-w-2xl [&_td]:p-3 [&_td]:align-top [&_td:first-child]:max-w-xs [&_td:first-child]:break-all [&_th]:p-3 [&_th]:text-left [&_nav]:mt-4 [&_nav]:flex [&_nav]:items-center [&_nav]:gap-3 [&_button]:rounded-md [&_button]:border [&_button]:px-3 [&_button]:py-1.5">
             <AffiliateRecoveryHistory
               operations={history.page}
               currency={currency}

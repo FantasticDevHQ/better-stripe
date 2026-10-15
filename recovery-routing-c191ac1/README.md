@@ -10,3 +10,5 @@ Current source: c191ac1877d49064de0d414fc15e559c7329440f (rebased on main, packa
 - React Doctor: 90/100, one warning at saleRecovery.ts:46. The balance read must follow the reservation mutation to see the updated financial totals; parallelizing those awaits would be incorrect. All React and repository checks pass.
 
 These are Stripe sandbox results, not live-mode charges. Test data contains fictional personas and sandbox provider IDs. Credentials are excluded; harnesses read test keys only into child-process memory. Hosts still own authorization, fee policy and explicit balance-payment consent. Unresolved legacy holds and ambiguous funding allocations fail closed rather than inventing collection.
+
+Final source 1494b5798592f8e78a548bc2013dcf7a3649f31d removes only an unused example allocation helper and its two obsolete tests. Runtime recovery behavior and UI are unchanged from the recorded c191ac1 evidence. All 15 gates rerun and passed at 73.5% coverage; see cleanup-gates-1494b57.log.

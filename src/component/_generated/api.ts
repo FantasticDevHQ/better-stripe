@@ -12,6 +12,7 @@ import type * as billing_mutations from "../billing/mutations.js";
 import type * as billing_queries from "../billing/queries.js";
 import type * as billing_validators from "../billing/validators.js";
 import type * as connect_mutations from "../connect/mutations.js";
+import type * as connect_payoutWrites from "../connect/payoutWrites.js";
 import type * as connect_queries from "../connect/queries.js";
 import type * as connect_validators from "../connect/validators.js";
 import type * as core_mutations from "../core/mutations.js";
@@ -50,6 +51,10 @@ import type * as payoutSnapshots_localState from "../payoutSnapshots/localState.
 import type * as payoutSnapshots_mutations from "../payoutSnapshots/mutations.js";
 import type * as payoutSnapshots_revisions from "../payoutSnapshots/revisions.js";
 import type * as payoutSnapshots_scope from "../payoutSnapshots/scope.js";
+import type * as payoutSync_helpers from "../payoutSync/helpers.js";
+import type * as payoutSync_mutations from "../payoutSync/mutations.js";
+import type * as payoutSync_queries from "../payoutSync/queries.js";
+import type * as payoutSync_validators from "../payoutSync/validators.js";
 import type * as payoutWorker_helpers from "../payoutWorker/helpers.js";
 import type * as payoutWorker_mutations from "../payoutWorker/mutations.js";
 import type * as payoutWorker_queries from "../payoutWorker/queries.js";
@@ -75,6 +80,7 @@ const fullApi: ApiFromModules<{
   "billing/queries": typeof billing_queries;
   "billing/validators": typeof billing_validators;
   "connect/mutations": typeof connect_mutations;
+  "connect/payoutWrites": typeof connect_payoutWrites;
   "connect/queries": typeof connect_queries;
   "connect/validators": typeof connect_validators;
   "core/mutations": typeof core_mutations;
@@ -113,6 +119,10 @@ const fullApi: ApiFromModules<{
   "payoutSnapshots/mutations": typeof payoutSnapshots_mutations;
   "payoutSnapshots/revisions": typeof payoutSnapshots_revisions;
   "payoutSnapshots/scope": typeof payoutSnapshots_scope;
+  "payoutSync/helpers": typeof payoutSync_helpers;
+  "payoutSync/mutations": typeof payoutSync_mutations;
+  "payoutSync/queries": typeof payoutSync_queries;
+  "payoutSync/validators": typeof payoutSync_validators;
   "payoutWorker/helpers": typeof payoutWorker_helpers;
   "payoutWorker/mutations": typeof payoutWorker_mutations;
   "payoutWorker/queries": typeof payoutWorker_queries;

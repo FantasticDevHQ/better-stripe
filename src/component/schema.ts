@@ -8,6 +8,7 @@ import {
   snapshotClaimsTable,
   snapshotFeesTable,
 } from "./payoutSnapshots/schema.js";
+import { claimsTable as payoutSyncClaimsTable } from "./payoutSync/schema.js";
 import {
   feeBalancesTable as payoutFeeBalancesTable,
   claimsTable as payoutReleaseClaimsTable,
@@ -55,6 +56,7 @@ export default defineSchema({
   payoutSnapshotSources: snapshotSourcesTable,
   payoutSnapshotClaims: snapshotClaimsTable,
   payoutSnapshotFees: snapshotFeesTable,
+  payoutSyncClaims: payoutSyncClaimsTable,
   payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,
   payoutSourceAllocations: payoutSourceAllocationsTable,

@@ -3310,6 +3310,88 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutSync: {
+      mutations: {
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; stripePayoutId: string },
+          number,
+          Name
+        >;
+        finish: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            generation: number;
+            payout: {
+              accountId: string;
+              amount: number;
+              arrivalDate?: string;
+              currency: string;
+              failureCode?: string;
+              failureMessage?: string;
+              metadata?: Record<string, string>;
+              method?: string;
+              status: "pending" | "paid" | "failed" | "canceled" | "in_transit";
+              stripePayoutId: string;
+            };
+            stripePayoutId: string;
+          },
+          | {
+              changed: boolean;
+              generation: number;
+              payout: {
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                amount: number;
+                arrivalDate?: string;
+                currency: string;
+                failureCode?: string;
+                failureMessage?: string;
+                metadata?: any;
+                method?: string;
+                status:
+                  "pending" | "paid" | "failed" | "canceled" | "in_transit";
+                stripePayoutId: string;
+                totalsRecorded?: true;
+              };
+              status: "accepted";
+            }
+          | { generation: number; status: "superseded" },
+          Name
+        >;
+        markUnknown: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; generation: number; stripePayoutId: string },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; stripePayoutId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            acceptedAt?: number;
+            acceptedFingerprint?: string;
+            acceptedGeneration?: number;
+            accountId: string;
+            generation: number;
+            startedAt: number;
+            status: "pending" | "accepted" | "unknown";
+            stripePayoutId: string;
+          } | null,
+          Name
+        >;
+      };
+    };
     payoutWorker: {
       mutations: {
         begin: FunctionReference<

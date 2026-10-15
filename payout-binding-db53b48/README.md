@@ -25,7 +25,7 @@ The production cron, worker, adapters and financial binding modules in the isola
 
 ## Verification
 
-All 15 repository gates pass; 77.5% line coverage. 143 focused package tests and 21 example tests pass. The original failing refund-cost race and final logs are included. Two new multi-pass integration scenarios explicitly allow 15 seconds under coverage; existing budgets/floors are unchanged. React Doctor reports four warnings about sequential indexed Convex reads; the live supported scan completed within the ten-minute action limit. This is not a performance guarantee for every workload.
+All 15 repository gates pass; 77.5% line coverage. 143 focused package tests and 21 example tests pass. The original failing refund-cost race and final logs are included. Two new multi-pass integration scenarios explicitly allow 15 seconds under coverage; existing budgets/floors are unchanged. React Doctor reports four warnings about sequential indexed Convex reads; the live supported scan completed within the ten-minute worker lease. This is not a performance guarantee for every workload.
 
 The versioned-liability regression is deterministic component/client evidence. It proves new/increased/decreased costs invalidate stale qualification, fresh quotes pay exact net entitlement, and unknown/attempted claims never create replacements. It does not claim a new live customer-refund scenario in this recording.
 
@@ -33,3 +33,5 @@ Parent payout and linked Dojo consumer acceptance remain open. See the separate 
 
 ![Verified paid assessment](./paid-cards.png)
 ![Components after restoration](./components-restored.png)
+
+Runtime note: current [Convex limits](https://docs.convex.dev/production/state/limits) distinguish 30-minute Convex-runtime actions from 10-minute Node actions. This example uses a Convex-runtime action; the measured 160.3 seconds also fits its separate ten-minute worker lease.

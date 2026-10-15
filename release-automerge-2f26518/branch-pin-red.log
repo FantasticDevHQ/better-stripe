@@ -1,0 +1,35 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |scripts| scripts/enable-release-automerge.test.mjs (16 tests | 1 failed) 208ms
+   × pins the generated release branch across retries 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > pins the generated release branch across retries
+AssertionError: promise resolved "'enabled'" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+"enabled"
+
+ ❯ scripts/enable-release-automerge.test.mjs:136:22
+    134|   command.mockResolvedValueOnce(JSON.stringify(pr())).mockRejectedValu…
+    135|     .mockResolvedValueOnce(JSON.stringify({ ...pr(), head: { ...pr().h…
+    136|   await expect(run()).rejects.toThrow("generated release PR");
+       |                      ^
+    137|   expect(command).toHaveBeenCalledTimes(3);
+    138| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  13:04:31
+   Duration  630ms (tests 82%, transform 10%, import 7%, worker 2%)
+

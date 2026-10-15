@@ -1,0 +1,341 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |scripts| scripts/enable-release-automerge.test.mjs (15 tests | 15 failed) 31ms
+   × re-reads the same release PR after a stale head and preserves exact-head matching 9ms
+   × bounds repeated stale-head failures to three merge attempts 4ms
+   × does not retry unrelated errors or failed PR reads 1ms
+   × refuses an unexpected branch, repository, base or revision 1ms
+   × refuses an unexpected branch, repository, base or revision 1ms
+   × refuses an unexpected branch, repository, base or revision 1ms
+   × refuses an unexpected branch, repository, base or revision 1ms
+   × refuses an unexpected branch, repository, base or revision 1ms
+   × revalidates release branch identity after a head race 1ms
+   × accepts an already merged release without another merge operation 1ms
+   × does not enable auto-merge for a closed, unmerged PR 1ms
+   × uses the tested retry helper in the release workflow 3ms
+   × rejects invalid invocation before external calls 1ms
+   × rejects invalid invocation before external calls 1ms
+   × rejects invalid invocation before external calls 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > re-reads the same release PR after a stale head and preserves exact-head matching
+AssertionError: release auto-merge retry helper is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature scripts/enable-release-automerge.test.mjs:16:87
+     14| async function feature() {
+     15|   const module = await import("./enable-release-automerge.mjs").catch(…
+     16|   expect(module.enableReleaseAutoMerge, "release auto-merge retry help…
+       |                                                                                       ^
+     17|   return module.enableReleaseAutoMerge;
+     18| }
+ ❯ run scripts/enable-release-automerge.test.mjs:22:57
+ ❯ scripts/enable-release-automerge.test.mjs:28:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > bounds repeated stale-head failures to three merge attempts
+AssertionError: expected [Function] to throw error including 'merge rejected' but got 'release auto-merge retry helper is mi…'
+
+Expected: "merge rejected"
+Received: "release auto-merge retry helper is missing: expected undefined to be type of 'function'"
+
+ ❯ scripts/enable-release-automerge.test.mjs:40:22
+     38|   const { command, wait, run } = setup();
+     39|   command.mockImplementation(async (args) => { if(args[0] === "api") r…
+     40|   await expect(run()).rejects.toThrow("merge rejected");
+       |                      ^
+     41|   expect(command).toHaveBeenCalledTimes(6);
+     42|   expect(wait).toHaveBeenCalledTimes(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > does not retry unrelated errors or failed PR reads
+AssertionError: expected [Function] to throw error including 'permission denied' but got 'release auto-merge retry helper is mi…'
+
+Expected: "permission denied"
+Received: "release auto-merge retry helper is missing: expected undefined to be type of 'function'"
+
+ ❯ scripts/enable-release-automerge.test.mjs:47:22
+     45|   const { command, wait, run } = setup();
+     46|   command.mockResolvedValueOnce(JSON.stringify(pr())).mockRejectedValu…
+     47|   await expect(run()).rejects.toThrow("permission denied");
+       |                      ^
+     48|   expect(command).toHaveBeenCalledTimes(2);
+     49|   expect(wait).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > refuses an unexpected branch, repository, base or revision
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > refuses an unexpected branch, repository, base or revision
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > refuses an unexpected branch, repository, base or revision
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > refuses an unexpected branch, repository, base or revision
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > refuses an unexpected branch, repository, base or revision
+AssertionError: expected [Function] to throw error including 'generated release PR' but got 'release auto-merge retry helper is mi…'
+
+Expected: "generated release PR"
+Received: "release auto-merge retry helper is missing: expected undefined to be type of 'function'"
+
+ ❯ scripts/enable-release-automerge.test.mjs:63:22
+     61|   const { command, run } = setup();
+     62|   command.mockResolvedValueOnce(JSON.stringify(data));
+     63|   await expect(run()).rejects.toThrow("generated release PR");
+       |                      ^
+     64|   expect(command).toHaveBeenCalledTimes(1);
+     65| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > revalidates release branch identity after a head race
+AssertionError: expected [Function] to throw error including 'generated release PR' but got 'release auto-merge retry helper is mi…'
+
+Expected: "generated release PR"
+Received: "release auto-merge retry helper is missing: expected undefined to be type of 'function'"
+
+ ❯ scripts/enable-release-automerge.test.mjs:70:22
+     68|   command.mockResolvedValueOnce(JSON.stringify(pr())).mockRejectedValu…
+     69|     .mockResolvedValueOnce(JSON.stringify({ ...pr(), head: { ...pr().h…
+     70|   await expect(run()).rejects.toThrow("generated release PR");
+       |                      ^
+     71|   expect(command).toHaveBeenCalledTimes(3);
+     72| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > accepts an already merged release without another merge operation
+AssertionError: release auto-merge retry helper is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature scripts/enable-release-automerge.test.mjs:16:87
+     14| async function feature() {
+     15|   const module = await import("./enable-release-automerge.mjs").catch(…
+     16|   expect(module.enableReleaseAutoMerge, "release auto-merge retry help…
+       |                                                                                       ^
+     17|   return module.enableReleaseAutoMerge;
+     18| }
+ ❯ run scripts/enable-release-automerge.test.mjs:22:57
+ ❯ scripts/enable-release-automerge.test.mjs:76:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > does not enable auto-merge for a closed, unmerged PR
+AssertionError: release auto-merge retry helper is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature scripts/enable-release-automerge.test.mjs:16:87
+     14| async function feature() {
+     15|   const module = await import("./enable-release-automerge.mjs").catch(…
+     16|   expect(module.enableReleaseAutoMerge, "release auto-merge retry help…
+       |                                                                                       ^
+     17|   return module.enableReleaseAutoMerge;
+     18| }
+ ❯ run scripts/enable-release-automerge.test.mjs:22:57
+ ❯ scripts/enable-release-automerge.test.mjs:82:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > uses the tested retry helper in the release workflow
+AssertionError: expected 'name: Release\n\n# Release Please kee…' to contain 'node scripts/enable-release-automerge…'
+
+- Expected
++ Received
+
+- node scripts/enable-release-automerge.mjs
++ name: Release
++
++ # Release Please keeps a release PR open against main. It bumps package.json, CHANGELOG.md,
++ # the README version line and .release-please-manifest.json from the Conventional Commit titles
++ # merged since the last release. Merging that PR is the release decision: the `release-please`
++ # job then tags the version and creates the GitHub release, and the `publish` job below publishes
++ # it to npmjs.com in the same run. A tag pushed with GITHUB_TOKEN does not start another
++ # workflow, so publishing cannot wait for one.
++ #
++ # A manually pushed `vX.Y.Z` tag still publishes through the `publish` job alone.
++ #
++ # Auth: npm trusted publishing. npmjs.com trusts this repository's `release.yml` (keep the
++ # filename), and the job exchanges its OIDC token for a one-off publish credential, so no
++ # long-lived npm token exists. The same OIDC token signs the provenance attestation that ties
++ # the tarball to this run and commit (provenance needs the repository to be public).
++ # Trusted publishing needs npm >= 11.5.1.
++
++ on:
++   push:
++     branches: [main]
++     tags: ["v*"]
++   workflow_dispatch:
++
++ permissions:
++   contents: read
++
++ concurrency:
++   group: release
++   cancel-in-progress: false # never kill a publish mid-flight
++
++ jobs:
++   release-please:
++     name: Release PR
++     if: github.ref == 'refs/heads/main'
++     runs-on: ubuntu-24.04
++     timeout-minutes: 10
++     permissions:
++       contents: write # tag and GitHub release
++       issues: write # release labels
++       pull-requests: write # the release PR
++     outputs:
++       release_created: ${{ steps.release.outputs.release_created }}
++       tag_name: ${{ steps.release.outputs.tag_name }}
++     steps:
++       # Releases and tags use GITHUB_TOKEN on purpose: its events do not trigger workflows, so
++       # the v* tag push cannot start a second publish below.
++       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
++         id: release
++         with:
++           config-file: release-please-config.json
++           manifest-file: .release-please-manifest.json
++           skip-github-pull-request: true
++       # The release PR uses the org-wide release GitHub App, so it triggers CI like any other PR
++       # and can satisfy the required checks on main.
++       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
++         id: app-token
++         with:
++           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
++           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
++           permission-contents: write
++           permission-pull-requests: write
++           permission-issues: write
++       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
++         id: release-pr
++         with:
++           token: ${{ steps.app-token.outputs.token }}
++           config-file: release-please-config.json
++           manifest-file: .release-please-manifest.json
++           skip-github-release: true
++       # Release Please emits Markdown that may not match the repository formatter.
++       # Use the App token so the formatting commit triggers CI on the release PR.
++       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++         if: steps.release-pr.outputs.prs_created == 'true'
++         with:
++           persist-credentials: false
++       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
++         if: steps.release-pr.outputs.prs_created == 'true'
++       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++         if: steps.release-pr.outputs.prs_created == 'true'
++         with:
++           node-version: 24
++           cache: pnpm
++       - name: Format the generated release changelog
++         if: steps.release-pr.outputs.prs_created == 'true'
++         env:
++           GH_TOKEN: ${{ steps.app-token.outputs.token }}
++           RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
++         run: |
++           pnpm install --frozen-lockfile --ignore-scripts
++           node scripts/format-release-changelog.mjs
++       - name: Enable auto-merge for the generated release PR
++         if: steps.release-pr.outputs.prs_created == 'true'
++         env:
++           GH_TOKEN: ${{ steps.app-token.outputs.token }}
++           RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
++         run: |
++           set -euo pipefail
++           pr_number="$(jq -er '.number | select(type == "number" and . > 0)' <<< "$RELEASE_PR")"
++           release_head="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
++           gh pr merge "$pr_number" --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$release_head"
++
++   publish:
++     name: Publish
++     needs: release-please
++     if: >-
++       always() && !cancelled() &&
++       (needs.release-please.outputs.release_created == 'true' ||
++        (startsWith(github.ref, 'refs/tags/v') && needs.release-please.result == 'skipped'))
++     runs-on: ubuntu-24.04
++     timeout-minutes: 20
++     permissions:
++       contents: write # create the GitHub release for a manual tag
++       id-token: write # trusted publishing + provenance
++     env:
++       RELEASE_TAG: ${{ needs.release-please.outputs.tag_name || github.ref_name }}
++     steps:
++       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++         with:
++           ref: ${{ env.RELEASE_TAG }}
++           persist-credentials: false
++       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
++       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
++         with:
++           node-version: 24
++           cache: pnpm
++           registry-url: https://registry.npmjs.org
++       - name: Require the tag to match package.json and CHANGELOG.md
++         run: |
++           set -euo pipefail
++           version="$(node -p 'require("./package.json").version')"
++           test "v${version}" = "${RELEASE_TAG}" || { echo "tag ${RELEASE_TAG} != package.json v${version}" >&2; exit 1; }
++           node scripts/release-notes.mjs "${version}" > "${RUNNER_TEMP}/release-notes.md"
++       - name: Require npm with trusted publishing
++         run: |
++           set -euo pipefail
++           node -e 'const [a,b,c]=process.argv[1].split(".").map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)' "$(npm --version)" \
++             || { echo "npm $(npm --version) is older than 11.5.1, which trusted publishing needs" >&2; exit 1; }
++       - run: pnpm install --frozen-lockfile
++       # The same gates as CI's `ci` job, plus the codegen drift check.
++       - run: pnpm build
++       - run: pnpm typecheck
++       - run: pnpm lint
++       - run: pnpm test
++       - run: pnpm codegen:check
++       - name: Publish to npm
++         # The steps above built dist; skip lifecycle scripts so publish cannot rebuild a different
++         # tree. Registry, public access and provenance come from package.json `publishConfig`.
++         run: npm publish --ignore-scripts
++       # Release Please already created the GitHub release for its own tags.
++       - name: Create the GitHub release for a manual tag
++         if: startsWith(github.ref, 'refs/tags/v')
++         env:
++           GH_TOKEN: ${{ github.token }}
++         run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "${RUNNER_TEMP}/release-notes.md"
++
+
+ ❯ scripts/enable-release-automerge.test.mjs:86:67
+     84| });
+     85| it("uses the tested retry helper in the release workflow", async () =>…
+     86|   expect(await readFile(".github/workflows/release.yml", "utf8")).toCo…
+       |                                                                   ^
+     87| });
+     88| it.each([{ repository: "bad", prNumber: 174 }, { repository, prNumber:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > rejects invalid invocation before external calls
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > rejects invalid invocation before external calls
+ FAIL  |scripts| scripts/enable-release-automerge.test.mjs > rejects invalid invocation before external calls
+AssertionError: expected [Function] to throw error including 'Repository and release PR number' but got 'release auto-merge retry helper is mi…'
+
+Expected: "Repository and release PR number"
+Received: "release auto-merge retry helper is missing: expected undefined to be type of 'function'"
+
+ ❯ scripts/enable-release-automerge.test.mjs:90:29
+     88| it.each([{ repository: "bad", prNumber: 174 }, { repository, prNumber:…
+     89|   const { command, run } = setup();
+     90|   await expect(run(options)).rejects.toThrow("Repository and release P…
+       |                             ^
+     91|   expect(command).not.toHaveBeenCalled();
+     92| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  15 failed (15)
+   Start at  13:03:09
+   Duration  185ms (tests 57%, transform 24%, import 13%, worker 5%)
+

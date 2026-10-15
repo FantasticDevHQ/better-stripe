@@ -677,7 +677,10 @@ fields. They are never inferred from the current Stripe available balance.
 
 `policy={undefined}` means loading. A null policy or `stripe_managed` mode shows
 Stripe-managed defaults without inventing a numeric provider floor. Changing
-policies suppress prior financial progress. For a ready custom policy, an
+policies suppress prior financial progress during activation, opt-out and expiry
+restoration. A policy preserves its prior mode until confirmation, so mode alone
+does not establish verified controls while status is `changing`.
+For a ready custom policy, an
 undefined preview means loading; a null or minimal held preview shows an
 unavailable assessment rather than fabricated zero balances. A mismatched
 currency or configured minimum rejects the display.

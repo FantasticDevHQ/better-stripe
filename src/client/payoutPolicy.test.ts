@@ -242,6 +242,40 @@ it("restores original settings at the holding deadline, without extending it", a
   expect((await client.get(ctx, scope))!.mode).toBe("stripe_managed");
   expect(provider.balanceSettings.update).toHaveBeenCalledTimes(2);
 });
+it("retains pending expiry restoration and retries the same provider operation", async () => {
+  const { client, ctx, t, provider } = await setup();
+  await client.prepare(ctx, options);
+  await client.apply(ctx, { ...scope, operationKey: "enable" });
+  await t.run(async (c) => {
+    const p = await c.db.query("payoutPolicies").first();
+    await c.db.patch(p!._id, { holdDeadline: Date.now() - 1 });
+  });
+  provider.balanceSettings.update.mockRejectedValueOnce(
+    new Error("restoration timeout"),
+  );
+  await expect(client.expire(ctx, scope)).rejects.toThrow(
+    "restoration timeout",
+  );
+  const pending = await client.get(ctx, scope);
+  expect(pending).toMatchObject({
+    mode: "custom",
+    status: "changing",
+    previousSchedule: { interval: "weekly", weeklyDays: ["monday"] },
+  });
+  expect(pending!.holdDeadline).toBeLessThan(Date.now());
+  await client.expire(ctx, scope);
+  expect(await client.get(ctx, scope)).toMatchObject({
+    mode: "stripe_managed",
+    status: "ready",
+  });
+  expect(provider.balanceSettings.update).toHaveBeenCalledTimes(3);
+  expect(provider.balanceSettings.update.mock.calls[1][1]).toEqual(
+    provider.balanceSettings.update.mock.calls[2][1],
+  );
+  expect(
+    (await provider.balanceSettings.retrieve()).payments.payouts.schedule,
+  ).toMatchObject({ interval: "weekly", weekly_payout_days: ["monday"] });
+});
 it("re-checks live control on every payout-policy verification", async () => {
   const { client, ctx, setSchedule } = await setup();
   await client.prepare(ctx, options);

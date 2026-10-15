@@ -103,16 +103,37 @@ it("keeps Stripe-managed defaults distinct from a custom application minimum", (
   expect(screen.queryByRole("progressbar")).toBeNull();
   expect(screen.queryByText("$1.00")).toBeNull();
 });
-it("does not reuse a prior assessment while the schedule change is pending", () => {
+it.each(["custom", "stripe_managed"] as const)(
+  "keeps %s mode unverified while the schedule change is pending",
+  (mode) => {
+    render(
+      <PayoutProgress
+        policy={{ ...policy, mode, status: "changing" }}
+        preview={preview}
+        currency="usd"
+      />,
+    );
+    expect(screen.getByRole("status").textContent).toContain("being verified");
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText(/Stripe manages automatic payouts/)).toBeNull();
+    expect(screen.queryByText("Combined qualifying balance")).toBeNull();
+  },
+);
+it("gives host cards an unverified state during activation from Stripe-managed defaults", () => {
   render(
     <PayoutProgress
-      policy={{ ...policy, status: "changing" }}
+      policy={{ ...policy, mode: "stripe_managed", status: "changing" }}
       preview={preview}
       currency="usd"
-    />,
+    >
+      {(state) => (
+        <span data-testid="restoration">
+          {state.status}:{state.metrics.length}
+        </span>
+      )}
+    </PayoutProgress>,
   );
-  expect(screen.getByRole("status").textContent).toContain("being verified");
-  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.getByTestId("restoration").textContent).toBe("changing:0");
 });
 it("preserves negative entitlement while clamping only the visual progress", () => {
   render(

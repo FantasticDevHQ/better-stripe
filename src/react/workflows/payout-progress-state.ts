@@ -98,14 +98,14 @@ export function payoutProgressState({
     observedAt: null,
   };
   if (policy !== undefined) {
-    if (!policy || policy.mode === "stripe_managed") {
-      state.status = "stripe_managed";
-      state.message =
-        "Stripe manages automatic payouts. No additional application minimum is set.";
-    } else if (policy.status === "changing") {
+    if (policy?.status === "changing") {
       state.status = "changing";
       state.message =
         "Payout settings are being verified. Eligibility is unavailable until the change completes.";
+    } else if (!policy || policy.mode === "stripe_managed") {
+      state.status = "stripe_managed";
+      state.message =
+        "Stripe manages automatic payouts. No additional application minimum is set.";
     } else if (preview !== undefined) {
       state.nextAttemptAt = nextAttemptAt ?? null;
       if (!preview || !("currency" in preview)) {

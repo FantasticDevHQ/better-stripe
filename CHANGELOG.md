@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.25.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.24.0...v0.25.0) (2026-10-15)
+
+### Features
+
+- **checkout:** expose immutable prepared request execution ([#199](https://github.com/FantasticDevHQ/better-stripe/issues/199)) ([a73454b](https://github.com/FantasticDevHQ/better-stripe/commit/a73454b3027613c5920be79e152610448c9ac70c))
+- **payouts:** collect ledger pages and schedule durable payout attempts ([#198](https://github.com/FantasticDevHQ/better-stripe/issues/198)) ([0ed1b2f](https://github.com/FantasticDevHQ/better-stripe/commit/0ed1b2f23ab34301d226fa65fe0c63e093f4f9e1))
+
 ## [0.24.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.23.2...v0.24.0) (2026-10-15)
 
 ### Features

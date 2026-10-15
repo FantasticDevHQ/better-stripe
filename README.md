@@ -36,6 +36,12 @@ Accounts and changes customer creation in Stripe-hosted integrations. Review
 those migration effects before enabling it on an existing account.
 See the [customer preview setup and webhook migration guide](docs/accounts-v2-preview.md).
 
+Recipient-held custom payout policies now have versioned preparation, verified
+manual schedule changes, live drift checks, opt-out restoration, and a bounded
+deadline-expiry API. See [policy setup and limits](docs/settlement.md#recipient-held-payout-policy-controls).
+Automatic combined release and adoption of existing balances still require the
+separate release boundary; schedule controls alone do not enforce a minimum.
+
 ## Status
 
 **Version**: `0.17.1` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.

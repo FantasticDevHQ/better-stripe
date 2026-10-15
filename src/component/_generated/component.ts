@@ -2194,6 +2194,286 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutPolicy: {
+      mutations: {
+        beginAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        cancelUnattempted: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        confirm: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          },
+          Name
+        >;
+      };
+      queries: {
+        due: FunctionReference<
+          "query",
+          "internal",
+          {
+            now: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              country: string;
+              holdDeadline?: number;
+              mode: "stripe_managed" | "custom";
+              operationKey: string;
+              ownerKey: string;
+              previousSchedule?: {
+                interval: "daily" | "weekly" | "monthly" | "manual";
+                monthlyDays?: Array<number>;
+                weeklyDays?: Array<string>;
+              };
+              revision: number;
+              status: "changing" | "ready";
+              thresholds: Array<{ amount: number; currency: string }>;
+            }>;
+          },
+          Name
+        >;
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            country: string;
+            holdDeadline?: number;
+            mode: "stripe_managed" | "custom";
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule?: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "changing" | "ready";
+            thresholds: Array<{ amount: number; currency: string }>;
+          } | null,
+          Name
+        >;
+        operation: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            attempted?: boolean;
+            country: string;
+            expectedRevision: number;
+            mode: "stripe_managed" | "custom";
+            observedAt?: number;
+            observedSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            operationKey: string;
+            ownerKey: string;
+            previousSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            revision: number;
+            status: "pending" | "complete" | "canceled";
+            targetSchedule: {
+              interval: "daily" | "weekly" | "monthly" | "manual";
+              monthlyDays?: Array<number>;
+              weeklyDays?: Array<string>;
+            };
+            thresholds: Array<{ amount: number; currency: string }>;
+          } | null,
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<

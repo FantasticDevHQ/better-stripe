@@ -1,3 +1,5 @@
+import { PayoutPolicyClient } from "./payoutPolicy.js";
+export * from "./payoutPolicy.js";
 import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
@@ -1146,17 +1148,7 @@ export class BetterStripe extends ReadContractClient {
 
   // PAYOUT METHODS
 
-  async createPayout(
-    ctx: RunCtx,
-    opts: {
-      stripeAccountId: string;
-      amount: number;
-      currency?: string;
-      metadata?: Record<string, string>;
-      /** Stripe idempotency key for retry-safe payout creation. */
-      idempotencyKey?: string;
-    },
-  ) {
+  async createPayout(ctx: RunCtx, opts: payoutsImpl.CreatePayoutOptions) {
     return payoutsImpl.createPayout(this.stripe(), ctx, opts);
   }
 
@@ -1263,6 +1255,10 @@ export class BetterStripe extends ReadContractClient {
   ) {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
   }
+  get payoutPolicy() {
+    return new PayoutPolicyClient(this.component, () => this.stripe());
+  }
+
   get costRecovery() {
     return new CostRecoveryClient(this.component, () => this.stripe());
   }

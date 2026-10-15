@@ -4,6 +4,8 @@ import { getFunctionName } from "convex/server";
 import { beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   currency: "jpy",
+  chargeContext: null as
+    { sourceChargeId: string; currency: string } | null | undefined,
   refund: vi.fn(),
   reverse: vi.fn(),
 }));
@@ -23,11 +25,15 @@ vi.mock("convex/react", () => ({
       : mocks.reverse,
   useQuery: (
     fn: Parameters<typeof getFunctionName>[0],
-    args: { stripePaymentIntentId?: string } | "skip",
+    args: { stripePaymentIntentId?: string; sourceChargeId?: string } | "skip",
   ) => {
     const name = getFunctionName(fn);
     if (name === "queries:getAccountByUserId")
       return { stripeAccountId: "acct_test" };
+    if (name === "queries:getRefundChargeContext")
+      return args !== "skip" && args.sourceChargeId === "ch_test"
+        ? mocks.chargeContext
+        : null;
     if (name === "queries:getPaymentByStripeId")
       return args !== "skip" && args.stripePaymentIntentId === "pi_test"
         ? {
@@ -43,6 +49,7 @@ vi.mock("convex/react", () => ({
 }));
 import { SellerRefunds } from "../pages/seller/refunds";
 beforeEach(() => {
+  mocks.chargeContext = null;
   mocks.refund.mockReset().mockResolvedValue({ stripeRefundId: "re_example" });
   mocks.reverse.mockReset().mockResolvedValue({
     reversals: [],
@@ -81,5 +88,44 @@ it.each([
       "ch_unverified",
     );
     expect(screen.getByTestId("reversal-partial-button")).toBeDisabled();
+  },
+);
+
+it("uses an independently loaded ISK charge with a JPY refund payment", async () => {
+  mocks.currency = "jpy";
+  mocks.chargeContext = { sourceChargeId: "ch_test", currency: "isk" };
+  render(<SellerRefunds />);
+  await userEvent.type(
+    screen.getByTestId("reversal-partial-amount-input"),
+    "500",
+  );
+  expect(screen.getByTestId("reversal-partial-button")).toBeEnabled();
+  await userEvent.click(screen.getByTestId("reversal-partial-button"));
+  expect(mocks.reverse).toHaveBeenCalledWith({
+    sourceChargeId: "ch_test",
+    amountCents: 50000,
+    userId: "seller_id",
+  });
+  await userEvent.clear(screen.getByTestId("reversal-charge-input"));
+  await userEvent.type(
+    screen.getByTestId("reversal-charge-input"),
+    "ch_unverified",
+  );
+  expect(screen.getByTestId("reversal-partial-button")).toBeDisabled();
+  expect(screen.getByTestId("reversal-partial-amount-input")).toHaveValue("");
+});
+
+it.each([
+  undefined,
+  null,
+  { sourceChargeId: "ch_wrong", currency: "isk" },
+  { sourceChargeId: "ch_test", currency: "zzz" },
+])(
+  "disables partial reversal for unavailable or mismatched charge context %j",
+  (context) => {
+    mocks.chargeContext = context;
+    render(<SellerRefunds />);
+    expect(screen.getByTestId("reversal-partial-button")).toBeDisabled();
+    expect(mocks.reverse).not.toHaveBeenCalled();
   },
 );

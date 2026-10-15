@@ -93,6 +93,15 @@ export function SellerRefunds() {
       ? { stripePaymentIntentId: selection.paymentIntentId.trim() }
       : "skip",
   );
+  const chargeContext = useQuery(
+    api.queries.getRefundChargeContext,
+    selection.sourceChargeId.trim()
+      ? {
+          userId: currentUser.id,
+          sourceChargeId: selection.sourceChargeId.trim(),
+        }
+      : "skip",
+  );
   const setPaymentIntentId = (paymentIntentId: string) =>
     setSelection((previous) => ({ ...previous, paymentIntentId }));
   const setSourceChargeId = (sourceChargeId: string) =>
@@ -119,7 +128,10 @@ export function SellerRefunds() {
     paymentIntentId: selection.paymentIntentId,
     sourceChargeId: selection.sourceChargeId,
     paymentCurrency: payment?.currency ?? null,
-    sourceChargeCurrency: null,
+    sourceChargeCurrency:
+      chargeContext?.sourceChargeId === selection.sourceChargeId.trim()
+        ? chargeContext.currency
+        : null,
     issueRefund: (args) => issueRefund({ ...args, userId: currentUser.id }),
     reverseTransfers: (args) =>
       reverseTransfers({ ...args, userId: currentUser.id }),
@@ -386,8 +398,9 @@ export function SellerRefunds() {
         <CardContent>
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
-              Original charge currency lookup is not configured here. Partial
-              reversals remain disabled until that context is available.
+              Partial reversals use the original charge currency, verified
+              against this seller's stored merchant allocation. They remain
+              disabled when that context is unavailable.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">

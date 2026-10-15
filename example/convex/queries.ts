@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { StripeComponentAccount } from "@fantastic.dev/better-stripe";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -18,17 +19,53 @@ type TransferLedgerRow = {
 };
 
 // Accounts
+async function getPersonaAccount(
+  ctx: QueryCtx,
+  userId: string,
+): Promise<StripeComponentAccount | null> {
+  if (!userId) return null;
+  const id = ctx.db.normalizeId("users", userId);
+  const user = id ? await ctx.db.get("users", id) : null;
+  return user?.stripeAccountId
+    ? stripe.getAccountByStripeId(ctx, {
+        stripeAccountId: user.stripeAccountId,
+      })
+    : stripe.getAccountByUserId(ctx, { userId });
+}
 export const getAccountByUserId = query({
   args: { userId: v.string() },
+  handler: async (ctx, args) => getPersonaAccount(ctx, args.userId),
+});
+
+/** Demo persona binding only. Production hosts must derive an authenticated user. */
+export const getRefundChargeContext = query({
+  args: { userId: v.string(), sourceChargeId: v.string() },
+  returns: v.union(
+    v.object({ sourceChargeId: v.string(), currency: v.string() }),
+    v.null(),
+  ),
   handler: async (ctx, args) => {
-    if (!args.userId) return null;
     const userId = ctx.db.normalizeId("users", args.userId);
-    const user = userId ? await ctx.db.get("users", userId) : null;
-    return user?.stripeAccountId
-      ? stripe.getAccountByStripeId(ctx, {
-          stripeAccountId: user.stripeAccountId,
-        })
-      : stripe.getAccountByUserId(ctx, args);
+    const sourceChargeId = args.sourceChargeId.trim();
+    if (!userId || !sourceChargeId || !(await ctx.db.get("users", userId)))
+      return null;
+    const account = await getPersonaAccount(ctx, userId);
+    if (!account?.stripeAccountId || account.userId !== userId) return null;
+    const allocation = await ctx.runQuery(
+      components.betterStripe.settlement.queries.getSettlementAllocation,
+      { sourceChargeId },
+    );
+    const isStoreOwner = allocation?.transfers.some(
+      (leg) =>
+        leg.role === "store" &&
+        leg.destinationAccountId === account.stripeAccountId,
+    );
+    return allocation && isStoreOwner
+      ? {
+          sourceChargeId: allocation.sourceChargeId,
+          currency: allocation.currency,
+        }
+      : null;
   },
 });
 

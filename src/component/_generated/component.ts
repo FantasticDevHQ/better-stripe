@@ -3310,6 +3310,212 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutWorker: {
+      mutations: {
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            cadenceMs: number;
+            currency: string;
+            ownerKey: string;
+          },
+          | { nextAttemptAt?: number; reason: string; status: "held" }
+          | {
+              job: {
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                cadenceMs: number;
+                completedGeneration?: number;
+                completedOperationKey?: string;
+                currency: string;
+                generation: number;
+                hasOperation: boolean;
+                lastAttemptAt?: number;
+                lastReason?: string;
+                leaseUntil?: number;
+                nextAttemptAt: number;
+                operationKey?: string;
+                ownerKey: string;
+                sequence: number;
+              };
+              reconcileOnly: boolean;
+              status: "run";
+            },
+          Name
+        >;
+        finish: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            generation: number;
+            operationKey: string;
+            ownerKey: string;
+            reason: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cadenceMs: number;
+            completedGeneration?: number;
+            completedOperationKey?: string;
+            currency: string;
+            generation: number;
+            hasOperation: boolean;
+            lastAttemptAt?: number;
+            lastReason?: string;
+            leaseUntil?: number;
+            nextAttemptAt: number;
+            operationKey?: string;
+            ownerKey: string;
+            sequence: number;
+          },
+          Name
+        >;
+      };
+      queries: {
+        changing: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              country: string;
+              holdDeadline?: number;
+              mode: "stripe_managed" | "custom";
+              operationKey: string;
+              ownerKey: string;
+              previousSchedule?: {
+                interval: "daily" | "weekly" | "monthly" | "manual";
+                monthlyDays?: Array<number>;
+                weeklyDays?: Array<string>;
+              };
+              revision: number;
+              status: "changing" | "ready";
+              thresholds: Array<{ amount: number; currency: string }>;
+            }>;
+          },
+          Name
+        >;
+        get: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; ownerKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cadenceMs: number;
+            completedGeneration?: number;
+            completedOperationKey?: string;
+            currency: string;
+            generation: number;
+            hasOperation: boolean;
+            lastAttemptAt?: number;
+            lastReason?: string;
+            leaseUntil?: number;
+            nextAttemptAt: number;
+            operationKey?: string;
+            ownerKey: string;
+            sequence: number;
+          } | null,
+          Name
+        >;
+        policies: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              country: string;
+              holdDeadline?: number;
+              mode: "stripe_managed" | "custom";
+              operationKey: string;
+              ownerKey: string;
+              previousSchedule?: {
+                interval: "daily" | "weekly" | "monthly" | "manual";
+                monthlyDays?: Array<number>;
+                weeklyDays?: Array<string>;
+              };
+              revision: number;
+              status: "changing" | "ready";
+              thresholds: Array<{ amount: number; currency: string }>;
+            }>;
+          },
+          Name
+        >;
+        recovering: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              cadenceMs: number;
+              completedGeneration?: number;
+              completedOperationKey?: string;
+              currency: string;
+              generation: number;
+              hasOperation: boolean;
+              lastAttemptAt?: number;
+              lastReason?: string;
+              leaseUntil?: number;
+              nextAttemptAt: number;
+              operationKey?: string;
+              ownerKey: string;
+              sequence: number;
+            }>;
+          },
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<

@@ -50,6 +50,9 @@ import type * as payoutSnapshots_localState from "../payoutSnapshots/localState.
 import type * as payoutSnapshots_mutations from "../payoutSnapshots/mutations.js";
 import type * as payoutSnapshots_revisions from "../payoutSnapshots/revisions.js";
 import type * as payoutSnapshots_scope from "../payoutSnapshots/scope.js";
+import type * as payoutWorker_helpers from "../payoutWorker/helpers.js";
+import type * as payoutWorker_mutations from "../payoutWorker/mutations.js";
+import type * as payoutWorker_queries from "../payoutWorker/queries.js";
 import type * as products_mutations from "../products/mutations.js";
 import type * as products_queries from "../products/queries.js";
 import type * as products_validators from "../products/validators.js";
@@ -110,6 +113,9 @@ const fullApi: ApiFromModules<{
   "payoutSnapshots/mutations": typeof payoutSnapshots_mutations;
   "payoutSnapshots/revisions": typeof payoutSnapshots_revisions;
   "payoutSnapshots/scope": typeof payoutSnapshots_scope;
+  "payoutWorker/helpers": typeof payoutWorker_helpers;
+  "payoutWorker/mutations": typeof payoutWorker_mutations;
+  "payoutWorker/queries": typeof payoutWorker_queries;
   "products/mutations": typeof products_mutations;
   "products/queries": typeof products_queries;
   "products/validators": typeof products_validators;

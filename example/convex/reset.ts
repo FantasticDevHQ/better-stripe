@@ -62,8 +62,9 @@ export const clearStripeDb = internalAction({
 export const run = internalAction({
   args: {},
   handler: async (ctx) => {
-    await ctx.runMutation(internal.reset.clearAppDb, {});
+    // Preserve host owner bindings when the component refuses an unsafe reset.
     await ctx.runAction(internal.reset.clearStripeDb, {});
+    await ctx.runMutation(internal.reset.clearAppDb, {});
     console.log("[reset] All data cleared. Run `npm run setup` to re-seed.");
   },
 });

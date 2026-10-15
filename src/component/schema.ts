@@ -1,3 +1,4 @@
+import { jobsTable as payoutWorkerJobsTable } from "./payoutWorker/schema.js";
 import {
   financialRevisionsTable,
   riskEventsTable,
@@ -46,6 +47,7 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutWorkerJobs: payoutWorkerJobsTable,
   payoutFinancialRevisions: financialRevisionsTable,
   payoutRiskEvents: riskEventsTable,
   payoutRiskRevisions: riskRevisionsTable,

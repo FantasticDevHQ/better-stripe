@@ -41,6 +41,11 @@ pnpm run setup               # Re-set the Stripe key
 
 Then visit `/admin/setup` again to re-seed and re-sync.
 
+Reset refuses active custom payout schedules, unresolved payout claims and
+in-flight payouts. Restore schedules and reconcile those operations first.
+The guarded component reset runs before app records are deleted, so a refusal
+preserves the demo owner bindings needed for recovery.
+
 The seed is **idempotent and resumable**: every step guards on what already
 exists (users by email, accounts by their linked `stripeAccountId`, catalogs by
 store-tagged products), so re-running `seed:run` — with or without a prior
@@ -79,6 +84,22 @@ Beyond the classic demo personas, the seed creates a real marketplace
   same way, for referral-share transfers in split sales.
 - **Buyer** (`Billie Buyer`) -- a billable `customer_account` with a reusable
   test card (`pm_card_visa`) attached, so purchases can charge off-session.
+
+### Automatic payout attempts
+
+Deploying the example installs the five-minute cron in `convex/crons.ts`.
+`convex/payoutWorkers.ts` dispatches ready custom policies, retained attempts,
+pending schedule operations and expired holding deadlines through BetterStripe.
+It validates the demo user's linked recipient account and withholds uncollected
+seller costs, including costs reserved on unpaid invoices.
+
+The cron does not enable custom policies. Stripe-managed automatic payouts remain
+the default. Explicit custom activation requires consent, a supported recipient
+without independent Dashboard withdrawals, verified source history and a bank
+destination. The package worker records the next application attempt, which is
+different from the next bank arrival date. Unknown payout outcomes stay attached
+to the same claim for reconciliation. See the package's
+[worker contract and limits](../docs/settlement.md#automatic-recipient-worker).
 
 ### Prerequisites
 

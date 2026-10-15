@@ -1,3 +1,5 @@
+import { PayoutWorkerClient } from "./connect/payoutWorker.js";
+export type * from "./connect/payoutWorker.js";
 import {
   collectPayoutSnapshot,
   discardPayoutSnapshot,
@@ -104,10 +106,17 @@ const toProvider = (
 });
 /** Host authenticates owner/policy/consent. Provider I/O stays in this package. */
 export class PayoutPolicyClient {
+  readonly worker: PayoutWorkerClient;
   constructor(
     private readonly component: Component,
     private readonly provider: () => Stripe,
-  ) {}
+  ) {
+    this.worker = new PayoutWorkerClient(
+      component,
+      (ctx, opts) => this.release(ctx, opts),
+      (ctx, opts) => this.reconcilePayout(ctx, opts),
+    );
+  }
   collectSnapshot(ctx: RunCtx, opts: PayoutCollectionOptions) {
     return collectPayoutSnapshot(this.component, ctx, opts);
   }

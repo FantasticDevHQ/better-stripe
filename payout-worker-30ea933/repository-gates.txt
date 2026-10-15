@@ -1,0 +1,28 @@
+
+> @fantastic.dev/better-stripe@0.23.2 check:all <repository>
+> repo-gates check-all
+
+✓ build               (1.3s)
+✓ lint                (15.8s)
+✓ check:design-system (3.8s)
+✓ format:check        (11.8s)
+✓ typecheck           (7.6s)
+✓ codegen:check       (0.5s)
+✓ check:size          (0.7s)
+✓ check:debt          (1.0s)
+✓ check:circular      (2.9s)
+✓ check:secrets       (1.0s)
+✓ check:shadscan      (6.1s)
+✓ test                (56.3s)
+✓ check:coverage      (39.9s)
+✓ check:agents        (0.4s)
+✓ check:ci-parity     (0.4s)
+
+15/15 gates passed (149.6s)
+
+Scores:
+  file-size         tightest example/scripts/e2e-webhooks.ts 907/907 (0 to spare)
+  debt-markers      1 grandfathered, 0 untracked
+  circular-imports  0 grandfathered, 0 new
+  secrets           0 grandfathered, 0 new
+  coverage          lowest coverage/coverage-summary.json 76.7% lines (1 pkgs ≥ floor)

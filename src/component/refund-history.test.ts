@@ -1,14 +1,11 @@
 import { convexTest } from "convex-test";
-import { makeFunctionReference } from "convex/server";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { api } from "./_generated/api.js";
 import schema from "./schema.js";
 
 const modules = import.meta.glob("./**/*.*s");
-const paginate = makeFunctionReference<"query">(
-  "refundHistory/queries:paginateRefunds",
-);
+const paginate = api.refundHistory.queries.paginateRefunds;
 afterEach(() => vi.useRealTimers());
 const rows = [
   {
@@ -117,7 +114,7 @@ it.each([
     },
     [],
   ],
-])(
+] as const)(
   "applies every supplied scope conjunctively: %j",
   async (scope, expected) => {
     const t = await fixture();

@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.27.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.26.0...v0.27.0) (2026-10-15)
+
+### Features
+
+- **react:** add reusable payout policy settings and progress ([#206](https://github.com/FantasticDevHQ/better-stripe/issues/206)) ([02dbc96](https://github.com/FantasticDevHQ/better-stripe/commit/02dbc966c065741b72d7a82bfc8f1b714083dc36))
+
 ## [0.26.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.25.1...v0.26.0) (2026-10-15)
 
 ### Features

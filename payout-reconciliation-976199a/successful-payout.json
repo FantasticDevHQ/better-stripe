@@ -1,0 +1,63 @@
+{
+  "scenario": "successful_bank_payout",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "976199abace93c41e18900331a468825479f0c1a",
+  "run": "payout-reconciliation-qa-b1356856-85c9-41e4-9843-d69dd3ec9313",
+  "accountId": "acct_1UQl3989E4D1C9M5",
+  "transferId": "tr_1UQl3b6JR7kThJogI7Eh2WMG",
+  "funding": {
+    "totalNet": 1000,
+    "matureNet": 1000,
+    "pendingCredits": 0
+  },
+  "payoutId": "po_1UQl3p89E4D1C9M57Llawvlq",
+  "recordingFailureHeld": true,
+  "recovered": {
+    "status": "paid",
+    "amount": 1000,
+    "providerFee": 0,
+    "receipt": {
+      "status": "ready",
+      "accountId": "acct_1UQl3989E4D1C9M5",
+      "stripePayoutId": "po_1UQl3p89E4D1C9M57Llawvlq",
+      "operationKey": "payout-reconciliation-qa-b1356856-85c9-41e4-9843-d69dd3ec9313:release",
+      "amount": 1000,
+      "currency": "usd",
+      "providerStatus": "paid",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQl3E89E4D1C9M5zGA8vDEs",
+      "created": 1792056893,
+      "arrivalDate": 1792022400,
+      "debit": {
+        "id": "txn_1UQl3p89E4D1C9M59u6Ux6yW",
+        "amount": -1000,
+        "fee": 0,
+        "net": -1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792056893,
+        "availableOn": 1792056893,
+        "type": "payout"
+      },
+      "returnedPrincipal": 0,
+      "returnedNet": 0,
+      "observedAt": 1792056903402
+    }
+  },
+  "duplicateReplayCreatedNoPayout": true,
+  "providerOutcome": {
+    "status": "paid",
+    "failureCode": null
+  },
+  "payoutCreateCalls": 1,
+  "status": "passed",
+  "cleanupReconciliation": "updated",
+  "finalClaimStatus": "paid",
+  "scheduleRestored": true,
+  "accountClosed": true
+}

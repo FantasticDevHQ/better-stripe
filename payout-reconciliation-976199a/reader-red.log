@@ -1,0 +1,548 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/connect/payoutReceipt.test.ts (32 tests | 32 failed) 16ms
+   × verifies a paid manual bank payout against its actual scoped debit 6ms
+   × reads automatic history without pretending it identifies per-source allocations 1ms
+   × preserves pending without saying the bank was paid 1ms
+   × preserves in_transit without saying the bank was paid 0ms
+   × verifies exact principal and signed fees returned after a failed payout 1ms
+   × verifies exact principal and signed fees returned after a canceled payout 0ms
+   × does not release a failure without a return receipt 0ms
+   × does not release an immature return ({"status":"pending"}) 0ms
+   × does not release an immature return ({"available_on":1792139766}) 1ms
+   × preserves a non-refundable payout fee separately from returned principal 0ms
+   × fails closed when the provider changes the payout during receipt reads 0ms
+   × does not allocate a reversed bank payout as a failed payout 0ms
+   × fails closed when settlement currencies differ 0ms
+   × rejects mismatched or unsafe payout debit {"id":"txn_other"} 1ms
+   × rejects mismatched or unsafe payout debit {"source":"po_other"} 0ms
+   × rejects mismatched or unsafe payout debit {"amount":-999,"net":-999} 0ms
+   × rejects mismatched or unsafe payout debit {"net":-1001} 0ms
+   × rejects mismatched or unsafe payout debit {"amount":-1000.1} 0ms
+   × rejects mismatched or unsafe payout debit {"fee":null} 0ms
+   × rejects mismatched or unsafe payout debit {"type":"charge"} 0ms
+   × rejects mismatched payout return {"source":"po_other"} 0ms
+   × rejects mismatched payout return {"amount":999,"net":999} 0ms
+   × rejects mismatched payout return {"amount":1001,"net":1001} 0ms
+   × rejects mismatched payout return {"net":999} 0ms
+   × rejects mismatched payout return {"type":"charge"} 0ms
+   × rejects mismatched payout return {"id":"txn_debit"} 0ms
+   × does not trust expanded receipt objects without retrieving their scoped records 0ms
+   × binds recovery to the expected durable claim marker when requested 0ms
+   × detects claim marker drift on the final payout read 0ms
+   × does not suppress provider errors as proof of a missing receipt 0ms
+   × returns no totals when the original debit is not available 0ms
+   × rejects foreign payout identities and malformed scope 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 32 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > verifies a paid manual bank payout against its actual scoped debit
+AssertionError: expected undefined to match object { status: 'ready', …(9) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "amount": 1000,
+  "automatic": false,
+  "currency": "usd",
+  "debit": {
+    "amount": -1000,
+    "fee": 0,
+    "id": "txn_debit",
+    "net": -1000,
+  },
+  "providerStatus": "paid",
+  "returnedNet": 0,
+  "returnedPrincipal": 0,
+  "status": "ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:23:24
+     21| it("verifies a paid manual bank payout against its actual scoped debit…
+     22|   const { provider, read } = setup();
+     23|   expect(await read()).toMatchObject({ status: "ready", ...scope, amou…
+       |                        ^
+     24|     providerStatus: "paid", automatic: false, returnedPrincipal: 0, re…
+     25|     debit: { id: "txn_debit", amount: -1000, net: -1000, fee: 0 } });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > reads automatic history without pretending it identifies per-source allocations
+AssertionError: expected undefined to match object { status: 'ready', …(2) }
+
+- Expected:
+{
+  "automatic": true,
+  "returnedPrincipal": 0,
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:32:24
+     30| it("reads automatic history without pretending it identifies per-sourc…
+     31|   const { read } = setup({ automatic: true });
+     32|   expect(await read()).toMatchObject({ status: "ready", automatic: tru…
+       |                        ^
+     33| });
+     34| it.each(["pending", "in_transit"])("preserves %s without saying the ba…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > preserves pending without saying the bank was paid
+AssertionError: expected undefined to match object { status: 'ready', …(1) }
+
+- Expected:
+{
+  "providerStatus": "pending",
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:35:42
+     33| });
+     34| it.each(["pending", "in_transit"])("preserves %s without saying the ba…
+     35|   expect(await setup({ status }).read()).toMatchObject({ status: "read…
+       |                                          ^
+     36| });
+     37| it.each(["failed", "canceled"])("verifies exact principal and signed f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > preserves in_transit without saying the bank was paid
+AssertionError: expected undefined to match object { status: 'ready', …(1) }
+
+- Expected:
+{
+  "providerStatus": "in_transit",
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:35:42
+     33| });
+     34| it.each(["pending", "in_transit"])("preserves %s without saying the ba…
+     35|   expect(await setup({ status }).read()).toMatchObject({ status: "read…
+       |                                          ^
+     36| });
+     37| it.each(["failed", "canceled"])("verifies exact principal and signed f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > verifies exact principal and signed fees returned after a failed payout
+AssertionError: expected undefined to match object { status: 'ready', …(5) }
+
+- Expected:
+{
+  "credit": {
+    "fee": -10,
+    "id": "txn_return",
+    "net": 1010,
+  },
+  "debit": {
+    "fee": 30,
+  },
+  "providerStatus": "failed",
+  "returnedNet": 1010,
+  "returnedPrincipal": 1000,
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:40:18
+     38|   const result = await setup({ status, failure_balance_transaction: "t…
+     39|     { type: status === "failed" ? "payout_failure" : "payout_cancel", …
+     40|   expect(result).toMatchObject({ status: "ready", providerStatus: stat…
+       |                  ^
+     41|     returnedNet: 1010, debit: { fee: 30 }, credit: { id: "txn_return",…
+     42| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > verifies exact principal and signed fees returned after a canceled payout
+AssertionError: expected undefined to match object { status: 'ready', …(5) }
+
+- Expected:
+{
+  "credit": {
+    "fee": -10,
+    "id": "txn_return",
+    "net": 1010,
+  },
+  "debit": {
+    "fee": 30,
+  },
+  "providerStatus": "canceled",
+  "returnedNet": 1010,
+  "returnedPrincipal": 1000,
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:40:18
+     38|   const result = await setup({ status, failure_balance_transaction: "t…
+     39|     { type: status === "failed" ? "payout_failure" : "payout_cancel", …
+     40|   expect(result).toMatchObject({ status: "ready", providerStatus: stat…
+       |                  ^
+     41|     returnedNet: 1010, debit: { fee: 30 }, credit: { id: "txn_return",…
+     42| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not release a failure without a return receipt
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "return_unavailable",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:44:52
+     42| });
+     43| it("does not release a failure without a return receipt", async () => {
+     44|   expect(await setup({ status: "failed" }).read()).toEqual({ status: "…
+       |                                                    ^
+     45| });
+     46| it.each([{ status: "pending" }, { available_on: timestamp + 86400 }])(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not release an immature return ({"status":"pending"})
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not release an immature return ({"available_on":1792139766})
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "return_pending",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:48:18
+     46| it.each([{ status: "pending" }, { available_on: timestamp + 86400 }])(…
+     47|   const result = await setup({ status: "failed", failure_balance_trans…
+     48|   expect(result).toEqual({ status: "not_ready", ...scope, reason: "ret…
+       |                  ^
+     49|   expect(result).not.toHaveProperty("amount");
+     50| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > preserves a non-refundable payout fee separately from returned principal
+AssertionError: expected undefined to match object { status: 'ready', …(4) }
+
+- Expected:
+{
+  "credit": {
+    "fee": 0,
+  },
+  "debit": {
+    "fee": 30,
+  },
+  "returnedNet": 1000,
+  "returnedPrincipal": 1000,
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:53:6
+     51| it("preserves a non-refundable payout fee separately from returned pri…
+     52|   expect(await setup({ status: "failed", failure_balance_transaction: …
+     53|     .toMatchObject({ status: "ready", returnedPrincipal: 1000, returne…
+       |      ^
+     54| });
+     55| it("fails closed when the provider changes the payout during receipt r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > fails closed when the provider changes the payout during receipt reads
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "provider_changed",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:58:24
+     56|   const { provider, read } = setup();
+     57|   provider.payouts.retrieve.mockResolvedValueOnce(payout()).mockResolv…
+     58|   expect(await read()).toEqual({ status: "not_ready", ...scope, reason…
+       |                        ^
+     59| });
+     60| it("does not allocate a reversed bank payout as a failed payout", asyn…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not allocate a reversed bank payout as a failed payout
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "reversal_allocation_required",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:61:62
+     59| });
+     60| it("does not allocate a reversed bank payout as a failed payout", asyn…
+     61|   expect(await setup({ reversed_by: "po_reversal" }).read()).toEqual({…
+       |                                                              ^
+     62| });
+     63| it("fails closed when settlement currencies differ", async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > fails closed when settlement currencies differ
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "currency_allocation_required",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:64:55
+     62| });
+     63| it("fails closed when settlement currencies differ", async () => {
+     64|   expect(await setup({}, { currency: "eur" }).read()).toEqual({ status…
+       |                                                       ^
+     65| });
+     66| it.each([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"id":"txn_other"}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"source":"po_other"}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"amount":-999,"net":-999}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"net":-1001}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"amount":-1000.1}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"fee":null}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched or unsafe payout debit {"type":"charge"}
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:70:40
+     68|   { net: -1001 }, { amount: -1000.1 }, { fee: NaN }, { type: "charge" …
+     69| ])("rejects mismatched or unsafe payout debit %j", async debit => {
+     70|   await expect(setup({}, debit).read()).rejects.toThrow(/receipt|integ…
+       |                                        ^
+     71| });
+     72| it.each([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"source":"po_other"}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"amount":999,"net":999}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"amount":1001,"net":1001}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"net":999}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"type":"charge"}
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects mismatched payout return {"id":"txn_debit"}
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:76:106
+     74|   { net: 999 }, { type: "charge" }, { id: "txn_debit" },
+     75| ])("rejects mismatched payout return %j", async credit => {
+     76|   await expect(setup({ status: "failed", failure_balance_transaction: …
+       |                                                                                                          ^
+     77| });
+     78| it("does not trust expanded receipt objects without retrieving their s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not trust expanded receipt objects without retrieving their scoped records
+AssertionError: expected undefined to match object { status: 'ready', …(1) }
+
+- Expected:
+{
+  "debit": {
+    "amount": -1000,
+  },
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:80:24
+     78| it("does not trust expanded receipt objects without retrieving their s…
+     79|   const { provider, read } = setup({ balance_transaction: { id: "txn_d…
+     80|   expect(await read()).toMatchObject({ status: "ready", debit: { amoun…
+       |                        ^
+     81|   expect(provider.balanceTransactions.retrieve).toHaveBeenCalledTimes(…
+     82| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > binds recovery to the expected durable claim marker when requested
+AssertionError: expected undefined to match object { status: 'ready', …(1) }
+
+- Expected:
+{
+  "operationKey": "claim-1",
+  "status": "ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:86:33
+     84|   const { provider } = setup({ metadata: { bsPayoutClaim: "claim-1" } …
+     85|   const read = (operationKey: string) => getRecipientPayoutReceipt(pro…
+     86|   expect(await read("claim-1")).toMatchObject({ status: "ready", opera…
+       |                                 ^
+     87|   await expect(read("other")).rejects.toThrow(/claim/);
+     88| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > detects claim marker drift on the final payout read
+AssertionError: expected undefined to match object { status: 'not_ready', …(1) }
+
+- Expected:
+{
+  "reason": "provider_changed",
+  "status": "not_ready",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:94:6
+     92|     .mockResolvedValueOnce(payout({ metadata: { bsPayoutClaim: "other"…
+     93|   expect(await getRecipientPayoutReceipt(provider as unknown as Stripe…
+     94|     .toMatchObject({ status: "not_ready", reason: "provider_changed" }…
+       |      ^
+     95| });
+     96| it("does not suppress provider errors as proof of a missing receipt", …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not suppress provider errors as proof of a missing receipt
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:98:23
+     96| it("does not suppress provider errors as proof of a missing receipt", …
+     97|   const { provider, read } = setup(); provider.balanceTransactions.ret…
+     98|   await expect(read()).rejects.toThrow("provider unavailable");
+       |                       ^
+     99| });
+    100| it("returns no totals when the original debit is not available", async…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > returns no totals when the original debit is not available
+AssertionError: expected undefined to deeply equal { status: 'not_ready', …(3) }
+
+- Expected:
+{
+  "accountId": "acct_recipient",
+  "reason": "debit_unavailable",
+  "status": "not_ready",
+  "stripePayoutId": "po_one",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:101:61
+     99| });
+    100| it("returns no totals when the original debit is not available", async…
+    101|   expect(await setup({ balance_transaction: null }).read()).toEqual({ …
+       |                                                             ^
+    102| });
+    103| it("rejects foreign payout identities and malformed scope", async () =…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/32]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > rejects foreign payout identities and malformed scope
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutReceipt.test.ts:104:49
+    102| });
+    103| it("rejects foreign payout identities and malformed scope", async () =…
+    104|   await expect(setup({ id: "po_other" }).read()).rejects.toThrow(/iden…
+       |                                                 ^
+    105|   await expect(setup().read({ accountId: "acct_recipient\n", stripePay…
+    106| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/32]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  32 failed (32)
+   Start at  15:36:15
+   Duration  223ms (transform 43%, tests 33%, import 19%, worker 6%)
+

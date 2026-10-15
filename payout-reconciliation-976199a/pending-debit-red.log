@@ -1,0 +1,111 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/connect/payoutReceipt.test.ts (38 tests | 2 failed) 158ms
+   × does not book a payout debit before its fees and net are available ({"status":"pending"}) 5ms
+   × does not book a payout debit before its fees and net are available ({"available_on":1792142797}) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not book a payout debit before its fees and net are available ({"status":"pending"})
+AssertionError: expected { status: 'ready', …(16) } to deeply equal { status: 'not_ready', …(3) }
+
+- Expected
++ Received
+
+  {
+    "accountId": "acct_recipient",
+-   "reason": "debit_pending",
+-   "status": "not_ready",
++   "amount": 1000,
++   "arrivalDate": 1792142797,
++   "automatic": false,
++   "created": 1792056397,
++   "currency": "usd",
++   "debit": {
++     "amount": -1000,
++     "availableOn": 1792056397,
++     "created": 1792056397,
++     "currency": "usd",
++     "fee": 0,
++     "id": "txn_debit",
++     "net": -1000,
++     "status": "pending",
++     "type": "payout",
++   },
++   "destinationId": "ba_one",
++   "method": "standard",
++   "observedAt": 1792056407370,
++   "providerStatus": "paid",
++   "returnedNet": 0,
++   "returnedPrincipal": 0,
++   "sourceType": "card",
++   "status": "ready",
+    "stripePayoutId": "po_one",
++   "type": "bank_account",
+  }
+
+ ❯ src/client/connect/payoutReceipt.test.ts:303:19
+    301| it.each([{ status: "pending" }, { available_on: timestamp + 86400 }])(…
+    302|   const receipt = await setup({}, debit).read();
+    303|   expect(receipt).toEqual({ status: "not_ready", ...scope, reason: "de…
+       |                   ^
+    304|   expect(receipt).not.toHaveProperty("amount");
+    305| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |client| src/client/connect/payoutReceipt.test.ts > does not book a payout debit before its fees and net are available ({"available_on":1792142797})
+AssertionError: expected { status: 'ready', …(16) } to deeply equal { status: 'not_ready', …(3) }
+
+- Expected
++ Received
+
+  {
+    "accountId": "acct_recipient",
+-   "reason": "debit_pending",
+-   "status": "not_ready",
++   "amount": 1000,
++   "arrivalDate": 1792142797,
++   "automatic": false,
++   "created": 1792056397,
++   "currency": "usd",
++   "debit": {
++     "amount": -1000,
++     "availableOn": 1792142797,
++     "created": 1792056397,
++     "currency": "usd",
++     "fee": 0,
++     "id": "txn_debit",
++     "net": -1000,
++     "status": "available",
++     "type": "payout",
++   },
++   "destinationId": "ba_one",
++   "method": "standard",
++   "observedAt": 1792056407375,
++   "providerStatus": "paid",
++   "returnedNet": 0,
++   "returnedPrincipal": 0,
++   "sourceType": "card",
++   "status": "ready",
+    "stripePayoutId": "po_one",
++   "type": "bank_account",
+  }
+
+ ❯ src/client/connect/payoutReceipt.test.ts:303:19
+    301| it.each([{ status: "pending" }, { available_on: timestamp + 86400 }])(…
+    302|   const receipt = await setup({}, debit).read();
+    303|   expect(receipt).toEqual({ status: "not_ready", ...scope, reason: "de…
+       |                   ^
+    304|   expect(receipt).not.toHaveProperty("amount");
+    305| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 53 passed (55)
+   Start at  16:26:47
+   Duration  454ms (tests 56%, transform 19%, import 17%, environment 7%, worker 1%)
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/payout-fees.test.ts (7 tests | 1 failed) 97ms
+   × can add verified fee evidence to a legacy returned claim without releasing principal twice 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > can add verified fee evidence to a legacy returned claim without releasing principal twice
+AssertionError: expected { amount: +0, revision: +0 } to match object { amount: 20 }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "amount": 20,
++   "amount": 0,
+  }
+
+ ❯ src/component/payout-fees.test.ts:194:118
+    192|   const verified = { ...legacy, debitTransactionId: receipt.debitTrans…
+    193|   await t.mutation(m("recordOutcome"), verified); await t.mutation(m("…
+    194|   expect(await t.query(makeFunctionReference<"query">("payoutRelease/q…
+       |                                                                                                                      ^
+    195|   await expect(t.mutation(m("recordOutcome"), { ...verified, returnFee…
+    196|   expect(await t.mutation(m("claim"), { ...args, operationKey: "next",…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  15:49:41
+   Duration  347ms (tests 38%, transform 35%, import 13%, environment 13%, worker 1%)
+

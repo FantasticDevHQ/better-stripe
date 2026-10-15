@@ -1,0 +1,68 @@
+{
+  "sourceRevision": "976199abace93c41e18900331a468825479f0c1a",
+  "sandbox": true,
+  "readOnly": true,
+  "publicClient": true,
+  "noFinancialWrites": true,
+  "receipts": [
+    {
+      "status": "ready",
+      "accountId": "acct_1UQ78o7xOsB2U2nM",
+      "stripePayoutId": "po_1UQGVa7xOsB2U2nMO1Wt840U",
+      "amount": 154910,
+      "currency": "usd",
+      "providerStatus": "paid",
+      "automatic": true,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQ7G37xOsB2U2nMIqabf0MK",
+      "created": 1791939450,
+      "arrivalDate": 1791936000,
+      "debit": {
+        "id": "txn_1UQGVb7xOsB2U2nMqNScKGyl",
+        "amount": -154910,
+        "fee": 0,
+        "net": -154910,
+        "currency": "usd",
+        "status": "available",
+        "created": 1791939450,
+        "availableOn": 1791939450,
+        "type": "payout"
+      },
+      "returnedPrincipal": 0,
+      "returnedNet": 0,
+      "observedAt": 1792057029930
+    },
+    {
+      "status": "ready",
+      "accountId": "acct_1UQ78o7xOsB2U2nM",
+      "stripePayoutId": "po_1UQ7G57xOsB2U2nMcCqTW1xZ",
+      "amount": 1000,
+      "currency": "usd",
+      "providerStatus": "paid",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQ7G37xOsB2U2nMIqabf0MK",
+      "created": 1791903893,
+      "arrivalDate": 1791849600,
+      "debit": {
+        "id": "txn_1UQ7G57xOsB2U2nMjcNvg3pK",
+        "amount": -1000,
+        "fee": 0,
+        "net": -1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1791903893,
+        "availableOn": 1791903893,
+        "type": "payout"
+      },
+      "returnedPrincipal": 0,
+      "returnedNet": 0,
+      "observedAt": 1792057030748
+    }
+  ],
+  "status": "passed"
+}

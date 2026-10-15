@@ -1,0 +1,170 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/connect/payoutAllocation.test.ts (37 tests | 2 failed) 13ms
+   × deducts confirmed payout fees from entitlement without deducting them twice from provider availability 5ms
+   × does not qualify the gross threshold while known independent liabilities remain 1ms
+ ❯ |component| src/component/payout-fees.test.ts (6 tests | 6 failed) 72ms
+   × books a verified payout fee once and keeps it out of later eligibility 49ms
+   × books only the net non-refundable fee after a verified return, including a negative fee credit 6ms
+   × does not erase known fees with a stale pending receipt after payout completion 4ms
+   × rejects a changed original debit identity or fee 4ms
+   × invalidates an unattempted claim if a known fee changes after reservation 4ms
+   × rejects ambiguous fee pairs and over-credits instead of creating spendable money 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > books a verified payout fee once and keeps it out of later eligibility
+Error: Validator error: Unexpected field `debitTransactionId` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-fees.test.ts:27:3
+     25| it("books a verified payout fee once and keeps it out of later eligibi…
+     26|   const { t, args, receipt } = await setup();
+     27|   await t.mutation(m("recordOutcome"), receipt); await t.mutation(m("r…
+       |   ^
+     28|   expect(await t.query(makeFunctionReference<"query">("payoutRelease/q…
+     29|     .toMatchObject({ amount: 30, revision: 1 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > books only the net non-refundable fee after a verified return, including a negative fee credit
+Error: Validator error: Unexpected field `debitTransactionId` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-fees.test.ts:35:3
+     33| it("books only the net non-refundable fee after a verified return, inc…
+     34|   const { t, args, receipt } = await setup();
+     35|   await t.mutation(m("recordOutcome"), receipt);
+       |   ^
+     36|   const returned = { ...receipt, providerStatus: "failed", returnTrans…
+     37|   await t.mutation(m("recordOutcome"), returned); await t.mutation(m("…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > does not erase known fees with a stale pending receipt after payout completion
+Error: Validator error: Unexpected field `debitTransactionId` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-fees.test.ts:44:41
+     42| });
+     43| it("does not erase known fees with a stale pending receipt after payou…
+     44|   const { t, receipt } = await setup(); await t.mutation(m("recordOutc…
+       |                                         ^
+     45|   await t.mutation(m("recordOutcome"), { ...receipt, providerStatus: "…
+     46|   expect(await t.query(makeFunctionReference<"query">("payoutRelease/q…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > rejects a changed original debit identity or fee
+Error: Validator error: Unexpected field `debitTransactionId` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-fees.test.ts:50:41
+     48| });
+     49| it("rejects a changed original debit identity or fee", async () => {
+     50|   const { t, receipt } = await setup(); await t.mutation(m("recordOutc…
+       |                                         ^
+     51|   for (const changed of [{ debitTransactionId: "txn_other" }, { debitF…
+     52|     await expect(t.mutation(m("recordOutcome"), { ...receipt, ...chang…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > invalidates an unattempted claim if a known fee changes after reservation
+Error: Validator error: Unexpected field `debitTransactionId` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-fees.test.ts:56:3
+     54| it("invalidates an unattempted claim if a known fee changes after rese…
+     55|   const { t, args, receipt } = await setup(3000);
+     56|   await t.mutation(m("recordOutcome"), { ...receipt, providerStatus: "…
+       |   ^
+     57|   await t.mutation(m("claim"), { ...args, operationKey: "second" });
+     58|   // First receipt had not supplied fee evidence. A later verified rec…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  |component| src/component/payout-fees.test.ts > rejects ambiguous fee pairs and over-credits instead of creating spendable money
+AssertionError: expected [Function] to throw error matching /fee|receipt/ but got 'Validator error: Unexpected field `de…'
+
+- Expected:
+/fee|receipt/
+
++ Received:
+"Validator error: Unexpected field `debitTransactionId` in object"
+
+ ❯ src/component/payout-fees.test.ts:64:94
+     62| it("rejects ambiguous fee pairs and over-credits instead of creating s…
+     63|   const { t, receipt } = await setup();
+     64|   await expect(t.mutation(m("recordOutcome"), { ...receipt, debitTrans…
+       |                                                                                              ^
+     65|   await expect(t.mutation(m("recordOutcome"), { ...receipt, providerSt…
+     66| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > deducts confirmed payout fees from entitlement without deducting them twice from provider availability
+AssertionError: expected { currency: 'usd', …(6) } to match object { status: 'qualified', …(2) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "amount": 1470,
+-   "matureUnpaid": 1470,
++   "matureUnpaid": 1500,
+    "status": "qualified",
+  }
+
+ ❯ src/client/connect/payoutAllocation.test.ts:295:6
+    293| it("deducts confirmed payout fees from entitlement without deducting t…
+    294|   expect(planRecipientPayout({ ...options([source("tr_one", 1500)]), p…
+    295|     .toMatchObject({ status: "qualified", amount: 1470, matureUnpaid: …
+       |      ^
+    296|   expect(planRecipientPayout({ ...options([source("tr_one", 1000)]), p…
+    297|     .toMatchObject({ status: "held", reason: "below_threshold", mature…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > does not qualify the gross threshold while known independent liabilities remain
+AssertionError: expected { currency: 'usd', …(6) } to match object { status: 'held', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "matureUnpaid": 999,
+-   "reason": "below_threshold",
+-   "status": "held",
++   "matureUnpaid": 1000,
++   "status": "qualified",
+  }
+
+ ❯ src/client/connect/payoutAllocation.test.ts:301:6
+    299| it("does not qualify the gross threshold while known independent liabi…
+    300|   expect(planRecipientPayout({ ...options(), providerAvailable: 5000, …
+    301|     .toMatchObject({ status: "held", reason: "below_threshold", mature…
+       |      ^
+    302| });
+    303|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 35 passed (43)
+   Start at  15:44:31
+   Duration  341ms (transform 38%, tests 30%, import 17%, environment 14%, worker 2%)
+

@@ -1,0 +1,75 @@
+{
+  "scenario": "bank_insufficient_funds",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "976199abace93c41e18900331a468825479f0c1a",
+  "run": "payout-reconciliation-qa-6e68ecc7-3c6e-42e3-a55d-a8f034a2ee2d",
+  "accountId": "acct_1UQl4a5yz9ABreiR",
+  "transferId": "tr_1UQl516JR7kThJogQT32F3GB",
+  "funding": {
+    "totalNet": 1000,
+    "matureNet": 1000,
+    "pendingCredits": 0
+  },
+  "payoutId": "po_1UQl5F5yz9ABreiRTrAFk0O1",
+  "recordingFailureHeld": true,
+  "recovered": {
+    "status": "returned",
+    "amount": 1000,
+    "providerFee": 0,
+    "receipt": {
+      "status": "ready",
+      "accountId": "acct_1UQl4a5yz9ABreiR",
+      "stripePayoutId": "po_1UQl5F5yz9ABreiRTrAFk0O1",
+      "operationKey": "payout-reconciliation-qa-6e68ecc7-3c6e-42e3-a55d-a8f034a2ee2d:release",
+      "amount": 1000,
+      "currency": "usd",
+      "providerStatus": "failed",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQl4f5yz9ABreiRaMDRw6wa",
+      "created": 1792056980,
+      "arrivalDate": 1792022400,
+      "debit": {
+        "id": "txn_1UQl5F5yz9ABreiRQ6pFA5iQ",
+        "amount": -1000,
+        "fee": 0,
+        "net": -1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792056980,
+        "availableOn": 1792056980,
+        "type": "payout"
+      },
+      "credit": {
+        "id": "txn_1UQl5F5yz9ABreiRCM5rpWlA",
+        "amount": 1000,
+        "fee": 0,
+        "net": 1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792056981,
+        "availableOn": 1792056981,
+        "type": "payout_failure"
+      },
+      "returnedPrincipal": 1000,
+      "returnedNet": 1000,
+      "observedAt": 1792056991446
+    }
+  },
+  "duplicateReplayCreatedNoPayout": true,
+  "providerOutcome": {
+    "status": "failed",
+    "failureCode": "insufficient_funds"
+  },
+  "payoutCreateCalls": 1,
+  "status": "passed",
+  "cleanupReconciliation": "updated",
+  "finalClaimStatus": "returned",
+  "testFundingReturned": true,
+  "scheduleRestored": true,
+  "accountClosed": true
+}

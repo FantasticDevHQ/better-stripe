@@ -72,6 +72,8 @@ export const payoutFields = {
   status: payoutStatusValidator,
   arrivalDate: v.optional(v.string()),
   method: v.optional(v.string()),
+  failureCode: v.optional(v.string()),
+  failureMessage: v.optional(v.string()),
   metadata: v.optional(v.any()),
 };
 
@@ -80,6 +82,7 @@ export const payoutDocValidator = v.object({
   _id: v.id("payouts"),
   _creationTime: v.number(),
   ...payoutFields,
+  totalsRecorded: v.optional(v.literal(true)),
 });
 
 // =============================================================================
@@ -266,6 +269,7 @@ export const transferFields = {
  * redelivered base payload must not clobber an in-flight reversal claim.
  */
 export const transferPersistedFields = {
+  totalsRecorded: v.optional(v.literal(true)),
   /**
    * Reversal claim frontier (BTS-63): the highest cumulative reversal amount
    * reserved by `claimReversalSlices` before money moves. Always ≥

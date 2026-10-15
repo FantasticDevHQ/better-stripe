@@ -1160,3 +1160,9 @@ For saved cards, use the exported unstyled `SaveCard` workflow with an authorize
 screen remains compatible and does not demonstrate completed SetupIntent/SCA
 verification. See the [setup workflow contract](../docs/react-workflows.md#save-a-card-through-setupintent-confirmation)
 for consent, redirect recovery and durable request requirements.
+
+## Component history and currency summaries
+
+See the [read contract guide](../docs/read-contracts.md) for reactive product, price and payout
+cursors, exact currency summaries, legacy backfill, payout failure details, and
+published-version adoption requirements.

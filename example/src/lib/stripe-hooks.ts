@@ -1,5 +1,7 @@
 import {
   createUseEarnings,
+  createUseCurrencyEarnings,
+  useComponentPaginatedQuery,
   createUseSplitBreakdown,
 } from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
@@ -23,3 +25,31 @@ export const useEarnings = createUseEarnings(
   api.queries.getAccountEarnings,
   api.queries.getAccountPayouts,
 );
+
+export const useCurrencyEarnings = createUseCurrencyEarnings(
+  useQuery,
+  api.readContracts.getAccountEarningsByCurrency,
+  api.readContracts.getAccountPayoutsByCurrency,
+);
+/** Reactive readers with pinned page boundaries. Keep Products/useProductManager write callbacks. */
+export function usePaginatedProducts(accountId?: string) {
+  return useComponentPaginatedQuery(
+    api.readContracts.paginateProducts,
+    { accountId },
+    { initialNumItems: 25 },
+  );
+}
+export function usePaginatedPrices(productId: string | undefined) {
+  return useComponentPaginatedQuery(
+    api.readContracts.paginatePrices,
+    productId ? { productId } : "skip",
+    { initialNumItems: 25 },
+  );
+}
+export function usePaginatedPayouts(accountId: string | undefined) {
+  return useComponentPaginatedQuery(
+    api.readContracts.paginatePayouts,
+    accountId ? { accountId } : "skip",
+    { initialNumItems: 25 },
+  );
+}

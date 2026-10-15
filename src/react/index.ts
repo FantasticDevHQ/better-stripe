@@ -293,3 +293,15 @@ export {
 
 export { SaveCard } from "./workflows/SaveCard.js";
 export type { SaveCardProps, SaveCardFormState } from "./workflows/SaveCard.js";
+
+export { createUseCurrencyEarnings } from "./hooks/useCurrencyEarnings.js";
+export type {
+  CurrencyEarningsTotal,
+  CurrencyPayoutTotal,
+  AccountCurrencyEarnings,
+  AccountCurrencyPayouts,
+  UseCurrencyEarningsResult,
+} from "./hooks/useCurrencyEarnings.js";
+
+// Pins end cursors for the component paginator, including reactive page splits.
+export { usePaginatedQuery as useComponentPaginatedQuery } from "convex-helpers/react";

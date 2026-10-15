@@ -2,6 +2,7 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
+import { ReadContractClient } from "./readContracts.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -107,7 +108,7 @@ export type { RefundActor } from "./connect/refunds.js";
 import type { RefundActor } from "./connect/refunds.js";
 export type { AccountBalance } from "./connect/payouts.js";
 export type { WedgedReversalClaim } from "./connect/transfers.js";
-import type { Component, RunCtx } from "./helpers.js";
+import type { RunCtx } from "./helpers.js";
 import { getStripeClient } from "./helpers.js";
 import type {
   V2AccountRetrieveInclude,
@@ -210,8 +211,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe {
-  public component: Component;
+export class BetterStripe extends ReadContractClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -220,7 +220,7 @@ export class BetterStripe {
   private _statementDescriptorSuffix?: string;
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
-    this.component = component;
+    super(component);
     this.stripeApiVersion = resolveStripeApiVersion(options?.stripeApiVersion);
     this._apiKey = options?.STRIPE_SECRET_KEY;
     this._triggers = options?.triggers;

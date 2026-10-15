@@ -27,6 +27,12 @@ export type {
   ConnectRenderProps,
 } from "./Connect.js";
 export { Payouts } from "./Payouts.js";
+export { PayoutProgress } from "./PayoutProgress.js";
+export type {
+  PayoutProgressProps,
+  PayoutProgressState,
+  PayoutProgressMetric,
+} from "./PayoutProgress.js";
 export type {
   PayoutsProps,
   HeadlessPayoutsProps,

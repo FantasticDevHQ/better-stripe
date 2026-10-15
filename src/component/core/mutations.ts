@@ -1,3 +1,4 @@
+import { assertPayoutResetSafe } from "./resetSafety.js";
 import { v } from "convex/values";
 
 import type { TableNames } from "../_generated/dataModel";
@@ -155,6 +156,7 @@ export const clearAllTables = mutation({
     tables: v.array(v.string()),
   }),
   handler: async (ctx) => {
+    await assertPayoutResetSafe(ctx);
     // Derive table names from the schema definition so the clear list can never
     // drift out of sync when new tables are added.
     const tables = Object.keys(schema.tables) as TableNames[];

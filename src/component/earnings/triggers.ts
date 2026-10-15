@@ -1,3 +1,4 @@
+import { registerPayoutRevisions } from "../payoutSnapshots/revisions.js";
 import { Triggers } from "convex-helpers/server/triggers";
 import {
   customCtx,
@@ -93,4 +94,5 @@ triggers.register("payouts", async (ctx, change) => {
       await ctx.innerDb.patch("payouts", change.id, { totalsRecorded: true });
   }
 });
+registerPayoutRevisions(triggers);
 export const mutation = customMutation(rawMutation, customCtx(triggers.wrapDB));

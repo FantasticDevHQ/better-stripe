@@ -48,10 +48,16 @@ provider outcome, and books its net payout fees once.
 The [combined release API](docs/settlement.md#combined-recipient-release) verifies
 complete source and payout history, reserves mature unpaid funds, and creates an
 idempotent bank payout. Install a host job to invoke it and expire due policies.
+The [automatic worker](docs/settlement.md#automatic-recipient-worker) provides
+durable attempt IDs, retry leases, recovery discovery and the next attempt time.
+The example installs its five-minute cron in `example/convex/crons.ts`.
 [Historical imports and explicit funded activation](docs/settlement.md#historical-import-and-funded-activation)
 verify old payouts, source ownership and holding age before enabling a custom
 schedule. Larger histories and unallocated money still require reconciliation;
 schedule controls alone do not enforce a minimum.
+[Resumable local collections and reset safeguards](docs/settlement.md#resumable-local-collections)
+provide bounded ledger inspection while provider-history continuation and scalable
+claim execution are completed.
 
 ## Status
 

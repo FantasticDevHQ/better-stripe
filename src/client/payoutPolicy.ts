@@ -1,3 +1,12 @@
+import { PayoutWorkerClient } from "./connect/payoutWorker.js";
+export type * from "./connect/payoutWorker.js";
+import {
+  collectPayoutSnapshot,
+  discardPayoutSnapshot,
+  type PayoutCollectionOptions,
+  type PayoutCollectionScope,
+} from "./connect/payoutCollection.js";
+export type * from "./connect/payoutCollection.js";
 import { collectAdoptionProof } from "./connect/payoutActivationProof.js";
 import {
   adoptRecipientPayouts,
@@ -97,10 +106,26 @@ const toProvider = (
 });
 /** Host authenticates owner/policy/consent. Provider I/O stays in this package. */
 export class PayoutPolicyClient {
+  readonly worker: PayoutWorkerClient;
   constructor(
     private readonly component: Component,
     private readonly provider: () => Stripe,
-  ) {}
+  ) {
+    this.worker = new PayoutWorkerClient(
+      component,
+      (ctx, opts) => this.release(ctx, opts),
+      (ctx, opts) => this.reconcilePayout(ctx, opts),
+    );
+  }
+  collectSnapshot(ctx: RunCtx, opts: PayoutCollectionOptions) {
+    return collectPayoutSnapshot(this.component, ctx, opts);
+  }
+  discardSnapshot(
+    ctx: RunCtx,
+    opts: PayoutCollectionScope & { batchSize?: number },
+  ) {
+    return discardPayoutSnapshot(this.component, ctx, opts);
+  }
   adoptPayouts(ctx: RunCtx, opts: PayoutAdoptionOptions) {
     return adoptRecipientPayouts(this.provider(), this.component, ctx, opts);
   }

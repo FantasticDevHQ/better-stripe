@@ -428,7 +428,7 @@ describe("core — clearAllTables", () => {
       accountId: "acct_clear",
       amount: 1000,
       currency: "usd",
-      status: "pending",
+      status: "paid",
     });
 
     await t.mutation(api.connect.mutations.upsertRefund, {
@@ -471,7 +471,7 @@ describe("core — clearAllTables", () => {
     const result = await t.mutation(api.core.mutations.clearAllTables, {});
     const tableCount = Object.keys(schema.tables).length;
 
-    expect(result.cleared).toBe(15);
+    expect(result.cleared).toBe(20);
     expect(result.tables).toHaveLength(tableCount);
 
     for (const tableName of Object.keys(schema.tables) as TableNames[]) {

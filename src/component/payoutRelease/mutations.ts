@@ -8,7 +8,7 @@ import {
 } from "./adoption.js";
 import { readFees, recordFees } from "./fees.js";
 import { v } from "convex/values";
-import { mutation } from "../_generated/server.js";
+import { mutation } from "../earnings/triggers.js";
 import { identity, observation, claimDoc } from "./schema.js";
 import {
   claimByKey,

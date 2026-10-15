@@ -533,4 +533,131 @@ shorten the pending operation's deadline. `migration_required.adoptionReason`
 explains unknown history or an expired holding period. This flow does not enable
 Dashboard accounts with withdrawal bypasses, Global Payouts, unsupported source
 rails, unknown numeric provider floors or accounts beyond the current atomic
-snapshot bounds. It installs no host cron or UI.
+snapshot bounds. Activation itself does not install a host cron or UI.
+
+## Automatic recipient worker
+
+`stripe.payoutPolicy.worker` runs authorized custom policies from a host cron.
+It invokes the maintained release and reconciliation APIs, including their live
+schedule, source-maturity, history, fee and balance checks. A worker lease never
+replaces the financial payout claim.
+
+```ts
+const result = await stripe.payoutPolicy.worker.run(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+  // Resolve all off-provider debts and reserves for this owner/currency first.
+  // Do not count Stripe receipt debits twice.
+  independentLiabilities,
+  cadenceMs: 300_000,
+});
+const job = await stripe.payoutPolicy.worker.get(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+});
+// job.nextAttemptAt is the next application attempt, not a bank arrival date.
+```
+
+The default retry cadence is five minutes; hosts can configure one minute to
+one day. Concurrent callers share a ten-minute lease. A crashed worker resumes
+the same operation ID. Unknown provider outcomes retain their attempted claim
+and reconcile on later runs, including after a recipient opts out. They never
+trigger a blind payout recreation. Expired worker leases permit observation
+retries; they do not release monetary reservations. A generation check prevents
+an older worker from replacing a newer worker's result. Completion replays keep
+the original next attempt time.
+
+Affiliate clawback debt, pending recoveries/restorations and competing affiliate
+payout reservations hold fresh worker attempts with `affiliate_recovery_pending`.
+The recipient claim boundary checks the same recovery lock again atomically
+before reservation and immediately before the provider attempt. Existing unknown
+attempts continue to reconcile even when new recovery debt arrives. Do not add
+the same affiliate debt to `independentLiabilities` again; that option is for
+separate host liabilities.
+
+The host must page all four queues, using bounded pages and scheduling each
+recipient/currency independently:
+
+- `worker.policies(ctx, paginationOpts)` discovers ready custom policies.
+- `worker.recovering(ctx, paginationOpts)` discovers retained operations,
+  including recipients who switched back to Stripe-managed payouts.
+- `worker.changing(ctx, paginationOpts)` discovers pending schedule operations
+  to retry through `payoutPolicy.apply`.
+- `payoutPolicy.due(ctx, paginationOpts)` discovers expired holding deadlines
+  to restore through `payoutPolicy.expire`.
+
+Authorize the host's owner/account mapping before each action. Read outstanding
+liabilities again before every attempt. In the example, uncollected seller cost
+reservations remain withheld even while attached to an unpaid invoice. Confirmed
+collections are already reflected in the store's transferred amount. Additional
+host liability scopes must be included when adopting this worker in another app.
+
+The example's `convex/crons.ts` installs a five-minute dispatcher. Its internal
+actions in `convex/payoutWorkers.ts` page these queues and use the package APIs;
+they do not call the Stripe SDK directly. Stripe-managed recipients continue to
+use Stripe's automatic schedule. Custom activation still requires explicit
+consent and verified exclusive payout control. The worker preserves the current
+release/adoption history limits and reports held results when those limits are
+exceeded. It does not yet consume the resumable local manifest described below.
+
+These are server worker APIs, not manual withdrawal actions for a customer UI.
+`worker.get` exposes the latest reason, attempt time and next application attempt
+for an authorized host to display. Bank availability, pending funds and bank
+arrival dates come from the recipient payout snapshot API.
+
+## Resumable local collections
+
+An authorized host worker can collect the local recipient ledger in bounded
+steps, retaining its cursor and step number across restarts:
+
+```ts
+let state = await stripe.payoutPolicy.collectSnapshot(ctx, {
+  accountId,
+  ownerKey,
+  operationKey: collectionKey,
+  expectedRevision: policy?.revision ?? -1,
+});
+state = await stripe.payoutPolicy.collectSnapshot(ctx, {
+  accountId,
+  ownerKey,
+  operationKey: collectionKey,
+  expectedRevision: policy?.revision ?? -1,
+  expectedStep: state.step,
+  batchSize: 25,
+});
+```
+
+Repeat bounded calls until `phase` reaches `local_ready` or `invalidated`.
+Duplicate step submissions preserve cursor progress. Sources, source allocations,
+payout fees and payout claims are copied across pages, with no 100-row limit on the local
+collection. New positive funding can be deferred to a later collection; refunds,
+reservations, payouts and fees enter an ordered account risk journal. The worker
+repairs changed entries and checks claim/source allocation rollups before local
+completion. Missing journal events, orphaned sources and changed policy identity
+stop collection with an explicit reason.
+
+`local_ready` describes a read-only local manifest. Complete provider receipts,
+provider history and monetary claim binding are still required before a payout.
+These local APIs do not remove the current bounded release/adoption limits by
+themselves. Provider-history continuation and scalable claim execution remain
+under implementation.
+
+After a read-only collection is no longer needed, repeatedly call
+`discardSnapshot(ctx, { accountId, ownerKey, operationKey: collectionKey })` until
+it returns `null`. Cleanup removes only collection caches. Read-only collection
+leases last 24 hours. Financially bound collections reject read-only cleanup and
+expiry; payout claims and their source reservations keep their own lifecycle.
+
+### Development reset safeguards
+
+`clearAllTables` is a development/test utility. It rejects active or changing
+payout schedules, unresolved reserved/submitted claims, financially bound
+collections and known pending/in-transit provider payouts. The host must quiesce
+provider writers and verify live provider state before invoking reset. Restore
+schedules through the policy APIs and reconcile unresolved operations first.
+Pending or unknown direct affiliate payouts and recovery operations also block
+reset, preserving the receipts and obligations needed for reconciliation.
+The guard preserves the restoration and payout records until that work is done.
+Read-only cache collections can be cleared with the other development data.

@@ -53,6 +53,7 @@ export const claimDoc = v.object({
 export const claimsTable = defineTable(claimFields)
   .index("by_operation", ["operationKey"])
   .index("by_account_status", ["accountId", "status"])
+  .index("by_status", ["status"])
   .index("by_provider_payout", ["stripePayoutId"])
   .index("by_debit_receipt", ["debitTransactionId"])
   .index("by_return_receipt", ["returnTransactionId"])

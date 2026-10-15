@@ -42,6 +42,8 @@ import type * as lib_storeRecipient from "../lib/storeRecipient.js";
 import type * as lib_stripeClient from "../lib/stripeClient.js";
 import type * as lib_unsettledCostSource from "../lib/unsettledCostSource.js";
 import type * as marketplace from "../marketplace.js";
+import type * as payoutWorkerScope from "../payoutWorkerScope.js";
+import type * as payoutWorkers from "../payoutWorkers.js";
 import type * as queries from "../queries.js";
 import type * as readContracts from "../readContracts.js";
 import type * as recipientPayouts from "../recipientPayouts.js";
@@ -112,6 +114,8 @@ const fullApi: ApiFromModules<{
   "lib/stripeClient": typeof lib_stripeClient;
   "lib/unsettledCostSource": typeof lib_unsettledCostSource;
   marketplace: typeof marketplace;
+  payoutWorkerScope: typeof payoutWorkerScope;
+  payoutWorkers: typeof payoutWorkers;
   queries: typeof queries;
   readContracts: typeof readContracts;
   recipientPayouts: typeof recipientPayouts;

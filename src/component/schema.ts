@@ -1,3 +1,13 @@
+import { jobsTable as payoutWorkerJobsTable } from "./payoutWorker/schema.js";
+import {
+  financialRevisionsTable,
+  riskEventsTable,
+  riskRevisionsTable,
+  snapshotsTable,
+  snapshotSourcesTable,
+  snapshotClaimsTable,
+  snapshotFeesTable,
+} from "./payoutSnapshots/schema.js";
 import { claimsTable as payoutSyncClaimsTable } from "./payoutSync/schema.js";
 import {
   payoutReleasesTable as affiliatePayoutReleases,
@@ -49,6 +59,14 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutWorkerJobs: payoutWorkerJobsTable,
+  payoutFinancialRevisions: financialRevisionsTable,
+  payoutRiskEvents: riskEventsTable,
+  payoutRiskRevisions: riskRevisionsTable,
+  payoutSnapshots: snapshotsTable,
+  payoutSnapshotSources: snapshotSourcesTable,
+  payoutSnapshotClaims: snapshotClaimsTable,
+  payoutSnapshotFees: snapshotFeesTable,
   affiliateObligations: affiliateObligationsTable,
   affiliateRecoveryOperations: affiliateOperations,
   affiliatePayoutReleases,

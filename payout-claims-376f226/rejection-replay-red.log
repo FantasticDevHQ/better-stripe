@@ -1,0 +1,85 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/payout-release.test.ts (23 tests | 1 failed) 164ms
+   × releases a recent proven provider rejection but keeps unknown or old attempts held 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > releases a recent proven provider rejection but keeps unknown or old attempts held
+AssertionError: promise resolved "{ _creationTime: 1792052247485, …(12) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "_creationTime": 1792052247485,
++   "_id": "0000000010008payoutReleaseClaims",
++   "accountId": "acct_recipient",
++   "allocations": [
++     {
++       "amount": 400,
++       "role": "affiliate",
++       "stripeTransferId": "tr_affiliate",
++     },
++     {
++       "amount": 600,
++       "role": "store",
++       "stripeTransferId": "tr_creator",
++     },
++   ],
++   "amount": 1000,
++   "attemptedAt": 1792052247485,
++   "currency": "usd",
++   "expectedRevision": 0,
++   "observations": [
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_creator\",\"acct_recipient\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
++       "matureNet": 600,
++       "observedAt": 1792052247482,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_creator",
++       "transactionIds": [
++         "txn_tr_creator",
++       ],
++     },
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_affiliate\",\"acct_recipient\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
++       "matureNet": 400,
++       "observedAt": 1792052247482,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_affiliate",
++       "transactionIds": [
++         "txn_tr_affiliate",
++       ],
++     },
++   ],
++   "operationKey": "next",
++   "ownerKey": "user_1",
++   "rejection": {
++     "code": "balance_insufficient",
++     "requestId": "req_rejected",
++   },
++   "status": "rejected",
+  }
+
+ ❯ src/component/payout-release.test.ts:546:72
+    544|   ).toBe(1000);
+    545|   await t.mutation(m("beginAttempt"), next);
+    546|   await expect(t.mutation(m("recordRejection"), { ...proof, ...next })…
+       |                                                                        ^
+    547|   await t.run(async (ctx) => {
+    548|     const row = await ctx.db
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  15:17:27
+   Duration  426ms (tests 49%, transform 30%, import 11%, environment 10%, worker 1%)
+

@@ -1,0 +1,583 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/connect/payoutAllocation.test.ts (35 tests | 35 failed) 19ms
+   ❯ combined recipient payout allocation (35)
+     × qualifies creator and affiliate funds together at the exact threshold 5ms
+     × keeps the entire combined balance owed below the threshold 1ms
+     × releases the full eligible balance above the threshold 0ms
+     × cannot use unrelated available money to qualify a pending source 0ms
+     × deducts previously paid and still reserved allocations exactly once 0ms
+     × carries a refunded paid source as debt against future funds 0ms
+     × retains negative fee adjustments without forfeiting unpaid funds 0ms
+     × caps release by fresh provider availability after independent liabilities 0ms
+     × does not subtract reservations again from an already debited provider balance 1ms
+     × isolates currencies, including debts and pending credits 0ms
+     × uses stable source ordering regardless of observation order 0ms
+     × preserves signed debt even if there are no current credits 0ms
+     × does not invent a numeric provider minimum 0ms
+     × rejects duplicate sources rather than counting them twice 1ms
+     × rejects an unsafe threshold 0 0ms
+     × rejects an unsafe threshold -1 0ms
+     × rejects an unsafe threshold 0.5 0ms
+     × rejects an unsafe threshold 9007199254740992 0ms
+     × rejects an unsafe threshold NaN 0ms
+     × rejects an unsafe threshold Infinity 0ms
+     × rejects malformed currency USD 0ms
+     × rejects malformed currency us 0ms
+     × rejects malformed currency  0ms
+     × rejects malformed currency usd
+ 0ms
+     × rejects negative source paidAmount 0ms
+     × rejects negative source reservedAmount 0ms
+     × rejects negative source pendingCredits 0ms
+     × checks every source, even an otherwise ignored currency 0ms
+     × rejects unsafe source money NaN 0ms
+     × rejects unsafe source money Infinity 0ms
+     × rejects unsafe source money 0.1 0ms
+     × rejects unsafe source money 9007199254740992 0ms
+     × rejects arithmetic overflow rather than producing approximate money 0ms
+     × holds on a negative provider balance without erasing entitlement 0ms
+     × rejects negative independent liabilities 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 35 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > qualifies creator and affiliate funds together at the exact threshold
+AssertionError: expected undefined to deeply equal { status: 'qualified', …(6) }
+
+- Expected:
+{
+  "allocations": [
+    {
+      "amount": 400,
+      "role": "affiliate",
+      "stripeTransferId": "tr_affiliate",
+    },
+    {
+      "amount": 600,
+      "role": "store",
+      "stripeTransferId": "tr_creator",
+    },
+  ],
+  "amount": 1000,
+  "currency": "usd",
+  "matureUnpaid": 1000,
+  "pendingCredits": 0,
+  "providerMinimum": null,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:24:44
+     22| describe("combined recipient payout allocation", () => {
+     23|   it("qualifies creator and affiliate funds together at the exact thre…
+     24|     expect(planRecipientPayout(options())).toEqual({
+       |                                            ^
+     25|       status: "qualified",
+     26|       currency: "usd",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > keeps the entire combined balance owed below the threshold
+AssertionError: expected undefined to match object { status: 'held', …(3) }
+
+- Expected:
+{
+  "amount": 0,
+  "matureUnpaid": 999,
+  "reason": "below_threshold",
+  "status": "held",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:38:71
+     36|   });
+     37|   it("keeps the entire combined balance owed below the threshold", () …
+     38|     expect(planRecipientPayout(options([source("tr_creator", 999)]))).…
+       |                                                                       ^
+     39|       status: "held", reason: "below_threshold", matureUnpaid: 999, am…
+     40|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > releases the full eligible balance above the threshold
+AssertionError: expected undefined to match object { status: 'qualified', amount: 1200 }
+
+- Expected:
+{
+  "amount": 1200,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:43:104
+     41|   });
+     42|   it("releases the full eligible balance above the threshold", () => {
+     43|     expect(planRecipientPayout({ ...options([source("tr_creator", 1200…
+       |                                                                                                        ^
+     44|       status: "qualified", amount: 1200,
+     45|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > cannot use unrelated available money to qualify a pending source
+AssertionError: expected undefined to match object { status: 'held', …(3) }
+
+- Expected:
+{
+  "matureUnpaid": 0,
+  "pendingCredits": 1500,
+  "reason": "below_threshold",
+  "status": "held",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:48:128
+     46|   });
+     47|   it("cannot use unrelated available money to qualify a pending source…
+     48|     expect(planRecipientPayout({ ...options([source("tr_pending", 0, {…
+       |                                                                                                                                ^
+     49|       status: "held", reason: "below_threshold", matureUnpaid: 0, pend…
+     50|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > deducts previously paid and still reserved allocations exactly once
+AssertionError: expected undefined to match object { status: 'qualified', …(3) }
+
+- Expected:
+{
+  "allocations": [
+    {
+      "amount": 1000,
+      "role": "store",
+      "stripeTransferId": "tr_creator",
+    },
+  ],
+  "amount": 1000,
+  "matureUnpaid": 1000,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:53:114
+     51|   });
+     52|   it("deducts previously paid and still reserved allocations exactly o…
+     53|     expect(planRecipientPayout(options([source("tr_creator", 2500, { p…
+       |                                                                                                                  ^
+     54|       status: "qualified", matureUnpaid: 1000, amount: 1000,
+     55|       allocations: [{ stripeTransferId: "tr_creator", amount: 1000, ro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > carries a refunded paid source as debt against future funds
+AssertionError: expected undefined to match object { status: 'held', …(2) }
+
+- Expected:
+{
+  "matureUnpaid": 900,
+  "reason": "below_threshold",
+  "status": "held",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:62:10
+     60|       source("tr_refunded", 0, { paidAmount: 600 }),
+     61|       source("tr_new", 1500, { role: "affiliate" }),
+     62|     ]))).toMatchObject({
+       |          ^
+     63|       status: "held", reason: "below_threshold", matureUnpaid: 900,
+     64|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > retains negative fee adjustments without forfeiting unpaid funds
+AssertionError: expected undefined to match object { status: 'qualified', …(2) }
+
+- Expected:
+{
+  "allocations": [
+    {
+      "amount": 1000,
+      "role": "store",
+      "stripeTransferId": "tr_new",
+    },
+  ],
+  "amount": 1000,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:74:91
+     72|   });
+     73|   it("retains negative fee adjustments without forfeiting unpaid funds…
+     74|     expect(planRecipientPayout(options([source("tr_fee", -30), source(…
+       |                                                                                           ^
+     75|       status: "qualified", amount: 1000,
+     76|       allocations: [{ stripeTransferId: "tr_new", amount: 1000, role: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > caps release by fresh provider availability after independent liabilities
+AssertionError: expected undefined to match object { status: 'qualified', …(2) }
+
+- Expected:
+{
+  "amount": 1300,
+  "matureUnpaid": 2000,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:83:20
+     81|       ...options([source("tr_creator", 2000)]), providerAvailable: 150…
+     82|     });
+     83|     expect(result).toMatchObject({ status: "qualified", amount: 1300, …
+       |                    ^
+     84|     expect(planRecipientPayout({ ...options(), providerAvailable: 1000…
+     85|       status: "held", reason: "insufficient_available", matureUnpaid: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > does not subtract reservations again from an already debited provider balance
+AssertionError: expected undefined to match object { status: 'qualified', amount: 1000 }
+
+- Expected:
+{
+  "amount": 1000,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:91:9
+     89|     expect(planRecipientPayout({
+     90|       ...options([source("tr_creator", 2000, { reservedAmount: 1000 })…
+     91|     })).toMatchObject({ status: "qualified", amount: 1000 });
+       |         ^
+     92|   });
+     93|   it("isolates currencies, including debts and pending credits", () =>…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > isolates currencies, including debts and pending credits
+AssertionError: expected undefined to match object { status: 'qualified', …(2) }
+
+- Expected:
+{
+  "amount": 1000,
+  "pendingCredits": 0,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:96:10
+     94|     expect(planRecipientPayout(options([
+     95|       source("tr_usd", 1000), source("tr_eur", -5000, { currency: "eur…
+     96|     ]))).toMatchObject({ status: "qualified", amount: 1000, pendingCre…
+       |          ^
+     97|   });
+     98|   it("uses stable source ordering regardless of observation order", ()…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > uses stable source ordering regardless of observation order
+AssertionError: expected undefined to match object { allocations: [ { …(3) }, { …(3) } ] }
+
+- Expected:
+{
+  "allocations": [
+    {
+      "amount": 800,
+      "role": "store",
+      "stripeTransferId": "tr_a",
+    },
+    {
+      "amount": 300,
+      "role": "store",
+      "stripeTransferId": "tr_z",
+    },
+  ],
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:103:19
+    101|     const first = planRecipientPayout(args);
+    102|     expect(first).toEqual(planRecipientPayout({ ...args, sources: [...…
+    103|     expect(first).toMatchObject({ allocations: [
+       |                   ^
+    104|       { stripeTransferId: "tr_a", amount: 800, role: "store" },
+    105|       { stripeTransferId: "tr_z", amount: 300, role: "store" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > preserves signed debt even if there are no current credits
+AssertionError: expected undefined to match object { status: 'held', …(2) }
+
+- Expected:
+{
+  "amount": 0,
+  "matureUnpaid": -250,
+  "status": "held",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:109:89
+    107|   });
+    108|   it("preserves signed debt even if there are no current credits", () …
+    109|     expect(planRecipientPayout(options([source("tr_debt", -50, { paidA…
+       |                                                                                         ^
+    110|       status: "held", matureUnpaid: -250, amount: 0,
+    111|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > does not invent a numeric provider minimum
+AssertionError: expected undefined to match object { Object (status, amount, ...) }
+
+- Expected:
+{
+  "amount": 1,
+  "providerMinimum": null,
+  "status": "qualified",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:114:88
+    112|   });
+    113|   it("does not invent a numeric provider minimum", () => {
+    114|     expect(planRecipientPayout({ ...options([source("tr_small", 1)]), …
+       |                                                                                        ^
+    115|       status: "qualified", amount: 1, providerMinimum: null,
+    116|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects duplicate sources rather than counting them twice
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:119:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold 0
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold -1
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold 0.5
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold 9007199254740992
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold NaN
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects an unsafe threshold Infinity
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:122:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects malformed currency USD
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects malformed currency us
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects malformed currency 
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects malformed currency usd
+
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:125:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects negative source paidAmount
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects negative source reservedAmount
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects negative source pendingCredits
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:128:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > checks every source, even an otherwise ignored currency
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:131:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects unsafe source money NaN
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects unsafe source money Infinity
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects unsafe source money 0.1
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects unsafe source money 9007199254740992
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:134:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects arithmetic overflow rather than producing approximate money
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:137:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > holds on a negative provider balance without erasing entitlement
+AssertionError: expected undefined to match object { status: 'held', …(2) }
+
+- Expected:
+{
+  "matureUnpaid": 1000,
+  "reason": "insufficient_available",
+  "status": "held",
+}
+
++ Received:
+undefined
+
+ ❯ src/client/connect/payoutAllocation.test.ts:142:76
+    140|   });
+    141|   it("holds on a negative provider balance without erasing entitlement…
+    142|     expect(planRecipientPayout({ ...options(), providerAvailable: -100…
+       |                                                                            ^
+    143|       status: "held", reason: "insufficient_available", matureUnpaid: …
+    144|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/35]⎯
+
+ FAIL  |client| src/client/connect/payoutAllocation.test.ts > combined recipient payout allocation > rejects negative independent liabilities
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ awaitInvalid src/client/connect/payoutAllocation.test.ts:151:18
+    149| });
+    150| function awaitInvalid(action: () => unknown) {
+    151|   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
+       |                  ^
+    152| }
+    153|
+ ❯ src/client/connect/payoutAllocation.test.ts:147:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/35]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  35 failed (35)
+   Start at  14:58:40
+   Duration  304ms (transform 40%, tests 36%, import 19%, worker 5%)
+

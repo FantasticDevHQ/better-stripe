@@ -1,0 +1,150 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/payout-release.test.ts (19 tests | 2 failed) 153ms
+   × rejects a recipient receipt counted against two source transfers 8ms
+   × cannot reuse one payout return receipt to credit a different payout 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > rejects a recipient receipt counted against two source transfers
+AssertionError: promise resolved "{ …(11) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "_creationTime": 1792051656686.002,
++   "_id": "0000000010007payoutReleaseClaims",
++   "accountId": "acct_recipient",
++   "allocations": [
++     {
++       "amount": 400,
++       "role": "affiliate",
++       "stripeTransferId": "tr_affiliate",
++     },
++     {
++       "amount": 600,
++       "role": "store",
++       "stripeTransferId": "tr_creator",
++     },
++   ],
++   "amount": 1000,
++   "currency": "usd",
++   "expectedRevision": 0,
++   "observations": [
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_creator\",\"acct_recipient\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
++       "matureNet": 600,
++       "observedAt": 1792051656686,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_creator",
++       "transactionIds": [
++         "txn_tr_creator",
++       ],
++     },
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_affiliate\",\"acct_recipient\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
++       "matureNet": 400,
++       "observedAt": 1792051656686,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_affiliate",
++       "transactionIds": [
++         "txn_tr_creator",
++       ],
++     },
++   ],
++   "operationKey": "release-1",
++   "ownerKey": "user_1",
++   "status": "reserved",
+  }
+
+ ❯ src/component/payout-release.test.ts:422:45
+    420|   const { t, args } = await setup();
+    421|   args.observations[1].transactionIds = args.observations[0].transacti…
+    422|   await expect(t.mutation(m("claim"), args)).rejects.toThrow(/receipt/…
+       |                                             ^
+    423| });
+    424| it("cannot reuse one payout return receipt to credit a different payou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > cannot reuse one payout return receipt to credit a different payout
+AssertionError: promise resolved "{ _creationTime: 1792051656696, …(13) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "_creationTime": 1792051656696,
++   "_id": "0000000010008payoutReleaseClaims",
++   "accountId": "acct_recipient",
++   "allocations": [
++     {
++       "amount": 400,
++       "role": "affiliate",
++       "stripeTransferId": "tr_affiliate",
++     },
++     {
++       "amount": 600,
++       "role": "store",
++       "stripeTransferId": "tr_creator",
++     },
++   ],
++   "amount": 1000,
++   "attemptedAt": 1792051656696,
++   "currency": "usd",
++   "expectedRevision": 0,
++   "observations": [
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_creator\",\"acct_recipient\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
++       "matureNet": 600,
++       "observedAt": 1792051656694,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_creator",
++       "transactionIds": [
++         "txn_tr_creator",
++       ],
++     },
++     {
++       "currency": "usd",
++       "ledgerFingerprint": "[\"tr_affiliate\",\"acct_recipient\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
++       "matureNet": 400,
++       "observedAt": 1792051656694,
++       "pendingCredits": 0,
++       "stripeTransferId": "tr_affiliate",
++       "transactionIds": [
++         "txn_tr_affiliate",
++       ],
++     },
++   ],
++   "operationKey": "release-2",
++   "ownerKey": "user_1",
++   "returnTransactionId": "txn_return",
++   "status": "returned",
++   "stripePayoutId": "po_two",
+  }
+
+ ❯ src/component/payout-release.test.ts:433:100
+    431|   await t.mutation(m("claim"), { ...args, operationKey: second.operati…
+    432|   await t.mutation(m("beginAttempt"), second);
+    433|   await expect(t.mutation(m("recordOutcome"), { ...receipt, ...second,…
+       |                                                                                                    ^
+    434| });
+    435|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  15:07:36
+   Duration  417ms (tests 47%, transform 30%, import 12%, environment 10%, worker 1%)
+

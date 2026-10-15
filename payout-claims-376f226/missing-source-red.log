@@ -1,0 +1,42 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/payout-release.test.ts (21 tests | 1 failed) 195ms
+   × does not forget a previously paid source when its transfer row disappears 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > does not forget a previously paid source when its transfer row disappears
+AssertionError: promise resolved "{ amount: +0, currency: 'usd', …(5) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "amount": 0,
++   "currency": "usd",
++   "matureUnpaid": 0,
++   "pendingCredits": 0,
++   "providerMinimum": null,
++   "reason": "below_threshold",
++   "status": "held",
+  }
+
+ ❯ src/component/payout-release.test.ts:506:88
+    504|   });
+    505|   const observations = args.observations.filter(row => row.stripeTrans…
+    506|   await expect(t.mutation(m("claim"), { ...args, operationKey: "next",…
+       |                                                                                        ^
+    507| });
+    508|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  15:14:01
+   Duration  524ms (tests 46%, transform 33%, import 11%, environment 9%, worker 1%)
+

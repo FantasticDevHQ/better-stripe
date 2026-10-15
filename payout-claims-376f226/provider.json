@@ -1,0 +1,78 @@
+{
+  "sourceRevision": "376f22610a71cdcd8715904e04b79ff031eb6f80",
+  "sandbox": true,
+  "readOnly": true,
+  "publicClient": true,
+  "deployedComponentLedger": true,
+  "apiVersion": "2026-09-30.endive",
+  "pendingSource": {
+    "transferId": "tr_3UQPLf6JR7kThJog0IKSdBEa",
+    "totalNet": 4014,
+    "matureNet": 0,
+    "pendingCredits": 4014,
+    "transactions": [
+      {
+        "id": "txn_1UQPLm7xOsB2U2nM895yyrjD",
+        "sourceId": "py_1UQPLm7xOsB2U2nMDFlscCtu",
+        "amount": 4014,
+        "fee": 0,
+        "net": 4014,
+        "currency": "usd",
+        "created": 1791973438,
+        "availableOn": 1792540800,
+        "status": "pending",
+        "type": "payment"
+      }
+    ]
+  },
+  "fullyReversedPendingSource": {
+    "transferId": "tr_3UQ7Np6JR7kThJog0xDCHzaE",
+    "providerReversed": 7280,
+    "totalNet": 0,
+    "matureNet": 0,
+    "pendingCredits": 0,
+    "transactions": [
+      {
+        "id": "txn_1UQ7Nx7xOsB2U2nM0it78OAB",
+        "sourceId": "py_1UQ7Nw7xOsB2U2nMse63ND9n",
+        "amount": 7280,
+        "fee": 0,
+        "net": 7280,
+        "currency": "usd",
+        "created": 1791904381,
+        "availableOn": 1792454400,
+        "status": "pending",
+        "type": "payment"
+      },
+      {
+        "id": "txn_1UQ7Ob7xOsB2U2nMxeBiJfpQ",
+        "sourceId": "pyr_1UQ7Ob7xOsB2U2nMIVDfWW98",
+        "amount": -7207,
+        "fee": 0,
+        "net": -7207,
+        "currency": "usd",
+        "created": 1791904421,
+        "availableOn": 1792454400,
+        "status": "pending",
+        "type": "payment_refund"
+      },
+      {
+        "id": "txn_1UQ7OZ7xOsB2U2nM9HqX9KOw",
+        "sourceId": "pyr_1UQ7OZ7xOsB2U2nMW6WJEyKC",
+        "amount": -73,
+        "fee": 0,
+        "net": -73,
+        "currency": "usd",
+        "created": 1791904419,
+        "availableOn": 1792454400,
+        "status": "pending",
+        "type": "payment_refund"
+      }
+    ]
+  },
+  "budgetFailsClosed": true,
+  "foreignAccountRejected": true,
+  "noFinancialWrites": true,
+  "noUnpaidEntitlementClaim": true,
+  "status": "passed"
+}

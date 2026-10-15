@@ -1,0 +1,49 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |component| src/component/payout-release.test.ts (23 tests | 2 failed) 158ms
+   × releases a recent proven provider rejection but keeps unknown or old attempts held 6ms
+   × does not treat an accepted payout as a rejected create request 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > releases a recent proven provider rejection but keeps unknown or old attempts held
+Error: Expected a Convex function exported from module "payoutRelease/mutations" as `recordRejection`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-release.test.ts:528:11
+    526|   await t.mutation(m("claim"), args); await t.mutation(m("beginAttempt…
+    527|   const proof = { ...identity, requestId: "req_rejected", code: "balan…
+    528|   expect((await t.mutation(m("recordRejection"), proof)).status).toBe(…
+       |           ^
+    529|   expect((await t.mutation(m("recordRejection"), proof)).status).toBe(…
+    530|   const next = { ...scope, operationKey: "next" };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |component| src/component/payout-release.test.ts > does not treat an accepted payout as a rejected create request
+AssertionError: expected [Function] to throw error matching /uncertain|accepted/ but got 'Expected a Convex function exported f…'
+
+- Expected:
+/uncertain|accepted/
+
++ Received:
+"Expected a Convex function exported from module \"payoutRelease/mutations\" as `recordRejection`, but there is no such export."
+
+ ❯ src/component/payout-release.test.ts:544:123
+    542|   await t.mutation(m("claim"), args); await t.mutation(m("beginAttempt…
+    543|   await t.mutation(m("recordOutcome"), { ...identity, stripePayoutId: …
+    544|   await expect(t.mutation(m("recordRejection"), { ...identity, request…
+       |                                                                                                                           ^
+    545| });
+    546|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  15:16:05
+   Duration  417ms (tests 48%, transform 31%, import 11%, environment 10%, worker 1%)
+

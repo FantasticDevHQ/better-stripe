@@ -47,3 +47,18 @@ it.each([false, true])(
     });
   },
 );
+it("rejects browser-provided attachment IDs, even for the owning seller", async () => {
+  mockedStripe.getAccountByUserId.mockImplementation(accountFor());
+  mockedStripe.getDisputeByStripeId.mockResolvedValue(
+    OWNED_DISPUTE as Awaited<ReturnType<typeof stripe.getDisputeByStripeId>>,
+  );
+  await expect(
+    convexTest(schema, modules).action(api.actions.submitDisputeEvidence, {
+      userId: "owner_1",
+      stripeDisputeId: "dp_1",
+      evidence: { customer_communication: "file_unbound" } as never,
+      submit: false,
+    }),
+  ).rejects.toThrow();
+  expect(mockedStripe.updateDispute).not.toHaveBeenCalled();
+});

@@ -265,3 +265,6 @@ export type {
   AffiliatePayoutEditorState,
   AffiliatePayoutUpdate,
 } from "./AffiliatePayoutEditor.js";
+
+export { EvidenceUpload } from "./EvidenceUpload.js";
+export type { EvidenceUploadProps } from "./EvidenceUpload.js";

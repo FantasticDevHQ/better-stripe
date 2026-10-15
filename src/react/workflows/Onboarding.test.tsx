@@ -73,3 +73,76 @@ it("offers the shared example countries in the native onboarding UI", async () =
   );
   expect(screen.getByRole("option", { name: "United Kingdom" })).toBeTruthy();
 });
+
+for (const flow of ["create", "continue"] as const) {
+  for (const transition of ["unmount", "scope", "current"] as const) {
+    it(`${flow} navigates only while current after ${transition}`, async () => {
+      let resolve!: (value: { url: string; onboardingUrl: string }) => void;
+      const response = new Promise<{ url: string; onboardingUrl: string }>(
+        (done) => {
+          resolve = done;
+        },
+      );
+      const navigate = vi.fn();
+      const { result, rerender, unmount } = renderHook(
+        ({ scope }) =>
+          useOnboarding({
+            scopeKey: scope,
+            createAccount: () => response,
+            continueOnboarding: () => response,
+            onNavigate: navigate,
+          }),
+        { initialProps: { scope: "seller-a" } },
+      );
+      let pending!: Promise<unknown>;
+      act(() => {
+        pending = result.current[flow]();
+      });
+      if (transition === "unmount") unmount();
+      if (transition === "scope") rerender({ scope: "seller-b" });
+      await act(async () => {
+        resolve({
+          url: "https://connect.stripe.com/setup",
+          onboardingUrl: "https://connect.stripe.com/setup",
+        });
+        await pending;
+      });
+      expect(navigate).toHaveBeenCalledTimes(transition === "current" ? 1 : 0);
+    });
+  }
+}
+
+for (const flow of ["create", "continue"] as const) {
+  it(`${flow} suppresses the default location assignment after unmount`, async () => {
+    let resolve!: (value: { url: string; onboardingUrl: string }) => void;
+    const response = new Promise<{ url: string; onboardingUrl: string }>(
+      (done) => {
+        resolve = done;
+      },
+    );
+    const assign = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useOnboarding({
+        scopeKey: "seller",
+        createAccount: () => response,
+        continueOnboarding: () => response,
+      }),
+    );
+    let pending!: Promise<unknown>;
+    act(() => {
+      pending = result.current[flow]();
+    });
+    unmount();
+    vi.stubGlobal("window", { location: { assign } });
+    try {
+      resolve({
+        url: "https://connect.stripe.com/setup",
+        onboardingUrl: "https://connect.stripe.com/setup",
+      });
+      await pending;
+      expect(assign).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+}

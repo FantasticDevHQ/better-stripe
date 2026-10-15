@@ -50,12 +50,12 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
    - `fix: …` makes a patch release.
    - `feat: …` makes a minor release.
    - `feat!: …` (or a `BREAKING CHANGE:` footer) makes a minor release while the package is pre-1.0.
-   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which you can leave open to collect more changes: nothing publishes until that PR is merged.
+   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which auto-merges once its required checks pass.
 
    Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
 
-2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit.
-3. **Merging the release PR** is the release decision. The same run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
+2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the version line above and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit. After formatting, the workflow enables squash auto-merge for the generated release PR using the release GitHub App.
+3. **Auto-merge waits for green checks**. The active `main` ruleset requires `ci`, `Shadscan UI quality gate (100)` and `codegen`, with no bypass actors. Failed or pending required checks prevent merging. Once GitHub merges the generated release PR, the resulting `Release` workflow run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
 
 Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.
 
@@ -652,9 +652,41 @@ recovery costs and credits remain host-owned policy. See Stripe's
 | `getDisputeByStripeId(ctx, { stripeDisputeId })`                                                                                                         | Get a dispute by Stripe dispute ID                                                                                                                                 |
 | `getDisputeWithCountdown(ctx, { stripeDisputeId })`                                                                                                      | Get a dispute plus its evidence-due countdown (`daysRemaining`, `isOverdue`)                                                                                       |
 | `listDisputes(ctx, { stripeAccountId?, stripePaymentIntentId?, status?, limit? })`                                                                       | List disputes with optional filters                                                                                                                                |
+| `uploadDisputeEvidence(ctx, { stripeDisputeId, actor, field, file, stripeAccountId? })`                                                                  | Since 0.14.0: validate and upload file bytes, then attach the returned file ID to an authorized dispute draft; never submits                                       |
 | `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                                                               | Submit/stage dispute evidence (`submit: true` finalizes the response)                                                                                              |
 | `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                                                               | Accept a dispute (concede the chargeback) — irreversible                                                                                                           |
 | `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                                                           | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually)                                         |
+
+`uploadDisputeEvidence` shipped in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
+Call it from an authenticated server adapter with a session-derived actor. A seller
+can upload only for a dispute whose sale belongs to their merchant account.
+
+```ts
+const { stripeFileId } = await stripe.uploadDisputeEvidence(ctx, {
+  stripeDisputeId,
+  actor: { type: "seller", accountId: authorizedSellerAccountId },
+  field: "customer_communication",
+  file: {
+    data: evidenceBytes, // Uint8Array loaded from authorized private storage
+    name: "communication.pdf",
+    type: "application/pdf",
+  },
+});
+```
+
+The API accepts nonempty PDF, JPEG or PNG bytes up to 5,000,000 bytes, with a
+matching MIME type and file signature. Stripe validates the complete document.
+Authorization runs before upload and again before attachment. Only the returned
+provider file ID is bound to the chosen evidence field, with explicit
+`submit: false`. The result contains `stripeFileId` and `stripeDisputeId` after
+attachment succeeds. Use a separate authorized `updateDispute` call with
+`submit: true` when the user explicitly finalizes evidence.
+
+The optional `stripeAccountId` identifies the provider account owning the charge;
+it is distinct from the seller actor. Resolve it server-side. Do not accept
+browser-provided actors or file IDs as authorization. See the
+[upload workflow guide](docs/react-workflows.md#dispute-evidence-uploads-and-onboarding-navigation)
+for errors, retries and storage/transport limits.
 
 Refunds denormalize cumulative state onto the linked `payments` row (`refundedAmount`, `refundStatus: "partially_refunded" | "fully_refunded"`) so "is this payment whole?" is a single read.
 
@@ -1176,6 +1208,16 @@ Existing low-level components remain available below. Props vary by component;
 Stripe iframe styling uses `appearance`, while custom markup uses render props
 or the low-level component's `className`/label props.
 
+### Hosted onboarding navigation
+
+Since 0.14.0, `Onboarding` and `useOnboarding` suppress hosted navigation from
+create/continue responses after unmount or authenticated scope replacement.
+Current-scope responses still navigate through `onNavigate` or the default
+`window.location.assign`. Shared pending locks, duplicate-submit prevention and
+error state remain intact. Set `scopeKey` to identify the authenticated
+account/resource; it controls lifecycle isolation and does not authorize access.
+See the [workflow guide](docs/react-workflows.md#dispute-evidence-uploads-and-onboarding-navigation).
+
 ### Provider
 
 | Component                 | Description                                                                                      |
@@ -1284,11 +1326,12 @@ function BuyerBilling({ userId, customerAccount }: Props) {
 
 The app-owned alternative to [Embedded Disputes](#embedded-disputes-stripe-connect) below — build a custom dispute UI on the read hooks and these components instead of Stripe's hosted ConnectJS components.
 
-| Component       | Description                                                                                                                                                                                                                                        |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DisputesList`  | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`                                                                                                                                            |
-| `DisputeDetail` | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown`                                                                                                                             |
-| `EvidenceForm`  | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
+| Component        | Description                                                                                                                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DisputesList`   | Sorted-by-deadline dispute list (soonest evidence due-by first, no-deadline last), fed by `useDisputes`                                                                                                                                            |
+| `DisputeDetail`  | Amount, reason, status, evidence-due countdown, and linked transfers for one dispute, fed by `useDisputeWithCountdown`                                                                                                                             |
+| `EvidenceUpload` | Since 0.14.0: unstyled file-selection, pending, failure and retry control with render props; bind `onUpload(file)` to an authenticated server adapter that attaches to a draft                                                                     |
+| `EvidenceForm`   | Plain-language evidence form (product description, access activity, additional info, customer communication) that maps through `buildDisputeEvidence` before calling an app-wired `onUpdateDispute`; `stage()` saves a draft, `submit()` finalizes |
 
 ### Embedded Disputes (Stripe Connect)
 

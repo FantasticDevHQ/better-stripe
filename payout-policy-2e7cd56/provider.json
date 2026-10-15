@@ -1,0 +1,23 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "publicClient": true,
+  "deployedComponent": true,
+  "apiVersion": "2026-09-30.endive",
+  "accountId": "acct_1UQiOf4P8fmoi0qS",
+  "prepare": "prepared",
+  "preparationDoesNotMutateProvider": true,
+  "persistenceRecovery": {
+    "providerManual": true,
+    "updates": 1,
+    "replayNoDuplicate": true
+  },
+  "editDoesNotExtendDeadline": true,
+  "liveDriftDetected": true,
+  "optOutRestoredOriginalSchedule": true,
+  "providerMinimumNotInvented": true,
+  "status": "passed",
+  "cleanupScheduleRestored": true,
+  "accountClosed": true,
+  "noChargesTransfersOrPayoutsCreated": true
+}

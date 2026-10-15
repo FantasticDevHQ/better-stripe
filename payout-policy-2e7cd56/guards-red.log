@@ -1,0 +1,127 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |component| src/component/payout-policy.test.ts (12 tests | 1 failed) 96ms
+   × marks attempts durably and only cancels an unattempted provider change 5ms
+ ❯ |client| src/client/payoutPolicy.test.ts (11 tests | 3 failed) 189ms
+   × reports a staged initial enable as pending rather than unconfigured 7ms
+   × restores opt-out even after exclusive Dashboard control is lost 5ms
+   × cancels an expired, unattempted enable without switching a live schedule to manual 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > marks attempts durably and only cancels an unattempted provider change
+Error: Expected a Convex function exported from module "payoutPolicy/mutations" as `cancelUnattempted`, but there is no such export.
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2405:15
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:34
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ src/component/payout-policy.test.ts:201:11
+    199|   await t.mutation(m("prepare"),initial);
+    200|   const args={...scope,operationKey:"enable-1",observedSchedule:initia…
+    201|   expect((await t.mutation(m("cancelUnattempted"),args)).status).toBe(…
+       |           ^
+    202|   expect(await t.query(q("get"),scope)).toMatchObject({mode:"stripe_ma…
+    203|   await expect(t.mutation(m("confirm"),{...scope,operationKey:"enable-…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > reports a staged initial enable as pending rather than unconfigured
+AssertionError: expected { status: 'not_configured' } to match object { status: 'pending_operation' }
+
+- Expected
++ Received
+
+  {
+-   "status": "pending_operation",
++   "status": "not_configured",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:237:42
+    235|   const {client,ctx}=await setup();
+    236|   await client.prepare(ctx,options);
+    237|   expect(await client.verify(ctx,scope)).toMatchObject({status:"pendin…
+       |                                          ^
+    238| });
+    239| it("restores opt-out even after exclusive Dashboard control is lost",a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > restores opt-out even after exclusive Dashboard control is lost
+AssertionError: expected 'unsupported' to be 'prepared' // Object.is equality
+
+Expected: "prepared"
+Received: "unsupported"
+
+ ❯ src/client/payoutPolicy.test.ts:243:146
+    241|   await client.prepare(ctx,options);await client.apply(ctx,{...scope,o…
+    242|   provider.v2.core.accounts.retrieve.mockResolvedValue({id:scope.accou…
+    243|   expect((await client.prepare(ctx,{...options,operationKey:"off-lost-…
+       |                                                                                                                                                  ^
+    244|   expect((await client.apply(ctx,{...scope,operationKey:"off-lost-cont…
+    245| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > cancels an expired, unattempted enable without switching a live schedule to manual
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 2 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "payments": Object {
+          "payouts": Object {
+            "schedule": Object {
+              "interval": "manual",
+            },
+          },
+        },
+      },
+      Object {
+        "idempotencyKey": "bs:payout-policy:enable",
+        "stripeAccount": "acct_recipient",
+      },
+    ]
+
+  2nd vi.fn() call:
+
+    Array [
+      Object {
+        "payments": Object {
+          "payouts": Object {
+            "schedule": Object {
+              "interval": "weekly",
+              "weekly_payout_days": Array [
+                "monday",
+              ],
+            },
+          },
+        },
+      },
+      Object {
+        "idempotencyKey": "bs:payout-policy:bs:payout-expiry:acct_recipient:0",
+        "stripeAccount": "acct_recipient",
+      },
+    ]
+
+
+Number of calls: 2
+
+ ❯ src/client/payoutPolicy.test.ts:252:47
+    250|   await client.expire(ctx,scope);
+    251|   expect((await client.get(ctx,scope))!.mode).toBe("stripe_managed");
+    252|   expect(provider.balanceSettings.update).not.toHaveBeenCalled();
+       |                                               ^
+    253| });
+    254|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 19 passed (23)
+   Start at  13:23:47
+   Duration  878ms (transform 54%, tests 23%, import 14%, environment 9%, worker 1%)
+

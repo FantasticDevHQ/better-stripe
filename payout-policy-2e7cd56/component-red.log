@@ -1,0 +1,153 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |component| src/component/payout-policy.test.ts (10 tests | 10 failed) 16ms
+   × persists restoration and a deadline before provider mutation, then confirms exactly once 5ms
+   × preserves the original schedule and deadline across threshold changes and opt-out 1ms
+   × rejects changed replays, ownership changes, stale revisions and competing operations 1ms
+   × cannot confirm a different provider schedule or hide external drift 0ms
+   × rejects invalid custom minor-unit thresholds (0) 4ms
+   × rejects invalid custom minor-unit thresholds (-1) 1ms
+   × rejects invalid custom minor-unit thresholds (1.5) 1ms
+   × rejects invalid custom minor-unit thresholds (9007199254740992) 1ms
+   × uses country holding limits and never extends a hold by editing thresholds 1ms
+   × returns bounded due policies and retains expired changing operations for reconciliation 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > persists restoration and a deadline before provider mutation, then confirms exactly once
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:17:22
+     15| it("persists restoration and a deadline before provider mutation, then…
+     16|   const t = convexTest(schema, modules);
+     17|   const op = await t.mutation(m("prepare"), initial);
+       |                      ^
+     18|   expect(op.status).toBe("pending");
+     19|   expect(op.targetSchedule).toEqual({ interval: "manual" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > preserves the original schedule and deadline across threshold changes and opt-out
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:33:11
+     31| it("preserves the original schedule and deadline across threshold chan…
+     32|   const t = convexTest(schema, modules);
+     33|   await t.mutation(m("prepare"), initial);
+       |           ^
+     34|   await t.mutation(m("confirm"), { ...scope, operationKey:"enable-1", …
+     35|   const original = await t.query(q("get"), scope);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > rejects changed replays, ownership changes, stale revisions and competing operations
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:49:22
+     47| it("rejects changed replays, ownership changes, stale revisions and co…
+     48|   const t = convexTest(schema, modules);
+     49|   const op = await t.mutation(m("prepare"), initial);
+       |                      ^
+     50|   expect(await t.mutation(m("prepare"), initial)).toEqual(op);
+     51|   for(const changed of [ {thresholds:[{currency:"usd",amount:900}]}, {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > cannot confirm a different provider schedule or hide external drift
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:60:11
+     58| it("cannot confirm a different provider schedule or hide external drif…
+     59|   const t=convexTest(schema,modules);
+     60|   await t.mutation(m("prepare"), initial);
+       |           ^
+     61|   await expect(t.mutation(m("confirm"),{...scope,operationKey:"enable-…
+     62|   await t.mutation(m("confirm"),{...scope,operationKey:"enable-1",obse…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > rejects invalid custom minor-unit thresholds (0)
+ FAIL  |component| src/component/payout-policy.test.ts > rejects invalid custom minor-unit thresholds (-1)
+ FAIL  |component| src/component/payout-policy.test.ts > rejects invalid custom minor-unit thresholds (1.5)
+ FAIL  |component| src/component/payout-policy.test.ts > rejects invalid custom minor-unit thresholds (9007199254740992)
+AssertionError: expected [Function] to throw error matching /threshold/ but got 'Could not find module for: "payoutPol…'
+
+- Expected:
+/threshold/
+
++ Received:
+"Could not find module for: \"payoutPolicy/mutations\""
+
+ ❯ src/component/payout-policy.test.ts:67:91
+     65| it.each([0,-1,1.5,Number.MAX_SAFE_INTEGER+1])("rejects invalid custom …
+     66|   const t=convexTest(schema,modules);
+     67|   await expect(t.mutation(m("prepare"),{...initial,thresholds:[{curren…
+       |                                                                                           ^
+     68| });
+     69| it("uses country holding limits and never extends a hold by editing th…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > uses country holding limits and never extends a hold by editing thresholds
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:72:13
+     70|   for(const [country,days] of [["TH",10],["US",730],["GB",90]] as cons…
+     71|     const t=convexTest(schema,modules);const before=Date.now();
+     72|     await t.mutation(m("prepare"),{...initial,country});
+       |             ^
+     73|     const policy=await t.query(q("get"),scope);
+     74|     expect(policy.holdDeadline).toBeGreaterThanOrEqual(before+days*864…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  |component| src/component/payout-policy.test.ts > returns bounded due policies and retains expired changing operations for reconciliation
+Error: Could not find module for: "payoutPolicy/mutations"
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ result.<computed> [as mutation] node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ src/component/payout-policy.test.ts:80:11
+     78| it("returns bounded due policies and retains expired changing operatio…
+     79|   const t=convexTest(schema,modules);
+     80|   await t.mutation(m("prepare"),initial);
+       |           ^
+     81|   const p=await t.query(q("get"),scope);
+     82|   const result=await t.query(q("due"),{now:p.holdDeadline+1,pagination…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed (10)
+   Start at  13:16:03
+   Duration  565ms (transform 59%, import 21%, environment 14%, tests 4%, worker 1%)
+

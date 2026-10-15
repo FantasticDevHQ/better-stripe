@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "backendRestored": true,
+  "trackedBackendMatchesHead": true,
+  "existingFinancialDataReadBeforeAnyMutation": true,
+  "originalFundingDebt": 147,
+  "originalFundingOutstanding": 147,
+  "reserved": 0,
+  "existingUsers": 8
+}

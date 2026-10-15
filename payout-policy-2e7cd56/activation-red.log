@@ -1,0 +1,37 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |client| src/client/payoutPolicy.test.ts (13 tests | 1 failed) 157ms
+   × rechecks delayed activation and cancels safely when funds arrive after preparation 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > rechecks delayed activation and cancels safely when funds arrive after preparation
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'migration_required', …(1) }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "existing_balance",
+-   "status": "migration_required",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:309:68
+    307|   await client.prepare(ctx,options);
+    308|   provider.balance.retrieve.mockResolvedValueOnce({available:[{currenc…
+    309|   expect(await client.apply(ctx,{...scope,operationKey:"enable"})).toM…
+       |                                                                    ^
+    310|   expect(provider.balanceSettings.update).not.toHaveBeenCalled();
+    311|   expect(await client.get(ctx,scope)).toMatchObject({mode:"stripe_mana…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  13:36:46
+   Duration  415ms (tests 49%, transform 28%, import 12%, environment 10%, worker 1%)
+

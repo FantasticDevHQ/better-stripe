@@ -1,0 +1,29 @@
+▌ Developing against deployment:
+▌ [Development] dojo:better-stripe-example:dev/kelly-kampen (dev) (dashboard: https://dashboard.convex.dev/t/dojo/better-stripe-example/fabulous-egret-37)
+▌ └─ https://fabulous-egret-37.convex.cloud
+- Preparing Convex functions...
+
+✔ Added table indexes:
+  [+] affiliateDefaults.by_seller   sellerId, _creationTime
+  [+] sandboxFixtureJobs.by_version   version, _creationTime
+  [+] sandboxFixtureResources.by_key   key, _creationTime
+  [+] sellerAffiliateRates.by_target   sellerId, stripeProductId, stripePriceId, _creationTime
+  [+] sellerCosts.by_charge   sourceChargeId, _creationTime
+  [+] sellerCosts.by_recovery_version   sellerId, recoveryVersion, _creationTime
+  [+] sellerCosts.by_seller   sellerId, _creationTime
+  [+] sellerCosts.by_seller_open   sellerId, open, _creationTime
+  [+] storeBalanceFunding.by_seller   sellerId, _creationTime
+  [+] storeCostBills.by_invoice   invoiceId, _creationTime
+  [+] storePlanCatalog.by_plan   planId, _creationTime
+  [+] storePlanSettings.by_plan   planId, _creationTime
+  [+] storeSales.by_charge   chargeId, _creationTime
+  [+] storeSales.by_recovery   sellerId, currency, status, costRecoveryAmount, _creationTime
+  [+] storeSales.by_seller   sellerId, _creationTime
+  [+] subscriptionCommissions.by_subscription   stripeSubscriptionId, _creationTime
+  [+] triggerLog.by_kind   kind, _creationTime
+  [+] users.by_email   email, _creationTime
+  [+] users.by_role   role, _creationTime
+  [+] users.by_stripe_account   stripeAccountId, _creationTime
+  [+] users.by_test_fixture   testFixture, _creationTime
+✔ Remounted component betterStripe.
+✔ 13:42:07 Convex functions ready! (3.93s)

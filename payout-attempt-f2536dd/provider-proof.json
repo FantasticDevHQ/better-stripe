@@ -1,0 +1,99 @@
+{
+  "sourceRevision": "f2536dd285da2a89d890a97ff77aae7e004340f1",
+  "sandbox": true,
+  "isolatedRaceHarness": true,
+  "scheduledCronDisabled": true,
+  "before": {
+    "available": [
+      {
+        "amount": 1000,
+        "currency": "usd",
+        "source_types": {
+          "card": 1000
+        }
+      }
+    ],
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": []
+  },
+  "claim": {
+    "amount": 1000,
+    "currency": "usd",
+    "allocations": [
+      {
+        "amount": 599,
+        "role": "store",
+        "stripeTransferId": "tr_1UQveC6JR7kThJogEflVJ5JB"
+      },
+      {
+        "amount": 401,
+        "role": "affiliate",
+        "stripeTransferId": "tr_1UQveN6JR7kThJogcoRZmVof"
+      }
+    ],
+    "status": "rejected",
+    "rejection": {
+      "code": "balance_insufficient",
+      "requestId": "req_YwNVHbii1Zu5yV"
+    }
+  },
+  "after": {
+    "available": [
+      {
+        "amount": 0,
+        "currency": "usd",
+        "source_types": {
+          "card": 0
+        }
+      }
+    ],
+    "payouts": [],
+    "worker": {
+      "_creationTime": 1792097643953.343,
+      "_id": "nn75x87svr1by7rk7rrh8ww0kd8gaah0",
+      "accountId": "acct_1UQvbJ8bdCXmrrDD",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:nn75x87svr1by7rk7rrh8ww0kd8gaah0:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792097643953,
+      "lastReason": "balance_insufficient",
+      "lastResultAt": 1792097657201,
+      "nextAttemptAt": 1792097957201,
+      "ownerKey": "kn770hfre6qk4b41vdgn8e2d9d8gakbp",
+      "sequence": 1
+    }
+  },
+  "replay": {
+    "nextAttemptAt": 1792097957201,
+    "reason": "not_due",
+    "status": "held"
+  },
+  "optOutSchedule": {
+    "interval": "weekly",
+    "weekly_payout_days": [
+      "monday"
+    ]
+  },
+  "cleanup": {
+    "providerVerified": true,
+    "payoutCount": 0,
+    "available": [
+      {
+        "currency": "usd",
+        "amount": 0
+      }
+    ],
+    "pending": [
+      {
+        "currency": "usd",
+        "amount": 0
+      }
+    ],
+    "closeRequestId": "req_v2LAXMTR7SolBUOOJ"
+  }
+}

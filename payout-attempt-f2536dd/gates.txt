@@ -1,0 +1,28 @@
+
+> @fantastic.dev/better-stripe@0.28.4 check:all /private/tmp/better-stripe-payout-accounting-79d4421
+> repo-gates check-all
+
+✓ build               (1.0s)
+✓ lint                (8.5s)
+✓ check:design-system (2.3s)
+✓ format:check        (6.7s)
+✓ typecheck           (3.9s)
+✓ codegen:check       (0.3s)
+✓ check:size          (0.4s)
+✓ check:debt          (0.4s)
+✓ check:circular      (0.4s)
+✓ check:secrets       (0.4s)
+✓ check:shadscan      (2.3s)
+✓ test                (28.7s)
+✓ check:coverage      (31.2s)
+✓ check:agents        (0.3s)
+✓ check:ci-parity     (0.3s)
+
+15/15 gates passed (87.1s)
+
+Scores:
+  file-size         tightest example/scripts/e2e-webhooks.ts 907/907 (0 to spare)
+  debt-markers      1 grandfathered, 0 untracked
+  circular-imports  0 grandfathered, 0 new
+  secrets           0 grandfathered, 0 new
+  coverage          lowest coverage/coverage-summary.json 77.4% lines (1 pkgs ≥ floor)

@@ -54,6 +54,11 @@ See [the package settings contract](../docs/react-workflows.md#payout-settings).
 
 ### Reset & Re-seed
 
+The Admin reset button and CLI use the same payout safety check before clearing
+app users or component records. Restore custom payout policies to Stripe-managed
+defaults and reconcile pending payouts first. A refused reset preserves owner
+bindings and schedule restoration records so these operations can still finish.
+
 ```bash
 pnpm exec convex run reset:run   # Clear all data (app DB + better-stripe component DB)
 pnpm run setup               # Re-set the Stripe key

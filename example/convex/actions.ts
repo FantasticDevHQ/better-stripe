@@ -124,9 +124,11 @@ export const syncAccounts = action({
 // Reset — clear all app + component data
 export const resetAll = action({
   args: {},
+  returns: v.null(),
   handler: async (ctx) => {
-    await ctx.runMutation(internal.reset.clearAppDb, {});
-    await ctx.runAction(internal.reset.clearStripeDb, {});
+    // Share the CLI path: payout safety must pass before deleting owner bindings.
+    await ctx.runAction(internal.reset.run, {});
+    return null;
   },
 });
 

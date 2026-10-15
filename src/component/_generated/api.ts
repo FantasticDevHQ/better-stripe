@@ -36,6 +36,7 @@ import type * as lib_stripeFactory from "../lib/stripeFactory.js";
 import type * as products_mutations from "../products/mutations.js";
 import type * as products_queries from "../products/queries.js";
 import type * as products_validators from "../products/validators.js";
+import type * as refundHistory_queries from "../refundHistory/queries.js";
 import type * as settlement_mutations from "../settlement/mutations.js";
 import type * as settlement_queries from "../settlement/queries.js";
 import type * as webhooks_mutations from "../webhooks/mutations.js";
@@ -78,6 +79,7 @@ const fullApi: ApiFromModules<{
   "products/mutations": typeof products_mutations;
   "products/queries": typeof products_queries;
   "products/validators": typeof products_validators;
+  "refundHistory/queries": typeof refundHistory_queries;
   "settlement/mutations": typeof settlement_mutations;
   "settlement/queries": typeof settlement_queries;
   "webhooks/mutations": typeof webhooks_mutations;

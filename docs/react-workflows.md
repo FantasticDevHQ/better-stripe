@@ -391,6 +391,40 @@ Preview grouping performs no reads, writes or provider operations and cannot pro
 bank delivery or complete-account earnings. Authorize and bound the source read in
 the host; keep authoritative full-account aggregates separate.
 
+### Complete refund history (added after 0.16.0)
+
+`BetterStripe.paginateRefunds(ctx, opts)` reads authoritative synchronized component
+refund records. `RefundPageOptions` is exported from the main package entrypoint.
+Pass `paginationOpts: { numItems, cursor }` with an integer page size from 1 to 100
+and `null` for the initial cursor. The result has `page`, `isDone` and
+`continueCursor`; feed the returned cursor into the next request until `isDone`.
+Each request performs one bounded helper-compatible component paginate operation
+in newest-first order. Bind the authorized host query with the package React
+`useComponentPaginatedQuery`, matching the catalog and payout readers. Pinned
+ranges may grow beyond the requested page size; reads cap at 200 rows or 1 MB
+and return split hints for the hook. Existing `listRefunds` retains its
+capped-array compatibility.
+
+The host must authenticate the session and derive an authorized account/payment
+scope before exposing this method through its reactive query. Optional
+`stripeAccountId`, `stripePaymentIntentId` and `status` filters all apply together;
+a mismatched account/payment pair returns no records. Do not expose an unscoped
+reader to ordinary sellers, trust browser-supplied account IDs or treat this
+component API as an authentication boundary.
+
+Render returned records with `RefundHistory` or its render prop, retaining their
+original amount, currency, status and charge/payment identifiers. Dojo supplies
+translated Shadcn presentation and its application audit context. Loaded pages
+and the existing 25-row Vite preview are incomplete until pagination finishes;
+neither is a monetary aggregate. Grouped preview amounts remain explicitly
+bounded, and authoritative monetary totals require currency-isolated aggregate
+APIs. This reader performs no Stripe request, refund or ledger write.
+
+This method is absent from public 0.16.0. Source acceptance does not publish it.
+Host applications must wait for a separately verified published artifact and
+package adoption before importing it; source merges alone do not satisfy that
+consumer gate.
+
 ## Store-plan pricing editor
 
 `PlanPricingEditor` accepts a `plan` with `id`, `name`, `monthlyAmount` in minor

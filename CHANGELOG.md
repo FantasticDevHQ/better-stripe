@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.25.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.25.0...v0.25.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **webhooks:** reconcile payout generations before host callbacks ([#202](https://github.com/FantasticDevHQ/better-stripe/issues/202)) ([d8332c4](https://github.com/FantasticDevHQ/better-stripe/commit/d8332c4a3fd98b1cf10e289caa9c476e56b04c79))
+
 ## [0.25.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.24.0...v0.25.0) (2026-10-15)
 
 ### Features

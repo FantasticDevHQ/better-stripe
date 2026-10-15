@@ -489,3 +489,45 @@ original method and types; it does not retry an unpaid invoice or automatically
 fall back to a card. The example demonstrates durable preparation and pending
 operation records in `storeBalanceFunding.ts` with a separate preview client.
 See the [README balance-funding workflow](../README.md#optional-balance-funded-subscriptions).
+
+## Dispute evidence uploads and onboarding navigation
+
+`EvidenceUpload` is an unstyled control with render props. Its `scopeKey` must
+include the authenticated scope and selected dispute. Bind `onUpload(file)` to
+an authenticated server callback, convert the file to bytes there, and call
+`betterStripe.uploadDisputeEvidence(ctx, { stripeDisputeId, actor, field, file })`.
+The example seller disputes page demonstrates a communication-file attachment.
+The example uses demo personas, so production applications must replace its
+persona authorization with a session-derived actor and dispute ownership check.
+Never accept an actor, connected request account, or attachment file ID from the
+browser as authorization.
+
+The server API accepts nonempty PDF, JPEG or PNG bytes up to 5,000,000 bytes. MIME
+type and file signature must match. Stripe performs full document validation and
+may reject corrupt documents or apply additional dispute/network limits. See
+[Stripe's file upload guide](https://docs.stripe.com/file-upload) and
+[evidence troubleshooting](https://support.stripe.com/questions/evidence-submission-troubleshooting-faq).
+Authorization runs before uploading and again before binding. The API uploads
+with `purpose: "dispute_evidence"`, binds only the returned ID to the chosen
+file evidence field, and explicitly sends `submit: false`. Uploading never sends
+evidence to the bank. Continue using `EvidenceForm.stage()` for prose drafts and
+`EvidenceForm.submit()` for explicit final submission.
+
+`DISPUTE_UPLOAD_FAILED` carries structured provider error details. An attachment
+failure reports `DISPUTE_UPDATE_FAILED`; the uploaded file can remain at Stripe
+without a draft attachment. Keep the local file and prose draft so the user can
+retry. Do not mark an upload as attached until the entire callback succeeds.
+Convex action payload limits can be lower than Stripe's file limit. For larger
+files, authorize and load a private storage reference on the server, then pass
+its bytes to the package. The example byte-action transport is for small files.
+
+`useWorkflowAction(action, scopeKey, onSuccess)` invokes `onSuccess` only after
+checking that the response still belongs to the mounted scope. `useOnboarding`
+uses this lifecycle for both create and continue navigation, including its
+`window.location.assign` fallback. An old response cannot navigate after unmount
+or scope replacement. Current requests preserve shared pending locks and errors.
+These APIs ship in the release containing the dispute-upload and stale-navigation
+implementation PR. Version 0.13.0 does not contain them. Consumers must upgrade
+to that release before removing their navigation guard or using the upload API.
+Production storage, session authorization, styling, translations and extended
+hosted onboarding verification remain application responsibilities.

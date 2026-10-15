@@ -51,10 +51,13 @@ export function useOnboarding(props: OnboardingActions) {
             ? result.url
             : undefined;
       if (!url) throw new Error("Stripe did not return an onboarding URL.");
-      (props.onNavigate ?? ((url) => window.location.assign(url)))(url);
-      return true;
+      return url;
     },
     props.scopeKey,
+    (url) => {
+      if (typeof url === "string")
+        (props.onNavigate ?? ((url) => window.location.assign(url)))(url);
+    },
   );
   const run = action.run;
   return {
@@ -69,9 +72,9 @@ export function useOnboarding(props: OnboardingActions) {
     createError: operation === "create" ? action.error : null,
     linkError: operation === "link" ? action.error : null,
     restartError: operation === "close" ? action.error : null,
-    create: () => run("create"),
-    continue: () => run("link"),
-    close: () => run("close"),
+    create: async () => ((await run("create")) ? true : undefined),
+    continue: async () => ((await run("link")) ? true : undefined),
+    close: async () => ((await run("close")) ? true : undefined),
   };
 }
 export type OnboardingAccount = {

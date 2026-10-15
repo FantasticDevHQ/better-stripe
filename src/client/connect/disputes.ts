@@ -148,6 +148,109 @@ export async function updateDispute(
   }
 }
 
+/** File fields supported by Stripe dispute evidence. */
+export type DisputeEvidenceFileField =
+  | "cancellation_policy"
+  | "customer_communication"
+  | "customer_signature"
+  | "duplicate_charge_documentation"
+  | "receipt"
+  | "refund_policy"
+  | "service_documentation"
+  | "shipping_documentation"
+  | "uncategorized_file";
+export type DisputeEvidenceUploadOptions = {
+  stripeDisputeId: string;
+  /** Derive this on the server from the authenticated session. */
+  actor: RefundActor;
+  field: DisputeEvidenceFileField;
+  file: {
+    data: Uint8Array;
+    name: string;
+    type: "application/pdf" | "image/jpeg" | "image/png";
+  };
+  /** Request account owning the charge, distinct from the seller actor. */
+  stripeAccountId?: string;
+};
+
+/** Upload and attach to one authorized dispute as a draft. Never submits. */
+export async function uploadDisputeEvidence(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: DisputeEvidenceUploadOptions,
+): Promise<{ stripeFileId: string; stripeDisputeId: string }> {
+  if (
+    !opts.actor ||
+    !["admin", "seller"].includes(opts.actor.type) ||
+    (opts.actor.type === "seller" &&
+      (typeof opts.actor.accountId !== "string" ||
+        !opts.actor.accountId.trim()))
+  )
+    throwStripeError(
+      "DISPUTE_UNAUTHORIZED",
+      "Dispute upload requires an authenticated actor",
+    );
+  await assertDisputeAuthorized(component, ctx, opts);
+  const fields: DisputeEvidenceFileField[] = [
+    "cancellation_policy",
+    "customer_communication",
+    "customer_signature",
+    "duplicate_charge_documentation",
+    "receipt",
+    "refund_policy",
+    "service_documentation",
+    "shipping_documentation",
+    "uncategorized_file",
+  ];
+  const { data, name, type } = opts.file;
+  const signature =
+    type === "application/pdf"
+      ? [37, 80, 68, 70, 45]
+      : type === "image/jpeg"
+        ? [255, 216, 255]
+        : type === "image/png"
+          ? [137, 80, 78, 71, 13, 10, 26, 10]
+          : [];
+  if (
+    !fields.includes(opts.field) ||
+    !(data instanceof Uint8Array) ||
+    !data.byteLength ||
+    data.byteLength > 5_000_000 ||
+    !name.trim() ||
+    !signature.length ||
+    !signature.every((byte, i) => data[i] === byte)
+  )
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "Invalid dispute evidence: use a nonempty PDF, JPEG or PNG up to 5 MB with a matching MIME type and filename",
+    );
+  let stripeFileId: string;
+  try {
+    const file = await stripe.files.create(
+      { purpose: "dispute_evidence", file: { data, name, type } },
+      opts.stripeAccountId
+        ? { stripeAccount: opts.stripeAccountId }
+        : undefined,
+    );
+    stripeFileId = file.id;
+  } catch (err) {
+    throwStripeError(
+      "DISPUTE_UPLOAD_FAILED",
+      "Failed to upload dispute evidence",
+      err,
+    );
+  }
+  await updateDispute(stripe, component, ctx, {
+    stripeDisputeId: opts.stripeDisputeId,
+    actor: opts.actor,
+    stripeAccountId: opts.stripeAccountId,
+    evidence: { [opts.field]: stripeFileId },
+    submit: false,
+  });
+  return { stripeFileId, stripeDisputeId: opts.stripeDisputeId };
+}
+
 /**
  * Accept a dispute (concede the chargeback). Irreversible.
  *

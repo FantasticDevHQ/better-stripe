@@ -40,6 +40,7 @@ import {
   canRespondToDispute,
   DisputesList,
   EvidenceForm,
+  EvidenceUpload,
   type EvidenceFormUpdateArgs,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
@@ -139,6 +140,7 @@ function HeadlessDisputes({
     selectedId ? { stripeDisputeId: selectedId } : "skip",
   ) as ChargebackSummary | null | undefined;
   const submitEvidence = useAction(api.actions.submitDisputeEvidence);
+  const uploadEvidence = useAction(api.actions.uploadDisputeEvidence);
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card size="inset" data-testid="disputes-list">
@@ -251,6 +253,29 @@ function HeadlessDisputes({
                     </p>
                   )}
                 </div>
+                <EvidenceUpload
+                  scopeKey={`${userId}:${selectedId}`}
+                  onUpload={async (file) => {
+                    if (
+                      !["application/pdf", "image/jpeg", "image/png"].includes(
+                        file.type,
+                      )
+                    )
+                      throw new Error("Use PDF, JPEG or PNG evidence.");
+                    if (!file.size || file.size > 5_000_000)
+                      throw new Error(
+                        "Evidence must be nonempty and no larger than 5 MB.",
+                      );
+                    return uploadEvidence({
+                      userId,
+                      stripeDisputeId: selectedId,
+                      data: await file.arrayBuffer(),
+                      name: file.name,
+                      type: file.type as
+                        "application/pdf" | "image/jpeg" | "image/png",
+                    });
+                  }}
+                />
                 <EvidenceForm
                   key={selectedId}
                   stripeDisputeId={selectedId}

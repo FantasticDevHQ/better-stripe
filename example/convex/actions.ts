@@ -502,14 +502,7 @@ export const createAffiliateSplitCheckout = action({
 // Disputes (BTS-44) — seller disputes page
 // ===========================================================================
 
-// Account Session client secret for the embedded disputes surface (BTS-30):
-// the ConnectProvider's fetchClientSecret calls this to mount EmbeddedDisputes.
-// `userId` binds the caller to the requested `stripeAccountId` (BTS-83) — an
-// embedded session grants Stripe-hosted UI control over that account's
-// disputes, so a client can't just request a session for someone else's store.
-// Mounting the session makes a REAL Stripe API call, so it's also gated on the
-// test-mode key guard first (BTS-89) — a live/misconfigured key is refused
-// before any ownership lookup, matching the money/dispute-closing actions.
+// Embedded disputes require the verified demo account and a test key.
 export const createDisputeSession = action({
   args: { userId: v.string(), stripeAccountId: v.string() },
   handler: async (ctx, args) => {
@@ -521,19 +514,45 @@ export const createDisputeSession = action({
   },
 });
 
-// Submit (or stage) dispute evidence from the headless EvidenceForm. The form
-// hands us the shape of EvidenceFormUpdateArgs; `submit: true` finalizes the
-// response to the bank, `submit: false` saves a draft. `userId` must own the
-// dispute's connected account (BTS-83); the verified account id — not a
-// client-supplied one — scopes the Stripe API call. Both submitting and
-// staging evidence make a REAL Stripe API call, so it's gated on the test-mode
-// key guard first (BTS-89) — refused before any ownership lookup on a
-// live/misconfigured key.
+// Upload is bound server-side to one verified dispute and always stages a draft.
+export const uploadDisputeEvidence = action({
+  args: {
+    userId: v.string(),
+    stripeDisputeId: v.string(),
+    data: v.bytes(),
+    name: v.string(),
+    type: v.union(
+      v.literal("application/pdf"),
+      v.literal("image/jpeg"),
+      v.literal("image/png"),
+    ),
+  },
+  returns: v.object({ stripeFileId: v.string(), stripeDisputeId: v.string() }),
+  handler: async (ctx, args) => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    const dispute = await assertDisputeOwner(ctx, args);
+    return stripe.uploadDisputeEvidence(ctx, {
+      stripeDisputeId: args.stripeDisputeId,
+      actor: { type: "seller", accountId: dispute.accountId! },
+      field: "customer_communication",
+      file: {
+        data: new Uint8Array(args.data),
+        name: args.name,
+        type: args.type,
+      },
+    });
+  },
+});
+
 export const submitDisputeEvidence = action({
   args: {
     userId: v.string(),
     stripeDisputeId: v.string(),
-    evidence: v.any(),
+    evidence: v.object({
+      product_description: v.optional(v.string()),
+      access_activity_log: v.optional(v.string()),
+      uncategorized_text: v.optional(v.string()),
+    }),
     submit: v.boolean(),
   },
   handler: async (ctx, args) => {

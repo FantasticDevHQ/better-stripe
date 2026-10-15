@@ -12,6 +12,7 @@ export type WorkflowActionState<T, Args extends unknown[]> = {
 export function useWorkflowAction<T, Args extends unknown[]>(
   action: (...args: Args) => Promise<T>,
   scope: string = "default",
+  onSuccess?: (result: T) => void,
 ): WorkflowActionState<T, Args> {
   const initial = {
     scope,
@@ -22,11 +23,13 @@ export function useWorkflowAction<T, Args extends unknown[]>(
   const [state, setState] = useState(initial);
   if (state.scope !== scope) setState(initial);
   const callback = useRef(action);
+  const success = useRef(onSuccess);
   const lifecycle = useRef({ version: 0, mounted: false });
   const lock = useRef<number | null>(null);
   useEffect(() => {
     callback.current = action;
-  }, [action]);
+    success.current = onSuccess;
+  }, [action, onSuccess]);
   useEffect(() => {
     const version = ++lifecycle.current.version;
     lifecycle.current.mounted = true;
@@ -51,9 +54,11 @@ export function useWorkflowAction<T, Args extends unknown[]>(
       setState({ scope, isPending: true, error: null, result: undefined });
       const current = () =>
         lifecycle.current.mounted && lifecycle.current.version === version;
+      const complete = success.current;
       try {
         const result = await callback.current(...args);
         if (!current()) return undefined;
+        complete?.(result);
         setState({ scope, isPending: false, error: null, result });
         return result;
       } catch (error) {

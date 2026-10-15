@@ -94,6 +94,8 @@ export { computeFee, computeSplit } from "./core/fees.js";
 export type { FeeBreakdown, SplitResult, SplitTransfer } from "./core/fees.js";
 export { groupSubscriptionsByStore } from "./billing/subscriptions.js";
 export {
+  type DisputeEvidenceUploadOptions,
+  type DisputeEvidenceFileField,
   buildDisputeEvidence,
   disputeEvidenceCountdown,
 } from "./connect/disputes.js";
@@ -1403,13 +1405,6 @@ export class BetterStripe {
     return disputesImpl.listDisputes(this.component, ctx, opts);
   }
 
-  /**
-   * Submit or stage dispute evidence. Stripe's `submit` defaults to TRUE, so
-   * this method stages by default: EVERY call sends an explicit
-   * `submit: false` — evidence-bearing or metadata-only — unless you pass
-   * `submit: true` to submit to the bank (one-shot, outcome-affecting;
-   * BTS-61, BTS-72). See {@link disputesImpl.updateDispute}.
-   */
   async updateDispute(
     ctx: RunCtx,
     opts: {
@@ -1418,15 +1413,22 @@ export class BetterStripe {
       metadata?: Record<string, string>;
       submit?: boolean;
       stripeAccountId?: string;
-      /**
-       * Who is acting on the dispute (BTS-107). A platform admin may act on any
-       * dispute; a seller may act only on a dispute for a sale routed to their
-       * own account. Omit for platform-initiated (unrestricted) actions.
-       */
       actor?: RefundActor;
     },
   ): Promise<{ success: true }> {
     return disputesImpl.updateDispute(this.stripe(), this.component, ctx, opts);
+  }
+
+  async uploadDisputeEvidence(
+    ctx: RunCtx,
+    opts: disputesImpl.DisputeEvidenceUploadOptions,
+  ) {
+    return disputesImpl.uploadDisputeEvidence(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   async closeDispute(
@@ -1434,7 +1436,6 @@ export class BetterStripe {
     opts: {
       stripeDisputeId: string;
       stripeAccountId?: string;
-      /** See {@link updateDispute}'s `actor` (BTS-107). Omit for unrestricted. */
       actor?: RefundActor;
     },
   ): Promise<{ success: true }> {

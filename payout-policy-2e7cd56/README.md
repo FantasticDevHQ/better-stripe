@@ -10,3 +10,5 @@ Source: 2e7cd56511b756a1a7b1ee8e870d74d9b7e3e992, rebased on main release 0.17.1
 - Schedule/control APIs are the foundation only. No claim of automatic combined payout execution, existing-balance adoption, UI integration, or a numeric provider minimum is made. Those remain separate dependent work. A host recurring expiry job is required before activation in a production integration. Unsupported control, drift, permissions and mixed-balance limitations remain explicit.
 
 No UI layout changed; backend test/provider receipts replace video evidence. All provider credentials stay in child-process memory and are excluded from these artifacts. The harness reads its sandbox key privately from the configured development environment.
+
+Additional post-merge environment check: freshly loaded localhost Seller → Refunds rendered the existing cost rows and refund history. Browser console reported 0 errors and 0 warnings; screenshot and console output included. This is a restoration smoke check, not a claim of new payout UI coverage.

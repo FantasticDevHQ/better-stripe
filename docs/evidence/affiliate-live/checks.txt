@@ -1,0 +1,32 @@
+Command: CHECK_ALL_VERBOSE=1 VITEST_MAX_WORKERS=1 corepack pnpm run check:all
+Code: backend 979f68e, UI b3baebc
+Date: 2026-10-15
+
+✓ build               (3.4s)
+✓ lint                (22.4s)
+✓ check:design-system (5.4s)
+✓ format:check        (12.0s)
+✓ typecheck           (6.4s)
+✓ codegen drift check: src/component/_generated/component.ts is in sync with src/component/**/*.{queries,mutations,actions}.ts
+✓ codegen drift check: example/convex/_generated/api.ts is in sync with example/convex/**/*.ts
+✓ codegen:check       (0.4s)
+✓ check:size          (0.5s)
+✓ check:debt          (0.4s)
+✓ check:circular      (0.6s)
+✓ check:secrets       (0.5s)
+✓ check:shadscan      (3.7s)
+ Test Files  267 passed (267)
+      Tests  2420 passed (2420)
+   Duration  150.97s (environment 32%, import 28%, tests 24%, transform 14%, setup 2%, worker 1%)
+✓ test                (151.8s)
+ Test Files  267 passed (267)
+      Tests  2420 passed (2420)
+   Duration  148.29s (environment 33%, tests 25%, import 24%, transform 12%, worker 4%, setup 2%)
+All files          |   74.75 |    69.23 |   69.08 |   75.59 |                   
+SCORE: coverage — lowest coverage/coverage-summary.json 75.6% lines (1 pkgs ≥ floor)
+✓ check:coverage      (151.0s)
+✓ agent-doc validation passed (AGENTS.md)
+✓ check:agents        (0.3s)
+✓ CI parity: 1 gate invocation(s) across CI workflows, all reachable from "check:all" (18 scripts in graph).
+✓ check:ci-parity     (0.3s)
+15/15 gates passed (359.3s)

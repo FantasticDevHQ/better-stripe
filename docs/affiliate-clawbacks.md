@@ -264,6 +264,13 @@ key per invoice. `affiliateRecoveryBillingSandbox:advance` accepts that fixture'
 rerun `prepare` to read the next paid invoice. Existing persona subscriptions
 are not changed by these helpers.
 
+The raw-payment fixture uses trusted internal settlement and does not establish
+seller checkout ownership. For the seller refund UI, create a purchase through
+the storefront so its server-selected merchant routing is present. Keep the
+ownership guard intact. The example's fixed-rate settings use major currency
+units, so `$10.01` is entered as `10.01`; component commission amounts and the
+raw driver's 1,001-unit allocation use minor units.
+
 The driver rejects live/missing Stripe keys. It makes real sandbox transactions
 and does not delete their receipts. Record its JSON output and demo-persona
 snapshots as release evidence; an API response alone does not establish a bank

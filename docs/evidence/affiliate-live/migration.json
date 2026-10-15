@@ -1,0 +1,29 @@
+{
+  "pages": [
+    {
+      "continueCursor": "[1791946836530.5305,\"kn78csnjxqtxjkwkfvsthe8z618g971v\"]",
+      "isDone": false,
+      "migrated": 0,
+      "skipped": 40
+    },
+    {
+      "continueCursor": "[1791957996507.0916,\"kn7878ycp46vfz3r05a76e30rx8g8ghw\"]",
+      "isDone": false,
+      "migrated": 0,
+      "skipped": 42
+    },
+    {
+      "continueCursor": "[1792069802238.5945,\"kn7fjv5rmm9z5eakd9tvz86xz98gaa92\"]",
+      "isDone": false,
+      "migrated": 9,
+      "skipped": 34
+    },
+    {
+      "continueCursor": "[]",
+      "isDone": true,
+      "migrated": 2,
+      "skipped": 0
+    }
+  ],
+  "note": "migrated counts include already-existing obligations; skipped rows lack immutable allocation evidence"
+}

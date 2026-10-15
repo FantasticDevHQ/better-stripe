@@ -1,0 +1,59 @@
+[
+  {
+    "seconds": 0,
+    "type": "setup",
+    "text": "Local example with real fabulous-egret-37 Stripe test data. Sampled screenshots, not continuous recording."
+  },
+  {
+    "seconds": 0,
+    "type": "assertion",
+    "result": "passed",
+    "text": "Headless view shows original 1001, reversed 501, debt 0."
+  },
+  {
+    "seconds": 4,
+    "type": "assertion",
+    "result": "passed",
+    "text": "Reusable component shows the same financial figures."
+  },
+  {
+    "seconds": 8,
+    "type": "test_start",
+    "text": "Operator reconciles the actual partial-refund receipt."
+  },
+  {
+    "seconds": 12,
+    "type": "assertion",
+    "result": "passed",
+    "text": "Same 501-unit reversal receipt, no second collection."
+  },
+  {
+    "seconds": 16,
+    "type": "test_start",
+    "text": "Actual storefront purchase, seller refund, webhook and accounting."
+  },
+  {
+    "seconds": 16,
+    "type": "assertion",
+    "result": "passed",
+    "text": "UI purchase confirmed by Stripe for 10000 USD minor units."
+  },
+  {
+    "seconds": 20,
+    "type": "assertion",
+    "result": "passed",
+    "text": "Seller prepares 5000-unit partial refund for the routed payment."
+  },
+  {
+    "seconds": 24,
+    "type": "assertion",
+    "result": "passed",
+    "text": "UI refund succeeded with real re_3UQorZ6JR7kThJog1oea19Rd receipt."
+  },
+  {
+    "seconds": 28,
+    "type": "assertion",
+    "result": "passed",
+    "text": "Original 9100 commission, recovered4550, debt0 despite changed rate."
+  }
+]

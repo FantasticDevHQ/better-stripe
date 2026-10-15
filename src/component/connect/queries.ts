@@ -513,13 +513,11 @@ export const paginatePayouts = query({
         : rows.withIndex("by_account_status", (q) =>
             q.eq("accountId", args.accountId).eq("status", args.status!),
           );
-    return scoped
-      .order("desc")
-      .paginate({
-        ...args.paginationOpts,
-        maximumRowsRead: 200,
-        maximumBytesRead: 1_000_000,
-      });
+    return scoped.order("desc").paginate({
+      ...args.paginationOpts,
+      maximumRowsRead: 200,
+      maximumBytesRead: 1_000_000,
+    });
   },
 });
 

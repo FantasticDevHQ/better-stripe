@@ -28,10 +28,9 @@
 
 ## [0.24.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.23.2...v0.24.0) (2026-10-15)
 
-
 ### Features
 
-* add affiliate commission recovery and future earnings offsets ([#191](https://github.com/FantasticDevHQ/better-stripe/issues/191)) ([49f38ac](https://github.com/FantasticDevHQ/better-stripe/commit/49f38ac78f12415d6a330b4729ade56950ee2ad5))
+- add affiliate commission recovery and future earnings offsets ([#191](https://github.com/FantasticDevHQ/better-stripe/issues/191)) ([49f38ac](https://github.com/FantasticDevHQ/better-stripe/commit/49f38ac78f12415d6a330b4729ade56950ee2ad5))
 
 ## [0.23.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.23.1...v0.23.2) (2026-10-15)
 

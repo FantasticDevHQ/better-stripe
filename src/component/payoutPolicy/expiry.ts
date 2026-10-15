@@ -13,10 +13,10 @@ export async function beginHoldingExpiry(ctx: MutationCtx, args: Scope) {
   if (p.holdingExpiry?.deadline === p.holdDeadline) return p;
   if (p.holdingExpiry && p.holdingExpiry.status !== "no_held_balance")
     throw new Error("Previous holding expiry recovery is unresolved.");
-  await ctx.db.patch(p._id, {
+  await ctx.db.patch("payoutPolicies", p._id, {
     holdingExpiry: { deadline: p.holdDeadline, status: "unverified" },
   });
-  return (await ctx.db.get(p._id))!;
+  return (await ctx.db.get("payoutPolicies", p._id))!;
 }
 export async function observeHoldingExpiry(
   ctx: MutationCtx,
@@ -66,7 +66,7 @@ export async function observeHoldingExpiry(
     : args.balances.some((b) => b.available !== 0 || b.pending !== 0)
       ? ("balance_remaining" as const)
       : ("no_held_balance" as const);
-  await ctx.db.patch(p._id, {
+  await ctx.db.patch("payoutPolicies", p._id, {
     holdingExpiry: {
       deadline: args.deadline,
       observedAt: args.observedAt,
@@ -76,5 +76,5 @@ export async function observeHoldingExpiry(
     // Retain due discovery until both provider balances and durable claims clear.
     holdDeadline: status === "no_held_balance" ? undefined : args.deadline,
   });
-  return (await ctx.db.get(p._id))!;
+  return (await ctx.db.get("payoutPolicies", p._id))!;
 }

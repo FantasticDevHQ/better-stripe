@@ -1,5 +1,16 @@
 # Migrating to 0.5.0 and Stripe Endive
 
+## Combined payout eligibility preview
+
+`stripe.payoutPolicy.preview` is an additive server API. Regenerate the component
+bindings when upgrading. No table migration or provider schedule change is
+required to read it. Keep existing release and automatic worker calls; the
+preview does not replace either. Authenticate the recipient and resolve
+liabilities on the server before calling it. See the
+[preview contract and display guidance](docs/settlement.md#payout-eligibility-preview)
+for detailed versus unavailable assessments, shared deductions, and the
+difference between an application attempt and a bank arrival.
+
 ## Package and runtime
 
 Install `@fantastic.dev/better-stripe@0.5.0`. The old

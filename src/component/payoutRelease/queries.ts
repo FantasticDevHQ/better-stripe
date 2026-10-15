@@ -1,3 +1,4 @@
+import { previewFields, previewResult, previewPlan } from "./preview.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
 import { transferDocValidator } from "../connect/validators.js";
@@ -8,6 +9,11 @@ import { query } from "../_generated/server.js";
 import { identity, claimDoc } from "./schema.js";
 import { validateIdentity } from "./helpers.js";
 import { readPolicy } from "../payoutPolicy/helpers.js";
+export const preview = query({
+  args: previewFields,
+  returns: previewResult,
+  handler: previewPlan,
+});
 export const get = query({
   args: identity,
   returns: v.union(claimDoc, v.null()),

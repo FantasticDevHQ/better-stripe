@@ -51,6 +51,9 @@ idempotent bank payout. Install a host job to invoke it and expire due policies.
 The [automatic worker](docs/settlement.md#automatic-recipient-worker) provides
 durable attempt IDs, retry leases, recovery discovery and the next attempt time.
 The example installs its five-minute cron in `example/convex/crons.ts`.
+A [payout eligibility preview](docs/settlement.md#payout-eligibility-preview)
+uses the release qualification checks to report combined mature funds, pending
+credits, shared deductions and source categories without creating a bank payout.
 [Historical imports and explicit funded activation](docs/settlement.md#historical-import-and-funded-activation)
 verify old payouts, source ownership and holding age before enabling a custom
 schedule. Larger histories and unallocated money still require reconciliation;

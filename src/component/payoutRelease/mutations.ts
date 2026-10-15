@@ -19,7 +19,7 @@ import {
   validateIdentity,
   add,
 } from "./helpers.js";
-import { planRecipientPayout, type PayoutFundingSource } from "./allocation.js";
+import { readPayoutPlan } from "./planning.js";
 const held = v.object({
   status: v.literal("held"),
   reason: v.union(
@@ -63,10 +63,6 @@ export const claim = mutation({
       return existing;
     }
     const policy = await readyPolicy(ctx, args);
-    const minimum = policy.thresholds.find(
-      (value) => value.currency === args.currency,
-    );
-    if (!minimum) throw new Error("Payout policy currency is not configured.");
     const pending = await ctx.db
       .query("payoutReleaseClaims")
       .withIndex("by_account_status", (q) =>
@@ -81,38 +77,7 @@ export const claim = mutation({
         currency: args.currency,
         providerMinimum: null,
       };
-    const rows = await checkSnapshot(
-      ctx,
-      args.accountId,
-      args.observations,
-      true,
-    );
-    const sources: PayoutFundingSource[] = [];
-    for (const observation of args.observations) {
-      const prior = await sourceById(ctx, observation.stripeTransferId);
-      if (
-        prior &&
-        (prior.accountId !== args.accountId ||
-          prior.ownerKey !== args.ownerKey ||
-          prior.currency !== observation.currency)
-      )
-        throw new Error("Payout source allocation identity changed.");
-      sources.push({
-        ...observation,
-        role: rows.get(observation.stripeTransferId)!.role,
-        paidAmount: prior?.paidAmount ?? 0,
-        reservedAmount: prior?.reservedAmount ?? 0,
-      });
-    }
-    const fees = await readFees(ctx, args);
-    const plan = planRecipientPayout({
-      currency: args.currency,
-      threshold: minimum.amount,
-      providerAvailable: args.providerAvailable,
-      independentLiabilities: args.independentLiabilities,
-      confirmedFees: fees?.amount ?? 0,
-      sources,
-    });
+    const { plan, fees } = await readPayoutPlan(ctx, args, policy);
     if (plan.status === "held") return plan;
     await reserveRecoveryGuard(ctx, args, plan.amount);
     for (const allocation of plan.allocations) {

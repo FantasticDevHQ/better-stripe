@@ -1,3 +1,8 @@
+import {
+  previewRecipientPayout,
+  type PayoutPreviewOptions,
+} from "./connect/payoutPreview.js";
+export type * from "./connect/payoutPreview.js";
 import { PayoutWorkerClient } from "./connect/payoutWorker.js";
 export type * from "./connect/payoutWorker.js";
 import {
@@ -107,6 +112,15 @@ const toProvider = (
 /** Host authenticates owner/policy/consent. Provider I/O stays in this package. */
 export class PayoutPolicyClient {
   readonly worker: PayoutWorkerClient;
+  preview(ctx: RunCtx, opts: PayoutPreviewOptions) {
+    return previewRecipientPayout(
+      this.provider(),
+      this.component,
+      ctx,
+      opts,
+      () => this.verify(ctx, opts),
+    );
+  }
   constructor(
     private readonly component: Component,
     private readonly provider: () => Stripe,

@@ -607,6 +607,63 @@ These are server worker APIs, not manual withdrawal actions for a customer UI.
 for an authorized host to display. Bank availability, pending funds and bank
 arrival dates come from the recipient payout snapshot API.
 
+## Payout eligibility preview
+
+An authorized server action can assess a custom policy before displaying its
+progress. It uses the same provider receipt qualification and local allocation
+plan as release:
+
+```ts
+const preview = await stripe.payoutPolicy.preview(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+  independentLiabilities,
+});
+const job = await stripe.payoutPolicy.worker.get(ctx, {
+  accountId,
+  ownerKey,
+  currency,
+});
+```
+
+Authorize the owner/account mapping and derive independent liabilities on the
+server, exactly as for the automatic worker. The preview reads Stripe and can
+reconcile existing payout receipts in the component. It never creates a bank
+payout, reserves funds, or invokes the worker. The caller needs an action context
+that permits component queries and reconciliation mutations.
+
+A detailed result includes `currency`, `threshold`, `matureUnpaid`,
+`pendingCredits`, `confirmedFees`, `independentLiabilities`, `providerAvailable`,
+`amount`, `observedAt` and `sources`. Each source category reports its signed
+mature unpaid entitlement and pending credits. Category amounts are before shared
+fees and independent liabilities. Those deductions reduce the combined
+`matureUnpaid` once. Negative entitlement after a refund survives the calculation;
+pending credits never qualify. `amount` is the amount currently qualified for the
+supported bank payout rail, or zero when held. `providerMinimum: null` means the
+numeric Stripe floor is unknown, not zero.
+
+Below-threshold funds remain owed. `insufficient_available` distinguishes enough
+qualifying earnings from insufficient provider funds on the supported rail. Some
+holds return only `{ status: "held", reason, amount: 0 }`, including incomplete
+history, unverified controls and unresolved affiliate recovery. Such a result
+does **not** establish a zero balance or zero debt. Render an unavailable
+assessment with its reason, rather than inventing amounts. Ledger changes during
+the final query reject the assessment and require a refresh.
+
+The preview verifies policy controls again after reading provider data. Source
+and balance observations older than 30 seconds do not qualify. Display
+`observedAt` as an assessment time; release independently repeats qualification
+and reserves funds atomically. A qualified preview is neither a promised payout
+nor authorization to call Stripe. `job.nextAttemptAt` is the next application
+attempt. Bank arrival dates remain separate provider data from
+`getPayoutSnapshot`.
+
+Stripe-managed recipients keep Stripe's default automatic schedule. This preview
+requires a ready custom policy and preserves the current source/history limits,
+region restrictions and supported payout rail. It does not remove the need for
+provider-history continuation on larger accounts.
+
 ## Resumable local collections
 
 An authorized host worker can collect the local recipient ledger in bounded

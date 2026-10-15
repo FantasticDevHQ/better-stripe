@@ -1,0 +1,109 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |client| src/client/connect/transferReceipt.test.ts (20 tests | 3 failed) 111ms
+   × verifies the refund's primary debit rather than trusting an unrelated source total 5ms
+   × rejects corrupted ledger reversal counters before qualification 1ms
+   × nets a fully reversed pending transfer to zero without withholding other earnings 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > verifies the refund's primary debit rather than trusting an unrelated source total
+AssertionError: expected { status: 'ready', …(14) } to match object { status: 'not_ready', …(1) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "receipt_unavailable",
+-   "status": "not_ready",
++   "status": "ready",
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:335:22
+    333|  provider.refunds.retrieve.mockResolvedValue({id:"pyr_1",charge:"py_1"…
+    334|  provider.balanceTransactions.list.mockImplementation(async(args:{sour…
+    335|  expect(await run()).toMatchObject({status:"not_ready",reason:"receipt…
+       |                      ^
+    336|  provider.refunds.retrieve.mockResolvedValue({id:"pyr_1",charge:"py_1"…
+    337|  provider.balanceTransactions.list.mockImplementation(async(args:{sour…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects corrupted ledger reversal counters before qualification
+AssertionError: promise resolved "{ status: 'ready', …(14) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "accountId": "acct_owner",
++   "destinationPaymentId": "py_1",
++   "matureNet": 1000,
++   "observedAt": 1792048730512,
++   "pendingCredits": 0,
++   "providerReversedAmount": 0,
++   "reinstatement": false,
++   "role": "affiliate",
++   "settlementCurrency": "usd",
++   "sourceAmount": 1000,
++   "sourceCurrency": "usd",
++   "status": "ready",
++   "stripeTransferId": "tr_1",
++   "totalNet": 1000,
++   "transactions": [
++     {
++       "amount": 1000,
++       "availableOn": 200,
++       "created": 100,
++       "currency": "usd",
++       "fee": 0,
++       "id": "txn_credit",
++       "net": 1000,
++       "sourceId": "py_1",
++       "status": "available",
++       "type": "payment",
++     },
++   ],
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:343:21
+    341|  const {ctx,run}=setup();
+    342|  (ctx.runQuery as ReturnType<typeof vi.fn>).mockResolvedValue({...ledg…
+    343|  await expect(run()).rejects.toThrow(/amount/);
+       |                     ^
+    344| });
+    345| it("nets a fully reversed pending transfer to zero without withholding…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > nets a fully reversed pending transfer to zero without withholding other earnings
+AssertionError: expected { status: 'ready', …(14) } to match object { status: 'ready', totalNet: +0, …(2) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "matureNet": 0,
+-   "pendingCredits": 0,
++   "matureNet": -1000,
++   "pendingCredits": 1000,
+    "status": "ready",
+    "totalNet": 0,
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:352:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 17 passed (20)
+   Start at  14:18:50
+   Duration  232ms (tests 79%, transform 14%, import 5%, worker 2%)
+

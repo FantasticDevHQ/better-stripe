@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "readOnly": true,
+  "transferId": "tr_3UQ7Np6JR7kThJog0xDCHzaE",
+  "reversed": 7280,
+  "destinationPayment": "py_1UQ7Nw7xOsB2U2nMse63ND9n",
+  "reversal": {
+    "id": "trr_1UQ7Ob6JR7kThJogzWqAwHG7",
+    "amount": 7207,
+    "currency": "usd",
+    "refundId": "pyr_1UQ7Ob7xOsB2U2nMIVDfWW98"
+  },
+  "refund": {
+    "id": "pyr_1UQ7Ob7xOsB2U2nMIVDfWW98",
+    "amount": 7207,
+    "currency": "usd",
+    "charge": "py_1UQ7Nw7xOsB2U2nMse63ND9n",
+    "status": "succeeded",
+    "balanceTransaction": "txn_1UQ7Ob7xOsB2U2nMxeBiJfpQ"
+  },
+  "transactions": [
+    {
+      "id": "txn_1UQ7Ob7xOsB2U2nMxeBiJfpQ",
+      "source": "pyr_1UQ7Ob7xOsB2U2nMIVDfWW98",
+      "amount": -7207,
+      "fee": 0,
+      "net": -7207,
+      "currency": "usd",
+      "status": "pending",
+      "availableOn": 1792454400,
+      "type": "payment_refund"
+    }
+  ]
+}

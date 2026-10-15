@@ -1,0 +1,235 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |client| src/client/connect/transferReceipt.test.ts (16 tests | 16 failed) 28ms
+   × binds actual recipient receipts and returns mature received credit, not unpaid entitlement 8ms
+   × excludes pending or future positive receipts 3ms
+   × excludes pending or future positive receipts 1ms
+   × retains known negative reversals even while original positive credit is pending 1ms
+   × does not guess settlement currency amounts from exchange rates 1ms
+   × fails closed for reserved reversal claims and missing or incomplete provider history 1ms
+   × deduplicates repeated receipts but rejects conflicting receipt identities 1ms
+   × rejects mismatched transfer provenance 3ms
+   × rejects mismatched transfer provenance 2ms
+   × rejects mismatched transfer provenance 1ms
+   × rejects mismatched transfer provenance 1ms
+   × rejects mismatched transfer provenance 1ms
+   × rejects a foreign recipient payment or refund receipt 1ms
+   × requires complete provider reversal totals and consistent snapshots 1ms
+   × rejects unsafe financial arithmetic and incompatible settlement currencies 1ms
+   × returns a missing-ledger limitation before provider reads and rejects invalid request budgets 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > binds actual recipient receipts and returns mature received credit, not unpaid entitlement
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:21:44
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > excludes pending or future positive receipts
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > excludes pending or future positive receipts
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:29:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > retains known negative reversals even while original positive credit is pending
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:38:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > does not guess settlement currency amounts from exchange rates
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:43:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > fails closed for reserved reversal claims and missing or incomplete provider history
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:48:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > deduplicates repeated receipts but rejects conflicting receipt identities
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:59:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects mismatched transfer provenance
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects mismatched transfer provenance
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects mismatched transfer provenance
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects mismatched transfer provenance
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects mismatched transfer provenance
+AssertionError: expected [Function] to throw error matching /identity|provenance/ but got 'recipient funding reader is missing: …'
+
+- Expected:
+/identity|provenance/
+
++ Received:
+"recipient funding reader is missing: expected undefined to be type of 'function'"
+
+ ❯ src/client/connect/transferReceipt.test.ts:67:21
+     65| ])("rejects mismatched transfer provenance",async change=>{
+     66|  const {provider,run}=setup();provider.transfers.retrieve.mockResolved…
+     67|  await expect(run()).rejects.toThrow(/identity|provenance/);
+       |                     ^
+     68| });
+     69| it("rejects a foreign recipient payment or refund receipt",async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects a foreign recipient payment or refund receipt
+AssertionError: expected [Function] to throw error matching /identity/ but got 'recipient funding reader is missing: …'
+
+- Expected:
+/identity/
+
++ Received:
+"recipient funding reader is missing: expected undefined to be type of 'function'"
+
+ ❯ src/client/connect/transferReceipt.test.ts:71:21
+     69| it("rejects a foreign recipient payment or refund receipt",async()=>{
+     70|  const {provider,run}=setup();provider.charges.retrieve.mockResolvedVa…
+     71|  await expect(run()).rejects.toThrow(/identity/);
+       |                     ^
+     72|  provider.charges.retrieve.mockResolvedValue(payment);
+     73|  provider.balanceTransactions.list.mockResolvedValue({data:[transactio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > requires complete provider reversal totals and consistent snapshots
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:78:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects unsafe financial arithmetic and incompatible settlement currencies
+AssertionError: expected [Function] to throw error matching /integer|amount/ but got 'recipient funding reader is missing: …'
+
+- Expected:
+/integer|amount/
+
++ Received:
+"recipient funding reader is missing: expected undefined to be type of 'function'"
+
+ ❯ src/client/connect/transferReceipt.test.ts:85:21
+     83|  const {provider,run}=setup();
+     84|  provider.balanceTransactions.list.mockResolvedValue({data:[{...transa…
+     85|  await expect(run()).rejects.toThrow(/integer|amount/);
+       |                     ^
+     86|  provider.balanceTransactions.list.mockResolvedValue({data:[transactio…
+     87|  expect(await run()).toMatchObject({status:"not_ready",reason:"currenc…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > returns a missing-ledger limitation before provider reads and rejects invalid request budgets
+AssertionError: recipient funding reader is missing: expected undefined to be type of 'function'
+
+Expected: "function"
+Received: "undefined"
+
+ ❯ feature src/client/connect/transferReceipt.test.ts:12:82
+     10| async function feature(){
+     11|   const module=await import("./transferReceipt.js").catch(()=>({})) as…
+     12|   expect(module.getTransferFundingReceipt,"recipient funding reader is…
+       |                                                                                  ^
+     13| }
+     14| function setup(){
+ ❯ run src/client/connect/transferReceipt.test.ts:17:37
+ ❯ src/client/connect/transferReceipt.test.ts:91:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  16 failed (16)
+   Start at  14:08:22
+   Duration  177ms (tests 49%, transform 33%, import 13%, worker 5%)
+

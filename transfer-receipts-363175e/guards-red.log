@@ -1,0 +1,87 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |client| src/client/connect/transferReceipt.test.ts (18 tests | 2 failed) 109ms
+   × verifies the refund's primary debit rather than trusting an unrelated source total 5ms
+   × rejects corrupted ledger reversal counters before qualification 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > verifies the refund's primary debit rather than trusting an unrelated source total
+AssertionError: expected { status: 'ready', …(14) } to match object { status: 'not_ready', …(1) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "receipt_unavailable",
+-   "status": "not_ready",
++   "status": "ready",
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:335:22
+    333|  provider.refunds.retrieve.mockResolvedValue({id:"pyr_1",charge:"py_1"…
+    334|  provider.balanceTransactions.list.mockImplementation(async(args:{sour…
+    335|  expect(await run()).toMatchObject({status:"not_ready",reason:"receipt…
+       |                      ^
+    336|  provider.refunds.retrieve.mockResolvedValue({id:"pyr_1",charge:"py_1"…
+    337|  provider.balanceTransactions.list.mockImplementation(async(args:{sour…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rejects corrupted ledger reversal counters before qualification
+AssertionError: promise resolved "{ status: 'ready', …(14) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "accountId": "acct_owner",
++   "destinationPaymentId": "py_1",
++   "matureNet": 1000,
++   "observedAt": 1792048451658,
++   "pendingCredits": 0,
++   "providerReversedAmount": 0,
++   "reinstatement": false,
++   "role": "affiliate",
++   "settlementCurrency": "usd",
++   "sourceAmount": 1000,
++   "sourceCurrency": "usd",
++   "status": "ready",
++   "stripeTransferId": "tr_1",
++   "totalNet": 1000,
++   "transactions": [
++     {
++       "amount": 1000,
++       "availableOn": 200,
++       "created": 100,
++       "currency": "usd",
++       "fee": 0,
++       "id": "txn_credit",
++       "net": 1000,
++       "sourceId": "py_1",
++       "status": "available",
++       "type": "payment",
++     },
++   ],
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:343:21
+    341|  const {ctx,run}=setup();
+    342|  (ctx.runQuery as ReturnType<typeof vi.fn>).mockResolvedValue({...ledg…
+    343|  await expect(run()).rejects.toThrow(/amount/);
+       |                     ^
+    344| });
+    345|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+   Start at  14:14:11
+   Duration  228ms (tests 79%, transform 13%, import 5%, worker 2%)
+

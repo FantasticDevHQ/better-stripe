@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "readOnly": true,
+  "sandbox": true,
+  "apiVersion": "2026-09-30.endive",
+  "accountId": "acct_1UQ78o7xOsB2U2nM",
+  "transferId": "tr_3UQPLf6JR7kThJog0IKSdBEa",
+  "transferAmount": 4014,
+  "transferCurrency": "usd",
+  "reversed": 0,
+  "destinationPaymentId": "py_1UQPLm7xOsB2U2nMDFlscCtu",
+  "sourceTransfer": "tr_3UQPLf6JR7kThJog0IKSdBEa",
+  "transaction": {
+    "id": "txn_1UQPLm7xOsB2U2nM895yyrjD",
+    "source": "py_1UQPLm7xOsB2U2nMDFlscCtu",
+    "amount": 4014,
+    "fee": 0,
+    "net": 4014,
+    "currency": "usd",
+    "status": "pending",
+    "created": 1791973438,
+    "availableOn": 1792540800,
+    "type": "payment"
+  },
+  "sourceFilterMatches": true
+}

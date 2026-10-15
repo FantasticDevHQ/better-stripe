@@ -1,0 +1,20 @@
+{
+  "deployedComponent": true,
+  "publicClient": true,
+  "bookkeepingOnly": true,
+  "stripeCredentialsNotUsed": true,
+  "syntheticNonBillableScope": true,
+  "concurrentReplayHasOneClaim": true,
+  "openingCollectionPreserved": true,
+  "newObservationNotOverwritten": true,
+  "conflictingSnapshotsAndOwnersRejected": true,
+  "pendingBoundaryRejected": true,
+  "finalBalances": {
+    "amountDue": 300,
+    "collectedAmount": 300,
+    "outstanding": 0,
+    "reservedAmount": 0
+  },
+  "noPendingQaObligation": true,
+  "status": "passed"
+}

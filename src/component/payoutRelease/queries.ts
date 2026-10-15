@@ -1,3 +1,4 @@
+import { transferDocValidator } from "../connect/validators.js";
 import { readFees } from "./fees.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
@@ -63,5 +64,39 @@ export const fees = query({
     await readPolicy(ctx, args);
     const balance = await readFees(ctx, args);
     return { amount: balance?.amount ?? 0, revision: balance?.revision ?? 0 };
+  },
+});
+
+/** Complete bounded input for package qualification. Partial membership never qualifies. */
+export const snapshot = query({
+  args: { accountId: v.string(), ownerKey: v.string() },
+  returns: v.union(
+    v.object({
+      status: v.literal("held"),
+      reason: v.literal("snapshot_limit"),
+    }),
+    v.object({
+      status: v.literal("ready"),
+      transfers: v.array(transferDocValidator),
+      claims: v.array(claimDoc),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await readPolicy(ctx, args);
+    const transfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_destination_account_id", (q) =>
+        q.eq("destinationAccountId", args.accountId),
+      )
+      .take(101);
+    const claims = await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))
+      .take(101);
+    if (transfers.length > 100 || claims.length > 100)
+      return { status: "held" as const, reason: "snapshot_limit" as const };
+    if (claims.some((c) => c.ownerKey !== args.ownerKey))
+      throw new Error("Payout history owner does not match.");
+    return { status: "ready" as const, transfers, claims };
   },
 });

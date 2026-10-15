@@ -383,3 +383,16 @@ it("serializes concurrent outcome reconciliation without duplicate fees or princ
   ).toMatchObject([{ amount: 30, revision: 1 }]);
   expect(provider.payouts.create).not.toHaveBeenCalled();
 });
+it("rejects a payout sent to a different bank than the immutable claim", async () => {
+  const s = await setup();
+  await s.t.run(async (ctx) => {
+    const claim = await ctx.db.query("payoutReleaseClaims").first();
+    await ctx.db.patch("payoutReleaseClaims", claim!._id, {
+      destinationId: "ba_expected",
+    });
+  });
+  await expect(s.reconcile()).rejects.toThrow(/bank destination/i);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("payoutSourceAllocations").collect()),
+  ).toMatchObject([{ paidAmount: 0, reservedAmount: 1000 }]);
+});

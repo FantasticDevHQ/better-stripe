@@ -1,4 +1,9 @@
 import {
+  releaseRecipientPayout,
+  type PayoutReleaseOptions,
+} from "./connect/payoutExecution.js";
+export type * from "./connect/payoutExecution.js";
+import {
   reconcileRecipientPayout,
   type PayoutReconciliationOptions,
 } from "./connect/payoutReconciliation.js";
@@ -85,6 +90,15 @@ export class PayoutPolicyClient {
     private readonly component: Component,
     private readonly provider: () => Stripe,
   ) {}
+  release(ctx: RunCtx, opts: PayoutReleaseOptions) {
+    return releaseRecipientPayout(
+      this.provider(),
+      this.component,
+      ctx,
+      opts,
+      () => this.verify(ctx, opts),
+    );
+  }
   reconcilePayout(ctx: RunCtx, opts: PayoutReconciliationOptions) {
     return reconcileRecipientPayout(this.provider(), this.component, ctx, opts);
   }

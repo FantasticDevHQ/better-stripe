@@ -23,6 +23,7 @@ export const claimFields = {
   expectedRevision: v.number(),
   currency: v.string(),
   amount: v.number(),
+  destinationId: v.optional(v.string()),
   allocations: v.array(allocation),
   observations: v.array(observation),
   status: v.union(

@@ -2494,6 +2494,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2542,6 +2543,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2578,6 +2580,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             accountId: string;
             currency: string;
+            destinationId?: string;
             expectedRevision: number;
             independentLiabilities: number;
             observations: Array<{
@@ -2607,6 +2610,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               currency: string;
               debitFee?: number;
               debitTransactionId?: string;
+              destinationId?: string;
               expectedRevision: number;
               feeRevision?: number;
               observations: Array<{
@@ -2678,6 +2682,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2732,6 +2737,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2789,6 +2795,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             currency: string;
             debitFee?: number;
             debitTransactionId?: string;
+            destinationId?: string;
             expectedRevision: number;
             feeRevision?: number;
             observations: Array<{
@@ -2851,6 +2858,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               currency: string;
               debitFee?: number;
               debitTransactionId?: string;
+              destinationId?: string;
               expectedRevision: number;
               feeRevision?: number;
               observations: Array<{
@@ -2880,6 +2888,78 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               stripePayoutId?: string;
             }>;
           },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; ownerKey: string },
+          | { reason: "snapshot_limit"; status: "held" }
+          | {
+              claims: Array<{
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                allocations: Array<{
+                  amount: number;
+                  role?: "store" | "affiliate" | "other";
+                  stripeTransferId: string;
+                }>;
+                amount: number;
+                attemptedAt?: number;
+                currency: string;
+                debitFee?: number;
+                debitTransactionId?: string;
+                destinationId?: string;
+                expectedRevision: number;
+                feeRevision?: number;
+                observations: Array<{
+                  currency: string;
+                  ledgerFingerprint: string;
+                  matureNet: number;
+                  observedAt: number;
+                  pendingCredits: number;
+                  stripeTransferId: string;
+                  transactionIds: Array<string>;
+                }>;
+                operationKey: string;
+                ownerKey: string;
+                providerFee?: number;
+                rejection?: {
+                  code: "balance_insufficient" | "amount_too_small";
+                  requestId: string;
+                };
+                returnTransactionId?: string;
+                status:
+                  | "reserved"
+                  | "submitted"
+                  | "paid"
+                  | "returned"
+                  | "canceled"
+                  | "rejected";
+                stripePayoutId?: string;
+              }>;
+              status: "ready";
+              transfers: Array<{
+                _creationTime: number;
+                _id: string;
+                amount: number;
+                currency: string;
+                destinationAccountId: string;
+                metadata?: any;
+                paymentId?: string;
+                reinstatement?: boolean;
+                reversalClaimedAmount?: number;
+                reversalStatus?: "partially_reversed" | "fully_reversed";
+                reversedAmount?: number;
+                role?: "store" | "affiliate" | "other";
+                sourceChargeId?: string;
+                sourceInvoiceId?: string;
+                status: "pending" | "paid" | "failed" | "reversed";
+                stripeTransferId: string;
+                totalsRecorded?: true;
+              }>;
+            },
           Name
         >;
       };

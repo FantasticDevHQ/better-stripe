@@ -28,6 +28,7 @@ import type * as lib_sandboxFixtureResources from "../lib/sandboxFixtureResource
 import type * as lib_sellerCostLedger from "../lib/sellerCostLedger.js";
 import type * as lib_sellerCostValidators from "../lib/sellerCostValidators.js";
 import type * as lib_sellerCosts from "../lib/sellerCosts.js";
+import type * as lib_sellerRecovery from "../lib/sellerRecovery.js";
 import type * as lib_storeCheckout from "../lib/storeCheckout.js";
 import type * as lib_storePlanValidators from "../lib/storePlanValidators.js";
 import type * as lib_storePlans from "../lib/storePlans.js";
@@ -37,6 +38,7 @@ import type * as lib_unsettledCostSource from "../lib/unsettledCostSource.js";
 import type * as marketplace from "../marketplace.js";
 import type * as queries from "../queries.js";
 import type * as recipientPayouts from "../recipientPayouts.js";
+import type * as recoveryMigration from "../recoveryMigration.js";
 import type * as reset from "../reset.js";
 import type * as sandboxFixtureState from "../sandboxFixtureState.js";
 import type * as sandboxFixtures from "../sandboxFixtures.js";
@@ -88,6 +90,7 @@ const fullApi: ApiFromModules<{
   "lib/sellerCostLedger": typeof lib_sellerCostLedger;
   "lib/sellerCostValidators": typeof lib_sellerCostValidators;
   "lib/sellerCosts": typeof lib_sellerCosts;
+  "lib/sellerRecovery": typeof lib_sellerRecovery;
   "lib/storeCheckout": typeof lib_storeCheckout;
   "lib/storePlanValidators": typeof lib_storePlanValidators;
   "lib/storePlans": typeof lib_storePlans;
@@ -97,6 +100,7 @@ const fullApi: ApiFromModules<{
   marketplace: typeof marketplace;
   queries: typeof queries;
   recipientPayouts: typeof recipientPayouts;
+  recoveryMigration: typeof recoveryMigration;
   reset: typeof reset;
   sandboxFixtureState: typeof sandboxFixtureState;
   sandboxFixtures: typeof sandboxFixtures;

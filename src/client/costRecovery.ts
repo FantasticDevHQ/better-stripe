@@ -26,6 +26,12 @@ export type RecoveryClaim = RecoveryObservation & {
   reservedAmount: number;
   outstanding: number;
   sign: "positive" | "negative" | "zero";
+  openingCollection?: {
+    operationKey: string;
+    amountDue: number;
+    revision: number;
+    collectedAmount: number;
+  };
 };
 export type RecoveryBalance = RecoveryScope & {
   amountDue: number;
@@ -193,6 +199,16 @@ export class CostRecoveryClient {
         revision: opts.revision,
       }),
     };
+  }
+  /** Import a host-verified opening collection. Never overwrites a live claim. */
+  importClaim(
+    ctx: RunCtx,
+    opts: RecoveryObservation & {
+      operationKey: string;
+      collectedAmount: number;
+    },
+  ) {
+    return this.mutate<RecoveryClaim>(ctx, "mutations/importClaim", opts);
   }
   recordClaim(ctx: RunCtx, opts: RecoveryObservation) {
     return this.mutate<RecoveryClaim>(ctx, "mutations/record", opts);

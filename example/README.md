@@ -808,6 +808,22 @@ unrecovered refund/dispute costs and credits. It excludes costs already reserved
 for an invoice or deducted from earnings. Refund and dispute itemizations are
 under their respective menu pages, with links from estimated adjustment lines.
 
+### Recovery ledger cutover
+
+The package exposes an explicit opening-collection import for preserving costs
+already collected by an earlier host ledger. The example's internal
+`recoveryMigration.adoptLegacy` adapter checks the original seller/source binding,
+uses a stable import identity, and compares the captured legacy observation before
+writing. The first adoption blocks legacy cost recording, invoice claims and
+payout recovery for that seller until routing is converted. Invoice holds and
+pending payouts with cost recovery must be resolved
+before adoption. Replays preserve the opening snapshot after newer observations.
+
+The adapter is a migration building block. Disable the old ledger writers and
+complete the payout/invoice routing cutover before invoking it on active stores;
+do not operate both ledgers for the same store. The current integration still
+requires that cutover and the combined renewal verification below.
+
 ### Testing monthly renewals
 
 Run `pnpm run e2e:balance-renewals` from the example directory. The script creates

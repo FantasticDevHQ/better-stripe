@@ -420,6 +420,30 @@ Use `balance(ctx, scope)` for exact maintained totals and
 the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
 consent, provider fee policy and entitlement changes in the host.
 
+### Importing opening recovery balances
+
+When moving an existing ledger into the component, your server can call
+`stripe.costRecovery.importClaim(ctx, { ...observation, operationKey, collectedAmount })`.
+The observation includes the authorized account/scope/currency, original charge,
+gross and processing fee, approved cumulative amount due and a durable revision.
+`collectedAmount` is the signed amount already verified as collected before the
+cutover. The component retains that opening snapshot and computes outstanding as
+amount due minus the imported collection. It does not create a Stripe payment.
+
+Quiesce the old ledger's writers and verify its invoice and payout outcomes first.
+An unpaid invoice is a reservation, not a collection; an unknown provider outcome
+must stay held until reconciled. Do not import those amounts as collected or
+silently release them. Authorize source identity and original provider economics
+in the host before invoking this server-only bookkeeping operation.
+
+Use one stable import operation key per claim. A replay returns the current claim
+even after later observations or collections, without resetting its opening
+amount. Changing the opening snapshot or source binding, reusing an operation key
+for another claim, importing over a normal live claim, or introducing a new
+opening balance while the scope has a pending external recovery group is rejected.
+Signed credit collections and currencies stay separate. New observations continue
+through `recordClaim` with newer durable revisions.
+
 ### Invoice recovery adjustments
 
 After authorizing the seller, invoice and liability scope, reserve with

@@ -1,3 +1,4 @@
+import { assertLegacyRecoveryWriter } from "./lib/sellerRecovery";
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
 import { sellerCostDoc, costBillDoc } from "./lib/sellerCostValidators";
@@ -15,6 +16,7 @@ export const record = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertLegacyRecoveryWriter(ctx, args.sellerId);
     if (
       !Number.isSafeInteger(args.amountDue) ||
       [args.processingLoss, args.disputeFees].some(
@@ -70,6 +72,7 @@ export const claimInvoice = internalMutation({
   },
   returns: v.union(costBillDoc, v.null()),
   handler: async (ctx, args) => {
+    await assertLegacyRecoveryWriter(ctx, args.sellerId);
     const existing = await ctx.db
       .query("storeCostBills")
       .withIndex("by_invoice", (q) => q.eq("invoiceId", args.invoiceId))

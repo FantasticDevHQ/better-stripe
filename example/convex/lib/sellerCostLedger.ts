@@ -1,3 +1,4 @@
+import { assertLegacyRecoveryWriter } from "./sellerRecovery";
 import type { MutationCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { allocateSellerCosts } from "./sellerCosts";
@@ -8,6 +9,7 @@ export async function collectCostsForSale(
   available: number,
   creditLimit: number,
 ) {
+  await assertLegacyRecoveryWriter(ctx, sellerId);
   const costs = (
     await ctx.db
       .query("sellerCosts")

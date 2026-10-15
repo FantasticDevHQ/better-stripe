@@ -20,6 +20,7 @@ import type * as core_validators from "../core/validators.js";
 import type * as costRecovery_claims from "../costRecovery/claims.js";
 import type * as costRecovery_completion from "../costRecovery/completion.js";
 import type * as costRecovery_helpers from "../costRecovery/helpers.js";
+import type * as costRecovery_imports from "../costRecovery/imports.js";
 import type * as costRecovery_mutations from "../costRecovery/mutations.js";
 import type * as costRecovery_queries from "../costRecovery/queries.js";
 import type * as costRecovery_reservations from "../costRecovery/reservations.js";
@@ -57,6 +58,7 @@ const fullApi: ApiFromModules<{
   "costRecovery/claims": typeof costRecovery_claims;
   "costRecovery/completion": typeof costRecovery_completion;
   "costRecovery/helpers": typeof costRecovery_helpers;
+  "costRecovery/imports": typeof costRecovery_imports;
   "costRecovery/mutations": typeof costRecovery_mutations;
   "costRecovery/queries": typeof costRecovery_queries;
   "costRecovery/reservations": typeof costRecovery_reservations;

@@ -13,6 +13,10 @@ export const sellerCostFields = {
   processingLoss: v.number(),
   disputeFees: v.number(),
   observedAt: v.number(),
+  recoveryVersion: v.optional(v.number()),
+  legacyObservedAt: v.optional(v.number()),
+  sourceGross: v.optional(v.number()),
+  sourceProcessingFee: v.optional(v.number()),
 };
 export const sellerCostDoc = v.object({
   ...sellerCostFields,

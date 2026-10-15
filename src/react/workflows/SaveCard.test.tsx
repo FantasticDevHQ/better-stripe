@@ -99,3 +99,29 @@ it("does not confirm the same completed setup twice", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Save card" }));
   expect(confirm).toHaveBeenCalledOnce();
 });
+it("blocks repeat confirmation through a custom render callback", async () => {
+  confirm.mockResolvedValue({ success: true });
+  const success = vi.fn();
+  let submit: (() => Promise<void>) | undefined;
+  render(
+    <SaveCard
+      publishableKey="pk_test"
+      scopeKey="buyer"
+      returnUrl="https://app.test/cards"
+      createSetupIntent={async () => ({
+        setupIntentId: "seti_one",
+        clientSecret: "secret",
+      })}
+      onSuccess={success}
+      renderForm={(state) => {
+        submit = state.submit;
+        return <button onClick={() => state.setConsent(true)}>Consent</button>;
+      }}
+    />,
+  );
+  await userEvent.click(await screen.findByRole("button", { name: "Consent" }));
+  await submit!();
+  await submit!();
+  expect(confirm).toHaveBeenCalledOnce();
+  expect(success).toHaveBeenCalledOnce();
+});

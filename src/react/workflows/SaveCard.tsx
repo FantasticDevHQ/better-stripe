@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { PaymentElement } from "@stripe/react-stripe-js";
 import {
   StripeProvider,
@@ -68,10 +68,13 @@ function SaveCardBody(props: SaveCardProps) {
 function SaveCardForm(props: SaveCardProps & { setupIntentId: string }) {
   const { confirmSetup, isReady, hasElements } = useConfirmPayment();
   const [consent, setConsent] = useState(false);
+  const completed = useRef(false);
   const action = useWorkflowAction(async () => {
+    if (completed.current) return false;
     if (!consent) throw new Error("Consent is required to save this card.");
     const result = await confirmSetup(props.returnUrl, "always");
     if (!result.success) throw new Error(result.error);
+    completed.current = true;
     return true;
   });
   const state: SaveCardFormState = {

@@ -77,15 +77,27 @@ export function useConfirmPayment() {
    * @param returnUrl - URL to redirect to after 3D Secure. Defaults to current page.
    */
   const confirmSetup = useCallback(
-    async (returnUrl?: string): Promise<StripeConfirmResult> => {
+    async (
+      returnUrl?: string,
+      allowRedisplay?: "always" | "limited" | "unspecified",
+    ): Promise<StripeConfirmResult> => {
       if (!stripe || !elements) {
         return { success: false, error: "Stripe not initialized" };
       }
 
-      const { error } = await stripe.confirmSetup({
+      const validation = await elements.submit();
+      if (validation.error)
+        return {
+          success: false,
+          error: validation.error.message ?? "Check your card details.",
+        };
+      const { error, setupIntent } = await stripe.confirmSetup({
         elements,
         confirmParams: {
           return_url: returnUrl ?? window.location.href,
+          ...(allowRedisplay
+            ? { payment_method_data: { allow_redisplay: allowRedisplay } }
+            : {}),
         },
         redirect: "if_required",
       });
@@ -96,6 +108,8 @@ export function useConfirmPayment() {
           error: error.message ?? "Failed to confirm setup",
         };
       }
+      if (setupIntent?.status !== "succeeded")
+        return { success: false, error: "Card setup is not complete." };
       return { success: true };
     },
     [stripe, elements],

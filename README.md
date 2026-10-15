@@ -1553,3 +1553,36 @@ and [v2 request semantics](https://docs.stripe.com/api-v2-overview).
 current provider objects rather than cached component records. They are server
 APIs: authorize each resource and return only the fields your browser needs.
 Subscription upserts accept Stripe's `incomplete_expired` terminal status.
+
+### One-time intents and saved-card setup
+
+`createPaymentIntent(ctx, { userId, customerAccount?, stripePriceId,
+idempotencyKey, receiptEmail?, metadata? })` creates a card-only, platform
+PaymentIntent by default. Set `paymentMethods: "automatic"` to let Stripe select
+compatible methods, as in the example. It retrieves the platform price and expanded product from Stripe,
+rejects inactive products/prices, recurring and nonpositive/nonfixed prices, and
+derives amount and currency from the provider price. It returns only
+`{ paymentIntentId, clientSecret }`. Omit `customerAccount` for a host-authorized
+guest purchase. Existing Checkout Sessions integrations remain available.
+
+`createSetupIntent(ctx, { userId, customerAccount, usage, consent: true,
+idempotencyKey, metadata? })` provisions a card-only SetupIntent for a V2 customer
+account, returning only `{ setupIntentId, clientSecret }`. Explicitly choose
+`on_session` or `off_session` and record consent to that usage before provisioning.
+Confirmation attaches the saved card after required authentication; it does not
+set a subscription default. `SaveCard` from the React entrypoint supplies an
+unstyled Payment Element workflow. See the [React guide](docs/react-workflows.md#save-a-card-through-setupintent-confirmation).
+
+Both APIs require caller idempotency keys. Persist logical request identity and
+immutable inputs on the server, bind keys to the authenticated customer and
+operation, and reuse the same key on retries. Stripe's bounded idempotency window
+is not a durable order store. Authenticate in the host adapter, authorize the
+selected price/product and customer, and supply server-selected metadata. The
+package checks a supplied customer account's persisted `userId` ownership,
+protects its own attribution keys and strips the reserved `bs*` namespace. Never
+accept browser-provided amounts, user IDs or metadata as authorization.
+
+Grant paid access only after the existing verified webhook/settlement flow.
+Creation and browser confirmation are not settlement proof. Customer-account
+operations require Accounts v2 support in the sandbox or merchant account; the
+[customer preview guide](docs/accounts-v2-preview.md) explains eligibility.

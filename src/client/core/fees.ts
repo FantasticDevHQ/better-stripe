@@ -273,3 +273,11 @@ export function validateSplit(recipients: SplitRecipient[]): void {
     throw new Error(`split percents sum to ${percentSum}, which exceeds 100`);
   }
 }
+
+/** Deep-copy a platform fee config so stored/returned values can't be mutated. */
+export function clonePlatformFee(config: PlatformFeeConfig): PlatformFeeConfig {
+  return {
+    ...config,
+    tiers: config.tiers?.map((tier) => ({ ...tier })),
+  };
+}

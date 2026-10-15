@@ -1,0 +1,18 @@
+The `--diff` flag is deprecated; use `--scope changed` (add `--base <ref>` to pin the base) instead.
+✔ Select projects › @fantastic.dev/better-stripe, example
+Scanning changes: codex/payout-progress-accounting → origin/main
+
+✔ Scanned 13 files in 3.3s
+
+React Doctor — better-stripe
+Score: 89 / 100 Great
+
+✔ No issues found!
+  Full diagnostics written to /var/folders/f3/_6wf4t2j04d77051fw3p1k4w0000gn/T/react-doctor-8bfcd54a-e353-4ff2-811c-d4dbc7ca6623
+
+React Doctor is not installed in this project.
+Ask the user if they would like to set it up, then run:
+
+  npx react-doctor install --yes
+
+This adds agent skill files, a `doctor` package script, and react-doctor as a dev dependency.

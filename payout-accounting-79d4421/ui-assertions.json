@@ -1,0 +1,33 @@
+{
+  "video": "/tmp/payout-accounting-evidence/0908a8a294b96d6f7415f0d9a2660241.webm",
+  "assertions": [
+    {
+      "test": "Below-minimum carry forward",
+      "status": "passed",
+      "expected": 999
+    },
+    {
+      "test": "Withholding and net carry forward",
+      "status": "passed"
+    },
+    {
+      "test": "Exact combined threshold",
+      "status": "passed"
+    },
+    {
+      "test": "Paid source totals",
+      "status": "passed"
+    },
+    {
+      "test": "Native package markup",
+      "status": "passed"
+    },
+    {
+      "test": "390px mobile rendering",
+      "status": "passed",
+      "width": 390,
+      "body": 390
+    }
+  ],
+  "pageErrors": []
+}

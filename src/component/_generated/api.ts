@@ -24,6 +24,7 @@ import type * as costRecovery_imports from "../costRecovery/imports.js";
 import type * as costRecovery_mutations from "../costRecovery/mutations.js";
 import type * as costRecovery_queries from "../costRecovery/queries.js";
 import type * as costRecovery_reservations from "../costRecovery/reservations.js";
+import type * as earnings_arithmetic from "../earnings/arithmetic.js";
 import type * as earnings_legacyReads from "../earnings/legacyReads.js";
 import type * as earnings_mutations from "../earnings/mutations.js";
 import type * as earnings_reads from "../earnings/reads.js";
@@ -67,6 +68,7 @@ const fullApi: ApiFromModules<{
   "costRecovery/mutations": typeof costRecovery_mutations;
   "costRecovery/queries": typeof costRecovery_queries;
   "costRecovery/reservations": typeof costRecovery_reservations;
+  "earnings/arithmetic": typeof earnings_arithmetic;
   "earnings/legacyReads": typeof earnings_legacyReads;
   "earnings/mutations": typeof earnings_mutations;
   "earnings/reads": typeof earnings_reads;

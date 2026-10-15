@@ -94,6 +94,19 @@ earnings ledger does not determine settlement availability.
 
 ### Existing installations
 
+Summary amounts, counts and derived net amounts must remain safe integers in the
+public Number representation. Checked integer intermediates reject fractional,
+non-finite or unsupported inputs/results before rounding. A rejected transfer,
+payout, reversal or backfill page rolls back its source changes, markers and
+summary updates together. Stored unsafe summary fields also fail closed on reads.
+
+These guards prevent new precision loss; they do not repair summaries rounded by
+an earlier release. An affected historical summary needs reconciliation against
+its original records before reuse, even if a later rounded value appears safe.
+The ordinary backfill below skips already-marked records and cannot repair that
+case. Do not treat a successful backfill or a current safe-looking Number as
+proof that previously unsupported arithmetic was exact.
+
 After deploying the optional marker fields and summary table, invoke
 `components.betterStripe.earnings.mutations.backfillCurrencyTotals` from a trusted
 server migration. Run separately for `kind: "earnings"` and `kind: "payouts"`,

@@ -4,6 +4,7 @@ import {
   customMutation,
 } from "convex-helpers/server/customFunctions";
 import type { DataModel } from "../_generated/dataModel.js";
+import { addSummaryAmounts } from "./arithmetic.js";
 import {
   mutation as rawMutation,
   type MutationCtx,
@@ -21,7 +22,7 @@ async function adjust(
   ctx: MutationCtx,
   kind: "earnings" | "payouts",
   value: Contribution,
-  sign: number,
+  sign: 1 | -1,
 ) {
   const row = await ctx.db
     .query("currencyTotals")
@@ -33,11 +34,12 @@ async function adjust(
     )
     .unique();
   const totals = {
-    gross: (row?.gross ?? 0) + sign * value.gross,
-    reversed: (row?.reversed ?? 0) + sign * value.reversed,
-    paidOut: (row?.paidOut ?? 0) + sign * value.paidOut,
-    count: (row?.count ?? 0) + sign * value.count,
+    gross: addSummaryAmounts(row?.gross ?? 0, sign * value.gross),
+    reversed: addSummaryAmounts(row?.reversed ?? 0, sign * value.reversed),
+    paidOut: addSummaryAmounts(row?.paidOut ?? 0, sign * value.paidOut),
+    count: addSummaryAmounts(row?.count ?? 0, sign * value.count),
   };
+  addSummaryAmounts(totals.gross, -totals.reversed);
   if (row) {
     if (totals.count === 0) await ctx.db.delete("currencyTotals", row._id);
     else await ctx.db.patch("currencyTotals", row._id, totals);
@@ -72,14 +74,17 @@ triggers.register("transfers", async (ctx, change) => {
 triggers.register("payouts", async (ctx, change) => {
   const contribution = (
     row: NonNullable<typeof change.newDoc>,
-  ): Contribution => ({
-    accountId: row.accountId,
-    currency: row.currency,
-    gross: 0,
-    reversed: 0,
-    paidOut: row.status === "paid" ? row.amount : 0,
-    count: 1,
-  });
+  ): Contribution => {
+    const amount = addSummaryAmounts(row.amount, 0);
+    return {
+      accountId: row.accountId,
+      currency: row.currency,
+      gross: 0,
+      reversed: 0,
+      paidOut: row.status === "paid" ? amount : 0,
+      count: 1,
+    };
+  };
   if (change.oldDoc?.totalsRecorded)
     await adjust(ctx, "payouts", contribution(change.oldDoc), -1);
   if (change.newDoc) {

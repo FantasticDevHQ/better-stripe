@@ -3,6 +3,7 @@ import {
   getAccountPayouts as getAccountPayoutsLegacy,
 } from "../earnings/legacyReads.js";
 import { currencyTotals, previewSize } from "../earnings/reads.js";
+import { addSummaryAmounts } from "../earnings/arithmetic.js";
 import { v } from "convex/values";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
@@ -557,7 +558,7 @@ export const getAccountEarningsByCurrency = query({
         currency: r.currency,
         gross: r.gross,
         reversed: r.reversed,
-        net: r.gross - r.reversed,
+        net: addSummaryAmounts(r.gross, -r.reversed),
         transferCount: r.count,
       })),
       transfers,

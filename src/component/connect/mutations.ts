@@ -1,3 +1,4 @@
+import { writePayout } from "./payoutWrites.js";
 import { v } from "convex/values";
 
 import type { Doc, Id } from "../_generated/dataModel";
@@ -8,7 +9,7 @@ import { paymentSeller } from "../lib/paymentSeller";
 import {
   disputeFields,
   paymentStatusValidator,
-  payoutStatusValidator,
+  payoutFields,
   refundFields,
   transferFields,
 } from "./validators";
@@ -113,37 +114,10 @@ export const upsertPayment = mutation({
 // Payout mutations
 
 export const upsertPayout = mutation({
-  args: {
-    stripePayoutId: v.string(),
-    accountId: v.string(),
-    amount: v.number(),
-    currency: v.string(),
-    status: payoutStatusValidator,
-    arrivalDate: v.optional(v.string()),
-    method: v.optional(v.string()),
-    failureCode: v.optional(v.string()),
-    failureMessage: v.optional(v.string()),
-    metadata: v.optional(v.any()),
-  },
+  args: payoutFields,
   returns: v.null(),
   handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("payouts")
-      .withIndex("by_stripe_payout_id", (q) =>
-        q.eq("stripePayoutId", args.stripePayoutId),
-      )
-      .first();
-
-    if (existing) {
-      await ctx.db.patch("payouts", existing._id, {
-        ...args,
-        failureCode: args.failureCode,
-        failureMessage: args.failureMessage,
-      });
-    } else {
-      await ctx.db.insert("payouts", args);
-    }
-
+    await writePayout(ctx, args);
     return null;
   },
 });

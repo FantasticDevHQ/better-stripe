@@ -1,3 +1,4 @@
+import { claimsTable as payoutSyncClaimsTable } from "./payoutSync/schema.js";
 import {
   feeBalancesTable as payoutFeeBalancesTable,
   claimsTable as payoutReleaseClaimsTable,
@@ -37,6 +38,7 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutSyncClaims: payoutSyncClaimsTable,
   payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,
   payoutSourceAllocations: payoutSourceAllocationsTable,

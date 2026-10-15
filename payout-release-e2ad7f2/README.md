@@ -7,4 +7,4 @@ Source: `e2ad7f2728cadeec1aca26d24a1f19e11a8a8e1f`.
 - Red logs demonstrate the missing implementation before the new tests passed.
 - This is backend/package work; no UI was changed.
 
-Sandbox provider receipts will be added before merge. Historical adoption, resumable larger-account collection, additional debit/debt integration and recurring/UI/consumer adoption are not claimed complete by this change.
+Superseded by [final-head provider receipts and test evidence](../payout-release-f11de59). Historical adoption, resumable larger-account collection, additional debit/debt integration and recurring/UI/consumer adoption are not claimed complete by this change.

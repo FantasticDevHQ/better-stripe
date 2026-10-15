@@ -1,0 +1,70 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutExecution.test.ts (16 tests | 2 failed) 173ms
+   × automatically releases combined creator and affiliate funds exactly once 83ms
+   × requires a verified default bank destination before any reservation 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > automatically releases combined creator and affiliate funds exactly once
+AssertionError: expected "vi.fn()" to be called with arguments: [ { amount: 1000, …(5) }, { …(2) } ]
+
+Received:
+
+  1st vi.fn() call:
+
+@@ -1,10 +1,9 @@
+  [
+    {
+      "amount": 1000,
+      "currency": "usd",
+-     "destination": "ba_one",
+      "metadata": {
+        "bsPayoutClaim": "release-1",
+      },
+      "method": "standard",
+      "source_type": "card",
+
+
+Number of calls: 1
+
+ ❯ src/client/connect/payoutExecution.test.ts:208:37
+    206|     claim: { status: "paid", amount: 1000 },
+    207|   });
+    208|   expect(s.provider.payouts.create).toHaveBeenCalledWith(
+       |                                     ^
+    209|     {
+    210|       amount: 1000,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > requires a verified default bank destination before any reservation
+AssertionError: expected { status: 'updated', …(2) } to match object { status: 'held', …(1) }
+(37 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "bank_destination_unavailable",
+-   "status": "held",
++   "status": "updated",
+  }
+
+ ❯ src/client/connect/payoutExecution.test.ts:462:24
+    460|  const s = await setup();
+    461|  s.provider.accounts.listExternalAccounts.mockResolvedValue({data:[],h…
+    462|  expect(await s.run()).toMatchObject({status:"held",reason:"bank_desti…
+       |                        ^
+    463|  expect(s.provider.payouts.create).not.toHaveBeenCalled();
+    464|  expect(await s.t.run(ctx=>ctx.db.query("payoutReleaseClaims").collect…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+   Start at  17:58:19
+   Duration  635ms (tests 33%, transform 31%, import 25%, environment 10%, worker 1%)
+

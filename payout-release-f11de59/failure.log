@@ -1,0 +1,85 @@
+Creating isolated sandbox recipient
+Funding mixed creator and affiliate sources below and at the threshold
+Public automatic release performs qualification, reservation and creation
+Restoring QA schedule and reconciling cleanup
+{
+  "scenario": "bank_insufficient_funds",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "f11de59de4f86e656d6377479fc3fc6decafc7b5",
+  "run": "payout-qualification-qa-ee182769-e645-4c66-9e76-79cd8d3e62f9",
+  "accountId": "acct_1UQmP79EM0e2B1YX",
+  "fundingIds": [
+    "tr_1UQmPY6JR7kThJog96nyoQfb",
+    "tr_1UQmPs6JR7kThJogebdFxuXU"
+  ],
+  "below": {
+    "amount": 0,
+    "currency": "usd",
+    "matureUnpaid": 600,
+    "pendingCredits": 0,
+    "providerMinimum": null,
+    "reason": "below_threshold",
+    "status": "held"
+  },
+  "payoutId": "po_1UQmQI9EM0e2B1YXHZEpERqs",
+  "recovered": {
+    "status": "returned",
+    "amount": 1000,
+    "providerFee": 0,
+    "receipt": {
+      "status": "ready",
+      "accountId": "acct_1UQmP79EM0e2B1YX",
+      "stripePayoutId": "po_1UQmQI9EM0e2B1YXHZEpERqs",
+      "operationKey": "payout-qualification-qa-ee182769-e645-4c66-9e76-79cd8d3e62f9:release",
+      "amount": 1000,
+      "currency": "usd",
+      "providerStatus": "failed",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQmPC9EM0e2B1YXsTIoNZTg",
+      "created": 1792062130,
+      "arrivalDate": 1792022400,
+      "debit": {
+        "id": "txn_1UQmQI9EM0e2B1YX9Kkj2gbG",
+        "amount": -1000,
+        "fee": 0,
+        "net": -1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792062130,
+        "availableOn": 1792062130,
+        "type": "payout"
+      },
+      "credit": {
+        "id": "txn_1UQmQI9EM0e2B1YXArvcGs2Y",
+        "amount": 1000,
+        "fee": 0,
+        "net": 1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792062130,
+        "availableOn": 1792062130,
+        "type": "payout_failure"
+      },
+      "returnedPrincipal": 1000,
+      "returnedNet": 1000,
+      "observedAt": 1792062135804
+    }
+  },
+  "duplicateReplayCreatedNoPayout": true,
+  "providerOutcome": {
+    "status": "failed",
+    "failureCode": "insufficient_funds"
+  },
+  "payoutCreateCalls": 1,
+  "status": "passed",
+  "cleanupReconciliation": "updated",
+  "finalClaimStatus": "returned",
+  "testFundingReturned": true,
+  "scheduleRestored": true,
+  "accountClosed": true
+}

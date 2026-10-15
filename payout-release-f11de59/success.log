@@ -1,0 +1,82 @@
+Creating isolated sandbox recipient
+Funding mixed creator and affiliate sources below and at the threshold
+Public automatic release performs qualification, reservation and creation
+Restoring QA schedule and reconciling cleanup
+{
+  "scenario": "successful_bank_payout",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "f11de59de4f86e656d6377479fc3fc6decafc7b5",
+  "run": "payout-qualification-qa-1588b03f-570e-4ab2-8b96-0c934f2bb71f",
+  "accountId": "acct_1UQmP7QHNVjGntsE",
+  "fundingIds": [
+    "tr_1UQmPa6JR7kThJogO2D8vFfl",
+    "tr_1UQmPt6JR7kThJogQbpID551"
+  ],
+  "below": {
+    "amount": 0,
+    "currency": "usd",
+    "matureUnpaid": 600,
+    "pendingCredits": 0,
+    "providerMinimum": null,
+    "reason": "below_threshold",
+    "status": "held"
+  },
+  "payoutId": "po_1UQmQKQHNVjGntsEksOOKM6Y",
+  "recovered": {
+    "status": "paid",
+    "amount": 1000,
+    "providerFee": 0,
+    "receipt": {
+      "status": "ready",
+      "accountId": "acct_1UQmP7QHNVjGntsE",
+      "stripePayoutId": "po_1UQmQKQHNVjGntsEksOOKM6Y",
+      "operationKey": "payout-qualification-qa-1588b03f-570e-4ab2-8b96-0c934f2bb71f:release",
+      "amount": 1000,
+      "currency": "usd",
+      "providerStatus": "paid",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQmPCQHNVjGntsELrMzs3U2",
+      "created": 1792062132,
+      "arrivalDate": 1792022400,
+      "debit": {
+        "id": "txn_1UQmQKQHNVjGntsEDLLBWNMd",
+        "amount": -1000,
+        "fee": 0,
+        "net": -1000,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792062132,
+        "availableOn": 1792062132,
+        "type": "payout"
+      },
+      "returnedPrincipal": 0,
+      "returnedNet": 0,
+      "observedAt": 1792062135848
+    }
+  },
+  "duplicateReplayCreatedNoPayout": true,
+  "paidSourceNotReused": {
+    "amount": 0,
+    "currency": "usd",
+    "matureUnpaid": 0,
+    "pendingCredits": 0,
+    "providerMinimum": null,
+    "reason": "below_threshold",
+    "status": "held"
+  },
+  "providerOutcome": {
+    "status": "paid",
+    "failureCode": null
+  },
+  "payoutCreateCalls": 1,
+  "status": "passed",
+  "cleanupReconciliation": "updated",
+  "finalClaimStatus": "paid",
+  "scheduleRestored": true,
+  "accountClosed": true
+}

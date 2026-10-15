@@ -1,4 +1,5 @@
 import {
+  feeBalancesTable as payoutFeeBalancesTable,
   claimsTable as payoutReleaseClaimsTable,
   sourcesTable as payoutSourceAllocationsTable,
 } from "./payoutRelease/schema.js";
@@ -36,6 +37,7 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,
   payoutSourceAllocations: payoutSourceAllocationsTable,
   payoutPolicies: policiesTable,

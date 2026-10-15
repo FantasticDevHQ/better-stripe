@@ -1,3 +1,4 @@
+import { readFees } from "./fees.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
@@ -52,5 +53,15 @@ export const pending = query({
       continueCursor: result.continueCursor,
       isDone: result.isDone,
     };
+  },
+});
+
+export const fees = query({
+  args: { accountId: v.string(), ownerKey: v.string(), currency: v.string() },
+  returns: v.object({ amount: v.number(), revision: v.number() }),
+  handler: async (ctx, args) => {
+    await readPolicy(ctx, args);
+    const balance = await readFees(ctx, args);
+    return { amount: balance?.amount ?? 0, revision: balance?.revision ?? 0 };
   },
 });

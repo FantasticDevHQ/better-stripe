@@ -36,6 +36,10 @@ export const claimFields = {
   attemptedAt: v.optional(v.number()),
   stripePayoutId: v.optional(v.string()),
   returnTransactionId: v.optional(v.string()),
+  feeRevision: v.optional(v.number()),
+  debitTransactionId: v.optional(v.string()),
+  debitFee: v.optional(v.number()),
+  providerFee: v.optional(v.number()),
   rejection: v.optional(
     v.object({
       requestId: v.string(),
@@ -55,6 +59,7 @@ export const claimsTable = defineTable(claimFields)
   .index("by_operation", ["operationKey"])
   .index("by_account_status", ["accountId", "status"])
   .index("by_provider_payout", ["stripePayoutId"])
+  .index("by_debit_receipt", ["debitTransactionId"])
   .index("by_return_receipt", ["returnTransactionId"])
   .index("by_rejection_request", ["rejection.requestId"]);
 export const sourcesTable = defineTable({
@@ -67,3 +72,10 @@ export const sourcesTable = defineTable({
   .index("by_transfer", ["stripeTransferId"])
   .index("by_account", ["accountId"]);
 export const identity = { ...scopeFields, operationKey: v.string() };
+
+export const feeBalancesTable = defineTable({
+  ...scopeFields,
+  currency: v.string(),
+  amount: v.number(),
+  revision: v.number(),
+}).index("by_account_currency", ["accountId", "currency"]);

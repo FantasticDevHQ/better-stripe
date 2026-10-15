@@ -1,3 +1,4 @@
+import { readFees, recordFees } from "./fees.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { identity, observation, claimDoc } from "./schema.js";
@@ -88,11 +89,13 @@ export const claim = mutation({
         reservedAmount: prior?.reservedAmount ?? 0,
       });
     }
+    const fees = await readFees(ctx, args);
     const plan = planRecipientPayout({
       currency: args.currency,
       threshold: minimum.amount,
       providerAvailable: args.providerAvailable,
       independentLiabilities: args.independentLiabilities,
+      confirmedFees: fees?.amount ?? 0,
       sources,
     });
     if (plan.status === "held") return plan;
@@ -121,6 +124,7 @@ export const claim = mutation({
       amount: plan.amount,
       allocations: plan.allocations,
       observations: args.observations,
+      feeRevision: fees?.revision ?? 0,
       status: "reserved",
     });
     return (await ctx.db.get("payoutReleaseClaims", id))!;
@@ -135,6 +139,9 @@ export const beginAttempt = mutation({
       throw new Error("Payout claim is not reserved.");
     if (claim.attemptedAt !== undefined) return claim;
     await readyPolicy(ctx, claim);
+    const feeRevision = (await readFees(ctx, claim))?.revision ?? 0;
+    if (feeRevision !== (claim.feeRevision ?? 0))
+      throw new Error("Payout fee revision changed after reservation.");
     await checkSnapshot(ctx, claim.accountId, claim.observations, true);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       attemptedAt: Date.now(),
@@ -175,6 +182,9 @@ export const recordOutcome = mutation({
       v.literal("canceled"),
     ),
     returnTransactionId: v.optional(v.string()),
+    debitTransactionId: v.optional(v.string()),
+    debitFee: v.optional(v.number()),
+    returnFee: v.optional(v.number()),
   },
   returns: claimDoc,
   handler: async (ctx, args) => {
@@ -226,8 +236,15 @@ export const recordOutcome = mutation({
     if (claim.status === "returned") {
       if (returned && args.returnTransactionId !== claim.returnTransactionId)
         throw new Error("Payout return receipt identity changed.");
+      if (returned) {
+        await recordFees(ctx, claim, args, true);
+        return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
+      }
       return claim;
     }
+    if (claim.status === "paid" && args.providerStatus !== "paid" && !returned)
+      return claim;
+    await recordFees(ctx, claim, args, returned);
     if (returned) {
       await moveAllocations(
         ctx,

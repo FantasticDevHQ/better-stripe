@@ -42,6 +42,9 @@ deadline-expiry API. See [policy setup and limits](docs/settlement.md#recipient-
 A [recipient funding reader](docs/settlement.md#verified-recipient-funding-receipts)
 verifies original and reversal receipts, maturity, and exact settlement amounts;
 received credit is kept distinct from still-unpaid entitlement.
+A [payout receipt and reconciliation API](docs/settlement.md#verified-payout-receipts-and-reconciliation)
+verifies actual bank-payout debits and returns, adopts an attempted claim's
+provider outcome, and books its net payout fees once.
 The component also has an internal transactional claim ledger for reservations
 and paid allocations. Automatic combined release and adoption of existing
 balances still require the separate release boundary; schedule controls and
@@ -130,6 +133,13 @@ existing integration to this API version.
 ### Regenerating codegen
 
 The component ships committed Convex codegen output at `src/component/_generated/{api,component,dataModel,server}.ts` — consumers reach the bindings via the `./_generated/component` subpath export. The example app also commits its own codegen at `example/convex/_generated/`. Running `pnpm dev` (which wraps `convex dev`) regenerates these automatically when the schema or function definitions change, but only against the live dev deployment and only while the dev server is watching.
+
+The example resolves the workspace package through `dist/`. After changing
+component source, regenerate library bindings with `pnpm codegen:lib`, run
+`pnpm build`, then deploy the rebuilt component from the example directory with
+`pnpm exec convex dev --once`. Run `pnpm codegen:example` afterward. Code generation
+alone does not prove that a newly added function is mounted; invoke a representative
+query or action against the development deployment before running financial tests.
 
 If you add, remove, or rename a query/mutation/action on a branch without the dev server watching — or after a rebase — regenerate explicitly before committing:
 

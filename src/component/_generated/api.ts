@@ -38,6 +38,7 @@ import type * as payoutPolicy_helpers from "../payoutPolicy/helpers.js";
 import type * as payoutPolicy_mutations from "../payoutPolicy/mutations.js";
 import type * as payoutPolicy_queries from "../payoutPolicy/queries.js";
 import type * as payoutRelease_allocation from "../payoutRelease/allocation.js";
+import type * as payoutRelease_fees from "../payoutRelease/fees.js";
 import type * as payoutRelease_helpers from "../payoutRelease/helpers.js";
 import type * as payoutRelease_mutations from "../payoutRelease/mutations.js";
 import type * as payoutRelease_queries from "../payoutRelease/queries.js";
@@ -89,6 +90,7 @@ const fullApi: ApiFromModules<{
   "payoutPolicy/mutations": typeof payoutPolicy_mutations;
   "payoutPolicy/queries": typeof payoutPolicy_queries;
   "payoutRelease/allocation": typeof payoutRelease_allocation;
+  "payoutRelease/fees": typeof payoutRelease_fees;
   "payoutRelease/helpers": typeof payoutRelease_helpers;
   "payoutRelease/mutations": typeof payoutRelease_mutations;
   "payoutRelease/queries": typeof payoutRelease_queries;

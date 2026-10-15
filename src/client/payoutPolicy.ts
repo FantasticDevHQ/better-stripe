@@ -1,4 +1,14 @@
 import {
+  reconcileRecipientPayout,
+  type PayoutReconciliationOptions,
+} from "./connect/payoutReconciliation.js";
+export type * from "./connect/payoutReconciliation.js";
+import {
+  getRecipientPayoutReceipt,
+  type RecipientPayoutReceiptOptions,
+} from "./connect/payoutReceipt.js";
+export type * from "./connect/payoutReceipt.js";
+import {
   getTransferFundingReceipt,
   type TransferReceiptOptions,
 } from "./connect/transferReceipt.js";
@@ -75,6 +85,12 @@ export class PayoutPolicyClient {
     private readonly component: Component,
     private readonly provider: () => Stripe,
   ) {}
+  reconcilePayout(ctx: RunCtx, opts: PayoutReconciliationOptions) {
+    return reconcileRecipientPayout(this.provider(), this.component, ctx, opts);
+  }
+  payoutReceipt(opts: RecipientPayoutReceiptOptions) {
+    return getRecipientPayoutReceipt(this.provider(), opts);
+  }
   transferReceipt(ctx: RunCtx, opts: TransferReceiptOptions) {
     return getTransferFundingReceipt(
       this.provider(),

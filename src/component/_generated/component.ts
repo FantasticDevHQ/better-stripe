@@ -2492,7 +2492,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             attemptedAt?: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             expectedRevision: number;
+            feeRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -2504,6 +2507,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            providerFee?: number;
             rejection?: {
               code: "balance_insufficient" | "amount_too_small";
               requestId: string;
@@ -2536,7 +2540,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             attemptedAt?: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             expectedRevision: number;
+            feeRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -2548,6 +2555,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            providerFee?: number;
             rejection?: {
               code: "balance_insufficient" | "amount_too_small";
               requestId: string;
@@ -2597,7 +2605,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               attemptedAt?: number;
               currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
               expectedRevision: number;
+              feeRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2609,6 +2620,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               operationKey: string;
               ownerKey: string;
+              providerFee?: number;
               rejection?: {
                 code: "balance_insufficient" | "amount_too_small";
                 requestId: string;
@@ -2642,10 +2654,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             amount: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             operationKey: string;
             ownerKey: string;
             providerStatus:
               "pending" | "in_transit" | "paid" | "failed" | "canceled";
+            returnFee?: number;
             returnTransactionId?: string;
             stripePayoutId: string;
           },
@@ -2661,7 +2676,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             attemptedAt?: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             expectedRevision: number;
+            feeRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -2673,6 +2691,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            providerFee?: number;
             rejection?: {
               code: "balance_insufficient" | "amount_too_small";
               requestId: string;
@@ -2711,7 +2730,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             attemptedAt?: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             expectedRevision: number;
+            feeRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -2723,6 +2745,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            providerFee?: number;
             rejection?: {
               code: "balance_insufficient" | "amount_too_small";
               requestId: string;
@@ -2741,6 +2764,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
+        fees: FunctionReference<
+          "query",
+          "internal",
+          { accountId: string; currency: string; ownerKey: string },
+          { amount: number; revision: number },
+          Name
+        >;
         get: FunctionReference<
           "query",
           "internal",
@@ -2757,7 +2787,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             attemptedAt?: number;
             currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
             expectedRevision: number;
+            feeRevision?: number;
             observations: Array<{
               currency: string;
               ledgerFingerprint: string;
@@ -2769,6 +2802,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            providerFee?: number;
             rejection?: {
               code: "balance_insufficient" | "amount_too_small";
               requestId: string;
@@ -2815,7 +2849,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               attemptedAt?: number;
               currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
               expectedRevision: number;
+              feeRevision?: number;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2827,6 +2864,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               operationKey: string;
               ownerKey: string;
+              providerFee?: number;
               rejection?: {
                 code: "balance_insufficient" | "amount_too_small";
                 requestId: string;

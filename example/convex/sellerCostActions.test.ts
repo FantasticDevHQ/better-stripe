@@ -3,6 +3,7 @@
 import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
+import componentSchema from "../../dist/component/schema.js";
 import { api, internal } from "./_generated/api";
 const raw = vi.hoisted(() => ({
   invoices: { retrieve: vi.fn(), listLineItems: vi.fn() },
@@ -16,7 +17,19 @@ const client = vi.hoisted(() => ({
   getPriceByStripeId: vi.fn(),
   getProductByStripeId: vi.fn(),
 }));
-vi.mock("./stripe", () => ({ stripe: client }));
+vi.mock("./stripe", async () => {
+  const { CostRecoveryClient } = await import("../../src/client/costRecovery");
+  const { components } = await import("./_generated/api");
+  return {
+    stripe: {
+      ...client,
+      costRecovery: new CostRecoveryClient(
+        components.betterStripe,
+        () => raw as unknown as import("stripe").default,
+      ),
+    },
+  };
+});
 const costContext = {
   status: "ready",
   paymentIntentId: "pi_sale",
@@ -34,6 +47,11 @@ const modules = import.meta.glob("./**/*.*s");
 beforeEach(() => vi.resetAllMocks());
 async function setup() {
   const t = convexTest(schema, modules);
+  t.registerComponent(
+    "betterStripe",
+    componentSchema,
+    import.meta.glob("../../dist/component/**/*.js"),
+  );
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       role: "seller",
@@ -71,8 +89,17 @@ async function setup() {
     currency: "usd",
     status: "draft",
   });
-  raw.invoiceItems.list.mockResolvedValue({ data: [] });
-  raw.invoiceItems.create.mockResolvedValue({ id: "ii_costs" });
+  const items: Record<string, unknown>[] = [];
+  raw.invoiceItems.list.mockImplementation(() =>
+    (async function* () {
+      for (const item of items) yield item;
+    })(),
+  );
+  raw.invoiceItems.create.mockImplementation(async (args) => {
+    const item = { ...args, id: "ii_costs" };
+    items.push(item);
+    return item;
+  });
   return { t, sellerId };
 }
 it("records actual non-refundable costs and adds them to the monthly invoice once", async () => {
@@ -99,7 +126,7 @@ it("records actual non-refundable costs and adds them to the monthly invoice onc
       customer_account: "acct_store",
     }),
     expect.objectContaining({
-      idempotencyKey: expect.stringContaining("example_seller_cost_bill_"),
+      idempotencyKey: expect.stringContaining("better-stripe:recovery:"),
     }),
   );
   expect(
@@ -141,7 +168,7 @@ it("turns returned Stripe fees into a credit after the seller was already billed
     (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
   ).toMatchObject({ amountDue: 0, outstanding: -320, open: true });
 });
-it("refuses another seller's invoice and finalized invoices", async () => {
+it("refuses another seller's invoice and keeps missing finalized adjustments held", async () => {
   const { t, sellerId } = await setup();
   raw.invoices.retrieve.mockResolvedValue({
     id: "in_monthly",
@@ -157,6 +184,7 @@ it("refuses another seller's invoice and finalized invoices", async () => {
   raw.invoices.retrieve.mockResolvedValue({
     id: "in_monthly",
     customer_account: "acct_store",
+    currency: "usd",
     status: "open",
   });
   await expect(
@@ -164,7 +192,7 @@ it("refuses another seller's invoice and finalized invoices", async () => {
       sellerId,
       invoiceId: "in_monthly",
     }),
-  ).rejects.toThrow(/before.*finalized/);
+  ).rejects.toThrow(/missing/i);
   expect(raw.invoiceItems.create).not.toHaveBeenCalled();
 });
 it("retries when the actual refund fee is delayed", async () => {
@@ -336,4 +364,69 @@ it("resolves a disputed subscription source through its verified paid invoice in
       paymentIntentId: "pi_sale",
     }),
   ).rejects.toThrow(/allocation/i);
+});
+it("commits recovery on paid invoice outcomes and releases void outcomes without double collection", async () => {
+  const { t, sellerId } = await setup();
+  await t.action(internal.sellerCostActions.reconcile, {
+    paymentIntentId: "pi_sale",
+  });
+  await t.action(internal.sellerCostActions.attachToInvoice, {
+    sellerId,
+    invoiceId: "in_monthly",
+  });
+  raw.invoices.retrieve.mockResolvedValue({
+    id: "in_monthly",
+    customer_account: "acct_store",
+    currency: "usd",
+    status: "open",
+  });
+  await t.action(internal.recoveryInvoices.reconcile, {
+    sellerId,
+    invoiceId: "in_monthly",
+  });
+  expect(
+    (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
+  ).toMatchObject({ collectedAmount: 0, reservedAmount: 320, outstanding: 0 });
+  raw.invoices.retrieve.mockResolvedValue({
+    id: "in_monthly",
+    customer_account: "acct_store",
+    currency: "usd",
+    status: "paid",
+  });
+  await t.action(internal.recoveryInvoices.reconcile, {
+    sellerId,
+    invoiceId: "in_monthly",
+  });
+  await t.action(internal.recoveryInvoices.reconcile, {
+    sellerId,
+    invoiceId: "in_monthly",
+  });
+  expect(
+    (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
+  ).toMatchObject({ collectedAmount: 320, reservedAmount: 0, outstanding: 0 });
+  const other = await setup();
+  await other.t.action(internal.sellerCostActions.reconcile, {
+    paymentIntentId: "pi_sale",
+  });
+  await other.t.action(internal.sellerCostActions.attachToInvoice, {
+    sellerId: other.sellerId,
+    invoiceId: "in_monthly",
+  });
+  raw.invoices.retrieve.mockResolvedValue({
+    id: "in_monthly",
+    customer_account: "acct_store",
+    currency: "usd",
+    status: "void",
+  });
+  await other.t.action(internal.recoveryInvoices.reconcile, {
+    sellerId: other.sellerId,
+    invoiceId: "in_monthly",
+  });
+  expect(
+    (
+      await other.t.query(api.sellerCostBilling.list, {
+        sellerId: other.sellerId,
+      })
+    )[0],
+  ).toMatchObject({ collectedAmount: 0, reservedAmount: 0, outstanding: 320 });
 });

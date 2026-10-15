@@ -31,10 +31,16 @@ export const process = internalAction({
             sellerId: sub.metadata
               .sellerId as import("./_generated/dataModel").Id<"users">,
           });
-        else
+        else {
+          await ctx.runAction(internal.recoveryInvoices.reconcile, {
+            invoiceId: invoice.id,
+            sellerId: sub.metadata
+              .sellerId as import("./_generated/dataModel").Id<"users">,
+          });
           await ctx.runAction(internal.storePlanActions.refreshSubscription, {
             subscriptionId,
           });
+        }
       } else if (
         sub.metadata.storeBilling === "sale_v1" &&
         invoice.status === "paid"

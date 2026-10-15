@@ -7,6 +7,7 @@ export const sellerCostFields = {
   amountDue: v.number(),
   collectedAmount: v.number(),
   invoicedAmount: v.number(),
+  reservedAmount: v.optional(v.number()),
   outstanding: v.number(),
   open: v.boolean(),
   sourceType: v.optional(v.union(v.literal("refund"), v.literal("dispute"))),
@@ -17,6 +18,7 @@ export const sellerCostFields = {
   legacyObservedAt: v.optional(v.number()),
   sourceGross: v.optional(v.number()),
   sourceProcessingFee: v.optional(v.number()),
+  invoiceRecoveryGroupKey: v.optional(v.string()),
 };
 export const sellerCostDoc = v.object({
   ...sellerCostFields,

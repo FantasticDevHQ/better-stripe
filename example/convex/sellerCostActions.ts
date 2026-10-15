@@ -1,9 +1,10 @@
+import { reconcileInvoiceFunding } from "./lib/invoiceRecoverySource";
+import { costClaimKey } from "./lib/sellerRecovery";
 import { unsettledCostSource } from "./lib/unsettledCostSource";
 import { stripe } from "./stripe";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
-import { getStripeClient } from "./lib/stripeClient";
 import { stripeCostDeficit } from "./lib/sellerCosts";
 import type { Id } from "./_generated/dataModel";
 
@@ -12,6 +13,9 @@ export const reconcile = internalAction({
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
     const observedAt = Date.now();
+    const previousClaim = await stripe.costRecovery.getClaim(ctx, {
+      claimKey: costClaimKey(args.paymentIntentId),
+    });
     const cost = await stripe.getProcessingCostContext(ctx, args);
     if (cost.status === "not_ready") {
       if (
@@ -29,7 +33,21 @@ export const reconcile = internalAction({
         chargeId: cost.chargeId,
       },
     );
-    const sale = settled ?? (await unsettledCostSource(ctx, cost));
+    if (
+      settled?.status === "pending" &&
+      settled.recoveryReady !== undefined &&
+      cost.principalReturned > 0
+    )
+      await ctx.runMutation(
+        internal.storeSaleSettlement.markUnpaidSaleRefunded,
+        { chargeId: cost.chargeId },
+      );
+    const invoiceSource =
+      !settled && cost.metadata.storeBilling !== "sale_v1"
+        ? await reconcileInvoiceFunding(ctx, cost)
+        : null;
+    const sale =
+      settled ?? invoiceSource ?? (await unsettledCostSource(ctx, cost));
     if (!sale) return null;
     if (sale.currency !== cost.currency || sale.gross !== cost.gross)
       throw new Error("Stripe cost context does not match the original sale.");
@@ -48,9 +66,11 @@ export const reconcile = internalAction({
     });
     // Returning a payment also returns any previous cost adjustment funded by
     // that payment. Reinstate that adjustment so old expenses aren't forgiven.
-    const adjustmentRollback = Math.round(
-      ((sale.costRecoveryAmount ?? 0) * principalReturned) / sale.gross,
-    );
+    const adjustmentRollback = settled?.recoveryGroupKey
+      ? 0
+      : Math.round(
+          ((sale.costRecoveryAmount ?? 0) * principalReturned) / sale.gross,
+        );
     await ctx.runMutation(internal.sellerCostBilling.record, {
       sellerId: sale.sellerId,
       sourceChargeId: cost.chargeId,
@@ -61,7 +81,22 @@ export const reconcile = internalAction({
       processingLoss,
       disputeFees,
       observedAt,
+      sourceGross: cost.gross,
+      sourceProcessingFee: cost.processingFee,
+      expectedRevision: previousClaim?.revision ?? -1,
+      invoiceRecoveryGroupKey: invoiceSource?.invoiceRecoveryGroupKey,
     });
+    if (settled?.recoveryGroupKey) {
+      const group = await stripe.costRecovery.getGroup(ctx, {
+        groupKey: settled.recoveryGroupKey,
+      });
+      if (group?.status === "collected")
+        await stripe.costRecovery.rollback(ctx, {
+          groupKey: group.groupKey,
+          returnedPrincipal: principalReturned,
+          revision: (previousClaim?.revision ?? -1) + 1,
+        });
+    }
     return null;
   },
 });
@@ -70,64 +105,7 @@ export const attachToInvoice = internalAction({
   args: { invoiceId: v.string(), sellerId: v.id("users") },
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    const raw = getStripeClient();
-    const invoice = await raw.invoices.retrieve(args.invoiceId);
-    const seller = await ctx.runQuery(internal.storePlanBilling.getSeller, {
-      sellerId: args.sellerId,
-    });
-    if (invoice.customer_account !== seller.stripeAccountId)
-      throw new Error("Cost invoice belongs to another Stripe account.");
-    const previous = await ctx.runQuery(internal.sellerCostBilling.getBill, {
-      invoiceId: invoice.id,
-    });
-    if (previous?.status === "attached") return null;
-    if (invoice.status !== "draft")
-      throw new Error(
-        "Seller costs must be attached before the monthly invoice is finalized.",
-      );
-    const bill = await ctx.runMutation(
-      internal.sellerCostBilling.claimInvoice,
-      {
-        sellerId: seller.sellerId,
-        invoiceId: invoice.id,
-        currency: invoice.currency,
-      },
-    );
-    if (!bill) return null;
-    if (bill.amount === 0) {
-      await ctx.runMutation(internal.sellerCostBilling.markAttached, {
-        billId: bill._id,
-      });
-      return null;
-    }
-    const key = `example_seller_cost_bill_${bill._id}`;
-    const items = await raw.invoiceItems.list({
-      customer_account: seller.stripeAccountId,
-      limit: 100,
-    });
-    const existing = items.data.find(
-      (item) => item.metadata?.sellerCostBill === bill._id,
-    );
-    const item =
-      existing ??
-      (await raw.invoiceItems.create(
-        {
-          customer_account: seller.stripeAccountId,
-          invoice: invoice.id,
-          amount: bill.amount,
-          currency: bill.currency,
-          description:
-            bill.amount > 0
-              ? "Unrecovered Stripe costs from refunds and disputes"
-              : "Credit for returned Stripe costs",
-          metadata: { sellerCostBill: bill._id, sellerId: seller.sellerId },
-        },
-        { idempotencyKey: key },
-      ));
-    await ctx.runMutation(internal.sellerCostBilling.markAttached, {
-      billId: bill._id,
-      stripeInvoiceItemId: item.id,
-    });
+    await ctx.runAction(internal.recoveryInvoices.attach, args);
     return null;
   },
 });
@@ -169,7 +147,7 @@ export const reconcileWhenReady = internalAction({
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (
-        !/Stripe (processing|refund) costs are not available yet|Sale settlement is not ready/.test(
+        !/Stripe (processing|refund) costs are not available yet|Sale settlement is not ready|Cost observation changed|Recovery revision cannot be reused/.test(
           message,
         ) ||
         attempt >= 10

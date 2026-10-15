@@ -826,7 +826,9 @@ provider or host write retries. A provider attempt that may have sent money
 keeps its reservation; cancellation releases only allocations whose attempt
 has never started. A pending invoice or other sale can hold recovery while a
 new sale pays the seller without an additional recovery deduction. This lets
-new earnings fund a retry of an insufficient-balance invoice.
+new earnings fund a retry of an insufficient-balance invoice. A later plan
+invoice likewise defers recovery while another boundary owns the reservation;
+the normal monthly plan can still bill without charging the held cost twice.
 
 Monthly invoice adjustments use the package's complete invoice scan and stable
 item identity. Paid invoices collect; void invoices release; unpaid or unknown

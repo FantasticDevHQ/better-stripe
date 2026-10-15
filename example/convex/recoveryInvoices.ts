@@ -11,7 +11,7 @@ export const prepare = internalMutation({
     invoiceId: v.string(),
     currency: v.string(),
   },
-  returns: v.boolean(),
+  returns: v.union(v.boolean(), v.null()),
   handler: async (ctx, args) => {
     const seller = await ctx.db.get("users", args.sellerId);
     if (seller?.role !== "seller" || !seller.stripeAccountId)
@@ -36,6 +36,9 @@ export const prepare = internalMutation({
     )
       throw new Error("Recovery invoice scope changed.");
     if (existing && existing.status !== "open") return true;
+    const current = await stripe.costRecovery.balance(ctx, scope);
+    if (current.activeGroupKey && current.activeGroupKey !== groupKey)
+      return null;
     await stripe.costRecovery.reserve(ctx, {
       ...scope,
       groupKey,
@@ -125,14 +128,14 @@ export const attach = internalAction({
     await ctx.runAction(internal.recoveryInvoices.migrateLegacy, {
       sellerId: args.sellerId,
     });
-    while (
-      !(await ctx.runMutation(internal.recoveryInvoices.prepare, {
+    let prepared: boolean | null;
+    do {
+      prepared = await ctx.runMutation(internal.recoveryInvoices.prepare, {
         ...args,
         currency: invoice.currency,
-      }))
-    ) {
-      /* Bounded reservation batches. */
-    }
+      });
+    } while (prepared === false);
+    if (prepared === null) return null;
     const opts = {
       ...costScope(args.sellerId, seller.stripeAccountId, invoice.currency),
       groupKey: `example:cost-invoice:${invoice.id}`,

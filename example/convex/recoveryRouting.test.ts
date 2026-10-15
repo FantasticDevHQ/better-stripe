@@ -243,3 +243,30 @@ it("prepares multiple reservation batches and commits once with rollback tied to
     amountDue: 213,
   });
 });
+it("defers a second invoice's recovery while another boundary is unresolved, so the plan can still bill", async () => {
+  const { t, sellerId, scope } = await setup();
+  await t.mutation(internal.recoveryInvoices.prepare, {
+    sellerId,
+    invoiceId: "in_held",
+    currency: "usd",
+  });
+  expect(
+    await t.mutation(internal.recoveryInvoices.prepare, {
+      sellerId,
+      invoiceId: "in_later",
+      currency: "usd",
+    }),
+  ).toBeNull();
+  expect(
+    await t.query(components.betterStripe.costRecovery.queries.group, {
+      groupKey: "example:cost-invoice:in_later",
+    }),
+  ).toBeNull();
+  expect(
+    await t.query(components.betterStripe.costRecovery.queries.balance, scope),
+  ).toMatchObject({
+    reservedAmount: 320,
+    collectedAmount: 0,
+    activeGroupKey: "example:cost-invoice:in_held",
+  });
+});

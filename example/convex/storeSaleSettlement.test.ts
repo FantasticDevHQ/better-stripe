@@ -309,13 +309,13 @@ it("recovers seller costs once before transferring earnings and bills only the r
   expect(
     (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
   ).toMatchObject({ invoicedAmount: 490, outstanding: 0 });
-  await expect(
-    t.mutation(internal.recoveryInvoices.prepare, {
+  expect(
+    await t.mutation(internal.recoveryInvoices.prepare, {
       sellerId,
       invoiceId: "in_following_month",
       currency: "usd",
     }),
-  ).rejects.toThrow(/pending/i);
+  ).toBeNull();
 });
 
 it("returns credited costs once without exceeding the charge transfer limit", async () => {

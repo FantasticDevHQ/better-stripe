@@ -1,0 +1,34 @@
+
+ RUN  v5.0.3 <repository>
+
+ ❯ |example| example/convex/recipientPayoutPolicy.test.ts (12 tests | 1 failed) 224ms
+   × scopes settings operations to the resolved account when a persona's recipient changes 10ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/recipientPayoutPolicy.test.ts > scopes settings operations to the resolved account when a persona's recipient changes
+Error: Payout policy operation identity does not match.
+ ❯ handler src/component/payoutPolicy/queries.ts:24:13
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeQuery node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:350:18
+ ❯ runQueryWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2013:31
+ ❯ Object.queryFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2073:32
+ ❯ Object.runQuery node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2140:20
+ ❯ handler example/convex/recipientPayoutPolicy.ts:82:19
+     80|     const policy = await stripe.payoutPolicy.get(ctx, scope);
+     81|     const operationKey = `example:payout-settings:${args.userId}:${arg…
+     82|     const prior = await stripe.payoutPolicy.operation(ctx, {
+       |                   ^
+     83|       ...scope,
+     84|       operationKey,
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeAction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:513:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  00:24:03
+   Duration  1.08s (transform 55%, tests 23%, import 19%, environment 4%)
+

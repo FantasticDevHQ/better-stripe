@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "assertions": [
+    {
+      "test": "Actual example dispatcher/scheduled actions create one verified 1000 payout",
+      "status": "passed"
+    },
+    {
+      "test": "Browser reset refuses active custom policy and preserves owner binding",
+      "status": "passed"
+    },
+    {
+      "test": "Browser opt-out restores verified original weekly schedule",
+      "status": "passed"
+    },
+    {
+      "test": "Browser reset clears app/component data only after verified restoration",
+      "status": "passed"
+    },
+    {
+      "test": "Core persona reseed repopulates app users without reactivating a cleared policy",
+      "status": "passed"
+    }
+  ],
+  "pageErrors": [],
+  "video": "/tmp/payout-lifecycle-evidence/3f5c396996b53764f45d03963718dc9d.webm"
+}

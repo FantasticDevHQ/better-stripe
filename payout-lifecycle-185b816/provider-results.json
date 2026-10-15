@@ -1,0 +1,564 @@
+{
+  "run": "lifecycle-qa-a0c68d35-e5bc-4cc1-b02e-da2f87bad58e",
+  "sandbox": true,
+  "sourceRevision": "185b81646666b1f36482e1543976cc9f2f2be2fb",
+  "funding": [
+    {
+      "id": "tr_1UQsQO6JR7kThJogrQn54gb1",
+      "amount": 599,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQsQP6JR7kThJogfWz8yEdM",
+      "amount": 400,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQsQY6JR7kThJogGgztVozn",
+      "amount": 1,
+      "role": "affiliate"
+    }
+  ],
+  "accountId": "acct_1UQsJeG9BqZFooQW",
+  "userId": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+  "prepared": true,
+  "preparedRevision": "2518a2f7e61a977b83715ad2d71ce1e6750b7fb4",
+  "browserActivated": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": null,
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "dispatchCalls": 3,
+  "dispatcherProgress": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792085738277,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792086047844,
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "lastProof": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792085738277,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792086047844,
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "dispatcherPaid": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792085738277,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792086047844,
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "duplicateDispatch": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:1",
+      "currency": "usd",
+      "generation": 2,
+      "hasOperation": true,
+      "lastAttemptAt": 1792086072642,
+      "lastReason": "paid",
+      "leaseUntil": 1792086672642,
+      "nextAttemptAt": 1792086047844,
+      "operationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:2",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 2
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "resetRefused": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "holdDeadline": 1855157187666,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:1",
+      "currency": "usd",
+      "generation": 2,
+      "hasOperation": true,
+      "lastAttemptAt": 1792086072642,
+      "lastReason": "paid",
+      "leaseUntil": 1792086672642,
+      "nextAttemptAt": 1792086047844,
+      "operationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:2",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 2
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "browserRestored": {
+    "policy": {
+      "_creationTime": 1792085189684.9143,
+      "_id": "kd76eb72cw9hwp6a0hr4pb9s618gbgtn",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "country": "US",
+      "mode": "stripe_managed",
+      "operationKey": "example:payout-settings:acct_1UQsJeG9BqZFooQW:kn79sy16v57ptytx2pt6ex0ec98gaz2p:0:stripe_managed:usd:default",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "revision": 1,
+      "status": "ready",
+      "thresholds": []
+    },
+    "job": {
+      "_creationTime": 1792085738277.031,
+      "_id": "mn71v889pc9mpffdj52v6cz1js8gazqs",
+      "accountId": "acct_1UQsJeG9BqZFooQW",
+      "cadenceMs": 300000,
+      "completedGeneration": 2,
+      "completedOperationKey": "bs:auto:mn71v889pc9mpffdj52v6cz1js8gazqs:2",
+      "currency": "usd",
+      "generation": 2,
+      "hasOperation": false,
+      "lastAttemptAt": 1792086072642,
+      "lastReason": "below_threshold",
+      "nextAttemptAt": 1792086379603,
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "sequence": 2
+    },
+    "schedule": {
+      "interval": "weekly",
+      "weekly_payout_days": [
+        "monday"
+      ]
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsJeG9BqZFooQW"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "resetProgress": {
+    "policy": null,
+    "job": null,
+    "schedule": {
+      "interval": "weekly",
+      "weekly_payout_days": [
+        "monday"
+      ]
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": []
+  },
+  "reseed": {
+    "inserted": 4
+  },
+  "coreReseeded": {
+    "policy": null,
+    "job": null,
+    "schedule": {
+      "interval": "weekly",
+      "weekly_payout_days": [
+        "monday"
+      ]
+    },
+    "payouts": [
+      {
+        "id": "po_1UQsZCG9BqZFooQWkgR1stpU",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "scheduleRestored": true,
+  "accountClosed": true
+}

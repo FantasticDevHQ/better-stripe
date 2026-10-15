@@ -1,0 +1,97 @@
+
+ RUN  v5.0.3 <repository>
+
+ ❯ |component| src/component/payout-component-pagination.test.ts (4 tests | 4 failed) 18ms
+   × pages ready, changing and expired policies across the deployed component boundary 8ms
+   × pages only due unresolved worker operations 1ms
+   × reads affiliate reconciliation and seller cost history without native pagination 1ms
+   × continues every local collection phase across bounded component-compatible pages 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-component-pagination.test.ts > pages ready, changing and expired policies across the deployed component boundary
+Error: paginate() is only supported in the app
+ ❯ Proxy.<anonymous> src/testing/component-db.ts:8:19
+      6|         if (key === "paginate")
+      7|           return () => {
+      8|             throw new Error("paginate() is only supported in the app");
+       |                   ^
+      9|           };
+     10|         const member = Reflect.get(target, key);
+ ❯ handler src/component/payoutWorker/queries.ts:26:8
+ ❯ src/component/payout-component-pagination.test.ts:27:5
+ ❯ src/component/payout-component-pagination.test.ts:62:40
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:18
+ ❯ runMutationWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1975:31
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2181:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |component| src/component/payout-component-pagination.test.ts > pages only due unresolved worker operations
+Error: paginate() is only supported in the app
+ ❯ Proxy.<anonymous> src/testing/component-db.ts:8:19
+      6|         if (key === "paginate")
+      7|           return () => {
+      8|             throw new Error("paginate() is only supported in the app");
+       |                   ^
+      9|           };
+     10|         const member = Reflect.get(target, key);
+ ❯ handler src/component/payoutWorker/queries.ts:61:8
+ ❯ src/component/payout-component-pagination.test.ts:27:5
+ ❯ src/component/payout-component-pagination.test.ts:118:42
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:18
+ ❯ runMutationWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1975:31
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2181:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |component| src/component/payout-component-pagination.test.ts > reads affiliate reconciliation and seller cost history without native pagination
+Error: paginate() is only supported in the app
+ ❯ Proxy.<anonymous> src/testing/component-db.ts:8:19
+      6|         if (key === "paginate")
+      7|           return () => {
+      8|             throw new Error("paginate() is only supported in the app");
+       |                   ^
+      9|           };
+     10|         const member = Reflect.get(target, key);
+ ❯ handler src/component/affiliatePayouts/queries.ts:24:8
+ ❯ src/component/payout-component-pagination.test.ts:27:5
+ ❯ src/component/payout-component-pagination.test.ts:132:36
+ ❯ node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1956:83
+ ❯ runWithGlobalOverrides node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1667:35
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1956:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:36
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |component| src/component/payout-component-pagination.test.ts > continues every local collection phase across bounded component-compatible pages
+Error: paginate() is only supported in the app
+ ❯ Proxy.<anonymous> src/testing/component-db.ts:8:19
+      6|         if (key === "paginate")
+      7|           return () => {
+      8|             throw new Error("paginate() is only supported in the app");
+       |                   ^
+      9|           };
+     10|         const member = Reflect.get(target, key);
+ ❯ handler src/component/payoutSnapshots/mutations.ts:129:12
+ ❯ handler node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:265:36
+ ❯ src/component/payout-component-pagination.test.ts:192:15
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:18
+ ❯ runMutationWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1975:31
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2181:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  00:33:49
+   Duration  374ms (transform 62%, import 18%, environment 12%, tests 6%, worker 1%)
+

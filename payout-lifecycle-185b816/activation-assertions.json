@@ -1,0 +1,20 @@
+{
+  "status": "failed",
+  "error": "Actual scheduled payout did not settle within the observation window",
+  "assertions": [
+    {
+      "test": "Browser activation requires consent and verifies manual schedule",
+      "status": "passed"
+    },
+    {
+      "test": "Actual 599 store + 400 affiliate remains below one 1000 minimum",
+      "status": "passed"
+    },
+    {
+      "test": "Actual combined balance qualifies at the exact threshold",
+      "status": "passed"
+    }
+  ],
+  "pageErrors": [],
+  "video": "/tmp/payout-lifecycle-evidence/eca65f2dc5cac852681cf2796d642d80.webm"
+}

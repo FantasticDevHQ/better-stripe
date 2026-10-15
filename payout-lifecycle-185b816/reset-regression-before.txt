@@ -1,0 +1,35 @@
+
+ RUN  v5.0.3 <repository>
+
+ ❯ |example| example/convex/payoutWorkers.test.ts (7 tests | 1 failed) 325ms
+   × Admin browser reset preserves owner bindings when the payout safety check refuses it 31ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/payoutWorkers.test.ts > Admin browser reset preserves owner bindings when the payout safety check refuses it
+AssertionError: expected null to match object { stripeAccountId: 'acct_recipient' }
+
+- Expected:
+{
+  "stripeAccountId": "acct_recipient",
+}
+
++ Received:
+null
+
+ ❯ example/convex/payoutWorkers.test.ts:183:67
+    181|     const s = await setup();
+    182|     await expect(s.t.action(reset, {})).rejects.toThrow(/restore/i);
+    183|     expect(await s.t.run((ctx) => ctx.db.get("users", s.userId))).toMa…
+       |                                                                   ^
+    184|       {
+    185|         stripeAccountId: "acct_recipient",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  00:08:33
+   Duration  1.68s (transform 63%, tests 20%, import 14%, environment 2%)
+

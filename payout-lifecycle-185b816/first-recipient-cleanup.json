@@ -1,0 +1,72 @@
+{
+  "run": "lifecycle-qa-0ab2d845-6b2c-4265-ba27-0a8f4ea1d2f9",
+  "sandbox": true,
+  "sourceRevision": "2518a2f7e61a977b83715ad2d71ce1e6750b7fb4",
+  "funding": [
+    {
+      "id": "tr_1UQsHj6JR7kThJogvh3aj3SG",
+      "amount": 599,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQsHl6JR7kThJogpVDGrCET",
+      "amount": 400,
+      "role": "affiliate"
+    }
+  ],
+  "accountId": "acct_1UQsBr4yqRYX8vxy",
+  "userId": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+  "prepared": true,
+  "browserActivated": {
+    "policy": {
+      "_creationTime": 1792084653733.0332,
+      "_id": "kd78wy6ppae8cdqtsjmgxnty5x8ga1q4",
+      "accountId": "acct_1UQsBr4yqRYX8vxy",
+      "country": "US",
+      "holdDeadline": 1855156651794,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:kn79sy16v57ptytx2pt6ex0ec98gaz2p:-1:custom:usd:1000",
+      "ownerKey": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": null,
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [],
+    "users": [
+      {
+        "id": "kn72mn47anhktf4qhxwe72768x8gbb9f",
+        "role": "customer"
+      },
+      {
+        "id": "kn79sy16v57ptytx2pt6ex0ec98gaz2p",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQsBr4yqRYX8vxy"
+      },
+      {
+        "id": "kn76cmqq4jnyqv4gnd01e6z3pd8gbpcp",
+        "role": "admin"
+      },
+      {
+        "id": "kn7732fmw75jnf9rfqj7qzgx8n8gadn6",
+        "role": "visitor"
+      }
+    ]
+  },
+  "scheduleRestored": true,
+  "accountClosed": true
+}

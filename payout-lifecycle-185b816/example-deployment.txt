@@ -1,0 +1,6 @@
+▌ Developing against deployment:
+▌ [Development] dojo:better-stripe-example:dev/kelly-kampen (dev) (dashboard: https://dashboard.convex.dev/t/dojo/better-stripe-example/fabulous-egret-37)
+▌ └─ https://fabulous-egret-37.convex.cloud
+- Preparing Convex functions...
+
+✔ 00:39:16 Convex functions ready! (15.4s)

@@ -1,0 +1,214 @@
+{
+  "run": "payout-worker-qa-91649757-22d6-4f63-8ae3-8593409ef7ae",
+  "sandbox": true,
+  "realProvider": true,
+  "compiledPackage": true,
+  "isolatedLocalBackend": true,
+  "sourceRevision": "fefee14a3454ed55ef056bc3d26d0915fa5db2e5",
+  "funding": [
+    {
+      "id": "tr_1UQpuz6JR7kThJogiWakPPyS",
+      "amount": 599,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQpv06JR7kThJogSvmTvLBk",
+      "amount": 400,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQpvB6JR7kThJogWJ1xHl5o",
+      "amount": 1,
+      "role": "affiliate"
+    }
+  ],
+  "accountId": "acct_1UQpuS5UHcrDsRh7",
+  "below": {
+    "status": "completed",
+    "job": {
+      "_creationTime": 1792075568491.509,
+      "_id": "mn725nn8930a2g0f6f367eredh8gawjt",
+      "accountId": "acct_1UQpuS5UHcrDsRh7",
+      "cadenceMs": 60000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn725nn8930a2g0f6f367eredh8gawjt:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792075568491,
+      "lastReason": "below_threshold",
+      "nextAttemptAt": 1792075637346,
+      "ownerKey": "payout-worker-qa-91649757-22d6-4f63-8ae3-8593409ef7ae",
+      "sequence": 1
+    },
+    "payout": {
+      "amount": 0,
+      "currency": "usd",
+      "matureUnpaid": 999,
+      "pendingCredits": 0,
+      "providerMinimum": null,
+      "reason": "below_threshold",
+      "status": "held"
+    }
+  },
+  "early": {
+    "nextAttemptAt": 1792075637346,
+    "reason": "not_due",
+    "status": "held"
+  },
+  "release": {
+    "status": "completed",
+    "job": {
+      "_creationTime": 1792075568491.509,
+      "_id": "mn725nn8930a2g0f6f367eredh8gawjt",
+      "accountId": "acct_1UQpuS5UHcrDsRh7",
+      "cadenceMs": 60000,
+      "completedGeneration": 2,
+      "completedOperationKey": "bs:auto:mn725nn8930a2g0f6f367eredh8gawjt:2",
+      "currency": "usd",
+      "generation": 2,
+      "hasOperation": false,
+      "lastAttemptAt": 1792075637780,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792075713110,
+      "ownerKey": "payout-worker-qa-91649757-22d6-4f63-8ae3-8593409ef7ae",
+      "sequence": 2
+    },
+    "payout": {
+      "status": "updated",
+      "claim": {
+        "_creationTime": 1792075648230.7656,
+        "_id": "kn72xy0xpmxedk3tgnc6qnkmr18gbw9t",
+        "accountId": "acct_1UQpuS5UHcrDsRh7",
+        "allocations": [
+          {
+            "amount": 599,
+            "role": "store",
+            "stripeTransferId": "tr_1UQpuz6JR7kThJogiWakPPyS"
+          },
+          {
+            "amount": 400,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQpv06JR7kThJogSvmTvLBk"
+          },
+          {
+            "amount": 1,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQpvB6JR7kThJogWJ1xHl5o"
+          }
+        ],
+        "amount": 1000,
+        "attemptedAt": 1792075649805,
+        "currency": "usd",
+        "debitFee": 0,
+        "debitTransactionId": "txn_1UQpwM5UHcrDsRh77HzQKluR",
+        "destinationId": "ba_1UQpuY5UHcrDsRh7B1XOJJiK",
+        "expectedRevision": 0,
+        "feeRevision": 0,
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQpuz6JR7kThJogiWakPPyS\",\"acct_1UQpuS5UHcrDsRh7\",null,599,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 599,
+            "observedAt": 1792075642370,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQpuz6JR7kThJogiWakPPyS",
+            "transactionIds": [
+              "txn_1UQpuz5UHcrDsRh7Yf8nZ0in"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQpv06JR7kThJogSvmTvLBk\",\"acct_1UQpuS5UHcrDsRh7\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 400,
+            "observedAt": 1792075644575,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQpv06JR7kThJogSvmTvLBk",
+            "transactionIds": [
+              "txn_1UQpv15UHcrDsRh7ALSZ4GFV"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQpvB6JR7kThJogWJ1xHl5o\",\"acct_1UQpuS5UHcrDsRh7\",null,1,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 1,
+            "observedAt": 1792075646824,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQpvB6JR7kThJogWJ1xHl5o",
+            "transactionIds": [
+              "txn_1UQpvC5UHcrDsRh77cTwAqh7"
+            ]
+          }
+        ],
+        "operationKey": "bs:auto:mn725nn8930a2g0f6f367eredh8gawjt:2",
+        "ownerKey": "payout-worker-qa-91649757-22d6-4f63-8ae3-8593409ef7ae",
+        "providerFee": 0,
+        "status": "paid",
+        "stripePayoutId": "po_1UQpwM5UHcrDsRh72GneF8um"
+      },
+      "receipt": {
+        "status": "ready",
+        "accountId": "acct_1UQpuS5UHcrDsRh7",
+        "stripePayoutId": "po_1UQpwM5UHcrDsRh72GneF8um",
+        "operationKey": "bs:auto:mn725nn8930a2g0f6f367eredh8gawjt:2",
+        "amount": 1000,
+        "currency": "usd",
+        "providerStatus": "paid",
+        "automatic": false,
+        "method": "standard",
+        "type": "bank_account",
+        "sourceType": "card",
+        "destinationId": "ba_1UQpuY5UHcrDsRh7B1XOJJiK",
+        "created": 1792075650,
+        "arrivalDate": 1792022400,
+        "debit": {
+          "id": "txn_1UQpwM5UHcrDsRh77HzQKluR",
+          "amount": -1000,
+          "fee": 0,
+          "net": -1000,
+          "currency": "usd",
+          "status": "available",
+          "created": 1792075650,
+          "availableOn": 1792075650,
+          "type": "payout"
+        },
+        "returnedPrincipal": 0,
+        "returnedNet": 0,
+        "observedAt": 1792075652253
+      }
+    }
+  },
+  "duplicate": {
+    "nextAttemptAt": 1792075713110,
+    "reason": "not_due",
+    "status": "held"
+  },
+  "allocations": [
+    {
+      "operationKey": "bs:auto:mn725nn8930a2g0f6f367eredh8gawjt:2",
+      "amount": 1000,
+      "status": "paid",
+      "allocations": [
+        {
+          "amount": 599,
+          "role": "store",
+          "stripeTransferId": "tr_1UQpuz6JR7kThJogiWakPPyS"
+        },
+        {
+          "amount": 400,
+          "role": "affiliate",
+          "stripeTransferId": "tr_1UQpv06JR7kThJogSvmTvLBk"
+        },
+        {
+          "amount": 1,
+          "role": "affiliate",
+          "stripeTransferId": "tr_1UQpvB6JR7kThJogWJ1xHl5o"
+        }
+      ]
+    }
+  ],
+  "status": "passed",
+  "scheduleRestored": true,
+  "accountClosed": true,
+  "payoutCreateCalls": 1
+}

@@ -94,10 +94,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
         run: |
-          set -euo pipefail
-          pr_number="$(jq -er '.number | select(type == "number" and . > 0)' <<< "$RELEASE_PR")"
-          release_head="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
-          gh pr merge "$pr_number" --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$release_head"
+          node scripts/enable-release-automerge.mjs
 
   publish:
     name: Publish

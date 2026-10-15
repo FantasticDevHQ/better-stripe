@@ -1,0 +1,534 @@
+Creating isolated sandbox recipient
+Creating one historical manual sandbox payout without a BetterStripe claim
+Importing and replaying explicit historical source allocations
+Rechecking historical funding after a later refund; paid principal must remain recorded
+Activating a funded custom policy with a fresh complete adoption proof
+Reconciling historical claim and returning remaining QA funds
+{
+  "scenario": "historical_import_funded_activation_and_release",
+  "sandbox": true,
+  "publicPackage": true,
+  "realProvider": true,
+  "sourceRevision": "c212ba2c851891616e89a8715c529f9ca09223b0",
+  "run": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+  "accountId": "acct_1UQnJS8yunUrZvgb",
+  "transferCapability": "active",
+  "funding": [
+    {
+      "id": "tr_1UQnK26JR7kThJog8PDDOWDR",
+      "amount": 600,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQnK56JR7kThJogx5QvEP8K",
+      "amount": 400,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+      "amount": 300,
+      "role": "store"
+    }
+  ],
+  "payoutId": "po_1UQnK98yunUrZvgbDXEPiO1n",
+  "originalPayoutReceipt": {
+    "status": "ready",
+    "accountId": "acct_1UQnJS8yunUrZvgb",
+    "stripePayoutId": "po_1UQnK98yunUrZvgbDXEPiO1n",
+    "amount": 1000,
+    "currency": "usd",
+    "providerStatus": "paid",
+    "automatic": false,
+    "method": "standard",
+    "type": "bank_account",
+    "sourceType": "card",
+    "destinationId": "ba_1UQnJY8yunUrZvgbcQrB13el",
+    "created": 1792065593,
+    "arrivalDate": 1792022400,
+    "debit": {
+      "id": "txn_1UQnK98yunUrZvgb77Cg9VVK",
+      "amount": -1000,
+      "fee": 0,
+      "net": -1000,
+      "currency": "usd",
+      "status": "available",
+      "created": 1792065593,
+      "availableOn": 1792065593,
+      "type": "payout"
+    },
+    "returnedPrincipal": 0,
+    "returnedNet": 0,
+    "observedAt": 1792065595021
+  },
+  "adopted": {
+    "status": "adopted",
+    "claims": [
+      {
+        "_creationTime": 1792065618798.3486,
+        "_id": "n574f0bn23wpnzhvcg7ezdjeeh8ga3v3",
+        "accountId": "acct_1UQnJS8yunUrZvgb",
+        "allocations": [
+          {
+            "amount": 600,
+            "role": "store",
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR"
+          },
+          {
+            "amount": 400,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K"
+          }
+        ],
+        "amount": 1000,
+        "attemptedAt": 1792065593000,
+        "currency": "usd",
+        "debitFee": 0,
+        "debitTransactionId": "txn_1UQnK98yunUrZvgb77Cg9VVK",
+        "destinationId": "ba_1UQnJY8yunUrZvgbcQrB13el",
+        "expectedRevision": 0,
+        "historical": true,
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792065607621,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+            "transactionIds": [
+              "txn_1UQnK38yunUrZvgbEA8MDJqy"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 400,
+            "observedAt": 1792065612703,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+            "transactionIds": [
+              "txn_1UQnK58yunUrZvgbtb7ETTId"
+            ]
+          }
+        ],
+        "operationKey": "bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n",
+        "ownerKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+        "providerFee": 0,
+        "status": "paid",
+        "stripePayoutId": "po_1UQnK98yunUrZvgbDXEPiO1n"
+      }
+    ],
+    "observations": [
+      {
+        "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+        "currency": "usd",
+        "matureNet": 600,
+        "pendingCredits": 0,
+        "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+        "observedAt": 1792065607621,
+        "transactionIds": [
+          "txn_1UQnK38yunUrZvgbEA8MDJqy"
+        ]
+      },
+      {
+        "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+        "currency": "usd",
+        "matureNet": 400,
+        "pendingCredits": 0,
+        "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+        "observedAt": 1792065612703,
+        "transactionIds": [
+          "txn_1UQnK58yunUrZvgbtb7ETTId"
+        ]
+      }
+    ],
+    "historyCurrencies": [
+      "usd"
+    ],
+    "observedAt": 1792065619011
+  },
+  "replayDidNotCreatePayout": true,
+  "laterTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+  "refundReversalId": "trr_1UQnKz6JR7kThJogvimg5NHb",
+  "afterRefund": {
+    "status": "adopted",
+    "claims": [
+      {
+        "_creationTime": 1792065618798.3486,
+        "_id": "n574f0bn23wpnzhvcg7ezdjeeh8ga3v3",
+        "accountId": "acct_1UQnJS8yunUrZvgb",
+        "allocations": [
+          {
+            "amount": 600,
+            "role": "store",
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR"
+          },
+          {
+            "amount": 400,
+            "role": "affiliate",
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K"
+          }
+        ],
+        "amount": 1000,
+        "attemptedAt": 1792065593000,
+        "currency": "usd",
+        "debitFee": 0,
+        "debitTransactionId": "txn_1UQnK98yunUrZvgb77Cg9VVK",
+        "destinationId": "ba_1UQnJY8yunUrZvgbcQrB13el",
+        "expectedRevision": 0,
+        "historical": true,
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792065607621,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+            "transactionIds": [
+              "txn_1UQnK38yunUrZvgbEA8MDJqy"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",0,0,false]",
+            "matureNet": 400,
+            "observedAt": 1792065612703,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+            "transactionIds": [
+              "txn_1UQnK58yunUrZvgbtb7ETTId"
+            ]
+          }
+        ],
+        "operationKey": "bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n",
+        "ownerKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+        "providerFee": 0,
+        "status": "paid",
+        "stripePayoutId": "po_1UQnK98yunUrZvgbDXEPiO1n"
+      }
+    ],
+    "observations": [
+      {
+        "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+        "currency": "usd",
+        "matureNet": 600,
+        "pendingCredits": 0,
+        "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+        "observedAt": 1792065658507,
+        "transactionIds": [
+          "txn_1UQnK38yunUrZvgbEA8MDJqy"
+        ]
+      },
+      {
+        "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+        "currency": "usd",
+        "matureNet": 300,
+        "pendingCredits": 0,
+        "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",100,0,false]",
+        "observedAt": 1792065664797,
+        "transactionIds": [
+          "txn_1UQnK58yunUrZvgbtb7ETTId",
+          "txn_1UQnKz8yunUrZvgbA6uIZbDO"
+        ]
+      },
+      {
+        "stripeTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+        "currency": "usd",
+        "matureNet": 300,
+        "pendingCredits": 0,
+        "ledgerFingerprint": "[\"tr_1UQnKw6JR7kThJogmDGMD0dL\",\"acct_1UQnJS8yunUrZvgb\",null,300,\"usd\",\"store\",\"paid\",0,0,false]",
+        "observedAt": 1792065670047,
+        "transactionIds": [
+          "txn_1UQnKw8yunUrZvgbiUe2KRBR"
+        ]
+      }
+    ],
+    "historyCurrencies": [
+      "usd"
+    ],
+    "oldestHeldAt": 1792065642000,
+    "observedAt": 1792065676864
+  },
+  "currentFunding": {
+    "matureReceived": 1200,
+    "historicalPaid": 1000,
+    "unpaidAfterRefund": 200,
+    "providerAvailable": 200
+  },
+  "activationPrepared": {
+    "status": "prepared",
+    "operation": {
+      "_creationTime": 1792065732970.9602,
+      "_id": "n17bv1hj9ecrxw4tdp0yd9v03n8gbdaq",
+      "accountId": "acct_1UQnJS8yunUrZvgb",
+      "adoption": {
+        "claims": [
+          {
+            "fingerprint": "[\"acct_1UQnJS8yunUrZvgb\",\"payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f\",\"bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n\",true,\"usd\",1000,\"paid\",1792065593000,\"po_1UQnK98yunUrZvgbDXEPiO1n\",\"ba_1UQnJY8yunUrZvgbcQrB13el\",\"txn_1UQnK98yunUrZvgb77Cg9VVK\",0,0,null,[[\"tr_1UQnK26JR7kThJog8PDDOWDR\",600,\"store\"],[\"tr_1UQnK56JR7kThJogx5QvEP8K\",400,\"affiliate\"]]]",
+            "operationKey": "bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n"
+          }
+        ],
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792065711662,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+            "transactionIds": [
+              "txn_1UQnK38yunUrZvgbEA8MDJqy"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",100,0,false]",
+            "matureNet": 300,
+            "observedAt": 1792065717106,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+            "transactionIds": [
+              "txn_1UQnK58yunUrZvgbtb7ETTId",
+              "txn_1UQnKz8yunUrZvgbA6uIZbDO"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnKw6JR7kThJogmDGMD0dL\",\"acct_1UQnJS8yunUrZvgb\",null,300,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 300,
+            "observedAt": 1792065722697,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+            "transactionIds": [
+              "txn_1UQnKw8yunUrZvgbiUe2KRBR"
+            ]
+          }
+        ],
+        "oldestHeldAt": 1792065642000
+      },
+      "country": "US",
+      "expectedRevision": 0,
+      "mode": "custom",
+      "observedAt": 1792065696082,
+      "observedSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "operationKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f:funded-enable",
+      "ownerKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 1,
+      "status": "pending",
+      "targetSchedule": {
+        "interval": "manual"
+      },
+      "thresholds": [
+        {
+          "amount": 200,
+          "currency": "usd"
+        }
+      ]
+    }
+  },
+  "activationApplied": {
+    "status": "ready",
+    "operation": {
+      "_creationTime": 1792065732970.9602,
+      "_id": "n17bv1hj9ecrxw4tdp0yd9v03n8gbdaq",
+      "accountId": "acct_1UQnJS8yunUrZvgb",
+      "adoption": {
+        "claims": [
+          {
+            "fingerprint": "[\"acct_1UQnJS8yunUrZvgb\",\"payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f\",\"bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n\",true,\"usd\",1000,\"paid\",1792065593000,\"po_1UQnK98yunUrZvgbDXEPiO1n\",\"ba_1UQnJY8yunUrZvgbcQrB13el\",\"txn_1UQnK98yunUrZvgb77Cg9VVK\",0,0,null,[[\"tr_1UQnK26JR7kThJog8PDDOWDR\",600,\"store\"],[\"tr_1UQnK56JR7kThJogx5QvEP8K\",400,\"affiliate\"]]]",
+            "operationKey": "bs:historical:po_1UQnK98yunUrZvgbDXEPiO1n"
+          }
+        ],
+        "observations": [
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 600,
+            "observedAt": 1792065748681,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+            "transactionIds": [
+              "txn_1UQnK38yunUrZvgbEA8MDJqy"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",100,0,false]",
+            "matureNet": 300,
+            "observedAt": 1792065754560,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+            "transactionIds": [
+              "txn_1UQnK58yunUrZvgbtb7ETTId",
+              "txn_1UQnKz8yunUrZvgbA6uIZbDO"
+            ]
+          },
+          {
+            "currency": "usd",
+            "ledgerFingerprint": "[\"tr_1UQnKw6JR7kThJogmDGMD0dL\",\"acct_1UQnJS8yunUrZvgb\",null,300,\"usd\",\"store\",\"paid\",0,0,false]",
+            "matureNet": 300,
+            "observedAt": 1792065759694,
+            "pendingCredits": 0,
+            "stripeTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+            "transactionIds": [
+              "txn_1UQnKw8yunUrZvgbiUe2KRBR"
+            ]
+          }
+        ],
+        "oldestHeldAt": 1792065642000
+      },
+      "attempted": true,
+      "country": "US",
+      "expectedRevision": 0,
+      "mode": "custom",
+      "observedAt": 1792065696082,
+      "observedSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "operationKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f:funded-enable",
+      "ownerKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 1,
+      "status": "complete",
+      "targetSchedule": {
+        "interval": "manual"
+      },
+      "thresholds": [
+        {
+          "amount": 200,
+          "currency": "usd"
+        }
+      ]
+    }
+  },
+  "holdingAgeAnchored": true,
+  "adoptedFundsReleased": {
+    "status": "updated",
+    "claim": {
+      "_creationTime": 1792065804930.296,
+      "_id": "n57cvz0kypehwm0g8cv2j2qhz58gbkw5",
+      "accountId": "acct_1UQnJS8yunUrZvgb",
+      "allocations": [
+        {
+          "amount": 200,
+          "role": "store",
+          "stripeTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL"
+        }
+      ],
+      "amount": 200,
+      "attemptedAt": 1792065809201,
+      "currency": "usd",
+      "debitFee": 0,
+      "debitTransactionId": "txn_1UQnNe8yunUrZvgbTsKbC0tZ",
+      "destinationId": "ba_1UQnJY8yunUrZvgbcQrB13el",
+      "expectedRevision": 1,
+      "feeRevision": 0,
+      "observations": [
+        {
+          "currency": "usd",
+          "ledgerFingerprint": "[\"tr_1UQnK26JR7kThJog8PDDOWDR\",\"acct_1UQnJS8yunUrZvgb\",null,600,\"usd\",\"store\",\"paid\",0,0,false]",
+          "matureNet": 600,
+          "observedAt": 1792065791671,
+          "pendingCredits": 0,
+          "stripeTransferId": "tr_1UQnK26JR7kThJog8PDDOWDR",
+          "transactionIds": [
+            "txn_1UQnK38yunUrZvgbEA8MDJqy"
+          ]
+        },
+        {
+          "currency": "usd",
+          "ledgerFingerprint": "[\"tr_1UQnK56JR7kThJogx5QvEP8K\",\"acct_1UQnJS8yunUrZvgb\",null,400,\"usd\",\"affiliate\",\"paid\",100,0,false]",
+          "matureNet": 300,
+          "observedAt": 1792065797253,
+          "pendingCredits": 0,
+          "stripeTransferId": "tr_1UQnK56JR7kThJogx5QvEP8K",
+          "transactionIds": [
+            "txn_1UQnK58yunUrZvgbtb7ETTId",
+            "txn_1UQnKz8yunUrZvgbA6uIZbDO"
+          ]
+        },
+        {
+          "currency": "usd",
+          "ledgerFingerprint": "[\"tr_1UQnKw6JR7kThJogmDGMD0dL\",\"acct_1UQnJS8yunUrZvgb\",null,300,\"usd\",\"store\",\"paid\",0,0,false]",
+          "matureNet": 300,
+          "observedAt": 1792065802229,
+          "pendingCredits": 0,
+          "stripeTransferId": "tr_1UQnKw6JR7kThJogmDGMD0dL",
+          "transactionIds": [
+            "txn_1UQnKw8yunUrZvgbiUe2KRBR"
+          ]
+        }
+      ],
+      "operationKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f:release-adopted",
+      "ownerKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f",
+      "providerFee": 0,
+      "status": "paid",
+      "stripePayoutId": "po_1UQnNd8yunUrZvgbSACDpW9i"
+    },
+    "receipt": {
+      "status": "ready",
+      "accountId": "acct_1UQnJS8yunUrZvgb",
+      "stripePayoutId": "po_1UQnNd8yunUrZvgbSACDpW9i",
+      "operationKey": "payout-activation-qa-d6436c32-77a3-4023-ad7a-d115cb12a28f:release-adopted",
+      "amount": 200,
+      "currency": "usd",
+      "providerStatus": "paid",
+      "automatic": false,
+      "method": "standard",
+      "type": "bank_account",
+      "sourceType": "card",
+      "destinationId": "ba_1UQnJY8yunUrZvgbcQrB13el",
+      "created": 1792065809,
+      "arrivalDate": 1792022400,
+      "debit": {
+        "id": "txn_1UQnNe8yunUrZvgbTsKbC0tZ",
+        "amount": -200,
+        "fee": 0,
+        "net": -200,
+        "currency": "usd",
+        "status": "available",
+        "created": 1792065809,
+        "availableOn": 1792065809,
+        "type": "payout"
+      },
+      "returnedPrincipal": 0,
+      "returnedNet": 0,
+      "observedAt": 1792065813516
+    }
+  },
+  "paidFundsNotReused": {
+    "amount": 0,
+    "currency": "usd",
+    "matureUnpaid": 0,
+    "pendingCredits": 0,
+    "providerMinimum": null,
+    "reason": "below_threshold",
+    "status": "held"
+  },
+  "status": "passed",
+  "finalClaimStatus": "paid",
+  "remainingTestCashReturned": true,
+  "schedulePreserved": true,
+  "accountClosed": true,
+  "payoutCreateCalls": 2
+}

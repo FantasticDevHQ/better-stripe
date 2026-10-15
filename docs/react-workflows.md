@@ -320,12 +320,20 @@ queries independently of pagination.
 `Refunds` and `useRefunds` accept `paymentCurrency` for the selected
 `paymentIntentId` and independent `sourceChargeCurrency` for `sourceChargeId`.
 Derive both from authorized original records. The Vite seller refunds page
-loads the selected payment before parsing a partial refund. Its standalone
-original-charge currency adapter is a separate follow-up; partial reversals remain
-disabled until that context is available. The reusable workflow accepts verified
-source-charge currency independently of payment currency. A charge without verified
-currency can still use its separately authorized full operation, but cannot submit
-an assumed-USD partial amount.
+loads the selected payment before parsing a partial refund. Its readonly
+`getRefundChargeContext` adapter reads the component's stored settlement allocation
+for the selected source charge and matches the claimed persona's current account
+to its original `store` leg. Missing allocations, unavailable accounts, foreign
+store legs and affiliate/collaborator-only recipients return no context. Partial
+reversals remain disabled until the selected charge has supported verified currency,
+independently of payment currency. A charge without verified currency can still use
+its separately authorized full operation, but cannot submit an assumed-USD partial
+amount. This adapter adds no provider calls, writes or settlement ledger.
+
+The example binds a client-claimed demo persona, not an authenticated identity.
+Production hosts such as Dojo must derive an enabled user from the authenticated
+session, authorize merchant ownership on the server and expose only the permitted
+original-charge context. Loading context does not authorize a reversal.
 
 ```tsx
 <Refunds

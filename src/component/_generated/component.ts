@@ -1594,6 +1594,81 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     costRecovery: {
       mutations: {
+        bindInvoiceFunding: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            groupKey: string;
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amount: number;
+            currency: string;
+            groupKey: string;
+            invoiceFunding?: {
+              sourceChargeId: string;
+              sourceGross: number;
+              sourceProcessingFee: number;
+            };
+            invoiceItemId?: string;
+            maxCredit: number;
+            maxDebit: number;
+            pendingOperations: number;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+            status:
+              | "open"
+              | "sealed"
+              | "collecting"
+              | "releasing"
+              | "collected"
+              | "released";
+          },
+          Name
+        >;
+        bindInvoiceItem: FunctionReference<
+          "mutation",
+          "internal",
+          { groupKey: string; invoiceItemId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amount: number;
+            currency: string;
+            groupKey: string;
+            invoiceFunding?: {
+              sourceChargeId: string;
+              sourceGross: number;
+              sourceProcessingFee: number;
+            };
+            invoiceItemId?: string;
+            maxCredit: number;
+            maxDebit: number;
+            pendingOperations: number;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+            status:
+              | "open"
+              | "sealed"
+              | "collecting"
+              | "releasing"
+              | "collected"
+              | "released";
+          },
+          Name
+        >;
         finish: FunctionReference<
           "mutation",
           "internal",
@@ -1606,6 +1681,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               currency: string;
               groupKey: string;
+              invoiceFunding?: {
+                sourceChargeId: string;
+                sourceGross: number;
+                sourceProcessingFee: number;
+              };
+              invoiceItemId?: string;
               maxCredit: number;
               maxDebit: number;
               pendingOperations: number;
@@ -1684,6 +1765,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               currency: string;
               groupKey: string;
+              invoiceFunding?: {
+                sourceChargeId: string;
+                sourceGross: number;
+                sourceProcessingFee: number;
+              };
+              invoiceItemId?: string;
               maxCredit: number;
               maxDebit: number;
               pendingOperations: number;
@@ -1751,6 +1838,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             currency: string;
             groupKey: string;
+            invoiceFunding?: {
+              sourceChargeId: string;
+              sourceGross: number;
+              sourceProcessingFee: number;
+            };
+            invoiceItemId?: string;
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;
@@ -1821,6 +1914,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             amount: number;
             currency: string;
             groupKey: string;
+            invoiceFunding?: {
+              sourceChargeId: string;
+              sourceGross: number;
+              sourceProcessingFee: number;
+            };
+            invoiceItemId?: string;
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;

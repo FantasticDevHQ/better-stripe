@@ -83,16 +83,28 @@ export async function rollbackClaim(
   const group = await getGroup(ctx, args.groupKey);
   if (
     group.status !== "collected" ||
-    group.sourceKind !== "settlement" ||
-    !group.sourceGross
+    (group.sourceKind === "settlement"
+      ? !group.sourceGross
+      : !group.invoiceFunding)
   )
     throw new Error(
-      "Rollback requires a collected settlement group with original funding economics.",
+      "Rollback requires a collected group with original funding economics.",
     );
-  if (args.returnedPrincipal < 0 || args.returnedPrincipal > group.sourceGross)
+  const funding =
+    group.sourceKind === "settlement"
+      ? {
+          sourceChargeId: group.sourceId,
+          sourceGross: group.sourceGross!,
+          sourceProcessingFee: group.sourceProcessingFee!,
+        }
+      : group.invoiceFunding!;
+  if (
+    args.returnedPrincipal < 0 ||
+    args.returnedPrincipal > funding.sourceGross
+  )
     throw new Error("Returned principal exceeds the original funding sale.");
   const abs = BigInt(Math.abs(group.amount)),
-    gross = BigInt(group.sourceGross),
+    gross = BigInt(funding.sourceGross),
     principal = BigInt(args.returnedPrincipal);
   const rounded = Number((abs * principal + gross / 2n) / gross);
   return recordClaim(ctx, {
@@ -100,9 +112,7 @@ export async function rollbackClaim(
     scopeKey: group.scopeKey,
     currency: group.currency,
     claimKey: `rollback:${group.groupKey}`,
-    sourceChargeId: group.sourceId,
-    sourceGross: group.sourceGross,
-    sourceProcessingFee: group.sourceProcessingFee!,
+    ...funding,
     amountDue: group.amount < 0 ? -rounded : rounded,
     revision: args.revision,
   });

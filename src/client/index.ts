@@ -1265,7 +1265,7 @@ export class BetterStripe {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
   }
   get costRecovery() {
-    return new CostRecoveryClient(this.component);
+    return new CostRecoveryClient(this.component, () => this.stripe());
   }
 
   async getProcessingCostContext(

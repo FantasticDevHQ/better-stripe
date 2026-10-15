@@ -13,4 +13,4 @@ The fix renews only the selected currency after the existing complete provider-h
 - A local reversal change after renewal still rejects the assessment.
 - Existing history-head, current balance, unknown outcome, deadline, worker retry and reconciliation safeguards pass.
 
-These are deterministic component/client tests with provider fixtures and a simulated clock advance. No new live Stripe transaction or browser flow was run for this backend change. Prior live payout evidence on PRs #214, #216 and #218 remains separate. This does not remove the 100-row financial snapshot limit or complete the parent payout/Dojo requirements. Full repository gate results are added when complete.
+These are deterministic component/client tests with provider fixtures and a simulated clock advance. No new live Stripe transaction or browser flow was run for this backend change. Prior live payout evidence on PRs #214, #216 and #218 remains separate. This does not remove the 100-row financial snapshot limit or complete the parent payout/Dojo requirements. All 15 repository gates passed on the tested source (77.5% line coverage); see `repository-gates.txt`.

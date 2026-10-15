@@ -1,3 +1,4 @@
+import * as payoutsImpl from "./connect/payouts.js";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { PaginationOptions, PaginationResult } from "convex/server";
 import type { Component, RunCtx } from "./helpers.js";
@@ -49,6 +50,17 @@ export class ReadContractClient {
       componentRef(this.component, "connect/queries/paginatePayouts"),
       opts,
     );
+  }
+
+  async getPayout(ctx: RunCtx, opts: { payoutId: string }) {
+    return payoutsImpl.getPayout(this.component, ctx, opts);
+  }
+
+  async listPayouts(
+    ctx: RunCtx,
+    opts?: { stripeAccountId?: string; status?: PayoutStatus; limit?: number },
+  ) {
+    return payoutsImpl.listPayouts(this.component, ctx, opts);
   }
 
   async getAccountEarningsByCurrency(

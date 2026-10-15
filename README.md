@@ -61,7 +61,7 @@ claim execution are completed.
 
 ## Status
 
-**Version**: `0.24.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.25.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 

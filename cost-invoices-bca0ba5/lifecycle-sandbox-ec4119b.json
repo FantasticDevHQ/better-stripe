@@ -1,0 +1,24 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedComponent": true,
+  "publicClient": true,
+  "apiVersion": "2026-09-30.preview",
+  "paginationAndPersistenceRecovery": {
+    "paddingItems": 105,
+    "matchingRecoveryItems": 1,
+    "retryNoDuplicate": true
+  },
+  "scopeCurrencyRejected": true,
+  "paidLifecycleNoDuplicateCollection": true,
+  "partialRefundRollback": {
+    "recovered": 320,
+    "fundingGross": 1220,
+    "returnedPrincipal": 610,
+    "rollbackClaim": 160
+  },
+  "voidReleasedObligation": true,
+  "signedCreditItem": true,
+  "status": "passed",
+  "noOpenTestInvoices": true
+}

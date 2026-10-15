@@ -3,7 +3,7 @@
 
 
  Test Files  3 passed (3)
-      Tests  38 passed (38)
-   Start at  14:31:58
-   Duration  816ms (transform 38%, tests 31%, import 19%, environment 9%, worker 3%)
+      Tests  39 passed (39)
+   Start at  14:41:54
+   Duration  369ms (tests 41%, transform 29%, import 23%, environment 6%, worker 1%)
 

@@ -1,0 +1,32 @@
+
+ RUN  v5.0.3 /path/to/better-stripe
+
+ ❯ |client| src/client/connect/transferReceipt.test.ts (21 tests | 1 failed) 109ms
+   × rechecks reinstatement provenance if its provider metadata changes during receipt reads 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/transferReceipt.test.ts > rechecks reinstatement provenance if its provider metadata changes during receipt reads
+AssertionError: expected { status: 'ready', …(14) } to match object { status: 'not_ready', …(1) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": "provider_changed",
+-   "status": "not_ready",
++   "status": "ready",
+  }
+
+ ❯ src/client/connect/transferReceipt.test.ts:502:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  14:41:37
+   Duration  230ms (tests 78%, transform 15%, import 6%, worker 2%)
+

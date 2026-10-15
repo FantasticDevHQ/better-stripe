@@ -14,6 +14,17 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.14.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.13.0...v0.14.0) (2026-10-15)
+
+### Features
+
+- bind dispute evidence uploads and guard onboarding navigation ([#167](https://github.com/FantasticDevHQ/better-stripe/issues/167)) ([e52cd5d](https://github.com/FantasticDevHQ/better-stripe/commit/e52cd5dfc34d3c83a00d2f1686d07af5370b1e60))
+- **recovery:** preserve verified opening collections ([#163](https://github.com/FantasticDevHQ/better-stripe/issues/163)) ([e613ac0](https://github.com/FantasticDevHQ/better-stripe/commit/e613ac0d52d1d053b4e3a54dd0394ad1e427c729))
+
+### Bug Fixes
+
+- **recovery:** release unbound void invoice reservations ([#165](https://github.com/FantasticDevHQ/better-stripe/issues/165)) ([a73fd89](https://github.com/FantasticDevHQ/better-stripe/commit/a73fd893370688385fcf9dc2a8dd309d2cbd3ead))
+
 ## [0.13.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.12.0...v0.13.0) (2026-10-15)
 
 ### Features

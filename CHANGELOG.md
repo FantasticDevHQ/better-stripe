@@ -28,10 +28,9 @@
 
 ## [0.28.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.28.0...v0.28.1) (2026-10-15)
 
-
 ### Bug Fixes
 
-* **payouts:** repair scheduled scans and preserve safe reset ([#210](https://github.com/FantasticDevHQ/better-stripe/issues/210)) ([5869570](https://github.com/FantasticDevHQ/better-stripe/commit/586957006690ae7e63efd57db82bcd6859d29a5e))
+- **payouts:** repair scheduled scans and preserve safe reset ([#210](https://github.com/FantasticDevHQ/better-stripe/issues/210)) ([5869570](https://github.com/FantasticDevHQ/better-stripe/commit/586957006690ae7e63efd57db82bcd6859d29a5e))
 
 ## [0.28.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.27.0...v0.28.0) (2026-10-15)
 

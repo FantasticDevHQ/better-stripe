@@ -1,0 +1,21 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedComponent": true,
+  "publicClient": true,
+  "apiVersion": "2026-09-30.preview",
+  "noPaymentAttempt": true,
+  "openInvoiceKeepsReservation": true,
+  "voidReleasesExactlyOnce": true,
+  "noRecoveryItemCreated": true,
+  "finalBalance": {
+    "accountId": "acct_1UQgWWL9QFBdBeKg",
+    "amountDue": 0,
+    "collectedAmount": 0,
+    "currency": "usd",
+    "outstanding": 0,
+    "reservedAmount": 0,
+    "scopeKey": "recovery-unbound-void-07e3533d-1210-470a-abef-4f7201988c16"
+  },
+  "status": "passed"
+}

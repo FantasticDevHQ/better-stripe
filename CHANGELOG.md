@@ -16,18 +16,16 @@
 
 ## [0.13.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.12.0...v0.13.0) (2026-10-15)
 
-
 ### Features
 
-* **recovery:** reconcile seller cost invoice adjustments ([#159](https://github.com/FantasticDevHQ/better-stripe/issues/159)) ([d1ffdbc](https://github.com/FantasticDevHQ/better-stripe/commit/d1ffdbcb224b6c31ae958c576a4bcd6ff4a0a4dd))
-
+- **recovery:** reconcile seller cost invoice adjustments ([#159](https://github.com/FantasticDevHQ/better-stripe/issues/159)) ([d1ffdbc](https://github.com/FantasticDevHQ/better-stripe/commit/d1ffdbcb224b6c31ae958c576a4bcd6ff4a0a4dd))
 
 ### Bug Fixes
 
-* **example:** bind reversal inputs to original charge currency (BTS-161) ([#160](https://github.com/FantasticDevHQ/better-stripe/issues/160)) ([6b86926](https://github.com/FantasticDevHQ/better-stripe/commit/6b86926c7d4a173babd2964d4eee086f61c48f63))
-* **example:** reconcile unsettled disputed sources ([#161](https://github.com/FantasticDevHQ/better-stripe/issues/161)) ([9c732bd](https://github.com/FantasticDevHQ/better-stripe/commit/9c732bdc88555210d2172067e6bbf5d2fc513190))
-* **react:** isolate refund preview amounts by currency and status (BTS-160) ([#162](https://github.com/FantasticDevHQ/better-stripe/issues/162)) ([601d509](https://github.com/FantasticDevHQ/better-stripe/commit/601d50923dc98f212b29fd4e4e3d856dfffbda44))
-* **react:** preserve original refund currency units (BTS-159) ([#157](https://github.com/FantasticDevHQ/better-stripe/issues/157)) ([494827f](https://github.com/FantasticDevHQ/better-stripe/commit/494827f1cb35b0b0ca10b1c6da38a1095bb32500))
+- **example:** bind reversal inputs to original charge currency ([#160](https://github.com/FantasticDevHQ/better-stripe/issues/160)) ([6b86926](https://github.com/FantasticDevHQ/better-stripe/commit/6b86926c7d4a173babd2964d4eee086f61c48f63))
+- **example:** reconcile unsettled disputed sources ([#161](https://github.com/FantasticDevHQ/better-stripe/issues/161)) ([9c732bd](https://github.com/FantasticDevHQ/better-stripe/commit/9c732bdc88555210d2172067e6bbf5d2fc513190))
+- **react:** isolate refund preview amounts by currency and status ([#162](https://github.com/FantasticDevHQ/better-stripe/issues/162)) ([601d509](https://github.com/FantasticDevHQ/better-stripe/commit/601d50923dc98f212b29fd4e4e3d856dfffbda44))
+- **react:** preserve original refund currency units ([#157](https://github.com/FantasticDevHQ/better-stripe/issues/157)) ([494827f](https://github.com/FantasticDevHQ/better-stripe/commit/494827f1cb35b0b0ca10b1c6da38a1095bb32500))
 
 ## [0.12.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.11.0...v0.12.0) (2026-10-15)
 

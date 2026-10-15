@@ -1,0 +1,211 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutHistory.test.ts (21 tests | 21 failed) 11ms
+   × verifies complete exact known history and card-specific available cash 3ms
+   × holds an unallocated payout instead of treating received credits as unpaid 0ms
+   × holds an unallocated stripe_fee instead of treating received credits as unpaid 0ms
+   × holds an unallocated payment_refund instead of treating received credits as unpaid 0ms
+   × holds an unallocated payment instead of treating received credits as unpaid 0ms
+   × rejects reused receipt identities 2ms
+   × holds missing expected history 0ms
+   × holds changed receipt amount 0ms
+   × holds changed receipt fee 1ms
+   × holds changed receipt net 0ms
+   × holds changed receipt created 0ms
+   × holds changed receipt available_on 0ms
+   × holds partial pages 0ms
+   × holds nonadvancing or duplicated history 0ms
+   × holds a changed provider head 0ms
+   × holds a balance that does not reconcile to complete history 0ms
+   × never counts pending source money as available even when available_on has passed 0ms
+   × uses card source availability rather than unrelated rails 0ms
+   × rejects invalid page budget 0 before provider I/O 1ms
+   × rejects invalid page budget 101 before provider I/O 0ms
+   × rejects invalid page budget 1.5 before provider I/O 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 21 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > verifies complete exact known history and card-specific available cash
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:18:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds an unallocated payout instead of treating received credits as unpaid
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds an unallocated stripe_fee instead of treating received credits as unpaid
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds an unallocated payment_refund instead of treating received credits as unpaid
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds an unallocated payment instead of treating received credits as unpaid
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:23:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > rejects reused receipt identities
+AssertionError: expected [Function] to throw error matching /duplicate/i but got 'Not implemented'
+
+- Expected:
+/duplicate/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutHistory.test.ts:26:47
+     24| });
+     25| it("rejects reused receipt identities", async () => {
+     26|   await expect(setup().read([credit, credit])).rejects.toThrow(/duplic…
+       |                                               ^
+     27| });
+     28| it("holds missing expected history", async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds missing expected history
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:29:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds changed receipt amount
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds changed receipt fee
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds changed receipt net
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds changed receipt created
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds changed receipt available_on
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:32:51
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds partial pages
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:37:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds nonadvancing or duplicated history
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:41:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds a changed provider head
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:46:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > holds a balance that does not reconcile to complete history
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:51:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > never counts pending source money as available even when available_on has passed
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:57:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > uses card source availability rather than unrelated rails
+Error: Not implemented
+ ❯ verifyPayoutHistory src/client/connect/payoutHistory.ts:5:30
+      3| export async function verifyPayoutHistory(_stripe: Stripe, _opts: {
+      4|   accountId: string; currency: string; transactions: TransferReceiptTr…
+      5| }): Promise<unknown> { throw new Error("Not implemented"); }
+       |                              ^
+      6|
+ ❯ Object.read src/client/connect/payoutHistory.test.ts:13:60
+ ❯ src/client/connect/payoutHistory.test.ts:62:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/21]⎯
+
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > rejects invalid page budget 0 before provider I/O
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > rejects invalid page budget 101 before provider I/O
+ FAIL  |client| src/client/connect/payoutHistory.test.ts > rejects invalid page budget 1.5 before provider I/O
+AssertionError: expected [Function] to throw error matching /budget/i but got 'Not implemented'
+
+- Expected:
+/budget/i
+
++ Received:
+"Not implemented"
+
+ ❯ src/client/connect/payoutHistory.test.ts:66:38
+     64| it.each([0, 101, 1.5])("rejects invalid page budget %s before provider…
+     65|   const s = setup();
+     66|   await expect(s.read([credit], max)).rejects.toThrow(/budget/i);
+       |                                      ^
+     67|   expect(s.list).not.toHaveBeenCalled();
+     68| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/21]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  21 failed (21)
+   Start at  17:44:41
+   Duration  207ms (transform 44%, tests 28%, import 21%, worker 6%)
+

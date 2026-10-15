@@ -1,0 +1,100 @@
+
+ RUN  v5.0.3 [repository]
+
+ ❯ |client| src/client/connect/payoutExecution.test.ts (6 tests | 6 failed) 19ms
+   × automatically releases combined creator and affiliate funds exactly once 8ms
+   × carries below-threshold funds forward 1ms
+   × holds unknown historical payouts rather than double paying 2ms
+   × an unknown provider outcome keeps the reservation and retries reconciliation only 4ms
+   × rechecks live controls before the attempted marker and cancels only unattempted funds on drift 2ms
+   × deducts independent liabilities before qualification 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > automatically releases combined creator and affiliate funds exactly once
+Error: Not implemented
+ ❯ releaseRecipientPayout src/client/connect/payoutExecution.ts:3:152
+      1| import type Stripe from "stripe";
+      2| import type { Component, RunCtx } from "../helpers.js";
+      3| export async function releaseRecipientPayout(_stripe: Stripe,_componen…
+       |                                                                                                                                                        ^
+      4|
+ ❯ Object.run src/client/connect/payoutExecution.test.ts:31:24
+ ❯ src/client/connect/payoutExecution.test.ts:36:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > carries below-threshold funds forward
+Error: Not implemented
+ ❯ releaseRecipientPayout src/client/connect/payoutExecution.ts:3:152
+      1| import type Stripe from "stripe";
+      2| import type { Component, RunCtx } from "../helpers.js";
+      3| export async function releaseRecipientPayout(_stripe: Stripe,_componen…
+       |                                                                                                                                                        ^
+      4|
+ ❯ Object.run src/client/connect/payoutExecution.test.ts:31:24
+ ❯ src/client/connect/payoutExecution.test.ts:44:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > holds unknown historical payouts rather than double paying
+Error: Not implemented
+ ❯ releaseRecipientPayout src/client/connect/payoutExecution.ts:3:152
+      1| import type Stripe from "stripe";
+      2| import type { Component, RunCtx } from "../helpers.js";
+      3| export async function releaseRecipientPayout(_stripe: Stripe,_componen…
+       |                                                                                                                                                        ^
+      4|
+ ❯ Object.run src/client/connect/payoutExecution.test.ts:31:24
+ ❯ src/client/connect/payoutExecution.test.ts:50:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > an unknown provider outcome keeps the reservation and retries reconciliation only
+AssertionError: expected [Function] to throw error including 'timeout' but got 'Not implemented'
+
+Expected: "timeout"
+Received: "Not implemented"
+
+ ❯ src/client/connect/payoutExecution.test.ts:55:23
+     53| it("an unknown provider outcome keeps the reservation and retries reco…
+     54|  const s=await setup();s.provider.payouts.create.mockRejectedValue(new…
+     55|  await expect(s.run()).rejects.toThrow("timeout");
+       |                       ^
+     56|  expect(await s.run()).toMatchObject({status:"held",reason:"payout_uni…
+     57|  expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > rechecks live controls before the attempted marker and cancels only unattempted funds on drift
+Error: Not implemented
+ ❯ releaseRecipientPayout src/client/connect/payoutExecution.ts:3:152
+      1| import type Stripe from "stripe";
+      2| import type { Component, RunCtx } from "../helpers.js";
+      3| export async function releaseRecipientPayout(_stripe: Stripe,_componen…
+       |                                                                                                                                                        ^
+      4|
+ ❯ Object.run src/client/connect/payoutExecution.test.ts:31:24
+ ❯ src/client/connect/payoutExecution.test.ts:62:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  |client| src/client/connect/payoutExecution.test.ts > deducts independent liabilities before qualification
+Error: Not implemented
+ ❯ releaseRecipientPayout src/client/connect/payoutExecution.ts:3:152
+      1| import type Stripe from "stripe";
+      2| import type { Component, RunCtx } from "../helpers.js";
+      3| export async function releaseRecipientPayout(_stripe: Stripe,_componen…
+       |                                                                                                                                                        ^
+      4|
+ ❯ Object.run src/client/connect/payoutExecution.test.ts:31:24
+ ❯ src/client/connect/payoutExecution.test.ts:67:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+   Start at  17:47:19
+   Duration  299ms (transform 46%, environment 24%, import 19%, tests 9%, worker 2%)
+

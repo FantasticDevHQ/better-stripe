@@ -2738,6 +2738,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2748,6 +2749,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             operationKey: string;
             ownerKey: string;
@@ -2758,6 +2760,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2768,6 +2771,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             attempted?: boolean;
             country: string;
@@ -2854,6 +2858,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2864,6 +2869,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             attempted?: boolean;
             country: string;
@@ -2912,6 +2918,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -2922,6 +2929,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             attempted?: boolean;
             country: string;
@@ -3007,6 +3015,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3017,6 +3026,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             country: string;
             expectedRevision: number;
@@ -3037,6 +3047,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3047,6 +3058,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             attempted?: boolean;
             country: string;
@@ -3178,6 +3190,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             adoption?: {
               claims: Array<{ fingerprint: string; operationKey: string }>;
+              collectionKey?: string;
               observations: Array<{
                 currency: string;
                 ledgerFingerprint: string;
@@ -3188,6 +3201,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 transactionIds: Array<string>;
               }>;
               oldestHeldAt?: number;
+              snapshotId?: string;
             };
             attempted?: boolean;
             country: string;
@@ -3260,6 +3274,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 stripePayoutId: string;
               };
             }>;
+            snapshotId?: string;
           },
           {
             claims: Array<{

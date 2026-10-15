@@ -63,6 +63,7 @@ import type * as payoutRelease_planning from "../payoutRelease/planning.js";
 import type * as payoutRelease_preview from "../payoutRelease/preview.js";
 import type * as payoutRelease_progress from "../payoutRelease/progress.js";
 import type * as payoutRelease_queries from "../payoutRelease/queries.js";
+import type * as payoutSnapshots_adoption from "../payoutSnapshots/adoption.js";
 import type * as payoutSnapshots_financial from "../payoutSnapshots/financial.js";
 import type * as payoutSnapshots_liabilities from "../payoutSnapshots/liabilities.js";
 import type * as payoutSnapshots_localState from "../payoutSnapshots/localState.js";
@@ -152,6 +153,7 @@ const fullApi: ApiFromModules<{
   "payoutRelease/preview": typeof payoutRelease_preview;
   "payoutRelease/progress": typeof payoutRelease_progress;
   "payoutRelease/queries": typeof payoutRelease_queries;
+  "payoutSnapshots/adoption": typeof payoutSnapshots_adoption;
   "payoutSnapshots/financial": typeof payoutSnapshots_financial;
   "payoutSnapshots/liabilities": typeof payoutSnapshots_liabilities;
   "payoutSnapshots/localState": typeof payoutSnapshots_localState;

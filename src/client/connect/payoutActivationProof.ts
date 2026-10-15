@@ -1,3 +1,8 @@
+import { collectLargePayoutInput } from "./payoutCollectedInput.js";
+import {
+  adoptionCollectionKey,
+  discardAdoptionProof,
+} from "./payoutAdoptionCollection.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { Component, RunCtx } from "../helpers.js";
@@ -73,24 +78,64 @@ export async function collectAdoptionProof(
     if (result.oldestHeldAt !== undefined)
       oldestHeldAt = Math.min(oldestHeldAt ?? Infinity, result.oldestHeldAt);
   }
-  const balance = await stripe.balance.retrieve(undefined, request);
-  const latest = await stripe.balanceTransactions.list({ limit: 1 }, request);
-  if (
-    balanceIdentity(initial) !== balanceIdentity(balance) ||
-    transactionIdentity(first.data[0]) !== transactionIdentity(latest.data[0])
-  )
-    return { status: "held", reason: "provider_changed" };
-  const snapshot = (await ctx.runQuery(
+  let snapshot = (await ctx.runQuery(
     componentRef(component, "payoutRelease/queries/snapshot"),
     { accountId: scope.accountId, ownerKey: scope.ownerKey },
   )) as
     | { status: "ready"; claims: Infer<typeof claimDoc>[] }
     | { status: "held"; reason: string };
-  if (snapshot.status !== "ready") return snapshot;
+  let collection:
+    | {
+        snapshotId: Infer<typeof adoptionProof>["snapshotId"];
+        collectionKey: string;
+      }
+    | undefined;
+  if (snapshot.status !== "ready") {
+    const policy = (await ctx.runQuery(
+      componentRef(component, "payoutPolicy/queries/get"),
+      { accountId: scope.accountId, ownerKey: scope.ownerKey },
+    )) as { operationKey: string };
+    const key = await adoptionCollectionKey(
+      scope,
+      policy.operationKey,
+      "activation",
+    );
+    const large = await collectLargePayoutInput(
+      component,
+      ctx,
+      { ...scope, operationKey: key },
+      10,
+    );
+    if (large.status !== "ready") {
+      if (large.reason !== "collection_pending" && large.collection)
+        await discardAdoptionProof(component, ctx, scope, {
+          snapshotId: large.collection.snapshotId,
+          collectionKey: key,
+        });
+      return { status: "held", reason: large.reason };
+    }
+    collection = {
+      snapshotId: large.collection.snapshotId,
+      collectionKey: key,
+    };
+    snapshot = large;
+  }
+  const balance = await stripe.balance.retrieve(undefined, request);
+  const latest = await stripe.balanceTransactions.list({ limit: 1 }, request);
+  if (
+    balanceIdentity(initial) !== balanceIdentity(balance) ||
+    transactionIdentity(first.data[0]) !== transactionIdentity(latest.data[0])
+  ) {
+    await discardAdoptionProof(component, ctx, scope, collection);
+    return { status: "held", reason: "provider_changed" };
+  }
   return {
     status: "verified",
     proof: {
-      observations,
+      // All discovered currencies completed verification. The final provider
+      // head and balances still match the initial account snapshot after local collection.
+      observations: observations.map((o) => ({ ...o, observedAt: Date.now() })),
+      ...collection,
       claims: snapshot.claims.map((c) => ({
         operationKey: c.operationKey,
         fingerprint: payoutClaimFingerprint(c),

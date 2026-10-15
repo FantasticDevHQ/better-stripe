@@ -1,3 +1,4 @@
+import { adoptionCollection } from "../payoutSnapshots/adoption.js";
 import type { Infer } from "convex/values";
 import type { MutationCtx } from "../_generated/server.js";
 import type { adoptionProof } from "./schema.js";
@@ -14,16 +15,26 @@ export async function validateAdoption(
   scope: { accountId: string; ownerKey: string },
   proof: Infer<typeof adoptionProof>,
 ) {
-  await checkSnapshot(ctx, scope.accountId, proof.observations, true);
-  const rows = await ctx.db
-    .query("payoutReleaseClaims")
-    .withIndex("by_account_status", (q) => q.eq("accountId", scope.accountId))
-    .take(101);
+  const collected = await adoptionCollection(ctx, scope, proof);
+  await checkSnapshot(
+    ctx,
+    scope.accountId,
+    proof.observations,
+    true,
+    undefined,
+    collected?.sources,
+  );
+  const rows =
+    collected?.claims ??
+    (await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_account_status", (q) => q.eq("accountId", scope.accountId))
+      .take(101));
   const expected = new Map(
     proof.claims.map((c) => [c.operationKey, c.fingerprint]),
   );
   if (
-    rows.length > 100 ||
+    (!collected && rows.length > 100) ||
     expected.size !== proof.claims.length ||
     rows.length !== expected.size ||
     rows.some(

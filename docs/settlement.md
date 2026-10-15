@@ -546,6 +546,35 @@ reduces later qualifying funds rather than making the old commission payable
 again. An adopted payout can reconcile a subsequent bank failure without
 requiring a package marker that was absent from its original Stripe object.
 
+Public adoption and funded activation use complete cursor-paginated collections
+when local sources, existing claims or proposed imports exceed the small direct
+snapshot path. There is no lifetime 100-row cutoff in these public flows. The
+collection checks complete membership, paid/reserved rollups, owner, policy and
+financial revision again inside the atomic import or activation transaction.
+Unlike a later release, adoption rejects deferred positive funding as well as
+risk changes; collect a new current baseline before changing account controls.
+
+`collection_pending` preserves bounded local work. Repeat the same authorized
+account/currency/policy request with enough `maxPages` to complete the provider
+history. The internal collection key also includes the policy operation, so a
+new policy operation cannot reuse an obsolete baseline. Invalidated and consumed
+read-only caches are discarded; financial claims and schedule restoration records
+remain intact. No partial import or cache state authorizes a bank payout.
+
+Source receipts run in groups of at most five. After reconciliation, a complete
+matching currency history renews its observations. Funded activation verifies
+every discovered currency, then rechecks the account-wide balance and history
+head after collecting the local baseline. It renews the complete proof only if
+that provider snapshot remained unchanged. These checks retain freshness limits
+rather than accepting old observations because a scan took longer.
+
+Native platform limits still apply to the atomic boundary, including document,
+argument, return-value and transaction sizes, array lengths and execution time.
+An oversized workload requires a separately designed import/migration; it must
+not be split into unverified partial activation or silently truncated. See the
+[Convex limits](https://docs.convex.dev/production/state/limits). Provider page
+budgets and unsupported payout rails remain explicit holds.
+
 After successful import, explicitly request funded-account adoption during
 preparation, using the latest owned policy revision:
 
@@ -582,8 +611,8 @@ Preparation cannot restart an expired holding period, and later checks can only
 shorten the pending operation's deadline. `migration_required.adoptionReason`
 explains unknown history or an expired holding period. This flow does not enable
 Dashboard accounts with withdrawal bypasses, Global Payouts, unsupported source
-rails, unknown numeric provider floors or accounts beyond the current atomic
-snapshot bounds. Activation itself does not install a host cron or UI.
+rails, unknown numeric provider floors or workloads beyond native atomic
+platform limits. Activation itself does not install a host cron or UI.
 
 ## Automatic recipient worker
 

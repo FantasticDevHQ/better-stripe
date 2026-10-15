@@ -12,6 +12,7 @@ export type PayoutAllocationOptions = {
   threshold: number;
   providerAvailable: number;
   independentLiabilities: number;
+  confirmedFees?: number;
   sources: PayoutFundingSource[];
 };
 export type RecipientPayoutPlan = {
@@ -66,6 +67,7 @@ export function planRecipientPayout(
   if (money(opts.threshold) <= 0) throw new Error("Invalid payout threshold.");
   money(opts.providerAvailable);
   nonnegative(opts.independentLiabilities);
+  nonnegative(opts.confirmedFees ?? 0);
   const seen = new Set<string>();
   for (const source of opts.sources) {
     if (
@@ -107,6 +109,10 @@ export function planRecipientPayout(
     pendingCredits = money(pendingCredits + source.pendingCredits);
     return { source, unpaid };
   });
+  matureUnpaid = money(
+    money(matureUnpaid - (opts.confirmedFees ?? 0)) -
+      opts.independentLiabilities,
+  );
   const totals = {
     currency: opts.currency,
     matureUnpaid,

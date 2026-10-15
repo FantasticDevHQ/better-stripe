@@ -222,8 +222,8 @@ Sources: [payout schedules](https://docs.stripe.com/connect/manage-payout-schedu
 ### Transactional claim ledger implementation status
 
 The component contains `payoutRelease` claim and source-allocation tables. These
-are server-side building blocks for the release boundary, with no public client
-executor or scheduled bank-payout integration yet. Do not call the claim
+are server-side building blocks for the release boundary, with no automatic
+payout-creation or scheduled bank-payout integration yet. Do not call the claim
 mutation with UI totals or a transfer receipt alone. Its trusted upstream caller
 must establish complete provider history, still-unpaid ownership, adoption of
 prior payouts, independent liabilities, and live payout controls first.
@@ -245,7 +245,7 @@ held. This window stays below Stripe's [24-hour v1 idempotency retention minimum
 The current claim snapshot is deliberately bounded to 100 account transfer rows
 and 1,000 receipt IDs per source. Larger or incomplete histories reject the whole
 claim, without using partial totals. A resumable reconciliation/adoption process,
-provider payout creation and receipt verification, payout-fee accounting, and
+provider payout creation and receipt verification, historical fee adoption, other account debit allocation, and
 recurring release/expiry integration remain required before custom payout
 minimums can be presented as an operational feature. In-memory claim tests are
 not evidence of a completed Stripe bank payout.
@@ -299,3 +299,74 @@ remains intact for retries.
 Sources: [transfer provenance](https://docs.stripe.com/api/transfers/object),
 [receipt maturity](https://docs.stripe.com/api/balance_transactions/object), and
 [history pagination and payout-filter limits](https://docs.stripe.com/api/balance_transactions/list).
+
+## Verified payout receipts and reconciliation
+
+In an authorized server action, read a Connect Stripe-balance payout with:
+
+```ts
+const receipt = await stripe.payoutPolicy.payoutReceipt({
+  accountId,
+  stripePayoutId,
+});
+```
+
+The reader retrieves the payout and its actual account-scoped balance
+transactions, including a failed/canceled payout's return transaction. It checks
+transaction identity, currency, exact principal, signed fees, net amounts and
+maturity, then re-reads the payout to detect changes. Expanded transaction
+objects are not trusted in place of scoped retrieval. Automatic and manual
+history can both be inspected; a manual payout receipt does not identify the
+transfers that funded it. Changed snapshots, missing debit/return receipts,
+pending debits or returns, unsupported currency allocation and bank-payout reversals return
+`not_ready` without partial financial totals.
+
+A ready receipt preserves `providerStatus`, original `debit`, optional returned
+`credit`, `returnedPrincipal` and `returnedNet`. A returned principal can differ
+from net cash because payout fees are retained or credited separately. This data
+alone does not authorize releasing a reservation, identify still-unpaid earnings,
+or prove that a pending payout reached the bank. Global Payouts requires a
+separate receipt and capability implementation.
+
+To reconcile an already attempted durable claim:
+
+```ts
+const outcome = await stripe.payoutPolicy.reconcilePayout(ctx, {
+  accountId,
+  ownerKey,
+  operationKey,
+  // stripePayoutId, // optional when the provider ID is already known
+  maxPages: 10,
+});
+```
+
+The host authenticates the account/owner/operation before this call. Reconciliation
+requires `ctx.runMutation`. It never creates or retries a bank payout. A stored
+provider ID must agree with any supplied ID. Otherwise, bounded provider history
+is scanned for the exact reserved `bsPayoutClaim` marker. Discovery must finish;
+partial history, duplicate matches and a changed history head stay held. The
+page budget is 1 to 100, default 10. No match, including after idempotency expiry,
+never proves that money did not move.
+
+Adoption verifies the claim marker, amount, currency, creation window and
+standard manual bank-payout type. Current claims use the card source balance;
+other source rails return an explicit allocation limitation. A missing or
+immature return keeps allocations reserved. Verified paid and returned outcomes
+update source allocations and payout fees in one component transaction. Unknown
+provider and persistence errors propagate so the host can retry reconciliation.
+Canceled/rejected claim states are returned as terminal states, not as bank
+payment confirmation.
+
+Net non-refundable payout fees are retained per recipient/currency and deducted
+from later mature unpaid entitlement. They are not deducted again from fresh
+provider availability, which already reflects the debit. A newly observed fee
+invalidates an unattempted claim prepared against an older fee revision. Fee
+credits after a return reduce only the verified original fee; excess credits
+require explicit allocation. Original debit receipts and their fees remain
+immutable. Older returned claims can receive verified fee evidence without
+releasing their principal again.
+
+These APIs reconcile existing claims; full automatic qualification/creation,
+historical source adoption, large-history collection, other account debit
+allocation and recurring/UI integration remain separate work. Do not expose a
+custom minimum as fully enforced solely because reconciliation is available.

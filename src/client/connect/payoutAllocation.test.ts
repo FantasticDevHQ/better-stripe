@@ -139,7 +139,7 @@ describe("combined recipient payout allocation", () => {
     expect(result).toMatchObject({
       status: "qualified",
       amount: 1300,
-      matureUnpaid: 2000,
+      matureUnpaid: 1800,
     });
     expect(
       planRecipientPayout({
@@ -149,8 +149,8 @@ describe("combined recipient payout allocation", () => {
       }),
     ).toMatchObject({
       status: "held",
-      reason: "insufficient_available",
-      matureUnpaid: 1000,
+      reason: "below_threshold",
+      matureUnpaid: 999,
     });
   });
   it("does not subtract reservations again from an already debited provider balance", () => {
@@ -290,3 +290,36 @@ describe("combined recipient payout allocation", () => {
 function awaitInvalid(action: () => unknown) {
   expect(action).toThrow(/Invalid|Unsafe|Duplicate/);
 }
+it("deducts confirmed payout fees from entitlement without deducting them twice from provider availability", () => {
+  expect(
+    planRecipientPayout({
+      ...options([source("tr_one", 1500)]),
+      providerAvailable: 1470,
+      confirmedFees: 30,
+    }),
+  ).toMatchObject({ status: "qualified", amount: 1470, matureUnpaid: 1470 });
+  expect(
+    planRecipientPayout({
+      ...options([source("tr_one", 1000)]),
+      providerAvailable: 5000,
+      confirmedFees: 30,
+    }),
+  ).toMatchObject({
+    status: "held",
+    reason: "below_threshold",
+    matureUnpaid: 970,
+  });
+});
+it("does not qualify the gross threshold while known independent liabilities remain", () => {
+  expect(
+    planRecipientPayout({
+      ...options(),
+      providerAvailable: 5000,
+      independentLiabilities: 1,
+    }),
+  ).toMatchObject({
+    status: "held",
+    reason: "below_threshold",
+    matureUnpaid: 999,
+  });
+});

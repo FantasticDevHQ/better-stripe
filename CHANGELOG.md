@@ -14,6 +14,16 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.17.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.16.0...v0.17.0) (2026-10-15)
+
+### Features
+
+- **refunds:** expose authoritative cursor history ([#172](https://github.com/FantasticDevHQ/better-stripe/issues/172)) ([5943471](https://github.com/FantasticDevHQ/better-stripe/commit/5943471c406d9202e69691eabbdc1839d5b2b5a3))
+
+### Bug Fixes
+
+- **example:** route seller recovery through verified package ledgers ([#173](https://github.com/FantasticDevHQ/better-stripe/issues/173)) ([f361f2e](https://github.com/FantasticDevHQ/better-stripe/commit/f361f2eb7ba46d98898e928b8bcfe7ef3f42150d))
+
 ## [0.16.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.15.0...v0.16.0) (2026-10-15)
 
 ### Features

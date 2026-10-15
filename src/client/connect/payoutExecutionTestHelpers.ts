@@ -122,22 +122,24 @@ export async function setup(amounts = [600, 400]) {
       ),
     },
     balance: {
-      retrieve: vi.fn(async () => ({
-        available: [
-          {
-            currency: "usd",
-            amount: transactions
-              .filter((t) => t.status === "available")
-              .reduce((a, t) => a + t.net, 0),
-            source_types: {
-              card: transactions
+      retrieve: vi.fn(
+        async (): Promise<Pick<Stripe.Balance, "available" | "pending">> => ({
+          available: [
+            {
+              currency: "usd",
+              amount: transactions
                 .filter((t) => t.status === "available")
                 .reduce((a, t) => a + t.net, 0),
+              source_types: {
+                card: transactions
+                  .filter((t) => t.status === "available")
+                  .reduce((a, t) => a + t.net, 0),
+              },
             },
-          },
-        ],
-        pending: [],
-      })),
+          ],
+          pending: [],
+        }),
+      ),
     },
     payouts: {
       list: vi.fn(async () => ({

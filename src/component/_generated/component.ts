@@ -3608,6 +3608,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        preview: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            expectedRevision: number;
+            independentLiabilities: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            ownerKey: string;
+            providerAvailable: number;
+          },
+          | { amount: 0; reason: string; status: "held" }
+          | {
+              amount: number;
+              confirmedFees: number;
+              currency: string;
+              independentLiabilities: number;
+              matureUnpaid: number;
+              observedAt: number;
+              pendingCredits: number;
+              providerAvailable: number;
+              providerMinimum: null;
+              reason?: string;
+              sources: Array<{
+                matureUnpaid: number;
+                pendingCredits: number;
+                role: "store" | "affiliate" | "other";
+              }>;
+              status: "held" | "qualified";
+              threshold: number;
+            },
+          Name
+        >;
         snapshot: FunctionReference<
           "query",
           "internal",

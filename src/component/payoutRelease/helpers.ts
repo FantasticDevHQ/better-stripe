@@ -1,6 +1,6 @@
 import type { Infer } from "convex/values";
 import type { transferDocValidator } from "../connect/validators.js";
-import type { MutationCtx } from "../_generated/server.js";
+import type { MutationCtx, QueryCtx } from "../_generated/server.js";
 import type { Doc } from "../_generated/dataModel.js";
 import { readPolicy, validateScope } from "../payoutPolicy/helpers.js";
 import type { observation } from "./schema.js";
@@ -50,7 +50,7 @@ export async function claimByKey(
   return claim;
 }
 export async function readyPolicy(
-  ctx: MutationCtx,
+  ctx: MutationCtx | QueryCtx,
   args: { accountId: string; ownerKey: string; expectedRevision: number },
 ) {
   const policy = await readPolicy(ctx, args);
@@ -67,7 +67,7 @@ export async function readyPolicy(
 }
 /** Full local account membership is checked under OCC before any reservation. */
 export async function checkSnapshot(
-  ctx: MutationCtx,
+  ctx: MutationCtx | QueryCtx,
   accountId: string,
   observations: Infer<typeof observation>[],
   fresh: boolean,
@@ -126,7 +126,10 @@ export async function checkSnapshot(
   }
   return byId;
 }
-export async function sourceById(ctx: MutationCtx, stripeTransferId: string) {
+export async function sourceById(
+  ctx: MutationCtx | QueryCtx,
+  stripeTransferId: string,
+) {
   return ctx.db
     .query("payoutSourceAllocations")
     .withIndex("by_transfer", (q) => q.eq("stripeTransferId", stripeTransferId))

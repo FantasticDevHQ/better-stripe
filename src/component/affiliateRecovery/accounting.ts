@@ -1,5 +1,5 @@
 import type { Doc } from "../_generated/dataModel.js";
-import type { MutationCtx } from "../_generated/server.js";
+import type { MutationCtx, QueryCtx } from "../_generated/server.js";
 export type Obligation = Omit<
   Doc<"affiliateObligations">,
   "_id" | "_creationTime"
@@ -13,7 +13,7 @@ export const due = (row: Obligation) =>
 export const credit = (row: Obligation) =>
   row.needsReconciliation ? 0 : Math.max(0, netRecovery(row) - target(row));
 export async function balance(
-  ctx: MutationCtx,
+  ctx: MutationCtx | QueryCtx,
   account: string,
   currency: string,
 ) {

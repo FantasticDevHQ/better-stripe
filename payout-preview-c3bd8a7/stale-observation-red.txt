@@ -1,0 +1,38 @@
+
+ RUN  v5.0.3 <repo>
+
+ ❯ |client| src/client/connect/payoutPreview.test.ts (5 tests | 1 failed) 114ms
+   × rejects an expired provider balance observation even when there are no transfer observations 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutPreview.test.ts > rejects an expired provider balance observation even when there are no transfer observations
+AssertionError: expected { Object (amount, confirmedFees, ...) } to match object { status: 'held', …(2) }
+(10 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "amount": 0,
+-   "reason": "observations_stale",
++   "reason": "below_threshold",
+    "status": "held",
+  }
+
+ ❯ src/client/connect/payoutPreview.test.ts:86:29
+     84|     return policy;
+     85|   });
+     86|   expect(await s.preview()).toMatchObject({
+       |                             ^
+     87|     status: "held",
+     88|     reason: "observations_stale",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  22:09:15
+   Duration  548ms (transform 38%, import 28%, tests 25%, environment 8%, worker 1%)
+

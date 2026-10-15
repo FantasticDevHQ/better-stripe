@@ -1,0 +1,10 @@
+▌ Developing against deployment:
+▌ [Local] Port 3225 • No Convex account (run npx convex login to link to a project)
+▌ └─ http://127.0.0.1:3225
+- Preparing Convex functions...
+
+Convex AI files are not installed. Run npx convex ai-files install to get started or npx convex ai-files disable to hide this message.
+✔ 22:12:17 Convex functions ready! (1.11s)
+- Preparing Convex functions...
+
+✔ 22:15:19 Convex functions ready! (823.98ms)

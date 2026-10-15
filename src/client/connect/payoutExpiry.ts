@@ -57,6 +57,7 @@ export async function expirePayoutPolicy<
     ): Promise<P>;
   },
 ) {
+  scope = { accountId: scope.accountId, ownerKey: scope.ownerKey };
   let policy = await client.get(ctx, scope);
   if (!policy?.holdDeadline || policy.holdDeadline > Date.now())
     return { status: "not_due" as const };

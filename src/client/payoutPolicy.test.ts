@@ -569,3 +569,11 @@ it("concurrent expiry retries preserve one restoration identity and unresolved f
     .map((c) => (c[1] as { idempotencyKey: string }).idempotencyKey);
   expect(new Set(restoreKeys).size).toBe(1);
 });
+
+it("accepts a due policy document as scope without forwarding its extra fields to mutations", async () => {
+  const s = await expiredRecipient();
+  const policy = (await s.client.get(s.ctx, scope))!;
+  expect(await s.client.expire(s.ctx, policy)).toMatchObject({
+    status: "ready",
+  });
+});

@@ -34,6 +34,17 @@ export const reservePayout = mutation({
         existing.minimumAmount !== args.minimumAmount
       )
         throw new Error("Affiliate payout operation identity cannot change.");
+      if (existing.state === "pending" || existing.state === "unknown") {
+        if (
+          totals.outstandingDebt > 0 ||
+          totals.reservedRecovery > 0 ||
+          totals.reservedRestoration > 0 ||
+          totals.activePayoutKey !== existing.operationKey
+        )
+          throw new Error(
+            "Affiliate recovery must be reconciled before payout release.",
+          );
+      }
       return existing;
     }
     if (

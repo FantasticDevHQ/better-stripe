@@ -99,6 +99,14 @@ export async function createPayout(
         return { stripePayoutId: receiptId };
       }
     }
+    if (release) {
+      if (Date.now() - release.createdAt >= 23 * 60 * 60 * 1000)
+        throw new Error(
+          "Affiliate payout idempotency window expired; reconcile the provider receipt before retrying.",
+        );
+      // Receipt lookup may yield while a refund records new debt.
+      await reserveAffiliatePayout(component!, ctx, opts);
+    }
     const payout = await stripe.payouts.create(
       {
         amount: opts.amount,

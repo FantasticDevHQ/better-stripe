@@ -1,3 +1,7 @@
+import {
+  reconcileAffiliatePayout,
+  completeAffiliatePayout,
+} from "./affiliateRecovery/payoutGate.js";
 import { verifiedLegacyReview } from "./affiliateRecovery/review.js";
 import { runMutationOrThrow } from "./helpers.js";
 import { createPayout } from "./connect/payouts.js";
@@ -110,6 +114,18 @@ export class AffiliateRecoveryClient {
     };
     for (const row of page.page) {
       try {
+        // Confirm money already moved even when new debt blocks another attempt.
+        const receipt = await reconcileAffiliatePayout(this.provider(), row);
+        if (receipt) {
+          await completeAffiliatePayout(
+            this.component,
+            ctx,
+            row.operationKey,
+            "submitted",
+            receipt,
+          );
+          continue;
+        }
         await createPayout(
           this.provider(),
           ctx,

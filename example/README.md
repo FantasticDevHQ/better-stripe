@@ -1196,7 +1196,9 @@ commissions, reversals and restoration separately. Debt offsets run before
 future commission transfers; dispute wins retain independent refunds.
 
 These live endpoints require an authenticated identity whose `tokenIdentifier`
-is provisioned as `users.authTokenIdentifier`. The existing demo persona picker
+is provisioned as `users.authTokenIdentifier`. Configure a trusted JWT issuer in
+`convex/auth.config.ts` and connect its tokens to the frontend Convex client
+before exercising live recovery views; this example has no issuer configured. The existing demo persona picker
 is not authentication and grants no recovery access. `/admin/affiliate-recovery`
 requires the server-linked user's admin role for retries and another affiliate's
 records. `/demo/affiliate-recovery` needs no live account and labels all ten

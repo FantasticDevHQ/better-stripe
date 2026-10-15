@@ -1087,7 +1087,7 @@ Payouts are **automatic and rolling** (Stripe-managed schedule, via hosted Expre
 The platform is merchant of record, so a chargeback lands on the platform's Stripe account even for a seller's sale. The dispute pipeline (all webhook-driven, on `charge.dispute.*`):
 
 1. **Clawback** — a monetary `charge.dispute.created` event uses the disputed charge's original gross amount to calculate affiliate commission exposure. Inquiry/warning, prevented, and already-won payloads do not trigger recovery. Affiliate legs share the original-principal exposure axis with refunds; seller and other legs retain the existing reversal allocation. The dispute ID identifies the operation, and a missing authoritative charge amount causes recovery to retry.
-2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), the existing `reinstateTransfers` path creates new transfers from the platform balance. Affiliate restoration uses exact reversal/offset receipts, preserves independent successful refunds, and cancels unpaid dispute debt. Failed or uncertain restoration remains visible until reconciled. See [recovery limitations](docs/affiliate-clawbacks.md#verification-and-rollout-evidence).
+2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), the existing `reinstateTransfers` path creates new transfers from the platform balance. Affiliate restoration uses exact reversal/offset receipts, preserves independent successful refunds, and cancels unpaid dispute debt. Failed or uncertain restoration remains visible until reconciled. See [recovery limitations](docs/affiliate-clawbacks.md#verification-evidence).
 3. **Auto-cancel** — on dispute open, the disputed subscription (resolved PaymentIntent → invoice → subscription) is canceled by default (`registerRoutes`'s `autoCancelOnDispute`, default `true`; pairs with `cancelDisputeAtPeriodEnd`, default `false` → cancel-at-period-end, matching the Skool model of "cancel now, remove access at cycle end").
 
 Sellers respond to their own disputes without platform staff involvement, via an embedded Stripe Connect session:
@@ -1123,7 +1123,7 @@ Trusted host APIs under `components.betterStripe.settlement` provide
 `mutations.migrateAffiliateObligations`. Authorize account ownership before
 exposing snapshots and restrict migration to operators. Existing rows with
 unattributed reversal balances require reconciliation. See the
-[API and migration guide](docs/affiliate-clawbacks.md#migration-and-trusted-host-apis).
+[API and migration guide](docs/affiliate-clawbacks.md#migration-and-operator-reconciliation).
 
 Insufficient-balance debt is offset atomically against eligible future commissions
 in the same currency before transfer creation. Dispute wins restore only actual

@@ -121,7 +121,11 @@ submission, not arrival in a bank. Combined seller/affiliate releases through
 `stripe.payoutPolicy.release` share this recovery reservation. Debt and unresolved
 recovery block both reservation and the final provider attempt. An uncertain payout
 retains the lock until a verified outcome or rejection; an unattempted claim can
-be canceled. Locks are scoped to the recipient and currency. Stripe-managed automatic bank payouts cannot
+be canceled. Direct payouts recheck recovery after receipt lookup and before
+calling Stripe. Once a direct operation is 23 hours old, it requires receipt
+reconciliation and cannot create another payout with an expired idempotency key.
+Maintenance can confirm an existing payout receipt despite newly recorded debt;
+confirmation does not erase that debt. Locks are scoped to the recipient and currency. Stripe-managed automatic bank payouts cannot
 be intercepted by this gate; future commissions are offset before their Connect
 transfers leave the platform.
 
@@ -195,7 +199,10 @@ and receipts. Use them alongside earnings, referred sales and payouts; seller
 cost recovery remains a separate view.
 
 The example adds authenticated affiliate snapshots and an operator recovery
-page. Its existing persona picker is not authentication: a real identity's
+page. Configure the host JWT issuer in `example/convex/auth.config.ts` and
+provide its token through the Convex frontend auth integration before testing
+live recovery views. The example does not currently configure an issuer.
+Its existing persona picker is not authentication: a real identity's
 `tokenIdentifier` must be provisioned into the user's `authTokenIdentifier`
 field. Affiliate requests cannot select another account; operator permissions
 come from that server-linked user's role. With no authenticated identity, live
@@ -267,9 +274,11 @@ The recording requires a Playwright-compatible FFmpeg executable.
 
 For account preview prerequisites, see [Accounts v2 setup](accounts-v2-preview.md).
 
-Live deployment and real Stripe sandbox verification could not run in this
-execution environment: downloading the Convex backend was blocked and no Stripe
-credentials were configured. These artifacts do not establish account-specific
+Live deployment and real Stripe sandbox verification remain blocked by missing
+Convex authentication in the selected environment. The deployment is reachable,
+but no development deploy key is bound; existing server-side Stripe credentials
+have not been inspected or replaced. See the verification report for exact
+commands and acceptance traceability. These artifacts do not establish account-specific
 negative-balance behavior or successful external-payout recall. Before release,
 verify actual supported Connect accounts, currencies, insufficient-balance and
 restoration behavior in a configured sandbox, and retain the provider receipts.

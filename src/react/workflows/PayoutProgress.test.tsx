@@ -57,6 +57,45 @@ it("does not invent zero balances or progress for an unavailable assessment", ()
   expect(screen.queryByRole("progressbar")).toBeNull();
   expect(screen.queryByText("$0.00")).toBeNull();
 });
+it("shows verified carry forward, withholding, in-flight and paid totals separately", () => {
+  render(
+    <PayoutProgress
+      policy={policy}
+      currency="usd"
+      preview={{
+        ...preview,
+        matureUnpaid: 899,
+        independentLiabilities: 100,
+        accounting: {
+          carriedForwardAmount: 899,
+          withheldAmount: 100,
+          reservedAmount: 200,
+          releasedAmount: 1000,
+        },
+        sources: [
+          { ...preview.sources[0], reservedAmount: 100, releasedAmount: 600 },
+          { ...preview.sources[1], reservedAmount: 100, releasedAmount: 400 },
+          { ...preview.sources[2], reservedAmount: 0, releasedAmount: 0 },
+        ],
+      }}
+    />,
+  );
+  for (const [label, value] of [
+    ["Carried forward", "$8.99"],
+    ["Withheld for costs", "$1.00"],
+    ["Payouts in progress", "$2.00"],
+    ["Paid out, net of returns", "$10.00"],
+  ])
+    expect(screen.getByText(label).nextElementSibling?.textContent).toBe(value);
+  expect(screen.getByRole("columnheader", { name: "Paid out" })).toBeTruthy();
+  expect(screen.getByRole("columnheader", { name: "In flight" })).toBeTruthy();
+});
+it("does not invent new accounting totals for a legacy assessment", () => {
+  render(<PayoutProgress policy={policy} preview={preview} currency="usd" />);
+  expect(screen.queryByText("Carried forward")).toBeNull();
+  expect(screen.queryByText("Paid out, net of returns")).toBeNull();
+  expect(screen.queryByRole("columnheader", { name: "Paid out" })).toBeNull();
+});
 it("keeps Stripe-managed defaults distinct from a custom application minimum", () => {
   render(<PayoutProgress policy={null} currency="usd" />);
   expect(screen.getByRole("status").textContent).toContain("Stripe manages");

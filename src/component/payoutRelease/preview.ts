@@ -6,6 +6,7 @@ import { observation } from "./observation.js";
 import { readyPolicy, add } from "./helpers.js";
 import { readPayoutPlan } from "./planning.js";
 import { balance } from "../affiliateRecovery/accounting.js";
+import { progressAccounting, summarizePayoutProgress } from "./progress.js";
 export const previewFields = {
   ...scopeFields,
   expectedRevision: v.number(),
@@ -34,6 +35,7 @@ export const previewResult = v.union(
     independentLiabilities: v.number(),
     providerAvailable: v.number(),
     observedAt: v.number(),
+    accounting: v.optional(progressAccounting),
     sources: v.array(
       v.object({
         role: v.union(
@@ -43,6 +45,8 @@ export const previewResult = v.union(
         ),
         matureUnpaid: v.number(),
         pendingCredits: v.number(),
+        releasedAmount: v.optional(v.number()),
+        reservedAmount: v.optional(v.number()),
       }),
     ),
   }),
@@ -78,25 +82,11 @@ export async function previewPlan(
     fees,
     threshold,
   } = await readPayoutPlan(ctx, args, policy);
-  const sources = (["store", "affiliate", "other"] as const).map((role) => {
-    let matureUnpaid = 0,
-      pendingCredits = 0;
-    for (const source of funding)
-      if (
-        source.currency === args.currency &&
-        (source.role ?? "other") === role
-      ) {
-        matureUnpaid = add(
-          matureUnpaid,
-          add(
-            add(source.matureNet, -source.paidAmount),
-            -source.reservedAmount,
-          ),
-        );
-        pendingCredits = add(pendingCredits, source.pendingCredits);
-      }
-    return { role, matureUnpaid, pendingCredits };
-  });
+  const progress = summarizePayoutProgress(
+    plan,
+    funding,
+    add(fees?.amount ?? 0, args.independentLiabilities),
+  );
   return {
     status: plan.status,
     ...(plan.status === "held" ? { reason: plan.reason } : {}),
@@ -113,6 +103,6 @@ export async function previewPlan(
       Date.now(),
       ...args.observations.map((o) => o.observedAt),
     ),
-    sources,
+    ...progress,
   };
 }

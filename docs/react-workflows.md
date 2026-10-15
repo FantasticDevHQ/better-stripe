@@ -669,6 +669,12 @@ visible even though the visual progress indicator stops at zero. A qualified
 assessment is informational; the automatic worker verifies it again before a
 payout. The component has no withdrawal action.
 
+When the assessment includes `accounting`, the component also shows carried
+forward funds, funds withheld for costs, in-flight allocations and paid principal
+net of verified payout returns. Its source table separates in-flight and paid
+amounts. These metrics are omitted for older assessments without accounting
+fields. They are never inferred from the current Stripe available balance.
+
 `policy={undefined}` means loading. A null policy or `stripe_managed` mode shows
 Stripe-managed defaults without inventing a numeric provider floor. Changing
 policies suppress prior financial progress. For a ready custom policy, an
@@ -678,7 +684,8 @@ currency or configured minimum rejects the display.
 
 Use the `children` render prop for translated labels and application cards. It
 receives `status`, `reason`, `metrics`, `sources`, `progress`, `observedAt`,
-`nextAttemptAt` and `holdDeadline`. Metrics include stable keys and raw minor-unit
+`nextAttemptAt`, `holdDeadline` and optional `accounting`. Accounting metric keys
+are `carried`, `withheld`, `reserved` and `released`. Metrics include raw minor-unit
 amounts as well as formatted values. Render props use the same state calculation
 as the native markup; replace the English message with your own translated copy
 selected by `status` and `reason`.

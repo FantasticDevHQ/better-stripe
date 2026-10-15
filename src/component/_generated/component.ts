@@ -3630,6 +3630,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           | { amount: 0; reason: string; status: "held" }
           | {
+              accounting?: {
+                carriedForwardAmount: number;
+                releasedAmount: number;
+                reservedAmount: number;
+                withheldAmount: number;
+              };
               amount: number;
               confirmedFees: number;
               currency: string;
@@ -3643,6 +3649,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               sources: Array<{
                 matureUnpaid: number;
                 pendingCredits: number;
+                releasedAmount?: number;
+                reservedAmount?: number;
                 role: "store" | "affiliate" | "other";
               }>;
               status: "held" | "qualified";

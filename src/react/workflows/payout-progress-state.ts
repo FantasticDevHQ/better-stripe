@@ -3,7 +3,16 @@ import type { PayoutPolicy, PayoutPreview } from "../../client/payoutPolicy.js";
 import { formatPrice } from "../lib/price-helpers.js";
 export type PayoutProgressMetric = {
   key:
-    "qualifying" | "pending" | "minimum" | "eligible" | "fees" | "liabilities";
+    | "qualifying"
+    | "pending"
+    | "minimum"
+    | "eligible"
+    | "fees"
+    | "liabilities"
+    | "carried"
+    | "withheld"
+    | "reserved"
+    | "released";
   label: string;
   amount: number;
   formattedValue: string;
@@ -15,12 +24,19 @@ export type PayoutProgressState = {
   reason: string | null;
   message: string;
   metrics: PayoutProgressMetric[];
+  accounting?: NonNullable<
+    Extract<PayoutPreview, { currency: string }>["accounting"]
+  >;
   sources: {
     role: "store" | "affiliate" | "other";
     matureUnpaid: number;
     pendingCredits: number;
     matureLabel: string;
     pendingLabel: string;
+    releasedAmount?: number;
+    reservedAmount?: number;
+    releasedLabel?: string;
+    reservedLabel?: string;
   }[];
   progress: { value: number; max: number } | null;
   nextAttemptAt: number | null;
@@ -118,6 +134,7 @@ export function payoutProgressState({
             : (reasons[preview.reason ?? ""] ??
               "Automatic payout is on hold. Refresh or contact support.");
         state.observedAt = preview.observedAt;
+        state.accounting = preview.accounting;
         state.progress = {
           value: Math.max(0, Math.min(preview.threshold, preview.matureUnpaid)),
           max: preview.threshold,
@@ -127,6 +144,30 @@ export function payoutProgressState({
           ["pending", "Pending settlement", preview.pendingCredits],
           ["minimum", "Combined payout minimum", preview.threshold],
           ["eligible", "Eligible at assessment", preview.amount],
+          ...(preview.accounting
+            ? ([
+                [
+                  "carried",
+                  "Carried forward",
+                  preview.accounting.carriedForwardAmount,
+                ],
+                [
+                  "withheld",
+                  "Withheld for costs",
+                  preview.accounting.withheldAmount,
+                ],
+                [
+                  "reserved",
+                  "Payouts in progress",
+                  preview.accounting.reservedAmount,
+                ],
+                [
+                  "released",
+                  "Paid out, net of returns",
+                  preview.accounting.releasedAmount,
+                ],
+              ] as const)
+            : []),
           ["fees", "Confirmed payout costs", preview.confirmedFees],
           [
             "liabilities",
@@ -144,6 +185,12 @@ export function payoutProgressState({
           ...source,
           matureLabel: amount(source.matureUnpaid),
           pendingLabel: amount(source.pendingCredits),
+          ...(source.releasedAmount === undefined
+            ? {}
+            : { releasedLabel: amount(source.releasedAmount) }),
+          ...(source.reservedAmount === undefined
+            ? {}
+            : { reservedLabel: amount(source.reservedAmount) }),
         }));
       }
     }

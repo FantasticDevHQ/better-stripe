@@ -5,6 +5,7 @@ import type { observation } from "./observation.js";
 import { checkSnapshot, sourceById } from "./helpers.js";
 import { readFees } from "./fees.js";
 import { planRecipientPayout, type PayoutFundingSource } from "./allocation.js";
+import { assertAllocationTotals } from "./allocationTotals.js";
 export async function readPayoutPlan(
   ctx: MutationCtx | QueryCtx,
   args: {
@@ -43,6 +44,7 @@ export async function readPayoutPlan(
     });
   }
   const fees = await readFees(ctx, args);
+  await assertAllocationTotals(ctx, args, sources);
   const plan = planRecipientPayout({
     currency: args.currency,
     threshold: minimum.amount,

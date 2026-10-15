@@ -3155,6 +3155,161 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutSnapshots: {
+      mutations: {
+        advance: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            batchSize?: number;
+            expectedStep: number;
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocationCount: number;
+            allocationCursor?: string;
+            claimCount: number;
+            claimCursor?: string;
+            deferredPositiveChanges: boolean;
+            expectedRevision: number;
+            expiresAt: number;
+            feeCount: number;
+            feeCursor?: string;
+            initialRevision: number;
+            initialRiskRevision: number;
+            observedRevision: number;
+            operationKey: string;
+            ownerKey: string;
+            phase:
+              | "sources"
+              | "allocations"
+              | "fees"
+              | "claims"
+              | "repair"
+              | "check"
+              | "local_ready"
+              | "invalidated"
+              | "discarding";
+            policyMode?: string;
+            policyOperationKey?: string;
+            providerChanged: boolean;
+            readOnly: boolean;
+            reason?: string;
+            riskRevision: number;
+            sourceCount: number;
+            sourceCursor?: string;
+            sourceFence: number;
+            step: number;
+          },
+          Name
+        >;
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            expectedRevision: number;
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocationCount: number;
+            allocationCursor?: string;
+            claimCount: number;
+            claimCursor?: string;
+            deferredPositiveChanges: boolean;
+            expectedRevision: number;
+            expiresAt: number;
+            feeCount: number;
+            feeCursor?: string;
+            initialRevision: number;
+            initialRiskRevision: number;
+            observedRevision: number;
+            operationKey: string;
+            ownerKey: string;
+            phase:
+              | "sources"
+              | "allocations"
+              | "fees"
+              | "claims"
+              | "repair"
+              | "check"
+              | "local_ready"
+              | "invalidated"
+              | "discarding";
+            policyMode?: string;
+            policyOperationKey?: string;
+            providerChanged: boolean;
+            readOnly: boolean;
+            reason?: string;
+            riskRevision: number;
+            sourceCount: number;
+            sourceCursor?: string;
+            sourceFence: number;
+            step: number;
+          },
+          Name
+        >;
+        discard: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            batchSize?: number;
+            operationKey: string;
+            ownerKey: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocationCount: number;
+            allocationCursor?: string;
+            claimCount: number;
+            claimCursor?: string;
+            deferredPositiveChanges: boolean;
+            expectedRevision: number;
+            expiresAt: number;
+            feeCount: number;
+            feeCursor?: string;
+            initialRevision: number;
+            initialRiskRevision: number;
+            observedRevision: number;
+            operationKey: string;
+            ownerKey: string;
+            phase:
+              | "sources"
+              | "allocations"
+              | "fees"
+              | "claims"
+              | "repair"
+              | "check"
+              | "local_ready"
+              | "invalidated"
+              | "discarding";
+            policyMode?: string;
+            policyOperationKey?: string;
+            providerChanged: boolean;
+            readOnly: boolean;
+            reason?: string;
+            riskRevision: number;
+            sourceCount: number;
+            sourceCursor?: string;
+            sourceFence: number;
+            step: number;
+          } | null,
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         upsertPrice: FunctionReference<

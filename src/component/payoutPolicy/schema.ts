@@ -69,7 +69,8 @@ export const operationDoc = v.object({
 });
 export const policiesTable = defineTable(policyFields)
   .index("by_account", ["accountId"])
-  .index("by_deadline", ["holdDeadline"]);
+  .index("by_deadline", ["holdDeadline"])
+  .index("by_mode_status", ["mode", "status"]);
 export const operationsTable = defineTable(operationFields).index(
   "by_operation",
   ["operationKey"],

@@ -1,4 +1,13 @@
 import {
+  financialRevisionsTable,
+  riskEventsTable,
+  riskRevisionsTable,
+  snapshotsTable,
+  snapshotSourcesTable,
+  snapshotClaimsTable,
+  snapshotFeesTable,
+} from "./payoutSnapshots/schema.js";
+import {
   feeBalancesTable as payoutFeeBalancesTable,
   claimsTable as payoutReleaseClaimsTable,
   sourcesTable as payoutSourceAllocationsTable,
@@ -37,6 +46,13 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  payoutFinancialRevisions: financialRevisionsTable,
+  payoutRiskEvents: riskEventsTable,
+  payoutRiskRevisions: riskRevisionsTable,
+  payoutSnapshots: snapshotsTable,
+  payoutSnapshotSources: snapshotSourcesTable,
+  payoutSnapshotClaims: snapshotClaimsTable,
+  payoutSnapshotFees: snapshotFeesTable,
   payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,
   payoutSourceAllocations: payoutSourceAllocationsTable,

@@ -517,3 +517,56 @@ explains unknown history or an expired holding period. This flow does not enable
 Dashboard accounts with withdrawal bypasses, Global Payouts, unsupported source
 rails, unknown numeric provider floors or accounts beyond the current atomic
 snapshot bounds. It installs no host cron or UI.
+
+## Resumable local collections
+
+An authorized host worker can collect the local recipient ledger in bounded
+steps, retaining its cursor and step number across restarts:
+
+```ts
+let state = await stripe.payoutPolicy.collectSnapshot(ctx, {
+  accountId,
+  ownerKey,
+  operationKey: collectionKey,
+  expectedRevision: policy?.revision ?? -1,
+});
+state = await stripe.payoutPolicy.collectSnapshot(ctx, {
+  accountId,
+  ownerKey,
+  operationKey: collectionKey,
+  expectedRevision: policy?.revision ?? -1,
+  expectedStep: state.step,
+  batchSize: 25,
+});
+```
+
+Repeat bounded calls until `phase` reaches `local_ready` or `invalidated`.
+Duplicate step submissions preserve cursor progress. Sources, source allocations,
+payout fees and payout claims are copied across pages, with no 100-row limit on the local
+collection. New positive funding can be deferred to a later collection; refunds,
+reservations, payouts and fees enter an ordered account risk journal. The worker
+repairs changed entries and checks claim/source allocation rollups before local
+completion. Missing journal events, orphaned sources and changed policy identity
+stop collection with an explicit reason.
+
+`local_ready` describes a read-only local manifest. Complete provider receipts,
+provider history and monetary claim binding are still required before a payout.
+These local APIs do not remove the current bounded release/adoption limits by
+themselves. Provider-history continuation and scalable claim execution remain
+under implementation.
+
+After a read-only collection is no longer needed, repeatedly call
+`discardSnapshot(ctx, { accountId, ownerKey, operationKey: collectionKey })` until
+it returns `null`. Cleanup removes only collection caches. Read-only collection
+leases last 24 hours. Financially bound collections reject read-only cleanup and
+expiry; payout claims and their source reservations keep their own lifecycle.
+
+### Development reset safeguards
+
+`clearAllTables` is a development/test utility. It rejects active or changing
+payout schedules, unresolved reserved/submitted claims, financially bound
+collections and known pending/in-transit provider payouts. The host must quiesce
+provider writers and verify live provider state before invoking reset. Restore
+schedules through the policy APIs and reconcile unresolved operations first.
+The guard preserves the restoration and payout records until that work is done.
+Read-only cache collections can be cleared with the other development data.

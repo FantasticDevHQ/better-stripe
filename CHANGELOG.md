@@ -16,10 +16,9 @@
 
 ## [0.18.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.17.1...v0.18.0) (2026-10-15)
 
-
 ### Features
 
-* **payouts:** add durable recipient-held policy controls ([#180](https://github.com/FantasticDevHQ/better-stripe/issues/180)) ([14404c6](https://github.com/FantasticDevHQ/better-stripe/commit/14404c6d3a710c214917657baeb807c180eb1b0f))
+- **payouts:** add durable recipient-held policy controls ([#180](https://github.com/FantasticDevHQ/better-stripe/issues/180)) ([14404c6](https://github.com/FantasticDevHQ/better-stripe/commit/14404c6d3a710c214917657baeb807c180eb1b0f))
 
 ## [0.17.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.17.0...v0.17.1) (2026-10-15)
 

@@ -25,12 +25,24 @@ export const observationFields = {
   amountDue: v.number(),
   revision: v.number(),
 };
+export const openingCollection = v.object({
+  operationKey: v.string(),
+  amountDue: v.number(),
+  revision: v.number(),
+  collectedAmount: v.number(),
+});
+export const importArgs = {
+  ...observationFields,
+  operationKey: v.string(),
+  collectedAmount: v.number(),
+};
 export const claimFields = {
   ...observationFields,
   collectedAmount: v.number(),
   reservedAmount: v.number(),
   outstanding: v.number(),
   sign: signValidator,
+  openingCollection: v.optional(openingCollection),
 };
 export const claimDoc = v.object({
   ...claimFields,
@@ -104,6 +116,7 @@ export const reservationDoc = v.object({
 });
 export const claimsTable = defineTable(claimFields)
   .index("by_key", ["claimKey"])
+  .index("by_import", ["openingCollection.operationKey"])
   .index("by_scope", ["accountId", "scopeKey", "currency"])
   .index("by_sign", ["accountId", "scopeKey", "currency", "sign"]);
 export const balancesTable = defineTable(balanceFields).index("by_scope", [

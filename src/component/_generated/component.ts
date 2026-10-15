@@ -1707,6 +1707,47 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        importClaim: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            operationKey: string;
+            revision: number;
+            scopeKey: string;
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            amountDue: number;
+            claimKey: string;
+            collectedAmount: number;
+            currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
+            outstanding: number;
+            reservedAmount: number;
+            revision: number;
+            scopeKey: string;
+            sign: "positive" | "negative" | "zero";
+            sourceChargeId: string;
+            sourceGross: number;
+            sourceProcessingFee: number;
+          },
+          Name
+        >;
         record: FunctionReference<
           "mutation",
           "internal",
@@ -1729,6 +1770,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -1816,6 +1863,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -1892,6 +1945,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             claimKey: string;
             collectedAmount: number;
             currency: string;
+            openingCollection?: {
+              amountDue: number;
+              collectedAmount: number;
+              operationKey: string;
+              revision: number;
+            };
             outstanding: number;
             reservedAmount: number;
             revision: number;
@@ -1965,6 +2024,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               claimKey: string;
               collectedAmount: number;
               currency: string;
+              openingCollection?: {
+                amountDue: number;
+                collectedAmount: number;
+                operationKey: string;
+                revision: number;
+              };
               outstanding: number;
               reservedAmount: number;
               revision: number;

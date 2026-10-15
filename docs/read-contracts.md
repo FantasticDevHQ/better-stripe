@@ -126,14 +126,49 @@ accounts and direct callers to the new methods. Their historical scans remain
 subject to Convex read limits; migrate busy accounts to the maintained summaries.
 Full referred-sale history uses `paginateTransfersByAccount`, not the preview.
 
+## Current payout observations
+
+Call `betterStripe.syncPayoutFromStripe(ctx, { stripePayoutId, scope })` from an
+authorized server action. Use `scope: { type: "connected", accountId }` for the
+recipient's connected account or explicitly use `scope: { type: "platform" }`
+for a platform payout. Resolve scope from trusted host configuration and recipient
+ownership. Never accept an arbitrary account or platform mode from the browser.
+The method reads Stripe and updates the existing component payout record; it
+never creates, cancels or releases a bank payout.
+
+The operation works for Stripe-managed automatic and manually triggered payouts.
+It retrieves the current payout under that account's Stripe request scope and
+validates the payout identity, original amount and currency, status, arrival date,
+method and failure details. It does not require a mature balance transaction or a
+manual execution claim. A current status observation does not establish funding
+maturity, payout eligibility or a policy minimum.
+
+A durable claim assigns each read a per-payout generation. Only the newest
+claimed generation can commit. A delayed older response returns `superseded`
+without changing the financial row. A successful result returns `accepted`, its
+generation, `changed` and the stored payout. Identical observations preserve the
+financial row and exact currency totals. Retrying the same committed generation
+also preserves its acceptance timestamp. A later current provider observation
+can legitimately change paid to failed; no terminal-status ranking is applied.
+
+Provider errors or invalid snapshots throw and leave the last accepted financial
+observation intact. The latest incomplete claim becomes unknown when that marker
+can be saved. A lost mutation response may leave a pending or already accepted
+claim. Retry the operation to obtain a new generation and read Stripe again.
+Never substitute the webhook event body when the current provider read fails.
+The claim table holds reconciliation metadata, not a second money ledger.
+
+This method does not yet replace the existing signed webhook dispatcher. The
+prepared generation must be integrated into the shared host callback transaction.
+Until that wiring is adopted, legacy webhook deliveries still apply
+event-body snapshots and can regress on distinct out-of-order events. Do not call
+this method and then blindly apply an old event-body upsert afterward.
+
 ## Payout failures
 
 Component payout rows and live `RecipientPayoutRow` snapshots expose optional
-`failureCode` and `failureMessage`. Signed payout events write the provider's
-current snapshot to the existing payout identity. A later snapshot with absent
-or null provider failure fields clears stored details. Legacy rows remain valid.
-Ordinary event replay is deduplicated. This is snapshot reconciliation and does
-not guarantee convergence for globally out-of-order events.
+`failureCode` and `failureMessage`. A later accepted snapshot with absent or null
+provider failure fields clears stored details. Legacy rows remain valid.
 
 Host apps should translate known codes into safe recovery instructions and a
 settings link. Do not log or blindly render raw provider messages. Authorize

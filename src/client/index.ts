@@ -1,5 +1,10 @@
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
+import * as payoutSyncImpl from "./connect/payoutSync.js";
+export type {
+  PayoutSyncOptions,
+  PayoutSyncResult,
+} from "./connect/payoutSync.js";
 import { PayoutPolicyClient } from "./payoutPolicy.js";
 export * from "./payoutPolicy.js";
 import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
@@ -79,10 +84,7 @@ import { internalActionGeneric, internalMutationGeneric } from "convex/server";
 import { v } from "convex/values";
 import Stripe from "stripe";
 import type { ComponentApi } from "../component/_generated/component.js";
-import type {
-  DisputeStatus,
-  PayoutStatus,
-} from "../component/connect/validators.js";
+import type { DisputeStatus } from "../component/connect/validators.js";
 import type { SplitRecipient } from "../component/lib/fees.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as invoicesImpl from "./billing/invoices.js";
@@ -1299,15 +1301,16 @@ export class BetterStripe extends ReadContractClient {
     return payoutsImpl.getAccountBalance(this.stripe(), opts);
   }
 
-  async getPayout(ctx: RunCtx, opts: { payoutId: string }) {
-    return payoutsImpl.getPayout(this.component, ctx, opts);
-  }
-
-  async listPayouts(
+  async syncPayoutFromStripe(
     ctx: RunCtx,
-    opts?: { stripeAccountId?: string; status?: PayoutStatus; limit?: number },
+    opts: payoutSyncImpl.PayoutSyncOptions,
   ) {
-    return payoutsImpl.listPayouts(this.component, ctx, opts);
+    return payoutSyncImpl.syncPayoutFromStripe(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   // REFUND METHODS

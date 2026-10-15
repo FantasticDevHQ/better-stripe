@@ -1,3 +1,4 @@
+import { claimsTable as payoutSyncClaimsTable } from "./payoutSync/schema.js";
 import {
   payoutReleasesTable as affiliatePayoutReleases,
   operationsTable as affiliateOperations,
@@ -55,6 +56,7 @@ export default defineSchema({
   affiliateOffsets,
   affiliateRecoveryBalances: affiliateBalances,
   affiliateReversalReceipts: affiliateReversalReceiptsTable,
+  payoutSyncClaims: payoutSyncClaimsTable,
   payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,
   payoutSourceAllocations: payoutSourceAllocationsTable,

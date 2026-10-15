@@ -136,7 +136,7 @@ complexity, and no error diagnostics. The final repository-wide validation
 result is retained in [check output](affiliate-live/checks.txt). Coverage floors,
 file budgets, Shadscan policy and test timeouts are unchanged.
 
-## Remaining acceptance limitations
+## Provider verification limitations
 
 - **Insufficient-balance debt and subsequent debt offsets:** not reproduced live.
   This account accepted reversal into a negative available balance. A separate
@@ -160,5 +160,7 @@ file budgets, Shadscan policy and test timeouts are unchanged.
 - **Global Payouts:** unsupported by this Connect path. No card/bank debit or
   completed-payout recall was introduced.
 
-The PR and project remain open. The live evidence above supports the listed
-refund and payout cases, not completion of every acceptance scenario.
+Implementation verification combines the automated lifecycle and payout tests
+with the live refund and payout cases above. The provider-specific scenarios
+listed here remain unverified live; the automated coverage does not remove
+these deployment limitations.

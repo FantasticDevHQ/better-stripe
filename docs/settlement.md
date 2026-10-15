@@ -476,6 +476,12 @@ the currency. Existing package claims supply their immutable allocations on
 subsequent calls; use `payouts: []` to verify/reconcile already imported history.
 The same flow supports explicit accounting for automatic historical payouts.
 
+For a verified bank return, holding-age proof retains the original paid
+principal and adds the returned credit at its availability time. The returned
+claim contributes no currently paid source allocation. Net provider fees still
+reduce the combined unpaid balance. Replaying adoption preserves the same claim;
+a later release can include returned cash and new funding exactly once.
+
 The package retrieves actual recipient funding and payout receipts, verifies
 full history against live available/pending cash, and validates each allocation
 against source maturity at the historical payout date. Future credits and

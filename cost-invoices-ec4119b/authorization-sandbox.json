@@ -1,0 +1,13 @@
+{
+  "sandbox": true,
+  "realProvider": true,
+  "deployedComponent": true,
+  "publicClient": true,
+  "apiVersion": "2026-09-30.preview",
+  "status": "passed",
+  "providerOwnershipRejected": true,
+  "providerCurrencyRejected": true,
+  "noProviderItemsCreated": true,
+  "closedQaClaims": true,
+  "draftRemoved": true
+}

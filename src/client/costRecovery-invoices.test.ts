@@ -390,3 +390,12 @@ it("does not guess funding allocations for multi-payment invoices", async () => 
     outstanding: 0,
   });
 });
+it("never creates a new provider item for an already completed bookkeeping group", async () => {
+  const { ctx, recovery, provider } = await setup();
+  await recovery.finish(ctx, {
+    groupKey: options.groupKey,
+    outcome: "collect",
+  });
+  await expect(recovery.attachInvoice(ctx, options)).rejects.toThrow(/sealed/i);
+  expect(provider.invoiceItems.create).not.toHaveBeenCalled();
+});

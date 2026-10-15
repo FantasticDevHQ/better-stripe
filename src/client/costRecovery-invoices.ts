@@ -70,6 +70,10 @@ export async function attachRecoveryInvoice(
       throw new Error(
         "Recovery invoice item is missing; no collection can be confirmed.",
       );
+    if (group.status !== "sealed")
+      throw new Error(
+        "New recovery items require a sealed, uncompleted group.",
+      );
     if (invoice.status !== "draft")
       throw new Error("New recovery items require a draft invoice.");
     found = await stripe.invoiceItems.create(

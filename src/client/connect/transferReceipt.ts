@@ -79,6 +79,7 @@ function fingerprint(t: Stripe.Transfer) {
     t.amount,
     t.currency,
     t.amount_reversed,
+    t.metadata?.bsReinstateOf,
   ]);
 }
 function ledgerFingerprint(t: LedgerTransfer) {

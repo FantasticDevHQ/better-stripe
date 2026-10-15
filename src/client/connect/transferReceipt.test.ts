@@ -495,3 +495,26 @@ it("reduces mature original credit for a known pending reversal", async () => {
     pendingCredits: 0,
   });
 });
+it("rechecks reinstatement provenance if its provider metadata changes during receipt reads", async () => {
+  const { ctx, provider, run } = setup();
+  (ctx.runQuery as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ...ledger,
+    reinstatement: true,
+  });
+  provider.transfers.retrieve
+    .mockReset()
+    .mockResolvedValueOnce({
+      ...transfer,
+      source_transaction: null,
+      metadata: { bsReinstateOf: "ch_sale" },
+    })
+    .mockResolvedValueOnce({
+      ...transfer,
+      source_transaction: null,
+      metadata: { bsReinstateOf: "ch_other" },
+    });
+  expect(await run()).toMatchObject({
+    status: "not_ready",
+    reason: "provider_changed",
+  });
+});

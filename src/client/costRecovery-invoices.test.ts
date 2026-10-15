@@ -399,3 +399,72 @@ it("never creates a new provider item for an already completed bookkeeping group
   await expect(recovery.attachInvoice(ctx, options)).rejects.toThrow(/sealed/i);
   expect(provider.invoiceItems.create).not.toHaveBeenCalled();
 });
+it("releases an unbound void invoice after a complete item scan without creating an adjustment", async () => {
+  const { ctx, recovery, invoice, items, provider } = await setup();
+  items.push(
+    ...Array.from(
+      { length: 105 },
+      (_, i) => ({ id: `ii_other_${i}`, metadata: {} }) as Stripe.InvoiceItem,
+    ),
+  );
+  invoice.status = "void";
+  const result = await recovery.reconcileInvoice(ctx, options);
+  expect(result).toMatchObject({
+    isDone: true,
+    invoiceItemId: null,
+    invoiceStatus: "void",
+  });
+  await recovery.reconcileInvoice(ctx, options);
+  expect(provider.invoiceItems.create).not.toHaveBeenCalled();
+  expect(await recovery.balance(ctx, scope)).toMatchObject({
+    reservedAmount: 0,
+    collectedAmount: 0,
+    outstanding: 320,
+  });
+});
+it("keeps missing adjustments reserved for unpaid, paid, uncollectible or previously bound invoices", async () => {
+  for (const status of ["draft", "open", "paid", "uncollectible"]) {
+    const { ctx, recovery, invoice } = await setup();
+    invoice.status = status;
+    await expect(
+      recovery.reconcileInvoice(ctx, {
+        ...options,
+        releaseUncollectible: true,
+      }),
+    ).rejects.toThrow(/missing/i);
+    expect(await recovery.balance(ctx, scope)).toMatchObject({
+      reservedAmount: 320,
+      collectedAmount: 0,
+    });
+  }
+  const { ctx, recovery, invoice, items } = await setup();
+  await recovery.attachInvoice(ctx, options);
+  items.length = 0;
+  invoice.status = "void";
+  await expect(recovery.reconcileInvoice(ctx, options)).rejects.toThrow(
+    /bound.*missing/i,
+  );
+});
+it("does not release an unbound void invoice on an incomplete scan or ownership mismatch", async () => {
+  const { ctx, recovery, invoice, provider } = await setup();
+  invoice.status = "void";
+  const originalList = provider.invoiceItems.list.getMockImplementation()!;
+  provider.invoiceItems.list.mockImplementation(() =>
+    (async function* () {
+      yield { id: "ii_unrelated", metadata: {} } as Stripe.InvoiceItem;
+      throw new Error("pagination interrupted");
+    })(),
+  );
+  await expect(recovery.reconcileInvoice(ctx, options)).rejects.toThrow(
+    "pagination interrupted",
+  );
+  provider.invoiceItems.list.mockImplementation(originalList);
+  invoice.customer_account = "acct_other";
+  await expect(recovery.reconcileInvoice(ctx, options)).rejects.toThrow(
+    /ownership/i,
+  );
+  expect(await recovery.balance(ctx, scope)).toMatchObject({
+    reservedAmount: 320,
+    collectedAmount: 0,
+  });
+});

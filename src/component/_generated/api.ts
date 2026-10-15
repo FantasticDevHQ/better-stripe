@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as connect_reversalDiagnostics from "../connect/reversalDiagnostics.js";
 import type * as connect_reversalClaims from "../connect/reversalClaims.js";
 import type * as connect_reversalReceipts from "../connect/reversalReceipts.js";
 import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js";
@@ -72,6 +73,7 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "connect/reversalDiagnostics": typeof connect_reversalDiagnostics;
   "connect/reversalClaims": typeof connect_reversalClaims;
   "connect/reversalReceipts": typeof connect_reversalReceipts;
   "settlement/clawbackSchema": typeof settlement_clawbackSchema;

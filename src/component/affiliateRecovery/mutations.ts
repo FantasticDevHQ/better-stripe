@@ -1,7 +1,7 @@
 import { commissionExposureValidator } from "../settlement/clawbackSchema.js";
 import { applyObligationExposure } from "../settlement/clawbacks.js";
 import { v } from "convex/values";
-import { mutation } from "../_generated/server.js";
+import { mutation } from "../earnings/triggers.js";
 import { balance, updateObligation, due, credit } from "./accounting.js";
 import { operationFields, recoveryState } from "./schema.js";
 import { deriveReversalState } from "../lib/reversals.js";

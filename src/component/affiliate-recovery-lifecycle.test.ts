@@ -264,6 +264,13 @@ describe("affiliate recovery lifecycle", () => {
     await f.refund("ch_1", 5000);
     await f.refund("ch_1", 5000);
     expect(f.receipts.map((r) => r.amount)).toEqual([501]);
+    expect(
+      await f.t.query(api.connect.queries.getAccountEarningsByCurrency, {
+        destinationAccountId: "acct_a",
+      }),
+    ).toMatchObject({
+      totals: [{ currency: "usd", gross: 1001, reversed: 501, net: 500 }],
+    });
     expect((await f.snapshot()).balance).toMatchObject({
       recoveredAmount: 501,
       outstandingDebt: 0,
@@ -369,6 +376,13 @@ describe("affiliate recovery lifecycle", () => {
           .filter((r) => r.metadata.bsRecoveryOperation)
           .map((r) => r.amount),
       ).toEqual([500]);
+      expect(
+        await f.t.query(api.connect.queries.getAccountEarningsByCurrency, {
+          destinationAccountId: "acct_a",
+        }),
+      ).toMatchObject({
+        totals: [{ currency: "usd", gross: 1501, reversed: 1001, net: 500 }],
+      });
       expect((await f.snapshot()).obligations.page[0]).toMatchObject({
         disputeState: "won",
         finalizedAmount: 501,

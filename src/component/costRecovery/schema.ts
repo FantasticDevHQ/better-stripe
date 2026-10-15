@@ -56,6 +56,14 @@ export const groupFields = {
   ...groupInput,
   amount: v.number(),
   pendingOperations: v.number(),
+  invoiceItemId: v.optional(v.string()),
+  invoiceFunding: v.optional(
+    v.object({
+      sourceChargeId: v.string(),
+      sourceGross: v.number(),
+      sourceProcessingFee: v.number(),
+    }),
+  ),
   status: v.union(
     v.literal("open"),
     v.literal("sealed"),

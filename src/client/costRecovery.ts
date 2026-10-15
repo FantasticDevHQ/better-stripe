@@ -1,3 +1,8 @@
+import type Stripe from "stripe";
+import {
+  readInvoiceFunding,
+  attachRecoveryInvoice,
+} from "./costRecovery-invoices.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { runMutationOrThrow } from "./helpers.js";
 import { componentRef } from "./webhooks/helpers.js";
@@ -52,6 +57,12 @@ export type RecoveryGroup = RecoveryGroupOptions & {
   _creationTime: number;
   amount: number;
   pendingOperations: number;
+  invoiceItemId?: string;
+  invoiceFunding?: {
+    sourceChargeId: string;
+    sourceGross: number;
+    sourceProcessingFee: number;
+  };
   status:
     "open" | "sealed" | "collecting" | "releasing" | "collected" | "released";
 };
@@ -65,9 +76,12 @@ export type RecoveryReservation = {
   allocations: { claimId: string; claimKey: string; amount: number }[];
   status: "reserved" | "collected" | "released" | "empty";
 };
-/** Durable bookkeeping only. Host authorizes policy and verifies provider outcomes. */
+/** Host authorizes policy and scope. Provider methods verify invoice outcomes. */
 export class CostRecoveryClient {
-  constructor(private readonly component: Component) {}
+  constructor(
+    private readonly component: Component,
+    private readonly provider?: () => Stripe,
+  ) {}
   private async mutate<T>(
     ctx: RunCtx,
     path: string,
@@ -88,6 +102,97 @@ export class CostRecoveryClient {
       componentRef(this.component, `costRecovery/queries/${path}`),
       args,
     )) as T;
+  }
+  /** Host authorizes the account, scope and invoice group; call from an action. */
+  async attachInvoice(ctx: RunCtx, opts: RecoveryScope & { groupKey: string }) {
+    if (!this.provider)
+      throw new Error("Invoice recovery requires a Stripe client.");
+    const group = await this.getGroup(ctx, { groupKey: opts.groupKey });
+    return attachRecoveryInvoice(
+      this.provider(),
+      group,
+      opts,
+      (invoiceItemId) =>
+        this.mutate<RecoveryGroup>(ctx, "mutations/bindInvoiceItem", {
+          groupKey: opts.groupKey,
+          invoiceItemId,
+        }),
+    );
+  }
+  /** Re-read Stripe; keep unpaid items reserved. Repeat until isDone after terminal outcomes. */
+  async reconcileInvoice(
+    ctx: RunCtx,
+    opts: RecoveryScope & { groupKey: string; releaseUncollectible?: boolean },
+  ) {
+    if (!this.provider)
+      throw new Error("Invoice recovery requires a Stripe client.");
+    const group = await this.getGroup(ctx, { groupKey: opts.groupKey });
+    const receipt = await attachRecoveryInvoice(
+      this.provider(),
+      group,
+      opts,
+      (invoiceItemId) =>
+        this.mutate<RecoveryGroup>(ctx, "mutations/bindInvoiceItem", {
+          groupKey: opts.groupKey,
+          invoiceItemId,
+        }),
+      false,
+    );
+    const outcome =
+      receipt.invoiceStatus === "paid"
+        ? "collect"
+        : receipt.invoiceStatus === "void" ||
+            (receipt.invoiceStatus === "uncollectible" &&
+              opts.releaseUncollectible === true)
+          ? "release"
+          : null;
+    if (!outcome) return { ...receipt, isDone: false };
+    return {
+      ...receipt,
+      ...(await this.finish(ctx, { groupKey: opts.groupKey, outcome })),
+    };
+  }
+  /** Reconcile a returned funding charge without changing the original cost claims. */
+  async rollbackInvoice(
+    ctx: RunCtx,
+    opts: RecoveryScope & { groupKey: string; revision: number },
+  ) {
+    if (!this.provider)
+      throw new Error("Invoice recovery requires a Stripe client.");
+    const stripe = this.provider();
+    const group = await this.getGroup(ctx, { groupKey: opts.groupKey });
+    const receipt = await attachRecoveryInvoice(
+      stripe,
+      group,
+      opts,
+      (invoiceItemId) =>
+        this.mutate<RecoveryGroup>(ctx, "mutations/bindInvoiceItem", {
+          groupKey: opts.groupKey,
+          invoiceItemId,
+        }),
+      false,
+    );
+    if (
+      receipt.group.status !== "collected" ||
+      receipt.invoiceStatus !== "paid"
+    )
+      throw new Error("Invoice rollback requires verified collection.");
+    const cost = await readInvoiceFunding(stripe, receipt.group);
+    if (cost.status === "not_ready") return cost;
+    await this.mutate<RecoveryGroup>(ctx, "mutations/bindInvoiceFunding", {
+      groupKey: opts.groupKey,
+      sourceChargeId: cost.chargeId,
+      sourceGross: cost.gross,
+      sourceProcessingFee: cost.processingFee,
+    });
+    return {
+      status: "ready" as const,
+      claim: await this.rollback(ctx, {
+        groupKey: opts.groupKey,
+        returnedPrincipal: cost.principalReturned,
+        revision: opts.revision,
+      }),
+    };
   }
   recordClaim(ctx: RunCtx, opts: RecoveryObservation) {
     return this.mutate<RecoveryClaim>(ctx, "mutations/record", opts);

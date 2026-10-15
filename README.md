@@ -337,9 +337,10 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 ### Durable recovery claims
 
-`stripe.costRecovery` is a server-only bookkeeping client. It uses the Convex
-component. Its calls do not use Stripe credentials; normal component installation
-configuration still applies. It never moves money. Your host authenticates the
+`stripe.costRecovery` is a server-only recovery client backed by the Convex
+component. Bookkeeping methods do not use Stripe credentials or move money.
+Invoice methods use the configured Stripe client and must run in an action.
+Your host authenticates the
 caller, approves which costs are owed, authorizes the account and recovery scope,
 and verifies provider outcomes before confirming collection. A recovery scope is
 an application-defined liability boundary, such as one store. Amounts are signed
@@ -410,15 +411,70 @@ cumulative principal. This records a separate, source-linked rollback claim,
 preserves the original costs and collection history, and rounds positive and
 negative amounts symmetrically. Reinstated principal can reduce the rollback
 again with a newer revision. This bookkeeping operation does not refund or
-reverse a transfer. Invoice funding requires a provider-aware adapter; this
-settlement rollback helper does not infer invoice payment allocations.
+reverse a transfer. For invoice groups, use the verified funding adapter below;
+do not invent invoice payment allocations.
 
 Use `balance(ctx, scope)` for exact maintained totals and
 `listClaims(ctx, { ...scope, limit, cursor })` for paginated history. `getClaim`, `getGroup` and
 `getReservation` resume durable workflows. Integrate these server callbacks with
 the existing unstyled React `CostRecovery` display. These bookkeeping APIs leave
-consent, provider fee policy and entitlement changes in the host; provider invoice
-reconciliation and the example migration are separate work.
+consent, provider fee policy and entitlement changes in the host.
+
+### Invoice recovery adjustments
+
+After authorizing the seller, invoice and liability scope, reserve with
+`sourceKind: "invoice"` and `sourceId: invoiceId`. Allocate bounded batches and
+seal the group before calling Stripe. Then attach exactly one signed adjustment
+for the entire group:
+
+```ts
+const receipt = await recovery.attachInvoice(ctx, { ...scope, groupKey });
+// Invoke from your invoice lifecycle reconciliation, and repeat bounded completion
+// until isDone after payment or release.
+const result = await recovery.reconcileInvoice(ctx, {
+  ...scope,
+  groupKey,
+  releaseUncollectible: false,
+});
+```
+
+The invoice must belong to the authorized customer account, use the same currency,
+and be draft before a new item is created. The package stores its stable group
+identity before the provider call, uses that identity as the idempotency key and
+item metadata, and persists the resulting item ID. Every retry scans all items
+on that exact invoice, recovering a successful creation even if the subsequent
+database write failed or the provider idempotency key expired. A bound item that
+has been deleted, changed or duplicated requires reconciliation; the package
+never silently recreates it. Negative adjustments are credits. Items are not
+discountable.
+
+Your host must durably serialize provider operations for each group, including
+attachment and any calls that finish or release it. Never release a reservation
+after a timeout or unknown provider outcome. Draft and open invoices retain their
+reservations, blocking recovery from a second payout. A verified paid invoice
+commits collection; a verified void releases the obligation for a future boundary.
+Uncollectible invoices stay reserved unless your explicit host policy passes
+`releaseUncollectible: true`. Do not use that policy while another process might
+retry payment on the original invoice. Subscription cancellation alone does not
+prove its invoices were voided. These methods never attempt card fallback or
+change a payout schedule.
+
+For a collected invoice fully funded by one PaymentIntent, call
+`rollbackInvoice(ctx, { ...scope, groupKey, revision })`. It checks the paid
+invoice, completely paginates its payments, verifies the funding charge and its
+refund/dispute transactions, retains the original funding economics, and records
+a separate proportional rollback claim. Use a durable revision captured before
+provider reconciliation, and retry the full read on revision conflicts. Original
+cost claims remain intact. Multiple payments, partial allocations, mixed customer
+credits and non-PaymentIntent funding return
+`{ status: "not_ready", reason: "invoice_funding_allocation_required" }` without
+changing claims. Provider processing costs can also return their documented
+not-ready reasons. Those cases need a host-approved allocation policy rather than
+guessed amounts. Invoice integration in the example is a separate migration.
+
+Provider methods preserve the configured API version and propagate Stripe errors.
+See Stripe's [invoice item creation](https://docs.stripe.com/api/invoiceitems/create)
+and [invoice item pagination](https://docs.stripe.com/api/invoiceitems/list).
 
 ### Refund and dispute processing costs
 

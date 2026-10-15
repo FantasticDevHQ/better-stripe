@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "assertions": [
+    {
+      "test": "Example preserves the actual unresolved 999 expiry record after weekly restoration",
+      "status": "passed"
+    },
+    {
+      "test": "BetterStripe components mode displays the same unresolved recovery record",
+      "status": "passed"
+    },
+    {
+      "test": "Repeated dispatch preserves one restoration identity and creates no payout",
+      "status": "passed"
+    },
+    {
+      "test": "Actual browser reset refuses unresolved expiry after automatic scheduling was restored",
+      "status": "passed"
+    },
+    {
+      "test": "Verified test funding reversals and fresh zero balance clear recovery without claiming bank payment",
+      "status": "passed"
+    },
+    {
+      "test": "Browser reset succeeds after verified recovery and preserves provider weekly scheduling",
+      "status": "passed"
+    }
+  ],
+  "pageErrors": []
+}

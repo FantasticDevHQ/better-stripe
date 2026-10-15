@@ -1,0 +1,42 @@
+import {createServer} from 'node:http';
+import {execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {componentsGeneric} from 'convex/server';
+import {BetterStripe} from '<workspace>/dist/client/index.js';
+import {getStripeClient} from '<workspace>/dist/client/helpers.js';
+const root='<workspace>',cwd='/tmp/better-stripe-expiry-recovery-qa',cli=root+'/node_modules/.bin/convex',file='/tmp/payout-expiry-recovery-provider.json';
+const report=JSON.parse(readFileSync(file,'utf8'));
+const key=execFileSync(cli,['env','get','STRIPE_SECRET_KEY'],{cwd:root+'/example',encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();assert(key.startsWith('sk_test_'));
+const sdk=getStripeClient(key),bs=new BetterStripe(componentsGeneric().betterStripe,{STRIPE_SECRET_KEY:key});
+const scope={accountId:report.accountId,ownerKey:report.userId};
+const save=()=>writeFileSync(file,JSON.stringify(report,null,2));
+for(const path of ['actions.ts','recipientPayoutPolicy.ts']) assert.equal(readFileSync(root+'/example/convex/'+path,'utf8'),readFileSync(cwd+'/convex/'+path,'utf8'));
+report.preparedRevision??=report.sourceRevision;report.sourceRevision=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();save();
+function call(path,args={},component=false){return JSON.parse(execFileSync(cli,['run',...(component?['--component','betterStripe']:[]),path,JSON.stringify(args)],{cwd,env:{...process.env,CONVEX_AGENT_MODE:'',CONVEX_DEPLOYMENT:'anonymous:anonymous-better-stripe-expiry-recovery-qa'},encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:120000}).trim()||'null');}
+async function bridge(ref,args){const full=ref[Symbol.for('toReferencePath')];const path=full.match(/\/((?:payoutPolicy|payoutRelease|payoutWorker|connect)\/(?:queries|mutations)\/\w+)$/)?.[1];assert(path);return call(path.replace(/\/(\w+)$/,':$1'),args,true);}
+const ctx={runQuery:bridge,runMutation:bridge};
+async function proof(){return {policy:await bs.payoutPolicy.get(ctx,scope),job:await bs.payoutPolicy.worker.get(ctx,{...scope,currency:'usd'}),schedule:(await sdk.balanceSettings.retrieve(undefined,{stripeAccount:scope.accountId})).payments.payouts.schedule,balance:await sdk.balance.retrieve(undefined,{stripeAccount:scope.accountId}),payouts:(await sdk.payouts.list({limit:100},{stripeAccount:scope.accountId})).data.map(p=>({id:p.id,amount:p.amount,currency:p.currency,status:p.status})),users:call('users:list').map(u=>({id:u._id,role:u.role,stripeAccountId:u.stripeAccountId}))};}
+const server=createServer(async(req,res)=>{try{let input='';for await(const part of req)input+=part;const args=input?JSON.parse(input):{};let result;
+ if(req.url==='/state') result={run:report.run,userId:report.userId,accountId:report.accountId};
+ else if(req.url==='/proof'){result=await proof();report.lastProof=result;save();}
+ else if(req.url==='/fixture'&&req.method==='POST'){result=call('payoutPolicy/mutations:qaExpireFixture',scope,true);report.deadlineFixture=result;save();}
+ else if(req.url==='/return-funding'&&req.method==='POST'){
+  report.fundingReturns??=[];
+  for(const f of report.funding){const t=await sdk.transfers.retrieve(f.id);const amount=t.amount-t.amount_reversed;if(amount>0){const reversal=await sdk.transfers.createReversal(f.id,{amount},{idempotencyKey:report.run+':return:'+f.id});report.fundingReturns.push({id:reversal.id,transferId:f.id,amount});save();call('connect/mutations:upsertTransfer',{stripeTransferId:f.id,destinationAccountId:scope.accountId,amount:t.amount,currency:'usd',role:f.role,status:'reversed',reversedAmount:t.amount,metadata:t.metadata},true);}}
+  result={returned:true};
+ }
+ else if(req.url==='/fund' &&req.method==='POST'){assert(Number.isSafeInteger(args.amount)&&args.amount>0&&args.amount<=1000);assert(['store','affiliate'].includes(args.role));assert(/^[a-z0-9-]{1,30}$/.test(args.tag));const t=await sdk.transfers.create({amount:args.amount,currency:'usd',destination:scope.accountId,metadata:{bsRole:args.role,lifecycleQA:report.run}},{idempotencyKey:report.run+':'+args.tag});if(!report.funding.some(x=>x.id===t.id))report.funding.push({id:t.id,amount:t.amount,role:args.role});save();call('connect/mutations:upsertTransfer',{stripeTransferId:t.id,destinationAccountId:scope.accountId,amount:t.amount,currency:'usd',role:args.role,status:'paid',metadata:t.metadata},true);result={id:t.id,amount:t.amount};}
+ else if(req.url==='/dispatch'&&req.method==='POST'){result=call('payoutWorkers:dispatch');report.dispatchCalls=(report.dispatchCalls??0)+1;save();}
+ else if(req.url==='/reseed'&&req.method==='POST'){result=call('seed:seedDb');report.reseed=result;save();}
+ else if(req.url==='/checkpoint'&&req.method==='POST'){assert(/^[a-zA-Z0-9-]{1,40}$/.test(args.name));result=await proof();report[args.name]=result;save();}
+ else if(req.url==='/cleanup'&&req.method==='POST'){
+ let p=await bs.payoutPolicy.get(ctx,scope);if(p?.status==='changing'){await bs.payoutPolicy.apply(ctx,{...scope,operationKey:p.operationKey});p=await bs.payoutPolicy.get(ctx,scope);}if(p?.mode==='custom'){const operationKey=report.run+':cleanup-restore';assert.equal((await bs.payoutPolicy.prepare(ctx,{...scope,operationKey,expectedRevision:p.revision,mode:'stripe_managed',thresholds:[]})).status,'prepared');assert.equal((await bs.payoutPolicy.apply(ctx,{...scope,operationKey})).status,'ready');}
+ const settings=await sdk.balanceSettings.retrieve(undefined,{stripeAccount:scope.accountId});assert.equal(settings.payments.payouts.schedule.interval,'weekly');report.scheduleRestored=true;
+ let balance=await sdk.balance.retrieve(undefined,{stripeAccount:scope.accountId});let available=balance.available.find(x=>x.currency==='usd')?.amount??0;
+ for(const t of [...report.funding].reverse()){if(available<=0)break;const original=await sdk.transfers.retrieve(t.id);const amount=Math.min(available,original.amount-original.amount_reversed);if(amount>0){await sdk.transfers.createReversal(t.id,{amount},{idempotencyKey:report.run+':cleanup:'+t.id});available-=amount;}}
+ balance=await sdk.balance.retrieve(undefined,{stripeAccount:scope.accountId});const payouts=await sdk.payouts.list({limit:100},{stripeAccount:scope.accountId});assert(![...balance.available,...balance.pending].some(x=>x.amount!==0),'Cleanup still has a non-zero balance');assert(!payouts.data.some(x=>['pending','in_transit'].includes(x.status)),'Cleanup still has an in-flight payout');await sdk.v2.core.accounts.close(scope.accountId,{applied_configurations:['recipient']},{idempotencyKey:report.run+':close'});report.accountClosed=true;save();result={scheduleRestored:true,accountClosed:true};
+ }else {res.writeHead(404);res.end();return;}
+ res.setHeader('Content-Type','application/json');res.end(JSON.stringify(result));
+ }catch(e){const error=String(e.message).replace(/sk_(?:test|live)_\w+/g,'[redacted]');res.writeHead(500,{'Content-Type':'application/json'});res.end(JSON.stringify({error}));console.log('QA control request failed:',error);}});
+server.listen(5192,'127.0.0.1',()=>console.log('Isolated sandbox QA control ready on 5192. No credentials exposed.'));

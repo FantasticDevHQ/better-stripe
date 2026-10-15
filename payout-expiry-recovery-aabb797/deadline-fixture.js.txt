@@ -1,0 +1,12 @@
+import { internalMutation as qaMutation } from "../_generated/server.js";
+export const qaExpireFixture = qaMutation({
+ args: { accountId: v.literal("acct_1UQu8m4kKPIzdC2U"), ownerKey: v.literal("kn7d2bg8wk6k1h6tqhtrj354158gaepk") },
+ returns: v.object({ previousDeadline:v.number(), fixtureDeadline:v.number() }),
+ handler: async(ctx,args)=>{
+  const p=await readPolicy(ctx,args),now=Date.now();
+  if(!p||p.mode!=="custom"||p.status!=="ready"||!p.holdDeadline||p.holdDeadline<=now)throw Error("Expected ready unexpired QA custom policy");
+  const fixtureDeadline=now-1;
+  await ctx.db.patch("payoutPolicies",p._id,{holdDeadline:fixtureDeadline});
+  return {previousDeadline:p.holdDeadline,fixtureDeadline};
+ }
+});

@@ -1,0 +1,20 @@
+10/16/2026, 2:32:22 AM [CONVEX A(payoutWorkers:expire)] [WARN] 'Holding expiry requires operator recovery' {
+  accountId: 'acct_1UQu8m4kKPIzdC2U',
+  deadline: 1792092738548,
+  reason: 'balance_remaining'
+}
+10/16/2026, 2:35:52 AM [CONVEX A(payoutWorkers:expire)] [WARN] 'Holding expiry requires operator recovery' {
+  accountId: 'acct_1UQu8m4kKPIzdC2U',
+  deadline: 1792092738548,
+  reason: 'balance_remaining'
+}
+10/16/2026, 2:40:49 AM [CONVEX A(payoutWorkers:expire)] [WARN] 'Holding expiry requires operator recovery' {
+  accountId: 'acct_1UQu8m4kKPIzdC2U',
+  deadline: 1792092738548,
+  reason: 'balance_remaining'
+}
+10/16/2026, 2:40:52 AM [CONVEX A(payoutWorkers:expire)] [WARN] 'Holding expiry requires operator recovery' {
+  accountId: 'acct_1UQu8m4kKPIzdC2U',
+  deadline: 1792092738548,
+  reason: 'balance_remaining'
+}

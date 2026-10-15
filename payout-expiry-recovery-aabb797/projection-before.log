@@ -1,0 +1,45 @@
+
+ RUN  v5.0.3 <workspace>/example
+
+ ❯ convex/recipientPayoutPolicy.test.ts (13 tests | 1 failed) 355ms
+   × preserves unresolved expiry in the public policy view after controls are restored 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/recipientPayoutPolicy.test.ts > preserves unresolved expiry in the public policy view after controls are restored
+AssertionError: expected { nextAttemptAt: null, …(2) } to match object { policy: { …(2) } }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "policy": {
+-     "holdingExpiry": {
+-       "balances": [
+-         {
+-           "available": 999,
+-           "currency": "usd",
+-           "pending": 0,
+-         },
+-       ],
+-       "status": "balance_remaining",
+-     },
+      "mode": "stripe_managed",
+    },
+  }
+
+ ❯ convex/recipientPayoutPolicy.test.ts:369:45
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  02:36:21
+   Duration  1.66s (transform 63%, tests 23%, import 12%, environment 2%)
+
+undefined
+<workspace>/example:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/recipientPayoutPolicy.test.ts

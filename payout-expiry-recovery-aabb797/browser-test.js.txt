@@ -1,0 +1,36 @@
+async (page) => {
+ const state=await (await page.request.get('http://127.0.0.1:5192/state')).json();
+ const context=await page.context().browser().newContext({viewport:{width:1280,height:900},deviceScaleFactor:1,recordVideo:{dir:'/tmp/payout-expiry-recovery-evidence',size:{width:1280,height:900}}});
+ await context.addInitScript(({userId})=>{if(!localStorage.getItem('betterlearn-role'))localStorage.setItem('betterlearn-role','seller');if(!localStorage.getItem('betterstripe-seller'))localStorage.setItem('betterstripe-seller',userId);},state);
+ const p=await context.newPage(),assertions=[],errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const api=async(path,args={})=>{const r=await p.request.post('http://127.0.0.1:5192'+path,{data:args,timeout:120000});const v=await r.json();if(!r.ok())throw Error(JSON.stringify(v));return v;};
+ const checkpoint=name=>api('/checkpoint',{name});
+ const note=async(text)=>{await p.evaluate(text=>{let e=document.getElementById('qa-note');if(!e){e=document.createElement('div');e.id='qa-note';e.style.cssText='position:fixed;top:8px;left:16px;max-width:600px;background:#101827;color:white;padding:10px;border-radius:8px;font:14px sans-serif;z-index:10000;pointer-events:none';document.body.append(e);}e.textContent=text;},text);await p.waitForTimeout(1300);};
+ let result;
+ try {
+ await p.goto('http://127.0.0.1:5187/seller/payouts');await p.getByRole('combobox',{name:'Automatic payout policy',exact:true}).waitFor({timeout:60000});
+ const cdp=await context.newCDPSession(p);const {windowId}=await cdp.send('Browser.getWindowForTarget');await cdp.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'normal',width:1280,height:987}});await cdp.send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false,screenWidth:1280,screenHeight:900});
+ await note('SETUP: resume the preserved real $9.99 recipient after fixing the policy-view projection.');
+ let proof=await checkpoint('resumedBefore');if(proof.policy?.holdingExpiry?.status!=='balance_remaining'||proof.balance.available.find(b=>b.currency==='usd')?.amount!==999||proof.schedule.interval!=='weekly'||proof.payouts.length!==0)throw Error('Preserved funded expiry precondition failed');
+ await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await p.getByText(/Schedule restoration does not confirm disbursement/).waitFor({timeout:60000});await p.getByText(/Schedule restoration does not confirm disbursement/).scrollIntoViewIfNeeded();await p.getByText('Available: $9.99',{exact:true}).waitFor();
+ assertions.push({test:'Example preserves the actual unresolved 999 expiry record after weekly restoration',status:'passed'});await note('PASS: fixed policy projection shows unresolved expiry and the actual $9.99 balance.');await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/unresolved.png',fullPage:true});
+ await p.goto('http://127.0.0.1:5187/seller/payouts?example=components');await p.getByText(/Schedule restoration does not confirm disbursement/).waitFor({timeout:60000});await p.getByText(/Schedule restoration does not confirm disbursement/).scrollIntoViewIfNeeded();await p.getByText('Available: $9.99',{exact:true}).waitFor();
+ assertions.push({test:'BetterStripe components mode displays the same unresolved recovery record',status:'passed'});await note('PASS: BetterStripe components mode retains the same recovery notice and per-currency balance.');await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/components-unresolved.png',fullPage:true});
+ const operationKey=proof.policy.operationKey,revision=proof.policy.revision;await api('/dispatch');proof=await checkpoint('replayed');if(proof.policy.operationKey!==operationKey||proof.policy.revision!==revision||proof.payouts.length!==0)throw Error('Expiry replay changed restoration identity');
+ assertions.push({test:'Repeated dispatch preserves one restoration identity and creates no payout',status:'passed'});
+ await p.getByRole('button',{name:'Admin',exact:true}).click();await p.waitForFunction(()=>localStorage.getItem('betterlearn-role')==='admin');await p.goto('http://127.0.0.1:5187/admin/setup');await p.getByRole('button',{name:'Reset All Data',exact:true}).click();await p.getByText(/Resolve holding expiry recovery before reset/).first().waitFor({timeout:60000});
+ proof=await checkpoint('resetRefused');if(!proof.users.some(u=>u.id===state.userId)||proof.policy?.holdingExpiry?.status!=='balance_remaining')throw Error('Refused reset erased recovery or ownership');
+ assertions.push({test:'Actual browser reset refuses unresolved expiry after automatic scheduling was restored',status:'passed'});await note('PASS: reset refused; recovery deadline, balance record and owner binding remain.');await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/reset-refused.png',fullPage:true});
+ await api('/return-funding');await api('/dispatch');
+ let recovered=false;for(let i=0;i<20;i++){proof=await checkpoint('recoveryProgress');if(proof.policy?.holdingExpiry?.status==='no_held_balance'&&proof.policy.holdDeadline===undefined){recovered=true;break;}await p.waitForTimeout(1000);}
+ if(!recovered||proof.payouts.length!==0||proof.balance.available.some(b=>b.amount!==0)||proof.balance.pending.some(b=>b.amount!==0))throw Error('Fresh zero balance did not clear recovery safely');
+ await p.getByRole('button',{name:'Seller',exact:true}).click();await p.waitForFunction(()=>localStorage.getItem('betterlearn-role')==='seller');await p.goto('http://127.0.0.1:5187/seller/payouts');await p.getByText('Stripe manages automatic payouts. No additional application minimum is set.',{exact:true}).waitFor({timeout:60000});
+ assertions.push({test:'Verified test funding reversals and fresh zero balance clear recovery without claiming bank payment',status:'passed'});await note('PASS: test funding returned by real transfer reversals. Zero balance verified; no bank payout occurred.');await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/recovered.png',fullPage:true});
+ await p.getByRole('button',{name:'Admin',exact:true}).click();await p.waitForFunction(()=>localStorage.getItem('betterlearn-role')==='admin');await p.goto('http://127.0.0.1:5187/admin/setup');await p.getByRole('button',{name:'Reset All Data',exact:true}).click();
+ for(let i=0;i<10;i++){proof=await checkpoint('resetProgress');if(proof.policy===null&&proof.users.length===0)break;await p.waitForTimeout(1000);}
+ if(proof.policy!==null||proof.users.length!==0||proof.schedule.interval!=='weekly')throw Error('Resolved expiry did not allow safe reset');
+ assertions.push({test:'Browser reset succeeds after verified recovery and preserves provider weekly scheduling',status:'passed'});await note('PASS: reset succeeds after recovery. Stripe remains on the verified weekly schedule.');await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/reset-safe.png',fullPage:true});
+ result={status:'passed',assertions,pageErrors:errors};
+ }catch(e){result={status:'failed',error:e.message,assertions,pageErrors:errors};await p.screenshot({path:'/tmp/payout-expiry-recovery-evidence/failure.png',fullPage:true}).catch(()=>{});}
+ const video=await p.video().path();await context.close();return {...result,video};
+}

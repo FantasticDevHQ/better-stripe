@@ -1,0 +1,17 @@
+import {execFileSync} from 'node:child_process';
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {getStripeClient} from '<workspace>/dist/client/helpers.js';
+const root='<workspace>',file='/tmp/payout-expiry-recovery-provider.json';
+const report=JSON.parse(readFileSync(file,'utf8'));
+try {
+ const key=execFileSync(root+'/node_modules/.bin/convex',['env','get','STRIPE_SECRET_KEY'],{cwd:root+'/example',encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();assert(key.startsWith('sk_test_'));
+ const sdk=getStripeClient(key),accountId=report.accountId;
+ const account=await sdk.v2.core.accounts.retrieve(accountId);assert.equal(account.livemode,false);assert.equal(account.metadata.lifecycleQA,report.run);
+ const settings=await sdk.balanceSettings.retrieve(undefined,{stripeAccount:accountId});assert.equal(settings.payments.payouts.schedule.interval,'weekly');assert.deepEqual(settings.payments.payouts.schedule.weekly_payout_days,['monday']);
+ const balance=await sdk.balance.retrieve(undefined,{stripeAccount:accountId});assert(![...balance.available,...balance.pending].some(b=>b.amount!==0));
+ const payouts=await sdk.payouts.list({limit:100},{stripeAccount:accountId});assert.equal(payouts.data.length,0);assert.equal(payouts.has_more,false);
+ const closed=await sdk.v2.core.accounts.close(accountId,{applied_configurations:['recipient']},{idempotencyKey:report.run+':close'});
+ report.scheduleRestored=true;report.accountClosed=true;report.cleanup={providerVerified:true,payoutCount:0,available:balance.available.map(({currency,amount})=>({currency,amount})),pending:balance.pending.map(({currency,amount})=>({currency,amount})),closeRequestId:closed.lastResponse?.requestId};
+ writeFileSync(file,JSON.stringify(report,null,2));console.log(JSON.stringify({scheduleRestored:true,accountClosed:true,payoutCount:0}));
+}catch(e){throw new Error(String(e.message).replace(/sk_(?:test|live)_\w+/g,'[redacted]'));}

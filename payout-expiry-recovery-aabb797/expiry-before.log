@@ -1,0 +1,95 @@
+
+ RUN  v5.0.3 <workspace>
+
+ ❯ |client| src/client/payoutPolicy.test.ts (20 tests | 4 failed) 276ms
+   × keeps funded expiry discoverable after restoring weekly controls until fresh balances clear 12ms
+   × restores controls even if expiry balance verification is unavailable, without fabricating zero 7ms
+   × does not clear an unknown payout claim at expiry even when Stripe balance is zero 8ms
+   × does not net currencies or pending funds when checking expiry recovery 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > keeps funded expiry discoverable after restoring weekly controls until fresh balances clear
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'expiry_unresolved' }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "expiry_unresolved",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:399:47
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > restores controls even if expiry balance verification is unavailable, without fabricating zero
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'expiry_unresolved' }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "expiry_unresolved",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:413:47
+    411|   const s = await expiredRecipient();
+    412|   s.provider.balance.retrieve.mockRejectedValue(new Error("provider un…
+    413|   expect(await s.client.expire(s.ctx, scope)).toMatchObject({ status: …
+       |                                               ^
+    414|   const p = await s.client.get(s.ctx, scope);
+    415|   expect(p).toMatchObject({ mode: "stripe_managed", holdDeadline: s.de…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > does not clear an unknown payout claim at expiry even when Stripe balance is zero
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'expiry_unresolved' }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "expiry_unresolved",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:422:47
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > does not net currencies or pending funds when checking expiry recovery
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'expiry_unresolved' }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "expiry_unresolved",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:430:47
+    428|   const s = await expiredRecipient();
+    429|   s.provider.balance.retrieve.mockResolvedValue({ available: [{ curren…
+    430|   expect(await s.client.expire(s.ctx, scope)).toMatchObject({ status: …
+       |                                               ^
+    431|   expect((await s.client.get(s.ctx, scope))!.holdingExpiry!.balances).…
+    432| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 16 passed (20)
+   Start at  02:06:35
+   Duration  585ms (tests 57%, transform 27%, import 9%, environment 7%, worker 1%)
+

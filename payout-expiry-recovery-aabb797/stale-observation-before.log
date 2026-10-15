@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 <workspace>
+
+ ❯ |client| src/client/payoutPolicy.test.ts (21 tests | 1 failed) 341ms
+   × does not label a delayed expiry balance response as a fresh observation 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > does not label a delayed expiry balance response as a fresh observation
+AssertionError: expected { status: 'ready', …(1) } to match object { status: 'expiry_unresolved' }
+(17 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "expiry_unresolved",
++   "status": "ready",
+  }
+
+ ❯ src/client/payoutPolicy.test.ts:515:49
+    513|       return { available: [{ currency: "usd", amount: 0 }], pending: […
+    514|     });
+    515|     expect(await s.client.expire(s.ctx, scope)).toMatchObject({ status…
+       |                                                 ^
+    516|     expect((await s.client.get(s.ctx, scope))!.holdingExpiry).toMatchO…
+    517|   } finally { vi.useRealTimers(); }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  02:17:21
+   Duration  669ms (tests 59%, transform 25%, import 8%, environment 7%, worker 1%)
+

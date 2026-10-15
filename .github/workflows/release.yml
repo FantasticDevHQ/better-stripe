@@ -88,6 +88,16 @@ jobs:
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           node scripts/format-release-changelog.mjs
+      - name: Enable auto-merge for the generated release PR
+        if: steps.release-pr.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
+        run: |
+          set -euo pipefail
+          pr_number="$(jq -er '.number | select(type == "number" and . > 0)' <<< "$RELEASE_PR")"
+          release_head="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
+          gh pr merge "$pr_number" --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$release_head"
 
   publish:
     name: Publish

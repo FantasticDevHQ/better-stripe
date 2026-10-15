@@ -609,6 +609,37 @@ Existing `AddCardForm` and `PaymentMethods` tokenization/attach integrations rem
 available. Tokenization plus attachment does not complete SetupIntent or SCA
 verification.
 
+### Live authentication and reuse results, 2026-10-15
+
+The public `SaveCard` workflow and `BetterStripe.createSetupIntent` /
+`BetterStripe.createPaymentIntent` methods were exercised against real Stripe.js
+and Stripe test APIs at commit `332d49c`, merged in
+[PR #166](https://github.com/FantasticDevHQ/better-stripe/pull/166).
+The Connect-enabled sandbox used `2026-09-30.endive` for browser confirmation.
+Separate API checks also passed on `2026-09-30.preview`.
+
+| Check                                                                | Observed result                                                                                                                                                                       |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Explicit consent and repeated provisioning with the same request key | Off-session setup accepted; retries returned the same intent.                                                                                                                         |
+| Card `4000000000003220`, failed 3DS challenge then retry             | A retryable authentication error appeared. Retrying the same SetupIntent and completing 3DS succeeded. Stripe SetupAttempts recorded both outcomes.                                   |
+| Card `4000002500003155`, setup then later off-session payment        | 3DS setup succeeded with `usage: "off_session"` and `allow_redisplay: "always"`. The saved method belonged to the expected V2 customer; the later payment succeeded and was refunded. |
+| Later off-session reuse of card ending `3220`                        | Stripe returned `authentication_required`. Successful setup does not guarantee every later payment can avoid authentication.                                                          |
+| API decline and payment retry checks                                 | Decline returned `card_declined` / `requires_payment_method`; same-key payment provisioning returned the same intent.                                                                 |
+
+Use these public test card numbers only in a Stripe test payment form, with a
+future expiration and test CVC. Use Stripe's test PaymentMethod IDs for API tests.
+See [Stripe's testing guide](https://docs.stripe.com/testing#regulatory-cards).
+
+[Uploaded screenshots and provider records](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292)
+show the challenge, retryable failure and successful reuse. No continuous video
+was recorded. Test payments were refunded and disposable fixtures cleaned up.
+The test used a local ownership fixture for the host callback. It verifies package
+orchestration and actual provider authentication, not production application
+authentication, redirect-return recovery, webhook delivery or Dojo's saved-card UI.
+Consumer applications still need to verify their own authenticated adapters and saved-card UI.
+See [sandbox setup findings](accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15)
+for the account eligibility requirement.
+
 ## Component history and currency summaries
 
 See the [read contract guide](read-contracts.md) for reactive product, price and payout

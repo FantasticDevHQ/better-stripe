@@ -1185,6 +1185,19 @@ screen remains compatible and does not demonstrate completed SetupIntent/SCA
 verification. See the [setup workflow contract](../docs/react-workflows.md#save-a-card-through-setupintent-confirmation)
 for consent, redirect recovery and durable request requirements.
 
+### Live saved-card verification, 2026-10-15
+
+A separate temporary browser fixture exercised the public `SaveCard` component
+and intent APIs against a Connect-enabled Stripe sandbox. Real 3DS failure,
+retry on the same SetupIntent, successful setup and a later off-session saved-card
+payment passed. The later payment was refunded and test fixtures cleaned up.
+This does not turn the demo's tokenization/attach screen into a SetupIntent flow
+or prove production host authentication.
+
+See the [authentication and reuse results](../docs/react-workflows.md#live-authentication-and-reuse-results-2026-10-15),
+[sandbox setup findings](../docs/accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15),
+and [uploaded evidence](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292).
+
 ## Component history and currency summaries
 
 See the [read contract guide](../docs/read-contracts.md) for reactive product, price and payout

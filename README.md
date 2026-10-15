@@ -1649,6 +1649,23 @@ Creation and browser confirmation are not settlement proof. Customer-account
 operations require Accounts v2 support in the sandbox or merchant account; the
 [customer preview guide](docs/accounts-v2-preview.md) explains eligibility.
 
+#### Live sandbox verification, 2026-10-15
+
+The public intent APIs and `SaveCard` passed real Stripe test-mode verification
+at commit `332d49c`, merged in [PR #166](https://github.com/FantasticDevHQ/better-stripe/pull/166).
+Browser 3DS failure, retry on the same SetupIntent, and successful authentication
+passed. A card saved for `off_session` use then succeeded on a later PaymentIntent;
+all successful test payments were refunded. Provider checks also covered customer
+ownership, redisplay permission, idempotent retries and declines.
+
+The initial `non_connect_platform_accounts_v2_access_blocked` error was resolved
+by enabling Connect in the intended Connect test sandbox. The browser flow used
+`2026-09-30.endive`; separate API checks also passed on `2026-09-30.preview`.
+This does not establish customer-only preview eligibility for another account.
+See the [sandbox setup findings](docs/accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15),
+[authentication and reuse results](docs/react-workflows.md#live-authentication-and-reuse-results-2026-10-15),
+and [uploaded screenshots and provider records](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292).
+
 ## Component history and currency summaries
 
 See the [read contract guide](docs/read-contracts.md) for reactive product, price and payout

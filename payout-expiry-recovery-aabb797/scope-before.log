@@ -1,0 +1,32 @@
+
+ RUN  v5.0.3 <workspace>
+
+ ❯ |client| src/client/payoutPolicy.test.ts (24 tests | 1 failed) 345ms
+   × accepts a due policy document as scope without forwarding its extra fields to mutations 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/payoutPolicy.test.ts > accepts a due policy document as scope without forwarding its extra fields to mutations
+Error: Validator error: Unexpected field `_creationTime` in object
+ ❯ validateValidator node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:926:27
+ ❯ validateFunctionArgs node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2341:5
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2118:17
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ runMutationOrThrow src/client/helpers.ts:93:11
+     91|   }
+     92|
+     93|   return (await ctx.runMutation(ref, args)) as FunctionReturnType<Muta…
+       |           ^
+     94| }
+     95|
+ ❯ expirePayoutPolicy src/client/connect/payoutExpiry.ts:64:15
+ ❯ src/client/payoutPolicy.test.ts:576:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  03:10:09
+   Duration  641ms (tests 63%, transform 23%, import 8%, environment 6%, worker 1%)
+

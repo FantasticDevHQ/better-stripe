@@ -1,7 +1,7 @@
 # Holding expiry recovery evidence
 
 Passing browser/provider source: `aabb7978ce02c5054b71701caf09a44a680b3d02`.
-Final PR head: `5f5e2a27b59e657094d70fc6e6b041daccfb9002`. This merges only the v0.28.3 release metadata, changelog and README version; financial/UI code is unchanged.
+Final PR head: `6968168449a593b21ee54ef2d204184642ff97a3`. Later commits synchronize v0.28.3 release metadata, document DTO/legacy migration, and normalize extra scope fields before component mutations. Recorded calls already use the same canonical account/owner inputs. The additional full-policy-document input path is covered by its regression test; it is not claimed as a separate browser assertion.
 
 [Watch the verified browser flow](./verified.webm). This is the original 1280×900 recording, without cropping or removed actions. It resumes the same funded sandbox recipient after correcting the example policy projection.
 
@@ -24,7 +24,7 @@ The verified run passed six assertions with no page runtime errors:
 
 ## Verification
 
-- 66 focused package tests passed, including unknown claims, restoration retry, lost recovery writes, stale observations, concurrency, reset protection, currency separation, and final-window refund/reversal deductions.
+- 67 focused package tests passed, including unknown claims, restoration retry, lost recovery writes, stale observations, concurrency, reset protection, currency separation, and final-window refund/reversal deductions.
 - 13 example action tests passed, including preservation of recovery in the public policy view.
 - All 15 repository gates passed on the final merge head; see `repository-gates.log`.
 - React Doctor reported no issues, 89/100 across 19 changed files.

@@ -256,11 +256,11 @@ export function Payouts() {
     );
   return (
     <>
-      {currentUser.role === "affiliate" && <AffiliateRecoveryPanel />}
       <AccountPayouts
         key={currentUser.id}
         userId={currentUser.id as Id<"users">}
       />
+      {currentUser.role === "affiliate" && <AffiliateRecoveryPanel />}
     </>
   );
 }

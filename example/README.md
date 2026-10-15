@@ -1277,3 +1277,19 @@ and [uploaded evidence](https://github.com/FantasticDevHQ/better-stripe/pull/166
 See the [read contract guide](../docs/read-contracts.md) for reactive product, price and payout
 cursors, exact currency summaries, legacy backfill, payout failure details, and
 published-version adoption requirements.
+
+### Current payout webhook observations
+
+Keep the shared BetterStripe webhook endpoint and its exported handler pair.
+Payout created, updated, paid, failed and canceled events retrieve the current
+provider payout under the signed connected account or explicit platform scope.
+The package accepts only the newest durable observation before synchronized
+application callbacks. Duplicate event IDs remain deduplicated; unchanged or
+superseded observations do not repeat synchronized payout callbacks.
+
+A provider read failure must retry delivery rather than applying the old event
+body. A synchronized callback failure rolls back the payout acceptance, so
+callbacks should use the provided mutation context for transactional host writes.
+Raw event hooks retain their original event payload and need separate notification
+deduplication. This source behavior requires a verified published package and
+explicit consumer adoption before it can support another application's acceptance.

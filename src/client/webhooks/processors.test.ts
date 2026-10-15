@@ -96,6 +96,7 @@ type MockReversal = {
 
 function makeStripe() {
   return {
+    payouts: { retrieve: vi.fn() },
     refunds: {
       list: vi.fn(() =>
         (async function* () {
@@ -791,63 +792,77 @@ describe("processEvent — payments (status collapse)", () => {
 });
 
 describe("processEvent — payouts", () => {
-  it("scopes connected payouts to the event account instead of the external bank", async () => {
+  function context(id: string, status = "paid") {
     const whCtx = makeWhCtx();
+    whCtx.ctx.runMutation.mockResolvedValue(1 as never);
+    whCtx.stripe.payouts.retrieve.mockResolvedValue({
+      id,
+      amount: 5000,
+      currency: "usd",
+      status,
+      arrival_date: 1700000000,
+      automatic: true,
+      method: "standard",
+      metadata: { accountId: "acct_untrusted" },
+    });
+    return whCtx;
+  }
+  it("scopes connected provider reads to the signed event account", async () => {
+    const whCtx = context("po_connected");
     const payoutEvent = event("payout.paid", {
       id: "po_connected",
       destination: "ba_bank",
-      amount: 5000,
-      currency: "usd",
-      status: "paid",
-      arrival_date: 1700000000,
-      metadata: {},
+      metadata: { accountId: "acct_untrusted" },
     });
     payoutEvent.account = "acct_store";
     await processEvent(whCtx, payoutEvent);
-    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("acct_store");
+    expect(whCtx.stripe.payouts.retrieve).toHaveBeenCalledWith(
+      "po_connected",
+      {},
+      { stripeAccount: "acct_store" },
+    );
+    expect(dispatchedPayload(whCtx.ctx, 1).data).toMatchObject({
+      accountId: "acct_store",
+      generation: 1,
+      payout: { status: "paid", accountId: "acct_store" },
+    });
   });
-
-  it("normalizes a payout, taking destination as a string id", async () => {
-    const whCtx = makeWhCtx();
+  it("uses explicit platform scope instead of a bank destination or metadata account", async () => {
+    const whCtx = context("po_1");
     await processEvent(
       whCtx,
       event("payout.paid", {
         id: "po_1",
         destination: "ba_123",
-        amount: 5000,
-        currency: "usd",
-        status: "paid",
-        arrival_date: 1700000000,
-        method: "standard",
-        metadata: {},
+        status: "pending",
+        metadata: { accountId: "acct_forged" },
       }),
     );
-    const { path, data } = dispatchedPayload(whCtx.ctx);
-    expect(path).toBe("betterStripe/connect/mutations/upsertPayout");
+    const { path, data } = dispatchedPayload(whCtx.ctx, 1);
+    expect(path).toBe("betterStripe/payoutSync/mutations/finish");
     expect(data).toMatchObject({
       stripePayoutId: "po_1",
-      accountId: "ba_123",
-      amount: 5000,
-      status: "paid",
-      method: "standard",
+      accountId: "platform",
+      generation: 1,
+      payout: { status: "paid", amount: 5000, accountId: "platform" },
     });
+    expect(whCtx.stripe.payouts.retrieve).toHaveBeenCalledWith("po_1", {}, {});
   });
-
-  it("falls back to an empty-string accountId for an expanded destination without id", async () => {
-    const whCtx = makeWhCtx();
+  it("ignores malformed stale event fields when the current platform payout is valid", async () => {
+    const whCtx = context("po_2", "failed");
     await processEvent(
       whCtx,
       event("payout.failed", {
         id: "po_2",
         destination: {},
-        amount: 100,
-        currency: "usd",
-        status: "failed",
         arrival_date: null,
         metadata: {},
       }),
     );
-    expect(dispatchedPayload(whCtx.ctx).data.accountId).toBe("");
+    expect(dispatchedPayload(whCtx.ctx, 1).data).toMatchObject({
+      accountId: "platform",
+      payout: { status: "failed", arrivalDate: "2023-11-14T22:13:20.000Z" },
+    });
   });
 });
 

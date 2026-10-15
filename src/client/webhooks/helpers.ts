@@ -207,6 +207,7 @@ export const DISPATCHER_UPSERT_PATHS: Record<TriggerDispatcherName, string> = {
   invoiceUpserted: "billing/mutations/upsertInvoice",
   paymentUpserted: "connect/mutations/upsertPayment",
   payoutUpserted: "connect/mutations/upsertPayout",
+  payoutReconciled: "payoutSync/mutations/finish",
   refundUpserted: "connect/mutations/upsertRefund",
   disputeUpserted: "connect/mutations/upsertDispute",
 };

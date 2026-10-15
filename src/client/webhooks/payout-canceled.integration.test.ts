@@ -85,6 +85,11 @@ function fixture(
       },
     },
   };
+  const retrieve = vi
+    .spyOn(getStripeClient(key).payouts, "retrieve")
+    .mockImplementation(
+      async () => ({ ...event.data.object }) as Stripe.Response<Stripe.Payout>,
+    );
   const payout = () => t.query(payoutRef, { stripePayoutId: "po_qa_audit" });
   const deliver = async (config: RegisterRoutesConfig = {}, tamper = false) => {
     const body = JSON.stringify(event);
@@ -106,7 +111,7 @@ function fixture(
       return { status: response.status, body: await response.json() };
     });
   };
-  return { t, event, payout, deliver };
+  return { t, event, payout, deliver, retrieve };
 }
 
 it("reconciles signed cancellation before callbacks and deduplicates replay", async () => {
@@ -158,6 +163,7 @@ it("reconciles signed cancellation before callbacks and deduplicates replay", as
     await f.t.query(ledgerRef, { stripeEventId: f.event.id }),
   ).toMatchObject({ status: "processed" });
   expect(transport).not.toHaveBeenCalled();
+  expect(f.retrieve).toHaveBeenCalledTimes(2);
 });
 
 it("rejects a tampered cancellation before storage or callbacks", async () => {
@@ -167,6 +173,7 @@ it("rejects a tampered cancellation before storage or callbacks", async () => {
   expect(await f.payout()).toBeNull();
   expect(await f.t.query(ledgerRef, { stripeEventId: f.event.id })).toBeNull();
   expect(onEvent).not.toHaveBeenCalled();
+  expect(f.retrieve).not.toHaveBeenCalled();
   expect(transport).not.toHaveBeenCalled();
 });
 
@@ -188,6 +195,12 @@ it.each([
     });
     expect(await f.payout()).toEqual(first);
     expect(transport).not.toHaveBeenCalled();
+    expect(f.retrieve).toHaveBeenCalledOnce();
+    expect(f.retrieve).toHaveBeenCalledWith(
+      "po_qa_audit",
+      {},
+      { stripeAccount: "acct_qa_recipient" },
+    );
   },
 );
 

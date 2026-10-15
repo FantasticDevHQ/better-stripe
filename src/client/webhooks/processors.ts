@@ -1,3 +1,4 @@
+import { handlePayoutEvent } from "./payoutReconciliation.js";
 import { reconcileDisputeMoney } from "./disputeRecovery.js";
 import { successfulRefundPrincipal } from "../connect/refundPrincipal.js";
 import { subscriptionRouting } from "../billing/subscriptionRouting.js";
@@ -897,33 +898,6 @@ async function upsertPaymentFromStripe(
     // appears as application_fee_amount on the intent — merge it in directly.
     ...(perChargeFee !== undefined ? { feeCollectedAmount: perChargeFee } : {}),
     metadata: paymentIntent.metadata ?? undefined,
-  });
-}
-
-async function handlePayoutEvent(
-  whCtx: WebhookContext,
-  payout: Stripe.Payout,
-  connectedAccountId?: string,
-): Promise<void> {
-  await dispatchUpsert(whCtx, "payoutUpserted", {
-    stripePayoutId: payout.id,
-    accountId:
-      connectedAccountId ??
-      (payout.metadata?.accountId?.startsWith("acct_")
-        ? payout.metadata.accountId
-        : undefined) ??
-      (typeof payout.destination === "string"
-        ? payout.destination
-        : (payout.destination?.id ?? "")),
-    amount: payout.amount,
-    currency: payout.currency,
-    status: payout.status as
-      "pending" | "paid" | "failed" | "canceled" | "in_transit",
-    arrivalDate: epochToIso(payout.arrival_date),
-    method: payout.method ?? undefined,
-    failureCode: payout.failure_code ?? undefined,
-    failureMessage: payout.failure_message ?? undefined,
-    metadata: payout.metadata ?? undefined,
   });
 }
 

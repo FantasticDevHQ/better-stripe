@@ -243,6 +243,7 @@ export type TriggerDispatcherName =
   | "invoiceUpserted"
   | "paymentUpserted"
   | "payoutUpserted"
+  | "payoutReconciled"
   | "refundUpserted"
   | "disputeUpserted";
 

@@ -14,6 +14,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.23.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.23.0...v0.23.1) (2026-10-15)
+
+### Bug Fixes
+
+- **payouts:** retain original principal for historical returns ([#194](https://github.com/FantasticDevHQ/better-stripe/issues/194)) ([8210c1f](https://github.com/FantasticDevHQ/better-stripe/commit/8210c1f4447528b06d3f098cc85560ff5134b9ba))
+
 ## [0.23.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.22.0...v0.23.0) (2026-10-15)
 
 ### Features

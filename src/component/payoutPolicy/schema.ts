@@ -1,3 +1,4 @@
+import { observation } from "../payoutRelease/observation.js";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 export const scopeFields = { accountId: v.string(), ownerKey: v.string() };
@@ -15,7 +16,15 @@ export const mode = v.union(v.literal("stripe_managed"), v.literal("custom"));
 export const thresholds = v.array(
   v.object({ currency: v.string(), amount: v.number() }),
 );
+export const adoptionProof = v.object({
+  observations: v.array(observation),
+  claims: v.array(
+    v.object({ operationKey: v.string(), fingerprint: v.string() }),
+  ),
+  oldestHeldAt: v.optional(v.number()),
+});
 export const prepareFields = {
+  adoption: v.optional(adoptionProof),
   ...scopeFields,
   operationKey: v.string(),
   expectedRevision: v.number(),

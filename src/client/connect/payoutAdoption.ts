@@ -1,3 +1,5 @@
+import { oldestUnpaidFunding } from "./payoutAdoptionAge.js";
+import { addSummaryAmounts as add } from "../../component/earnings/arithmetic.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { Component, RunCtx } from "../helpers.js";
@@ -40,7 +42,14 @@ export type PayoutAdoptionOptions = {
   }[];
 };
 export type PayoutAdoptionResult =
-  | { status: "adopted"; claims: Claim[]; observedAt: number }
+  | {
+      status: "adopted";
+      claims: Claim[];
+      observedAt: number;
+      observations: Infer<typeof observation>[];
+      oldestHeldAt?: number;
+      historyCurrencies: string[];
+    }
   | { status: "held"; reason: string };
 /** Import verified terminal historical payouts. Does not change payout schedules or authorize activation. */
 export async function adoptRecipientPayouts(
@@ -48,6 +57,7 @@ export async function adoptRecipientPayouts(
   component: Component,
   ctx: RunCtx,
   opts: PayoutAdoptionOptions,
+  verifyOnly = false,
 ): Promise<PayoutAdoptionResult> {
   validateScope(opts);
   const max = opts.maxPages ?? 10;
@@ -80,7 +90,7 @@ export async function adoptRecipientPayouts(
     !policy ||
     policy.revision !== opts.expectedRevision ||
     policy.mode !== "stripe_managed" ||
-    policy.status !== "ready"
+    (policy.status !== "ready" && !(verifyOnly && policy.status === "changing"))
   )
     throw new Error(
       "Historical adoption requires an owned automatic policy at this revision.",
@@ -101,6 +111,7 @@ export async function adoptRecipientPayouts(
       .filter((c) => c.stripePayoutId)
       .map((c) => [c.stripePayoutId!, c]),
   );
+  const historyCurrencies = new Set<string>();
   const payouts: Stripe.Payout[] = [];
   let cursor: string | undefined,
     head: string | undefined,
@@ -111,6 +122,7 @@ export async function adoptRecipientPayouts(
       { stripeAccount: opts.accountId },
     );
     if (page === 0) head = batch.data[0]?.id;
+    for (const p of batch.data) historyCurrencies.add(p.currency);
     payouts.push(...batch.data.filter((p) => p.currency === opts.currency));
     if (!batch.has_more) {
       complete = true;
@@ -212,6 +224,7 @@ export async function adoptRecipientPayouts(
     });
     if (receipt.status !== "ready")
       return { status: "held", reason: receipt.reason };
+    historyCurrencies.add(receipt.settlementCurrency);
     sources.push({
       stripeTransferId: row.stripeTransferId,
       currency: receipt.settlementCurrency,
@@ -262,6 +275,8 @@ export async function adoptRecipientPayouts(
     claims.push(result.claim);
   }
   const unknown = imports.filter((i) => !i.old);
+  if (unknown.length && verifyOnly)
+    return { status: "held", reason: "historical_allocation_required" };
   if (unknown.length) {
     const fresh = (await ctx.runQuery(
       componentRef(component, "payoutRelease/queries/snapshot"),
@@ -288,5 +303,28 @@ export async function adoptRecipientPayouts(
     )) as { claims: Claim[] };
     claims.push(...result.claims);
   }
-  return { status: "adopted", claims, observedAt: Date.now() };
+  const paid = claims
+    .filter((c) => c.status === "paid")
+    .flatMap((c) => c.allocations);
+  const fees = claims.reduce((total, c) => add(total, c.providerFee ?? 0), 0);
+  const returned = proofPayouts
+    .filter((p) => p.returnedAt !== undefined)
+    .flatMap((p) =>
+      p.allocations.map((a) => ({ ...a, created: p.returnedAt! })),
+    );
+  const oldestHeldAt = oldestUnpaidFunding(
+    opts.currency,
+    sources,
+    paid,
+    fees,
+    returned,
+  );
+  return {
+    status: "adopted",
+    claims,
+    observations,
+    historyCurrencies: [...historyCurrencies],
+    ...(oldestHeldAt !== undefined ? { oldestHeldAt } : {}),
+    observedAt: Date.now(),
+  };
 }

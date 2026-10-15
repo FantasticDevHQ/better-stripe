@@ -135,14 +135,10 @@ Balance Settings API does not expose a numeric payout-floor field; this package
 does not invent one. `minimum_balance_by_currency` is a retained reserve after a
 payout, **not a minimum payout trigger**. [Stripe reserve documentation](https://docs.stripe.com/payouts/minimum-balances-for-automatic-payouts).
 
-Custom application thresholds need a separately controlled release boundary:
-
-- Before transfer: retain funds on the platform and maintain a durable payable
-  ledger, maturity, adjustments, and release claims. This changes settlement timing
-  and must account for existing transferred balances.
-- Before bank payout: use a manual payout schedule where the platform has
-  permission, and run an automatic application job. Otherwise provider automatic
-  sweeps can bypass the application threshold. A retained reserve cannot fix that.
+For a custom threshold, BetterStripe holds funds in the recipient's Stripe
+balance and controls the bank-payout schedule. Verified manual controls and a
+host automatic job prevent provider sweeps from bypassing the threshold. A
+retained reserve cannot serve as the trigger.
 
 Manual holding limits depend on country: Thailand 10 days, US 2 years, other
 countries generally 90 days. Schedule permissions depend on account controls and
@@ -152,7 +148,7 @@ See [payout schedule permissions](https://docs.stripe.com/connect/manage-payout-
 and [manual payout restrictions](https://docs.stripe.com/connect/manual-payouts).
 
 Custom threshold enforcement is not provided by the snapshot or settlement APIs.
-It requires a selected retention boundary and migration policy. Applications must
+Use the recipient-held policy, adoption and release APIs below. Applications must
 not describe a displayed threshold as enforced while Stripe controls automatic
 payouts. A numeric below/exact/above provider-floor demonstration is unavailable
 without a supported provider floor read; surface this capability limitation.
@@ -183,15 +179,15 @@ obtain control. Stripe also validates update permissions. Before each subsequent
 payout attempt, `verify` must confirm live manual settings, unchanged country,
 and an unexpired policy; stored `ready` state alone is insufficient.
 
-Initial activation rejects existing nonzero available or pending balances,
-in-flight payouts, and existing manual schedules with `migration_required`.
-The preflight is repeated before an initial schedule update; a delayed activation
-with newly arrived funds is canceled before changing Stripe. This is a bounded
-preflight, not an ownership inference or automatic adoption.
-Already-mixed funds need a reconciled source ledger and explicit adoption before
-custom release can be enabled. Zero-balance activation does not classify later
-unrelated deposits as earnings. Payout claims must use that source ledger and a
-fresh provider balance when the separate release boundary is integrated.
+Ordinary initial activation requires zero available/pending balances, no past or
+in-flight payouts, and an automatic schedule. Existing balances, payout history
+or a manual schedule return `migration_required`. The ordinary preflight repeats
+before a delayed initial write. For an owned funded account, use the explicit
+[historical import and funded activation flow](#historical-import-and-funded-activation)
+below. Unknown money is never classified as earnings merely because it is
+available. Existing manual schedules still require an authorized migration to a
+known automatic schedule before custom activation; the package does not guess
+which schedule should be restored later.
 
 The host must schedule a recurring server job that pages `due(ctx,
 { cursor: null, numItems: 100 })`, follows its cursor, and calls `expire` for each
@@ -208,10 +204,9 @@ For opt-out, prepare a new operation with the latest revision,
 available after Dashboard control is lost, subject to Stripe permissions. It
 restores only the captured schedule; other balance settings remain untouched.
 
-This is the durable policy/control boundary. Automatic combined payout execution,
-adoption of existing balances, and its UI integration are separate work and are
-not supplied by these schedule APIs. Do not expose a custom minimum as fully
-enforced until those boundaries and the recurring expiry job are installed.
+The policy/control APIs compose with historical adoption and combined release.
+Install recurring release and expiry jobs before exposing custom scheduling.
+React/example job integration and larger-account collection remain separate work.
 `verify.providerMinimum` is `null`: the Balance Settings API does not expose a
 numeric payout-floor field, and retained balance reserves are not payout triggers.
 
@@ -219,14 +214,13 @@ Sources: [payout schedules](https://docs.stripe.com/connect/manage-payout-schedu
 [manual payout holding limits](https://docs.stripe.com/connect/manual-payouts), and
 [Dashboard control limits](https://docs.stripe.com/connect/platform-controls-for-stripe-dashboard-accounts#control-payout-timing).
 
-### Transactional claim ledger implementation status
+### Transactional source allocations
 
-The component contains `payoutRelease` claim and source-allocation tables. These
-are server-side building blocks for the release boundary, with no automatic
-payout-creation or scheduled bank-payout integration yet. Do not call the claim
-mutation with UI totals or a transfer receipt alone. Its trusted upstream caller
-must establish complete provider history, still-unpaid ownership, adoption of
-prior payouts, independent liabilities, and live payout controls first.
+The package release method owns provider verification and payout creation over
+`payoutRelease` claim and source-allocation tables. Use that method rather than
+calling trusted component mutations with UI totals or an isolated transfer
+receipt. Complete provider history, still-unpaid ownership, prior payouts,
+independent liabilities and live controls must be established together.
 
 A claim combines mature creator and affiliate entitlement within one currency.
 It deducts persisted paid and reserved allocations, keeps negative entitlement
@@ -242,13 +236,11 @@ release an unaccepted claim within a conservative 23-hour window. It requires
 its own unique Stripe request receipt; ambiguous errors and older attempts stay
 held. This window stays below Stripe's [24-hour v1 idempotency retention minimum](https://docs.stripe.com/api/idempotent_requests).
 
-The current claim snapshot is deliberately bounded to 100 account transfer rows
-and 1,000 receipt IDs per source. Larger or incomplete histories reject the whole
-claim, without using partial totals. A resumable reconciliation/adoption process,
-provider payout creation and receipt verification, historical fee adoption, other account debit allocation, and
-recurring release/expiry integration remain required before custom payout
-minimums can be presented as an operational feature. In-memory claim tests are
-not evidence of a completed Stripe bank payout.
+Current atomic snapshots support 100 account transfers, 100 historical claims and
+1,000 receipt IDs per source. Larger/incomplete histories hold the whole operation
+without partial totals. Resumable larger-account collection, other provider-debit
+allocation and recurring/UI integration remain required. The package does not
+claim that component tests alone demonstrate a Stripe bank payout.
 
 ## Verified recipient funding receipts
 
@@ -423,10 +415,99 @@ unless a supported provider contract exposes it.
 Current atomic collection accepts up to 100 account transfers and 100 historical
 claims. Larger accounts return `held/snapshot_limit`, without paying a partial
 page. Provider history uses a 1–100 page budget, default 10; exhaustion stays held.
-Explicit prior-payout/source adoption, resumable larger-account collection,
-independent provider-debit allocation, recurring example jobs and React controls
-remain integration work. Existing funded accounts still follow the policy
-migration safeguards; do not bypass `migration_required` to activate this API.
+Use the historical import and funded activation flow below for known old funds.
+Resumable larger-account collection, independent provider-debit allocation,
+recurring example jobs and React controls remain integration work. Unknown funds
+and unsupported accounts keep explicit migration holds.
 
 Sources: [payout creation and source balance selection](https://docs.stripe.com/api/payouts/create),
 [complete balance history and automatic-only payout filtering](https://docs.stripe.com/api/balance_transactions/list).
+
+## Historical import and funded activation
+
+The host authenticates one recipient account and owner, authorizes historical
+source mappings, and records consent before custom scheduling. Start with an
+owned `stripe_managed` policy at its current revision. If no policy exists,
+prepare/apply a default policy with `expectedRevision: -1`,
+`mode: "stripe_managed"`, and `thresholds: []`. This records ownership and keeps
+the current automatic schedule.
+
+Import past payouts whose allocations are not already recorded by BetterStripe:
+
+```ts
+const imported = await stripe.payoutPolicy.adoptPayouts(ctx, {
+  accountId,
+  ownerKey,
+  expectedRevision: policy.revision,
+  currency: "usd",
+  payouts: [
+    {
+      stripePayoutId: historicalPayoutId,
+      allocations: [
+        { stripeTransferId: creatorTransferId, amount: 600 },
+        { stripeTransferId: affiliateTransferId, amount: 400 },
+      ],
+    },
+  ],
+});
+```
+
+Amounts use integer settlement-currency minor units. The package does not infer
+manual-payout ownership from a present balance or Stripe's automatic-only payout
+filter. Supply authorized accounting for every unrecorded historical payout in
+the currency. Existing package claims supply their immutable allocations on
+subsequent calls; use `payouts: []` to verify/reconcile already imported history.
+The same flow supports explicit accounting for automatic historical payouts.
+
+The package retrieves actual recipient funding and payout receipts, verifies
+full history against live available/pending cash, and validates each allocation
+against source maturity at the historical payout date. Future credits and
+not-yet-mature bank returns cannot fund an earlier payout. Terminal paid and
+verified returned payouts are supported; pending or ambiguous outcomes stay
+held. Unknown credits, debits, fees or unallocated payouts require further
+reconciliation. All unknown historical payouts import as one component
+transaction, including fees and source allocations. Changed mappings and stale
+competing snapshots reject without mixing their writes. Replays never create a
+payout. Historical paid principal remains paid after later refunds, so debt
+reduces later qualifying funds rather than making the old commission payable
+again. An adopted payout can reconcile a subsequent bank failure without
+requiring a package marker that was absent from its original Stripe object.
+
+After successful import, explicitly request funded-account adoption during
+preparation, using the latest owned policy revision:
+
+```ts
+const prepared = await stripe.payoutPolicy.prepare(ctx, {
+  accountId,
+  ownerKey,
+  operationKey,
+  expectedRevision: policy.revision,
+  mode: "custom",
+  thresholds: [{ currency: "usd", amount: 1000 }],
+  consent: true,
+  adoptExistingBalance: true,
+});
+if (prepared.status === "prepared") {
+  await stripe.payoutPolicy.apply(ctx, { accountId, ownerKey, operationKey });
+}
+```
+
+Preparation verifies all settlement currencies, full source membership and prior
+payouts. It repeats provider-history and balance checks before a delayed initial
+attempt, then checks local financial fingerprints under OCC before recording
+the attempt marker. New unallocated history cancels an unattempted activation
+while preserving the automatic schedule. Refresh the policy revision and use a
+new operation key after cancellation. If a manual schedule appears without the
+package's attempt marker, the operation reports schedule drift rather than
+pretending the package performed the change. Provider timeouts retain the
+persisted attempt and immutable schedule request for reconciliation.
+
+Holding age follows the unpaid funds. Paid original credits do not age newer
+funds; source debt and verified payout fees consume older ownership first.
+Verified bank-return cash starts a new holding age when it becomes available.
+Preparation cannot restart an expired holding period, and later checks can only
+shorten the pending operation's deadline. `migration_required.adoptionReason`
+explains unknown history or an expired holding period. This flow does not enable
+Dashboard accounts with withdrawal bypasses, Global Payouts, unsupported source
+rails, unknown numeric provider floors or accounts beyond the current atomic
+snapshot bounds. It installs no host cron or UI.

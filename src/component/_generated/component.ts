@@ -2199,11 +2199,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         beginAttempt: FunctionReference<
           "mutation",
           "internal",
-          { accountId: string; operationKey: string; ownerKey: string },
+          {
+            accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
+            operationKey: string;
+            ownerKey: string;
+          },
           {
             _creationTime: number;
             _id: string;
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             attempted?: boolean;
             country: string;
             expectedRevision: number;
@@ -2249,6 +2279,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             attempted?: boolean;
             country: string;
             expectedRevision: number;
@@ -2294,6 +2337,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             attempted?: boolean;
             country: string;
             expectedRevision: number;
@@ -2327,6 +2383,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             country: string;
             expectedRevision: number;
             mode: "stripe_managed" | "custom";
@@ -2344,6 +2413,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             attempted?: boolean;
             country: string;
             expectedRevision: number;
@@ -2444,6 +2526,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountId: string;
+            adoption?: {
+              claims: Array<{ fingerprint: string; operationKey: string }>;
+              observations: Array<{
+                currency: string;
+                ledgerFingerprint: string;
+                matureNet: number;
+                observedAt: number;
+                pendingCredits: number;
+                stripeTransferId: string;
+                transactionIds: Array<string>;
+              }>;
+              oldestHeldAt?: number;
+            };
             attempted?: boolean;
             country: string;
             expectedRevision: number;

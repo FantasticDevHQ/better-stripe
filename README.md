@@ -48,8 +48,10 @@ provider outcome, and books its net payout fees once.
 The [combined release API](docs/settlement.md#combined-recipient-release) verifies
 complete source and payout history, reserves mature unpaid funds, and creates an
 idempotent bank payout. Install a host job to invoke it and expire due policies.
-Existing unallocated balances, larger histories and other debit allocations still
-require migration; schedule controls alone do not enforce a minimum.
+[Historical imports and explicit funded activation](docs/settlement.md#historical-import-and-funded-activation)
+verify old payouts, source ownership and holding age before enabling a custom
+schedule. Larger histories and unallocated money still require reconciliation;
+schedule controls alone do not enforce a minimum.
 
 ## Status
 

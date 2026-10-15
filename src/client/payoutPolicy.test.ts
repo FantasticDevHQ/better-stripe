@@ -318,3 +318,19 @@ it("rechecks delayed activation and cancels safely when funds arrive after prepa
     status: "ready",
   });
 });
+it("requires adoption for historical payouts even when today's balance is zero", async () => {
+  const { client, ctx, provider } = await setup();
+  provider.payouts.list.mockImplementation(
+    async (params?: { status?: string }) =>
+      ({
+        data: params?.status ? [] : [{ id: "po_old" }],
+        has_more: false,
+      }) as never,
+  );
+  expect(await client.prepare(ctx, options)).toMatchObject({
+    status: "migration_required",
+    reason: "existing_payout_history",
+  });
+  expect(provider.balanceSettings.update).not.toHaveBeenCalled();
+  expect(await client.get(ctx, scope)).toBeNull();
+});

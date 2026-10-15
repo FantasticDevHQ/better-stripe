@@ -303,8 +303,9 @@ export async function adoptRecipientPayouts(
     )) as { claims: Claim[] };
     claims.push(...result.claims);
   }
-  const paid = claims
-    .filter((c) => c.status === "paid")
+  // Returned cash gets a fresh holding age after consuming its original principal.
+  const originalPaid = claims
+    .filter((c) => c.status === "paid" || c.status === "returned")
     .flatMap((c) => c.allocations);
   const fees = claims.reduce((total, c) => add(total, c.providerFee ?? 0), 0);
   const returned = proofPayouts
@@ -315,7 +316,7 @@ export async function adoptRecipientPayouts(
   const oldestHeldAt = oldestUnpaidFunding(
     opts.currency,
     sources,
-    paid,
+    originalPaid,
     fees,
     returned,
   );

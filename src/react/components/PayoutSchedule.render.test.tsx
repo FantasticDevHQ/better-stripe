@@ -176,3 +176,18 @@ describe("PayoutSchedule", () => {
     expect(BarrelExport).toBe(PayoutSchedule);
   });
 });
+it.each(["ugx", "isk"])(
+  "preserves observed fractional %s balances",
+  (currency) => {
+    const html = renderToStaticMarkup(
+      createElement(PayoutSchedule, {
+        balance: { currency, available: 101, pending: -1 },
+        children: ({ availableLabel, pendingLabel }) =>
+          createElement("p", null, `${availableLabel}|${pendingLabel}`),
+      }),
+    );
+    expect(html).toBe(
+      `<p>${currency.toUpperCase()} 1.01|-${currency.toUpperCase()} 0.01</p>`,
+    );
+  },
+);

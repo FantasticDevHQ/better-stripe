@@ -1,7 +1,11 @@
 /**
  * Price formatting and filtering utilities.
  */
-import { formatChargeAmount } from "../../client/charge-currency.js";
+import {
+  formatChargeAmount,
+  getChargeCurrencyMetadata,
+} from "../../client/charge-currency.js";
+import { renderCurrencyUnits } from "../../client/charge-currency-format.js";
 
 type PriceLike = {
   unitAmount?: number | null;
@@ -13,7 +17,8 @@ type PriceLike = {
 };
 
 /**
- * Format Stripe charge/Price units to a display string.
+ * Legacy display helper for observed ordinary account/charge units.
+ * Preserves fractional ISK/UGX balances; does not validate charge eligibility.
  * e.g. 2000, 'usd' → '$20.00'
  */
 export function formatPrice(
@@ -21,7 +26,20 @@ export function formatPrice(
   currency: string,
   locale = "en-US",
 ): string {
-  return formatChargeAmount(amount, currency, locale);
+  const metadata = getChargeCurrencyMetadata(currency);
+  if (!metadata || !Number.isSafeInteger(amount))
+    throw new RangeError("Invalid amount or unsupported currency");
+  const displayDecimals =
+    amount % 10 ** metadata.apiDecimals === 0
+      ? metadata.displayDecimals
+      : metadata.apiDecimals;
+  return renderCurrencyUnits(
+    amount,
+    metadata.currency,
+    metadata.apiDecimals,
+    displayDecimals,
+    locale,
+  );
 }
 
 /**
@@ -34,7 +52,7 @@ export function formatPriceWithInterval(
   customPriceLabel = "Custom price",
 ): string {
   if (price.unitAmount == null) return customPriceLabel;
-  const amount = formatPrice(price.unitAmount, price.currency, locale);
+  const amount = formatChargeAmount(price.unitAmount, price.currency, locale);
   if (price.type === "one_time" || !price.interval) {
     return amount;
   }

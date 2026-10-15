@@ -8,6 +8,10 @@ import {
 } from "./price-helpers.js";
 
 describe("formatPrice", () => {
+  it("keeps fractional compatibility units from observed balances and costs", () => {
+    expect(formatPrice(101, "ugx")).toContain("1.01");
+    expect(formatPrice(-1, "isk")).toBe("-ISK 0.01");
+  });
   it("formats USD cents to dollars", () => {
     expect(formatPrice(2000, "usd")).toBe("$20.00");
   });

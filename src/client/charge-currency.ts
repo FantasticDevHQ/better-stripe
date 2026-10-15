@@ -1,4 +1,5 @@
 /** Stripe charge/Price units. These are not payout or Global Payouts rules. */
+import { renderCurrencyUnits } from "./charge-currency-format.js";
 const zeroDecimal = new Set([
   "bif",
   "clp",
@@ -87,26 +88,11 @@ export function formatChargeAmount(
   ) {
     throw new RangeError("Invalid charge amount or unsupported currency");
   }
-  const scale = 10n ** BigInt(metadata.apiDecimals);
-  const units = BigInt(Math.abs(amount));
-  const whole = units / scale;
-  const signedWhole = amount < 0 ? (whole === 0n ? -0 : -whole) : whole;
-  const formatter = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: metadata.currency.toUpperCase(),
-    minimumFractionDigits: metadata.displayDecimals,
-    maximumFractionDigits: metadata.displayDecimals,
-  });
-  const digits = new Intl.NumberFormat(locale, { useGrouping: false });
-  const fraction = (units % scale)
-    .toString()
-    .padStart(metadata.apiDecimals, "0");
-  return formatter
-    .formatToParts(signedWhole)
-    .map((part) =>
-      part.type === "fraction"
-        ? [...fraction].map((digit) => digits.format(Number(digit))).join("")
-        : part.value,
-    )
-    .join("");
+  return renderCurrencyUnits(
+    amount,
+    metadata.currency,
+    metadata.apiDecimals,
+    metadata.displayDecimals,
+    locale,
+  );
 }

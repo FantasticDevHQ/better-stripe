@@ -42,7 +42,12 @@ and preserves negative sub-unit values. Parsing new charge inputs remains
 nonnegative. No helper performs FX or provider writes. Environments without
 `Intl.supportedValuesOf` fail closed with no recognized currencies.
 
-`PriceCard`, `formatPrice` and `formatPriceWithInterval` use these same rules.
+`PriceCard` and `formatPriceWithInterval` use the strict charge/Price rules.
+The legacy `formatPrice` display helper also serves observed account balances
+and signed costs. It preserves fractional ISK/UGX minor units without applying
+whole-charge eligibility, so an observed UGX balance of `101` displays `1.01`.
+It is not a charge validator. No helper establishes payout eligibility or
+Global Payouts units.
 Missing/null amounts display `Custom price`, distinct from a real zero price.
 Pass `customPriceLabel` and `locale` to `PriceCard` for translated presentation,
 or the third argument to `formatPriceWithInterval` for a custom missing-amount

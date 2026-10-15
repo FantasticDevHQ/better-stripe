@@ -253,6 +253,15 @@ export const recordOutcome = mutation({
       return claim;
     await recordFees(ctx, claim, args, returned);
     await releaseRecoveryGuard(ctx, claim);
+    if (
+      claim.status === "paid" &&
+      args.providerStatus === "paid" &&
+      args.debitTransactionId !== undefined &&
+      claim.debitTransactionId === args.debitTransactionId &&
+      claim.debitFee === args.debitFee &&
+      claim.providerFee === args.debitFee
+    )
+      return claim;
     if (returned) {
       await moveAllocations(
         ctx,

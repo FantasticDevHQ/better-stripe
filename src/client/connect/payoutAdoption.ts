@@ -55,6 +55,8 @@ export type PayoutAdoptionResult =
       observations: Infer<typeof observation>[];
       oldestHeldAt?: number;
       historyCurrencies: string[];
+      /** Internal handoff to funded-activation proof collection only. */
+      collection?: CollectionRef;
     }
   | { status: "held"; reason: string };
 /** Import verified terminal historical payouts. Does not change payout schedules or authorize activation. */
@@ -141,6 +143,7 @@ export async function adoptRecipientPayouts(
     }
     snapshot = large;
   }
+  let retainCollection = false;
   try {
     const known = new Map(
       snapshot.claims
@@ -372,8 +375,10 @@ export async function adoptRecipientPayouts(
       fees,
       returned,
     );
+    retainCollection = verifyOnly;
     return {
       status: "adopted",
+      ...(verifyOnly && collection ? { collection } : {}),
       claims,
       observations,
       historyCurrencies: [...historyCurrencies],
@@ -381,6 +386,11 @@ export async function adoptRecipientPayouts(
       observedAt: Date.now(),
     };
   } finally {
-    await discardQualificationInput(component, ctx, collection);
+    await discardQualificationInput(
+      component,
+      ctx,
+      collection,
+      retainCollection,
+    );
   }
 }

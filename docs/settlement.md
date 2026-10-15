@@ -539,7 +539,10 @@ not-yet-mature bank returns cannot fund an earlier payout. Terminal paid and
 verified returned payouts are supported; pending or ambiguous outcomes stay
 held. Unknown credits, debits, fees or unallocated payouts require further
 reconciliation. All unknown historical payouts import as one component
-transaction, including fees and source allocations. Changed mappings and stale
+transaction, including fees and source allocations. Each new historical claim
+retains immutable observations for every allocated source. Unrelated source
+proofs are still checked in the complete batch, but are not copied onto every
+claim. Existing claim evidence is not rewritten. Changed mappings and stale
 competing snapshots reject without mixing their writes. Replays never create a
 payout. Historical paid principal remains paid after later refunds, so debt
 reduces later qualifying funds rather than making the old commission payable

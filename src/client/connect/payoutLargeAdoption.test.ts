@@ -472,7 +472,7 @@ it("cleans an invalidated activation collection so a fresh proof can be collecte
     await import("./payoutAdoptionCollection.js");
   const { collectPayoutSnapshot } = await import("./payoutCollection.js");
   const { collectAdoptionProof } = await import("./payoutActivationProof.js");
-  const key = await adoptionCollectionKey(scope, "enable", "activation");
+  const key = await adoptionCollectionKey(scope, "enable", "import:usd");
   await collectPayoutSnapshot(component, s.ctx, {
     accountId: scope.accountId,
     ownerKey: scope.ownerKey,
@@ -516,4 +516,15 @@ it("cleans an invalidated activation collection so a fresh proof can be collecte
   expect(
     await s.t.run((ctx) => ctx.db.query("payoutSnapshots").collect()),
   ).toEqual([]);
+});
+it("retains each historical payout's complete allocated-source proof without copying unrelated proofs", async () => {
+  const { adopt } = await withHistory();
+  const result = await adopt();
+  expect(result).toMatchObject({ status: "adopted" });
+  if (result.status !== "adopted") throw Error("Expected import");
+  expect(result.observations).toHaveLength(205);
+  for (const claim of result.claims)
+    expect(claim.observations.map((o) => o.stripeTransferId).sort()).toEqual(
+      claim.allocations.map((a) => a.stripeTransferId).sort(),
+    );
 });

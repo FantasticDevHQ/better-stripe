@@ -190,7 +190,10 @@ export async function adoptHistoricalPayout(
     amount: p.amount,
     destinationId: p.destinationId,
     allocations,
-    observations: args.observations,
+    // Complete batch membership is validated above. Keep the immutable receipt
+    // evidence for every source allocated to this historical payout, rather than
+    // duplicating unrelated source proofs on every imported claim.
+    observations: args.observations.filter((o) => seen.has(o.stripeTransferId)),
     status: p.status,
     attemptedAt: p.created * 1000,
     stripePayoutId: p.stripePayoutId,

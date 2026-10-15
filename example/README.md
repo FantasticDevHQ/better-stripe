@@ -819,6 +819,20 @@ once. If Stripe canceled the subscription on failure, the report records that
 paying the debt leaves store access closed. It does not claim to reactivate a
 canceled subscription.
 
+Fixture purchases create seller-owned products and prices and retain their IDs
+on the payment. An immediate test dispute can precede settlement. Cost
+reconciliation binds that source to the seller's catalog, or to the original
+price on its verified paid subscription invoice, without creating a settled sale
+or transferring disputed funds. Unreturned principal retained by the platform
+first offsets processing costs; actual remaining processing and dispute costs
+become seller liabilities. Invoice customer, payment, currency and allocation
+checks also apply when the PaymentIntent has no store metadata.
+
+Stripe may activate test recipient capabilities or report processing fees
+asynchronously. Retry the same fixture operation with its durable keys instead
+of creating replacement payments. Historical prices remain valid source bindings
+after catalog deactivation or a subscription price change.
+
 The test refreshes webhook event subscriptions before starting. It cancels each
 test subscription afterward, hides these test sellers from the persona picker,
 and saves evidence under `qa/2026-10-13/`. All charges are sandbox-only. Stripe

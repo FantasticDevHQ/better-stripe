@@ -1,3 +1,4 @@
+import { unsettledCostSource } from "./lib/unsettledCostSource";
 import { stripe } from "./stripe";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
@@ -22,16 +23,14 @@ export const reconcile = internalAction({
         `Stripe processing costs are not available yet (${cost.reason}).`,
       );
     }
-    const sale = await ctx.runQuery(internal.storeSaleSettlement.getByCharge, {
-      chargeId: cost.chargeId,
-    });
-    if (!sale) {
-      if (cost.metadata.storeBilling === "sale_v1")
-        throw new Error(
-          "Sale settlement is not ready for cost reconciliation.",
-        );
-      return null;
-    }
+    const settled = await ctx.runQuery(
+      internal.storeSaleSettlement.getByCharge,
+      {
+        chargeId: cost.chargeId,
+      },
+    );
+    const sale = settled ?? (await unsettledCostSource(ctx, cost));
+    if (!sale) return null;
     if (sale.currency !== cost.currency || sale.gross !== cost.gross)
       throw new Error("Stripe cost context does not match the original sale.");
     const disputeFees = Math.max(0, cost.disputeFeeAdjustment);

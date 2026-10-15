@@ -5,11 +5,17 @@ import { beforeEach, expect, it, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 const raw = vi.hoisted(() => ({
-  invoices: { retrieve: vi.fn() },
+  invoices: { retrieve: vi.fn(), listLineItems: vi.fn() },
   invoiceItems: { list: vi.fn(), create: vi.fn() },
+  invoicePayments: { list: vi.fn() },
+  subscriptions: { retrieve: vi.fn() },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => raw }));
-const client = vi.hoisted(() => ({ getProcessingCostContext: vi.fn() }));
+const client = vi.hoisted(() => ({
+  getProcessingCostContext: vi.fn(),
+  getPriceByStripeId: vi.fn(),
+  getProductByStripeId: vi.fn(),
+}));
 vi.mock("./stripe", () => ({ stripe: client }));
 const costContext = {
   status: "ready",
@@ -54,6 +60,11 @@ async function setup() {
     }),
   );
   client.getProcessingCostContext.mockResolvedValue(costContext);
+  client.getPriceByStripeId.mockResolvedValue({
+    stripeProductId: "prod_store",
+    currency: "usd",
+  });
+  client.getProductByStripeId.mockResolvedValue({ accountId: "acct_store" });
   raw.invoices.retrieve.mockResolvedValue({
     id: "in_monthly",
     customer_account: "acct_store",
@@ -171,6 +182,11 @@ it("retries when the actual refund fee is delayed", async () => {
       await t.query(api.sellerCostBilling.list, { sellerId }),
     ).toHaveLength(0);
     client.getProcessingCostContext.mockResolvedValue(costContext);
+    client.getPriceByStripeId.mockResolvedValue({
+      stripeProductId: "prod_store",
+      currency: "usd",
+    });
+    client.getProductByStripeId.mockResolvedValue({ accountId: "acct_store" });
     await t.finishAllScheduledFunctions(() => vi.runAllTimers());
     expect(
       (await t.query(api.sellerCostBilling.list, { sellerId }))[0].amountDue,
@@ -178,4 +194,146 @@ it("retries when the actual refund fee is delayed", async () => {
   } finally {
     vi.useRealTimers();
   }
+});
+
+it("records actual costs for a disputed source that never settled without paying or fabricating a sale", async () => {
+  const { t, sellerId } = await setup();
+  await t.run(async (ctx) => {
+    const sale = await ctx.db
+      .query("storeSales")
+      .withIndex("by_charge", (q) => q.eq("chargeId", "ch_sale"))
+      .first();
+    await ctx.db.delete("storeSales", sale!._id);
+  });
+  client.getProcessingCostContext.mockResolvedValue({
+    ...costContext,
+    metadata: {
+      storeBilling: "sale_v1",
+      sellerId,
+      stripePriceId: "price_store",
+      stripeProductId: "prod_store",
+    },
+    disputeFeeAdjustment: 1500,
+    disputes: [{ id: "dp_original" }],
+  });
+  await t.action(internal.sellerCostActions.reconcile, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_sale",
+    }),
+  ).toBeNull();
+  expect(
+    (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
+  ).toMatchObject({
+    amountDue: 1820,
+    processingLoss: 320,
+    disputeFees: 1500,
+    outstanding: 1820,
+  });
+});
+it("rejects seller metadata that is not bound to the source product's owner", async () => {
+  const { t, sellerId } = await setup();
+  await t.run(async (ctx) => {
+    const sale = await ctx.db.query("storeSales").first();
+    await ctx.db.delete("storeSales", sale!._id);
+  });
+  client.getProcessingCostContext.mockResolvedValue({
+    ...costContext,
+    metadata: {
+      storeBilling: "sale_v1",
+      sellerId,
+      stripePriceId: "price_store",
+    },
+  });
+  client.getProductByStripeId.mockResolvedValue({ accountId: "acct_other" });
+  await expect(
+    t.action(internal.sellerCostActions.reconcile, {
+      paymentIntentId: "pi_sale",
+    }),
+  ).rejects.toThrow(/owner/i);
+  expect(await t.query(api.sellerCostBilling.list, { sellerId })).toHaveLength(
+    0,
+  );
+});
+
+it("resolves a disputed subscription source through its verified paid invoice instead of relying on PaymentIntent metadata", async () => {
+  const { t, sellerId } = await setup();
+  await t.run(async (ctx) => {
+    const sale = await ctx.db.query("storeSales").first();
+    await ctx.db.delete("storeSales", sale!._id);
+  });
+  client.getProcessingCostContext.mockResolvedValue({
+    ...costContext,
+    metadata: {},
+    disputes: [{ id: "dp_subscription" }],
+    disputeFeeAdjustment: 1500,
+  });
+  raw.invoicePayments.list.mockImplementation(() =>
+    (async function* () {
+      yield {
+        invoice: "in_original",
+        status: "paid",
+        amount_paid: 10000,
+        currency: "usd",
+        payment: { type: "payment_intent", payment_intent: "pi_sale" },
+      };
+    })(),
+  );
+  raw.invoices.retrieve.mockResolvedValue({
+    id: "in_original",
+    status: "paid",
+    amount_paid: 10000,
+    currency: "usd",
+    customer_account: "acct_buyer",
+    parent: { subscription_details: { subscription: "sub_original" } },
+  });
+  raw.invoices.listLineItems.mockImplementation(() =>
+    (async function* () {
+      yield {
+        pricing: {
+          price_details: { price: "price_original", product: "prod_store" },
+        },
+      };
+    })(),
+  );
+  raw.subscriptions.retrieve.mockResolvedValue({
+    id: "sub_original",
+    customer_account: "acct_buyer",
+    metadata: {
+      storeBilling: "sale_v1",
+      sellerId,
+      stripePriceId: "price_store",
+      stripeProductId: "prod_store",
+    },
+  });
+  await t.action(internal.sellerCostActions.reconcile, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    (await t.query(api.sellerCostBilling.list, { sellerId }))[0],
+  ).toMatchObject({ amountDue: 1820 });
+  expect(
+    await t.query(internal.storeSaleSettlement.getByCharge, {
+      chargeId: "ch_sale",
+    }),
+  ).toBeNull();
+  expect(client.getPriceByStripeId).toHaveBeenLastCalledWith(
+    expect.anything(),
+    { stripePriceId: "price_original" },
+  );
+  raw.invoices.retrieve.mockResolvedValue({
+    id: "in_original",
+    status: "paid",
+    amount_paid: 9999,
+    currency: "usd",
+    customer_account: "acct_buyer",
+    parent: { subscription_details: { subscription: "sub_original" } },
+  });
+  await expect(
+    t.action(internal.sellerCostActions.reconcile, {
+      paymentIntentId: "pi_sale",
+    }),
+  ).rejects.toThrow(/allocation/i);
 });

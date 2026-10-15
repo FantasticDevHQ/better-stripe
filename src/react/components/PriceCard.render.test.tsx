@@ -30,6 +30,43 @@ const basePrice: PriceCardPrice = {
 };
 
 describe("PriceCard", () => {
+  it("accepts a translated custom price label and locale", () => {
+    const html = renderToStaticMarkup(
+      createElement(PriceCard, {
+        price: { ...basePrice, unitAmount: undefined },
+        customPriceLabel: "Preis auf Anfrage",
+        locale: "de-DE",
+      }),
+    );
+    expect(html).toContain("<p>Preis auf Anfrage</p>");
+    expect(
+      renderToStaticMarkup(
+        createElement(PriceCard, {
+          price: { ...basePrice, currency: "eur" },
+          locale: "de-DE",
+        }),
+      ),
+    ).toContain("20,00");
+  });
+  it("shows a zero-decimal charge without dividing by 100", () => {
+    const html = renderToStaticMarkup(
+      createElement(PriceCard, {
+        price: { ...basePrice, currency: "jpy", unitAmount: 500 },
+      }),
+    );
+    expect(html).toContain("<p>¥500/month</p>");
+  });
+
+  it("does not present a custom price as free in render props", () => {
+    const html = renderToStaticMarkup(
+      createElement(PriceCard, {
+        price: { ...basePrice, unitAmount: null },
+        children: ({ formattedPrice }) =>
+          createElement("p", null, formattedPrice),
+      }),
+    );
+    expect(html).toBe("<p>Custom price</p>");
+  });
   it("renders the formatted price inside the default card with role=option", () => {
     const html = renderToStaticMarkup(
       createElement(PriceCard, { price: basePrice }),

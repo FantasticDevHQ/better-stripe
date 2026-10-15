@@ -1,6 +1,7 @@
 /**
  * Price formatting and filtering utilities.
  */
+import { formatChargeAmount } from "../../client/charge-currency.js";
 
 type PriceLike = {
   unitAmount?: number | null;
@@ -12,19 +13,15 @@ type PriceLike = {
 };
 
 /**
- * Format a price amount in cents to a display string.
+ * Format Stripe charge/Price units to a display string.
  * e.g. 2000, 'usd' → '$20.00'
  */
 export function formatPrice(
-  amountInCents: number,
+  amount: number,
   currency: string,
   locale = "en-US",
 ): string {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 2,
-  }).format(amountInCents / 100);
+  return formatChargeAmount(amount, currency, locale);
 }
 
 /**
@@ -34,8 +31,10 @@ export function formatPrice(
 export function formatPriceWithInterval(
   price: PriceLike,
   locale = "en-US",
+  customPriceLabel = "Custom price",
 ): string {
-  const amount = formatPrice(price.unitAmount ?? 0, price.currency, locale);
+  if (price.unitAmount == null) return customPriceLabel;
+  const amount = formatPrice(price.unitAmount, price.currency, locale);
   if (price.type === "one_time" || !price.interval) {
     return amount;
   }

@@ -106,7 +106,9 @@ export async function previewPlan(
     providerAvailable: args.providerAvailable,
     observedAt: Math.min(
       Date.now(),
-      ...args.observations.map((o) => o.observedAt),
+      ...args.observations
+        .filter((o) => o.currency === args.currency)
+        .map((o) => o.observedAt),
     ),
     ...progress,
   };

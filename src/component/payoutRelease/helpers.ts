@@ -71,6 +71,7 @@ export async function checkSnapshot(
   accountId: string,
   observations: Infer<typeof observation>[],
   fresh: boolean,
+  freshCurrency?: string,
 ) {
   const rows = await ctx.db
     .query("transfers")
@@ -106,6 +107,7 @@ export async function checkSnapshot(
       throw new Error("Payout source snapshot changed or is not ready.");
     if (
       fresh &&
+      (freshCurrency === undefined || o.currency === freshCurrency) &&
       (!Number.isSafeInteger(o.observedAt) ||
         o.observedAt > Date.now() ||
         o.observedAt < Date.now() - 30000)

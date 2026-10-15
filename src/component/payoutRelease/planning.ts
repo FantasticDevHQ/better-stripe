@@ -26,6 +26,7 @@ export async function readPayoutPlan(
     args.accountId,
     args.observations,
     true,
+    args.currency,
   );
   const sources: PayoutFundingSource[] = [];
   for (const observation of args.observations) {

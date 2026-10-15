@@ -124,7 +124,13 @@ export const beginAttempt = mutation({
     const feeRevision = (await readFees(ctx, claim))?.revision ?? 0;
     if (feeRevision !== (claim.feeRevision ?? 0))
       throw new Error("Payout fee revision changed after reservation.");
-    await checkSnapshot(ctx, claim.accountId, claim.observations, true);
+    await checkSnapshot(
+      ctx,
+      claim.accountId,
+      claim.observations,
+      true,
+      claim.currency,
+    );
     await reserveRecoveryGuard(ctx, claim, claim.amount);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
       attemptedAt: Date.now(),

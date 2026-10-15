@@ -59,7 +59,9 @@ export async function previewRecipientPayout(
     return held("policy_changed");
   if (
     proof.observedAt < Date.now() - 30000 ||
-    proof.observations.some((o) => o.observedAt < Date.now() - 30000)
+    proof.observations.some(
+      (o) => o.currency === opts.currency && o.observedAt < Date.now() - 30000,
+    )
   )
     return held("observations_stale");
   return ctx.runQuery(

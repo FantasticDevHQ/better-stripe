@@ -151,3 +151,18 @@ it("retries an unknown final attempt within five minutes even with a daily caden
     Date.now() + 300000,
   );
 });
+
+it("rescues a pre-existing job whose stored cadence would skip the final window", async () => {
+  vi.useFakeTimers();
+  const s = await recipient(25);
+  await s.worker(86400000);
+  await s.t.run(async (ctx) => {
+    const job = (await ctx.db.query("payoutWorkerJobs").first())!;
+    await ctx.db.patch(job._id, { nextAttemptAt: Date.now() + 86400000 });
+  });
+  vi.advanceTimersByTime(3600000);
+  expect(await s.worker(86400000)).toMatchObject({
+    payout: { claim: { amount: 999, status: "paid" } },
+  });
+  expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+});

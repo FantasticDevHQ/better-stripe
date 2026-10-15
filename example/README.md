@@ -46,7 +46,10 @@ affiliate and other contributions, with their in-flight and paid amounts.
 
 `convex/recipientPayoutPolicy.ts` derives the demo account and outstanding seller
 costs server-side. It preserves other currency settings and retries a persisted
-schedule operation. Production apps must use authenticated ownership instead of
+schedule operation. New settings operations include the resolved Stripe account
+in their identity so a replaced recipient cannot collide with the old account's
+history. Pending changes retain their stored identity when retried. Production
+apps must use authenticated ownership instead of
 the example's demo persona IDs. Funded or historical accounts can require
 reconciliation before activation. The UI reports that limitation instead of
 guessing allocations. Opt-out restores the recorded original account schedule.

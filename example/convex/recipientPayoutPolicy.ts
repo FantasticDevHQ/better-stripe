@@ -78,7 +78,7 @@ export const save = action({
     });
     const scope = { accountId, ownerKey: args.userId };
     const policy = await stripe.payoutPolicy.get(ctx, scope);
-    const operationKey = `example:payout-settings:${args.userId}:${args.expectedRevision}:${args.mode}:${args.currency}:${args.mode === "custom" ? args.minimum : "default"}`;
+    const operationKey = `example:payout-settings:${accountId}:${args.userId}:${args.expectedRevision}:${args.mode}:${args.currency}:${args.mode === "custom" ? args.minimum : "default"}`;
     const prior = await stripe.payoutPolicy.operation(ctx, {
       ...scope,
       operationKey,

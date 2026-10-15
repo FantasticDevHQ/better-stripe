@@ -1,3 +1,4 @@
+import { reconcilePayoutAndTrigger } from "./webhooks/payoutReconciliation.js";
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
 import { CheckoutRequestClient } from "./checkoutRequests.js";
@@ -934,12 +935,6 @@ export class BetterStripe extends ReadContractClient {
     return subscriptionsImpl.upsertSubscription(this.component, ctx, opts);
   }
 
-  async getTrialStatus(ctx: RunCtx, opts: { subscriptionId: string }) {
-    return subscriptionsImpl.getTrialStatus(this.component, ctx, opts);
-  }
-
-  // INVOICE METHODS
-
   async listInvoices(
     ctx: RunCtx,
     opts?: {
@@ -1775,6 +1770,8 @@ export class BetterStripe extends ReadContractClient {
           splitCreateUpdate(triggers?.payment?.onCreate, undefined),
           record,
         ),
+      payoutReconciled: (ctx, record) =>
+        reconcilePayoutAndTrigger(component, ctx, record, triggers?.payout),
       payoutUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentPayout>(
           ctx,

@@ -1,4 +1,5 @@
 import * as checkoutImpl from "./billing/checkout.js";
+import * as subscriptionsImpl from "./billing/subscriptions.js";
 import * as payoutsImpl from "./connect/payouts.js";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { PaginationOptions, PaginationResult } from "convex/server";
@@ -73,6 +74,10 @@ export class ReadContractClient {
     opts: { userId: string; status?: string },
   ): Promise<StripeComponentCheckoutSession[]> {
     return checkoutImpl.listCheckoutSessionsByUser(this.component, ctx, opts);
+  }
+
+  async getTrialStatus(ctx: RunCtx, opts: { subscriptionId: string }) {
+    return subscriptionsImpl.getTrialStatus(this.component, ctx, opts);
   }
 
   async getPayout(ctx: RunCtx, opts: { payoutId: string }) {

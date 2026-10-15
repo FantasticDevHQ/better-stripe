@@ -158,11 +158,27 @@ claim. Retry the operation to obtain a new generation and read Stripe again.
 Never substitute the webhook event body when the current provider read fails.
 The claim table holds reconciliation metadata, not a second money ledger.
 
-This method does not yet replace the existing signed webhook dispatcher. The
-prepared generation must be integrated into the shared host callback transaction.
-Until that wiring is adopted, legacy webhook deliveries still apply
-event-body snapshots and can regress on distinct out-of-order events. Do not call
-this method and then blindly apply an old event-body upsert afterward.
+Signed payout notifications use the same current-provider preparation and durable
+generation. The signed event account selects connected scope; an absent account
+selects platform scope. Event metadata and bank destinations cannot select an
+account. Created, updated, paid, failed and canceled events all follow this path.
+Unavailable provider state fails delivery for retry and preserves the previous
+financial observation. There is no event-body fallback or terminal-status ranking.
+
+When a host registers the shared `webhookHandlers()` pair, the accepted generation,
+payout write and synchronized `triggers.payout` callback commit in the same host
+mutation transaction. A thrown callback rolls back that financial acceptance.
+Retries obtain a fresh provider observation. Superseded and unchanged observations
+skip synchronized callbacks. Without host handlers, the package commits the same
+guarded component mutation directly. Keep one package webhook endpoint; never
+follow reconciliation with a raw old-event upsert.
+
+Existing event-ID deduplication remains in place. Raw `onEvent` and event-specific
+hooks retain their original signed event payloads and separate delivery semantics;
+they are not current-state financial observations. Host notifications must own
+their deduplication and retry policy. Legacy records with unverified or conflicting
+account bindings remain held for explicit reconciliation rather than foreign
+adoption.
 
 ## Payout failures
 

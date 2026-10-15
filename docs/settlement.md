@@ -250,6 +250,12 @@ claim remains, discovery clears the deadline and retains a `no_held_balance`
 observation. That means no balance was held at the observation time, not that a
 bank payout arrived or that off-provider obligations were forgiven.
 
+Existing active policies gain the recovery record at their first due expiry
+under the updated SDK. Already-restored older policies whose deadline was
+removed are not automatically backfilled. Audit their historical policy
+operations and Stripe receipts before treating them as financially settled;
+absence of a recovery field does not prove disbursement.
+
 Alert operators on `expiry_unresolved`. Reconcile unknown payout outcomes through
 the existing worker or receipt APIs using their original operation identity;
 never delete claims or blindly create replacements. Resolve provider capability,

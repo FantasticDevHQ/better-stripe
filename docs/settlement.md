@@ -218,3 +218,53 @@ numeric payout-floor field, and retained balance reserves are not payout trigger
 Sources: [payout schedules](https://docs.stripe.com/connect/manage-payout-schedule),
 [manual payout holding limits](https://docs.stripe.com/connect/manual-payouts), and
 [Dashboard control limits](https://docs.stripe.com/connect/platform-controls-for-stripe-dashboard-accounts#control-payout-timing).
+
+## Verified recipient funding receipts
+
+Use `stripe.payoutPolicy.transferReceipt(ctx, { accountId, stripeTransferId })`
+in an authorized action to read a transfer's actual recipient funding. The
+reader binds the component ledger to the provider transfer, destination payment,
+original balance transaction and each transfer reversal's recipient refund.
+It verifies account, amount, currency and source identities, and rechecks the
+transfer and ledger before publishing a result. It performs no financial writes.
+
+A `ready` result contains exact signed recipient settlement transactions and
+`totalNet`, `matureNet`, and `pendingCredits`. `sourceCurrency` describes the
+original transfer; `settlementCurrency` describes the actual recipient balance.
+For supported FX receipts, amounts come directly from Stripe's settlement
+transactions; the reader does not calculate exchange-rate conversions. Mixed
+settlement currencies or missing conversion evidence require explicit allocation.
+Transaction `created` and `availableOn` values are Unix seconds; the snapshot's
+`observedAt` is milliseconds.
+
+Positive credits qualify as mature only when their provider status is available
+and their availability date has passed. Pending debits first cancel the matching
+pending original credit; uncovered pending debits reduce mature credit. Other
+positive pending adjustments never qualify early. Signed mature debt is preserved.
+For example, in one settlement currency's minor units:
+
+| Original credit | Reversal/debit | Total net | Mature net | Pending credits |
+| --------------- | -------------- | --------: | ---------: | --------------: |
+| 1000 pending    | 250 pending    |       750 |          0 |             750 |
+| 1000 available  | 250 pending    |       750 |        750 |               0 |
+| 1000 pending    | 1000 pending   |         0 |          0 |               0 |
+| 1000 pending    | 250 available  |       750 |       -250 |            1000 |
+
+This is **received credit, not still-unpaid entitlement**. Previous bank payouts,
+source allocations, recovery liabilities and outstanding reservations must be
+reconciled before any release. Do not pay `matureNet` directly or infer ownership
+from unrelated account-wide available funds. Stripe's balance-transaction
+`payout` filter maps automatic payouts only; application-created manual payouts
+need a maintained allocation ledger.
+
+The default budget is 20 provider requests; `maxRequests` accepts 1–100. Exhausted
+or incomplete history returns `not_ready` without partial financial totals.
+Reserved reversal claims, changing provider/ledger snapshots and unavailable
+receipts also fail closed. Identity mismatches and invalid financial arithmetic
+throw. Larger histories need continued reconciliation rather than treating the
+missing amount as zero or silently truncating it. The original transfer ledger
+remains intact for retries.
+
+Sources: [transfer provenance](https://docs.stripe.com/api/transfers/object),
+[receipt maturity](https://docs.stripe.com/api/balance_transactions/object), and
+[history pagination and payout-filter limits](https://docs.stripe.com/api/balance_transactions/list).

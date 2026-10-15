@@ -680,6 +680,8 @@ Stripe-managed defaults without inventing a numeric provider floor. Changing
 policies suppress prior financial progress during activation, opt-out and expiry
 restoration. A policy preserves its prior mode until confirmation, so mode alone
 does not establish verified controls while status is `changing`.
+An expired assessment explains the holding deadline and withholds financial
+progress until the schedule is restored and verified.
 For a ready custom policy, an
 undefined preview means loading; a null or minimal held preview shows an
 unavailable assessment rather than fabricated zero balances. A mismatched

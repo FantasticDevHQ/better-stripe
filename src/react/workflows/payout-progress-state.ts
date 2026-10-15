@@ -72,6 +72,8 @@ const reasons: Record<string, string> = {
   payout_unidentified:
     "A previous payout outcome needs reconciliation. No replacement payout will be created blindly.",
   observations_stale: "Provider observations expired. Refresh the assessment.",
+  expired:
+    "The custom holding deadline has passed. Eligibility is unavailable until the payout schedule is restored and verified.",
   snapshot_limit:
     "This account needs continued history reconciliation before eligibility can be assessed.",
   policy_changed: "Payout settings changed. Refresh the assessment.",

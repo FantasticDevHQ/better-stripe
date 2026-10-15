@@ -90,6 +90,20 @@ it("shows verified carry forward, withholding, in-flight and paid totals separat
   expect(screen.getByRole("columnheader", { name: "Paid out" })).toBeTruthy();
   expect(screen.getByRole("columnheader", { name: "In flight" })).toBeTruthy();
 });
+it("explains an expired holding deadline without inventing a payable balance", () => {
+  render(
+    <PayoutProgress
+      policy={policy}
+      currency="usd"
+      preview={{ status: "held", reason: "expired", amount: 0 }}
+    />,
+  );
+  expect(screen.getByRole("status").textContent).toContain(
+    "holding deadline has passed",
+  );
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.queryByText("$0.00")).toBeNull();
+});
 it("does not invent new accounting totals for a legacy assessment", () => {
   render(<PayoutProgress policy={policy} preview={preview} currency="usd" />);
   expect(screen.queryByText("Carried forward")).toBeNull();

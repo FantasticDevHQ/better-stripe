@@ -1,3 +1,4 @@
+export { holdingExpiry as payoutHoldingExpiryValidator } from "../component/payoutPolicy/schema.js";
 import { expirePayoutPolicy } from "./connect/payoutExpiry.js";
 import {
   previewRecipientPayout,

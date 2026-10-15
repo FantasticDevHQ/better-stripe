@@ -166,3 +166,73 @@ it("rescues a pre-existing job whose stored cadence would skip the final window"
   });
   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
 });
+
+it("final-window release subtracts verified refund and reversal receipts before paying", async () => {
+  const s = await recipient(12, [600, 450]);
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", "tr_1"),
+      )
+      .unique();
+    await ctx.db.patch("transfers", row!._id, { reversedAmount: 100 });
+  });
+  const original = s.provider.transfers.retrieve.getMockImplementation()!;
+  s.provider.transfers.retrieve.mockImplementation(async (id) => ({
+    ...(await original(id)),
+    amount_reversed: id === "tr_1" ? 100 : 0,
+  }));
+  s.provider.transfers.listReversals.mockImplementation(
+    async (...args: unknown[]) =>
+      ({
+        data:
+          args[0] === "tr_1"
+            ? [
+                {
+                  id: "trr_one",
+                  transfer: "tr_1",
+                  amount: 100,
+                  currency: "usd",
+                  destination_payment_refund: "pyr_one",
+                },
+              ]
+            : [],
+        has_more: false,
+      }) as never,
+  );
+  Object.assign(s.provider, {
+    refunds: {
+      retrieve: vi.fn(async () => ({
+        id: "pyr_one",
+        charge: "py_1",
+        amount: 100,
+        currency: "usd",
+        status: "succeeded",
+        balance_transaction: "txn_refund",
+      })),
+    },
+  });
+  s.setTransactions([
+    ...s.transactions(),
+    {
+      ...s.transactions()[0],
+      id: "txn_refund",
+      source: "pyr_one",
+      amount: -100,
+      net: -100,
+      type: "payment_refund",
+    },
+  ]);
+  expect(await s.run()).toMatchObject({
+    claim: {
+      status: "paid",
+      amount: 950,
+      allocations: [
+        { stripeTransferId: "tr_0", amount: 600 },
+        { stripeTransferId: "tr_1", amount: 350 },
+      ],
+    },
+  });
+  expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+});

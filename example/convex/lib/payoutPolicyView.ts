@@ -1,5 +1,8 @@
 import { v } from "convex/values";
-import { payoutPreviewValidator } from "@fantastic.dev/better-stripe";
+import {
+  payoutPreviewValidator,
+  payoutHoldingExpiryValidator,
+} from "@fantastic.dev/better-stripe";
 export const policyMode = v.union(
   v.literal("custom"),
   v.literal("stripe_managed"),
@@ -10,6 +13,7 @@ export const policyView = v.object({
   revision: v.number(),
   country: v.string(),
   holdDeadline: v.optional(v.number()),
+  holdingExpiry: v.optional(payoutHoldingExpiryValidator),
   thresholds: v.array(v.object({ currency: v.string(), amount: v.number() })),
 });
 export const progressView = v.object({

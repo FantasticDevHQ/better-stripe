@@ -14,6 +14,23 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.12.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.11.0...v0.12.0) (2026-10-15)
+
+### Features
+
+- **billing:** add consented balance funding operations ([#149](https://github.com/FantasticDevHQ/better-stripe/issues/149)) ([16434c4](https://github.com/FantasticDevHQ/better-stripe/commit/16434c4eeef343045b4ba66516221232dfa57e06))
+- **billing:** expose complete upcoming invoice previews ([#147](https://github.com/FantasticDevHQ/better-stripe/issues/147)) ([6d81cec](https://github.com/FantasticDevHQ/better-stripe/commit/6d81cec1b458fadbe4aeb69b9611d6ba208d87ce))
+- **recovery:** add durable cost claims and reservations ([#151](https://github.com/FantasticDevHQ/better-stripe/issues/151)) ([a958c3a](https://github.com/FantasticDevHQ/better-stripe/commit/a958c3aa12178de4f22c0c614b0b9e5d7eb37819))
+- **settlement:** expose complete processing cost context ([#150](https://github.com/FantasticDevHQ/better-stripe/issues/150)) ([3933d6b](https://github.com/FantasticDevHQ/better-stripe/commit/3933d6bf3c54181e8f7c27b35e6eb6802fb7c2d8))
+
+### Bug Fixes
+
+- **react:** preserve charge currency units in price cards ([#155](https://github.com/FantasticDevHQ/better-stripe/issues/155)) ([b0967ae](https://github.com/FantasticDevHQ/better-stripe/commit/b0967ae61ac8ae85adc4f2d8f375e2c71ad1464f))
+- **react:** preserve plan pricing currency units ([#156](https://github.com/FantasticDevHQ/better-stripe/issues/156)) ([f65e712](https://github.com/FantasticDevHQ/better-stripe/commit/f65e712a91dd55e6979ccea540627d4c437dfc6c))
+- **release:** keep generated notes public ([#153](https://github.com/FantasticDevHQ/better-stripe/issues/153)) ([d67f21a](https://github.com/FantasticDevHQ/better-stripe/commit/d67f21a6315c0498db7358b6b37669520037fefa))
+- **release:** preserve historical code examples ([#154](https://github.com/FantasticDevHQ/better-stripe/issues/154)) ([1c3c9f0](https://github.com/FantasticDevHQ/better-stripe/commit/1c3c9f0a63e7c5eb77e685dc0bb3963a4e7dc935))
+- **webhooks:** reconcile dedicated payout cancellations ([#152](https://github.com/FantasticDevHQ/better-stripe/issues/152)) ([9dd84e2](https://github.com/FantasticDevHQ/better-stripe/commit/9dd84e22473a35445a0445a82e8fcdf2eb9ace23))
+
 ## [0.11.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.10.2...v0.11.0) (2026-10-14)
 
 ### Features

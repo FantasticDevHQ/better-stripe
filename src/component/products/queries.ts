@@ -180,13 +180,11 @@ export const paginateProducts = query({
         : active !== undefined
           ? rows.withIndex("by_active", (q) => q.eq("active", active))
           : rows;
-    return scoped
-      .order("desc")
-      .paginate({
-        ...args.paginationOpts,
-        maximumRowsRead: 200,
-        maximumBytesRead: 1_000_000,
-      });
+    return scoped.order("desc").paginate({
+      ...args.paginationOpts,
+      maximumRowsRead: 200,
+      maximumBytesRead: 1_000_000,
+    });
   },
 });
 
@@ -216,12 +214,10 @@ export const paginatePrices = query({
         : active !== undefined
           ? rows.withIndex("by_active", (q) => q.eq("active", active))
           : rows;
-    return scoped
-      .order("desc")
-      .paginate({
-        ...args.paginationOpts,
-        maximumRowsRead: 200,
-        maximumBytesRead: 1_000_000,
-      });
+    return scoped.order("desc").paginate({
+      ...args.paginationOpts,
+      maximumRowsRead: 200,
+      maximumBytesRead: 1_000_000,
+    });
   },
 });

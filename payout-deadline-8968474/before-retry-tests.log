@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutDeadline.test.ts (11 tests | 1 failed) 199ms
+   × retries an unknown final attempt within five minutes even with a daily cadence 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > retries an unknown final attempt within five minutes even with a daily cadence
+AssertionError: expected 1792176497500 to be 1792090397500 // Object.is equality
+
+- Expected
++ Received
+
+- 1792090397500
++ 1792176497500
+
+ ❯ src/client/connect/payoutDeadline.test.ts:148:61
+    146|   s.provider.payouts.create.mockRejectedValueOnce(new Error("network o…
+    147|   await expect(s.worker(86400000)).rejects.toThrow(/network outcome un…
+    148|   expect((await s.client.get(s.ctx, scope))!.nextAttemptAt).toBe(Date.…
+       |                                                             ^
+    149| });
+    150|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  01:48:16
+   Duration  604ms (tests 38%, transform 32%, import 22%, environment 7%, worker 1%)
+

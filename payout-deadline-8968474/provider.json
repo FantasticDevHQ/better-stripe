@@ -1,0 +1,782 @@
+{
+  "run": "lifecycle-qa-cc068e3a-6116-4ccb-a331-b1419c09741e",
+  "sandbox": true,
+  "sourceRevision": "8968474b063ef70429c5ff8ffb10e0226ef0bd62",
+  "funding": [
+    {
+      "id": "tr_1UQtlN6JR7kThJogkuJqkL8Y",
+      "amount": 599,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQtlP6JR7kThJogQzJx4n8n",
+      "amount": 400,
+      "role": "affiliate"
+    }
+  ],
+  "accountId": "acct_1UQtjA7R1YiSxmjv",
+  "userId": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+  "prepared": true,
+  "preparedRevision": "9bf310f28bd2e690a1f1543b4e15569196b3ba5e",
+  "browserActivated": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "holdDeadline": 1855162333686,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:-1:custom:usd:1000",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": null,
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "deadlineFixture": {
+    "fixtureDeadline": 1792133556369,
+    "previousDeadline": 1855162333686
+  },
+  "finalWindow": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "holdDeadline": 1792133556369,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:-1:custom:usd:1000",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": null,
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "dispatchCalls": 2,
+  "dispatcherProgress": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "holdDeadline": 1792133556369,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:-1:custom:usd:1000",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792090366363.559,
+      "_id": "mn78890dhbay3g3t769jv1dwt58gb0yb",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn78890dhbay3g3t769jv1dwt58gb0yb:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792090366363,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792090674298,
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQtlo7R1YiSxmjv0Gk1Yt05",
+        "amount": 999,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "dispatcherPaid": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "holdDeadline": 1792133556369,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:-1:custom:usd:1000",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792090366363.559,
+      "_id": "mn78890dhbay3g3t769jv1dwt58gb0yb",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn78890dhbay3g3t769jv1dwt58gb0yb:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792090366363,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792090674298,
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQtlo7R1YiSxmjv0Gk1Yt05",
+        "amount": 999,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "duplicateDispatch": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "holdDeadline": 1792133556369,
+      "mode": "custom",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:-1:custom:usd:1000",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "previousSchedule": {
+        "interval": "weekly",
+        "weeklyDays": [
+          "monday"
+        ]
+      },
+      "revision": 0,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 1000,
+          "currency": "usd"
+        }
+      ]
+    },
+    "job": {
+      "_creationTime": 1792090366363.559,
+      "_id": "mn78890dhbay3g3t769jv1dwt58gb0yb",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn78890dhbay3g3t769jv1dwt58gb0yb:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792090366363,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792090674298,
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "manual"
+    },
+    "payouts": [
+      {
+        "id": "po_1UQtlo7R1YiSxmjv0Gk1Yt05",
+        "amount": 999,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "browserRestored": {
+    "policy": {
+      "_creationTime": 1792090335622.4302,
+      "_id": "kd79zf1r1jkt5azf99nhzqj0k98gakan",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "country": "US",
+      "mode": "stripe_managed",
+      "operationKey": "example:payout-settings:acct_1UQtjA7R1YiSxmjv:kn74sa9g5xst2wc7044j69ate18gbfcb:0:stripe_managed:usd:default",
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "revision": 1,
+      "status": "ready",
+      "thresholds": []
+    },
+    "job": {
+      "_creationTime": 1792090366363.559,
+      "_id": "mn78890dhbay3g3t769jv1dwt58gb0yb",
+      "accountId": "acct_1UQtjA7R1YiSxmjv",
+      "cadenceMs": 300000,
+      "completedGeneration": 1,
+      "completedOperationKey": "bs:auto:mn78890dhbay3g3t769jv1dwt58gb0yb:1",
+      "currency": "usd",
+      "generation": 1,
+      "hasOperation": false,
+      "lastAttemptAt": 1792090366363,
+      "lastReason": "paid",
+      "nextAttemptAt": 1792090674298,
+      "ownerKey": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+      "sequence": 1
+    },
+    "schedule": {
+      "interval": "weekly",
+      "weekly_payout_days": [
+        "monday"
+      ]
+    },
+    "payouts": [
+      {
+        "id": "po_1UQtlo7R1YiSxmjv0Gk1Yt05",
+        "amount": 999,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "users": [
+      {
+        "id": "kn78b3cxjhxe4tescckv2w4fy18gak20",
+        "role": "customer"
+      },
+      {
+        "id": "kn74sa9g5xst2wc7044j69ate18gbfcb",
+        "role": "seller",
+        "stripeAccountId": "acct_1UQtjA7R1YiSxmjv"
+      },
+      {
+        "id": "kn703448mg1syq625c6t1pdh5h8gak3y",
+        "role": "admin"
+      },
+      {
+        "id": "kn7cw74ym29wwxpf1acs12snd58gatvd",
+        "role": "visitor"
+      }
+    ]
+  },
+  "scheduleRestored": true,
+  "accountClosed": true,
+  "artifactCheck": {
+    "status": "passed",
+    "productionModuleCount": 92,
+    "hashes": [
+      {
+        "path": "schema.js",
+        "sha256": "e9be5a6ed8d0cd1abedb372864452ce9b5380b42bdcc8d22a99147f47c70a292"
+      },
+      {
+        "path": "convex.config.js",
+        "sha256": "7e9aebd68c2b5a6ebdd8a9a66fc17c25311c2076f066cff6b63052647d57b8ed"
+      },
+      {
+        "path": "affiliateEarnings/mutations.js",
+        "sha256": "09750fab6401e1b3825ff4989e07eef1666de5cd847bb14b16283305d56c60d9"
+      },
+      {
+        "path": "payoutPolicy/mutations.js",
+        "sha256": "a6912183a6bc8b3718ae2cdb1374080f4d5a7c2866b14906a0a380d7a4715d6f"
+      },
+      {
+        "path": "payoutPolicy/schema.js",
+        "sha256": "e8d341fc0e9ab92f845635e052de88cc8b439d1028a06656d1f2b8a10bd38b79"
+      },
+      {
+        "path": "payoutPolicy/helpers.js",
+        "sha256": "513841e9a8682f0a1c9c13eaaec05ddf2ac14042b72fc01eacf52b73cc9b7719"
+      },
+      {
+        "path": "payoutPolicy/adoption.js",
+        "sha256": "bfc622405074939d74c5ac94c98e7feaad880936a2e9a9ef7c1bf8ef6d5a34a9"
+      },
+      {
+        "path": "payoutPolicy/queries.js",
+        "sha256": "35db63c1477a060e11beaf653e68eb98bb356122160e8cb52c7036f68986b7b6"
+      },
+      {
+        "path": "products/validators.js",
+        "sha256": "f102a59b98f0495cc796a04fb5fe2a8345af45929661eb7826daefddf67ac6aa"
+      },
+      {
+        "path": "products/mutations.js",
+        "sha256": "e462111f092e563a0776cb06654b6bcecd2655b776ac39bc8221864d9dbb27c2"
+      },
+      {
+        "path": "products/schema.js",
+        "sha256": "4b2dd8b3f69a7885d77a6892dacf3ed292c152e868408fbfc8edbfb2735fd1b4"
+      },
+      {
+        "path": "products/queries.js",
+        "sha256": "d6138947197be75fa869a20c275e30fcf200992852c7be5af4f9ad653d0ad8b8"
+      },
+      {
+        "path": "core/validators.js",
+        "sha256": "d822af42f7215969ac5eeafdbd501eaeb74cd109a0a6a81e95c38db9ec96c4a7"
+      },
+      {
+        "path": "core/mutations.js",
+        "sha256": "68cc8b1f3496108d1f96ffef9c08c0b32ad94520469fdb8000c8ad231bb9b8c3"
+      },
+      {
+        "path": "core/schema.js",
+        "sha256": "b380d5448e4a0e509e5697f6ecd02af8ba070903b4c8046d37ed80ff002924af"
+      },
+      {
+        "path": "core/resetSafety.js",
+        "sha256": "963451015d15d4bf41bb615f4acc19b4b85ee866217ce14235bfb105d0266581"
+      },
+      {
+        "path": "core/queries.js",
+        "sha256": "a0f759f4b13ebeb0b00fb93a89d5b7910b0defeca822ff1deeb1126b01675808"
+      },
+      {
+        "path": "settlement/mutations.js",
+        "sha256": "a99d11ea4d29bfaba8a48db1331f58d92f41ee600b627cac4156a1b1a66845cc"
+      },
+      {
+        "path": "settlement/clawbacks.js",
+        "sha256": "f3b37e38158e6fc64bacecaf10b69ce5a7fc6bdbd6435073951acc994001157c"
+      },
+      {
+        "path": "settlement/schema.js",
+        "sha256": "621a0e5a12c5d256320a8876ca1001aef5cc6d7ac5719a3b08dd93d487d4dc45"
+      },
+      {
+        "path": "settlement/queries.js",
+        "sha256": "b7a78b4100e95b87fd52d6dfbff4a042ffe33fac22d70bafc2e1a2c838e5c9ec"
+      },
+      {
+        "path": "settlement/clawbackSchema.js",
+        "sha256": "990e49f02ce705e3268cf085b0f7e7f453b72159490036d82701a7e66ff74b79"
+      },
+      {
+        "path": "payoutWorker/mutations.js",
+        "sha256": "e4f35d6755c9c600dbdcf83aa2100fb8debab26da6e77660458347e040f1923b"
+      },
+      {
+        "path": "payoutWorker/schema.js",
+        "sha256": "1e360489788d81651b36be46932b7f357b400923a1d95fda89f17e41253c79e4"
+      },
+      {
+        "path": "payoutWorker/helpers.js",
+        "sha256": "1ba3f2697afe4c90dd0b637891d41b8dae44be8ebb7e27cadacbf5d39a2928d5"
+      },
+      {
+        "path": "payoutWorker/queries.js",
+        "sha256": "f5ad2e32e9ebdbbab729abc8dda8fe3637a3fc0905edb4d9dda361a045ef6d16"
+      },
+      {
+        "path": "refundHistory/queries.js",
+        "sha256": "bf3d8c7e09f95a5b3c3b793a675c53ed0d5fa7655bf3cc3a2a29cdc549ad1f93"
+      },
+      {
+        "path": "costRecovery/mutations.js",
+        "sha256": "2e1ef77fe14983f2f5be3af3df22059527e0a8c58cb92192f8a77b6555099ea7"
+      },
+      {
+        "path": "costRecovery/imports.js",
+        "sha256": "9a9c4d1cabffb0c00836939067323e1ea1690219ded5effe1dd2f0cd33ba9fca"
+      },
+      {
+        "path": "costRecovery/claims.js",
+        "sha256": "338a0e2e85e633ef26200252a9242f4533c5c2a742b8901312de3a07ec9a372f"
+      },
+      {
+        "path": "costRecovery/completion.js",
+        "sha256": "f3293fed4cb673eb7bfaaf91e9fb9b33e9a05ec53d04975095c769d4363b03fc"
+      },
+      {
+        "path": "costRecovery/schema.js",
+        "sha256": "c668dc35033fec36da2170d926dea462e0ff71f75d4d2c6f22c00f536754d15b"
+      },
+      {
+        "path": "costRecovery/reservations.js",
+        "sha256": "d49fa89f78712ab099eb235ff8e9fbd8441e2959ec4c1c3aa607641480654cdc"
+      },
+      {
+        "path": "costRecovery/helpers.js",
+        "sha256": "95e1f73435869fa4fd2575f176fdf6ffe55cb007df1cae8543deb9b3041c78bd"
+      },
+      {
+        "path": "costRecovery/queries.js",
+        "sha256": "da47ad6110d4f1c434e974531dd7ce096d669926c4f787bf1d4c24297763f1f8"
+      },
+      {
+        "path": "affiliatePayouts/mutations.js",
+        "sha256": "25e609299579779e021aa8ea6a216411fc28872c4a0872a7fd3059a8e42264c0"
+      },
+      {
+        "path": "affiliatePayouts/recipientGuard.js",
+        "sha256": "8f0a569b0faa23f6f049e598b863ebaa817d1d18776f61061442970185bd6d86"
+      },
+      {
+        "path": "affiliatePayouts/queries.js",
+        "sha256": "3a00ce42913532233351953617d5a48c3506d3ff425a09607815ff7d54920440"
+      },
+      {
+        "path": "payoutSync/validators.js",
+        "sha256": "b8160f4ed77473914a091aa5fc85e914a4eaff58acdec1382c56f28b3568b26b"
+      },
+      {
+        "path": "payoutSync/mutations.js",
+        "sha256": "ec498686825de7faf195a984df0f737e1af3012779ee43fcda518b3b3c67ad8a"
+      },
+      {
+        "path": "payoutSync/schema.js",
+        "sha256": "d87a07a70ccab9fb35f1b62e864033e9da868afa4363f217dc53adfa022f8245"
+      },
+      {
+        "path": "payoutSync/helpers.js",
+        "sha256": "242383053020d8277be75d1a25cec00d1b5dd3565df702713ac4a77bc53f7a2d"
+      },
+      {
+        "path": "payoutSync/queries.js",
+        "sha256": "e3810a482fb65750195367ca3f42558fd8de3c2d6165a49ecdf9ab8a77fdbdde"
+      },
+      {
+        "path": "payoutSnapshots/revisions.js",
+        "sha256": "208a0ff6547de87737d86d1488c716474cec5adc689a11ce2f1089cd26b2f4df"
+      },
+      {
+        "path": "payoutSnapshots/mutations.js",
+        "sha256": "2235b1aa1f9b3ed1194da8744bada87d9194f073150c050e7d5ff4e34b1de004"
+      },
+      {
+        "path": "payoutSnapshots/localState.js",
+        "sha256": "9dfc0a6b2a75883d8d86165b18ed1d0d7e325037cbe6d93ea5ea45cb799a5884"
+      },
+      {
+        "path": "payoutSnapshots/schema.js",
+        "sha256": "786a8a0fa7d5685da66e32fe2466ec637f914214dfd15a5d0848ad7aad817700"
+      },
+      {
+        "path": "payoutSnapshots/scope.js",
+        "sha256": "45732f374aa38bdf84af31b92ca3f03f9e70e9a875b20508f9231e25a752ffa4"
+      },
+      {
+        "path": "payoutRelease/mutations.js",
+        "sha256": "1d4359cbcf3dc27aaa1f5ae010002809ae912b613b4ffabcdc441b5748453f4d"
+      },
+      {
+        "path": "payoutRelease/fees.js",
+        "sha256": "0b5863a634c2eb0aa259adad93f09beaa344417f616c81a5a05425cbdb850853"
+      },
+      {
+        "path": "payoutRelease/observation.js",
+        "sha256": "39e50c6d43cdae45ea7070bce6b2d8d1a5076125c7bcd7f6e297d8741e705597"
+      },
+      {
+        "path": "payoutRelease/preview.js",
+        "sha256": "f460c0b91da19693f2afa1dd8379726c7bfed29841589d5ac9e7f1d03dd7e6bb"
+      },
+      {
+        "path": "payoutRelease/deadline.js",
+        "sha256": "52b03d317930356203149b2720c67f31bcd6de0970d562f81167884fa0877d25"
+      },
+      {
+        "path": "payoutRelease/progress.js",
+        "sha256": "cc455221410ed5c2aa00a6f49ccf60ad36b8641130990a37ecf743951af83b62"
+      },
+      {
+        "path": "payoutRelease/schema.js",
+        "sha256": "d841096505041689b278e7d4fe00f8f4f1162b00066b1dd96162a444692110a9"
+      },
+      {
+        "path": "payoutRelease/helpers.js",
+        "sha256": "8292b13266b748c7dd7cc67e345410f4adda1a929d87fb19835e707a68648ea0"
+      },
+      {
+        "path": "payoutRelease/allocationTotals.js",
+        "sha256": "40fcd5f1ec6ee7c986df2c9388dbbabcd0d420fdc99a47046bde2304e6ea7d73"
+      },
+      {
+        "path": "payoutRelease/adoption.js",
+        "sha256": "56a720c86b37b023a851b8b40ad455bc34770c1d01d7d4e4f79c552f52866a6c"
+      },
+      {
+        "path": "payoutRelease/queries.js",
+        "sha256": "d81d039eda8a4989ea375d39aafcd342960d7c68492f9c79408c0f5c1b8a9823"
+      },
+      {
+        "path": "payoutRelease/allocation.js",
+        "sha256": "b6d3dbcd14fda7ce7b40b55e509a976b502f9c2f41a924ba67d603895eed9191"
+      },
+      {
+        "path": "payoutRelease/planning.js",
+        "sha256": "f74399c90bdf3cd9b7255a36db2471795e2c50f47bae5c1dd35b04f9391dee6c"
+      },
+      {
+        "path": "earnings/mutations.js",
+        "sha256": "338a5bb2ecdc4704d83da2a2541a730edf7fad4023eedc51befb892256d020bb"
+      },
+      {
+        "path": "earnings/arithmetic.js",
+        "sha256": "4a3e0288301720c8cdc3560552828ad3ffffbe0ff160128b8418273179ca185c"
+      },
+      {
+        "path": "earnings/triggers.js",
+        "sha256": "950b10620b71abbe23efe0111f9038a071ff0912804d6f81ca631c54c248f73d"
+      },
+      {
+        "path": "earnings/legacyReads.js",
+        "sha256": "49fb7d16868f0f96a8704b2228a3817fe3ec60c9388ad3f463e6cacef8ac696d"
+      },
+      {
+        "path": "earnings/reads.js",
+        "sha256": "1a4dca4f349721494160e52e4813809c1e32fb61ded826e1a40b9c1f19440098"
+      },
+      {
+        "path": "earnings/schema.js",
+        "sha256": "81ced65ef4d0ebe832bc4f2abd8d7d196e41d120b661dcd7c2805e954d57e4ce"
+      },
+      {
+        "path": "lib/idempotency.js",
+        "sha256": "5d760a544e34c998c2d4e248d062db51431c380c7cc8073fd5abdecf1ab09ce6"
+      },
+      {
+        "path": "lib/fees.js",
+        "sha256": "7dbfbb3f54a86d0f39f5b874e08ae16ea572d8b365aed2e3abcf490938fb6e59"
+      },
+      {
+        "path": "lib/stripeFactory.js",
+        "sha256": "9e5fde6ff7d7725c735b9f3ac4867957f2e6d457e2b718e0bbbf6d9824da1aac"
+      },
+      {
+        "path": "lib/paymentSeller.js",
+        "sha256": "6a942356dd93c172b65610745d8d6413689a66c4b90ab9fbd62f3eb4b264af27"
+      },
+      {
+        "path": "lib/reversals.js",
+        "sha256": "72c5711fa712f4dbd3e6178fe668a51dee84cdfca1e31075b4bceb0aab259c4e"
+      },
+      {
+        "path": "webhooks/validators.js",
+        "sha256": "6494e29ff1feb44a89b91fa66e961e866fdccaf0d16f07d3fd998e0bf27b71d6"
+      },
+      {
+        "path": "webhooks/mutations.js",
+        "sha256": "29ed71d904358d158c6638214eafe0a53c88bb2b3f4516043de06df23db93ce4"
+      },
+      {
+        "path": "webhooks/schema.js",
+        "sha256": "535c0a80d7772b40e92bf83e2060004f90b10156c9ceb0c00025e19c89988005"
+      },
+      {
+        "path": "webhooks/queries.js",
+        "sha256": "f72f9fa623fa89c2e4fd6c8268b28a3b40a820097d7526f0726e2018de1b3e7c"
+      },
+      {
+        "path": "connect/validators.js",
+        "sha256": "803a780788741d9e0867a78bbc00a6016a0d903d96373ab9fcb4230bc411104b"
+      },
+      {
+        "path": "connect/mutations.js",
+        "sha256": "4af60b87656032a359bfe6c06253e940034e60d634eb8da452b496a1ac0c1414"
+      },
+      {
+        "path": "connect/reversalReceipts.js",
+        "sha256": "b83d097fce293f582d626108afa96602dfa2fbde3b1e716047f0f65ae85e5431"
+      },
+      {
+        "path": "connect/payoutWrites.js",
+        "sha256": "af38893817428a0c820197eb64ba0877e94c99f05df4988ee27bd296b7df6456"
+      },
+      {
+        "path": "connect/reversalClaims.js",
+        "sha256": "815102ad2cba4d232595ff34edb3943df5628833d627c50f003013d255b1e140"
+      },
+      {
+        "path": "connect/schema.js",
+        "sha256": "dd508664b09eafcda6fddef6fa707d2804fae6f1362f704b92074e9cfbde0e8d"
+      },
+      {
+        "path": "connect/queries.js",
+        "sha256": "119762ff44b53400187a8916a49539c65011569e3dbb0320c9672c8b0b32c49a"
+      },
+      {
+        "path": "connect/reversalDiagnostics.js",
+        "sha256": "738a8dd85ec5b4874307d380e090b90a7c3680f7a22a43be3c2642d96e0a2dae"
+      },
+      {
+        "path": "affiliateRecovery/mutations.js",
+        "sha256": "441a02ad5cd6917cc9c4d20a6f8e732aeb8acec7af99ceb68b2257e771d268e1"
+      },
+      {
+        "path": "affiliateRecovery/accounting.js",
+        "sha256": "059213cd0c36f8e35501f45328bf4411415f3d7bdf7cd790838050841c3ac26a"
+      },
+      {
+        "path": "affiliateRecovery/schema.js",
+        "sha256": "4dd7c02d36c7ebb25160d4dc5cf219c797ee58250d217f2bc1e0a3024b7b48dc"
+      },
+      {
+        "path": "affiliateRecovery/queries.js",
+        "sha256": "777a7ca18bf7bb43159be59bf3bd630138a526a417d909c40635ba22d6eb9cb5"
+      },
+      {
+        "path": "billing/validators.js",
+        "sha256": "f798292b5aa9335a3f96a4efc04f5b278d341ab7a38c6512d0f5fccf1c6f8df3"
+      },
+      {
+        "path": "billing/mutations.js",
+        "sha256": "9d801d68abf5a69e74a1f924bed36e2a2ad7c55a662bd21fa64cc15145fe95b5"
+      },
+      {
+        "path": "billing/schema.js",
+        "sha256": "39de1ffe331c1456dff6ba58a004acd80974b57cbae65e0fb46abd4f2fe2583e"
+      },
+      {
+        "path": "billing/queries.js",
+        "sha256": "fe0debd2bd1b5972aa012ef46b7479f10c6b303c6084753221d73d8926ad93bf"
+      }
+    ],
+    "onlyExtension": "Private allowlisted qaFinalDayFixture shortens only one policy deadline to 12 hours remaining."
+  }
+}

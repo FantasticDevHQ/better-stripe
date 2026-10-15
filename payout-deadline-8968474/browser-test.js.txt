@@ -1,0 +1,37 @@
+async (page) => {
+ const state=await (await page.request.get('http://127.0.0.1:5190/state')).json();
+ const context=await page.context().browser().newContext({viewport:{width:1440,height:1000},recordVideo:{dir:'/tmp/payout-deadline-evidence',size:{width:1440,height:1000}}});
+ await context.addInitScript(({userId})=>{if(!localStorage.getItem('betterlearn-role'))localStorage.setItem('betterlearn-role','seller');if(!localStorage.getItem('betterstripe-seller'))localStorage.setItem('betterstripe-seller',userId);},state);
+ const p=await context.newPage();const assertions=[],errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const api=async(path,args)=>{const response=await p.request.post('http://127.0.0.1:5190'+path,{data:args??{},timeout:120000});const data=await response.json();if(!response.ok())throw Error(JSON.stringify(data));return data;};
+ const checkpoint=name=>api('/checkpoint',{name});
+ const note=async(text)=>{await p.evaluate(text=>{let e=document.getElementById('qa-note');if(!e){e=document.createElement('div');e.id='qa-note';e.style.cssText='position:fixed;bottom:10px;left:20px;right:20px;background:#101827;color:#fff;padding:12px;border-radius:8px;font:16px sans-serif;z-index:10000';document.body.append(e);}e.textContent=text;},text);await p.waitForTimeout(1300);};
+ const metric=async(label,value)=>{const card=p.getByText(label,{exact:true}).locator('..').locator('..');await card.getByText(value,{exact:true}).waitFor({timeout:60000});};
+ let result;
+ try {
+ await p.goto('http://127.0.0.1:5186/seller/payouts');await p.getByRole('combobox',{name:'Automatic payout policy',exact:true}).waitFor({timeout:60000});
+ const cdp=await context.newCDPSession(p);const {windowId}=await cdp.send('Browser.getWindowForTarget');await cdp.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'maximized'}});
+ await note('Isolated full example + real Stripe sandbox. No mocked financial responses.');
+ await p.getByRole('combobox',{name:'Automatic payout policy',exact:true}).click();await p.getByRole('option',{name:'Custom combined minimum',exact:true}).click();await p.getByLabel('Minimum (USD)',{exact:true}).fill('10.00');
+ if(await p.getByRole('button',{name:'Save payout settings',exact:true}).isEnabled())throw Error('Consent did not gate activation');
+ await p.getByRole('checkbox').check();await p.getByRole('button',{name:'Save payout settings',exact:true}).click();await p.getByText('Combined payout minimum',{exact:true}).waitFor({timeout:60000});
+ let proof=await checkpoint('browserActivated');if(proof.schedule.interval!=='manual'||proof.policy?.status!=='ready'||proof.policy?.mode!=='custom')throw Error('Custom activation was not verified');
+ assertions.push({test:'Browser activation requires consent and verifies manual schedule',status:'passed'});await note('PASS: browser activation verified a $10 combined minimum and manual schedule.');await p.screenshot({path:'/tmp/payout-deadline-evidence/activated.png',fullPage:true});
+ await api('/fund',{amount:599,role:'store',tag:'store'});await api('/fund',{amount:400,role:'affiliate',tag:'affiliate'});await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await metric('Carried forward','$9.99');await metric('Eligible at assessment','$0.00');
+ assertions.push({test:'Actual 599 store + 400 affiliate remains below one 1000 minimum',status:'passed'});await note('PASS: real $5.99 store + $4.00 affiliate funds carry forward as $9.99.');await p.screenshot({path:'/tmp/payout-deadline-evidence/below.png',fullPage:true});
+ await api('/fixture');await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await metric('Eligible at assessment','$9.99');await p.getByText(/application minimum is waived/).first().waitFor();
+ proof=await checkpoint('finalWindow');if(proof.policy.thresholds[0].amount!==1000||proof.policy.holdDeadline<=Date.now())throw Error('Fixture changed minimum or expired policy');
+ assertions.push({test:'Final-day timestamp fixture qualifies real 999 without changing the saved 1000 minimum',status:'passed'});await note('DEADLINE FIXTURE: shortened this policy to 12 hours remaining. Saved minimum stays $10.');await p.screenshot({path:'/tmp/payout-deadline-evidence/qualified.png',fullPage:true});
+ await api('/dispatch');
+ let paid=false;for(let i=0;i<75;i++){proof=await checkpoint('dispatcherProgress');if(proof.payouts.length===1&&proof.payouts[0].status==='paid'&&proof.job?.hasOperation===false){paid=true;break;}if(proof.payouts.length>1)throw Error('Duplicate payouts detected');await p.waitForTimeout(4000);}
+ if(!paid)throw Error('Actual scheduled payout did not settle within the observation window');
+ proof=await checkpoint('dispatcherPaid');if(proof.payouts[0].amount!==999)throw Error('Incorrect payout principal');
+ await p.getByRole('button',{name:'Refresh payout policy',exact:true}).click();await metric('Paid out, net of returns','$9.99');
+ await api('/dispatch');proof=await checkpoint('duplicateDispatch');if(proof.payouts.length!==1)throw Error('Replay created a duplicate payout');
+ assertions.push({test:'Actual example dispatcher/scheduled actions create one verified 999 final-window payout',status:'passed'});await note('PASS: actual scheduled actions paid $9.99 once, below the saved $10 minimum.');await p.screenshot({path:'/tmp/payout-deadline-evidence/paid.png',fullPage:true});
+ await p.getByRole('button',{name:'Seller',exact:true}).click();await p.goto('http://127.0.0.1:5186/seller/payouts');await p.getByRole('combobox',{name:'Automatic payout policy',exact:true}).click();await p.getByRole('option',{name:'Stripe-managed automatic payouts, all currencies',exact:true}).click();await p.getByRole('button',{name:'Save payout settings',exact:true}).click();await p.getByText('Stripe manages automatic payouts. No additional application minimum is set.',{exact:true}).waitFor({timeout:60000});
+ proof=await checkpoint('browserRestored');if(proof.schedule.interval!=='weekly'||proof.policy?.mode!=='stripe_managed'||proof.policy?.status!=='ready')throw Error('Browser did not restore original schedule');assertions.push({test:'Browser opt-out restores verified original weekly schedule',status:'passed'});await note('PASS: browser opt-out restored the original weekly schedule.');await p.screenshot({path:'/tmp/payout-deadline-evidence/restored.png',fullPage:true});
+ result={status:'passed',assertions,pageErrors:errors};
+ } catch(e) {result={status:'failed',error:e.message,assertions,pageErrors:errors};await p.screenshot({path:'/tmp/payout-deadline-evidence/failure.png',fullPage:true}).catch(()=>{});}
+ const video=await p.video().path();await context.close();return {...result,video};
+}

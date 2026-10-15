@@ -1,0 +1,184 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutDeadline.test.ts (6 tests | 5 failed) 125ms
+   × the scheduled worker releases below-custom-minimum funds in the final day 98ms
+   × the final attempt still subtracts known liabilities 5ms
+   × previews the deadline waiver without changing the configured minimum or reserving money 4ms
+   × caps a daily cadence at the beginning of the final-attempt window 5ms
+   × retains an unknown final-attempt claim and reconciles without another create 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > the scheduled worker releases below-custom-minimum funds in the final day
+AssertionError: expected { status: 'completed', …(2) } to match object { payout: { claim: { …(2) } } }
+(23 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "payout": {
+-     "claim": {
+-       "amount": 999,
+-       "status": "paid",
+-     },
++     "amount": 0,
++     "currency": "usd",
++     "matureUnpaid": 999,
++     "pendingCredits": 0,
++     "providerMinimum": null,
++     "reason": "below_threshold",
++     "status": "held",
+    },
+  }
+
+ ❯ src/client/connect/payoutDeadline.test.ts:26:28
+     24| it("the scheduled worker releases below-custom-minimum funds in the fi…
+     25|   const s = await recipient(12);
+     26|   expect(await s.worker()).toMatchObject({ payout: { claim: { status: …
+       |                            ^
+     27|   expect(s.provider.payouts.create).toHaveBeenCalledTimes(1);
+     28|   const policy = await s.t.run((ctx) => ctx.db.query("payoutPolicies")…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > the final attempt still subtracts known liabilities
+AssertionError: expected { amount: +0, currency: 'usd', …(5) } to match object { claim: { status: 'paid', …(1) } }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "claim": {
+-     "amount": 899,
+-     "status": "paid",
+-   },
++   "amount": 0,
++   "currency": "usd",
++   "matureUnpaid": 899,
++   "pendingCredits": 0,
++   "providerMinimum": null,
++   "reason": "below_threshold",
++   "status": "held",
+  }
+
+ ❯ src/client/connect/payoutDeadline.test.ts:38:56
+     36| it("the final attempt still subtracts known liabilities", async () => {
+     37|   const s = await recipient(12);
+     38|   expect(await s.run({ independentLiabilities: 100 })).toMatchObject({…
+       |                                                        ^
+     39| });
+     40| it("previews the deadline waiver without changing the configured minim…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > previews the deadline waiver without changing the configured minimum or reserving money
+AssertionError: expected { accounting: { …(4) }, …(13) } to match object { status: 'qualified', …(5) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "amount": 999,
+-   "holdDeadline": 1792133102262,
+-   "minimumWaived": true,
++   "amount": 0,
+    "providerMinimum": null,
+-   "status": "qualified",
++   "status": "held",
+    "threshold": 1000,
+  }
+
+ ❯ src/client/connect/payoutDeadline.test.ts:42:108
+     40| it("previews the deadline waiver without changing the configured minim…
+     41|   const s = await recipient(12);
+     42|   expect(await previewRecipientPayout(s.provider as unknown as Stripe,…
+       |                                                                                                            ^
+     43|     status: "qualified", amount: 999, threshold: 1000, minimumWaived: …
+     44|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > caps a daily cadence at the beginning of the final-attempt window
+AssertionError: expected { status: 'completed', …(2) } to match object { …(2) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "job": {
+-     "nextAttemptAt": 1792093502265,
++     "nextAttemptAt": 1792176302265,
+    },
+    "payout": {
+      "reason": "below_threshold",
+    },
+  }
+
+ ❯ src/client/connect/payoutDeadline.test.ts:51:36
+     49|   vi.useFakeTimers();
+     50|   const s = await recipient(25);
+     51|   expect(await s.worker(86400000)).toMatchObject({ payout: { reason: "…
+       |                                    ^
+     52|   vi.advanceTimersByTime(3600000);
+     53|   expect(await s.worker(86400000)).toMatchObject({ payout: { claim: { …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  |client| src/client/connect/payoutDeadline.test.ts > retains an unknown final-attempt claim and reconciles without another create
+AssertionError: promise resolved "{ status: 'completed', …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "job": {
++     "_creationTime": 1792089902270.003,
++     "_id": "0000000000010003payoutWorkerJobs",
++     "accountId": "acct_recipient",
++     "cadenceMs": 300000,
++     "completedGeneration": 1,
++     "completedOperationKey": "bs:auto:0000000000010003payoutWorkerJobs:1",
++     "currency": "usd",
++     "generation": 1,
++     "hasOperation": false,
++     "lastAttemptAt": 1792089902270,
++     "lastReason": "below_threshold",
++     "nextAttemptAt": 1792090202270,
++     "ownerKey": "owner",
++     "sequence": 1,
++   },
++   "payout": {
++     "amount": 0,
++     "currency": "usd",
++     "matureUnpaid": 999,
++     "pendingCredits": 0,
++     "providerMinimum": null,
++     "reason": "below_threshold",
++     "status": "held",
++   },
++   "status": "completed",
+  }
+
+ ❯ src/client/connect/payoutDeadline.test.ts:63:27
+     61|     throw new Error("response lost after provider accepted");
+     62|   });
+     63|   await expect(s.worker()).rejects.toThrow(/response lost/);
+       |                           ^
+     64|   vi.advanceTimersByTime(300000);
+     65|   expect(await s.worker()).toMatchObject({ payout: { claim: { amount: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  01:45:01
+   Duration  569ms (transform 37%, import 29%, tests 27%, environment 7%, worker 1%)
+

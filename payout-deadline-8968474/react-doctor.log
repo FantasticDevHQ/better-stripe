@@ -1,0 +1,11 @@
+The `--diff` flag is deprecated; use `--scope changed` (add `--base <ref>` to pin the base) instead.
+✔ Select projects › @fantastic.dev/better-stripe, example
+Scanning changes: codex/funded-payout-deadlines → origin/main
+
+✔ Scanned 12 files in 3.2s
+
+React Doctor — better-stripe
+Score: 88 / 100 Great
+
+✔ No issues found!
+  Full diagnostics written to /var/folders/f3/_6wf4t2j04d77051fw3p1k4w0000gn/T/react-doctor-2e3d8317-3ee4-4794-b8ed-8f9be7f4b1c4

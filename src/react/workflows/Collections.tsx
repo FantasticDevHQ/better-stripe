@@ -2,6 +2,7 @@
 import type { CollectionProps, WorkflowColumn } from "./Collection.js";
 import { Collection } from "./Collection.js";
 import { formatPrice } from "../lib/price-helpers.js";
+import { formatRefundAmount } from "./refund-preview.js";
 export type ResourceCollectionProps<Row> = Omit<
   CollectionProps<Row>,
   "columns" | "getKey"
@@ -111,7 +112,8 @@ export function RefundHistory(props: ResourceCollectionProps<RefundRow>) {
       id: "amount",
       label: "Amount",
       align: "end",
-      cell: (row) => formatPrice(row.amount, row.currency),
+      cell: (row) =>
+        formatRefundAmount(row.amount, row.currency) ?? "Amount unavailable",
     },
     { id: "status", label: "Status", cell: (row) => row.status },
     {

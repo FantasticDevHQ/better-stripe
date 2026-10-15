@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
@@ -18,7 +20,7 @@ export const policies = query({
   }),
   handler: async (ctx, args) => {
     pageSize(args.paginationOpts.numItems);
-    const p = await ctx.db
+    const p = await paginator(ctx.db, schema)
       .query("payoutPolicies")
       .withIndex("by_mode_status", (q) =>
         q.eq("mode", "custom").eq("status", "ready"),
@@ -36,7 +38,7 @@ export const changing = query({
   }),
   handler: async (ctx, args) => {
     pageSize(args.paginationOpts.numItems);
-    const p = await ctx.db
+    const p = await paginator(ctx.db, schema)
       .query("payoutPolicies")
       .withIndex("by_status", (q) => q.eq("status", "changing"))
       .paginate(args.paginationOpts);
@@ -53,7 +55,7 @@ export const recovering = query({
   }),
   handler: async (ctx, args) => {
     pageSize(args.paginationOpts.numItems);
-    const p = await ctx.db
+    const p = await paginator(ctx.db, schema)
       .query("payoutWorkerJobs")
       .withIndex("by_operation_pending", (q) =>
         q.eq("hasOperation", true).lte("nextAttemptAt", Date.now()),

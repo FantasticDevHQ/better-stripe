@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
@@ -41,7 +43,7 @@ export const due = query({
       args.paginationOpts.numItems > 100
     )
       throw new Error("Invalid payout policy due page.");
-    const page = await ctx.db
+    const page = await paginator(ctx.db, schema)
       .query("payoutPolicies")
       .withIndex("by_deadline", (q) =>
         q.gt("holdDeadline", 0).lte("holdDeadline", args.now),

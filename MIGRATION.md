@@ -19,6 +19,13 @@ fields as unavailable rather than zero. No table migration is required.
 
 ## Package and runtime
 
+Payout worker discovery, expiry, local snapshot collection, pending affiliate
+payouts and seller cost history now use component-compatible pagination. The
+page result shape is unchanged. Clear cached pagination cursors and reload from
+null after upgrading these readers. Component bindings must be regenerated and
+the component deployed; no table migration or schedule change is required.
+See [collection restart safeguards](docs/settlement.md#resumable-local-collections).
+
 Install `@fantastic.dev/better-stripe@0.5.0`. The old
 `@getdojo/better-stripe` name is deprecated. Replace imports and the component
 config import with the new name, retaining your existing component instance

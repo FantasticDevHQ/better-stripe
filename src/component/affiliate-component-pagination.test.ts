@@ -1,5 +1,6 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
+import { componentDb } from "../testing/component-db.js";
 import { expect, it } from "vitest";
 import type {
   RegisteredQuery,
@@ -25,31 +26,6 @@ function handler<Args extends DefaultFunctionArgs, Result>(
   )._handler;
 }
 
-// convex-test supports native pagination even though deployed components do not.
-// Make that runtime restriction explicit while exercising real indexed reads.
-function componentDb<T extends object>(db: T): T {
-  function wrap<TValue extends object>(value: TValue): TValue {
-    return new Proxy(value, {
-      get(target, key) {
-        if (key === "paginate")
-          return () => {
-            throw new Error("paginate() is only supported in the app");
-          };
-        const member = Reflect.get(target, key);
-        if (typeof member !== "function") return member;
-        return (...args: unknown[]) => {
-          const result = member.apply(target, args);
-          return result &&
-            typeof result === "object" &&
-            !(result instanceof Promise)
-            ? wrap(result)
-            : result;
-        };
-      },
-    });
-  }
-  return wrap(db);
-}
 it("reads recovery pages and migrates inside the deployed component pagination boundary", async () => {
   const t = convexTest(schema, import.meta.glob("./**/*.*s"));
   await t.run(async (ctx) => {

@@ -1,3 +1,5 @@
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
@@ -42,7 +44,7 @@ export const listClaims = query({
   handler: async (ctx, args) => {
     validateScope(args);
     batchLimit(args.paginationOpts.numItems);
-    const result = await ctx.db
+    const result = await paginator(ctx.db, schema)
       .query("recoveryClaims")
       .withIndex("by_scope", (q) =>
         q

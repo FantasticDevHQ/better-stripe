@@ -72,6 +72,8 @@ const reasons: Record<string, string> = {
   payout_unidentified:
     "A previous payout outcome needs reconciliation. No replacement payout will be created blindly.",
   observations_stale: "Provider observations expired. Refresh the assessment.",
+  expired:
+    "The custom holding deadline has passed. Eligibility is unavailable until the payout schedule is restored and verified.",
   snapshot_limit:
     "This account needs continued history reconciliation before eligibility can be assessed.",
   policy_changed: "Payout settings changed. Refresh the assessment.",
@@ -98,14 +100,14 @@ export function payoutProgressState({
     observedAt: null,
   };
   if (policy !== undefined) {
-    if (!policy || policy.mode === "stripe_managed") {
-      state.status = "stripe_managed";
-      state.message =
-        "Stripe manages automatic payouts. No additional application minimum is set.";
-    } else if (policy.status === "changing") {
+    if (policy?.status === "changing") {
       state.status = "changing";
       state.message =
         "Payout settings are being verified. Eligibility is unavailable until the change completes.";
+    } else if (!policy || policy.mode === "stripe_managed") {
+      state.status = "stripe_managed";
+      state.message =
+        "Stripe manages automatic payouts. No additional application minimum is set.";
     } else if (preview !== undefined) {
       state.nextAttemptAt = nextAttemptAt ?? null;
       if (!preview || !("currency" in preview)) {

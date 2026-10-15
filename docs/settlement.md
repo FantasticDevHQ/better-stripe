@@ -76,6 +76,23 @@ The Vite example exposes a [fee-first allocation preview](http://localhost:5173/
 from Admin → Testing Utilities. Its illustrative inputs use the public helper
 and the package React `SplitBreakdown`; they do not alter store settings.
 
+## Affiliate commission recovery
+
+Refund and monetary-dispute recovery uses each original affiliate transfer's
+allocated commission, including fixed amounts, rather than current payout rules.
+Successful refunds accumulate independently for each original invoice payment;
+refunds do not reset one-time subscription eligibility. Refund and dispute
+exposure share the same original-principal axis, capped at the original commission.
+New affiliate reversal operations retain exact provider receipt references and
+separate reserved funds from confirmed recovery.
+
+The recovery ledger reserves same-currency debt offsets before future affiliate
+transfers leave the platform, including fully withheld commissions with no Stripe
+transfer. Won disputes restore actual reversals/offsets while retaining independent
+refunds. Unknown outcomes retain reservations until exact receipt reconciliation. Before migrating or
+using these records, read the [clawback API, migration and reconciliation guide](affiliate-clawbacks.md).
+Seller cost recovery remains separate from affiliate commission principal.
+
 ## Subscription commission terms
 
 ```ts

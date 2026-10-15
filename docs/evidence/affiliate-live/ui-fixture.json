@@ -1,0 +1,53 @@
+{
+  "product": {
+    "_creationTime": 1792071420742.3496,
+    "_id": "jx7bmgg690kq05z14eyn05nh0n8ga464",
+    "accountId": "acct_1UQ78o7xOsB2U2nM",
+    "active": true,
+    "description": "Isolated sandbox commission refund verification",
+    "metadata": {},
+    "name": "Affiliate recovery UI verification 2026-10-15",
+    "stripeProductId": "prod_VRiG1kPsrelWIm"
+  },
+  "price": {
+    "_creationTime": 1792071423087.941,
+    "_id": "js75zj14ndbrf79k57yrbgpcx58ga044",
+    "active": true,
+    "currency": "usd",
+    "metadata": {},
+    "productId": "jx7bmgg690kq05z14eyn05nh0n8ga464",
+    "stripePriceId": "price_1UQoqA6JR7kThJogwH6mRFwt",
+    "stripeProductId": "prod_VRiG1kPsrelWIm",
+    "type": "one_time",
+    "unitAmount": 10000
+  },
+  "affiliateRate": {
+    "affiliateBasisPoints": null,
+    "affiliateCommissionTerm": "forever",
+    "affiliateFixedAmount": 1001,
+    "effectiveBasisPoints": 0,
+    "effectiveCommissionTerm": "forever",
+    "effectiveFixedAmount": 1001,
+    "source": "price",
+    "stripePriceId": "price_1UQoqA6JR7kThJogwH6mRFwt",
+    "stripeProductId": "prod_VRiG1kPsrelWIm",
+    "version": 1
+  },
+  "existingProductsChanged": false,
+  "initialOverrideMajorUnits": 1001,
+  "actualOriginalCommissionMinorUnits": 9100,
+  "correctedOverrideMajorUnits": 10.01,
+  "correctedRate": {
+    "affiliateBasisPoints": null,
+    "affiliateCommissionTerm": "forever",
+    "affiliateFixedAmount": 10.01,
+    "effectiveBasisPoints": 0,
+    "effectiveCommissionTerm": "forever",
+    "effectiveFixedAmount": 10.01,
+    "source": "price",
+    "stripePriceId": "price_1UQoqA6JR7kThJogwH6mRFwt",
+    "stripeProductId": "prod_VRiG1kPsrelWIm",
+    "version": 2
+  },
+  "note": "Example settings use major currency units. The initial 1001-unit setting capped commission at the actual 9100-unit remainder. Corrected future setting to 10.01 before refund, preserving original economics."
+}

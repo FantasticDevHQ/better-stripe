@@ -1,3 +1,5 @@
+import { AdminAffiliateRecovery } from "@/pages/admin/affiliate-recovery";
+import { AffiliateRecoveryDemo } from "@/pages/demo/affiliate-recovery";
 import { AllocationPreview } from "@/pages/demo/allocation";
 import { IntegrationExamples } from "@/components/integration-examples";
 import { ConnectExample } from "@/components/connect-example";
@@ -91,6 +93,10 @@ export default function App() {
             }
           />
 
+          <Route
+            path="/demo/affiliate-recovery"
+            element={<AffiliateRecoveryDemo />}
+          />
           <Route path="/demo/allocation" element={<AllocationPreview />} />
 
           {/* Marketplace demos */}
@@ -222,6 +228,10 @@ export default function App() {
             }
           />
           <Route path="/admin/webhooks" element={<AdminWebhooks />} />
+          <Route
+            path="/admin/affiliate-recovery"
+            element={<AdminAffiliateRecovery />}
+          />
           <Route path="/admin/testing" element={<AdminTesting />} />
           <Route path="/admin/setup" element={<AdminSetup />} />
         </Route>

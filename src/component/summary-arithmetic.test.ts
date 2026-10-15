@@ -103,15 +103,20 @@ it("rolls back subtract/reapply updates that would overflow", async () => {
   ).toMatchObject({ totals: [{ gross: max, transferCount: 2 }] });
 });
 
-it("rolls back a reversal whose cumulative summary would overflow", async () => {
+it("rolls back a reversal when a legacy cumulative summary would overflow", async () => {
   const t = convexTest(schema, modules);
   await t.mutation(api.connect.mutations.upsertTransfer, {
     ...transfer("tr_a", 1),
-    reversedAmount: max - 1,
+    reversedAmount: 0,
   });
   await t.mutation(api.connect.mutations.upsertTransfer, {
     ...transfer("tr_b", 1),
-    reversedAmount: 1,
+    reversedAmount: 0,
+  });
+  // Imported legacy totals can be inconsistent even when the new receipt is valid.
+  await t.run(async (ctx) => {
+    const totals = (await ctx.db.query("currencyTotals").first())!;
+    await ctx.db.patch("currencyTotals", totals._id, { reversed: max });
   });
   const before = await t.query(
     api.connect.queries.getAccountEarningsByCurrency,
@@ -120,7 +125,7 @@ it("rolls back a reversal whose cumulative summary would overflow", async () => 
   await expect(
     t.mutation(api.connect.mutations.recordTransferReversal, {
       stripeTransferId: "tr_b",
-      reversedAmount: 2,
+      reversedAmount: 1,
     }),
   ).rejects.toThrow(/safe integer/i);
   expect(

@@ -1,3 +1,5 @@
+import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
+export * from "./affiliateRecovery.js";
 import * as payoutSyncImpl from "./connect/payoutSync.js";
 export type {
   PayoutSyncOptions,
@@ -81,7 +83,6 @@ export type {
 import { internalActionGeneric, internalMutationGeneric } from "convex/server";
 import { v } from "convex/values";
 import Stripe from "stripe";
-
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { DisputeStatus } from "../component/connect/validators.js";
 import type { SplitRecipient } from "../component/lib/fees.js";
@@ -145,7 +146,6 @@ import type { AsyncHookName, TriggerDispatcherName } from "./types/triggers.js";
 import * as dataImpl from "./utils/data.js";
 import type { StripeMode } from "./utils/stripeDashboardUrl.js";
 import * as webhookEndpointsImpl from "./utils/webhookEndpoints.js";
-
 // Re-export standalone webhook registration
 export { registerRoutes } from "./webhooks.js";
 export {
@@ -154,13 +154,11 @@ export {
   STRIPE_DASHBOARD_BASE_URL,
   StripeDashboardResourcePath,
 } from "./utils/stripeDashboardUrl.js";
-
 // Re-export payment method utilities
 export {
   getPaymentMethodCard,
   getPaymentMethodOwner,
 } from "./connect/paymentMethodUtils.js";
-
 // Re-export webhook event constants and types
 export {
   ALL_BETTER_STRIPE_EVENTS,
@@ -171,7 +169,6 @@ export type {
   BetterStripeV2WebhookEvent,
   BetterStripeWebhookEvent,
 } from "./utils/webhookEndpoints.js";
-
 // Re-export types for consumers
 export type {
   BetterStripeOptions,
@@ -210,7 +207,6 @@ export type {
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";
-
 export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
@@ -1151,7 +1147,7 @@ export class BetterStripe extends ReadContractClient {
   // PAYOUT METHODS
 
   async createPayout(ctx: RunCtx, opts: payoutsImpl.CreatePayoutOptions) {
-    return payoutsImpl.createPayout(this.stripe(), ctx, opts);
+    return payoutsImpl.createPayout(this.stripe(), ctx, opts, this.component);
   }
 
   /**
@@ -1256,6 +1252,9 @@ export class BetterStripe extends ReadContractClient {
     opts: providerReads.CouponReadOptions,
   ) {
     return providerReads.getCouponFromStripe(this.stripe(), opts);
+  }
+  get affiliateRecovery() {
+    return new AffiliateRecoveryClient(this.component, () => this.stripe());
   }
   get payoutPolicy() {
     return new PayoutPolicyClient(this.component, () => this.stripe());

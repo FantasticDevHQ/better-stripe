@@ -1,3 +1,4 @@
+import { AffiliateRecoveryPanel } from "@/components/affiliate-recovery-panel";
 import {
   useReferralLinks,
   ReferredSales,
@@ -90,6 +91,7 @@ export function Affiliate({
         <MissingAccount />
       ) : (
         <>
+          <AffiliateRecoveryPanel presentation={integration} />
           <Earnings {...earnings}>
             {(state) =>
               integration === "components" &&
@@ -146,6 +148,7 @@ export function AffiliateSales() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Referred sales</h1>
+        <AffiliateRecoveryPanel />
         <p className="mt-2 text-muted-foreground">
           Your commission from purchases made through your referral links.
         </p>

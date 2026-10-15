@@ -1,0 +1,322 @@
+{
+  "deployment": "dev:fabulous-egret-37",
+  "date": "2026-10-15",
+  "mode": "test",
+  "snapshot": {
+    "balance": {
+      "_creationTime": 1792069080383.2832,
+      "_id": "p173khjqsfgh2h4b99x6n80gnx8gbgyh",
+      "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+      "currency": "usd",
+      "netPayable": 1001,
+      "offsetAmount": 0,
+      "originalCommission": 6006,
+      "outstandingDebt": 0,
+      "recoveredAmount": 3004,
+      "reservedRecovery": 0,
+      "reservedRestoration": 0,
+      "restorationDue": 0,
+      "restoredAmount": 0,
+      "withheldAmount": 0
+    },
+    "obligations": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": [
+        {
+          "_creationTime": 1792069080383.283,
+          "_id": "nn7c2angwn3qfyp667m0ztvnas8gabcr",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh7cbs8shzvtag1wywrzdqnxq58gab6r",
+          "finalizedAmount": 501,
+          "lastRefundId": "re_3UQoE06JR7kThJog1hjooLOn",
+          "lastState": "succeeded",
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoE06JR7kThJog19n82k07",
+          "provisionalAmount": 0,
+          "recoveredAmount": 501,
+          "refundedPrincipal": 5000,
+          "releasedCommission": 1001,
+          "reservedRecovery": 0,
+          "reservedRestoration": 0,
+          "sourceChargeId": "ch_3UQoE06JR7kThJog1BWHWKOZ",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM",
+          "stripeTransferId": "tr_3UQoE06JR7kThJog1iiDPPOv"
+        },
+        {
+          "_creationTime": 1792069194398.2078,
+          "_id": "nn7cvb1md4d55xymrgrdfet6598gb54z",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh7ebv2tkde9sqe14rmdwxy0518gadwj",
+          "finalizedAmount": 1001,
+          "lastRefundId": "re_3UQoFS6JR7kThJog0z1JyLQ3",
+          "lastState": "succeeded",
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoFS6JR7kThJog0tWaep8t",
+          "provisionalAmount": 0,
+          "recoveredAmount": 1001,
+          "refundedPrincipal": 10000,
+          "releasedCommission": 1001,
+          "reservedRecovery": 0,
+          "reservedRestoration": 0,
+          "sourceChargeId": "ch_3UQoFS6JR7kThJog0Ij9qQ4s",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM",
+          "stripeTransferId": "tr_3UQoFS6JR7kThJog0z0Cdmli"
+        },
+        {
+          "_creationTime": 1792069301783.2322,
+          "_id": "nn7fg9kvv9p9yfvm2t40dexfgs8ga5kn",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh79v6w9z5w1dh2gt1kdp69whs8gb842",
+          "finalizedAmount": 0,
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoH16JR7kThJog08IfuHln",
+          "provisionalAmount": 0,
+          "recoveredAmount": 0,
+          "refundedPrincipal": 0,
+          "releasedCommission": 1001,
+          "sourceChargeId": "ch_3UQoH16JR7kThJog0AccY8A0",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM",
+          "stripeTransferId": "tr_3UQoH16JR7kThJog0TGerNIf"
+        },
+        {
+          "_creationTime": 1792069582670.711,
+          "_id": "nn770p1gajtgentsjvy825dk018gbs1a",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh73sgdg7f7pacnzafzd00f6x98gakrp",
+          "finalizedAmount": 0,
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoLU6JR7kThJog00e6Dvep",
+          "provisionalAmount": 0,
+          "recoveredAmount": 0,
+          "refundedPrincipal": 0,
+          "releasedCommission": 1001,
+          "sourceChargeId": "ch_3UQoLU6JR7kThJog06ddklK6",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM"
+        },
+        {
+          "_creationTime": 1792069700360.5872,
+          "_id": "nn79ns1ge9nqs31q83b54wja2h8gamw8",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh74m6ew7v7jv9a8d8qmzq3nxx8gbqhf",
+          "finalizedAmount": 501,
+          "lastRefundId": "re_3UQoNM6JR7kThJog1uIoKIXY",
+          "lastState": "succeeded",
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoNM6JR7kThJog1BXp7lcg",
+          "provisionalAmount": 0,
+          "recoveredAmount": 501,
+          "refundedPrincipal": 5000,
+          "releasedCommission": 1001,
+          "reservedRecovery": 0,
+          "reservedRestoration": 0,
+          "sourceChargeId": "ch_3UQoNM6JR7kThJog15qIitB8",
+          "sourceInvoiceId": "in_1UQoNM6JR7kThJogpqDwq4rs",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM",
+          "stripeTransferId": "tr_3UQoNM6JR7kThJog1BW07I5I"
+        },
+        {
+          "_creationTime": 1792069800576.2295,
+          "_id": "nn79kem069a4epavfpd8q7579h8gbnmn",
+          "accounted": true,
+          "affiliateAccountId": "acct_1UQ7968nH9jL5c4a",
+          "chargeAmount": 10000,
+          "creditAmount": 0,
+          "currency": "usd",
+          "debtAmount": 0,
+          "debtStatus": "settled",
+          "disputedPrincipal": 0,
+          "earningId": "nh77yqgw6vbqng68czvtd2rfpd8gbab8",
+          "finalizedAmount": 1001,
+          "lastRefundId": "re_3UQoOd6JR7kThJog1WRrd305",
+          "lastState": "succeeded",
+          "lostPrincipal": 0,
+          "needsReconciliation": false,
+          "originalCommission": 1001,
+          "paymentIntentId": "pi_3UQoOd6JR7kThJog1fLORX3o",
+          "provisionalAmount": 0,
+          "recoveredAmount": 1001,
+          "refundedPrincipal": 10000,
+          "releasedCommission": 1001,
+          "reservedRecovery": 0,
+          "reservedRestoration": 0,
+          "sourceChargeId": "ch_3UQoOd6JR7kThJog19R1Q7ZB",
+          "sourceInvoiceId": "in_1UQoOY6JR7kThJognq1wCRQ5",
+          "storeAccountId": "acct_1UQ78o7xOsB2U2nM",
+          "stripeTransferId": "tr_3UQoOd6JR7kThJog1oUPAvpE"
+        }
+      ]
+    }
+  },
+  "histories": {
+    "nn7c2angwn3qfyp667m0ztvnas8gabcr": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": [
+        {
+          "_creationTime": 1792069084970.3184,
+          "_id": "p57ejf4g4qdenxkeetmkmx12018gahjk",
+          "amount": 501,
+          "attempted": true,
+          "createdAt": 1792069084968,
+          "kind": "recovery",
+          "obligationId": "nn7c2angwn3qfyp667m0ztvnas8gabcr",
+          "providerBaseline": 0,
+          "receiptId": "trr_1UQoET6JR7kThJogZPgiQE2n",
+          "sourceEventId": "re_3UQoE06JR7kThJog1hjooLOn",
+          "state": "succeeded"
+        }
+      ]
+    },
+    "nn7cvb1md4d55xymrgrdfet6598gb54z": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": [
+        {
+          "_creationTime": 1792069198815.0188,
+          "_id": "p5761e66w9jskyyk8qmyw3jjcx8gbh63",
+          "amount": 1001,
+          "attempted": true,
+          "createdAt": 1792069198813,
+          "kind": "recovery",
+          "obligationId": "nn7cvb1md4d55xymrgrdfet6598gb54z",
+          "providerBaseline": 0,
+          "receiptId": "trr_1UQoGJ6JR7kThJogsAd4e2hI",
+          "sourceEventId": "re_3UQoFS6JR7kThJog0z1JyLQ3",
+          "state": "succeeded"
+        }
+      ]
+    },
+    "nn7fg9kvv9p9yfvm2t40dexfgs8ga5kn": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": []
+    },
+    "nn770p1gajtgentsjvy825dk018gbs1a": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": []
+    },
+    "nn79ns1ge9nqs31q83b54wja2h8gamw8": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": [
+        {
+          "_creationTime": 1792069705249.4426,
+          "_id": "p57fveqj26824nxc74v60p30ph8gbzwm",
+          "amount": 501,
+          "attempted": true,
+          "createdAt": 1792069705248,
+          "kind": "recovery",
+          "obligationId": "nn79ns1ge9nqs31q83b54wja2h8gamw8",
+          "providerBaseline": 0,
+          "receiptId": "trr_1UQoOT6JR7kThJogqz23W4Ha",
+          "sourceEventId": "re_3UQoNM6JR7kThJog1uIoKIXY",
+          "state": "succeeded"
+        }
+      ]
+    },
+    "nn79kem069a4epavfpd8q7579h8gbnmn": {
+      "continueCursor": "[]",
+      "isDone": true,
+      "page": [
+        {
+          "_creationTime": 1792069806331.58,
+          "_id": "p574632839h8dnv4e5bcvmag3n8gbyrd",
+          "amount": 1001,
+          "attempted": true,
+          "createdAt": 1792069806329,
+          "kind": "recovery",
+          "obligationId": "nn79kem069a4epavfpd8q7579h8gbnmn",
+          "providerBaseline": 0,
+          "receiptId": "trr_1UQoQ66JR7kThJog6q5YJua5",
+          "sourceEventId": "re_3UQoOd6JR7kThJog1WRrd305",
+          "state": "succeeded"
+        }
+      ]
+    }
+  },
+  "assertions": {
+    "partial_order_recovered": 501,
+    "full_order_recovered": 1001,
+    "first_invoice_recovered": 501,
+    "second_invoice_recovered": 1001,
+    "all_four_debt": 0
+  },
+  "payouts": {
+    "balances": [
+      {
+        "available": 500,
+        "currency": "usd",
+        "pending": 145970
+      }
+    ],
+    "nextCursor": null,
+    "payouts": [
+      {
+        "amount": 46051,
+        "arrivalDate": 1791936000000,
+        "created": 1791938590000,
+        "currency": "usd",
+        "id": "po_1UQGHi8nH9jL5c4a8wFUuH4W",
+        "status": "paid"
+      },
+      {
+        "amount": 500,
+        "arrivalDate": 1791849600000,
+        "created": 1791903899000,
+        "currency": "usd",
+        "id": "po_1UQ7GB8nH9jL5c4aroOwoMQp",
+        "status": "paid"
+      }
+    ],
+    "status": "ready",
+    "upcoming": [],
+    "upcomingComplete": true
+  }
+}

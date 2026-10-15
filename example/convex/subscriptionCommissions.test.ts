@@ -81,7 +81,7 @@ beforeEach(() => {
   raw.charges.retrieve.mockResolvedValue({ created: 1 });
   raw.transfers.list.mockResolvedValue({ data: [] });
   raw.transfers.create.mockImplementation(async (args) => ({
-    id: `tr_${args.destination}`,
+    id: `tr_${args.source_transaction}_${args.destination}`,
     ...args,
   }));
 });

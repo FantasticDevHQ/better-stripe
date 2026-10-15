@@ -8,12 +8,22 @@
  * @module
  */
 
+import type * as affiliateEarnings_mutations from "../affiliateEarnings/mutations.js";
+import type * as affiliatePayouts_mutations from "../affiliatePayouts/mutations.js";
+import type * as affiliatePayouts_queries from "../affiliatePayouts/queries.js";
+import type * as affiliatePayouts_recipientGuard from "../affiliatePayouts/recipientGuard.js";
+import type * as affiliateRecovery_accounting from "../affiliateRecovery/accounting.js";
+import type * as affiliateRecovery_mutations from "../affiliateRecovery/mutations.js";
+import type * as affiliateRecovery_queries from "../affiliateRecovery/queries.js";
 import type * as billing_mutations from "../billing/mutations.js";
 import type * as billing_queries from "../billing/queries.js";
 import type * as billing_validators from "../billing/validators.js";
 import type * as connect_mutations from "../connect/mutations.js";
 import type * as connect_payoutWrites from "../connect/payoutWrites.js";
 import type * as connect_queries from "../connect/queries.js";
+import type * as connect_reversalClaims from "../connect/reversalClaims.js";
+import type * as connect_reversalDiagnostics from "../connect/reversalDiagnostics.js";
+import type * as connect_reversalReceipts from "../connect/reversalReceipts.js";
 import type * as connect_validators from "../connect/validators.js";
 import type * as core_mutations from "../core/mutations.js";
 import type * as core_queries from "../core/queries.js";
@@ -54,6 +64,8 @@ import type * as products_mutations from "../products/mutations.js";
 import type * as products_queries from "../products/queries.js";
 import type * as products_validators from "../products/validators.js";
 import type * as refundHistory_queries from "../refundHistory/queries.js";
+import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js";
+import type * as settlement_clawbacks from "../settlement/clawbacks.js";
 import type * as settlement_mutations from "../settlement/mutations.js";
 import type * as settlement_queries from "../settlement/queries.js";
 import type * as webhooks_mutations from "../webhooks/mutations.js";
@@ -68,12 +80,22 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "affiliateEarnings/mutations": typeof affiliateEarnings_mutations;
+  "affiliatePayouts/mutations": typeof affiliatePayouts_mutations;
+  "affiliatePayouts/queries": typeof affiliatePayouts_queries;
+  "affiliatePayouts/recipientGuard": typeof affiliatePayouts_recipientGuard;
+  "affiliateRecovery/accounting": typeof affiliateRecovery_accounting;
+  "affiliateRecovery/mutations": typeof affiliateRecovery_mutations;
+  "affiliateRecovery/queries": typeof affiliateRecovery_queries;
   "billing/mutations": typeof billing_mutations;
   "billing/queries": typeof billing_queries;
   "billing/validators": typeof billing_validators;
   "connect/mutations": typeof connect_mutations;
   "connect/payoutWrites": typeof connect_payoutWrites;
   "connect/queries": typeof connect_queries;
+  "connect/reversalClaims": typeof connect_reversalClaims;
+  "connect/reversalDiagnostics": typeof connect_reversalDiagnostics;
+  "connect/reversalReceipts": typeof connect_reversalReceipts;
   "connect/validators": typeof connect_validators;
   "core/mutations": typeof core_mutations;
   "core/queries": typeof core_queries;
@@ -114,6 +136,8 @@ const fullApi: ApiFromModules<{
   "products/queries": typeof products_queries;
   "products/validators": typeof products_validators;
   "refundHistory/queries": typeof refundHistory_queries;
+  "settlement/clawbackSchema": typeof settlement_clawbackSchema;
+  "settlement/clawbacks": typeof settlement_clawbacks;
   "settlement/mutations": typeof settlement_mutations;
   "settlement/queries": typeof settlement_queries;
   "webhooks/mutations": typeof webhooks_mutations;

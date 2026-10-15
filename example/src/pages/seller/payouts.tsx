@@ -1,3 +1,4 @@
+import { AffiliateRecoveryPanel } from "@/components/affiliate-recovery-panel";
 import { EmptyState } from "@/components/empty-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -249,9 +250,12 @@ export function Payouts() {
       </Alert>
     );
   return (
-    <AccountPayouts
-      key={currentUser.id}
-      userId={currentUser.id as Id<"users">}
-    />
+    <>
+      {currentUser.role === "affiliate" && <AffiliateRecoveryPanel />}
+      <AccountPayouts
+        key={currentUser.id}
+        userId={currentUser.id as Id<"users">}
+      />
+    </>
   );
 }

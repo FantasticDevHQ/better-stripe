@@ -1,5 +1,16 @@
 import { claimsTable as payoutSyncClaimsTable } from "./payoutSync/schema.js";
 import {
+  payoutReleasesTable as affiliatePayoutReleases,
+  operationsTable as affiliateOperations,
+  earningsTable as affiliateEarnings,
+  offsetsTable as affiliateOffsets,
+  balancesTable as affiliateBalances,
+} from "./affiliateRecovery/schema.js";
+import {
+  affiliateObligationsTable,
+  affiliateReversalReceiptsTable,
+} from "./settlement/clawbackSchema.js";
+import {
   feeBalancesTable as payoutFeeBalancesTable,
   claimsTable as payoutReleaseClaimsTable,
   sourcesTable as payoutSourceAllocationsTable,
@@ -38,6 +49,13 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  affiliateObligations: affiliateObligationsTable,
+  affiliateRecoveryOperations: affiliateOperations,
+  affiliatePayoutReleases,
+  affiliateEarnings,
+  affiliateOffsets,
+  affiliateRecoveryBalances: affiliateBalances,
+  affiliateReversalReceipts: affiliateReversalReceiptsTable,
   payoutSyncClaims: payoutSyncClaimsTable,
   payoutFeeBalances: payoutFeeBalancesTable,
   payoutReleaseClaims: payoutReleaseClaimsTable,

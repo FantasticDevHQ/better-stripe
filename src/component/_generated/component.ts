@@ -2504,8 +2504,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
             returnTransactionId?: string;
-            status: "reserved" | "submitted" | "paid" | "returned" | "canceled";
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
             stripePayoutId?: string;
           },
           Name
@@ -2538,8 +2548,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
             returnTransactionId?: string;
-            status: "reserved" | "submitted" | "paid" | "returned" | "canceled";
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
             stripePayoutId?: string;
           },
           Name
@@ -2589,9 +2609,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               operationKey: string;
               ownerKey: string;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
               returnTransactionId?: string;
               status:
-                "reserved" | "submitted" | "paid" | "returned" | "canceled";
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
               stripePayoutId?: string;
             }
           | {
@@ -2644,8 +2673,68 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
             returnTransactionId?: string;
-            status: "reserved" | "submitted" | "paid" | "returned" | "canceled";
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          },
+          Name
+        >;
+        recordRejection: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            code: "balance_insufficient" | "amount_too_small";
+            operationKey: string;
+            ownerKey: string;
+            requestId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            expectedRevision: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
             stripePayoutId?: string;
           },
           Name
@@ -2680,8 +2769,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             operationKey: string;
             ownerKey: string;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
             returnTransactionId?: string;
-            status: "reserved" | "submitted" | "paid" | "returned" | "canceled";
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
             stripePayoutId?: string;
           } | null,
           Name
@@ -2728,9 +2827,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               operationKey: string;
               ownerKey: string;
+              rejection?: {
+                code: "balance_insufficient" | "amount_too_small";
+                requestId: string;
+              };
               returnTransactionId?: string;
               status:
-                "reserved" | "submitted" | "paid" | "returned" | "canceled";
+                | "reserved"
+                | "submitted"
+                | "paid"
+                | "returned"
+                | "canceled"
+                | "rejected";
               stripePayoutId?: string;
             }>;
           },

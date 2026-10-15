@@ -493,3 +493,96 @@ it("carries a refund after a paid payout into the next combined release", async 
     ],
   });
 });
+it("does not forget a previously paid source when its transfer row disappears", async () => {
+  const { t, args } = await setup();
+  const identity = { ...scope, operationKey: args.operationKey };
+  await t.mutation(m("claim"), args);
+  await t.mutation(m("beginAttempt"), identity);
+  await t.mutation(m("recordOutcome"), {
+    ...identity,
+    stripePayoutId: "po_one",
+    amount: 1000,
+    currency: "usd",
+    providerStatus: "paid",
+  });
+  await t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("transfers")
+      .withIndex("by_stripe_transfer_id", (q) =>
+        q.eq("stripeTransferId", "tr_creator"),
+      )
+      .unique();
+    await ctx.db.delete("transfers", row!._id);
+  });
+  const observations = args.observations.filter(
+    (row) => row.stripeTransferId !== "tr_creator",
+  );
+  await expect(
+    t.mutation(m("claim"), { ...args, operationKey: "next", observations }),
+  ).rejects.toThrow(/snapshot|allocation/);
+});
+it("releases a recent proven provider rejection but keeps unknown or old attempts held", async () => {
+  const { t, args } = await setup();
+  const identity = { ...scope, operationKey: args.operationKey };
+  await t.mutation(m("claim"), args);
+  await t.mutation(m("beginAttempt"), identity);
+  const proof = {
+    ...identity,
+    requestId: "req_rejected",
+    code: "balance_insufficient",
+  };
+  expect((await t.mutation(m("recordRejection"), proof)).status).toBe(
+    "rejected",
+  );
+  expect((await t.mutation(m("recordRejection"), proof)).status).toBe(
+    "rejected",
+  );
+  const next = { ...scope, operationKey: "next" };
+  expect(
+    (await t.mutation(m("claim"), { ...args, operationKey: next.operationKey }))
+      .amount,
+  ).toBe(1000);
+  await t.mutation(m("beginAttempt"), next);
+  await expect(
+    t.mutation(m("recordRejection"), { ...proof, ...next }),
+  ).rejects.toThrow(/receipt/);
+  await t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_operation", (q) => q.eq("operationKey", next.operationKey))
+      .unique();
+    await ctx.db.patch("payoutReleaseClaims", row!._id, {
+      attemptedAt: Date.now() - 24 * 60 * 60 * 1000,
+    });
+  });
+  await expect(
+    t.mutation(m("recordRejection"), {
+      ...proof,
+      ...next,
+      requestId: "req_late",
+    }),
+  ).rejects.toThrow(/uncertain|expired/);
+  expect(
+    await t.mutation(m("claim"), { ...args, operationKey: "third" }),
+  ).toMatchObject({ status: "held", reason: "pending_claim" });
+});
+it("does not treat an accepted payout as a rejected create request", async () => {
+  const { t, args } = await setup();
+  const identity = { ...scope, operationKey: args.operationKey };
+  await t.mutation(m("claim"), args);
+  await t.mutation(m("beginAttempt"), identity);
+  await t.mutation(m("recordOutcome"), {
+    ...identity,
+    stripePayoutId: "po_one",
+    amount: 1000,
+    currency: "usd",
+    providerStatus: "pending",
+  });
+  await expect(
+    t.mutation(m("recordRejection"), {
+      ...identity,
+      requestId: "req_rejected",
+      code: "balance_insufficient",
+    }),
+  ).rejects.toThrow(/uncertain|accepted/);
+});

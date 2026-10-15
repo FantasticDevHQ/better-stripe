@@ -85,6 +85,15 @@ export async function checkSnapshot(
   )
     throw new Error("Payout source snapshot is incomplete or duplicated.");
   const byId = new Map(rows.map((row) => [row.stripeTransferId, row]));
+  const allocated = await ctx.db
+    .query("payoutSourceAllocations")
+    .withIndex("by_account", (q) => q.eq("accountId", accountId))
+    .take(101);
+  if (
+    allocated.length > 100 ||
+    allocated.some((source) => !byId.has(source.stripeTransferId))
+  )
+    throw new Error("Payout source allocation snapshot is incomplete.");
   const receiptIds = new Set<string>();
   for (const o of observations) {
     const row = byId.get(o.stripeTransferId);

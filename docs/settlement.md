@@ -236,7 +236,11 @@ unresolved account claim blocks competing reservations. An attempted claim
 cannot be canceled merely because the provider timed out. Accepted payouts keep
 their allocations reserved until payment is confirmed; a failed or canceled
 payout releases allocations only after its provider return transaction has been
-verified upstream. Return receipt identities cannot be reused across claims.
+verified upstream. Return receipt identities cannot be reused across claims. A verified create
+rejection for insufficient balance or an amount below the provider floor can
+release an unaccepted claim within a conservative 23-hour window. It requires
+its own unique Stripe request receipt; ambiguous errors and older attempts stay
+held. This window stays below Stripe's [24-hour v1 idempotency retention minimum](https://docs.stripe.com/api/idempotent_requests).
 
 The current claim snapshot is deliberately bounded to 100 account transfer rows
 and 1,000 receipt IDs per source. Larger or incomplete histories reject the whole

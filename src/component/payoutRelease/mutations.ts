@@ -182,7 +182,8 @@ export const recordOutcome = mutation({
     if (
       !claim ||
       claim.attemptedAt === undefined ||
-      claim.status === "canceled"
+      claim.status === "canceled" ||
+      claim.status === "rejected"
     )
       throw new Error("Payout receipt has no attempted claim.");
     if (
@@ -250,6 +251,59 @@ export const recordOutcome = mutation({
         stripePayoutId: args.stripePayoutId,
       });
     }
+    return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
+  },
+});
+
+/** Only a verified, no-object rejection within the original idempotency window. */
+export const recordRejection = mutation({
+  args: {
+    ...identity,
+    requestId: v.string(),
+    code: v.union(
+      v.literal("balance_insufficient"),
+      v.literal("amount_too_small"),
+    ),
+  },
+  returns: claimDoc,
+  handler: async (ctx, args) => {
+    const claim = await claimByKey(ctx, args);
+    if (
+      !claim ||
+      !/^req_\w+$/.test(args.requestId) ||
+      args.requestId.trim() !== args.requestId
+    )
+      throw new Error("Invalid payout rejection receipt.");
+    if (claim.status === "rejected") {
+      if (
+        claim.rejection?.requestId !== args.requestId ||
+        claim.rejection.code !== args.code
+      )
+        throw new Error("Payout rejection receipt identity changed.");
+      return claim;
+    }
+    if (
+      claim.status !== "reserved" ||
+      claim.stripePayoutId ||
+      claim.attemptedAt === undefined ||
+      Date.now() - claim.attemptedAt >= 23 * 60 * 60 * 1000
+    )
+      throw new Error(
+        "An accepted or uncertain expired payout attempt cannot be released as a rejection.",
+      );
+    const adoptedRejection = await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_rejection_request", (q) =>
+        q.eq("rejection.requestId", args.requestId),
+      )
+      .unique();
+    if (adoptedRejection && adoptedRejection._id !== claim._id)
+      throw new Error("Payout rejection receipt is already allocated.");
+    await moveAllocations(ctx, claim, "release");
+    await ctx.db.patch("payoutReleaseClaims", claim._id, {
+      status: "rejected",
+      rejection: { requestId: args.requestId, code: args.code },
+    });
     return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
   },
 });

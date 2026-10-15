@@ -32,7 +32,7 @@ export async function setup(amounts = [600, 400]) {
       operationKey: "enable",
       country: "US",
       thresholds: [{ currency: "usd", amount: 1000 }],
-      holdDeadline: Date.now() + 86400000,
+      holdDeadline: Date.now() + 7 * 86400000,
     });
     for (let i = 0; i < amounts.length; i++)
       await ctx.db.insert("transfers", {

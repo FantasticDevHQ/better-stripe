@@ -680,6 +680,9 @@ Stripe-managed defaults without inventing a numeric provider floor. Changing
 policies suppress prior financial progress during activation, opt-out and expiry
 restoration. A policy preserves its prior mode until confirmation, so mode alone
 does not establish verified controls while status is `changing`.
+During the final day, an assessment with `minimumWaived` explains that only the
+application minimum is waived; its saved threshold remains visible, and the
+minimum progress bar is omitted. Stripe limits and balance checks still apply.
 An expired assessment explains the holding deadline and withholds financial
 progress until the schedule is restored and verified.
 For a ready custom policy, an

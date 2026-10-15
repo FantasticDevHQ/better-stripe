@@ -3639,8 +3639,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               amount: number;
               confirmedFees: number;
               currency: string;
+              holdDeadline?: number;
               independentLiabilities: number;
               matureUnpaid: number;
+              minimumWaived?: boolean;
               observedAt: number;
               pendingCredits: number;
               providerAvailable: number;

@@ -1,5 +1,9 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
+import {
+  finalAttemptStartsAt,
+  nextPayoutAttempt,
+} from "../payoutRelease/deadline.js";
 import { readPolicy } from "../payoutPolicy/helpers.js";
 import { claimByKey, add } from "../payoutRelease/helpers.js";
 import { balance as recoveryBalance } from "../affiliateRecovery/accounting.js";
@@ -38,7 +42,15 @@ export const begin = mutation({
         reason: "worker_busy",
         nextAttemptAt: job.leaseUntil,
       };
-    if (job && job.nextAttemptAt > now)
+    const finalStart = finalAttemptStartsAt(policy);
+    const enteringFinalWindow =
+      policy?.mode === "custom" &&
+      policy.status === "ready" &&
+      finalStart !== undefined &&
+      finalStart <= now &&
+      policy.holdDeadline! > now &&
+      (job?.lastAttemptAt ?? 0) < finalStart;
+    if (job && job.nextAttemptAt > now && !enteringFinalWindow)
       return {
         status: "held" as const,
         reason: "not_due",
@@ -65,7 +77,7 @@ export const begin = mutation({
           hasOperation: false,
           leaseUntil: undefined,
           lastReason: "policy_inactive",
-          nextAttemptAt: now + args.cadenceMs,
+          nextAttemptAt: nextPayoutAttempt(policy, now, args.cadenceMs),
         });
       return { status: "held" as const, reason: "policy_inactive" };
     }
@@ -95,7 +107,7 @@ export const begin = mutation({
           recovery.reservedRestoration > 0 ||
           recovery.activePayoutKey)
       ) {
-        const nextAttemptAt = now + args.cadenceMs;
+        const nextAttemptAt = nextPayoutAttempt(policy, now, args.cadenceMs);
         await ctx.db.patch("payoutWorkerJobs", job._id, {
           operationKey: undefined,
           hasOperation: false,
@@ -171,7 +183,11 @@ export const finish = mutation({
       operationKey: retain ? job.operationKey : undefined,
       hasOperation: retain,
       leaseUntil: undefined,
-      nextAttemptAt: Date.now() + job.cadenceMs,
+      nextAttemptAt: nextPayoutAttempt(
+        await readPolicy(ctx, args),
+        Date.now(),
+        job.cadenceMs,
+      ),
       lastReason: args.reason,
       completedGeneration: args.generation,
       completedOperationKey: args.operationKey,

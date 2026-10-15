@@ -28,6 +28,8 @@ export const previewResult = v.union(
     currency: v.string(),
     amount: v.number(),
     threshold: v.number(),
+    minimumWaived: v.optional(v.boolean()),
+    holdDeadline: v.optional(v.number()),
     providerMinimum: v.null(),
     matureUnpaid: v.number(),
     pendingCredits: v.number(),
@@ -81,6 +83,7 @@ export async function previewPlan(
     sources: funding,
     fees,
     threshold,
+    minimumWaived,
   } = await readPayoutPlan(ctx, args, policy);
   const progress = summarizePayoutProgress(
     plan,
@@ -93,6 +96,8 @@ export async function previewPlan(
     currency: plan.currency,
     amount: plan.amount,
     threshold,
+    minimumWaived,
+    holdDeadline: policy.holdDeadline,
     providerMinimum: null,
     matureUnpaid: plan.matureUnpaid,
     pendingCredits: plan.pendingCredits,

@@ -179,7 +179,10 @@ export function PayoutSettings(props: PayoutSettingsProps) {
           </label>
           <p>
             Store and affiliate earnings combine per currency. Below-minimum
-            funds remain owed. Other currency minimums are preserved.
+            funds remain owed. During the final day before the holding deadline,
+            the application minimum is waived for automatic payout attempts.
+            Stripe payout limits and balance checks still apply. Other currency
+            minimums are preserved.
           </p>
         </>
       )}

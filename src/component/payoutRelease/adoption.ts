@@ -1,3 +1,5 @@
+import type { Doc } from "../_generated/dataModel.js";
+import { adoptionCollection } from "../payoutSnapshots/adoption.js";
 import { v, type Infer } from "convex/values";
 import type { MutationCtx } from "../_generated/server.js";
 import { scopeFields } from "../payoutPolicy/schema.js";
@@ -32,7 +34,11 @@ type Args = {
   [K in keyof typeof historicalArgs]: Infer<(typeof historicalArgs)[K]>;
 };
 /** Trusted package observations only. Provider history and historical maturity are verified upstream. */
-export async function adoptHistoricalPayout(ctx: MutationCtx, args: Args) {
+export async function adoptHistoricalPayout(
+  ctx: MutationCtx,
+  args: Args,
+  collected?: Map<string, Doc<"transfers">>,
+) {
   const policy = await readPolicy(ctx, args);
   if (!policy || policy.revision !== args.expectedRevision)
     throw new Error("Historical payout policy revision changed.");
@@ -61,12 +67,9 @@ export async function adoptHistoricalPayout(ctx: MutationCtx, args: Args) {
       : p.returnTransactionId !== undefined || p.returnFee !== undefined)
   )
     throw new Error("Invalid historical payout receipt.");
-  const rows = await checkSnapshot(
-    ctx,
-    args.accountId,
-    args.observations,
-    true,
-  );
+  const rows =
+    collected ??
+    (await checkSnapshot(ctx, args.accountId, args.observations, true));
   const byObservation = new Map(
     args.observations.map((o) => [o.stripeTransferId, o]),
   );
@@ -142,12 +145,14 @@ export async function adoptHistoricalPayout(ctx: MutationCtx, args: Args) {
         "Resolve existing payout attempts before historical adoption.",
       );
   }
-  const history = await ctx.db
-    .query("payoutReleaseClaims")
-    .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))
-    .take(100);
-  if (history.length >= 100)
-    throw new Error("Historical payout snapshot limit exceeded.");
+  if (!collected) {
+    const history = await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))
+      .take(100);
+    if (history.length >= 100)
+      throw new Error("Historical payout snapshot limit exceeded.");
+  }
   for (const a of allocations) {
     const source = await sourceById(ctx, a.stripeTransferId);
     if (
@@ -185,7 +190,10 @@ export async function adoptHistoricalPayout(ctx: MutationCtx, args: Args) {
     amount: p.amount,
     destinationId: p.destinationId,
     allocations,
-    observations: args.observations,
+    // Complete batch membership is validated above. Keep the immutable receipt
+    // evidence for every source allocated to this historical payout, rather than
+    // duplicating unrelated source proofs on every imported claim.
+    observations: args.observations.filter((o) => seen.has(o.stripeTransferId)),
     status: p.status,
     attemptedAt: p.created * 1000,
     stripePayoutId: p.stripePayoutId,
@@ -208,6 +216,7 @@ export async function adoptHistoricalPayout(ctx: MutationCtx, args: Args) {
 }
 
 export const historicalBatchArgs = {
+  snapshotId: v.optional(v.id("payoutSnapshots")),
   ...scopeFields,
   expectedRevision: v.number(),
   observations: v.array(observation),
@@ -227,17 +236,34 @@ type BatchArgs = {
   >;
 };
 export async function adoptHistoricalBatch(ctx: MutationCtx, args: BatchArgs) {
-  if (!args.payouts.length || args.payouts.length > 100)
+  if (!args.payouts.length || (!args.snapshotId && args.payouts.length > 100))
     throw new Error("Invalid historical payout batch size.");
-  const rows = await ctx.db
-    .query("payoutReleaseClaims")
-    .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))
-    .take(101);
+  const collected = await adoptionCollection(ctx, args, {
+    snapshotId: args.snapshotId,
+    observations: args.observations,
+    claims: args.expectedClaims,
+  });
+  const validated = collected
+    ? await checkSnapshot(
+        ctx,
+        args.accountId,
+        args.observations,
+        true,
+        undefined,
+        collected.sources,
+      )
+    : undefined;
+  const rows =
+    collected?.claims ??
+    (await ctx.db
+      .query("payoutReleaseClaims")
+      .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))
+      .take(101));
   const expected = new Map(
     args.expectedClaims.map((c) => [c.operationKey, c.fingerprint]),
   );
   if (
-    rows.length > 100 ||
+    (!collected && rows.length > 100) ||
     expected.size !== args.expectedClaims.length ||
     rows.length !== expected.size ||
     rows.some(
@@ -250,13 +276,17 @@ export async function adoptHistoricalBatch(ctx: MutationCtx, args: BatchArgs) {
   const claims = [];
   for (const p of args.payouts)
     claims.push(
-      await adoptHistoricalPayout(ctx, {
-        accountId: args.accountId,
-        ownerKey: args.ownerKey,
-        expectedRevision: args.expectedRevision,
-        observations: args.observations,
-        ...p,
-      }),
+      await adoptHistoricalPayout(
+        ctx,
+        {
+          accountId: args.accountId,
+          ownerKey: args.ownerKey,
+          expectedRevision: args.expectedRevision,
+          observations: args.observations,
+          ...p,
+        },
+        validated,
+      ),
     );
   return { claims };
 }

@@ -1746,3 +1746,5 @@ Payout qualification renews source verification for the selected currency only a
 Automatic combined payouts use a complete paginated ledger collection above 100 historical sources or claims. The collection is checked and bound to the immutable claim before Stripe is contacted; incomplete scans resume without authorizing money. See [settlement guidance](docs/settlement.md#resumable-local-collections).
 
 Resolve recovery-backed payout liabilities with `stripe.costRecovery.payoutQuote(ctx, authorizedScope)` and pass its amount/version together to preview or automatic release. The example does this for seller refund/dispute costs; stale or missing required versions fail safely. See [versioned liability guidance](docs/settlement.md#versioned-recovery-liabilities).
+
+Historical payout adoption and funded-account activation also use complete paginated collections beyond the small direct snapshot path. They revalidate complete financial membership atomically, preserve paid principal and holding age, and reject stale funding or recovery changes. See [historical import guidance](docs/settlement.md#historical-import-and-funded-activation).

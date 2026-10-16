@@ -204,3 +204,11 @@ published-version adoption requirements.
 Hosts with component recovery balance records must now pass `stripe.costRecovery.payoutQuote(ctx, authorizedScope)` into payout preview/release/worker options. Pass the returned `independentLiabilities` and `liabilityRevision` together for the same authorized account/currency/scope. Calls without a required version fail safely; accounts without recovery records retain the unversioned path. The example adapters are updated. Additional host-owned liabilities still require host authorization and consistency guards; the component version does not cover external databases.
 
 Do not backfill old attempted claims with guessed quotes. Reconcile their existing request, or replay an unattempted operation to cancel its exact reservations, then use a new operation and fresh quote. Obsolete read-only collection fingerprints can be discarded and recollected; financially bound or unresolved claim state must remain intact.
+
+## Paginated historical adoption
+
+The public `adoptPayouts` and explicit funded-activation flows now collect larger source and payout histories rather than rejecting a lifetime 100th row. Existing policy revisions, source allocations and provider receipt identities remain authoritative. Retry `collection_pending` for the same authorized scope/policy; invalidated collections require fresh provider verification. Native platform limits remain explicit.
+
+New optional collection references in adoption proofs are internal validation/cache identities. Hosts must use the package to obtain provider-verified proof; do not forge these references or rewrite old attempted claims. Successful import/prepare/attempt cleans disposable read-only caches while retaining financial claims and original schedule restoration records. Legacy small component proof calls remain supported.
+
+New historical claims retain the complete proof for their allocated sources, while the import still validates all batch sources and prior claims. Unrelated source observations are no longer duplicated on every new historical claim. Existing claims are not rewritten; fresh adoption/activation verification still reads complete account membership.

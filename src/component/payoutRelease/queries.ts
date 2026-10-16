@@ -97,6 +97,8 @@ export const snapshot = query({
         q.eq("destinationAccountId", args.accountId),
       )
       .take(101);
+    if (transfers.length > 100)
+      return { status: "held" as const, reason: "snapshot_limit" as const };
     const claims = await ctx.db
       .query("payoutReleaseClaims")
       .withIndex("by_account_status", (q) => q.eq("accountId", args.accountId))

@@ -1,3 +1,7 @@
+import {
+  runAdoptionMutation,
+  discardAdoptionProof,
+} from "./connect/payoutAdoptionCollection.js";
 export { payoutAttemptStatus } from "./connect/payoutWorker.js";
 export { attemptStatus as payoutAttemptValidator } from "../component/payoutWorker/schema.js";
 export { holdingExpiry as payoutHoldingExpiryValidator } from "../component/payoutPolicy/schema.js";
@@ -17,7 +21,7 @@ import {
   type PayoutCollectionScope,
 } from "./connect/payoutCollection.js";
 export type * from "./connect/payoutCollection.js";
-import { collectAdoptionProof } from "./connect/payoutActivationProof.js";
+import { collectResumableAdoptionProof as collectAdoptionProof } from "./connect/payoutResumableProof.js";
 import {
   adoptRecipientPayouts,
   type PayoutAdoptionOptions,
@@ -357,7 +361,10 @@ export class PayoutPolicyClient {
           opts,
           policy!.revision,
           thresholds.map((t) => t.currency),
+          "prepare",
         );
+        if (proof.status === "operation_changed")
+          return this.prepare(ctx, opts);
         if (proof.status !== "verified")
           return {
             status: "migration_required",
@@ -369,20 +376,23 @@ export class PayoutPolicyClient {
           adoption.oldestHeldAt !== undefined &&
           adoption.oldestHeldAt + holdingDays(controls.country) * 86400000 <=
             Date.now()
-        )
+        ) {
+          await discardAdoptionProof(this.component, ctx, opts, adoption);
           return {
             status: "migration_required",
             reason: "existing_balance",
             adoptionReason: "holding_deadline_expired",
           };
+        }
       } else {
         const migration = await this.migrationPreflight(opts);
         if (migration) return migration;
       }
     }
-    const operation = (await runMutationOrThrow(
+    const operation = (await runAdoptionMutation(
+      this.component,
       ctx,
-      componentRef(this.component, "payoutPolicy/mutations/prepare"),
+      "prepare",
       {
         accountId: opts.accountId,
         ownerKey: opts.ownerKey,
@@ -468,8 +478,11 @@ export class PayoutPolicyClient {
               args,
               policy.revision,
               operation.thresholds.map((t) => t.currency),
+              "apply",
             )
           : null;
+        if (result?.status === "operation_changed")
+          return this.apply(ctx, args);
         if (result?.status === "verified") freshAdoption = result.proof;
         const ageExpired =
           result?.status === "verified" &&
@@ -493,6 +506,7 @@ export class PayoutPolicyClient {
               ? null
               : await this.migrationPreflight(args);
         if (migration) {
+          await discardAdoptionProof(this.component, ctx, args, freshAdoption);
           await runMutationOrThrow(
             ctx,
             componentRef(
@@ -504,11 +518,10 @@ export class PayoutPolicyClient {
           return migration;
         }
       }
-      await runMutationOrThrow(
-        ctx,
-        componentRef(this.component, "payoutPolicy/mutations/beginAttempt"),
-        { ...args, ...(freshAdoption ? { adoption: freshAdoption } : {}) },
-      );
+      await runAdoptionMutation(this.component, ctx, "beginAttempt", {
+        ...args,
+        ...(freshAdoption ? { adoption: freshAdoption } : {}),
+      });
       try {
         await this.provider().balanceSettings.update(
           {

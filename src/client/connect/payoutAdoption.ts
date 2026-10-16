@@ -1,3 +1,9 @@
+import { adoptionCollectionKey } from "./payoutAdoptionCollection.js";
+import {
+  collectLargePayoutInput,
+  discardQualificationInput,
+  type CollectionRef,
+} from "./payoutCollectedInput.js";
 import { oldestUnpaidFunding } from "./payoutAdoptionAge.js";
 import { addSummaryAmounts as add } from "../../component/earnings/arithmetic.js";
 import type Stripe from "stripe";
@@ -49,6 +55,8 @@ export type PayoutAdoptionResult =
       observations: Infer<typeof observation>[];
       oldestHeldAt?: number;
       historyCurrencies: string[];
+      /** Internal handoff to funded-activation proof collection only. */
+      collection?: CollectionRef;
     }
   | { status: "held"; reason: string };
 /** Import verified terminal historical payouts. Does not change payout schedules or authorize activation. */
@@ -95,7 +103,7 @@ export async function adoptRecipientPayouts(
     throw new Error(
       "Historical adoption requires an owned automatic policy at this revision.",
     );
-  const snapshot = (await ctx.runQuery(
+  let snapshot = (await ctx.runQuery(
     componentRef(component, "payoutRelease/queries/snapshot"),
     scope,
   )) as
@@ -105,227 +113,284 @@ export async function adoptRecipientPayouts(
         claims: Claim[];
       }
     | { status: "held"; reason: string };
-  if (snapshot.status !== "ready") return snapshot;
-  const known = new Map(
-    snapshot.claims
-      .filter((c) => c.stripePayoutId)
-      .map((c) => [c.stripePayoutId!, c]),
-  );
-  const historyCurrencies = new Set<string>();
-  const payouts: Stripe.Payout[] = [];
-  let cursor: string | undefined,
-    head: string | undefined,
-    complete = false;
-  for (let page = 0; page < max; page++) {
-    const batch = await stripe.payouts.list(
-      { limit: 100, ...(cursor ? { starting_after: cursor } : {}) },
-      { stripeAccount: opts.accountId },
-    );
-    if (page === 0) head = batch.data[0]?.id;
-    for (const p of batch.data) historyCurrencies.add(p.currency);
-    payouts.push(...batch.data.filter((p) => p.currency === opts.currency));
-    if (!batch.has_more) {
-      complete = true;
-      break;
-    }
-    const next = batch.data[batch.data.length - 1]?.id;
-    if (!next || next === cursor)
-      return { status: "held", reason: "history_incomplete" };
-    cursor = next;
-  }
-  if (!complete) return { status: "held", reason: "history_incomplete" };
-  if (new Set(payouts.map((p) => p.id)).size !== payouts.length)
-    return { status: "held", reason: "history_incomplete" };
-  if ([...mappings.keys()].some((id) => !payouts.some((p) => p.id === id)))
-    return { status: "held", reason: "historical_history_changed" };
-  const proofPayouts: HistoricalFundingPayout[] = [];
-  const transactions: TransferReceiptTransaction[] = [];
-  const imports = [];
-  for (const p of payouts) {
-    const old = known.get(p.id),
-      supplied = mappings.get(p.id);
-    const allocations = old?.allocations ?? supplied;
-    if (!allocations)
-      return { status: "held", reason: "historical_allocation_required" };
-    const canonical = (a: typeof allocations) =>
-      JSON.stringify(
-        a
-          .map((x) => [x.stripeTransferId, x.amount])
-          .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
-      );
-    if (old && supplied && canonical(old.allocations) !== canonical(supplied))
-      throw new Error(
-        "Historical payout source allocations cannot be changed.",
-      );
-    const receipt = await getRecipientPayoutReceipt(stripe, {
-      accountId: opts.accountId,
-      stripePayoutId: p.id,
-    });
-    if (receipt.status !== "ready")
-      return { status: "held", reason: receipt.reason };
-    if (
-      receipt.sourceType !== "card" ||
-      receipt.method !== "standard" ||
-      receipt.type !== "bank_account"
-    )
-      return { status: "held", reason: "source_allocation_required" };
-    if (!["paid", "failed", "canceled"].includes(receipt.providerStatus))
-      return { status: "held", reason: "historical_payout_pending" };
-    const returned = receipt.providerStatus !== "paid";
-    if (returned && !receipt.credit)
-      return { status: "held", reason: "return_unavailable" };
-    if (receipt.debit.fee + (receipt.credit?.fee ?? 0) < 0)
-      return { status: "held", reason: "fee_allocation_required" };
-    proofPayouts.push({
-      stripePayoutId: p.id,
-      currency: receipt.currency,
-      amount: receipt.amount,
-      created: receipt.created,
-      allocations,
-      ...(returned
-        ? {
-            returnedAt: Math.max(
-              receipt.credit!.created,
-              receipt.credit!.availableOn,
-            ),
-          }
-        : {}),
-    });
-    transactions.push({ ...receipt.debit, sourceId: p.id });
-    if (receipt.credit)
-      transactions.push({ ...receipt.credit, sourceId: p.id });
-    imports.push({
-      old,
-      allocations,
-      payout: {
-        stripePayoutId: p.id,
-        amount: receipt.amount,
-        currency: receipt.currency,
-        created: receipt.created,
-        destinationId: receipt.destinationId,
-        status: returned ? ("returned" as const) : ("paid" as const),
-        debitTransactionId: receipt.debit.id,
-        debitFee: receipt.debit.fee,
-        ...(returned
-          ? {
-              returnTransactionId: receipt.credit!.id,
-              returnFee: receipt.credit!.fee,
-            }
-          : {}),
-      },
-    });
-  }
-  const observations: Infer<typeof observation>[] = [];
-  const sources: HistoricalFundingSource[] = [];
-  for (const row of snapshot.transfers) {
-    const receipt = await getTransferFundingReceipt(stripe, component, ctx, {
-      accountId: opts.accountId,
-      stripeTransferId: row.stripeTransferId,
-    });
-    if (receipt.status !== "ready")
-      return { status: "held", reason: receipt.reason };
-    historyCurrencies.add(receipt.settlementCurrency);
-    sources.push({
-      stripeTransferId: row.stripeTransferId,
-      currency: receipt.settlementCurrency,
-      transactions: receipt.transactions,
-    });
-    observations.push({
-      stripeTransferId: row.stripeTransferId,
-      currency: receipt.settlementCurrency,
-      matureNet: receipt.matureNet,
-      pendingCredits: receipt.pendingCredits,
-      ledgerFingerprint: transferFingerprint(row),
-      observedAt: receipt.observedAt,
-      transactionIds: receipt.transactions.map((t) => t.id),
-    });
-    if (receipt.settlementCurrency === opts.currency)
-      transactions.push(...receipt.transactions);
-  }
-  validateHistoricalFunding(sources, proofPayouts);
-  const history = await verifyPayoutHistory(stripe, {
-    accountId: opts.accountId,
-    currency: opts.currency,
-    transactions,
-    maxPages: max,
-  });
-  if (history.status !== "verified") return history;
-  const latest = await stripe.payouts.list(
-    { limit: 1 },
-    { stripeAccount: opts.accountId },
-  );
-  if (latest.data[0]?.id !== head)
-    return { status: "held", reason: "provider_changed" };
-  const claims: Claim[] = [];
-  for (const item of imports.filter((i) => i.old)) {
-    const result = await reconcileRecipientPayout(stripe, component, ctx, {
-      ...scope,
-      operationKey: item.old!.operationKey,
-      stripePayoutId: item.payout.stripePayoutId,
-      maxPages: max,
-    });
-    if (result.status !== "updated")
-      return {
-        status: "held",
-        reason:
-          result.status === "held"
-            ? result.reason
-            : "historical_claim_terminal",
-      };
-    claims.push(result.claim);
-  }
-  const unknown = imports.filter((i) => !i.old);
-  if (unknown.length && verifyOnly)
-    return { status: "held", reason: "historical_allocation_required" };
-  if (unknown.length) {
-    const fresh = (await ctx.runQuery(
-      componentRef(component, "payoutRelease/queries/snapshot"),
-      scope,
-    )) as
-      { status: "ready"; claims: Claim[] } | { status: "held"; reason: string };
-    if (fresh.status !== "ready") return fresh;
-    const result = (await runMutationOrThrow(
+  let collection: CollectionRef | undefined;
+  if (
+    snapshot.status !== "ready" ||
+    opts.payouts.length + snapshot.claims.length > 100
+  ) {
+    const large = await collectLargePayoutInput(
+      component,
       ctx,
-      componentRef(component, "payoutRelease/mutations/adoptHistoricalBatch"),
       {
         ...scope,
-        expectedRevision: opts.expectedRevision,
-        observations,
-        expectedClaims: fresh.claims.map((c) => ({
-          operationKey: c.operationKey,
-          fingerprint: payoutClaimFingerprint(c),
-        })),
-        payouts: unknown.map((i) => ({
-          payout: i.payout,
-          allocations: i.allocations,
-        })),
+        operationKey: await adoptionCollectionKey(
+          scope,
+          policy.operationKey,
+          `import:${opts.currency}`,
+        ),
       },
-    )) as { claims: Claim[] };
-    claims.push(...result.claims);
-  }
-  // Returned cash gets a fresh holding age after consuming its original principal.
-  const originalPaid = claims
-    .filter((c) => c.status === "paid" || c.status === "returned")
-    .flatMap((c) => c.allocations);
-  const fees = claims.reduce((total, c) => add(total, c.providerFee ?? 0), 0);
-  const returned = proofPayouts
-    .filter((p) => p.returnedAt !== undefined)
-    .flatMap((p) =>
-      p.allocations.map((a) => ({ ...a, created: p.returnedAt! })),
+      max,
     );
-  const oldestHeldAt = oldestUnpaidFunding(
-    opts.currency,
-    sources,
-    originalPaid,
-    fees,
-    returned,
-  );
-  return {
-    status: "adopted",
-    claims,
-    observations,
-    historyCurrencies: [...historyCurrencies],
-    ...(oldestHeldAt !== undefined ? { oldestHeldAt } : {}),
-    observedAt: Date.now(),
-  };
+    collection = large.collection;
+    if (large.status !== "ready") {
+      await discardQualificationInput(
+        component,
+        ctx,
+        collection,
+        large.reason === "collection_pending",
+      );
+      return { status: "held", reason: large.reason };
+    }
+    snapshot = large;
+  }
+  let retainCollection = false;
+  try {
+    const known = new Map(
+      snapshot.claims
+        .filter((c) => c.stripePayoutId)
+        .map((c) => [c.stripePayoutId!, c]),
+    );
+    const historyCurrencies = new Set<string>();
+    const payouts: Stripe.Payout[] = [];
+    let cursor: string | undefined,
+      head: string | undefined,
+      complete = false;
+    for (let page = 0; page < max; page++) {
+      const batch = await stripe.payouts.list(
+        { limit: 100, ...(cursor ? { starting_after: cursor } : {}) },
+        { stripeAccount: opts.accountId },
+      );
+      if (page === 0) head = batch.data[0]?.id;
+      for (const p of batch.data) historyCurrencies.add(p.currency);
+      payouts.push(...batch.data.filter((p) => p.currency === opts.currency));
+      if (!batch.has_more) {
+        complete = true;
+        break;
+      }
+      const next = batch.data[batch.data.length - 1]?.id;
+      if (!next || next === cursor)
+        return { status: "held", reason: "history_incomplete" };
+      cursor = next;
+    }
+    if (!complete) return { status: "held", reason: "history_incomplete" };
+    if (new Set(payouts.map((p) => p.id)).size !== payouts.length)
+      return { status: "held", reason: "history_incomplete" };
+    if ([...mappings.keys()].some((id) => !payouts.some((p) => p.id === id)))
+      return { status: "held", reason: "historical_history_changed" };
+    const proofPayouts: HistoricalFundingPayout[] = [];
+    const transactions: TransferReceiptTransaction[] = [];
+    const imports = [];
+    for (const p of payouts) {
+      const old = known.get(p.id),
+        supplied = mappings.get(p.id);
+      const allocations = old?.allocations ?? supplied;
+      if (!allocations)
+        return { status: "held", reason: "historical_allocation_required" };
+      const canonical = (a: typeof allocations) =>
+        JSON.stringify(
+          a
+            .map((x) => [x.stripeTransferId, x.amount])
+            .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+        );
+      if (old && supplied && canonical(old.allocations) !== canonical(supplied))
+        throw new Error(
+          "Historical payout source allocations cannot be changed.",
+        );
+      const receipt = await getRecipientPayoutReceipt(stripe, {
+        accountId: opts.accountId,
+        stripePayoutId: p.id,
+      });
+      if (receipt.status !== "ready")
+        return { status: "held", reason: receipt.reason };
+      if (
+        receipt.sourceType !== "card" ||
+        receipt.method !== "standard" ||
+        receipt.type !== "bank_account"
+      )
+        return { status: "held", reason: "source_allocation_required" };
+      if (!["paid", "failed", "canceled"].includes(receipt.providerStatus))
+        return { status: "held", reason: "historical_payout_pending" };
+      const returned = receipt.providerStatus !== "paid";
+      if (returned && !receipt.credit)
+        return { status: "held", reason: "return_unavailable" };
+      if (receipt.debit.fee + (receipt.credit?.fee ?? 0) < 0)
+        return { status: "held", reason: "fee_allocation_required" };
+      proofPayouts.push({
+        stripePayoutId: p.id,
+        currency: receipt.currency,
+        amount: receipt.amount,
+        created: receipt.created,
+        allocations,
+        ...(returned
+          ? {
+              returnedAt: Math.max(
+                receipt.credit!.created,
+                receipt.credit!.availableOn,
+              ),
+            }
+          : {}),
+      });
+      transactions.push({ ...receipt.debit, sourceId: p.id });
+      if (receipt.credit)
+        transactions.push({ ...receipt.credit, sourceId: p.id });
+      imports.push({
+        old,
+        allocations,
+        payout: {
+          stripePayoutId: p.id,
+          amount: receipt.amount,
+          currency: receipt.currency,
+          created: receipt.created,
+          destinationId: receipt.destinationId,
+          status: returned ? ("returned" as const) : ("paid" as const),
+          debitTransactionId: receipt.debit.id,
+          debitFee: receipt.debit.fee,
+          ...(returned
+            ? {
+                returnTransactionId: receipt.credit!.id,
+                returnFee: receipt.credit!.fee,
+              }
+            : {}),
+        },
+      });
+    }
+    const observations: Infer<typeof observation>[] = [];
+    const sources: HistoricalFundingSource[] = [];
+    for (let i = 0; i < snapshot.transfers.length; i += 5) {
+      const batch = snapshot.transfers.slice(i, i + 5);
+      const receipts = await Promise.all(
+        batch.map((row) =>
+          getTransferFundingReceipt(stripe, component, ctx, {
+            accountId: opts.accountId,
+            stripeTransferId: row.stripeTransferId,
+          }),
+        ),
+      );
+      for (let j = 0; j < batch.length; j++) {
+        const row = batch[j],
+          receipt = receipts[j];
+        if (receipt.status !== "ready")
+          return { status: "held", reason: receipt.reason };
+        historyCurrencies.add(receipt.settlementCurrency);
+        sources.push({
+          stripeTransferId: row.stripeTransferId,
+          currency: receipt.settlementCurrency,
+          transactions: receipt.transactions,
+        });
+        observations.push({
+          stripeTransferId: row.stripeTransferId,
+          currency: receipt.settlementCurrency,
+          matureNet: receipt.matureNet,
+          pendingCredits: receipt.pendingCredits,
+          ledgerFingerprint: transferFingerprint(row),
+          observedAt: receipt.observedAt,
+          transactionIds: receipt.transactions.map((t) => t.id),
+        });
+        if (receipt.settlementCurrency === opts.currency)
+          transactions.push(...receipt.transactions);
+      }
+    }
+    validateHistoricalFunding(sources, proofPayouts);
+    const claims: Claim[] = [];
+    for (const item of imports.filter((i) => i.old)) {
+      const result = await reconcileRecipientPayout(stripe, component, ctx, {
+        ...scope,
+        operationKey: item.old!.operationKey,
+        stripePayoutId: item.payout.stripePayoutId,
+        maxPages: max,
+      });
+      if (result.status !== "updated")
+        return {
+          status: "held",
+          reason:
+            result.status === "held"
+              ? result.reason
+              : "historical_claim_terminal",
+        };
+      claims.push(result.claim);
+    }
+    const history = await verifyPayoutHistory(stripe, {
+      accountId: opts.accountId,
+      currency: opts.currency,
+      transactions,
+      maxPages: max,
+    });
+    if (history.status !== "verified") return history;
+    const latest = await stripe.payouts.list(
+      { limit: 1 },
+      { stripeAccount: opts.accountId },
+    );
+    if (latest.data[0]?.id !== head)
+      return { status: "held", reason: "provider_changed" };
+    // Complete currency history now matches every receipt after reconciliation.
+    for (const o of observations)
+      if (o.currency === opts.currency) o.observedAt = history.observedAt;
+    const unknown = imports.filter((i) => !i.old);
+    if (unknown.length && verifyOnly)
+      return { status: "held", reason: "historical_allocation_required" };
+    if (unknown.length) {
+      const fresh = collection
+        ? snapshot
+        : ((await ctx.runQuery(
+            componentRef(component, "payoutRelease/queries/snapshot"),
+            scope,
+          )) as
+            | { status: "ready"; claims: Claim[] }
+            | { status: "held"; reason: string });
+      if (fresh.status !== "ready") return fresh;
+      const result = (await runMutationOrThrow(
+        ctx,
+        componentRef(component, "payoutRelease/mutations/adoptHistoricalBatch"),
+        {
+          ...scope,
+          expectedRevision: opts.expectedRevision,
+          ...(collection ? { snapshotId: collection.snapshotId } : {}),
+          observations,
+          expectedClaims: fresh.claims.map((c) => ({
+            operationKey: c.operationKey,
+            fingerprint: payoutClaimFingerprint(c),
+          })),
+          payouts: unknown.map((i) => ({
+            payout: i.payout,
+            allocations: i.allocations,
+          })),
+        },
+      )) as { claims: Claim[] };
+      claims.push(...result.claims);
+    }
+    // Returned cash gets a fresh holding age after consuming its original principal.
+    const originalPaid = claims
+      .filter((c) => c.status === "paid" || c.status === "returned")
+      .flatMap((c) => c.allocations);
+    const fees = claims.reduce((total, c) => add(total, c.providerFee ?? 0), 0);
+    const returned = proofPayouts
+      .filter((p) => p.returnedAt !== undefined)
+      .flatMap((p) =>
+        p.allocations.map((a) => ({ ...a, created: p.returnedAt! })),
+      );
+    const oldestHeldAt = oldestUnpaidFunding(
+      opts.currency,
+      sources,
+      originalPaid,
+      fees,
+      returned,
+    );
+    retainCollection = verifyOnly;
+    return {
+      status: "adopted",
+      ...(verifyOnly && collection ? { collection } : {}),
+      claims,
+      observations,
+      historyCurrencies: [...historyCurrencies],
+      ...(oldestHeldAt !== undefined ? { oldestHeldAt } : {}),
+      observedAt: Date.now(),
+    };
+  } finally {
+    await discardQualificationInput(
+      component,
+      ctx,
+      collection,
+      retainCollection,
+    );
+  }
 }

@@ -17,6 +17,8 @@ export const thresholds = v.array(
   v.object({ currency: v.string(), amount: v.number() }),
 );
 export const adoptionProof = v.object({
+  snapshotId: v.optional(v.id("payoutSnapshots")),
+  collectionKey: v.optional(v.string()),
   observations: v.array(observation),
   claims: v.array(
     v.object({ operationKey: v.string(), fingerprint: v.string() }),

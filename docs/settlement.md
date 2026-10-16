@@ -303,11 +303,14 @@ release an unaccepted claim within a conservative 23-hour window. It requires
 its own unique Stripe request receipt; ambiguous errors and older attempts stay
 held. This window stays below Stripe's [24-hour v1 idempotency retention minimum](https://docs.stripe.com/api/idempotent_requests).
 
-Current atomic snapshots support 100 account transfers, 100 historical claims and
-1,000 receipt IDs per source. Larger/incomplete histories hold the whole operation
-without partial totals. Resumable larger-account collection, other provider-debit
-allocation and recurring/UI integration remain required. The package does not
-claim that component tests alone demonstrate a Stripe bank payout.
+The legacy direct snapshot supports 100 account transfers and historical claims.
+Public release, preview and historical-adoption flows switch to complete paginated
+collections beyond that boundary. The per-source observation guard still permits
+at most 1,000 receipt IDs; incomplete provider history never supplies partial
+financial totals. Native platform limits still apply to the atomic boundary.
+Hosts install the scheduled runner and authenticated UI adapters. Unknown provider
+debits need explicit accounting before qualification. Verify actual Stripe payout
+receipts rather than treating component-only tests as proof of bank payment.
 
 ## Verified recipient funding receipts
 
@@ -539,12 +542,44 @@ not-yet-mature bank returns cannot fund an earlier payout. Terminal paid and
 verified returned payouts are supported; pending or ambiguous outcomes stay
 held. Unknown credits, debits, fees or unallocated payouts require further
 reconciliation. All unknown historical payouts import as one component
-transaction, including fees and source allocations. Changed mappings and stale
+transaction, including fees and source allocations. Each new historical claim
+retains immutable observations for every allocated source. Unrelated source
+proofs are still checked in the complete batch, but are not copied onto every
+claim. Existing claim evidence is not rewritten. Changed mappings and stale
 competing snapshots reject without mixing their writes. Replays never create a
 payout. Historical paid principal remains paid after later refunds, so debt
 reduces later qualifying funds rather than making the old commission payable
 again. An adopted payout can reconcile a subsequent bank failure without
 requiring a package marker that was absent from its original Stripe object.
+
+Public adoption and funded activation use complete cursor-paginated collections
+when local sources, existing claims or proposed imports exceed the small direct
+snapshot path. There is no lifetime 100-row cutoff in these public flows. The
+collection checks complete membership, paid/reserved rollups, owner, policy and
+financial revision again inside the atomic import or activation transaction.
+Unlike a later release, adoption rejects deferred positive funding as well as
+risk changes; collect a new current baseline before changing account controls.
+
+`collection_pending` preserves bounded local work. Repeat the same authorized
+account/currency/policy request with enough `maxPages` to complete the provider
+history. The internal collection key also includes the policy operation, so a
+new policy operation cannot reuse an obsolete baseline. Invalidated and consumed
+read-only caches are discarded; financial claims and schedule restoration records
+remain intact. No partial import or cache state authorizes a bank payout.
+
+Source receipts run in groups of at most five. After reconciliation, a complete
+matching currency history renews its observations. Funded activation verifies
+every discovered currency, then rechecks the account-wide balance and history
+head after collecting the local baseline. It renews the complete proof only if
+that provider snapshot remained unchanged. These checks retain freshness limits
+rather than accepting old observations because a scan took longer.
+
+Native platform limits still apply to the atomic boundary, including document,
+argument, return-value and transaction sizes, array lengths and execution time.
+An oversized workload requires a separately designed import/migration; it must
+not be split into unverified partial activation or silently truncated. See the
+[Convex limits](https://docs.convex.dev/production/state/limits). Provider page
+budgets and unsupported payout rails remain explicit holds.
 
 After successful import, explicitly request funded-account adoption during
 preparation, using the latest owned policy revision:
@@ -582,8 +617,8 @@ Preparation cannot restart an expired holding period, and later checks can only
 shorten the pending operation's deadline. `migration_required.adoptionReason`
 explains unknown history or an expired holding period. This flow does not enable
 Dashboard accounts with withdrawal bypasses, Global Payouts, unsupported source
-rails, unknown numeric provider floors or accounts beyond the current atomic
-snapshot bounds. Activation itself does not install a host cron or UI.
+rails, unknown numeric provider floors or workloads beyond native atomic
+platform limits. Activation itself does not install a host cron or UI.
 
 ## Automatic recipient worker
 

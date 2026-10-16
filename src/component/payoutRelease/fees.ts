@@ -66,6 +66,15 @@ export async function recordFees(
   )
     throw new Error("Verified payout return fee receipt changed.");
   const delta = add(fee, -(claim.providerFee ?? 0));
+  // Idempotent paid-history reads must not rewrite an already verified claim.
+  // Receipt identity, signed fee arithmetic and uniqueness were checked above.
+  if (
+    delta === 0 &&
+    claim.debitTransactionId === proof.debitTransactionId &&
+    claim.debitFee === proof.debitFee &&
+    claim.providerFee === fee
+  )
+    return;
   if (delta !== 0) {
     const balance = await readFees(ctx, claim);
     const amount = add(balance?.amount ?? 0, delta);

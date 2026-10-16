@@ -54,6 +54,25 @@ async function invalidate(ctx: MutationCtx, legs: Leg[]) {
   }
   for (const scope of scopes) await advanceObservationGeneration(ctx, scope);
 }
+function hasInvalidLegIdentity(
+  row: Doc<"settlementAllocations">,
+  legs: Doc<"financialSourceLegs">[],
+) {
+  const slots = new Set<number>();
+  return legs.some((leg) => {
+    const original = row.transfers[leg.legIndex];
+    const isInvalid =
+      slots.has(leg.legIndex) ||
+      !Number.isInteger(leg.legIndex) ||
+      !original ||
+      leg.sourceChargeId !== row.sourceChargeId ||
+      leg.bucketKey !== original.destinationAccountId ||
+      leg.role !== original.role;
+    slots.add(leg.legIndex);
+    return isInvalid;
+  });
+}
+
 /** Persist diagnostic provenance in the SAME raw mutation; never mutate the financial source. */
 export async function observeSettlementAllocation(
   ctx: MutationCtx,
@@ -92,7 +111,9 @@ export async function observeSettlementAllocation(
       q.eq("sourceChargeId", row.sourceChargeId),
     )
     .take(2);
+  const hasInvalidLegs = hasInvalidLegIdentity(row, oldLegs);
   const isContradictory =
+    hasInvalidLegs ||
     sources.length !== 1 ||
     sources[0]?._id !== row._id ||
     prior?.isContradictory === true ||
@@ -146,7 +167,7 @@ export async function observeSettlementAllocation(
         await ctx.db.patch("financialSourceLegs", existing._id, leg);
       else await ctx.db.insert("financialSourceLegs", leg);
     }
-  if (isContradictory)
+  if (isContradictory && !hasInvalidLegs)
     for (const leg of oldLegs)
       await ctx.db.patch("financialSourceLegs", leg._id, {
         ownershipStatus: "contradictory",

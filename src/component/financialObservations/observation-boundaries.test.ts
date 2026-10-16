@@ -335,3 +335,74 @@ it("holds exhausted source generations instead of exposing a stale valid observa
     await t.run((ctx) => ctx.db.get("settlementAllocations", row._id)),
   ).toEqual(row);
 });
+
+it.each([
+  "duplicate",
+  "destination",
+  "role",
+  "source charge",
+  "fractional slot",
+] as const)(
+  "holds %s observation identity without rewriting financial facts",
+  async (kind) => {
+    const t = convexTest(schema, modules);
+    const row = await t.mutation(reserve, allocation());
+    await t.run(async (ctx) => {
+      const leg = await ctx.db
+        .query("financialSourceLegs")
+        .withIndex("by_allocation_id_and_leg_index", (q) =>
+          q.eq("allocationId", row._id),
+        )
+        .unique();
+      if (kind === "duplicate") {
+        const { _id, _creationTime, ...fields } = leg!;
+        void _id;
+        void _creationTime;
+        await ctx.db.insert("financialSourceLegs", {
+          ...fields,
+          bucketKey: "contradictory",
+        });
+      }
+      if (kind === "destination")
+        await ctx.db.patch("financialSourceLegs", leg!._id, {
+          bucketKey: "contradictory",
+        });
+      if (kind === "role")
+        await ctx.db.patch("financialSourceLegs", leg!._id, {
+          role: "affiliate",
+        });
+      if (kind === "source charge")
+        await ctx.db.patch("financialSourceLegs", leg!._id, {
+          sourceChargeId: "ch_other",
+        });
+      if (kind === "fractional slot")
+        await ctx.db.patch("financialSourceLegs", leg!._id, { legIndex: 0.5 });
+    });
+    const originalLegs = await t.run((ctx) =>
+      ctx.db
+        .query("financialSourceLegs")
+        .withIndex("by_allocation_id_and_leg_index", (q) =>
+          q.eq("allocationId", row._id),
+        )
+        .take(101),
+    );
+    await t.mutation(reserve, allocation());
+    const after = await t.query(source, { allocationId: row._id });
+    expect(after).toMatchObject({
+      coverage: "unknown",
+      observation: { isContradictory: true },
+    });
+    expect(await t.mutation(reserve, allocation())).toEqual(row);
+    expect(await t.query(source, { allocationId: row._id })).toEqual(after);
+    expect(
+      await t.run((ctx) =>
+        ctx.db
+          .query("financialSourceLegs")
+          .withIndex("by_allocation_id_and_leg_index", (q) =>
+            q.eq("allocationId", row._id),
+          )
+          .take(101),
+      ),
+    ).toEqual(originalLegs);
+  },
+);

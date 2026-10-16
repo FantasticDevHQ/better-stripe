@@ -1,3 +1,4 @@
+import { refundCommandFields } from "../refundHistory/commandFields.js";
 import { v } from "convex/values";
 import { defineTable } from "convex/server";
 
@@ -48,7 +49,14 @@ export const pendingFeeRefundsTable = defineTable(pendingFeeRefundFields).index(
  * Refunds. Compound status indexes follow Plan 002: filtered list queries
  * use a compound index, never filter-after-take.
  */
-export const refundsTable = defineTable(refundFields)
+export const refundsTable = defineTable({
+  ...refundFields,
+  ...refundCommandFields,
+})
+  .index("by_refund_command_key", ["refundCommandKey"])
+  .index("by_refund_command_normalization_version", [
+    "refundCommandNormalizationVersion",
+  ])
   .index("by_stripe_refund_id", ["stripeRefundId"])
   .index("by_stripe_payment_intent_id", ["stripePaymentIntentId"])
   .index("by_account_id", ["accountId"])

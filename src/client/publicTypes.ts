@@ -49,3 +49,8 @@ export type {
   FinancialObservationPage,
   FinancialObservationOwner,
 } from "./financialObservations.js";
+
+export type {
+  RefundCommandEvidence,
+  RefundCommandEvidenceOptions,
+} from "./connect/refundCommandEvidence.js";

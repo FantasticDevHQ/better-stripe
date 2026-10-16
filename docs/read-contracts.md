@@ -311,3 +311,14 @@ requires host checkpoints and seen-ID reconciliation. Neither an exhausted page
 nor a complete Checkout status proves historical absence or payment. Unknown
 provenance, mutable provider states and provider-read/database races remain host
 responsibilities before any referral qualification or award.
+
+## Refund context
+
+`getRefundContext(ctx, { stripePaymentIntentId, actor, maxRefundPages?,
+stripeAccountId? })` observes the authorized original captured charge and complete
+bounded refund history. It returns a ready original-currency remainder or an
+explicit unavailable reason, and propagates provider failures. Required actors,
+partial-capture units, history budgets and creation-time host obligations are
+specified in [refund context](./refund-context.md). Invoice allocations and
+authorized gross amounts are not remaining refundable principal. No access,
+subscription or financial state is changed by this reader.

@@ -10,6 +10,7 @@ import type {
 } from "../types.js";
 import { componentRef } from "../webhooks/helpers.js";
 import { type RefundActor, isRefundAuthorized } from "./refundActor.js";
+import { readRefundPayment, readRefundCharge } from "./refundTarget.js";
 
 export type { RefundActor } from "./refundActor.js";
 
@@ -126,9 +127,6 @@ export async function createRefund(
   await assertRefundAuthorized(stripe, component, ctx, opts);
 
   try {
-    const accountRequestOpts = opts.stripeAccountId
-      ? { stripeAccount: opts.stripeAccountId }
-      : undefined;
     const createRequestOpts =
       opts.stripeAccountId !== undefined || opts.idempotencyKey !== undefined
         ? {
@@ -141,22 +139,9 @@ export async function createRefund(
           }
         : undefined;
 
-    // Resolve the charge to gate the marketplace flags on what it can honour.
-    let chargeId = opts.stripeChargeId;
-    if (!chargeId && opts.stripePaymentIntentId) {
-      const pi = await stripe.paymentIntents.retrieve(
-        opts.stripePaymentIntentId,
-        undefined,
-        accountRequestOpts,
-      );
-      chargeId =
-        typeof pi.latest_charge === "string"
-          ? pi.latest_charge
-          : (pi.latest_charge?.id ?? undefined);
-    }
-    const charge = chargeId
-      ? await stripe.charges.retrieve(chargeId, undefined, accountRequestOpts)
-      : undefined;
+    // Preserve the original target and marketplace flags through shared read-only resolution.
+    const payment = await readRefundPayment(stripe, opts);
+    const charge = await readRefundCharge(stripe, opts, payment);
 
     const refundApplicationFee =
       (opts.refundApplicationFee ?? true) && Boolean(charge?.application_fee);
@@ -193,7 +178,7 @@ export async function createRefund(
  * no ledger row), a seller is denied rather than allowed. No-ops for admin /
  * omitted actors.
  */
-async function assertRefundAuthorized(
+export async function assertRefundAuthorized(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
@@ -203,9 +188,9 @@ async function assertRefundAuthorized(
     stripeAccountId?: string;
     actor?: RefundActor;
   },
-): Promise<void> {
+): Promise<StripeComponentPayment | null> {
   const { actor } = opts;
-  if (!actor || actor.type === "admin") return; // unrestricted
+  if (!actor || actor.type === "admin") return null; // legacy createRefund remains unrestricted
 
   // Resolve the PaymentIntent id that keys the payments ledger. A charge-only
   // refund resolves through the charge's `payment_intent`.
@@ -253,6 +238,7 @@ async function assertRefundAuthorized(
       `Refund not authorized: seller ${actor.accountId} may not refund a sale routed to another account`,
     );
   }
+  return payment;
 }
 
 export async function getRefundByStripeId(

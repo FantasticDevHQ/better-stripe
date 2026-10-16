@@ -28,15 +28,13 @@
 
 ## [0.30.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.29.0...v0.30.0) (2026-10-16)
 
-
 ### Features
 
-* **payouts:** adopt complete historical funding ledgers ([#224](https://github.com/FantasticDevHQ/better-stripe/issues/224)) ([7aee88f](https://github.com/FantasticDevHQ/better-stripe/commit/7aee88fb4d4fd043fe3ef117aaa88eddb9b3ab99))
-
+- **payouts:** adopt complete historical funding ledgers ([#224](https://github.com/FantasticDevHQ/better-stripe/issues/224)) ([7aee88f](https://github.com/FantasticDevHQ/better-stripe/commit/7aee88fb4d4fd043fe3ef117aaa88eddb9b3ab99))
 
 ### Bug Fixes
 
-* **payouts:** bound reconciliation and resume activation races ([#226](https://github.com/FantasticDevHQ/better-stripe/issues/226)) ([39832a7](https://github.com/FantasticDevHQ/better-stripe/commit/39832a7b3cb75e7644e38999609da88a9de369ae))
+- **payouts:** bound reconciliation and resume activation races ([#226](https://github.com/FantasticDevHQ/better-stripe/issues/226)) ([39832a7](https://github.com/FantasticDevHQ/better-stripe/commit/39832a7b3cb75e7644e38999609da88a9de369ae))
 
 ## [0.29.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.28.6...v0.29.0) (2026-10-15)
 

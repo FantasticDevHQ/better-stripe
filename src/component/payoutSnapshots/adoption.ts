@@ -28,7 +28,7 @@ export async function adoptionCollection(
     );
   // No money is released here. Capture the current revision under this same
   // transaction; collectedSources also requires the cached risk fence to match.
-  const sources = await collectedSources(
+  const financial = await collectedSources(
     ctx,
     {
       ...scope,
@@ -65,5 +65,9 @@ export async function adoptionCollection(
       throw new Error("Adoption payout history changed.");
     claims.push(row);
   }
-  return { sources, claims };
+  return {
+    sources: financial?.transfers,
+    allocations: financial?.allocations,
+    claims,
+  };
 }

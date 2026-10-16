@@ -53,9 +53,14 @@ export async function cacheSource(
   id: string,
   counts: Counts,
   provided?: Doc<"transfers">,
+  providedAllocation?: Doc<"payoutSourceAllocations">,
 ) {
+  const old = await sourceCache(ctx, h, id);
   const row =
     provided ??
+    (old?.transferDocId
+      ? await ctx.db.get("transfers", old.transferDocId)
+      : null) ??
     (await ctx.db
       .query("transfers")
       .withIndex("by_stripe_transfer_id", (q) => q.eq("stripeTransferId", id))
@@ -67,17 +72,20 @@ export async function cacheSource(
   amount(row.amount);
   amount(row.reversedAmount ?? 0);
   amount(row.reversalClaimedAmount ?? 0);
-  const allocated = await sourceById(ctx, id);
+  const allocated = providedAllocation ?? (await sourceById(ctx, id));
   if (
     allocated &&
-    (allocated.accountId !== h.accountId || allocated.ownerKey !== h.ownerKey)
+    (allocated.stripeTransferId !== id ||
+      allocated.accountId !== h.accountId ||
+      allocated.ownerKey !== h.ownerKey)
   )
     throw new CollectionError("allocation_identity_changed");
-  const old = await sourceCache(ctx, h, id);
   const allocationPresent = allocated !== null;
   const fields = {
     stripeTransferId: id,
     ledgerFingerprint: transferFingerprint(row),
+    transferDocId: row._id,
+    allocationDocId: allocated?._id,
     sourceCreatedAt: row._creationTime,
     currency: row.currency,
     amount: row.amount,
@@ -98,6 +106,12 @@ export async function cacheSource(
       throw new CollectionError("allocation_removed");
     if (!old.allocationPresent && allocationPresent)
       counts.allocationCount = add(counts.allocationCount, 1);
+    if (
+      Object.entries(fields).every(
+        ([key, value]) => old[key as keyof typeof fields] === value,
+      )
+    )
+      return old;
     await ctx.db.patch("payoutSnapshotSources", old._id, fields);
     return { ...old, ...fields };
   }

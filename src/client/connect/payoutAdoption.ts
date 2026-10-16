@@ -33,7 +33,7 @@ import {
   type HistoricalFundingSource,
   type HistoricalFundingPayout,
 } from "./payoutAdoptionAllocation.js";
-import { reconcileRecipientPayout } from "./payoutReconciliation.js";
+import { reconcileRecipientPayouts } from "./payoutReconciliation.js";
 type Claim = Infer<typeof claimDoc>;
 export type PayoutAdoptionOptions = {
   accountId: string;
@@ -180,79 +180,93 @@ export async function adoptRecipientPayouts(
     const proofPayouts: HistoricalFundingPayout[] = [];
     const transactions: TransferReceiptTransaction[] = [];
     const imports = [];
-    for (const p of payouts) {
-      const old = known.get(p.id),
-        supplied = mappings.get(p.id);
-      const allocations = old?.allocations ?? supplied;
-      if (!allocations)
-        return { status: "held", reason: "historical_allocation_required" };
-      const canonical = (a: typeof allocations) =>
-        JSON.stringify(
-          a
-            .map((x) => [x.stripeTransferId, x.amount])
-            .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
-        );
-      if (old && supplied && canonical(old.allocations) !== canonical(supplied))
-        throw new Error(
-          "Historical payout source allocations cannot be changed.",
-        );
-      const receipt = await getRecipientPayoutReceipt(stripe, {
-        accountId: opts.accountId,
-        stripePayoutId: p.id,
-      });
-      if (receipt.status !== "ready")
-        return { status: "held", reason: receipt.reason };
-      if (
-        receipt.sourceType !== "card" ||
-        receipt.method !== "standard" ||
-        receipt.type !== "bank_account"
-      )
-        return { status: "held", reason: "source_allocation_required" };
-      if (!["paid", "failed", "canceled"].includes(receipt.providerStatus))
-        return { status: "held", reason: "historical_payout_pending" };
-      const returned = receipt.providerStatus !== "paid";
-      if (returned && !receipt.credit)
-        return { status: "held", reason: "return_unavailable" };
-      if (receipt.debit.fee + (receipt.credit?.fee ?? 0) < 0)
-        return { status: "held", reason: "fee_allocation_required" };
-      proofPayouts.push({
-        stripePayoutId: p.id,
-        currency: receipt.currency,
-        amount: receipt.amount,
-        created: receipt.created,
-        allocations,
-        ...(returned
-          ? {
-              returnedAt: Math.max(
-                receipt.credit!.created,
-                receipt.credit!.availableOn,
-              ),
-            }
-          : {}),
-      });
-      transactions.push({ ...receipt.debit, sourceId: p.id });
-      if (receipt.credit)
-        transactions.push({ ...receipt.credit, sourceId: p.id });
-      imports.push({
-        old,
-        allocations,
-        payout: {
+    for (let start = 0; start < payouts.length; start += 5) {
+      const batch = payouts.slice(start, start + 5);
+      const receipts = await Promise.all(
+        batch.map((p) =>
+          getRecipientPayoutReceipt(stripe, {
+            accountId: opts.accountId,
+            stripePayoutId: p.id,
+          }),
+        ),
+      );
+      for (let index = 0; index < batch.length; index++) {
+        const p = batch[index];
+
+        const old = known.get(p.id),
+          supplied = mappings.get(p.id);
+        const allocations = old?.allocations ?? supplied;
+        if (!allocations)
+          return { status: "held", reason: "historical_allocation_required" };
+        const canonical = (a: typeof allocations) =>
+          JSON.stringify(
+            a
+              .map((x) => [x.stripeTransferId, x.amount])
+              .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+          );
+        if (
+          old &&
+          supplied &&
+          canonical(old.allocations) !== canonical(supplied)
+        )
+          throw new Error(
+            "Historical payout source allocations cannot be changed.",
+          );
+        const receipt = receipts[index];
+        if (receipt.status !== "ready")
+          return { status: "held", reason: receipt.reason };
+        if (
+          receipt.sourceType !== "card" ||
+          receipt.method !== "standard" ||
+          receipt.type !== "bank_account"
+        )
+          return { status: "held", reason: "source_allocation_required" };
+        if (!["paid", "failed", "canceled"].includes(receipt.providerStatus))
+          return { status: "held", reason: "historical_payout_pending" };
+        const returned = receipt.providerStatus !== "paid";
+        if (returned && !receipt.credit)
+          return { status: "held", reason: "return_unavailable" };
+        if (receipt.debit.fee + (receipt.credit?.fee ?? 0) < 0)
+          return { status: "held", reason: "fee_allocation_required" };
+        proofPayouts.push({
           stripePayoutId: p.id,
-          amount: receipt.amount,
           currency: receipt.currency,
+          amount: receipt.amount,
           created: receipt.created,
-          destinationId: receipt.destinationId,
-          status: returned ? ("returned" as const) : ("paid" as const),
-          debitTransactionId: receipt.debit.id,
-          debitFee: receipt.debit.fee,
+          allocations,
           ...(returned
             ? {
-                returnTransactionId: receipt.credit!.id,
-                returnFee: receipt.credit!.fee,
+                returnedAt: Math.max(
+                  receipt.credit!.created,
+                  receipt.credit!.availableOn,
+                ),
               }
             : {}),
-        },
-      });
+        });
+        transactions.push({ ...receipt.debit, sourceId: p.id });
+        if (receipt.credit)
+          transactions.push({ ...receipt.credit, sourceId: p.id });
+        imports.push({
+          old,
+          allocations,
+          payout: {
+            stripePayoutId: p.id,
+            amount: receipt.amount,
+            currency: receipt.currency,
+            created: receipt.created,
+            destinationId: receipt.destinationId,
+            status: returned ? ("returned" as const) : ("paid" as const),
+            debitTransactionId: receipt.debit.id,
+            debitFee: receipt.debit.fee,
+            ...(returned
+              ? {
+                  returnTransactionId: receipt.credit!.id,
+                  returnFee: receipt.credit!.fee,
+                }
+              : {}),
+          },
+        });
+      }
     }
     const observations: Infer<typeof observation>[] = [];
     const sources: HistoricalFundingSource[] = [];
@@ -260,10 +274,16 @@ export async function adoptRecipientPayouts(
       const batch = snapshot.transfers.slice(i, i + 5);
       const receipts = await Promise.all(
         batch.map((row) =>
-          getTransferFundingReceipt(stripe, component, ctx, {
-            accountId: opts.accountId,
-            stripeTransferId: row.stripeTransferId,
-          }),
+          getTransferFundingReceipt(
+            stripe,
+            component,
+            ctx,
+            {
+              accountId: opts.accountId,
+              stripeTransferId: row.stripeTransferId,
+            },
+            row,
+          ),
         ),
       );
       for (let j = 0; j < batch.length; j++) {
@@ -292,23 +312,22 @@ export async function adoptRecipientPayouts(
     }
     validateHistoricalFunding(sources, proofPayouts);
     const claims: Claim[] = [];
-    for (const item of imports.filter((i) => i.old)) {
-      const result = await reconcileRecipientPayout(stripe, component, ctx, {
-        ...scope,
-        operationKey: item.old!.operationKey,
-        stripePayoutId: item.payout.stripePayoutId,
-        maxPages: max,
-      });
-      if (result.status !== "updated")
-        return {
-          status: "held",
-          reason:
-            result.status === "held"
-              ? result.reason
-              : "historical_claim_terminal",
-        };
-      claims.push(result.claim);
-    }
+    const reconciled = await reconcileRecipientPayouts(
+      stripe,
+      component,
+      ctx,
+      scope,
+      imports
+        .filter((i) => i.old)
+        .map((item) => ({
+          ...scope,
+          operationKey: item.old!.operationKey,
+          stripePayoutId: item.payout.stripePayoutId,
+          maxPages: max,
+        })),
+    );
+    if (reconciled.status !== "updated") return reconciled;
+    claims.push(...reconciled.claims);
     const history = await verifyPayoutHistory(stripe, {
       accountId: opts.accountId,
       currency: opts.currency,

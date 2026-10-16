@@ -1,5 +1,9 @@
+import { readPayoutOperation } from "./payoutPolicyState.js";
 import type { Infer } from "convex/values";
-import type { adoptionProof } from "../../component/payoutPolicy/schema.js";
+import type {
+  adoptionProof,
+  operationDoc,
+} from "../../component/payoutPolicy/schema.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
@@ -45,13 +49,29 @@ export async function runAdoptionMutation(
     adoption?: Infer<typeof adoptionProof>;
     [key: string]: unknown;
   },
-) {
+): Promise<Infer<typeof operationDoc> | { status: "operation_changed" }> {
   try {
-    return await runMutationOrThrow(
+    return (await runMutationOrThrow(
       ctx,
       componentRef(component, `payoutPolicy/mutations/${kind}`),
       args,
-    );
+    )) as Infer<typeof operationDoc>;
+  } catch (error) {
+    if (kind === "beginAttempt" && typeof args.operationKey === "string") {
+      const operation = await readPayoutOperation(component, ctx, {
+        accountId: args.accountId,
+        ownerKey: args.ownerKey,
+        operationKey: args.operationKey,
+      });
+      if (
+        operation &&
+        (operation.attempted ||
+          operation.status === "complete" ||
+          operation.status === "canceled")
+      )
+        return { status: "operation_changed" };
+    }
+    throw error;
   } finally {
     await discardAdoptionProof(component, ctx, args, args.adoption);
   }

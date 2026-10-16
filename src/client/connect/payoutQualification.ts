@@ -145,10 +145,16 @@ async function qualifyInput(
     const batch = snapshot.transfers.slice(i, i + 5);
     const receipts = await Promise.all(
       batch.map((row) =>
-        getTransferFundingReceipt(stripe, component, ctx, {
-          accountId: opts.accountId,
-          stripeTransferId: row.stripeTransferId,
-        }),
+        getTransferFundingReceipt(
+          stripe,
+          component,
+          ctx,
+          {
+            accountId: opts.accountId,
+            stripeTransferId: row.stripeTransferId,
+          },
+          row,
+        ),
       ),
     );
     for (let j = 0; j < batch.length; j++) {

@@ -44,23 +44,29 @@ export async function collectedSources(
     new Set(observations.map((o) => o.stripeTransferId)).size !== h.sourceCount
   )
     throw new Error("Financial payout collection membership is incomplete.");
+  const cachedRows = await ctx.db
+    .query("payoutSnapshotSources")
+    .withIndex("by_snapshot", (q) => q.eq("snapshotId", h._id))
+    .take(h.sourceCount + 1);
+  const byId = new Map(cachedRows.map((row) => [row.stripeTransferId, row]));
+  if (cachedRows.length !== h.sourceCount || byId.size !== h.sourceCount)
+    throw new Error("Financial payout collection membership is incomplete.");
   const rows = new Map<string, Doc<"transfers">>();
+  const allocations = new Map<string, Doc<"payoutSourceAllocations"> | null>();
   for (const o of observations) {
-    const cached = await ctx.db
-      .query("payoutSnapshotSources")
-      .withIndex("by_snapshot_transfer", (q) =>
-        q.eq("snapshotId", h._id).eq("stripeTransferId", o.stripeTransferId),
-      )
-      .unique();
-    const row = await ctx.db
-      .query("transfers")
-      .withIndex("by_stripe_transfer_id", (q) =>
-        q.eq("stripeTransferId", o.stripeTransferId),
-      )
-      .unique();
+    const cached = byId.get(o.stripeTransferId);
+    const row = cached?.transferDocId
+      ? await ctx.db.get("transfers", cached.transferDocId)
+      : await ctx.db
+          .query("transfers")
+          .withIndex("by_stripe_transfer_id", (q) =>
+            q.eq("stripeTransferId", o.stripeTransferId),
+          )
+          .unique();
     if (
       !cached ||
       !row ||
+      row.stripeTransferId !== o.stripeTransferId ||
       cached.needsCheck ||
       cached.ledgerFingerprint !== o.ledgerFingerprint ||
       cached.expectedPaid !== cached.paidAmount ||
@@ -68,25 +74,32 @@ export async function collectedSources(
     )
       throw new Error("Financial payout collection source changed.");
     if (h.readOnly) {
-      const allocation = await ctx.db
-        .query("payoutSourceAllocations")
-        .withIndex("by_transfer", (q) =>
-          q.eq("stripeTransferId", o.stripeTransferId),
-        )
-        .unique();
+      const knownAllocation = cached.allocationDocId
+        ? await ctx.db.get("payoutSourceAllocations", cached.allocationDocId)
+        : null;
+      const allocation =
+        knownAllocation ??
+        (await ctx.db
+          .query("payoutSourceAllocations")
+          .withIndex("by_transfer", (q) =>
+            q.eq("stripeTransferId", o.stripeTransferId),
+          )
+          .unique());
       if (
         (allocation?.paidAmount ?? 0) !== cached.paidAmount ||
         (allocation?.reservedAmount ?? 0) !== cached.reservedAmount ||
         (allocation &&
-          (allocation.accountId !== scope.accountId ||
+          (allocation.stripeTransferId !== o.stripeTransferId ||
+            allocation.accountId !== scope.accountId ||
             allocation.ownerKey !== scope.ownerKey ||
             allocation.currency !== o.currency))
       )
         throw new Error("Financial payout collection allocation changed.");
+      allocations.set(o.stripeTransferId, allocation);
     }
     rows.set(o.stripeTransferId, row);
   }
-  return rows;
+  return { transfers: rows, allocations };
 }
 export async function bindCollection(
   ctx: MutationCtx,

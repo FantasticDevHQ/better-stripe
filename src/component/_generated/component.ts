@@ -3582,6 +3582,76 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        recordOutcomes: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            outcomes: Array<{
+              accountId: string;
+              amount: number;
+              currency: string;
+              debitFee?: number;
+              debitTransactionId?: string;
+              operationKey: string;
+              ownerKey: string;
+              providerStatus:
+                "pending" | "in_transit" | "paid" | "failed" | "canceled";
+              returnFee?: number;
+              returnTransactionId?: string;
+              stripePayoutId: string;
+            }>;
+            ownerKey: string;
+          },
+          Array<{
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            allocations: Array<{
+              amount: number;
+              role?: "store" | "affiliate" | "other";
+              stripeTransferId: string;
+            }>;
+            amount: number;
+            attemptedAt?: number;
+            currency: string;
+            debitFee?: number;
+            debitTransactionId?: string;
+            destinationId?: string;
+            expectedRevision: number;
+            feeRevision?: number;
+            historical?: boolean;
+            independentLiabilities?: number;
+            liabilityRevision?: number;
+            observations: Array<{
+              currency: string;
+              ledgerFingerprint: string;
+              matureNet: number;
+              observedAt: number;
+              pendingCredits: number;
+              stripeTransferId: string;
+              transactionIds: Array<string>;
+            }>;
+            operationKey: string;
+            ownerKey: string;
+            providerFee?: number;
+            rejection?: {
+              code: "balance_insufficient" | "amount_too_small";
+              requestId: string;
+            };
+            returnTransactionId?: string;
+            snapshotId?: string;
+            status:
+              | "reserved"
+              | "submitted"
+              | "paid"
+              | "returned"
+              | "canceled"
+              | "rejected";
+            stripePayoutId?: string;
+          }>,
+          Name
+        >;
         recordRejection: FunctionReference<
           "mutation",
           "internal",

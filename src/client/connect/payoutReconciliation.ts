@@ -1,3 +1,5 @@
+import { payoutOutcomeBatches } from "./payoutOutcomeBatches.js";
+import type { outcomeArgs } from "../../component/payoutRelease/outcome.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
 import type { claimDoc } from "../../component/payoutRelease/schema.js";
@@ -87,12 +89,20 @@ async function discover(
  * receipts is required for adoption; no match never proves money did not move.
  * Fees and principal are persisted together in the component transaction.
  */
-export async function reconcileRecipientPayout(
+async function prepareRecipientPayout(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
   options: PayoutReconciliationOptions,
-): Promise<PayoutReconciliation> {
+): Promise<
+  | Exclude<PayoutReconciliation, { status: "updated" }>
+  | {
+      status: "prepared";
+      allocationCount: number;
+      outcome: Infer<typeof outcomeArgs>;
+      receipt: Extract<RecipientPayoutReceipt, { status: "ready" }>;
+    }
+> {
   validateIdentity(options);
   const maxPages = options.maxPages ?? 10;
   if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 100)
@@ -159,10 +169,11 @@ export async function reconcileRecipientPayout(
     return { status: "held", reason: "source_allocation_required" };
   const fee = addSummaryAmounts(receipt.debit.fee, receipt.credit?.fee ?? 0);
   if (fee < 0) return { status: "held", reason: "fee_allocation_required" };
-  const saved = (await runMutationOrThrow(
-    ctx,
-    componentRef(component, "payoutRelease/mutations/recordOutcome"),
-    {
+  return {
+    status: "prepared",
+    allocationCount: claim.allocations.length,
+    receipt,
+    outcome: {
       ...identity,
       stripePayoutId: receipt.stripePayoutId,
       amount: receipt.amount,
@@ -177,6 +188,74 @@ export async function reconcileRecipientPayout(
           }
         : {}),
     },
+  };
+}
+export async function reconcileRecipientPayout(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  options: PayoutReconciliationOptions,
+): Promise<PayoutReconciliation> {
+  const result = await prepareRecipientPayout(stripe, component, ctx, options);
+  if (result.status !== "prepared") return result;
+  const saved = (await runMutationOrThrow(
+    ctx,
+    componentRef(component, "payoutRelease/mutations/recordOutcome"),
+    result.outcome,
   )) as Claim;
-  return { status: "updated", claim: saved, receipt };
+  return { status: "updated", claim: saved, receipt: result.receipt };
+}
+/** Bound provider reads and outcome transactions without truncating known history. */
+export async function reconcileRecipientPayouts(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  scope: { accountId: string; ownerKey: string },
+  options: PayoutReconciliationOptions[],
+): Promise<
+  { status: "updated"; claims: Claim[] } | { status: "held"; reason: string }
+> {
+  const claims: Claim[] = [];
+  for (let start = 0; start < options.length; start += 25) {
+    const batch = options.slice(start, start + 25);
+    const outcomes: {
+      outcome: Infer<typeof outcomeArgs>;
+      allocationCount: number;
+    }[] = [];
+    for (let i = 0; i < batch.length; i += 5) {
+      const prepared = await Promise.all(
+        batch.slice(i, i + 5).map((opts) => {
+          if (
+            opts.accountId !== scope.accountId ||
+            opts.ownerKey !== scope.ownerKey
+          )
+            throw new Error("Payout reconciliation batch ownership changed.");
+          return prepareRecipientPayout(stripe, component, ctx, opts);
+        }),
+      );
+      for (const result of prepared) {
+        if (result.status !== "prepared")
+          return {
+            status: "held",
+            reason:
+              result.status === "held"
+                ? result.reason
+                : "historical_claim_terminal",
+          };
+        outcomes.push({
+          outcome: result.outcome,
+          allocationCount: result.allocationCount,
+        });
+      }
+    }
+    for (const group of payoutOutcomeBatches(outcomes)) {
+      const saved = (await runMutationOrThrow(
+        ctx,
+        componentRef(component, "payoutRelease/mutations/recordOutcomes"),
+        { ...scope, outcomes: group.map((row) => row.outcome) },
+      )) as Claim[];
+      claims.push(...saved);
+    }
+  }
+  return { status: "updated", claims };
 }

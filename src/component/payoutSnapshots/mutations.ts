@@ -139,7 +139,14 @@ export const advance = mutation({
           .withIndex("by_account", (q) => q.eq("accountId", h!.accountId))
           .paginate({ cursor: h.allocationCursor ?? null, numItems: batch });
         for (const row of page.page)
-          await cacheSource(ctx, h, row.stripeTransferId, counts);
+          await cacheSource(
+            ctx,
+            h,
+            row.stripeTransferId,
+            counts,
+            undefined,
+            row,
+          );
         patch.allocationCursor = page.continueCursor;
         patch.phase = page.isDone ? "fees" : "allocations";
       } else if (h.phase === "fees") {

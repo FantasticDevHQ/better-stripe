@@ -47,12 +47,14 @@ export const sources = query({
       .paginate(args.paginationOpts);
     const rows = [];
     for (const cached of page.page) {
-      const row = await ctx.db
-        .query("transfers")
-        .withIndex("by_stripe_transfer_id", (q) =>
-          q.eq("stripeTransferId", cached.stripeTransferId),
-        )
-        .unique();
+      const row = cached.transferDocId
+        ? await ctx.db.get("transfers", cached.transferDocId)
+        : await ctx.db
+            .query("transfers")
+            .withIndex("by_stripe_transfer_id", (q) =>
+              q.eq("stripeTransferId", cached.stripeTransferId),
+            )
+            .unique();
       if (!row || transferFingerprint(row) !== cached.ledgerFingerprint)
         throw new Error("Payout collection source changed.");
       rows.push(row);

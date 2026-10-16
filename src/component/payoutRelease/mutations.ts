@@ -1,3 +1,4 @@
+import { outcomeArgs, recordPayoutOutcome } from "./outcome.js";
 import {
   collectedSources,
   bindCollection,
@@ -11,7 +12,7 @@ import {
   historicalBatchArgs,
   adoptHistoricalBatch as importHistoricalBatch,
 } from "./adoption.js";
-import { readFees, recordFees } from "./fees.js";
+import { readFees } from "./fees.js";
 import { v } from "convex/values";
 import { mutation } from "../earnings/triggers.js";
 import { identity, observation, claimDoc } from "./schema.js";
@@ -144,7 +145,7 @@ export const beginAttempt = mutation({
       claim.observations,
       true,
       claim.currency,
-      await collectedSources(ctx, claim, claim.observations),
+      (await collectedSources(ctx, claim, claim.observations))?.transfers,
     );
     await reserveRecoveryGuard(ctx, claim, claim.amount);
     await ctx.db.patch("payoutReleaseClaims", claim._id, {
@@ -176,116 +177,36 @@ export const cancelUnattempted = mutation({
   },
 });
 export const recordOutcome = mutation({
-  args: {
-    ...identity,
-    stripePayoutId: v.string(),
-    amount: v.number(),
-    currency: v.string(),
-    providerStatus: v.union(
-      v.literal("pending"),
-      v.literal("in_transit"),
-      v.literal("paid"),
-      v.literal("failed"),
-      v.literal("canceled"),
-    ),
-    returnTransactionId: v.optional(v.string()),
-    debitTransactionId: v.optional(v.string()),
-    debitFee: v.optional(v.number()),
-    returnFee: v.optional(v.number()),
-  },
+  args: outcomeArgs,
   returns: claimDoc,
+  handler: recordPayoutOutcome,
+});
+/** Bounded atomic reconciliation; every row retains the single-outcome validation. */
+export const recordOutcomes = mutation({
+  args: {
+    accountId: v.string(),
+    ownerKey: v.string(),
+    outcomes: v.array(outcomeArgs),
+  },
+  returns: v.array(claimDoc),
   handler: async (ctx, args) => {
-    const claim = await claimByKey(ctx, args);
     if (
-      !claim ||
-      claim.attemptedAt === undefined ||
-      claim.status === "canceled" ||
-      claim.status === "rejected"
+      !args.outcomes.length ||
+      args.outcomes.length > 25 ||
+      new Set(args.outcomes.map((o) => o.operationKey)).size !==
+        args.outcomes.length
     )
-      throw new Error("Payout receipt has no attempted claim.");
-    if (
-      !/^po_\w+$/.test(args.stripePayoutId) ||
-      args.stripePayoutId.trim() !== args.stripePayoutId ||
-      args.currency !== claim.currency ||
-      args.amount !== claim.amount ||
-      (claim.stripePayoutId !== undefined &&
-        claim.stripePayoutId !== args.stripePayoutId)
-    )
-      throw new Error("Payout receipt identity or amount does not match.");
-    const adopted = await ctx.db
-      .query("payoutReleaseClaims")
-      .withIndex("by_provider_payout", (q) =>
-        q.eq("stripePayoutId", args.stripePayoutId),
+      throw new Error("Invalid payout outcome batch.");
+    const results = [];
+    for (const outcome of args.outcomes) {
+      if (
+        outcome.accountId !== args.accountId ||
+        outcome.ownerKey !== args.ownerKey
       )
-      .unique();
-    if (adopted && adopted._id !== claim._id)
-      throw new Error("Payout receipt identity is already allocated.");
-    if (
-      args.returnTransactionId !== undefined &&
-      (!/^txn_\w+$/.test(args.returnTransactionId) ||
-        args.returnTransactionId.trim() !== args.returnTransactionId)
-    )
-      throw new Error("Invalid payout return receipt identity.");
-    const returned =
-      (args.providerStatus === "failed" ||
-        args.providerStatus === "canceled") &&
-      args.returnTransactionId !== undefined;
-    if (returned) {
-      const adoptedReturn = await ctx.db
-        .query("payoutReleaseClaims")
-        .withIndex("by_return_receipt", (q) =>
-          q.eq("returnTransactionId", args.returnTransactionId),
-        )
-        .unique();
-      if (adoptedReturn && adoptedReturn._id !== claim._id)
-        throw new Error("Payout return receipt is already allocated.");
+        throw new Error("Payout outcome batch ownership changed.");
+      results.push(await recordPayoutOutcome(ctx, outcome));
     }
-    if (claim.status === "returned") {
-      if (returned && args.returnTransactionId !== claim.returnTransactionId)
-        throw new Error("Payout return receipt identity changed.");
-      if (returned) {
-        await recordFees(ctx, claim, args, true);
-        return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
-      }
-      return claim;
-    }
-    if (claim.status === "paid" && args.providerStatus !== "paid" && !returned)
-      return claim;
-    await recordFees(ctx, claim, args, returned);
-    await releaseRecoveryGuard(ctx, claim);
-    if (
-      claim.status === "paid" &&
-      args.providerStatus === "paid" &&
-      args.debitTransactionId !== undefined &&
-      claim.debitTransactionId === args.debitTransactionId &&
-      claim.debitFee === args.debitFee &&
-      claim.providerFee === args.debitFee
-    )
-      return claim;
-    if (returned) {
-      await moveAllocations(
-        ctx,
-        claim,
-        claim.status === "paid" ? "return" : "release",
-      );
-      await ctx.db.patch("payoutReleaseClaims", claim._id, {
-        status: "returned",
-        stripePayoutId: args.stripePayoutId,
-        returnTransactionId: args.returnTransactionId,
-      });
-    } else if (args.providerStatus === "paid" && claim.status !== "paid") {
-      await moveAllocations(ctx, claim, "pay");
-      await ctx.db.patch("payoutReleaseClaims", claim._id, {
-        status: "paid",
-        stripePayoutId: args.stripePayoutId,
-      });
-    } else if (claim.status !== "paid") {
-      await ctx.db.patch("payoutReleaseClaims", claim._id, {
-        status: "submitted",
-        stripePayoutId: args.stripePayoutId,
-      });
-    }
-    return (await ctx.db.get("payoutReleaseClaims", claim._id))!;
+    return results;
   },
 });
 

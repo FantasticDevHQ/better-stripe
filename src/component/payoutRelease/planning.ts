@@ -26,17 +26,20 @@ export async function readPayoutPlan(
 ) {
   const minimum = policy.thresholds.find((t) => t.currency === args.currency);
   if (!minimum) throw new Error("Payout policy currency is not configured.");
+  const collection = await collectedSources(ctx, args, args.observations);
   const rows = await checkSnapshot(
     ctx,
     args.accountId,
     args.observations,
     true,
     args.currency,
-    await collectedSources(ctx, args, args.observations),
+    collection?.transfers,
   );
   const sources: PayoutFundingSource[] = [];
   for (const observation of args.observations) {
-    const prior = await sourceById(ctx, observation.stripeTransferId);
+    const prior = collection?.allocations.has(observation.stripeTransferId)
+      ? collection.allocations.get(observation.stripeTransferId)
+      : await sourceById(ctx, observation.stripeTransferId);
     if (
       prior &&
       (prior.accountId !== args.accountId ||

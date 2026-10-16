@@ -552,6 +552,24 @@ reduces later qualifying funds rather than making the old commission payable
 again. An adopted payout can reconcile a subsequent bank failure without
 requiring a package marker that was absent from its original Stripe object.
 
+Historical receipt reads are bounded to five concurrent requests. Known outcomes
+reconcile in atomic batches of at most 25, splitting repeated allocation work
+above 1,000 allocations while retaining a large individual outcome as its own
+transaction. Native per-transaction limits still apply. Batches use the same receipt, ownership, fee,
+uniqueness and return validation as individual reconciliation. An invalid row
+rolls back its entire batch; earlier verified batches remain safely retryable.
+Disposable source caches retain optional primary document IDs to avoid repeated
+indexed lookups. Older caches fall back to indexed reads, and every primary-ID
+lookup still checks live identity and financial state. Already-read transfer
+baselines never replace the final live ledger check.
+
+Identical activation callers can complete while another caller is verifying a
+proof or waiting to mark its attempt. These retry boundaries re-read the same
+owned durable operation. Attempted, completed or canceled operations resume
+through their canonical state; an unattempted proof failure still rejects.
+A committed attempt is not marked again after its response is lost. Original
+provider request identity and schedule-restoration records remain unchanged.
+
 Public adoption and funded activation use complete cursor-paginated collections
 when local sources, existing claims or proposed imports exceed the small direct
 snapshot path. There is no lifetime 100-row cutoff in these public flows. The

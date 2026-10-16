@@ -74,6 +74,8 @@ export const snapshotSourcesTable = defineTable({
   snapshotId: v.id("payoutSnapshots"),
   stripeTransferId: v.string(),
   ledgerFingerprint: v.string(),
+  transferDocId: v.optional(v.id("transfers")),
+  allocationDocId: v.optional(v.id("payoutSourceAllocations")),
   sourceCreatedAt: v.number(),
   currency: v.string(),
   amount: v.number(),

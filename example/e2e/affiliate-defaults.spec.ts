@@ -16,12 +16,12 @@ test("zero defaults, global inheritance, store overrides and icon clears", async
 }, info) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(90000);
-  const users = convex("users:list");
+  const users = convex("users/queries:list");
   const admin = users.find((u: { role: string }) => u.role === "admin");
-  const store = convex("storefront:listStores")[0];
+  const store = convex("storefront/public/queries:listStores")[0];
   const originals = [
-    convex("affiliateDefaults:get"),
-    convex("affiliateDefaults:get", { sellerId: store.sellerId }),
+    convex("affiliateDefaults/queries:get"),
+    convex("affiliateDefaults/queries:get", { sellerId: store.sellerId }),
   ];
   await page.addInitScript((sellerId) => {
     if (!localStorage.getItem("betterlearn-role"))
@@ -96,14 +96,14 @@ test("zero defaults, global inheritance, store overrides and icon clears", async
   } finally {
     for (const [index, original] of originals.entries()) {
       const sellerId = index === 1 ? store.sellerId : undefined;
-      const current = convex("affiliateDefaults:get", { sellerId });
+      const current = convex("affiliateDefaults/queries:get", { sellerId });
       execFileSync(
         "pnpm",
         [
           "exec",
           "convex",
           "run",
-          "affiliateDefaults:save",
+          "affiliateDefaults/mutations:save",
           JSON.stringify({
             actorId: sellerId ?? admin._id,
             sellerId,

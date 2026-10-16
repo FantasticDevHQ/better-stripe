@@ -6,7 +6,7 @@ test("admin sets a fixed plan affiliate payout and a sandbox checkout uses it", 
 }, testInfo) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(180000);
-  const users = convex("users:list");
+  const users = convex("users/queries:list");
   const seller = users.find(
     (user: { role: string; storePlan?: { planId: string } }) =>
       user.role === "seller" && user.storePlan?.planId === "growth",
@@ -15,7 +15,7 @@ test("admin sets a fixed plan affiliate payout and a sandbox checkout uses it", 
   const affiliate = users.find(
     (user: { role: string }) => user.role === "affiliate",
   );
-  const store = convex("storefront:listStores").find(
+  const store = convex("storefront/public/queries:listStores").find(
     (row: { accountId: string }) => row.accountId === seller.stripeAccountId,
   );
   const price = store.products
@@ -85,7 +85,7 @@ test("admin sets a fixed plan affiliate payout and a sandbox checkout uses it", 
       "payment_intent",
     );
     const find = () =>
-      convex("storeSaleSettlement:listSellerSales", {
+      convex("settlement/public/queries:listSellerSales", {
         sellerId: seller._id,
       }).find(
         (row: { paymentIntentId: string }) =>
@@ -104,7 +104,7 @@ test("admin sets a fixed plan affiliate payout and a sandbox checkout uses it", 
         sale.sellerNet +
         (sale.costRecoveryAmount ?? 0),
     );
-    const transfers = convex("queries:listTransfersByCharge", {
+    const transfers = convex("connect/queries:listTransfersByCharge", {
       sourceChargeId: sale.chargeId,
     });
     expect(

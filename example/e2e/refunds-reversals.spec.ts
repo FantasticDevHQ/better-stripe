@@ -88,17 +88,17 @@ test("seller issues a partial refund then refunds the remaining balance", async 
       ),
     );
   }
-  expect(query("queries:getStripeMode")).toBe("test");
-  const seller = query("users:list").find(
+  expect(query("stripe/public/queries:getStripeMode")).toBe("test");
+  const seller = query("users/queries:list").find(
     (user: { email: string }) => user.email === "maya@example.com",
   );
-  const sales = query("storeSaleSettlement:listSellerSales", {
+  const sales = query("settlement/public/queries:listSellerSales", {
     sellerId: seller._id,
   });
   const sale = sales.find(
     (sale: { status: string; paymentIntentId: string }) =>
       sale.status === "settled" &&
-      !query("queries:getPaymentByStripeId", {
+      !query("connect/queries:getPaymentByStripeId", {
         stripePaymentIntentId: sale.paymentIntentId,
       }).refundedAmount,
   );

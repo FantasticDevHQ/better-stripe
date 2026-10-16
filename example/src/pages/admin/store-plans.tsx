@@ -22,8 +22,8 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 export function AdminStorePlans() {
   const { currentUser } = useRole();
-  const plans = useQuery(api.storePlanPricing.list, {});
-  const update = useAction(api.storePlanPricing.update);
+  const plans = useQuery(api.storePlans.pricing.public.queries.list, {});
+  const update = useAction(api.storePlans.pricing.public.actions.update);
   return (
     <div className="space-y-6">
       <div className="space-y-2">

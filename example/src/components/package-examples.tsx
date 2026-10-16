@@ -26,11 +26,11 @@ export function ProductComponents() {
   const { currentUser, currentRole } = useRole();
   const [selected, select] = useState<string>();
   const all = useQuery(
-    api.queries.listProductsWithPrices,
+    api.products.queries.listProductsWithPrices,
     currentRole === "admin" ? {} : "skip",
   );
   const own = useQuery(
-    api.queries.listProductsWithPricesByAccount,
+    api.products.queries.listProductsWithPricesByAccount,
     currentRole !== "admin" && currentUser.stripeAccountId
       ? { accountId: currentUser.stripeAccountId }
       : "skip",
@@ -87,10 +87,14 @@ export function ProductComponents() {
                               stripePriceId={price.stripePriceId}
                               currency={price.currency}
                               onSave={(values) =>
-                                convex.mutation(api.sellerAffiliateRates.save, {
-                                  ...values,
-                                  sellerId: currentUser.id as Id<"users">,
-                                })
+                                convex.mutation(
+                                  api.sellerAffiliateRates.public.mutations
+                                    .save,
+                                  {
+                                    ...values,
+                                    sellerId: currentUser.id as Id<"users">,
+                                  },
+                                )
                               }
                             />
                           </div>
@@ -124,15 +128,15 @@ export function ProductComponents() {
 export function SubscriptionComponents() {
   const { currentUser, currentRole } = useRole();
   const own = useQuery(
-    api.queries.listSubscriptionsByUser,
+    api.billing.public.queries.listSubscriptionsByUser,
     currentRole === "customer" ? { userId: currentUser.id } : "skip",
   );
   const all = useQuery(
-    api.queries.listSubscriptions,
+    api.billing.public.queries.listSubscriptions,
     currentRole === "admin" ? {} : "skip",
   );
   const store = useQuery(
-    api.storefront.listStoreSubscriptions,
+    api.storefront.public.queries.listStoreSubscriptions,
     currentRole === "seller"
       ? { sellerId: currentUser.id as Id<"users"> }
       : "skip",
@@ -190,7 +194,7 @@ export function PayoutComponents() {
 function PayoutComponentsBody() {
   const { currentUser } = useRole();
   const earnings = useEarnings(currentUser.stripeAccountId);
-  const load = useAction(api.actions.getAccountBalance);
+  const load = useAction(api.connect.actions.getAccountBalance);
   const { data, error } = useWorkflowResource(
     () =>
       currentUser.stripeAccountId
@@ -227,8 +231,10 @@ function PayoutComponentsBody() {
 }
 export function HostedBillingExample() {
   const { currentUser, currentRole } = useRole();
-  const customerPortal = useAction(api.actions.createBillingPortalSession);
-  const storePortal = useAction(api.storePlanActions.manage);
+  const customerPortal = useAction(
+    api.billing.public.actions.createBillingPortalSession,
+  );
+  const storePortal = useAction(api.storePlans.public.actions.manage);
   return (
     <Card>
       <CardHeader>

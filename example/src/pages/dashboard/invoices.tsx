@@ -7,7 +7,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 export function Invoices() {
   const { currentUser } = useRole();
-  const invoices = useQuery(api.queries.listInvoicesByUser, {
+  const invoices = useQuery(api.billing.public.queries.listInvoicesByUser, {
     userId: currentUser.id,
   });
   return (

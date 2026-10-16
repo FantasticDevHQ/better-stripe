@@ -43,9 +43,10 @@ const quickLinks = [
 ];
 
 export function AdminOverview() {
-  const stripeMode = useQuery(api.queries.getStripeMode) ?? "test";
-  const products = useQuery(api.queries.listProducts);
-  const subscriptions = useQuery(api.queries.listSubscriptions);
+  const stripeMode =
+    useQuery(api.stripe.public.queries.getStripeMode) ?? "test";
+  const products = useQuery(api.products.queries.listProducts);
+  const subscriptions = useQuery(api.billing.public.queries.listSubscriptions);
 
   return (
     <Overview products={products} subscriptions={subscriptions}>

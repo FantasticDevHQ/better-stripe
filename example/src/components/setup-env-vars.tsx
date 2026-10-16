@@ -8,7 +8,7 @@ import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 export function EnvVarsCard() {
-  const checkEnvVars = useAction(api.actions.checkEnvVars);
+  const checkEnvVars = useAction(api.admin.actions.checkEnvVars);
   const {
     data,
     isLoading: checking,

@@ -151,7 +151,7 @@ export function ProductAffiliateSettings({
   ) => Promise<unknown>;
 }) {
   const state = useQuery(
-    api.sellerAffiliateRates.get,
+    api.sellerAffiliateRates.public.queries.get,
     stripeProductId
       ? { sellerId: sellerId as Id<"users">, stripeProductId, stripePriceId }
       : "skip",
@@ -185,7 +185,7 @@ export function GlobalAffiliateSettings({
   actorId: string;
   sellerId?: string;
 }) {
-  const state = useQuery(api.affiliateDefaults.get, {
+  const state = useQuery(api.affiliateDefaults.queries.get, {
     sellerId: sellerId as Id<"users"> | undefined,
   });
   const convex = useConvex();
@@ -210,7 +210,7 @@ export function GlobalAffiliateSettings({
         {...state}
         scopeKey={`default:${sellerId ?? "platform"}`}
         onSave={(values) =>
-          convex.mutation(api.affiliateDefaults.save, {
+          convex.mutation(api.affiliateDefaults.mutations.save, {
             ...values,
             actorId: actorId as Id<"users">,
             sellerId: sellerId as Id<"users"> | undefined,

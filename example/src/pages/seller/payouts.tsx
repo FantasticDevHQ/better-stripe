@@ -25,7 +25,9 @@ import {
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
-type PayoutData = FunctionReturnType<typeof api.recipientPayouts.load>;
+type PayoutData = FunctionReturnType<
+  typeof api.recipientPayouts.public.actions.load
+>;
 type Payout = PayoutData["payouts"][number];
 const currency = formatPayoutAmount;
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -95,7 +97,7 @@ function PayoutTable({ payouts, empty }: { payouts: Payout[]; empty: string }) {
 }
 
 function AccountPayouts({ userId }: { userId: Id<"users"> }) {
-  const load = useAction(api.recipientPayouts.load);
+  const load = useAction(api.recipientPayouts.public.actions.load);
   return (
     <BetterStripePayouts
       scopeKey={userId}

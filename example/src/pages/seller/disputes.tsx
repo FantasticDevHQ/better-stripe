@@ -119,7 +119,7 @@ function HeadlessDisputes({
   userId: string;
 }) {
   const { disputes, isLoading } = useDisputes({ accountId: stripeAccountId });
-  const acceptDispute = useAction(api.actions.acceptDispute);
+  const acceptDispute = useAction(api.connect.actions.acceptDispute);
   const {
     selectedId,
     setSelectedId,
@@ -136,11 +136,11 @@ function HeadlessDisputes({
   const { dispute, isLoading: detailLoading } =
     useDisputeWithCountdown(selectedId);
   const chargeback = useQuery(
-    api.queries.getDisputeChargeback,
+    api.connect.queries.getDisputeChargeback,
     selectedId ? { stripeDisputeId: selectedId } : "skip",
   ) as ChargebackSummary | null | undefined;
-  const submitEvidence = useAction(api.actions.submitDisputeEvidence);
-  const uploadEvidence = useAction(api.actions.uploadDisputeEvidence);
+  const submitEvidence = useAction(api.connect.actions.submitDisputeEvidence);
+  const uploadEvidence = useAction(api.connect.actions.uploadDisputeEvidence);
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card size="inset" data-testid="disputes-list">
@@ -311,7 +311,7 @@ function HeadlessDisputes({
 
 export function SellerDisputes() {
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
 

@@ -13,8 +13,10 @@ function BalancePaymentEmptyState() {
 }
 
 export function StorePaymentSource({ sellerId }: { sellerId: Id<"users"> }) {
-  const state = useQuery(api.storeBalanceFunding.state, { sellerId });
-  const change = useAction(api.storeBalanceActions.setFunding);
+  const state = useQuery(api.storeBalance.funding.public.queries.state, {
+    sellerId,
+  });
+  const change = useAction(api.storeBalance.actions.setFunding);
   const {
     consent,
     setConsent,

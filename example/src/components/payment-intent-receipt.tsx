@@ -9,7 +9,7 @@ export function PaymentIntentReceipt({
 }: {
   paymentIntentId: string;
 }) {
-  const payment = useQuery(api.queries.getPaymentByStripeId, {
+  const payment = useQuery(api.connect.queries.getPaymentByStripeId, {
     stripePaymentIntentId: paymentIntentId,
   });
   return (

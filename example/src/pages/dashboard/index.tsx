@@ -19,9 +19,12 @@ export function Dashboard() {
   const { currentUser } = useRole();
   // Scope to the signed-in persona — never surface another account's
   // subscription (the account-less visitor sees their own empty state).
-  const subscriptions = useQuery(api.queries.listSubscriptionsByUser, {
-    userId: currentUser.id,
-  });
+  const subscriptions = useQuery(
+    api.billing.public.queries.listSubscriptionsByUser,
+    {
+      userId: currentUser.id,
+    },
+  );
 
   if (subscriptions === undefined) {
     return (

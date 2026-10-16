@@ -54,7 +54,7 @@ function DestinationChargeCheckoutForm({
   publishableKey: string;
 }) {
   const createCheckout = useAction(
-    api.marketplace.createDestinationChargeCheckout,
+    api.marketplace.actions.createDestinationChargeCheckout,
   );
   const returnUrl = buildCheckoutReturnUrl(
     window.location.origin,
@@ -99,10 +99,12 @@ export function DestinationChargeDemo() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
-  const context = useQuery(api.marketplace.getDestinationChargeDemoContext);
-  const publishableKey = useQuery(api.queries.getPublishableKey);
+  const context = useQuery(
+    api.marketplace.queries.getDestinationChargeDemoContext,
+  );
+  const publishableKey = useQuery(api.stripe.public.queries.getPublishableKey);
   const session = useQuery(
-    api.queries.getCheckoutSessionByStripeId,
+    api.billing.public.queries.getCheckoutSessionByStripeId,
     sessionId ? { stripeSessionId: sessionId } : "skip",
   );
 

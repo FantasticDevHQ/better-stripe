@@ -50,11 +50,11 @@ function Figure({ label, value }: { label: string; value: string }) {
  */
 export function StoreEarnings() {
   const { currentUser } = useRole();
-  const getBalance = useAction(api.marketplace.getRecipientBalance);
+  const getBalance = useAction(api.marketplace.actions.getRecipientBalance);
 
   const accountId = currentUser.stripeAccountId;
   const payouts = useQuery(
-    api.marketplace.listStorePayouts,
+    api.marketplace.queries.listStorePayouts,
     accountId ? { stripeAccountId: accountId } : "skip",
   ) as StripeComponentPayout[] | undefined;
 

@@ -56,12 +56,12 @@ test.describe("live monthly seller billing", () => {
       await expect(
         page.getByRole("heading", { name: "Billing", exact: true }),
       ).toBeVisible();
-      const users = convex("users:list");
+      const users = convex("users/queries:list");
       const seller = users.find(
         (u: { storeName?: string; name: string }) =>
           (u.storeName ?? u.name) === name,
       );
-      const before = convex("storePlanBilling:getState", {
+      const before = convex("storePlans/billing/public/queries:getState", {
         sellerId: seller._id,
       });
       if (!before.hasAccess) {
@@ -104,7 +104,7 @@ test.describe("live monthly seller billing", () => {
       await expect(
         page.getByText(`Your ${plan.toLowerCase()} plan is active.`),
       ).toBeVisible({ timeout: 60000 });
-      const after = convex("storePlanBilling:getState", {
+      const after = convex("storePlans/billing/public/queries:getState", {
         sellerId: seller._id,
       });
       expect(after.hasAccess).toBe(true);

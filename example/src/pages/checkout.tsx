@@ -14,7 +14,7 @@ export function Checkout() {
   const [searchParams] = useSearchParams();
   const priceId = searchParams.get("priceId");
   const referralCode = searchParams.get("ref") ?? undefined;
-  const publishableKey = useQuery(api.queries.getPublishableKey);
+  const publishableKey = useQuery(api.stripe.public.queries.getPublishableKey);
 
   if (!priceId) {
     return (

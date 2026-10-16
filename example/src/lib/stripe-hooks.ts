@@ -17,38 +17,38 @@ import { api } from "../../convex/_generated/api";
  */
 export const useSplitBreakdown = createUseSplitBreakdown(
   useQuery,
-  api.queries.listTransfersByCharge,
+  api.connect.queries.listTransfersByCharge,
 );
 
 export const useEarnings = createUseEarnings(
   useQuery,
-  api.queries.getAccountEarnings,
-  api.queries.getAccountPayouts,
+  api.connect.queries.getAccountEarnings,
+  api.connect.queries.getAccountPayouts,
 );
 
 export const useCurrencyEarnings = createUseCurrencyEarnings(
   useQuery,
-  api.readContracts.getAccountEarningsByCurrency,
-  api.readContracts.getAccountPayoutsByCurrency,
+  api.readContracts.queries.getAccountEarningsByCurrency,
+  api.readContracts.queries.getAccountPayoutsByCurrency,
 );
 /** Reactive readers with pinned page boundaries. Keep Products/useProductManager write callbacks. */
 export function usePaginatedProducts(accountId?: string) {
   return useComponentPaginatedQuery(
-    api.readContracts.paginateProducts,
+    api.readContracts.queries.paginateProducts,
     { accountId },
     { initialNumItems: 25 },
   );
 }
 export function usePaginatedPrices(productId: string | undefined) {
   return useComponentPaginatedQuery(
-    api.readContracts.paginatePrices,
+    api.readContracts.queries.paginatePrices,
     productId ? { productId } : "skip",
     { initialNumItems: 25 },
   );
 }
 export function usePaginatedPayouts(accountId: string | undefined) {
   return useComponentPaginatedQuery(
-    api.readContracts.paginatePayouts,
+    api.readContracts.queries.paginatePayouts,
     accountId ? { accountId } : "skip",
     { initialNumItems: 25 },
   );

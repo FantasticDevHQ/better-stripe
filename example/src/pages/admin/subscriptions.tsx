@@ -43,7 +43,7 @@ function formatDate(dateStr: string | undefined) {
 }
 
 export function AdminSubscriptions() {
-  const subscriptions = useQuery(api.queries.listSubscriptions);
+  const subscriptions = useQuery(api.billing.public.queries.listSubscriptions);
   const { filter, setFilter, filtered, countByStatus, tabs } =
     useSubscriptionFilter(subscriptions);
 

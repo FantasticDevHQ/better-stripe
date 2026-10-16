@@ -16,8 +16,10 @@ test("seller product and subscription overrides control real sandbox splits and 
 }, testInfo) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(240000);
-  expect(convex("queries:getPublishableKey")).toMatch(/^pk_test_/);
-  const store = convex("storefront:listStores").find(
+  expect(convex("stripe/public/queries:getPublishableKey")).toMatch(
+    /^pk_test_/,
+  );
+  const store = convex("storefront/public/queries:listStores").find(
     (row: { products: Product[] }) =>
       row.products.some((p) => p.prices.some((v) => v.type === "one_time")) &&
       row.products.some((p) => p.prices.some((v) => v.type === "recurring")),
@@ -91,7 +93,7 @@ test("seller product and subscription overrides control real sandbox splits and 
       [month, 10, "custom"],
     ] as const) {
       const previous = new Set(
-        convex("storeSaleSettlement:listSellerSales", {
+        convex("settlement/public/queries:listSellerSales", {
           sellerId: store.sellerId,
         }).map((sale: { chargeId: string }) => sale.chargeId),
       );
@@ -105,7 +107,7 @@ test("seller product and subscription overrides control real sandbox splits and 
         page.getByText("Payment successful!", { exact: true }),
       ).toBeVisible({ timeout: 60000 });
       const find = () =>
-        convex("storeSaleSettlement:listSellerSales", {
+        convex("settlement/public/queries:listSellerSales", {
           sellerId: store.sellerId,
         }).find(
           (sale: { chargeId: string; stripePriceId?: string }) =>
@@ -133,7 +135,7 @@ test("seller product and subscription overrides control real sandbox splits and 
       );
       if (price.type === "recurring")
         expect(sale.sourceInvoiceId).toMatch(/^in_/);
-      const transfers = convex("queries:listTransfersByCharge", {
+      const transfers = convex("connect/queries:listTransfersByCharge", {
         sourceChargeId: sale.chargeId,
       });
       expect(
@@ -186,15 +188,15 @@ test("inline clear saves inheritance in seller and admin controls", async ({
 }, testInfo) => {
   test.setTimeout(60000);
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
-  const store = convex("storefront:listStores").find(
+  const store = convex("storefront/public/queries:listStores").find(
     (row: { products: Product[] }) => row.products.length,
   );
   const product: Product = store.products[0];
-  const original = convex("sellerAffiliateRates:get", {
+  const original = convex("sellerAffiliateRates/public/queries:get", {
     sellerId: store.sellerId,
     stripeProductId: product.stripeProductId,
   });
-  const plan = convex("storePlanPricing:list")[1];
+  const plan = convex("storePlans/pricing/public/queries:list")[1];
   await page.addInitScript((sellerId) => {
     if (!localStorage.getItem("betterlearn-role"))
       localStorage.setItem("betterlearn-role", "seller");
@@ -212,7 +214,7 @@ test("inline clear saves inheritance in seller and admin controls", async ({
   await control.getByRole("button", { name: "Clear affiliate payout" }).click();
   await expect(control.getByRole("status")).toContainText("cleared");
   expect(
-    convex("sellerAffiliateRates:get", {
+    convex("sellerAffiliateRates/public/queries:get", {
       sellerId: store.sellerId,
       stripeProductId: product.stripeProductId,
     }),
@@ -252,7 +254,10 @@ test("inline clear saves inheritance in seller and admin controls", async ({
     stripeProductId: product.stripeProductId,
     stripePriceId: priceId,
   };
-  const priceOriginal = convex("sellerAffiliateRates:get", priceArgs);
+  const priceOriginal = convex(
+    "sellerAffiliateRates/public/queries:get",
+    priceArgs,
+  );
   await page.goto("/seller/products?example=components");
   const priceControl = page.getByTestId(`affiliate-rate-${priceId}`);
   await priceControl
@@ -262,7 +267,8 @@ test("inline clear saves inheritance in seller and admin controls", async ({
   await priceControl.getByRole("button", { name: "Save", exact: true }).click();
   await expect(priceControl.getByRole("status")).toContainText("saved");
   expect(
-    convex("sellerAffiliateRates:get", priceArgs).effectiveBasisPoints,
+    convex("sellerAffiliateRates/public/queries:get", priceArgs)
+      .effectiveBasisPoints,
   ).toBe(0);
   await priceControl
     .getByRole("button", { name: "Clear affiliate payout" })
@@ -310,7 +316,7 @@ test("inline clear saves inheritance in seller and admin controls", async ({
   await expect(admin.getByRole("status")).toContainText("saved");
   await admin.getByRole("button", { name: "Clear affiliate payout" }).click();
   await expect(admin.getByRole("status")).toContainText("cleared");
-  expect(convex("storePlanPricing:list")[1]).toMatchObject({
+  expect(convex("storePlans/pricing/public/queries:list")[1]).toMatchObject({
     affiliateFixedAmount: null,
     affiliateBasisPoints: null,
   });

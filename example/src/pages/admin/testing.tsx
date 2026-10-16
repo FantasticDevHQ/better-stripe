@@ -36,7 +36,7 @@ export function AdminTesting() {
     scopeKey: "sandbox-testing",
     formatResult: (value) => JSON.stringify(value, null, 2) ?? "Completed",
   });
-  const stripeMode = useQuery(api.queries.getStripeMode);
+  const stripeMode = useQuery(api.stripe.public.queries.getStripeMode);
 
   const fireAccountUpdated = useAction(adminTestingActions.fireAccountUpdated);
   const fireSubscriptionUpdated = useAction(

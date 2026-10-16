@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function SellerCosts({ kind }: { kind: "refund" | "dispute" }) {
   const { currentUser } = useRole();
   const costs = useQuery(
-    api.sellerCostBilling.list,
+    api.sellerCosts.billing.public.queries.list,
     currentUser.id ? { sellerId: currentUser.id as Id<"users"> } : "skip",
   );
   const rows = costs?.filter(

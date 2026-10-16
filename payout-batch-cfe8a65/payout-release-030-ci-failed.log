@@ -1,0 +1,61 @@
+ci	Run pnpm run check:all	﻿2026-10-16T00:50:25.2873515Z ##[group]Run pnpm run check:all
+ci	Run pnpm run check:all	2026-10-16T00:50:25.2873848Z ^[[36;1mpnpm run check:all^[[0m
+ci	Run pnpm run check:all	2026-10-16T00:50:25.2945201Z shell: /usr/bin/bash -e {0}
+ci	Run pnpm run check:all	2026-10-16T00:50:25.2945483Z env:
+ci	Run pnpm run check:all	2026-10-16T00:50:25.2945752Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+ci	Run pnpm run check:all	2026-10-16T00:50:25.2946089Z ##[endgroup]
+ci	Run pnpm run check:all	2026-10-16T00:50:25.5641782Z 
+ci	Run pnpm run check:all	2026-10-16T00:50:25.5642938Z > @fantastic.dev/better-stripe@0.30.0 check:all /home/runner/work/better-stripe/better-stripe
+ci	Run pnpm run check:all	2026-10-16T00:50:25.5643789Z > repo-gates check-all
+ci	Run pnpm run check:all	2026-10-16T00:50:25.5644034Z 
+ci	Run pnpm run check:all	2026-10-16T00:50:27.4595156Z ✓ build               (1.8s)
+ci	Run pnpm run check:all	2026-10-16T00:50:47.5231487Z ✓ lint                (20.1s)
+ci	Run pnpm run check:all	2026-10-16T00:50:51.0372944Z ✓ check:design-system (3.5s)
+ci	Run pnpm run check:all	2026-10-16T00:51:00.9104279Z ✓ format:check        (9.9s)
+ci	Run pnpm run check:all	2026-10-16T00:51:08.2652461Z ✓ typecheck           (7.4s)
+ci	Run pnpm run check:all	2026-10-16T00:51:08.6313245Z ✓ codegen:check       (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:51:09.0623490Z ✓ check:size          (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:51:09.4736044Z ✓ check:debt          (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:51:09.9925604Z ✓ check:circular      (0.5s)
+ci	Run pnpm run check:all	2026-10-16T00:51:10.4360323Z ✓ check:secrets       (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:51:13.5494965Z ✓ check:shadscan      (3.1s)
+ci	Run pnpm run check:all	2026-10-16T00:52:39.2755852Z ✓ test                (85.7s)
+ci	Run pnpm run check:all	2026-10-16T00:54:34.9061720Z ✗ check:coverage      (115.6s)
+ci	Run pnpm run check:all	2026-10-16T00:54:35.2794954Z ✓ check:agents        (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6611291Z ✓ check:ci-parity     (0.4s)
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6613005Z 
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6613349Z 1 gate(s) failed: check:coverage
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6613591Z 
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6617614Z ── check:coverage ──
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6628846Z    ^[[32m✓^[[39m ^[[30m^[[46m scripts ^[[49m^[[39m scripts/public-docs.test.mjs ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[32m 21^[[2mms^[[22m^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6630505Z    ^[[32m✓^[[39m ^[[30m^[[45m testing ^[[49m^[[39m src/testing/mock-webhooks.test.ts ^[[2m(^[[22m^[[2m14 tests^[[22m^[[2m)^[[22m^[[32m 9^[[2mms^[[22m^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6632467Z    ^[[32m✓^[[39m ^[[30m^[[45m testing ^[[49m^[[39m src/testing/assert-test-env.test.ts ^[[2m(^[[22m^[[2m4 tests^[[22m^[[2m)^[[22m^[[32m 6^[[2mms^[[22m^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6634013Z   ^[[2m Test Files ^[[22m ^[[1m^[[31m1 failed^[[39m^[[22m^[[2m | ^[[22m^[[1m^[[32m291 passed^[[39m^[[22m^[[90m (292)^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6661993Z   ^[[2m      Tests ^[[22m ^[[1m^[[31m1 failed^[[39m^[[22m^[[2m | ^[[22m^[[1m^[[32m2676 passed^[[39m^[[22m^[[90m (2677)^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6662728Z   ^[[2m   Start at ^[[22m 00:52:40
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6663381Z   ^[[2m   Duration ^[[22m 114.39s^[[2m (tests 53%, environment 20%, import 18%, transform 5%, worker 3%, setup 1%)^[[22m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6664255Z   ^[[2m    Isolate ^[[22m ^[[33m292 workers spawned^[[39m^[[2m · ~330ms startup each (spawn + environment, per file)^[[22m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6665223Z   ^[[2m            ^[[22m ^[[2mat least ~31.82s faster with ^[[22m^[[33misolate: false^[[39m^[[2m — reuses workers across files instead of one per file^[[22m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6692335Z ##[error]Error: Test timed out in 15000ms.
+ci	Run pnpm run check:all	If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ci	Run pnpm run check:all	 ❯ src/client/connect/payoutLargeAdoption.test.ts:134:1
+ci	Run pnpm run check:all	
+ci	Run pnpm run check:all	
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6699089Z    ELIFECYCLE  Command failed with exit code 1.
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6699613Z    ELIFECYCLE  Command failed with exit code 1.
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6700158Z   ^[[31m⎯⎯⎯⎯⎯⎯⎯^[[39m^[[1m^[[41m Failed Tests 1 ^[[49m^[[22m^[[31m⎯⎯⎯⎯⎯⎯⎯^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6701290Z   ^[[41m^[[1m FAIL ^[[22m^[[49m ^[[30m^[[42m client ^[[49m^[[39m src/client/connect/payoutLargeAdoption.test.ts^[[2m > ^[[22mactivates an adopted 205-source and 101-payout history then releases only 1040 unpaid cents
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6702197Z   ^[[31m^[[1mError^[[22m: Test timed out in 15000ms.
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6702943Z   If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6703763Z   ^[[36m ^[[2m❯^[[22m src/client/connect/payoutLargeAdoption.test.ts:^[[2m134:1^[[22m^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6704681Z       ^[[90m132|^[[39m }
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6704942Z       ^[[90m133|^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6705696Z       ^[[90m134|^[[39m it("activates an adopted 205-source and 101-payout history then releas…
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6706184Z       ^[[90m   |^[[39m ^[[31m^^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6706584Z       ^[[90m135|^[[39m   const { s, adopt } = await withHistory();
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6707529Z       ^[[90m136|^[[39m   const now = Math.floor(Date.now() / 1000);
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6708122Z   ^[[31m^[[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯^[[22m^[[39m
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6708975Z   check-coverage: no coverage-summary.json files matched coverage/coverage-summary.json — did test:coverage run with the json-summary reporter?
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6709848Z   ↳ re-run: pnpm run check:coverage  (or CHECK_ALL_VERBOSE=1 pnpm run check:all)
+ci	Run pnpm run check:all	2026-10-16T00:54:35.6813067Z  ELIFECYCLE  Command failed with exit code 1.
+ci	Run pnpm run check:all	2026-10-16T00:54:35.7022371Z ##[error]Process completed with exit code 1.

@@ -1,0 +1,64 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |component| src/component/payout-snapshots.test.ts (18 tests | 1 failed | 17 skipped) 74ms
+   × does not rewrite an unchanged source already cached in the same collection 72ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-snapshots.test.ts > does not rewrite an unchanged source already cached in the same collection
+AssertionError: expected "patch" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st patch call:
+
+    Array [
+      "payoutSnapshotSources",
+      "00000010006payoutSnapshotSources",
+      Object {
+        "allocationCurrency": undefined,
+        "allocationDocId": undefined,
+        "allocationPresent": false,
+        "amount": 1000,
+        "currency": "usd",
+        "ledgerFingerprint": "["tr_one","acct_one","ch_one",1000,"usd","affiliate","paid",0,0,false]",
+        "needsCheck": true,
+        "paidAmount": 0,
+        "reinstatement": false,
+        "reservedAmount": 0,
+        "reversalClaimedAmount": 0,
+        "reversedAmount": 0,
+        "role": "affiliate",
+        "sourceChargeId": "ch_one",
+        "sourceCreatedAt": 1792113051183,
+        "status": "paid",
+        "stripeTransferId": "tr_one",
+        "transferDocId": "00000000000000000010000transfers",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/component/payout-snapshots.test.ts:436:23
+    434|       transfer,
+    435|     );
+    436|     expect(patch).not.toHaveBeenCalled();
+       |                       ^
+    437|     patch.mockRestore();
+    438|   });
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:18
+ ❯ runMutationWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1975:31
+ ❯ handler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2181:24
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 skipped (18)
+   Start at  08:10:50
+   Duration  373ms (transform 44%, tests 27%, import 14%, environment 14%, worker 1%)
+

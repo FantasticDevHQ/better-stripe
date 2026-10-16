@@ -1,0 +1,26 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (15 tests | 1 failed | 14 skipped) 516ms
+   × bounds parallel historical receipt reads to five 515ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > bounds parallel historical receipt reads to five
+AssertionError: expected 1 to be greater than 1
+ ❯ src/client/connect/payoutLargeAdoption.test.ts:539:16
+    537|   });
+    538|   expect(await adopt()).toMatchObject({ status: "adopted" });
+    539|   expect(peak).toBeGreaterThan(1);
+       |                ^
+    540|   expect(peak).toBeLessThanOrEqual(5);
+    541| }, 15000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  08:14:03
+   Duration  989ms (tests 58%, transform 22%, import 16%, environment 4%)
+

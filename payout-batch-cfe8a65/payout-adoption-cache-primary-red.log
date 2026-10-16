@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |component| src/component/payout-snapshots.test.ts (17 tests | 1 failed | 16 skipped) 87ms
+   × retains immutable primary source IDs in the disposable verification cache 86ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |component| src/component/payout-snapshots.test.ts > retains immutable primary source IDs in the disposable verification cache
+AssertionError: expected undefined to be '00000000000000000010000transfers' // Object.is equality
+
+- Expected:
+"00000000000000000010000transfers"
+
++ Received:
+undefined
+
+ ❯ src/component/payout-snapshots.test.ts:408:7
+    406|     expect(
+    407|       (cached as typeof cached & { transferDocId?: string }).transferD…
+    408|     ).toBe(
+       |       ^
+    409|       rows.sources.find(
+    410|         (row) => row.stripeTransferId === cached.stripeTransferId,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  08:06:09
+   Duration  454ms (transform 49%, tests 25%, import 14%, environment 11%, worker 1%)
+

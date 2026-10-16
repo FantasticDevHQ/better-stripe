@@ -32,5 +32,15 @@
     "existing_configuration_tests": 20,
     "editor_session_tests": 6
   },
-  "read_only_convex_codegen": "passed against explicit Dojo dev deployment; no application deployment or data changes claimed"
+  "read_only_convex_codegen": "passed against explicit Dojo dev deployment; no application deployment or data changes claimed",
+  "quality_gates": {
+    "passed": 12,
+    "total": 12,
+    "duration_seconds": 307.0,
+    "backend_passed": 4668,
+    "backend_existing_skips": 1,
+    "web_passed": 7742,
+    "web_existing_skips": 4,
+    "ui_passed": 32
+  }
 }

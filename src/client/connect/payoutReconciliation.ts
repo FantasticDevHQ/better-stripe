@@ -1,3 +1,4 @@
+import { payoutOutcomeBatches } from "./payoutOutcomeBatches.js";
 import type { outcomeArgs } from "../../component/payoutRelease/outcome.js";
 import type Stripe from "stripe";
 import type { Infer } from "convex/values";
@@ -97,6 +98,7 @@ async function prepareRecipientPayout(
   | Exclude<PayoutReconciliation, { status: "updated" }>
   | {
       status: "prepared";
+      allocationCount: number;
       outcome: Infer<typeof outcomeArgs>;
       receipt: Extract<RecipientPayoutReceipt, { status: "ready" }>;
     }
@@ -169,6 +171,7 @@ async function prepareRecipientPayout(
   if (fee < 0) return { status: "held", reason: "fee_allocation_required" };
   return {
     status: "prepared",
+    allocationCount: claim.allocations.length,
     receipt,
     outcome: {
       ...identity,
@@ -215,7 +218,10 @@ export async function reconcileRecipientPayouts(
   const claims: Claim[] = [];
   for (let start = 0; start < options.length; start += 25) {
     const batch = options.slice(start, start + 25);
-    const outcomes: Infer<typeof outcomeArgs>[] = [];
+    const outcomes: {
+      outcome: Infer<typeof outcomeArgs>;
+      allocationCount: number;
+    }[] = [];
     for (let i = 0; i < batch.length; i += 5) {
       const prepared = await Promise.all(
         batch.slice(i, i + 5).map((opts) => {
@@ -236,15 +242,20 @@ export async function reconcileRecipientPayouts(
                 ? result.reason
                 : "historical_claim_terminal",
           };
-        outcomes.push(result.outcome);
+        outcomes.push({
+          outcome: result.outcome,
+          allocationCount: result.allocationCount,
+        });
       }
     }
-    const saved = (await runMutationOrThrow(
-      ctx,
-      componentRef(component, "payoutRelease/mutations/recordOutcomes"),
-      { ...scope, outcomes },
-    )) as Claim[];
-    claims.push(...saved);
+    for (const group of payoutOutcomeBatches(outcomes)) {
+      const saved = (await runMutationOrThrow(
+        ctx,
+        componentRef(component, "payoutRelease/mutations/recordOutcomes"),
+        { ...scope, outcomes: group.map((row) => row.outcome) },
+      )) as Claim[];
+      claims.push(...saved);
+    }
   }
   return { status: "updated", claims };
 }

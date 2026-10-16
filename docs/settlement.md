@@ -553,7 +553,9 @@ again. An adopted payout can reconcile a subsequent bank failure without
 requiring a package marker that was absent from its original Stripe object.
 
 Historical receipt reads are bounded to five concurrent requests. Known outcomes
-reconcile in atomic batches of at most 25 using the same receipt, ownership, fee,
+reconcile in atomic batches of at most 25, splitting repeated allocation work
+above 1,000 allocations while retaining a large individual outcome as its own
+transaction. Native per-transaction limits still apply. Batches use the same receipt, ownership, fee,
 uniqueness and return validation as individual reconciliation. An invalid row
 rolls back its entire batch; earlier verified batches remain safely retryable.
 Disposable source caches retain optional primary document IDs to avoid repeated

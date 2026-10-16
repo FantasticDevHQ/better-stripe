@@ -1,6 +1,6 @@
+export type * from "./publicTypes.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
 import type { PaginationOptions } from "convex/server";
-export type { StripeAccountClosure } from "./core/accountClosures.js";
 import { reconcilePayoutAndTrigger } from "./webhooks/payoutReconciliation.js";
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
@@ -194,42 +194,9 @@ export type {
 } from "./utils/webhookEndpoints.js";
 // Re-export types for consumers
 export type {
-  BetterStripeOptions,
-  FeeOverride,
-  FeeTier,
-  PlatformFeeConfig,
-  RegisterRoutesConfig,
-} from "./types.js";
-export type {
   StripeDashboardResourceType,
   StripeMode,
 } from "./utils/stripeDashboardUrl.js";
-export type {
-  AccountLinkWithStatus,
-  AsyncHookCtx,
-  AsyncHooks,
-  PaymentMethodCard,
-  PaymentMethodLike,
-  StripeComponentAccount,
-  StripeComponentCheckoutSession,
-  StripeComponentDispute,
-  StripeComponentInvoice,
-  StripeComponentPayment,
-  StripeComponentPayout,
-  StripeComponentPrice,
-  StripeComponentProduct,
-  StripeComponentRefund,
-  StripeComponentSubscription,
-  StripeCountrySpecs,
-  StripeEventHandler,
-  StripeEventHandlers,
-  StripeV2Account,
-  StripeWebhookEvent,
-  SyncTriggerCtx,
-  SyncTriggers,
-  V2ThinEvent,
-  WebhookActionCtx,
-} from "./types.js";
 export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT

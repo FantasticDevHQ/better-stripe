@@ -26,6 +26,19 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.31.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.3...v0.31.0) (2026-10-16)
+
+
+### Features
+
+* **billing:** add scoped provider invoice pages ([255863a](https://github.com/FantasticDevHQ/better-stripe/commit/255863a56b03220f8d8e0322aad7d1fea0ea0fd5))
+* **billing:** add scoped provider invoice pages ([05c2ae4](https://github.com/FantasticDevHQ/better-stripe/commit/05c2ae49193ef1d2487f6d968b0d6bdc90309e75))
+
+
+### Bug Fixes
+
+* **billing:** declare invoice reader runtime dependency ([05fcdee](https://github.com/FantasticDevHQ/better-stripe/commit/05fcdee12aead7df9fd070de5400ae3fac0eb487))
+
 ## [0.30.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.2...v0.30.3) (2026-10-16)
 
 ### Refactoring

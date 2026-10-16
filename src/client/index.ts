@@ -18,7 +18,13 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { FinancialOwnershipHost } from "./financialOwnership.js";
+import { BillingPortalClient } from "./core/billingPortalClient.js";
+export type {
+  CreateBillingPortalConfigurationOptions,
+  RetrieveBillingPortalConfigurationOptions,
+  UpdateBillingPortalConfigurationOptions,
+  CreateBillingPortalSessionOptions,
+} from "./core/accountLinks.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -193,7 +199,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends FinancialOwnershipHost {
+export class BetterStripe extends BillingPortalClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -1126,17 +1132,6 @@ export class BetterStripe extends FinancialOwnershipHost {
     },
   ): Promise<AccountLinkWithStatus> {
     return accountLinksImpl.getAccountLinkWithStatus(this.stripe(), ctx, opts);
-  }
-
-  async createBillingPortalSession(
-    ctx: RunCtx,
-    opts: { stripeAccountId: string; returnUrl: string },
-  ) {
-    return accountLinksImpl.createBillingPortalSession(
-      this.stripe(),
-      ctx,
-      opts,
-    );
   }
 
   async getCountrySpecs(ctx: RunCtx, opts: { countryCode: string }) {

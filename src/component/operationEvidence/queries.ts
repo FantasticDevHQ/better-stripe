@@ -3,6 +3,8 @@ import {
   paginationResultValidator,
 } from "convex/server";
 import { v } from "convex/values";
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "../schema.js";
 import { query, type QueryCtx } from "../_generated/server.js";
 import type { Id } from "../_generated/dataModel.js";
 import {
@@ -58,7 +60,7 @@ export const headers = query({
     const count = args.paginationOpts.numItems;
     if (!Number.isInteger(count) || count < 1 || count > 100)
       throw new Error("Invalid operation evidence page size");
-    const page = await ctx.db
+    const page = await paginator(ctx.db, schema)
       .query("operationEvidenceHeaders")
       .order("desc")
       .paginate({

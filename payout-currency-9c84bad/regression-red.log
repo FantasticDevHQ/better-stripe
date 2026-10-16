@@ -1,0 +1,292 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |example-ui| example/src/components/payout-currency.test.tsx (1 test | 1 failed) 1026ms
+   × preserves observed currency units in balances, next payout and history 1025ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example-ui| example/src/components/payout-currency.test.tsx > preserves observed currency units in balances, next payout and history
+TestingLibraryElementError: Unable to find an element with the text: ¥100. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold"[39m
+          [36m>[39m
+            [0mPayouts[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-2 text-muted-foreground"[39m
+          [36m>[39m
+            [0mYour Stripe balance, upcoming payouts, and previous payouts to your bank account.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"group/button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center rounded-lg border bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"[39m
+          [33mdata-slot[39m=[32m"button"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-4 sm:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-foreground/10 flex flex-col gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"[39m
+          [33mdata-size[39m=[32m"default"[39m
+          [33mdata-slot[39m=[32m"card"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-card-header has-data-[slot=card-description]:grid-rows-card-header [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"[39m
+            [33mdata-slot[39m=[32m"card-header"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-heading group-data-[size=sm]/card:text-sm text-sm font-medium text-muted-foreground"[39m
+              [33mdata-slot[39m=[32m"card-title"[39m
+            [36m>[39m
+              [0mAvailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-4 group-data-[size=sm]/card:px-3"[39m
+            [33mdata-slot[39m=[32m"card-content"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m¥1[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mKWD 10.000[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m$12.34[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mISK 1[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-2 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mFunds available in Stripe[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-foreground/10 flex flex-col gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"[39m
+          [33mdata-size[39m=[32m"default"[39m
+          [33mdata-slot[39m=[32m"card"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-card-header has-data-[slot=card-description]:grid-rows-card-header [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"[39m
+            [33mdata-slot[39m=[32m"card-header"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-heading group-data-[size=sm]/card:text-sm text-sm font-medium text-muted-foreground"[39m
+              [33mdata-slot[39m=[32m"card-title"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-4 group-data-[size=sm]/card:px-3"[39m
+            [33mdata-slot[39m=[32m"card-content"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m¥2[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mKWD 20.000[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m$56.78[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mISK 2[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-2 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mFunds still settling[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-for...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold"[39m
+          [36m>[39m
+            [0mPayouts[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-2 text-muted-foreground"[39m
+          [36m>[39m
+            [0mYour Stripe balance, upcoming payouts, and previous payouts to your bank account.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"group/button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center rounded-lg border bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"[39m
+          [33mdata-slot[39m=[32m"button"[39m
+          [33mtabindex[39m=[32m"0"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-4 sm:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-foreground/10 flex flex-col gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"[39m
+          [33mdata-size[39m=[32m"default"[39m
+          [33mdata-slot[39m=[32m"card"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-card-header has-data-[slot=card-description]:grid-rows-card-header [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"[39m
+            [33mdata-slot[39m=[32m"card-header"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-heading group-data-[size=sm]/card:text-sm text-sm font-medium text-muted-foreground"[39m
+              [33mdata-slot[39m=[32m"card-title"[39m
+            [36m>[39m
+              [0mAvailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-4 group-data-[size=sm]/card:px-3"[39m
+            [33mdata-slot[39m=[32m"card-content"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m¥1[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mKWD 10.000[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m$12.34[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mISK 1[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-2 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mFunds available in Stripe[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-foreground/10 flex flex-col gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"[39m
+          [33mdata-size[39m=[32m"default"[39m
+          [33mdata-slot[39m=[32m"card"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-card-header has-data-[slot=card-description]:grid-rows-card-header [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"[39m
+            [33mdata-slot[39m=[32m"card-header"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"font-heading group-data-[size=sm]/card:text-sm text-sm font-medium text-muted-foreground"[39m
+              [33mdata-slot[39m=[32m"card-title"[39m
+            [36m>[39m
+              [0mPending[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"px-4 group-data-[size=sm]/card:px-3"[39m
+            [33mdata-slot[39m=[32m"card-content"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m¥2[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mKWD 20.000[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0m$56.78[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-2xl font-semibold tabular-nums"[39m
+            [36m>[39m
+              [0mISK 2[0m
+            [36m</p>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-2 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mFunds still settling[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"group/card bg-card text-card-foreground ring-for...
+ ❯ waitForWrapper node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ example/src/components/payout-currency.test.tsx:32:24
+     30| it("preserves observed currency units in balances, next payout and his…
+     31|   render(<Payouts />);
+     32|   expect((await screen.findAllByText("¥100")).length).toBe(2);
+       |                        ^
+     33|   expect(screen.getByText("¥200")).toBeVisible();
+     34|   expect(screen.getAllByText("KWD 1.000").length).toBe(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  13:43:50
+   Duration  3.05s (tests 35%, environment 27%, transform 21%, import 10%, setup 7%)
+

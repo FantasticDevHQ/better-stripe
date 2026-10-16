@@ -1,0 +1,22 @@
+{
+  "scope": "Actual package Payouts in synthetic presentation fixture, no provider operations",
+  "assertions": [
+    {
+      "test": "JPY 100 observed units displays ¥100",
+      "result": "passed"
+    },
+    {
+      "test": "Fractional ISK compatibility units preserved",
+      "result": "passed"
+    },
+    {
+      "test": "Unsupported precision is explicit and does not crash",
+      "result": "passed"
+    },
+    {
+      "test": "Refresh and mobile rendering",
+      "result": "passed"
+    }
+  ],
+  "errors": []
+}

@@ -36,6 +36,30 @@
 - observe bounded transfer facts and preserve deferred references ([#252](https://github.com/FantasticDevHQ/better-stripe/issues/252)) ([8f951b2](https://github.com/FantasticDevHQ/better-stripe/commit/8f951b2c75737dceb5f074ae375acff84153b170))
 - resume every deferred transfer reference ([#254](https://github.com/FantasticDevHQ/better-stripe/issues/254)) ([70ee4b7](https://github.com/FantasticDevHQ/better-stripe/commit/70ee4b76585a2e7ee4acebe54ab92f21b09b1749))
 - resume oversized settlement destination indexing ([#251](https://github.com/FantasticDevHQ/better-stripe/issues/251)) ([6870b54](https://github.com/FantasticDevHQ/better-stripe/commit/6870b54055508adcc59b11a1da97d75d6079ff9d))
+- observe bounded original settlement destinations ([#250](https://github.com/FantasticDevHQ/better-stripe/pull/250)) ([bfab01e](https://github.com/FantasticDevHQ/better-stripe/commit/bfab01e18b2bbc07b367d7ea2ea12fb78091e20b))
+
+### Scope and limitations
+
+- Ownership registration and financial source observations remain UNKNOWN for
+  coverage. They do not certify complete financial history, fence new financial
+  work or authorize whole-account closure. Synchronous settlement/transfer
+  observations are bounded; oversized source traversal advances through durable
+  bounded continuation and validation. A completed pass applies to the observed
+  generation, not a permanent quiescence or financial-admission guarantee.
+- Exact refund-command evidence observes synchronized original-scope metadata;
+  missing, ambiguous, conflicting or unnormalized legacy evidence stays unavailable.
+  It never proves provider absence, completed money or safe retry. Legacy
+  normalization batches accept 1–100 rows, not a byte guarantee. Native transaction
+  or individual-document limits reject atomically and leave the reader held;
+  smaller batches do not solve an individual document ceiling.
+- The known 1,000-distinct-destination reversal-claim native read-limit failure
+  remains unresolved. Passing 1,000 transfers across four shared destinations and
+  the historical 1,001-leg release scenario are specific verification cases, not
+  general capacity promises. No financial maximum is lowered or error swallowed.
+- This release contains accepted additive ownership, observation and refund
+  correlation APIs. It does not complete the unfinished example Workflow/Workpool
+  migration, producer/backfill/admission chain, account-closure UI or Dojo adoption.
+  Public-artifact verification and explicit host adoption remain separate gates.
 
 ## [0.34.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.33.0...v0.34.0) (2026-10-16)
 

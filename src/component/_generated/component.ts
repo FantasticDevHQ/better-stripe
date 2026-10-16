@@ -2855,6 +2855,112 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    financialObservations: {
+      queries: {
+        bucket: FunctionReference<
+          "query",
+          "internal",
+          {
+            bucketKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              bucketKey: string;
+              legIndex: number;
+              orgId?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              role: "store" | "affiliate" | "other";
+              sourceChargeId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        owner: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              bucketKey: string;
+              legIndex: number;
+              orgId?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              role: "store" | "affiliate" | "other";
+              sourceChargeId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        source: FunctionReference<
+          "query",
+          "internal",
+          { allocationId: string },
+          {
+            coverage: "unknown";
+            observation: null | {
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              fingerprint: string;
+              generation: number;
+              indexedLegCount: number;
+              isContradictory: boolean;
+              isOverflow: boolean;
+              legCount: number;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              producer: "settlement_allocation";
+              producerVersion: 1;
+              sourceChargeId: string;
+            };
+          },
+          Name
+        >;
+      };
+    };
     financialOwnership: {
       mutations: {
         register: FunctionReference<

@@ -1,4 +1,9 @@
 import {
+  sourceObservationsTable,
+  sourceLegsTable,
+  observationGenerationsTable,
+} from "./financialObservations/schema.js";
+import {
   ownershipTable,
   generationsTable,
 } from "./financialOwnership/schema.js";
@@ -64,6 +69,9 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  financialSourceObservations: sourceObservationsTable,
+  financialSourceLegs: sourceLegsTable,
+  financialObservationGenerations: observationGenerationsTable,
   financialOwnership: ownershipTable,
   financialOwnershipGenerations: generationsTable,
   payoutWorkerJobs: payoutWorkerJobsTable,

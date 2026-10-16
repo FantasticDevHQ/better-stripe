@@ -47,7 +47,7 @@ const page = await betterStripe.financialOwnership.discover(ctx, {
 
 Pages use the component-compatible indexed paginator, at most 100 requested rows with fixed 200-row/1 MB read bounds. Preserve `continueCursor`, `isDone`, optional split metadata and native pagination identity. A full last page can require an empty continuation before `isDone` becomes true. Keep cursors scoped to the authorized owner query; a cursor is not an immutable snapshot.
 
-The returned generation advances only when a new bucket is registered in that owner scope. Matching replay does not advance it. It is a registration provenance generation, not a financial revision. This slice has no financial writer observers, so a newly written or unmapped money record does not automatically invalidate a completeness claim here. No completeness claim is available at all.
+The returned generation advances only when a new bucket is registered in that owner scope. Matching replay does not advance it. It is a registration provenance generation, not a financial revision. Registration itself has no financial writer observers. The separate [settlement source observations](./financial-observations.md) integration observes bounded raw allocation destinations only and has its own diagnostic generations; it does not establish complete financial coverage. Newly written or unmapped records outside that producer are still unobserved. No completeness claim is available at all.
 
 ## Verification boundary
 

@@ -57,7 +57,10 @@ export function AdminWebhooks() {
     setExpandedEvent,
     queryArgs,
   } = useWebhookFilters();
-  const events = useQuery(api.queries.listWebhookEvents, queryArgs);
+  const events = useQuery(
+    api.stripe.public.queries.listWebhookEvents,
+    queryArgs,
+  );
 
   if (events === undefined) {
     return (

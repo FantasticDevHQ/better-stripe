@@ -22,9 +22,13 @@ import { Link } from "react-router-dom";
 import { api } from "../../../convex/_generated/api";
 
 function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
-  const listMethods = useAction(api.actions.listPaymentMethods);
-  const attachMethod = useAction(api.actions.attachPaymentMethod);
-  const detachMethod = useAction(api.actions.detachPaymentMethod);
+  const listMethods = useAction(api.billing.public.actions.listPaymentMethods);
+  const attachMethod = useAction(
+    api.billing.public.actions.attachPaymentMethod,
+  );
+  const detachMethod = useAction(
+    api.billing.public.actions.detachPaymentMethod,
+  );
   const {
     methods,
     isLoading,
@@ -121,7 +125,7 @@ function PaymentMethodsInner({ stripeAccountId }: { stripeAccountId: string }) {
 
 export function PaymentMethods() {
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
 
@@ -168,7 +172,7 @@ export function PaymentMethods() {
       </div>
 
       <StripeProviderWithKey
-        publishableKeyQuery={api.queries.getPublishableKey}
+        publishableKeyQuery={api.stripe.public.queries.getPublishableKey}
       >
         <PaymentMethodsInner stripeAccountId={account.stripeAccountId} />
       </StripeProviderWithKey>

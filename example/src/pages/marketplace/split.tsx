@@ -21,7 +21,7 @@ import {
   AFFILIATE_REFERRAL_CODE,
   DEMO_SALE_AMOUNT,
   isAffiliateReferral,
-} from "../../../convex/affiliateSplit";
+} from "../../../convex/marketplace/affiliateSplit";
 import { buildSplitCheckoutReturnUrl } from "../../lib/split-checkout-return-url";
 import { useEarnings, useSplitBreakdown } from "../../lib/stripe-hooks";
 
@@ -49,7 +49,9 @@ function SplitCheckoutForm({
   referralCode: string | null;
   publishableKey: string;
 }) {
-  const createCheckout = useAction(api.actions.createAffiliateSplitCheckout);
+  const createCheckout = useAction(
+    api.marketplace.checkoutActions.createAffiliateSplitCheckout,
+  );
   return (
     <Checkout
       mode="embedded"
@@ -78,15 +80,17 @@ export function AffiliateSplitDemo() {
   const referralCode = searchParams.get("ref");
   const { currentUser } = useRole();
 
-  const personas = useQuery(api.queries.getMarketplacePersonas);
-  const publishableKey = useQuery(api.queries.getPublishableKey);
+  const personas = useQuery(
+    api.marketplace.personaQueries.getMarketplacePersonas,
+  );
+  const publishableKey = useQuery(api.stripe.public.queries.getPublishableKey);
   const [showCheckout, setShowCheckout] = useState(false);
 
   const storeAccountId = personas?.store?.accountId ?? undefined;
   const affiliateAccountId = personas?.affiliate?.accountId ?? undefined;
 
   const catalog = useQuery(
-    api.queries.listProductsWithPricesByAccount,
+    api.products.queries.listProductsWithPricesByAccount,
     storeAccountId ? { accountId: storeAccountId } : "skip",
   );
   const oneTimePrice = catalog

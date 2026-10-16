@@ -12,11 +12,14 @@ test("subscription checkouts save One-time and Forever commission terms", async 
 }, testInfo) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(240000);
-  expect(convex("queries:getPublishableKey")).toMatch(/^pk_test_/);
-  const store = convex("storefront:listStores").find((s: Store) =>
-    s.products.some((p: Product) =>
-      p.prices.some((price: Price) => price.type === "recurring"),
-    ),
+  expect(convex("stripe/public/queries:getPublishableKey")).toMatch(
+    /^pk_test_/,
+  );
+  const store = convex("storefront/public/queries:listStores").find(
+    (s: Store) =>
+      s.products.some((p: Product) =>
+        p.prices.some((price: Price) => price.type === "recurring"),
+      ),
   );
   const product = store.products.find((p: Product) =>
     p.prices.some((price: Price) => price.type === "recurring"),
@@ -29,7 +32,7 @@ test("subscription checkouts save One-time and Forever commission terms", async 
     stripeProductId: product.stripeProductId,
     stripePriceId: price.stripePriceId,
   };
-  const original = convex("sellerAffiliateRates:get", target);
+  const original = convex("sellerAffiliateRates/public/queries:get", target);
   await page.addInitScript((sellerId) => {
     if (!localStorage.getItem("betterlearn-role"))
       localStorage.setItem("betterlearn-role", "seller");
@@ -72,7 +75,7 @@ test("subscription checkouts save One-time and Forever commission terms", async 
         fullPage: true,
       });
       const previous = new Set(
-        convex("storeSaleSettlement:listSellerSales", {
+        convex("settlement/public/queries:listSellerSales", {
           sellerId: store.sellerId,
         }).map((sale: Sale) => sale.chargeId),
       );
@@ -84,7 +87,7 @@ test("subscription checkouts save One-time and Forever commission terms", async 
       await page.getByRole("button", { name: "Pay", exact: true }).click();
       await page.waitForURL(/\/checkout\/status\?/, { timeout: 90000 });
       const find = () =>
-        convex("storeSaleSettlement:listSellerSales", {
+        convex("settlement/public/queries:listSellerSales", {
           sellerId: store.sellerId,
         }).find(
           (sale: Sale) =>
@@ -110,14 +113,14 @@ test("subscription checkouts save One-time and Forever commission terms", async 
       JSON.stringify(sales, null, 2),
     );
   } finally {
-    const current = convex("sellerAffiliateRates:get", target);
+    const current = convex("sellerAffiliateRates/public/queries:get", target);
     execFileSync(
       "pnpm",
       [
         "exec",
         "convex",
         "run",
-        "sellerAffiliateRates:save",
+        "sellerAffiliateRates/public/mutations:save",
         JSON.stringify({
           ...target,
           affiliateBasisPoints: original.affiliateBasisPoints,
@@ -135,7 +138,7 @@ test("term controls show readable labels in API, package components and admin", 
   page,
 }, testInfo) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
-  const store: Store = convex("storefront:listStores")[0];
+  const store: Store = convex("storefront/public/queries:listStores")[0];
   await page.addInitScript((sellerId) => {
     if (!localStorage.getItem("betterlearn-role"))
       localStorage.setItem("betterlearn-role", "seller");

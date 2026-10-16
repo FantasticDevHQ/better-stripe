@@ -21,7 +21,7 @@ export function CheckoutTypeExamples({
 }) {
   const [params, setParams] = useSearchParams();
   const { currentUser } = useRole();
-  const price = useQuery(api.checkoutExamples.describePrice, {
+  const price = useQuery(api.checkoutExamples.queries.describePrice, {
     stripePriceId: priceId,
   });
   const requested = params.get("checkout") ?? "embedded";

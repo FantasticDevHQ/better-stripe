@@ -29,11 +29,11 @@ function formatCurrency(cents: number) {
 
 export function SellerHome() {
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
   const payouts = useQuery(
-    api.queries.listPayoutsByAccount,
+    api.connect.queries.listPayoutsByAccount,
     account?.stripeAccountId ? { accountId: account.stripeAccountId } : "skip",
   ) as StripeComponentPayout[] | undefined;
 

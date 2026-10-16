@@ -6,8 +6,12 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { FunctionReturnType } from "convex/server";
 import type { internal } from "../convex/_generated/api";
 
-type Snapshot = FunctionReturnType<typeof internal.sandboxRenewals.snapshot>;
-type Actor = FunctionReturnType<typeof internal.sandboxRenewals.prepare>;
+type Snapshot = FunctionReturnType<
+  typeof internal.sandboxFixtures.renewals.actions.snapshot
+>;
+type Actor = FunctionReturnType<
+  typeof internal.sandboxFixtures.renewals.actions.prepare
+>;
 const runId = process.argv[2] ?? `renewal-${Date.now().toString(36)}`;
 function call<T>(name: string, args: object): T {
   const output = execFileSync(

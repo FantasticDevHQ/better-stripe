@@ -113,7 +113,7 @@ settlement can finish; deduplicate actual payment execution with `settleSale`.
 If historical pagination exceeds the configured bound, selection refuses to guess.
 
 The Vite example migrates its old subscription claims with
-`pnpm exec convex run commissionMigration:run '{}'` from `example/`. Repeat until
+`pnpm exec convex run marketplace/commissionMigration/mutations:run '{}'` from `example/`. Repeat until
 it returns `0`. Run this after deploying the new component and before replaying
 historical subscription events. The migration preserves terms and first invoices;
 its batch deletes are transactional with component writes.

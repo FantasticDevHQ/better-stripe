@@ -9,7 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 export function SellerSales() {
   const { currentUser } = useRole();
   const sales = useQuery(
-    api.storeSaleSettlement.listSellerSales,
+    api.settlement.public.queries.listSellerSales,
     currentUser.id ? { sellerId: currentUser.id as Id<"users"> } : "skip",
   );
   return (

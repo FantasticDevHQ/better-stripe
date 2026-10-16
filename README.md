@@ -70,7 +70,7 @@ claim execution are completed.
 
 ## Status
 
-**Version**: `0.30.2` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.30.3` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
@@ -138,6 +138,15 @@ Run `pnpm run check:all` before submitting changes. It runs the build, lint,
 formatting, typechecks, codegen drift check, tests, and repository quality gates
 used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in
 `gates/`. Fix failures without weakening the gates or raising existing budgets.
+
+Successful full coverage checks automatically raise the floors in
+`gates/coverage-budgets.json`. Run `pnpm run check:coverage` or
+`pnpm run check:all`, then commit any budget changes. Each metric retains the
+existing 0.5 percentage point margin below its measured baseline, and floors
+never decrease. Failed checks leave the budgets untouched. CI checks the same
+ratchet and fails if an improvement has not been committed. `pnpm test:coverage`
+only generates the report; filtered or skipped runs cannot update floors through
+the automatic ratchet.
 
 Builds and typechecks use TypeScript 7 (`@typescript/native` aliases
 `typescript`). ESLint and Convex code generation still need the TypeScript 6

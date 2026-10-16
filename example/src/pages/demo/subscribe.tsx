@@ -9,10 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function StoreSubscribe() {
   const { currentUser } = useRole();
-  const subscriptions = useQuery(api.storefront.listStoreSubscriptions, {
-    sellerId:
-      currentUser.id as import("../../../convex/_generated/dataModel").Id<"users">,
-  });
+  const subscriptions = useQuery(
+    api.storefront.public.queries.listStoreSubscriptions,
+    {
+      sellerId:
+        currentUser.id as import("../../../convex/_generated/dataModel").Id<"users">,
+    },
+  );
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Subscriptions</h1>

@@ -36,7 +36,7 @@ import { ArrowRight, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
-import { selectPurchasablePrices } from "../../../convex/lib/marketplace";
+import { selectPurchasablePrices } from "../../../convex/marketplace/helpers";
 
 /**
  * BTS-46 — "one V2 account, configurations accrue" lifecycle demo, distinct
@@ -54,26 +54,32 @@ export function SellerMarketplaceAccount({
   const [searchParams] = useSearchParams();
   const purchaseSessionId = searchParams.get("purchase_session_id");
 
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
-  const products = useQuery(api.queries.listProductsWithPrices);
+  const products = useQuery(api.products.queries.listProductsWithPrices);
   const purchaseSession = useQuery(
-    api.queries.getCheckoutSessionByStripeId,
+    api.billing.public.queries.getCheckoutSessionByStripeId,
     purchaseSessionId ? { stripeSessionId: purchaseSessionId } : "skip",
   );
 
   const createOnboarding = useAction(
-    api.actions.createMarketplaceAccountOnboarding,
+    api.marketplace.accountActions.createMarketplaceAccountOnboarding,
   );
-  const getAccountLink = useAction(api.actions.getAccountLinkWithStatus);
-  const addCustomerConfig = useAction(api.actions.addMarketplaceCustomerConfig);
+  const getAccountLink = useAction(
+    api.accounts.actions.getAccountLinkWithStatus,
+  );
+  const addCustomerConfig = useAction(
+    api.marketplace.accountActions.addMarketplaceCustomerConfig,
+  );
   const addRecipientConfig = useAction(
-    api.actions.addMarketplaceRecipientConfig,
+    api.marketplace.accountActions.addMarketplaceRecipientConfig,
   );
-  const addMerchantConfig = useAction(api.actions.addMarketplaceMerchantConfig);
+  const addMerchantConfig = useAction(
+    api.marketplace.accountActions.addMarketplaceMerchantConfig,
+  );
   const createSelfPurchase = useAction(
-    api.actions.createMarketplaceSelfPurchaseCheckout,
+    api.marketplace.accountActions.createMarketplaceSelfPurchaseCheckout,
   );
 
   const [selectedPriceId, setSelectedPriceId] = useState<string | undefined>(

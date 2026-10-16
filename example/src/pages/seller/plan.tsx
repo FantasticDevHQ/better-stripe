@@ -12,20 +12,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { type StorePlanId } from "../../../convex/lib/storePlans";
+import { type StorePlanId } from "../../../convex/storePlans/helpers";
 
 export function SellerPlan() {
   const { currentUser } = useRole();
   const sellerId = currentUser.id as Id<"users">;
   const state = useQuery(
-    api.storePlanBilling.getState,
+    api.storePlans.billing.public.queries.getState,
     sellerId ? { sellerId } : "skip",
   );
-  const plans = useQuery(api.storePlanPricing.list, {});
-  const publishableKey = useQuery(api.queries.getPublishableKey);
-  const createCheckout = useAction(api.storePlanActions.createCheckout);
-  const manage = useAction(api.storePlanActions.manage);
-  const confirm = useAction(api.storePlanActions.confirmCheckout);
+  const plans = useQuery(api.storePlans.pricing.public.queries.list, {});
+  const publishableKey = useQuery(api.stripe.public.queries.getPublishableKey);
+  const createCheckout = useAction(
+    api.storePlans.public.actions.createCheckout,
+  );
+  const manage = useAction(api.storePlans.public.actions.manage);
+  const confirm = useAction(api.storePlans.public.actions.confirmCheckout);
   const [params] = useSearchParams();
   const sessionId = params.get("session_id");
   const {

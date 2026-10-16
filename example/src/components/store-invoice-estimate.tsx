@@ -9,7 +9,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 export function StoreInvoiceEstimate({ sellerId }: { sellerId: Id<"users"> }) {
-  const estimate = useAction(api.storeInvoiceActions.estimate);
+  const estimate = useAction(api.sellerCosts.invoices.actions.estimate);
   const {
     invoice,
     isPending: busy,

@@ -17,11 +17,11 @@ import { api } from "../../convex/_generated/api";
 /** The seller's disputes (optionally scoped to their store account). */
 export const useDisputes = createUseDisputes(
   useQuery,
-  api.queries.listDisputes,
+  api.connect.queries.listDisputes,
 );
 
 /** A single dispute with its evidence-due countdown, for DisputeDetail. */
 export const useDisputeWithCountdown = createUseDisputeWithCountdown(
   useQuery,
-  api.queries.getDisputeWithCountdown,
+  api.connect.queries.getDisputeWithCountdown,
 );

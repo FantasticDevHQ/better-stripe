@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.30.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.2...v0.30.3) (2026-10-16)
+
+
+### Refactoring
+
+* organize Convex domains and ratchet coverage floors ([#231](https://github.com/FantasticDevHQ/better-stripe/issues/231)) ([c881b44](https://github.com/FantasticDevHQ/better-stripe/commit/c881b44b611f6d979df71a4b540466c0cf28eddf))
+
 ## [0.30.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.1...v0.30.2) (2026-10-16)
 
 ### Bug Fixes

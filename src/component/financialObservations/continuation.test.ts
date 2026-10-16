@@ -400,3 +400,46 @@ it("reservation replay holds completed contradictory traversal without truncatin
     continuation: { state: "held", nextLeg: 251 },
   });
 });
+it.each([
+  { state: "complete" as const, nextLeg: 100, validatedLegs: 0 },
+  { state: "complete" as const, nextLeg: 100, validatedLegs: 100 },
+  { state: "indexing" as const, nextLeg: 100, validatedLegs: 1 },
+  { state: "validating" as const, nextLeg: 100, validatedLegs: 0 },
+])(
+  "holds impossible $state cursor/count combinations",
+  async (continuation) => {
+    const t = convexTest(schema, modules);
+    const row = await t.mutation(reserve, allocation());
+    const first = await t.mutation(resume, {
+      allocationId: row._id,
+      expectedGeneration: 1,
+    });
+    await t.run((ctx) =>
+      ctx.db.patch("financialSourceObservations", first.observation._id, {
+        continuation,
+      }),
+    );
+    const result = await t.mutation(resume, {
+      allocationId: row._id,
+      expectedGeneration: first.observation.generation,
+    });
+    expect(result.observation).toMatchObject({
+      isContradictory: true,
+      continuation: { state: "held" },
+    });
+  },
+);
+it("does not expose caller-controlled cursor or completion state through the public resume validator", async () => {
+  const t = convexTest(schema, modules);
+  const row = await t.mutation(reserve, allocation());
+  await expect(
+    t.mutation(resume, {
+      allocationId: row._id,
+      expectedGeneration: 1,
+      continuation: { state: "complete", nextLeg: 251, validatedLegs: 251 },
+    }),
+  ).rejects.toThrow();
+  expect(
+    (await t.query(source, { allocationId: row._id })).observation,
+  ).toMatchObject({ generation: 1, indexedLegCount: 0 });
+});

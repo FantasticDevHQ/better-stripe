@@ -146,7 +146,10 @@ export async function continueSettlementObservation(
         cursor.validatedLegs > cursor.nextLeg ||
         (cursor.state === "indexing" && cursor.validatedLegs !== 0) ||
         (cursor.state === "validating" &&
-          cursor.nextLeg !== row.transfers.length)
+          cursor.nextLeg !== row.transfers.length) ||
+        (cursor.state === "complete" &&
+          (cursor.nextLeg !== row.transfers.length ||
+            cursor.validatedLegs !== row.transfers.length))
       : marker.indexedLegCount !== 0)
   )
     return hold(ctx, marker);

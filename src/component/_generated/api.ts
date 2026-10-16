@@ -103,6 +103,7 @@ import type * as refundHistory_commandBinding from "../refundHistory/commandBind
 import type * as refundHistory_commandEvidence from "../refundHistory/commandEvidence.js";
 import type * as refundHistory_commandEvidenceValidator from "../refundHistory/commandEvidenceValidator.js";
 import type * as refundHistory_commandFields from "../refundHistory/commandFields.js";
+import type * as refundHistory_mutations from "../refundHistory/mutations.js";
 import type * as refundHistory_queries from "../refundHistory/queries.js";
 import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js";
 import type * as settlement_clawbacks from "../settlement/clawbacks.js";
@@ -215,6 +216,7 @@ const fullApi: ApiFromModules<{
   "refundHistory/commandEvidence": typeof refundHistory_commandEvidence;
   "refundHistory/commandEvidenceValidator": typeof refundHistory_commandEvidenceValidator;
   "refundHistory/commandFields": typeof refundHistory_commandFields;
+  "refundHistory/mutations": typeof refundHistory_mutations;
   "refundHistory/queries": typeof refundHistory_queries;
   "settlement/clawbackSchema": typeof settlement_clawbackSchema;
   "settlement/clawbacks": typeof settlement_clawbacks;

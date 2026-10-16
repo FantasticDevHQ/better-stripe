@@ -5393,6 +5393,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       };
     };
     refundHistory: {
+      mutations: {
+        normalizeRefundCommandBindings: FunctionReference<
+          "mutation",
+          "internal",
+          { limit: number },
+          { hasMore: boolean; normalized: number },
+          Name
+        >;
+      };
       queries: {
         getRefundCommandEvidence: FunctionReference<
           "query",

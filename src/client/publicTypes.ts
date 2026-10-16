@@ -70,3 +70,11 @@ export type {
   RefundCommandNormalizationOptions,
   RefundCommandNormalizationResult,
 } from "./connect/refundCommandNormalization.js";
+export type {
+  OperationEvidenceHeader,
+  OperationEvidencePayload,
+  OperationEvidenceHeaderResult,
+  OperationEvidencePayloadResult,
+  OperationEvidenceCaptureResult,
+  OperationEvidencePage,
+} from "./operationEvidence.js";

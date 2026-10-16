@@ -1,3 +1,7 @@
+import {
+  payloadsTable as operationEvidencePayloads,
+  headersTable as operationEvidenceHeaders,
+} from "./operationEvidence/schema.js";
 import { transferBatchReferencesTable } from "./financialObservations/transferReferenceSchema.js";
 import {
   transferObservationsTable,
@@ -74,6 +78,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  operationEvidencePayloads,
+  operationEvidenceHeaders,
   financialTransferObservations: transferObservationsTable,
   financialTransferBatches: transferBatchesTable,
   financialTransferBatchReferences: transferBatchReferencesTable,

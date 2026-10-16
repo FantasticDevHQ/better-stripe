@@ -157,3 +157,72 @@ reference from an actual old-public 1,001-transfer claim/release and a current
 1,000-transfer mixed-owner claim across separate committed calls, while retaining
 all financial rows and amounts. No provider operation or financial-attempt
 admission is part of this continuation API.
+
+## Lossless operation evidence maintenance
+
+`stripe.operationEvidence` is explicit trusted-host maintenance for actual
+persisted reversal-operation documents. Authenticate the host actor and derive
+the authorized source document before calling it. A source ID, selector, digest
+or cursor is not end-user authorization. The host selects an existing document;
+it cannot supply invented financial bytes.
+
+```ts
+const observed = await stripe.operationEvidence.capture(ctx, {
+  sourceId: authorizedPersistedOperation._id,
+});
+const page = await stripe.operationEvidence.headers(ctx, {
+  paginationOpts: { numItems: 25, cursor: previousCursor },
+});
+if (observed.header) {
+  const original = await stripe.operationEvidence.original(ctx, {
+    headerId: observed.header._id,
+  });
+  const latestObserved = await stripe.operationEvidence.latest(ctx, {
+    headerId: observed.header._id,
+  });
+}
+```
+
+Original means the first trusted observation, not provider creation or
+historical owner proof. Separate headerless documents retain the exact admitted
+source fields for original and latest observed data. Compact headers retain the
+original source reference, first-observed provenance, fingerprints and
+generation. Payload documents add no annotation or duplicated exposure envelope:
+a legal source can already be exactly the native 1 MiB document limit. Canonical
+Convex encoding preserves special floats, optional presence and array order
+while normalizing recursive object-key order.
+
+Stable maintenance replay changes no evidence generation. Changed source data
+updates the latest observed payload and global operation generation atomically;
+original data and identity never redirect. Contradictory original identity stays
+explicit, with actual latest bytes retained. Deletion after observation does not
+erase the retained payloads. A source missing before observation creates no
+evidence. Missing or damaged evidence is not silently recreated.
+
+Header pages contain compact references only, up to 100 per request with fixed
+read bounds. They never fan out to payloads. Original and latest hydration are
+separate one-payload reads. `resolve(ctx, { selector, value })` accepts either
+`operationId` or `sourceChargeId`, without narrowing admitted financial strings.
+It reads at most two compact digest candidates and hydrates only one unique
+original payload to verify raw selector equality. Missing, reused, colliding or
+otherwise ambiguous selectors return a null header and UNKNOWN. A source charge
+with multiple observed operations is ambiguous for this unique resolver; it is
+not an exact-scope page. There is no full-payload fallback scan or repin.
+
+Every response reports `coverage: "unknown"` and the current maintenance
+`evidenceGeneration`. This is the current maintenance-evidence generation only.
+Latest means latest **observed** data. Financial claim,
+release and exposure writers do not invoke this maintenance automatically.
+Changes that have not been explicitly captured therefore need not change its
+generation. No drained-page or source-generation token certifies complete
+history, current financial state, liabilities, ownership or closure readiness.
+
+Maintenance is atomic and can abort at native aggregate read/write or rate
+limits. It does not change financial source rows, swallow a resource abort as
+success, or promise unlimited backlog capacity. Per-document lossless storage
+does not prove that adding future hooks preserves aggregate financial
+transaction capacity. That requires separate baseline-versus-hook measurement
+before lifecycle integration. No financial writer hooks, destination/owner slice
+index, provider operations, admission fence or automatic backfill is included.
+Lifecycle/frontier integrations need separate raw-writer hooks and both financial
+fact and evidence invalidators before claiming destination or owner coverage.

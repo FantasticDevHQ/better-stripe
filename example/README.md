@@ -1460,3 +1460,12 @@ completion always retains UNKNOWN coverage. Reuse the packaged
 [transfer continuation contract](../docs/financial-observations.md#resume-every-retained-transfer-reference)
 for ownership snapshots, inter-commit invalidation and authority limits. No money
 operation or account-close control is enabled by these diagnostics.
+
+For lossless source evidence, trusted hosts can explicitly call
+`stripe.operationEvidence.capture` with an authorized persisted reversal-operation
+document ID, page compact `headers`, and hydrate `original` or `latest` separately.
+`resolve` verifies unique original selectors after bounded digest lookup. Reuse
+the [packaged maintenance contract](../docs/financial-observations.md#lossless-operation-evidence-maintenance)
+for native byte limits, first-observed meaning, unavailable/collision handling
+and latest-observed generations. This is server-only explicit maintenance, with
+no financial writer hooks, provider action, automatic backfill or closure claim.

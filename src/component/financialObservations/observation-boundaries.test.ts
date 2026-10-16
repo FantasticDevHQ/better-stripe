@@ -406,3 +406,61 @@ it.each([
     ).toEqual(originalLegs);
   },
 );
+
+it.each([false, true])(
+  "holds missing atomic slots without recreating or repinning history (owner changed: %s)",
+  async (hasChangedOwner) => {
+    const t = convexTest(schema, modules);
+    if (hasChangedOwner)
+      await t.mutation(register, logical("opaque_1", "historical-owner"));
+    const args = allocation("ch_missing_slot", 2);
+    const row = await t.mutation(reserve, args);
+    await t.run(async (ctx) => {
+      const leg = await ctx.db
+        .query("financialSourceLegs")
+        .withIndex("by_allocation_id_and_leg_index", (q) =>
+          q.eq("allocationId", row._id).eq("legIndex", 1),
+        )
+        .unique();
+      await ctx.db.delete("financialSourceLegs", leg!._id);
+      if (hasChangedOwner) {
+        const registration = await ctx.db
+          .query("financialOwnership")
+          .withIndex("by_bucket_key", (q) => q.eq("bucketKey", "opaque_1"))
+          .unique();
+        await ctx.db.delete("financialOwnership", registration!._id);
+      }
+    });
+    if (hasChangedOwner)
+      await t.mutation(register, logical("opaque_1", "replacement-owner"));
+    const originalLegs = await t.run((ctx) =>
+      ctx.db
+        .query("financialSourceLegs")
+        .withIndex("by_allocation_id_and_leg_index", (q) =>
+          q.eq("allocationId", row._id),
+        )
+        .take(101),
+    );
+    expect(await t.mutation(reserve, args)).toEqual(row);
+    const after = await t.query(source, { allocationId: row._id });
+    expect(after).toMatchObject({
+      coverage: "unknown",
+      observation: { isContradictory: true },
+    });
+    expect(
+      await t.run((ctx) =>
+        ctx.db
+          .query("financialSourceLegs")
+          .withIndex("by_allocation_id_and_leg_index", (q) =>
+            q.eq("allocationId", row._id),
+          )
+          .take(101),
+      ),
+    ).toEqual(originalLegs);
+    expect(
+      await t.query(owner, { userId: "replacement-owner", paginationOpts }),
+    ).toMatchObject({ coverage: "unknown", page: [] });
+    expect(await t.mutation(reserve, args)).toEqual(row);
+    expect(await t.query(source, { allocationId: row._id })).toEqual(after);
+  },
+);

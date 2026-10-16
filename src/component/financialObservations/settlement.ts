@@ -111,7 +111,14 @@ export async function observeSettlementAllocation(
       q.eq("sourceChargeId", row.sourceChargeId),
     )
     .take(2);
-  const hasInvalidLegs = hasInvalidLegIdentity(row, oldLegs);
+  const hasInvalidLegs =
+    hasInvalidLegIdentity(row, oldLegs) ||
+    (prior !== undefined &&
+      (prior.indexedLegCount !== oldLegs.length ||
+        (!prior.isOverflow &&
+          !prior.isContradictory &&
+          (prior.legCount !== row.transfers.length ||
+            oldLegs.length !== row.transfers.length))));
   const isContradictory =
     hasInvalidLegs ||
     sources.length !== 1 ||

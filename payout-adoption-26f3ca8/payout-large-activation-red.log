@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (3 tests | 1 failed) 7406ms
+   × activates an adopted 205-source and 101-payout history then releases only 1040 unpaid cents 3387ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > activates an adopted 205-source and 101-payout history then releases only 1040 unpaid cents
+AssertionError: expected { status: 'migration_required', …(2) } to match object { status: 'prepared' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "status": "prepared",
++   "status": "migration_required",
+  }
+
+ ❯ src/client/connect/payoutLargeAdoption.test.ts:188:45
+    186|     adoptExistingBalance: true as const,
+    187|   };
+    188|   expect(await client.prepare(s.ctx, opts)).toMatchObject({
+       |                                             ^
+    189|     status: "prepared",
+    190|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  06:21:59
+   Duration  7.86s (tests 95%, transform 2%, import 2%)
+

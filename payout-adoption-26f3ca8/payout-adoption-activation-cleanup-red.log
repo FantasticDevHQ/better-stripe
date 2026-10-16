@@ -1,0 +1,64 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (11 tests | 1 failed | 10 skipped) 396ms
+   × cleans an invalidated activation collection so a fresh proof can be collected 395ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > cleans an invalidated activation collection so a fresh proof can be collected
+AssertionError: expected [ { …(28) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "_creationTime": 1792107482889,
++     "_id": "00000000000010206payoutSnapshots",
++     "accountId": "acct_recipient",
++     "allocationCount": 0,
++     "allocationCursor": "[]",
++     "claimCount": 0,
++     "claimCursor": "[]",
++     "deferredPositiveChanges": false,
++     "expectedRevision": 0,
++     "expiresAt": 1792193882889,
++     "feeCount": 0,
++     "feeCursor": "[]",
++     "initialRevision": 0,
++     "initialRiskRevision": 0,
++     "observedRevision": 0,
++     "operationKey": "bs:adopt:b58c477b0f8e4405683995a17aa5959a7bb9db6e5905b3e559e73764548f6717",
++     "ownerKey": "owner",
++     "phase": "invalidated",
++     "policyMode": "stripe_managed",
++     "policyOperationKey": "enable",
++     "providerChanged": false,
++     "readOnly": true,
++     "reason": "liability_changed",
++     "riskRevision": 0,
++     "sourceCount": 205,
++     "sourceCursor": "[]",
++     "sourceFence": 1792107482856.0068,
++     "step": 13,
++   },
++ ]
+
+ ❯ src/client/connect/payoutLargeAdoption.test.ts:511:5
+    509|   expect(
+    510|     await s.t.run((ctx) => ctx.db.query("payoutSnapshots").collect()),
+    511|   ).toEqual([]);
+       |     ^
+    512|   const fresh = await collect();
+    513|   expect(fresh).toMatchObject({ status: "verified" });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 skipped (11)
+   Start at  06:38:02
+   Duration  765ms (tests 58%, transform 22%, import 15%, environment 5%)
+

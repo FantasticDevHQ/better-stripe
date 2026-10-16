@@ -1,0 +1,530 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+      Coverage enabled with v8
+
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > discovers an exact attempted payout after a timeout and records actual principal and fees once 122ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > keeps unknown attempts held when no payout can be identified, including after idempotency expiry 8ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > does not adopt a partial scan, duplicate matches, or a changing provider history 7ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > follows provider cursors before adopting the only matching payout 8ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > keeps failed payouts reserved without a mature return receipt 6ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > reconciles a paid payout that later fails and returns, preserving non-refundable fees 14ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects foreign owner, changed payout identity, money mismatch, missing markers, and old historical payouts 31ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > keeps over-refunded fees explicitly unallocated 5ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > never creates another payout after a persistence outage 7ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > is available through the public payout policy client 34ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects an invalid discovery budget 0 before provider I/O 4ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects an invalid discovery budget 0.5 before provider I/O 4ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects an invalid discovery budget 101 before provider I/O 4ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects an invalid discovery budget NaN before provider I/O 4ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > does not read Stripe for missing, unattempted, or terminal claims 11ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > does not silently adopt a different source balance rail 5ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > serializes concurrent outcome reconciliation without duplicate fees or principal 8ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > rejects a payout sent to a different bank than the immutable claim 5ms
+ ✓ |client| src/client/connect/payoutReconciliation.test.ts > reconciles an explicitly adopted automatic payout without a package claim marker 7ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > verifies all 205 existing funding sources through public adoption without a lifetime cutoff 530ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > atomically adopts 101 prior payouts against 205 verified sources and replays without duplicate principal 1923ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > activates an adopted 205-source and 101-payout history then releases only 1040 unpaid cents 5761ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > renews verified source observations after a slow complete adoption history scan 386ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > bounds concurrent source receipt verification to five while making progress 461ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > rejects positive funding added after verification before historical import, without partial allocations 394ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > keeps every currency's activation observations fresh after a complete slow multi-currency proof 1160ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > resumes a pending adoption collection without duplicating prior paid principal 1902ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > discards a liability-invalidated collection and allows a fresh non-paying adoption 2461ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > imports more than 100 provider payouts even when only two sources funded them 182ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > cleans an invalidated activation collection so a fresh proof can be collected 597ms
+ ✓ |client| src/client/connect/payoutLargeAdoption.test.ts > retains each historical payout's complete allocated-source proof without copying unrelated proofs 803ms
+
+ Test Files  2 passed (2)
+      Tests  31 passed (31)
+   Start at  06:53:12
+   Duration  18.04s (tests 97%, transform 1%, import 1%)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   14.61 |    12.51 |    9.54 |   14.97 |                   
+ example/convex    |       0 |        0 |       0 |       0 |                   
+  actions.ts       |       0 |        0 |       0 |       0 | 24-717            
+  adminTesting.ts  |       0 |        0 |       0 |       0 | 39-355            
+  ...teDefaults.ts |       0 |        0 |       0 |       0 | 9-149             
+  ...teRecovery.ts |       0 |        0 |       0 |       0 | 18-100            
+  ...ingSandbox.ts |       0 |        0 |       0 |       0 | 7-100             
+  ...coveryJobs.ts |       0 |        0 |       0 |       0 | 5-44              
+  ...erySandbox.ts |       0 |        0 |       0 |       0 | 8-266             
+  ...liateSplit.ts |       0 |        0 |       0 |       0 | 12-80             
+  authz.ts         |       0 |        0 |       0 |       0 | 27-300            
+  ...utExamples.ts |       0 |        0 |       0 |       0 | 7-77              
+  ...nMigration.ts |       0 |      100 |       0 |       0 | 5-23              
+  convex.config.ts |       0 |      100 |     100 |       0 | 9-17              
+  crons.ts         |       0 |      100 |     100 |       0 | 3-10              
+  e2eCheckout.ts   |       0 |        0 |       0 |       0 | 9-110             
+  e2eMoney.ts      |       0 |        0 |       0 |       0 | 29-430            
+  ...edExamples.ts |       0 |        0 |       0 |       0 | 7-125             
+  http.ts          |       0 |        0 |       0 |       0 | 7-59              
+  marketplace.ts   |       0 |        0 |       0 |       0 | 35-413            
+  ...orkerScope.ts |       0 |        0 |       0 |       0 | 5-27              
+  payoutWorkers.ts |       0 |        0 |       0 |       0 | 6-148             
+  queries.ts       |       0 |        0 |       0 |       0 | 26-455            
+  readContracts.ts |       0 |      100 |       0 |       0 | 8-34              
+  ...youtPolicy.ts |       0 |        0 |       0 |       0 | 11-137            
+  ...entPayouts.ts |       0 |        0 |       0 |       0 | 6-53              
+  ...ryInvoices.ts |       0 |        0 |       0 |       0 | 8-146             
+  ...yMigration.ts |       0 |        0 |       0 |       0 | 7-115             
+  reset.ts         |       0 |        0 |       0 |       0 | 8-68              
+  ...xtureState.ts |       0 |        0 |       0 |       0 | 4-135             
+  ...oxFixtures.ts |       0 |        0 |       0 |       0 | 21-569            
+  ...oxRenewals.ts |       0 |        0 |       0 |       0 | 17-546            
+  seed.ts          |       0 |        0 |       0 |       0 | 22-600            
+  ...liateRates.ts |       0 |        0 |       0 |       0 | 16-179            
+  ...ostActions.ts |       0 |        0 |       0 |       0 | 11-162            
+  ...ostBilling.ts |       0 |        0 |       0 |       0 | 7-118             
+  setup.ts         |       0 |        0 |       0 |       0 | 20-47             
+  ...nceActions.ts |       0 |        0 |       0 |       0 | 7-87              
+  ...nceFunding.ts |       0 |        0 |       0 |       0 | 3-125             
+  ...lingEvents.ts |       0 |        0 |       0 |       0 | 6-111             
+  ...iceActions.ts |       0 |        0 |       0 |       0 | 18-81             
+  ...lanActions.ts |       0 |        0 |       0 |       0 | 15-307            
+  ...lanBilling.ts |       0 |        0 |       0 |       0 | 9-102             
+  ...lanPricing.ts |       0 |        0 |       0 |       0 | 18-223            
+  ...Settlement.ts |       0 |        0 |       0 |       0 | 19-412            
+  storefront.ts    |       0 |        0 |       0 |       0 | 9-177             
+  stripe.ts        |       0 |      100 |       0 |       0 | 6-117             
+  ...nLifecycle.ts |       0 |        0 |       0 |       0 | 2-9               
+  triggerLogger.ts |       0 |        0 |       0 |       0 | 13-66             
+  users.ts         |       0 |      100 |       0 |       0 | 5-29              
+ ...ple/convex/lib |       0 |        0 |       0 |       0 |                   
+  ...Commission.ts |       0 |      100 |     100 |       0 | 2-6               
+  balanceStripe.ts |       0 |      100 |     100 |       0 | 9                 
+  ...verySource.ts |       0 |        0 |       0 |       0 | 8-72              
+  marketplace.ts   |       0 |        0 |       0 |       0 | 31-71             
+  ...PolicyView.ts |       0 |      100 |     100 |       0 | 7-26              
+  ...alPurchase.ts |       0 |        0 |       0 |       0 | 13-59             
+  saleRecovery.ts  |       0 |        0 |       0 |       0 | 11-59             
+  ...ixturePlan.ts |       0 |        0 |       0 |       0 | 1-108             
+  ...eResources.ts |       0 |        0 |       0 |       0 | 15-112            
+  ...Validators.ts |       0 |      100 |     100 |       0 | 2-39              
+  sellerCosts.ts   |       0 |        0 |       0 |       0 | 9-18              
+  ...erRecovery.ts |       0 |      100 |       0 |       0 | 1-7               
+  storeCheckout.ts |       0 |        0 |       0 |       0 | 7-108             
+  ...Validators.ts |       0 |      100 |     100 |       0 | 4-54              
+  storePlans.ts    |       0 |        0 |       0 |       0 | 3-125             
+  ...eRecipient.ts |       0 |        0 |       0 |       0 | 17                
+  stripeClient.ts  |       0 |      100 |       0 |       0 | 4                 
+  ...CostSource.ts |       0 |        0 |       0 |       0 | 17-118            
+ example/src       |       0 |      100 |       0 |       0 |                   
+  App.tsx          |       0 |      100 |       0 |       0 | 42-53             
+  main.tsx         |       0 |      100 |     100 |       0 | 14-16             
+ ...src/components |       0 |        0 |       0 |       0 |                   
+  ...gurations.tsx |       0 |        0 |       0 |       0 | 15-33             
+  ...t-control.tsx |       0 |        0 |       0 |       0 | 22-213            
+  ...ery-panel.tsx |       0 |        0 |       0 |       0 | 26-120            
+  ...mand-menu.tsx |       0 |        0 |       0 |       0 | 17-73             
+  ...-fallback.tsx |       0 |      100 |       0 |       0 | 4                 
+  ...providers.tsx |       0 |        0 |       0 |       0 | 10-63             
+  app-shell.tsx    |       0 |        0 |       0 |       0 | 11-14             
+  ...rm-fields.tsx |       0 |        0 |       0 |       0 | 7-23              
+  ...out-frame.tsx |       0 |        0 |       0 |       0 | 17-41             
+  ...out-types.tsx |       0 |        0 |       0 |       0 | 22-70             
+  ...t-example.tsx |       0 |        0 |       0 |       0 | 15-84             
+  empty-state.tsx  |       0 |      100 |       0 |       0 | 4                 
+  ...-examples.tsx |       0 |        0 |       0 |       0 | 23-46             
+  nav-sidebar.tsx  |       0 |        0 |       0 |       0 | 14-153            
+  ...-examples.tsx |       0 |        0 |       0 |       0 | 25-268            
+  ...-checkout.tsx |       0 |        0 |       0 |       0 | 17-36             
+  ...t-receipt.tsx |       0 |        0 |       0 |       0 | 12-18             
+  ...icy-panel.tsx |       0 |        0 |       0 |       0 | 42-411            
+  ...w-summary.tsx |       0 |        0 |       0 |       0 | 6-37              
+  ...-switcher.tsx |       0 |        0 |       0 |       0 | 7-39              
+  seller-costs.tsx |       0 |        0 |       0 |       0 | 10-43             
+  ...-checkout.tsx |       0 |        0 |       0 |       0 | 22-47             
+  ...-controls.tsx |       0 |        0 |       0 |       0 | 6-26              
+  ...-env-vars.tsx |       0 |        0 |       0 |       0 | 11-56             
+  ...-estimate.tsx |       0 |        0 |       0 |       0 | 12-53             
+  ...nt-source.tsx |       0 |        0 |       0 |       0 | 8-72              
+  ...low-table.tsx |       0 |        0 |       0 |       0 | 33-51             
+ .../components/ui |       0 |        0 |       0 |       0 |                   
+  alert.tsx        |       0 |      100 |       0 |       0 | 6-67              
+  badge.tsx        |       0 |        0 |       0 |       0 | 6-35              
+  button.tsx       |       0 |        0 |       0 |       0 | 1-54              
+  card.tsx         |       0 |        0 |       0 |       0 | 14-114            
+  dialog.tsx       |       0 |        0 |       0 |       0 | 9-134             
+  input.tsx        |       0 |      100 |       0 |       0 | 7                 
+  label.tsx        |       0 |        0 |       0 |       0 | 14                
+  progress.tsx     |       0 |      100 |       0 |       0 | 4                 
+  select.tsx       |       0 |        0 |       0 |       0 | 1-177             
+  separator.tsx    |       0 |        0 |       0 |       0 | 9                 
+  skeleton.tsx     |       0 |      100 |       0 |       0 | 4                 
+  table.tsx        |       0 |        0 |       0 |       0 | 6-125             
+  tabs.tsx         |       0 |        0 |       0 |       0 | 1-72              
+ example/src/lib   |       0 |        0 |       0 |       0 |                   
+  ...return-url.ts |       0 |        0 |       0 |       0 | 19                
+  dispute-hooks.ts |       0 |      100 |     100 |       0 | 18-24             
+  format-amount.ts |       0 |      100 |       0 |       0 | 2                 
+  ...navigation.ts |       0 |        0 |       0 |       0 | 7-63              
+  ...return-url.ts |       0 |      100 |       0 |       0 | 4                 
+  stripe-hooks.ts  |       0 |        0 |       0 |       0 | 18-50             
+  utils.ts         |       0 |      100 |       0 |       0 | 3-8               
+ example/src/pages |       0 |        0 |       0 |       0 |                   
+  affiliate.tsx    |       0 |        0 |       0 |       0 | 26-260            
+  ...ut-status.tsx |       0 |        0 |       0 |       0 | 16-123            
+  checkout.tsx     |       0 |        0 |       0 |       0 | 14-40             
+  landing.tsx      |       0 |        0 |       0 |       0 | 19-84             
+ ...rc/pages/admin |       0 |        0 |       0 |       0 |                   
+  ...ingActions.ts |       0 |      100 |     100 |       0 | 8                 
+  ...-recovery.tsx |       0 |        0 |       0 |       0 | 17-146            
+  index.tsx        |       0 |        0 |       0 |       0 | 17-108            
+  products.tsx     |       0 |        0 |       0 |       0 | 42-539            
+  setup.tsx        |       0 |        0 |       0 |       0 | 40-502            
+  store-plans.tsx  |       0 |        0 |       0 |       0 | 24-169            
+  ...criptions.tsx |       0 |        0 |       0 |       0 | 26-102            
+  testing.tsx      |       0 |        0 |       0 |       0 | 35-314            
+  webhooks.tsx     |       0 |        0 |       0 |       0 | 36-158            
+ ...ages/dashboard |       0 |        0 |       0 |       0 |                   
+  billing.tsx      |       0 |        0 |       0 |       0 | 34-560            
+  index.tsx        |       0 |        0 |       0 |       0 | 14-49             
+  invoices.tsx     |       0 |        0 |       0 |       0 | 9-30              
+  ...t-methods.tsx |       0 |        0 |       0 |       0 | 25-161            
+ ...src/pages/demo |       0 |        0 |       0 |       0 |                   
+  ...-recovery.tsx |       0 |        0 |       0 |       0 | 7-37              
+  allocation.tsx   |       0 |      100 |       0 |       0 | 4-52              
+  ...on-charge.tsx |       0 |        0 |       0 |       0 | 16-223            
+  ...-earnings.tsx |       0 |        0 |       0 |       0 | 28-179            
+  subscribe.tsx    |       0 |        0 |       0 |       0 | 11-43             
+ ...es/marketplace |       0 |        0 |       0 |       0 |                   
+  split.tsx        |       0 |        0 |       0 |       0 | 52-184            
+ ...c/pages/seller |       0 |        0 |       0 |       0 |                   
+  account.tsx      |       0 |        0 |       0 |       0 | 29-188            
+  disputes.tsx     |       0 |        0 |       0 |       0 | 56-347            
+  index.tsx        |       0 |        0 |       0 |       0 | 24-151            
+  ...e-account.tsx |       0 |        0 |       0 |       0 | 52-518            
+  onboarding.tsx   |       0 |        0 |       0 |       0 | 43-300            
+  payouts.tsx      |       0 |        0 |       0 |       0 | 29-257            
+  plan.tsx         |       0 |        0 |       0 |       0 | 18-131            
+  products.tsx     |       0 |        0 |       0 |       0 | 47-551            
+  refunds.tsx      |       0 |        0 |       0 |       0 | 36-457            
+  sales.tsx        |       0 |        0 |       0 |       0 | 10-36             
+ .../src/providers |       0 |        0 |       0 |       0 |                   
+  app-theme.tsx    |       0 |        0 |       0 |       0 | 11-53             
+  role-context.tsx |       0 |        0 |       0 |       0 | 38-171            
+  use-theme.ts     |       0 |        0 |       0 |       0 | 8-12              
+ src               |       0 |      100 |       0 |       0 |                   
+  test.ts          |       0 |      100 |       0 |       0 | 5                 
+ src/client        |    15.6 |    24.07 |    6.82 |   16.19 |                   
+  ...teRecovery.ts |       0 |        0 |       0 |       0 | 32-166            
+  apiVersion.ts    |       0 |        0 |       0 |       0 | 4-16              
+  ...ncy-format.ts |       0 |        0 |       0 |       0 | 9-25              
+  ...e-currency.ts |       0 |        0 |       0 |       0 | 3-112             
+  ...utRequests.ts |       0 |        0 |       0 |       0 | 13-33             
+  ...y-invoices.ts |       0 |        0 |       0 |       0 | 5-175             
+  costRecovery.ts  |       0 |        0 |       0 |       0 | 88-276            
+  errors.ts        |       0 |        0 |       0 |       0 | 43-64             
+  helpers.ts       |   16.66 |       10 |      20 |   18.75 | 46-76,88          
+  index.ts         |       0 |        0 |       0 |       0 | 226-1855          
+  payoutPolicy.ts  |   53.93 |    55.11 |   53.33 |   57.14 | ...70,572,579,584 
+  previewRoutes.ts |       0 |        0 |       0 |       0 | 11-21             
+  readContracts.ts |       0 |      100 |       0 |       0 | 17-122            
+ ...iliateRecovery |       0 |        0 |       0 |       0 |                   
+  disputes.ts      |       0 |        0 |       0 |       0 | 27-61             
+  engine.ts        |       0 |        0 |       0 |       0 | 18-195            
+  payoutGate.ts    |       0 |        0 |       0 |       0 | 17-64             
+  provider.ts      |       0 |        0 |       0 |       0 | 10-121            
+  review.ts        |       0 |        0 |       0 |       0 | 14-94             
+  validators.ts    |       0 |      100 |     100 |       0 | 7-20              
+ ...client/billing |       0 |        0 |       0 |       0 |                   
+  ...nceFunding.ts |       0 |        0 |       0 |       0 | 15-182            
+  checkout.ts      |       0 |      100 |       0 |       0 | 15-93             
+  ...outRequest.ts |       0 |        0 |       0 |       0 | 25-344            
+  intents.ts       |       0 |        0 |       0 |       0 | 29-119            
+  ...icePreview.ts |       0 |        0 |       0 |       0 | 32-82             
+  invoices.ts      |       0 |        0 |       0 |       0 | 24-92             
+  ...edCheckout.ts |       0 |        0 |       0 |       0 | 12-138            
+  providerReads.ts |       0 |      100 |       0 |       0 | 16-29             
+  ...ncellation.ts |       0 |        0 |       0 |       0 | 5-6               
+  ...ionRouting.ts |       0 |        0 |       0 |       0 | 8-24              
+  subscriptions.ts |       0 |        0 |       0 |       0 | 36-629            
+ ...client/connect |   46.74 |    39.08 |   44.95 |   47.41 |                   
+  ...onReceipts.ts |       0 |        0 |       0 |       0 | 10-22             
+  disputes.ts      |       0 |        0 |       0 |       0 | 28-406            
+  ...ethodUtils.ts |       0 |        0 |       0 |       0 | 10-22             
+  ...entMethods.ts |       0 |        0 |       0 |       0 | 15-54             
+  ...ationProof.ts |   83.92 |     61.9 |      90 |   83.33 | ...24-130,144-145 
+  ...utAdoption.ts |   81.87 |    69.82 |   81.81 |   82.57 | ...30,340,349,369 
+  ...doptionAge.ts |   67.39 |    55.55 |   71.42 |      65 | ...33-42,55,60,73 
+  ...Allocation.ts |   73.77 |    59.57 |     100 |      75 | ...8,82,84,98,103 
+  ...estHelpers.ts |   76.66 |       60 |   77.41 |   77.77 | ...01,204,224-252 
+  ...ectedInput.ts |   86.11 |    80.64 |     100 |    87.5 | 29,77,81,84       
+  ...Collection.ts |   78.57 |       68 |     100 |   83.33 | 35,71             
+  ...tExecution.ts |   48.93 |    44.26 |     100 |   51.11 | ...40-145,172-195 
+  ...estHelpers.ts |       0 |        0 |       0 |       0 | 9-226             
+  payoutExpiry.ts  |       0 |        0 |       0 |       0 | 10-131            
+  payoutHistory.ts |   74.28 |    65.27 |   85.71 |   83.05 | ...06-107,138,143 
+  payoutPreview.ts |       0 |        0 |       0 |       0 | 30-90             
+  ...lification.ts |   81.66 |    59.18 |     100 |   83.33 | ...22,124,132,158 
+  payoutReceipt.ts |      70 |    74.25 |     100 |      70 | ...49,258,260,264 
+  ...nciliation.ts |   96.82 |    97.29 |     100 |   96.55 | 79,101            
+  ...utSnapshot.ts |       0 |        0 |       0 |       0 | 29-129            
+  payoutSync.ts    |       0 |        0 |       0 |       0 | 28-91             
+  ...estHelpers.ts |       0 |        0 |       0 |       0 | 8-80              
+  ...Validation.ts |       0 |        0 |       0 |       0 | 11-73             
+  payoutWorker.ts  |    9.37 |        0 |    12.5 |      10 | 47-185            
+  payouts.ts       |       0 |        0 |       0 |       0 | 44-163            
+  refundActor.ts   |       0 |        0 |       0 |       0 | 53-57             
+  ...dPrincipal.ts |       0 |        0 |       0 |       0 | 8-25              
+  refunds.ts       |       0 |        0 |       0 |       0 | 33-280            
+  ...lExecution.ts |       0 |        0 |       0 |       0 | 51-129            
+  ...ferReceipt.ts |   60.62 |    55.23 |   88.23 |   62.83 | ...80-381,405-407 
+  transfers.ts     |       0 |        0 |       0 |       0 | 33-564            
+ src/client/core   |       0 |        0 |       0 |       0 |                   
+  ...ntDefaults.ts |       0 |      100 |     100 |       0 | 4-10              
+  accountLinks.ts  |       0 |        0 |       0 |       0 | 22-202            
+  accountStatus.ts |       0 |        0 |       0 |       0 | 16-103            
+  accounts.ts      |       0 |        0 |       0 |       0 | 47-656            
+  config.ts        |       0 |      100 |       0 |       0 | 13-23             
+  descriptors.ts   |       0 |        0 |       0 |       0 | 12-45             
+  fees.ts          |       0 |        0 |       0 |       0 | 12-281            
+  idempotency.ts   |       0 |        0 |       0 |       0 | 4-10              
+ ...lient/products |       0 |        0 |       0 |       0 |                   
+  prices.ts        |       0 |        0 |       0 |       0 | 35-203            
+  products.ts      |       0 |        0 |       0 |       0 | 36-337            
+ ...ent/settlement |       0 |        0 |       0 |       0 |                   
+  allocation.ts    |       0 |        0 |       0 |       0 | 25-100            
+  commissions.ts   |       0 |        0 |       0 |       0 | 37-120            
+  execution.ts     |       0 |        0 |       0 |       0 | 47-180            
+  ...ssingCosts.ts |       0 |        0 |       0 |       0 | 69-313            
+  ...nciliation.ts |       0 |        0 |       0 |       0 | 12-135            
+  settleSale.ts    |       0 |        0 |       0 |       0 | 32-58             
+  verifiedSale.ts  |       0 |        0 |       0 |       0 | 23-154            
+ src/client/utils  |       0 |        0 |       0 |       0 |                   
+  data.ts          |       0 |      100 |       0 |       0 | 17                
+  owner.ts         |       0 |        0 |       0 |       0 | 21-30             
+  ...shboardUrl.ts |       0 |        0 |       0 |       0 | 1-67              
+  ...kEndpoints.ts |       0 |        0 |       0 |       0 | 15-320            
+ ...lient/webhooks |    5.35 |      2.6 |       4 |    5.27 |                   
+  asyncHooks.ts    |       0 |      100 |       0 |       0 | 8-37              
+  ...teRecovery.ts |       0 |        0 |       0 |       0 | 16-66             
+  handler.ts       |       0 |        0 |       0 |       0 | 29-292            
+  helpers.ts       |   43.05 |    26.78 |   22.22 |    45.9 | ...25-232,265-294 
+  hooks.ts         |       0 |        0 |       0 |       0 | 19-175            
+  index.ts         |       0 |        0 |       0 |       0 | 37-43             
+  ...nciliation.ts |       0 |        0 |       0 |       0 | 24-71             
+  ...estHelpers.ts |       0 |        0 |       0 |       0 | 22-132            
+  processors.ts    |       0 |        0 |       0 |       0 | 36-1112           
+  v2.ts            |       0 |        0 |       0 |       0 | 28-137            
+ src/component     |       0 |      100 |     100 |       0 |                   
+  convex.config.ts |       0 |      100 |     100 |       0 | 4                 
+ ...iliateEarnings |       0 |        0 |       0 |       0 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 10-194            
+ ...filiatePayouts |   16.98 |    13.55 |      30 |   17.64 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 5-119             
+  queries.ts       |       0 |      100 |       0 |       0 | 10-25             
+  ...pientGuard.ts |      90 |    88.88 |     100 |      90 | 22                
+ ...iliateRecovery |   14.83 |     2.45 |    9.09 |   15.33 |                   
+  accounting.ts    |   46.42 |     8.33 |    37.5 |   46.42 | ...4,64-67,78-104 
+  mutations.ts     |       0 |        0 |       0 |       0 | 8-273             
+  queries.ts       |       0 |        0 |       0 |       0 | 11-133            
+ ...ponent/billing |    8.33 |        0 |       0 |    8.78 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 16-154            
+  queries.ts       |       0 |        0 |       0 |       0 | 18-387            
+ ...ponent/connect |   17.75 |     1.13 |    4.16 |   18.39 |                   
+  mutations.ts     |   13.51 |     3.94 |    9.09 |   13.63 | ...09-319,384-455 
+  payoutWrites.ts  |       0 |        0 |       0 |       0 | 9-24              
+  queries.ts       |   16.66 |        0 |    4.54 |   17.07 | ...00-514,538-546 
+  ...rsalClaims.ts |    3.22 |        0 |       0 |    3.38 | 68-220            
+  ...iagnostics.ts |    3.57 |        0 |       0 |    4.54 | 11-57             
+  ...alReceipts.ts |    3.03 |        0 |       0 |    3.03 | 13-62,94-145      
+ ...component/core |     7.6 |        0 |       0 |    7.77 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 17-179            
+  queries.ts       |       0 |        0 |       0 |       0 | 10-98             
+  resetSafety.ts   |       0 |        0 |       0 |       0 | 13-80             
+ ...t/costRecovery |   25.35 |    11.36 |    27.5 |   25.72 |                   
+  claims.ts        |   42.85 |    35.89 |   66.66 |      45 | 31,37-53,81-110   
+  completion.ts    |     2.7 |        0 |       0 |    2.77 | 19-88             
+  helpers.ts       |    62.5 |       40 |   66.66 |   65.51 | 6,11,63,67-82     
+  imports.ts       |    3.44 |        0 |       0 |    3.44 | 12-73             
+  mutations.ts     |   31.25 |      3.7 |      20 |   31.25 | 23,52-72,85-115   
+  queries.ts       |       0 |        0 |       0 |       0 | 20-106            
+  reservations.ts  |    1.53 |        0 |       0 |    1.58 | 20-163            
+ ...onent/earnings |   25.53 |    27.77 |   29.41 |   26.96 |                   
+  arithmetic.ts    |   71.42 |       75 |     100 |   71.42 | 4,8               
+  legacyReads.ts   |       0 |        0 |       0 |       0 | 8-58              
+  mutations.ts     |       0 |        0 |       0 |       0 | 6-19              
+  reads.ts         |       0 |        0 |       0 |       0 | 4-46              
+  triggers.ts      |   58.06 |       50 |   66.66 |      60 | 45-46,68,76-94    
+ src/component/lib |    9.52 |     7.89 |   11.11 |   10.34 |                   
+  idempotency.ts   |       0 |      100 |       0 |       0 | 12-17             
+  paymentSeller.ts |       0 |        0 |       0 |       0 | 7-14              
+  reversals.ts     |       5 |     8.82 |      25 |    5.55 | 43-116            
+  stripeFactory.ts |       0 |        0 |       0 |       0 | 17-37             
+ ...t/payoutPolicy |   61.57 |    50.54 |   62.16 |    61.8 |                   
+  adoption.ts      |      72 |       75 |      75 |   70.83 | ...36,48,61,83,85 
+  expiry.ts        |       0 |        0 |       0 |       0 | 5-79              
+  helpers.ts       |   71.42 |    63.82 |   85.71 |   71.42 | 22,26-36,57,69,88 
+  mutations.ts     |   65.21 |    54.34 |      75 |   65.55 | ...31,241,262-297 
+  queries.ts       |   57.14 |    33.33 |      50 |   57.14 | 26,38-52          
+ .../payoutRelease |   67.39 |    64.84 |   72.36 |   68.84 |                   
+  adoption.ts      |   59.72 |    51.96 |      50 |   59.72 | ...65,240,260-275 
+  allocation.ts    |   81.81 |     64.1 |     100 |   86.53 | ...,80,91,126,129 
+  ...tionTotals.ts |   73.07 |    73.07 |     100 |   73.07 | ...36,40,42,49,53 
+  deadline.ts      |      50 |    27.27 |   66.66 |      50 | 18-21             
+  fees.ts          |      75 |    81.35 |     100 |   77.14 | ...44,50,58,61,67 
+  helpers.ts       |      80 |    85.88 |     100 |   79.62 | ...27,130,158,172 
+  mutations.ts     |   69.02 |    66.66 |   88.88 |    70.9 | ...12-317,325,335 
+  planning.ts      |   88.23 |    83.33 |     100 |   92.85 | 46                
+  preview.ts       |   18.75 |        0 |       0 |      20 | 66-113            
+  progress.ts      |    5.88 |        0 |       0 |    6.25 | 16-47             
+  queries.ts       |   61.76 |    45.45 |   55.55 |   63.63 | ...,72-74,107,109 
+ ...ayoutSnapshots |   77.24 |    70.98 |    91.3 |   81.18 |                   
+  adoption.ts      |   85.71 |    84.21 |     100 |   89.47 | 42,65             
+  financial.ts     |   84.21 |    89.65 |     100 |   85.29 | 40,46,69,85,115   
+  liabilities.ts   |      75 |    77.77 |     100 |      75 | 14,24             
+  localState.ts    |   66.32 |       65 |      80 |   71.42 | ...78-179,217-240 
+  mutations.ts     |    77.7 |     71.2 |     100 |   84.32 | ...94,211,228,245 
+  queries.ts       |   82.85 |    81.25 |     100 |   82.85 | 35,43,57,75,83,97 
+  revisions.ts     |   78.66 |    60.71 |      85 |   80.28 | ...83,207,229,258 
+ ...ent/payoutSync |   10.29 |        0 |       0 |   10.44 |                   
+  helpers.ts       |       0 |        0 |       0 |       0 | 10-82             
+  mutations.ts     |       0 |        0 |       0 |       0 | 11-100            
+  queries.ts       |       0 |      100 |     100 |       0 | 6                 
+ ...t/payoutWorker |    5.88 |        0 |       0 |    5.88 |                   
+  helpers.ts       |       0 |        0 |       0 |       0 | 8-29              
+  mutations.ts     |       0 |        0 |       0 |       0 | 12-200            
+  queries.ts       |       0 |      100 |       0 |       0 | 9-64              
+ ...onent/products |    9.41 |        0 |       0 |    9.41 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 10-71             
+  queries.ts       |       0 |        0 |       0 |       0 | 16-217            
+ .../refundHistory |       0 |        0 |       0 |       0 |                   
+  queries.ts       |       0 |        0 |       0 |       0 | 17-98             
+ ...ent/settlement |    7.19 |        0 |       0 |     7.4 |                   
+  clawbacks.ts     |       0 |        0 |       0 |       0 | 15-227            
+  mutations.ts     |       0 |        0 |       0 |       0 | 9-166             
+  queries.ts       |       0 |        0 |       0 |       0 | 11-65             
+ ...onent/webhooks |    8.69 |        0 |       0 |    9.09 |                   
+  mutations.ts     |       0 |        0 |       0 |       0 | 16-149            
+  queries.ts       |       0 |        0 |       0 |       0 | 10-41             
+ ...act/components |       0 |        0 |       0 |       0 |                   
+  ...oseButton.tsx |       0 |        0 |       0 |       0 | 1-81              
+  ...CloseCard.tsx |       0 |        0 |       0 |       0 | 1-72              
+  ...ateButton.tsx |       0 |        0 |       0 |       0 | 1-73              
+  ...reateCard.tsx |       0 |        0 |       0 |       0 | 1-114             
+  ...ginButton.tsx |       0 |        0 |       0 |       0 | 1-64              
+  ...LoginCard.tsx |       0 |        0 |       0 |       0 | 1-83              
+  ...ingButton.tsx |       0 |        0 |       0 |       0 | 1-73              
+  ...rdingCard.tsx |       0 |        0 |       0 |       0 | 1-102             
+  AddCardForm.tsx  |       0 |        0 |       0 |       0 | 1-67              
+  ...ortalLink.tsx |       0 |        0 |       0 |       0 | 1-83              
+  ...llingView.tsx |       0 |        0 |       0 |       0 | 1-182             
+  ...nProvider.tsx |       0 |        0 |       0 |       0 | 1-65              
+  ...erWithKey.tsx |       0 |        0 |       0 |       0 | 1-89              
+  ...outStatus.tsx |       0 |        0 |       0 |       0 | 1-69              
+  ...tProvider.tsx |       0 |        0 |       0 |       0 | 1-67              
+  ...uirements.tsx |       0 |        0 |       0 |       0 | 1-154             
+  ...atusBadge.tsx |       0 |        0 |       0 |       0 | 1-52              
+  ...hodDialog.tsx |       0 |        0 |       0 |       0 | 1-49              
+  ...uteDetail.tsx |       0 |        0 |       0 |       0 | 1-114             
+  DisputesList.tsx |       0 |        0 |       0 |       0 | 1-105             
+  ...gsSummary.tsx |       0 |        0 |       0 |       0 | 1-119             
+  ...dCheckout.tsx |       0 |      100 |       0 |       0 | 1-44              
+  ...dDisputes.tsx |       0 |        0 |       0 |       0 | 1-32              
+  EvidenceForm.tsx |       0 |        0 |       0 |       0 | 1-158             
+  ...lSelector.tsx |       0 |        0 |       0 |       0 | 1-38              
+  ...odActions.tsx |       0 |        0 |       0 |       0 | 1-54              
+  ...thodsList.tsx |       0 |        0 |       0 |       0 | 1-72              
+  ...tSchedule.tsx |       0 |        0 |       0 |       0 | 1-131             
+  PriceBadge.tsx   |       0 |        0 |       0 |       0 | 1-48              
+  PriceCard.tsx    |       0 |        0 |       0 |       0 | 1-83              
+  PricePicker.tsx  |       0 |        0 |       0 |       0 | 1-83              
+  ...Breakdown.tsx |       0 |        0 |       0 |       0 | 1-123             
+  ...eProvider.tsx |       0 |        0 |       0 |       0 | 1-75              
+  ...erWithKey.tsx |       0 |        0 |       0 |       0 | 1-83              
+  ...onActions.tsx |       0 |        0 |       0 |       0 | 1-65              
+  ...ptionCard.tsx |       0 |        0 |       0 |       0 | 1-77              
+  ...LineItems.tsx |       0 |        0 |       0 |       0 | 1-50              
+  TrialAlert.tsx   |       0 |        0 |       0 |       0 | 1-39              
+ src/react/hooks   |       0 |        0 |       0 |       0 |                   
+  useAccount.ts    |       0 |        0 |       0 |       0 | 1-23              
+  ...Onboarding.ts |       0 |        0 |       0 |       0 | 1-27              
+  useCheckout.ts   |       0 |        0 |       0 |       0 | 1-26              
+  ...outSession.ts |       0 |        0 |       0 |       0 | 1-106             
+  ...irmPayment.ts |       0 |        0 |       0 |       0 | 1-118             
+  ...cyEarnings.ts |       0 |        0 |       0 |       0 | 1-64              
+  ...hCountdown.ts |       0 |        0 |       0 |       0 | 1-42              
+  useDisputes.ts   |       0 |        0 |       0 |       0 | 1-23              
+  useEarnings.ts   |       0 |        0 |       0 |       0 | 1-118             
+  useInvoices.ts   |       0 |        0 |       0 |       0 | 1-20              
+  ...hodActions.ts |       0 |        0 |       0 |       0 | 1-202             
+  ...entMethods.ts |       0 |        0 |       0 |       0 | 1-38              
+  usePrices.ts     |       0 |        0 |       0 |       0 | 1-21              
+  useProducts.ts   |       0 |        0 |       0 |       0 | 1-19              
+  ...tBreakdown.ts |       0 |        0 |       0 |       0 | 1-101             
+  ...ripeConfig.ts |       0 |        0 |       0 |       0 | 1-30              
+  useStripeMode.ts |       0 |      100 |       0 |       0 | 1-8               
+  ...ishableKey.ts |       0 |      100 |       0 |       0 | 1-8               
+  ...bscription.ts |       0 |        0 |       0 |       0 | 1-46              
+  ...scriptions.ts |       0 |        0 |       0 |       0 | 1-27              
+ src/react/lib     |       0 |        0 |       0 |       0 |                   
+  ...ement-keys.ts |       0 |        0 |       0 |       0 | 6-65              
+  price-helpers.ts |       0 |        0 |       0 |       0 | 29-84             
+  ...ent-styles.ts |       0 |        0 |       0 |       0 | 33-176            
+  ...on-helpers.ts |       0 |        0 |       0 |       0 | 18-63             
+ ...eact/workflows |       0 |        0 |       0 |       0 |                   
+  Account.tsx      |       0 |        0 |       0 |       0 | 1-177             
+  ...outEditor.tsx |       0 |        0 |       0 |       0 | 1-179             
+  ...ateEditor.tsx |       0 |        0 |       0 |       0 | 1-82              
+  ...eRecovery.tsx |       0 |        0 |       0 |       0 | 1-258             
+  Billing.tsx      |       0 |        0 |       0 |       0 | 1-206             
+  BillingPlans.tsx |       0 |        0 |       0 |       0 | 1-112             
+  Checkout.tsx     |       0 |        0 |       0 |       0 | 1-141             
+  ...utChooser.tsx |       0 |        0 |       0 |       0 | 1-51              
+  ...koutForms.tsx |       0 |        0 |       0 |       0 | 1-260             
+  ...ardButton.tsx |       0 |        0 |       0 |       0 | 1-59              
+  Collection.tsx   |       0 |        0 |       0 |       0 | 1-69              
+  Collections.tsx  |       0 |        0 |       0 |       0 | 1-211             
+  Connect.tsx      |       0 |        0 |       0 |       0 | 1-104             
+  Costs.tsx        |       0 |        0 |       0 |       0 | 1-134             
+  Disputes.tsx     |       0 |        0 |       0 |       0 | 1-137             
+  Earnings.tsx     |       0 |        0 |       0 |       0 | 1-70              
+  ...nceUpload.tsx |       0 |        0 |       0 |       0 | 1-58              
+  Financials.tsx   |       0 |        0 |       0 |       0 | 1-110             
+  ...ionSwitch.tsx |       0 |        0 |       0 |       0 | 1-54              
+  Onboarding.tsx   |       0 |        0 |       0 |       0 | 1-163             
+  Overview.tsx     |       0 |        0 |       0 |       0 | 1-115             
+  Pagination.tsx   |       0 |        0 |       0 |       0 | 1-76              
+  ...ntMethods.tsx |       0 |        0 |       0 |       0 | 1-111             
+  ...ntReceipt.tsx |       0 |        0 |       0 |       0 | 1-39              
+  ...mptStatus.tsx |       0 |        0 |       0 |       0 | 1-27              
+  ...tProgress.tsx |       0 |        0 |       0 |       0 | 1-93              
+  ...tSettings.tsx |       0 |        0 |       0 |       0 | 1-205             
+  Payouts.tsx      |       0 |        0 |       0 |       0 | 1-211             
+  ...ingEditor.tsx |       0 |        0 |       0 |       0 | 1-159             
+  Products.tsx     |       0 |        0 |       0 |       0 | 1-364             
+  ...rralLinks.tsx |       0 |        0 |       0 |       0 | 1-64              
+  Refunds.tsx      |       0 |        0 |       0 |       0 | 1-299             
+  SaveCard.tsx     |       0 |        0 |       0 |       0 | 1-111             
+  Setup.tsx        |       0 |        0 |       0 |       0 | 1-153             
+  Storefront.tsx   |       0 |        0 |       0 |       0 | 1-111             
+  ...nOverview.tsx |       0 |        0 |       0 |       0 | 1-35              
+  ...criptions.tsx |       0 |        0 |       0 |       0 | 1-279             
+  Tasks.tsx        |       0 |        0 |       0 |       0 | 1-198             
+  ...ut-options.ts |       0 |      100 |     100 |       0 | 1                 
+  ...bscription.ts |       0 |        0 |       0 |       0 | 13-20             
+  filters.ts       |       0 |        0 |       0 |       0 | 1-13              
+  ...empt-state.ts |       0 |        0 |       0 |       0 | 2-53              
+  ...ress-state.ts |       0 |        0 |       0 |       0 | 81-278            
+  ...nd-preview.ts |       0 |        0 |       0 |       0 | 13-55             
+  ...flowAction.ts |       0 |        0 |       0 |       0 | 1-79              
+  ...owResource.ts |       0 |        0 |       0 |       0 | 1-71              
+ src/testing       |       0 |        0 |       0 |       0 |                   
+  ...e-recovery.ts |       0 |        0 |       0 |       0 | 10-135            
+  ...t-test-env.ts |       0 |        0 |       0 |       0 | 6-15              
+  component-db.ts  |       0 |        0 |       0 |       0 | 4-23              
+  fixtures.ts      |       0 |        0 |       0 |       0 | 17-90             
+  mock-webhooks.ts |       0 |      100 |       0 |       0 | 14-84             
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 14.61% ( 1828/12511 )
+Branches     : 12.51% ( 1525/12189 )
+Functions    : 9.54% ( 294/3080 )
+Lines        : 14.97% ( 1766/11792 )
+================================================================================

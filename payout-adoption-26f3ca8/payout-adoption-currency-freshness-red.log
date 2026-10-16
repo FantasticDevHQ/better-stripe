@@ -1,0 +1,34 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (7 tests | 1 failed | 6 skipped) 813ms
+   × keeps every currency's activation observations fresh after a complete slow multi-currency proof 812ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > keeps every currency's activation observations fresh after a complete slow multi-currency proof
+Error: Payout source observation is stale or in the future.
+ ❯ checkSnapshot src/component/payoutRelease/helpers.ts:120:13
+    118|         o.observedAt < Date.now() - 30000)
+    119|     )
+    120|       throw new Error("Payout source observation is stale or in the fu…
+       |             ^
+    121|     if (
+    122|       !o.transactionIds.length ||
+ ❯ validateAdoption src/component/payoutPolicy/adoption.ts:19:9
+ ❯ handler src/component/payoutPolicy/mutations.ts:113:22
+ ❯ invokeFunction node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:90:14
+ ❯ invokeMutation node_modules/.pnpm/convex@1.46.0_react@19.3.0/node_modules/convex/src/server/impl/registration_impl.ts:70:18
+ ❯ runMutationWithHandler node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1975:31
+ ❯ Object.mutationFromPath node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2119:32
+ ❯ mutation node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:20
+ ❯ runMutationOrThrow src/client/helpers.ts:93:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  06:31:34
+   Duration  1.21s (tests 72%, transform 15%, import 9%, environment 3%)
+

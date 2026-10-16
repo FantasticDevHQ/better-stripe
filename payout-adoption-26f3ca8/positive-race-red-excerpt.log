@@ -1,0 +1,28 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (6 tests | 1 failed | 5 skipped) 1537ms
+   × rejects positive funding added after verification before historical import, without partial allocations 1537ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > rejects positive funding added after verification before historical import, without partial allocations
+AssertionError: promise resolved "{ status: 'adopted', …(5) }" instead of rejecting
+
+- Expected
+[Large synthetic resolved-result dump omitted; full original retained locally.]
+    288|     return mutation(args[0], args[1] ?? {});
+    289|   });
+    290|   await expect(adopt()).rejects.toThrow(/Adoption collection changed/);
+       |                        ^
+    291|   expect(
+    292|     await s.t.run((ctx) => ctx.db.query("payoutReleaseClaims").collect…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  06:29:00
+   Duration  1.92s (tests 84%, transform 8%, import 6%, environment 2%)
+

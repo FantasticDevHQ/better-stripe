@@ -2856,6 +2856,38 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       };
     };
     financialObservations: {
+      mutations: {
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          { allocationId: string; expectedGeneration: number },
+          {
+            coverage: "unknown";
+            observation: {
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              continuation?: {
+                nextLeg: number;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedLegs: number;
+              };
+              fingerprint: string;
+              generation: number;
+              indexedLegCount: number;
+              isContradictory: boolean;
+              isOverflow: boolean;
+              legCount: number;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              producer: "settlement_allocation";
+              producerVersion: 1;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+      };
       queries: {
         bucket: FunctionReference<
           "query",
@@ -2944,6 +2976,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               _creationTime: number;
               _id: string;
               allocationId: string;
+              continuation?: {
+                nextLeg: number;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedLegs: number;
+              };
               fingerprint: string;
               generation: number;
               indexedLegCount: number;

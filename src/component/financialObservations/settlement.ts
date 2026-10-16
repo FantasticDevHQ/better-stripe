@@ -3,75 +3,16 @@ import type { Doc } from "../_generated/dataModel.js";
 import type { MutationCtx } from "../_generated/server.js";
 import { generateIdempotencyKey } from "../lib/idempotency.js";
 import {
-  advanceObservationGeneration,
-  bucketScope,
-  ownerScope,
-} from "./generations.js";
+  hasInvalidLegIdentity,
+  invalidate,
+  legOwnership,
+  settlementFingerprint,
+} from "./settlementHelpers.js";
 import type { legDoc } from "./schema.js";
 
-/** Larger valid allocations retain an UNKNOWN marker; BTS-228 owns resumable ALL-leg traversal. */
+/** Larger allocations require explicit bounded continuation; aggregate coverage stays UNKNOWN. */
 export const synchronousSettlementLegLimit = 100;
 type Leg = Omit<Infer<typeof legDoc>, "_id" | "_creationTime">;
-async function legOwnership(
-  ctx: MutationCtx,
-  bucketKey: string,
-  prior: Doc<"financialSourceLegs"> | undefined,
-) {
-  const registrations = await ctx.db
-    .query("financialOwnership")
-    .withIndex("by_bucket_key", (q) => q.eq("bucketKey", bucketKey))
-    .take(2);
-  const registration = registrations[0];
-  const pin = prior?.registrationId
-    ? {
-        registrationId: prior.registrationId,
-        userId: prior.userId,
-        orgId: prior.orgId,
-      }
-    : {};
-  if (registrations.length > 1)
-    return { ...pin, ownershipStatus: "ambiguous" as const };
-  if (!registration) return { ...pin, ownershipStatus: "unknown" as const };
-  if (
-    prior?.registrationId &&
-    (prior.registrationId !== registration._id ||
-      prior.userId !== registration.userId ||
-      prior.orgId !== registration.orgId)
-  )
-    return { ...pin, ownershipStatus: "contradictory" as const };
-  return {
-    registrationId: registration._id,
-    userId: registration.userId,
-    orgId: registration.orgId,
-    ownershipStatus: "registered" as const,
-  };
-}
-async function invalidate(ctx: MutationCtx, legs: Leg[]) {
-  const scopes = new Set<string>();
-  for (const leg of legs) {
-    scopes.add(bucketScope(leg.bucketKey));
-    if (leg.userId !== undefined) scopes.add(ownerScope(leg.userId, leg.orgId));
-  }
-  for (const scope of scopes) await advanceObservationGeneration(ctx, scope);
-}
-function hasInvalidLegIdentity(
-  row: Doc<"settlementAllocations">,
-  legs: Doc<"financialSourceLegs">[],
-) {
-  const slots = new Set<number>();
-  return legs.some((leg) => {
-    const original = row.transfers[leg.legIndex];
-    const isInvalid =
-      slots.has(leg.legIndex) ||
-      !Number.isInteger(leg.legIndex) ||
-      !original ||
-      leg.sourceChargeId !== row.sourceChargeId ||
-      leg.bucketKey !== original.destinationAccountId ||
-      leg.role !== original.role;
-    slots.add(leg.legIndex);
-    return isInvalid;
-  });
-}
 
 /** Persist diagnostic provenance in the SAME raw mutation; never mutate the financial source. */
 export async function observeSettlementAllocation(
@@ -90,31 +31,19 @@ export async function observeSettlementAllocation(
       q.eq("allocationId", row._id),
     )
     .take(synchronousSettlementLegLimit + 1);
-  const fingerprint = await generateIdempotencyKey(
-    "settlement-allocation-observation-v1",
-    {
-      sourceChargeId: row.sourceChargeId,
-      paymentIntentId: row.paymentIntentId,
-      sourceInvoiceId: row.sourceInvoiceId,
-      gross: row.gross,
-      currency: row.currency,
-      processingFee: row.processingFee,
-      platformNet: row.platformNet,
-      adjustmentAmount: row.adjustmentAmount,
-      paymentId: row.paymentId,
-      transfers: row.transfers,
-    },
-  );
+  const fingerprint = await settlementFingerprint(row);
   const sources = await ctx.db
     .query("settlementAllocations")
     .withIndex("by_source_charge", (q) =>
       q.eq("sourceChargeId", row.sourceChargeId),
     )
     .take(2);
+  const isContinuedOverflow =
+    prior?.isOverflow === true && prior.continuation !== undefined;
   const hasInvalidLegs =
     hasInvalidLegIdentity(row, oldLegs) ||
     (prior !== undefined &&
-      (prior.indexedLegCount !== oldLegs.length ||
+      ((!isContinuedOverflow && prior.indexedLegCount !== oldLegs.length) ||
         (!prior.isOverflow &&
           !prior.isContradictory &&
           (prior.legCount !== row.transfers.length ||
@@ -125,7 +54,7 @@ export async function observeSettlementAllocation(
     sources[0]?._id !== row._id ||
     prior?.isContradictory === true ||
     (prior !== undefined && prior.fingerprint !== fingerprint) ||
-    oldLegs.length > synchronousSettlementLegLimit;
+    (oldLegs.length > synchronousSettlementLegLimit && !isContinuedOverflow);
   const isOverflow = row.transfers.length > synchronousSettlementLegLimit;
   const legs: Leg[] = [];
   if (!isOverflow && !isContradictory)
@@ -140,6 +69,7 @@ export async function observeSettlementAllocation(
         ...(await legOwnership(ctx, leg.destinationAccountId, previous)),
       });
     }
+  if (isContinuedOverflow && !isContradictory) return;
   const ownershipFingerprint = await generateIdempotencyKey(
     "settlement-leg-ownership-v1",
     { legs },
@@ -189,8 +119,19 @@ export async function observeSettlementAllocation(
     ownershipFingerprint,
     generation,
     legCount: row.transfers.length,
-    indexedLegCount:
-      isOverflow || isContradictory ? oldLegs.length : legs.length,
+    indexedLegCount: isContinuedOverflow
+      ? prior.indexedLegCount
+      : isOverflow || isContradictory
+        ? oldLegs.length
+        : legs.length,
+    ...(prior?.continuation && isContradictory
+      ? {
+          continuation: {
+            ...prior.continuation,
+            state: "held" as const,
+          },
+        }
+      : {}),
     isOverflow,
     isContradictory,
   };

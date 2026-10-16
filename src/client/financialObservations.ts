@@ -11,6 +11,7 @@ import type {
 } from "../component/financialObservations/schema.js";
 import { InvoiceReadClient } from "./invoiceReads.js";
 import type { Component, RunCtx } from "./helpers.js";
+import { runMutationOrThrow } from "./helpers.js";
 import { componentRef } from "./webhooks/helpers.js";
 
 export type FinancialSourceObservation = Infer<typeof sourceDoc>;
@@ -47,6 +48,27 @@ export class FinancialObservationsClient {
       .parse(input);
     return ctx.runQuery(
       componentRef(this.component, "financialObservations/queries/source"),
+      args,
+    );
+  }
+  async resume(
+    ctx: RunCtx,
+    input: { allocationId: string; expectedGeneration: number },
+  ): Promise<FinancialSourceResult> {
+    const args = z
+      .object({
+        allocationId: z.string().min(1).max(256),
+        expectedGeneration: z
+          .number()
+          .int()
+          .min(1)
+          .max(Number.MAX_SAFE_INTEGER),
+      })
+      .strict()
+      .parse(input);
+    return runMutationOrThrow(
+      ctx,
+      componentRef(this.component, "financialObservations/mutations/resume"),
       args,
     );
   }

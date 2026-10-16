@@ -1,0 +1,26 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutLargeAdoption.test.ts (13 tests | 1 failed | 12 skipped) 1240ms
+   × reconciles 101 known payouts with bounded outcome transactions 1240ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutLargeAdoption.test.ts > reconciles 101 known payouts with bounded outcome transactions
+AssertionError: expected 101 to be less than or equal to 5
+ ❯ src/client/connect/payoutLargeAdoption.test.ts:544:31
+    542|   };
+    543|   expect(await adopt()).toMatchObject({ status: "adopted" });
+    544|   expect(outcomeTransactions).toBeLessThanOrEqual(5);
+       |                               ^
+    545|   expect(
+    546|     await s.t.run((ctx) => ctx.db.query("payoutReleaseClaims").collect…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 skipped (13)
+   Start at  07:58:15
+   Duration  1.69s (tests 77%, transform 11%, import 9%, environment 2%)
+

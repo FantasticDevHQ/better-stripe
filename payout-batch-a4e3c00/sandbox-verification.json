@@ -1,0 +1,1742 @@
+{
+  "finalRevision": "a4e3c003bba4639cca975415f685dec811150d07",
+  "fixtureRevision": "cfe8a654c0fb30756c9dc62bf3175a47cd12e220",
+  "initialFinancialScenarioRevision": "4477f104a6395a7904da50e8afc3a874299504ae",
+  "sandboxAccount": "acct_1UQzoa8R1ii4OS8b",
+  "funding": [
+    {
+      "id": "tr_1UQzqc6JR7kThJogNTo02t45",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqc6JR7kThJogKrypmQCA",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqc6JR7kThJogs7J2a6QR",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqc6JR7kThJogmboFiSGQ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqc6JR7kThJogmPQjgjAj",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqf6JR7kThJogLURxCbMv",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqf6JR7kThJogARY6z0D0",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqf6JR7kThJogYz9O9z1o",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqf6JR7kThJogNhyoJkqj",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqf6JR7kThJogRnjG3zSb",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqi6JR7kThJogqIIlInQO",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqi6JR7kThJog9BaBzhVq",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqi6JR7kThJogirwCWSXz",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqi6JR7kThJogGhh9TGMR",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqi6JR7kThJogTWJkp3CV",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzql6JR7kThJogCUyRCdSP",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzql6JR7kThJog8YBxoBih",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzql6JR7kThJogR8lcG2E9",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzql6JR7kThJog5wHAQYpz",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzql6JR7kThJogAsuaJBh6",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqo6JR7kThJogEj9Nm8Fz",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqo6JR7kThJogiDMdvQW3",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqo6JR7kThJogh6bmuW5u",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqo6JR7kThJogncnfRJ8y",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqo6JR7kThJog5HJ7mJGe",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqr6JR7kThJog7s0aIpw4",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqr6JR7kThJog9AkymW1L",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqr6JR7kThJog7SQT0v8r",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqr6JR7kThJogPrDRsFsr",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqr6JR7kThJogDya8J71K",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqu6JR7kThJogTasQ2J0M",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqu6JR7kThJog4MWas9rK",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqu6JR7kThJogjficTMir",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqu6JR7kThJogrpOJQFTE",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqv6JR7kThJogpbFTmsGD",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqx6JR7kThJogyvJGQ32Z",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqx6JR7kThJogu1CNcuSb",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqx6JR7kThJogSdvvJ94u",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzqx6JR7kThJogZOx9vDuF",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzqx6JR7kThJogzNMzC9Ru",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr16JR7kThJogXIdMaDvo",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr16JR7kThJogXKdaCWVf",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr16JR7kThJoghxBZ8qb0",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr16JR7kThJogSiaTECTL",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr16JR7kThJogmqPrSz6G",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr46JR7kThJog0Jn5PqxD",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr46JR7kThJogKK62MYt8",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr46JR7kThJogSdEF3df1",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr46JR7kThJogGMKnUqz7",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr46JR7kThJog32nHvUzh",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr76JR7kThJoglENhgFAV",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr76JR7kThJog1ovsV8st",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr76JR7kThJogc0XWoK8Y",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzr76JR7kThJogrX1mwHQR",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzr76JR7kThJogrGd2tiGH",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrA6JR7kThJogyq0Ax0Im",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrA6JR7kThJogGCDfa6Jv",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrA6JR7kThJogJ3S6Yb15",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrA6JR7kThJogz4A9nDtc",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrA6JR7kThJog4YsoWwkK",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrD6JR7kThJogAcB3bBJ9",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrD6JR7kThJog65UZLtw0",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrD6JR7kThJogNncEe8p6",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrD6JR7kThJogxm8FgJjd",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrD6JR7kThJoghgjFkZFW",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrG6JR7kThJog3CJZPhfj",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrG6JR7kThJogmWgCJl6x",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrG6JR7kThJog2B5D62m9",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrG6JR7kThJog8x9UmBQz",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrG6JR7kThJog2qWor8Z7",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrJ6JR7kThJog7If88i4J",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrJ6JR7kThJogpcnoOCcl",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrJ6JR7kThJogeHbiIrBz",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrJ6JR7kThJogRnKvBQQ0",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrJ6JR7kThJoguCcETUNv",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrM6JR7kThJogZYiX5PRV",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrM6JR7kThJogREtzRyzv",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrM6JR7kThJogupUJBITn",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrM6JR7kThJog4zhyEU8N",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrM6JR7kThJogcEuaQORG",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrP6JR7kThJogeb5bL0HX",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrP6JR7kThJogEqE0qBm3",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrP6JR7kThJogEGacujBY",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrP6JR7kThJoggyJjfZby",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrQ6JR7kThJogljuBabrI",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrS6JR7kThJogvrjGypsw",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrS6JR7kThJogbNDDRJuV",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrS6JR7kThJogh3bhXBJc",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrS6JR7kThJogEryYQqcH",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrS6JR7kThJogffCy9kAa",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrW6JR7kThJogiQaBGYjx",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrW6JR7kThJogF8E1gNkK",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrW6JR7kThJogImtXfnY6",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrW6JR7kThJogxi7RMcr6",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrW6JR7kThJogzcnSTKHO",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrZ6JR7kThJogB3q6jY6Q",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrZ6JR7kThJogwC5hMBAS",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrZ6JR7kThJogBM0XW5tZ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrZ6JR7kThJogod6w125f",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrZ6JR7kThJogJmU9o29p",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrc6JR7kThJogqPOR43Fr",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrc6JR7kThJogZGgZyjJY",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrc6JR7kThJog0awVE5Gc",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrc6JR7kThJogV3HBJJzi",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrc6JR7kThJogalbBakWO",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrf6JR7kThJog6llf7tCg",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrf6JR7kThJogytObL4p2",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrf6JR7kThJogofffIeiF",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrf6JR7kThJog3mdrWQ66",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrf6JR7kThJogrXV0Ncvj",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzri6JR7kThJogRfnz0igE",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzri6JR7kThJogkzZwNEn9",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzri6JR7kThJog0mzh9SRG",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzri6JR7kThJogE9Ggp1vk",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzri6JR7kThJogctOhUUIA",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrl6JR7kThJogfTXRzGhj",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrl6JR7kThJogP9q2CH4K",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrl6JR7kThJogU4nFtJLD",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrl6JR7kThJogdw2zD7wG",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrl6JR7kThJogPaBL4qaU",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzro6JR7kThJogkIFj0cJX",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzro6JR7kThJogfcyOifTi",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzro6JR7kThJog673I6qbi",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzro6JR7kThJog3axUeTmG",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrp6JR7kThJoguXblBUdd",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrr6JR7kThJogIYhvWPpZ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrr6JR7kThJogQcFuGbf9",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrr6JR7kThJogPEnOaEqg",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzrr6JR7kThJog3dRlqJ0Y",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrs6JR7kThJogysFKqsu0",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzru6JR7kThJogZ5R6U7RH",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzru6JR7kThJogNwCkUe89",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzru6JR7kThJogCmCo5z5Z",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzru6JR7kThJogn4SddnmQ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzrv6JR7kThJogvZfJYvam",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzry6JR7kThJogTjchzErH",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzry6JR7kThJogGE2sb7c8",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzry6JR7kThJogAqBmtetu",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzry6JR7kThJogPklJOG15",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzry6JR7kThJogwMMkUZcP",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs16JR7kThJogk9AwLTmx",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs16JR7kThJogOdANGVXe",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs16JR7kThJog2zxD3u8J",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs16JR7kThJogP26Oucb9",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs16JR7kThJogwK6Bf4eY",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs46JR7kThJogfWtnOl01",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs46JR7kThJogfmXqc7EI",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs46JR7kThJog0hSjopXj",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs46JR7kThJogRlngsxqR",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs46JR7kThJogBr3xqi8T",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs76JR7kThJogWYdzITq3",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs76JR7kThJogLiKB51Mj",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs76JR7kThJog5KTGEgkD",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzs76JR7kThJogb9ZcwcP1",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzs76JR7kThJogV3dmdWLg",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsA6JR7kThJog9SBQn4Pg",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsA6JR7kThJogbA8qFHJn",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsA6JR7kThJogMhY4fPTF",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsA6JR7kThJogxsaQ5Dpp",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsA6JR7kThJogHzeBf1Km",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsD6JR7kThJogdXV91MsJ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsD6JR7kThJogSjGoIcE7",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsD6JR7kThJogwIlzzJVr",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsD6JR7kThJogBixnvBwz",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsD6JR7kThJogc5a3TQfl",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsG6JR7kThJog07hKiMkP",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsG6JR7kThJogo0EJLFxp",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsG6JR7kThJog4e6XaBPQ",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsG6JR7kThJogfVOFXGWP",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsG6JR7kThJogdD2D0maM",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsJ6JR7kThJoglXLGCt1M",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsJ6JR7kThJoglPta7Ivh",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsJ6JR7kThJogZhqxIyOX",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsJ6JR7kThJogFBN9IpuZ",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsK6JR7kThJogsqmJ3oq0",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsM6JR7kThJogrtxta6n8",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsM6JR7kThJogY4rgvgOd",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsM6JR7kThJog7EZo3T5Q",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsM6JR7kThJogN8iItsk1",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsM6JR7kThJog8oYpIBE9",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsQ6JR7kThJog1EIBnESp",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsQ6JR7kThJogFVgoCWHE",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsQ6JR7kThJog6yL25F16",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsQ6JR7kThJogwWYkj4Ix",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsQ6JR7kThJogMUEjEdEt",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsT6JR7kThJogirtI9XbZ",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsT6JR7kThJogiQ7JrI9m",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsT6JR7kThJogvra6mlxk",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsT6JR7kThJogQbynYYzA",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsT6JR7kThJogs1TTUGcT",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsW6JR7kThJognJaoq7iZ",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsW6JR7kThJogZD5B3pv2",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsW6JR7kThJogywTQZfPg",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsW6JR7kThJogepdjAogx",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsW6JR7kThJogJVx5Zkee",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsZ6JR7kThJogwb4Vz7Dv",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsZ6JR7kThJogaN5gu8zc",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsZ6JR7kThJogIVRfmLvO",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsZ6JR7kThJogNDg2EgYV",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsZ6JR7kThJogohdUVMPh",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsc6JR7kThJogOzFos8XO",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsc6JR7kThJogksx0WFFa",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsc6JR7kThJogQd39YGhb",
+      "amount": 50,
+      "role": "store"
+    },
+    {
+      "id": "tr_1UQzsc6JR7kThJogt9cxV7Bh",
+      "amount": 50,
+      "role": "affiliate"
+    },
+    {
+      "id": "tr_1UQzsc6JR7kThJogVJJo3ByJ",
+      "amount": 50,
+      "role": "store"
+    }
+  ],
+  "historicalPayoutCount": 101,
+  "historicalReceiptStatuses": [
+    "paid"
+  ],
+  "publicCalls": {
+    "adopted": {
+      "status": "adopted",
+      "elapsedMs": 87654
+    },
+    "preparedPolicy": {
+      "status": "prepared",
+      "elapsedMs": 118565
+    }
+  },
+  "initialApplyCallerError": {
+    "message": "Payout policy operation is not pending.",
+    "requestId": "ffab50d3ac17dbd2",
+    "capture": "Error text transcribed from captured QA controller output; original HTTP 500 body was not saved. Subsequent state is from saved API output.",
+    "policyStatus": "ready",
+    "policyMode": "custom",
+    "providerSchedule": {
+      "interval": "manual"
+    },
+    "payoutCount": 101,
+    "available": [
+      {
+        "amount": 150,
+        "currency": "usd",
+        "source_types": {
+          "card": 150
+        }
+      }
+    ]
+  },
+  "controlledFinalRevision": {
+    "revision": "a4e3c003bba4639cca975415f685dec811150d07",
+    "prepareElapsedMs": 118078,
+    "prepareSources": 205,
+    "prepareClaims": 102,
+    "applyElapsedMs": 113980,
+    "delayedAtBeginAttempt": true,
+    "results": [
+      {
+        "status": "ready"
+      },
+      {
+        "status": "ready"
+      }
+    ],
+    "operationStatus": "complete",
+    "attempted": true
+  },
+  "finalProviderPayouts": [
+    {
+      "id": "po_1UR0Ce8R1ii4OS8bsT9he99F",
+      "amount": 150,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvS8R1ii4OS8b2RbVqdyJ",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvR8R1ii4OS8bfVcayzYU",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvP8R1ii4OS8boPG4dnOY",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvO8R1ii4OS8bMP0vsl0v",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvN8R1ii4OS8b1rF0MUOv",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvM8R1ii4OS8bsAKAALqw",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvL8R1ii4OS8bMUO5lood",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvK8R1ii4OS8bbzPBagqM",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvJ8R1ii4OS8bD0s8BuCO",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvI8R1ii4OS8bhLK7LUJM",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvH8R1ii4OS8bN4DGFzUg",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvF8R1ii4OS8bZqkmPJbB",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvE8R1ii4OS8b0HHse4Vs",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvD8R1ii4OS8bgTRWrARq",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvB8R1ii4OS8bgkL078tY",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzvA8R1ii4OS8bEys7SD2N",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv98R1ii4OS8baDWQN8CG",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv88R1ii4OS8bBopIcSJp",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv78R1ii4OS8b31oGTRZ4",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv58R1ii4OS8bmZ9vkVDx",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv48R1ii4OS8bdHsKElIg",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv38R1ii4OS8bmsFKoTJ8",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv28R1ii4OS8byb8xZIpf",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv18R1ii4OS8bO7K0yqt1",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzv08R1ii4OS8bODEsqC8S",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuz8R1ii4OS8bknltXskN",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuy8R1ii4OS8bHOg1DKpa",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzux8R1ii4OS8bWmCoJNep",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuv8R1ii4OS8bRLleKyYb",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuu8R1ii4OS8bSlnSIDhW",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzut8R1ii4OS8bUECvBDEj",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzur8R1ii4OS8bKp2DPfGz",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuq8R1ii4OS8bdyDtnmmP",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzup8R1ii4OS8bBqUzgiCR",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuo8R1ii4OS8b7tCAUc3A",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzun8R1ii4OS8bsMzYFNGK",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzul8R1ii4OS8bLj8GVCPt",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuk8R1ii4OS8b3HpYBA2F",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuj8R1ii4OS8bdZ3QGlmU",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzui8R1ii4OS8bUYphnhv0",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzug8R1ii4OS8bhBKay9Vx",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuf8R1ii4OS8bCaITLlmX",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzue8R1ii4OS8bTg4ZWwcv",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzud8R1ii4OS8bvc2vdZW9",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzub8R1ii4OS8bQqXSf7If",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzua8R1ii4OS8bp0tWJWuG",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuZ8R1ii4OS8bOhTK8pTn",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuY8R1ii4OS8b1aC02iIV",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuX8R1ii4OS8bFTiIaRKV",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuV8R1ii4OS8brXVGmM6u",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuU8R1ii4OS8bpVds4lvr",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuT8R1ii4OS8bvpwA5jAH",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuS8R1ii4OS8bWiHNUGME",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuR8R1ii4OS8bTmqSiE3f",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuQ8R1ii4OS8bDQ7sAsYQ",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuP8R1ii4OS8bP1l3EJ68",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuO8R1ii4OS8bU5XpzxqP",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuM8R1ii4OS8bWOWouqvR",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuL8R1ii4OS8bSDEspKGo",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuK8R1ii4OS8bXJiz0y0U",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuJ8R1ii4OS8bu6nzPDTu",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuH8R1ii4OS8bJ5Opf5X9",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuG8R1ii4OS8bujhVQcri",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuF8R1ii4OS8bNEA5wNd2",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuE8R1ii4OS8byodU7Tzg",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuC8R1ii4OS8bR5kZMRlr",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuB8R1ii4OS8bq2JgYWai",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzuA8R1ii4OS8bWIWOWrRX",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu88R1ii4OS8bO8FIXjNg",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu78R1ii4OS8bKFAtlwcQ",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu68R1ii4OS8bDv1wY1Av",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu58R1ii4OS8bbE8VIqUL",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu48R1ii4OS8btXSrAcKA",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu28R1ii4OS8bVuL3YO1m",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu18R1ii4OS8bXlIxuTHg",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzu08R1ii4OS8bKDUFBEcY",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztz8R1ii4OS8bHVL9nKwb",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzty8R1ii4OS8b0WHdkLUs",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztx8R1ii4OS8b8jkNxxn6",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztv8R1ii4OS8byra9PvQp",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztu8R1ii4OS8bCP4bAe9U",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzts8R1ii4OS8buxmOzHhY",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztr8R1ii4OS8bozbMJtNa",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztq8R1ii4OS8bYxSvHPwy",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzto8R1ii4OS8bacxW9coS",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztn8R1ii4OS8bL8CvZBG2",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztm8R1ii4OS8boxYVDBZ3",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztl8R1ii4OS8bPoFCgeMX",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztk8R1ii4OS8bVoX8roKq",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztj8R1ii4OS8b5D93FPga",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzth8R1ii4OS8beaf9Jmg5",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztg8R1ii4OS8bgvWfAR2V",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztf8R1ii4OS8bpEzPp6P0",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzte8R1ii4OS8bmzGL9w3K",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztd8R1ii4OS8bWvBWgBXq",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztb8R1ii4OS8bZqQGqjg5",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQzta8R1ii4OS8bN9aAtSFX",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztZ8R1ii4OS8bAMYPaAw7",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztY8R1ii4OS8bBfwnH7Na",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztX8R1ii4OS8bpIZI8kAA",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    },
+    {
+      "id": "po_1UQztW8R1ii4OS8b8n2zQfIz",
+      "amount": 100,
+      "currency": "usd",
+      "status": "paid"
+    }
+  ],
+  "finalAvailable": [
+    {
+      "amount": 0,
+      "currency": "usd",
+      "source_types": {
+        "card": 0
+      }
+    }
+  ],
+  "finalPending": [
+    {
+      "amount": 0,
+      "currency": "usd",
+      "source_types": {
+        "card": 0
+      }
+    }
+  ],
+  "finalWorker": {
+    "completedGeneration": 3,
+    "hasOperation": false,
+    "lastReason": "below_threshold",
+    "lastAttemptAt": 1792116658974,
+    "lastResultAt": 1792116819186
+  },
+  "finalLedger": {
+    "claims": 102,
+    "allocations": 205,
+    "paidPrincipal": 10250,
+    "reservedPrincipal": 0,
+    "proofCacheCount": 0
+  },
+  "cleanup": {
+    "scheduleRestored": true,
+    "accountClosed": true,
+    "restorationOperationStatus": "complete",
+    "targetSchedule": {
+      "interval": "weekly",
+      "weeklyDays": [
+        "monday"
+      ]
+    }
+  }
+}

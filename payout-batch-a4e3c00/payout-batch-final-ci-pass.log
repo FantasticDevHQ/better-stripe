@@ -1,0 +1,289 @@
+ci	Set up job	﻿2026-10-16T01:30:34.1386242Z Current runner version: '2.337.0'
+ci	Set up job	2026-10-16T01:30:34.1414354Z ##[group]Runner Image Provisioner
+ci	Set up job	2026-10-16T01:30:34.1415295Z Hosted Compute Agent
+ci	Set up job	2026-10-16T01:30:34.1415888Z Version: 20261012.601
+ci	Set up job	2026-10-16T01:30:34.1416522Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+ci	Set up job	2026-10-16T01:30:34.1417265Z Build Date: 2026-10-12T17:48:21Z
+ci	Set up job	2026-10-16T01:30:34.1417914Z Worker ID: {80e918ff-22f2-4e08-9373-b093a495f48e}
+ci	Set up job	2026-10-16T01:30:34.1418600Z Region: centralus
+ci	Set up job	2026-10-16T01:30:34.1419171Z Cloud: Azure
+ci	Set up job	2026-10-16T01:30:34.1419691Z ##[endgroup]
+ci	Set up job	2026-10-16T01:30:34.1420965Z ##[group]Operating System
+ci	Set up job	2026-10-16T01:30:34.1421517Z Ubuntu
+ci	Set up job	2026-10-16T01:30:34.1422046Z 24.04.5
+ci	Set up job	2026-10-16T01:30:34.1422547Z LTS
+ci	Set up job	2026-10-16T01:30:34.1423029Z ##[endgroup]
+ci	Set up job	2026-10-16T01:30:34.1423581Z ##[group]Runner Image
+ci	Set up job	2026-10-16T01:30:34.1424521Z Image: ubuntu-24.04
+ci	Set up job	2026-10-16T01:30:34.1425104Z Version: 20261012.334.1
+ci	Set up job	2026-10-16T01:30:34.1426113Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+ci	Set up job	2026-10-16T01:30:34.1427871Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+ci	Set up job	2026-10-16T01:30:34.1428796Z ##[endgroup]
+ci	Set up job	2026-10-16T01:30:34.1429950Z ##[group]GITHUB_TOKEN Permissions
+ci	Set up job	2026-10-16T01:30:34.1432318Z Contents: read
+ci	Set up job	2026-10-16T01:30:34.1432942Z Metadata: read
+ci	Set up job	2026-10-16T01:30:34.1433475Z Packages: read
+ci	Set up job	2026-10-16T01:30:34.1434274Z ##[endgroup]
+ci	Set up job	2026-10-16T01:30:34.1436606Z Secret source: Actions
+ci	Set up job	2026-10-16T01:30:34.1437524Z Cache mode: write
+ci	Set up job	2026-10-16T01:30:34.1438222Z Prepare workflow directory
+ci	Set up job	2026-10-16T01:30:34.1768779Z Prepare all required actions
+ci	Set up job	2026-10-16T01:30:34.1818753Z Getting action download info
+ci	Set up job	2026-10-16T01:30:34.4687022Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+ci	Set up job	2026-10-16T01:30:34.5654742Z Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)
+ci	Set up job	2026-10-16T01:30:35.1392094Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+ci	Set up job	2026-10-16T01:30:35.3531805Z Complete job name: ci
+ci	Run actions/checkout@v4	﻿2026-10-16T01:30:35.4275497Z ##[group]Run actions/checkout@v4
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4276484Z with:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4277058Z   repository: FantasticDevHQ/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4282050Z   token: ***
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4282639Z   ssh-strict: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4283182Z   ssh-user: git
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4283744Z   persist-credentials: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4284497Z   clean: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4285075Z   sparse-checkout-cone-mode: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4285737Z   fetch-depth: 1
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4286245Z   fetch-tags: false
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4286821Z   show-progress: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4287372Z   lfs: false
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4287886Z   submodules: false
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4288498Z   set-safe-directory: true
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4289101Z   allow-unsafe-pr-checkout: false
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.4289950Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5392906Z Syncing repository: FantasticDevHQ/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5396412Z ##[group]Getting Git version info
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5397775Z Working directory is '/home/runner/work/better-stripe/better-stripe'
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5399802Z [command]/usr/bin/git version
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5400754Z git version 2.55.0
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5403617Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5411547Z Temporarily overriding HOME='/home/runner/work/_temp/1bde7df4-fcc2-4524-9886-8d764ae9b5b5' before making global git config changes
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5416171Z Adding repository directory to the temporary git global config as a safe directory
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5418424Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/better-stripe/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5465035Z Deleting the contents of '/home/runner/work/better-stripe/better-stripe'
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5474659Z ##[group]Initializing the repository
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5476494Z [command]/usr/bin/git init /home/runner/work/better-stripe/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5575993Z hint: Using 'master' as the name for the initial branch. This default branch name
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5578137Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5579993Z hint: to use in all of your new repositories, which will suppress this warning,
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5581616Z hint: call:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5582821Z hint:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5584053Z hint: 	git config --global init.defaultBranch <name>
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5585554Z hint:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5588926Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5590965Z hint: 'development'. The just-created branch can be renamed via this command:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5593184Z hint:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5594630Z hint: 	git branch -m <name>
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5595726Z hint:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5597054Z hint: Disable this message with "git config set advice.defaultBranchName false"
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5599596Z Initialized empty Git repository in /home/runner/work/better-stripe/better-stripe/.git/
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5603441Z [command]/usr/bin/git remote add origin https://github.com/FantasticDevHQ/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5638916Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5640407Z ##[group]Disabling automatic garbage collection
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5642798Z [command]/usr/bin/git config --local gc.auto 0
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5673331Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5675050Z ##[group]Setting up auth
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5681226Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.5711242Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6047347Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6079046Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6307681Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6340301Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6528779Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6568038Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6569620Z ##[group]Fetching the repository
+ci	Run actions/checkout@v4	2026-10-16T01:30:35.6579214Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +75070ba0e29f0aa0d8ad78dad2a4f137537e7cc8:refs/remotes/pull/226/merge
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6018917Z From https://github.com/FantasticDevHQ/better-stripe
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6021364Z  * [new ref]         75070ba0e29f0aa0d8ad78dad2a4f137537e7cc8 -> pull/226/merge
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6025908Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6027582Z ##[group]Determining the checkout info
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6029553Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6032535Z [command]/usr/bin/git sparse-checkout disable
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6091441Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6130750Z ##[group]Checking out the ref
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6134108Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/226/merge
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6839225Z Note: switching to 'refs/remotes/pull/226/merge'.
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6840955Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6842114Z You are in 'detached HEAD' state. You can look around, make experimental
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6845536Z changes and commit them, and you can discard any commits you make in this
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6848145Z state without impacting any branches by switching back to a branch.
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6850025Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6851016Z If you want to create a new branch to retain commits you create, you may
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6853698Z do so (now or later) by using -c with the switch command. Example:
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6855506Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6856127Z   git switch -c <new-branch-name>
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6857080Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6857650Z Or undo this operation with:
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6858549Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6859105Z   git switch -
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6859781Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6861155Z Turn off this advice by setting config variable advice.detachedHead to false
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6862845Z 
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6864878Z HEAD is now at 75070ba Merge 4477f104a6395a7904da50e8afc3a874299504ae into 7aee88fb4d4fd043fe3ef117aaa88eddb9b3ab99
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6870332Z ##[endgroup]
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6893305Z [command]/usr/bin/git log -1 --format=%H
+ci	Run actions/checkout@v4	2026-10-16T01:30:36.6917413Z 75070ba0e29f0aa0d8ad78dad2a4f137537e7cc8
+ci	Run pnpm/action-setup@v4	﻿2026-10-16T01:30:36.7223623Z ##[group]Run pnpm/action-setup@v4
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7224933Z with:
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7225811Z   dest: ~/setup-pnpm
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7226808Z   run_install: null
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7227714Z   cache: false
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7228671Z   cache_dependency_path: pnpm-lock.yaml
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7229912Z   package_json_file: package.json
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7231027Z   standalone: false
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.7231953Z ##[endgroup]
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:36.8609648Z ##[group]Running self-installer...
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:37.2631896Z (node:2307) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:37.2636365Z (Use `node --trace-deprecation ...` to show where the warning was created)
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:37.5820493Z Progress: resolved 1, reused 0, downloaded 0, added 0
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:37.5899205Z Packages: +1
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:37.5900966Z +
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0246371Z Progress: resolved 1, reused 0, downloaded 1, added 1, done
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0713753Z 
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0714765Z dependencies:
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0715368Z + pnpm 10.32.1 (12.11.2 is available)
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0715690Z 
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0744655Z Done in 1s
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0875578Z ##[endgroup]
+ci	Run pnpm/action-setup@v4	2026-10-16T01:30:38.0875967Z Installation Completed!
+ci	Run actions/setup-node@v4	﻿2026-10-16T01:30:38.1076013Z ##[group]Run actions/setup-node@v4
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1076338Z with:
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1076558Z   node-version: 24
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1076781Z   cache: pnpm
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1076993Z   always-auth: false
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1077223Z   check-latest: false
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1079838Z   token: ***
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1080166Z env:
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1080512Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.1080843Z ##[endgroup]
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.2515634Z Found in cache @ /opt/hostedtoolcache/node/24.21.0/x64
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.2519979Z (node:2322) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.2520694Z (Use `node --trace-deprecation ...` to show where the warning was created)
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.2522708Z ##[group]Environment details
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.6828470Z node: v24.21.0
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.6828961Z npm: 11.19.0
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.6829248Z yarn: 1.22.22
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.6830616Z ##[endgroup]
+ci	Run actions/setup-node@v4	2026-10-16T01:30:38.6850855Z [command]/home/runner/setup-pnpm/node_modules/.bin/pnpm store path --silent
+ci	Run actions/setup-node@v4	2026-10-16T01:30:39.0488620Z /home/runner/setup-pnpm/node_modules/.bin/store/v10
+ci	Run actions/setup-node@v4	2026-10-16T01:30:39.2100820Z Cache hit for: node-cache-Linux-x64-pnpm-df5ad27f94df2b93e56dd15f71a4e40758d7b028c399ac54f30e19d2f8d6263d
+ci	Run actions/setup-node@v4	2026-10-16T01:30:39.2199642Z (node:2322) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+ci	Run actions/setup-node@v4	2026-10-16T01:30:40.3915422Z Received 106656115 of 110850419 (96.2%), 101.6 MBs/sec
+ci	Run actions/setup-node@v4	2026-10-16T01:30:40.4375014Z Received 110850419 of 110850419 (100.0%), 101.0 MBs/sec
+ci	Run actions/setup-node@v4	2026-10-16T01:30:40.4376267Z Cache Size: ~106 MB (110850419 B)
+ci	Run actions/setup-node@v4	2026-10-16T01:30:40.4406672Z [command]/usr/bin/tar -xf /home/runner/work/_temp/46106531-9928-46a0-9583-b62a98ac1d6c/cache.tzst -P -C /home/runner/work/better-stripe/better-stripe --use-compress-program unzstd
+ci	Run actions/setup-node@v4	2026-10-16T01:30:41.4053646Z Cache restored successfully
+ci	Run actions/setup-node@v4	2026-10-16T01:30:41.4104138Z Cache restored from key: node-cache-Linux-x64-pnpm-df5ad27f94df2b93e56dd15f71a4e40758d7b028c399ac54f30e19d2f8d6263d
+ci	Run pnpm install --frozen-lockfile	﻿2026-10-16T01:30:41.4241962Z ##[group]Run pnpm install --frozen-lockfile
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.4242420Z ^[[36;1mpnpm install --frozen-lockfile^[[0m
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.4442930Z shell: /usr/bin/bash -e {0}
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.4443242Z env:
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.4443524Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.4444056Z ##[endgroup]
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.7223551Z Scope: all 2 workspace projects
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.7667971Z Lockfile is up to date, resolution step is skipped
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.8229507Z Progress: resolved 1, reused 0, downloaded 0, added 0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.9293523Z Packages: +748
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:41.9303667Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:42.8234291Z Progress: resolved 748, reused 748, downloaded 0, added 498
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.1392503Z Progress: resolved 748, reused 748, downloaded 0, added 748, done
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5783051Z 
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5784014Z dependencies:
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5784513Z + @stripe/connect-js 3.4.6
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5785081Z + @stripe/react-connect-js 3.4.4
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5785542Z + @stripe/react-stripe-js 7.0.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5785963Z + @stripe/stripe-js 10.0.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5786226Z + convex-helpers 0.1.128
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5786473Z + react 19.3.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5786709Z + react-dom 19.3.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5786931Z + stripe 23.0.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5787060Z 
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5787168Z devDependencies:
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5787444Z + @convex-dev/eslint-plugin 5.0.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5787752Z + @edge-runtime/vm 5.0.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5788034Z + @fantastic.dev/repo-gates 0.4.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5788305Z + @shadcn/lint 0.1.5
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5788552Z + @shadscan/cli 0.7.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5788830Z + @testing-library/jest-dom 7.0.1
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5789123Z + @testing-library/react 16.3.3
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5789432Z + @testing-library/user-event 14.6.7
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5789766Z + @types/react 19.3.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5790171Z + @types/react-dom 19.3.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5790589Z + @typescript-eslint/parser 8.71.1
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5791060Z + @typescript/native <- typescript 7.0.2
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5791370Z + @vitest/coverage-v8 5.0.3
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5791614Z + convex 1.46.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5791851Z + convex-test 0.0.60
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5792139Z + eslint 10.12.0
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5792354Z + jsdom 30.1.2
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5792578Z + npm-run-all 4.1.5
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5792807Z + prettier 3.9.9
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5793118Z + prettier-plugin-tailwindcss 0.8.1
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5793604Z + pretty-quick 4.2.2
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5794193Z + typescript <- @typescript/typescript6 6.0.2
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5794630Z + typescript-eslint 8.71.1
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5795081Z + vitest 5.0.3
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.5795276Z 
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6128033Z ╭ Warning ─────────────────────────────────────────────────────────────────────╮
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6128972Z │                                                                              │
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6129761Z │   Ignored build scripts: esbuild@0.27.0, esbuild@0.28.2, msw@2.14.6.         │
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6130393Z │   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6131068Z │   to run scripts.                                                            │
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6131859Z │                                                                              │
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6132557Z ╰──────────────────────────────────────────────────────────────────────────────╯
+ci	Run pnpm install --frozen-lockfile	2026-10-16T01:30:43.6231571Z Done in 2.1s using pnpm v10.32.1
+ci	Run pnpm run check:all	﻿2026-10-16T01:30:43.6442586Z ##[group]Run pnpm run check:all
+ci	Run pnpm run check:all	2026-10-16T01:30:43.6442914Z ^[[36;1mpnpm run check:all^[[0m
+ci	Run pnpm run check:all	2026-10-16T01:30:43.6483539Z shell: /usr/bin/bash -e {0}
+ci	Run pnpm run check:all	2026-10-16T01:30:43.6484135Z env:
+ci	Run pnpm run check:all	2026-10-16T01:30:43.6484428Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+ci	Run pnpm run check:all	2026-10-16T01:30:43.6484751Z ##[endgroup]
+ci	Run pnpm run check:all	2026-10-16T01:30:43.9042725Z 
+ci	Run pnpm run check:all	2026-10-16T01:30:43.9043727Z > @fantastic.dev/better-stripe@0.29.0 check:all /home/runner/work/better-stripe/better-stripe
+ci	Run pnpm run check:all	2026-10-16T01:30:43.9044574Z > repo-gates check-all
+ci	Run pnpm run check:all	2026-10-16T01:30:43.9044739Z 
+ci	Run pnpm run check:all	2026-10-16T01:30:45.8546955Z ✓ build               (1.9s)
+ci	Run pnpm run check:all	2026-10-16T01:31:06.1613544Z ✓ lint                (20.3s)
+ci	Run pnpm run check:all	2026-10-16T01:31:09.7191946Z ✓ check:design-system (3.6s)
+ci	Run pnpm run check:all	2026-10-16T01:31:19.8991554Z ✓ format:check        (10.2s)
+ci	Run pnpm run check:all	2026-10-16T01:31:27.3675292Z ✓ typecheck           (7.5s)
+ci	Run pnpm run check:all	2026-10-16T01:31:27.7246103Z ✓ codegen:check       (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:31:28.1360726Z ✓ check:size          (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:31:28.5339758Z ✓ check:debt          (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:31:29.0108943Z ✓ check:circular      (0.5s)
+ci	Run pnpm run check:all	2026-10-16T01:31:29.4404044Z ✓ check:secrets       (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:31:32.0099664Z ✓ check:shadscan      (2.6s)
+ci	Run pnpm run check:all	2026-10-16T01:32:53.8517514Z ✓ test                (81.8s)
+ci	Run pnpm run check:all	2026-10-16T01:34:38.3995324Z ✓ check:coverage      (104.5s)
+ci	Run pnpm run check:all	2026-10-16T01:34:38.7881193Z ✓ check:agents        (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1701758Z ✓ check:ci-parity     (0.4s)
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1702927Z 
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1703285Z 15/15 gates passed (235.2s)
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1718275Z 
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1719085Z Scores:
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1719832Z   file-size         tightest example/scripts/e2e-webhooks.ts 907/907 (0 to spare)
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1720507Z   debt-markers      1 grandfathered, 0 untracked
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1721234Z   circular-imports  0 grandfathered, 0 new
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1721704Z   secrets           0 grandfathered, 0 new
+ci	Run pnpm run check:all	2026-10-16T01:34:39.1722634Z   coverage          lowest coverage/coverage-summary.json 77.8% lines (1 pkgs ≥ floor)
+ci	Post Run actions/setup-node@v4	﻿2026-10-16T01:34:39.1937084Z Post job cleanup.
+ci	Post Run actions/setup-node@v4	2026-10-16T01:34:39.3175243Z (node:8994) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+ci	Post Run actions/setup-node@v4	2026-10-16T01:34:39.3176429Z (Use `node --trace-deprecation ...` to show where the warning was created)
+ci	Post Run actions/setup-node@v4	2026-10-16T01:34:39.3178701Z Cache hit occurred on the primary key node-cache-Linux-x64-pnpm-df5ad27f94df2b93e56dd15f71a4e40758d7b028c399ac54f30e19d2f8d6263d, not saving cache.
+ci	Post Run pnpm/action-setup@v4	﻿2026-10-16T01:34:39.3280081Z Post job cleanup.
+ci	Post Run pnpm/action-setup@v4	2026-10-16T01:34:39.4721691Z Pruning is unnecessary.
+ci	Post Run actions/checkout@v4	﻿2026-10-16T01:34:39.4899901Z Post job cleanup.
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5819644Z [command]/usr/bin/git version
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5858277Z git version 2.55.0
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5893937Z Temporarily overriding HOME='/home/runner/work/_temp/78a2ac39-a220-4daa-aa93-2554ecd7bc2e' before making global git config changes
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5895583Z Adding repository directory to the temporary git global config as a safe directory
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5899600Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/better-stripe/better-stripe
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5941187Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.5975706Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6205750Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6231395Z http.https://github.com/.extraheader
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6242305Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6275727Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6527319Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ci	Post Run actions/checkout@v4	2026-10-16T01:34:39.6561628Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ci	Complete job	﻿2026-10-16T01:34:39.6947766Z Cleaning up orphan processes
+ci	Complete job	2026-10-16T01:34:39.7189457Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

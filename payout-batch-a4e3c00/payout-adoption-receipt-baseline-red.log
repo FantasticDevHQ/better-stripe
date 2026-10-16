@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/transferReceiptBaseline.test.ts (2 tests | 1 failed) 33ms
+   × reuses an already read baseline while still rereading the current ledger 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/transferReceiptBaseline.test.ts > reuses an already read baseline while still rereading the current ledger
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/client/connect/transferReceiptBaseline.test.ts:33:17
+     31|     ),
+     32|   ).toMatchObject({ status: "ready" });
+     33|   expect(reads).toBe(1);
+       |                 ^
+     34| });
+     35| it("rejects a ledger change after an already read baseline", async () …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  08:12:30
+   Duration  439ms (transform 47%, import 32%, environment 10%, tests 10%, worker 1%)
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutAdoptionConcurrency.test.ts (3 tests | 1 failed) 650ms
+   × reconciles an identical activation completed while another caller was delayed at begin attempt 203ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionConcurrency.test.ts > reconciles an identical activation completed while another caller was delayed at begin attempt
+AssertionError: expected [ 'fulfilled', 'rejected' ] to deeply equal [ 'fulfilled', 'fulfilled' ]
+
+- Expected
++ Received
+
+  [
+    "fulfilled",
+-   "fulfilled",
++   "rejected",
+  ]
+
+ ❯ src/client/connect/payoutAdoptionConcurrency.test.ts:135:42
+    133|     const results = await Promise.allSettled([first, second]);
+    134|     expect(delayed).toBe(true);
+    135|     expect(results.map((r) => r.status)).toEqual(["fulfilled", "fulfil…
+       |                                          ^
+    136|     for (const result of results)
+    137|       if (result.status === "fulfilled")
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  08:45:04
+   Duration  1.13s (tests 63%, transform 21%, import 12%, environment 4%)
+

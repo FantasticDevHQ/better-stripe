@@ -1,0 +1,33 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutAdoptionConcurrency.test.ts (4 tests | 1 failed | 3 skipped) 50ms
+   × reconciles a lost beginAttempt response without repeating an already-attempted boundary 50ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutAdoptionConcurrency.test.ts > reconciles a lost beginAttempt response without repeating an already-attempted boundary
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/client/connect/payoutAdoptionConcurrency.test.ts:227:18
+    225|     operation: { attempted: true, status: "complete" },
+    226|   });
+    227|   expect(begins).toBe(1);
+       |                  ^
+    228|   expect(s.provider.payouts.create).not.toHaveBeenCalled();
+    229| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  08:49:41
+   Duration  530ms (transform 49%, import 31%, tests 11%, environment 8%, worker 1%)
+

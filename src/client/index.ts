@@ -24,20 +24,7 @@ export * from "./charge-currency.js";
 export * from "./costRecovery.js";
 import type { SubscriptionStatus } from "../component/billing/validators.js";
 import * as processingCostsImpl from "./settlement/processingCosts.js";
-export type {
-  ProcessingCostContext,
-  ProcessingCostOptions,
-  ProcessingCostTransaction,
-  ProcessingCostRecord,
-  ProcessingCostNotReadyReason,
-} from "./settlement/processingCosts.js";
 import * as balanceFundingImpl from "./billing/balanceFunding.js";
-export type {
-  BalanceFundingCapability,
-  BalanceFundingPreparation,
-  PrepareBalanceFundingOptions,
-  SetBalanceFundingOptions,
-} from "./billing/balanceFunding.js";
 import * as invoicePreviewImpl from "./billing/invoicePreview.js";
 export type {
   UpcomingInvoicePreview,

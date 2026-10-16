@@ -78,3 +78,16 @@ export type {
   OperationEvidenceCaptureResult,
   OperationEvidencePage,
 } from "./operationEvidence.js";
+export type {
+  ProcessingCostContext,
+  ProcessingCostOptions,
+  ProcessingCostTransaction,
+  ProcessingCostRecord,
+  ProcessingCostNotReadyReason,
+} from "./settlement/processingCosts.js";
+export type {
+  BalanceFundingCapability,
+  BalanceFundingPreparation,
+  PrepareBalanceFundingOptions,
+  SetBalanceFundingOptions,
+} from "./billing/balanceFunding.js";

@@ -46,7 +46,21 @@ export const transferBatchFields = {
   referenceCount: v.number(),
   transferIds: v.array(v.id("transfers")),
   isOverflow: v.literal(true),
-  state: v.literal("pending"),
+  state: v.union(v.literal("pending"), v.literal("complete")),
+  continuation: v.optional(
+    v.object({
+      state: v.union(
+        v.literal("indexing"),
+        v.literal("validating"),
+        v.literal("complete"),
+        v.literal("held"),
+      ),
+      nextReference: v.number(),
+      validatedReferences: v.number(),
+      producerGeneration: v.number(),
+      sourceFingerprint: v.string(),
+    }),
+  ),
 };
 export const transferBatchDoc = v.object({
   ...transferBatchFields,

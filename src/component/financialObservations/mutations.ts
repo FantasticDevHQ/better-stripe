@@ -1,3 +1,6 @@
+import { continueTransferBatch } from "./transferContinuation.js";
+import { transferReaderState } from "./transferBatches.js";
+import { transferBatchDoc } from "./transferSchema.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { sourceDoc } from "./schema.js";
@@ -38,6 +41,35 @@ export const resume = mutation({
         current.generation >= 1
           ? current
           : null,
+    };
+  },
+});
+
+/** Trusted host continuation; caller selects identity and generation, never cursor state. */
+export const resumeTransferBatch = mutation({
+  args: {
+    batchId: v.id("financialTransferBatches"),
+    expectedGeneration: v.number(),
+  },
+  returns: v.object({
+    coverage: v.literal("unknown"),
+    producerGeneration: v.union(v.number(), v.null()),
+    hasDeferredWork: v.boolean(),
+    batch: v.union(transferBatchDoc, v.null()),
+  }),
+  handler: async (ctx, args) => {
+    if (
+      !Number.isSafeInteger(args.expectedGeneration) ||
+      args.expectedGeneration < 1
+    )
+      throw new Error("Invalid observation generation");
+    const batch = await ctx.db.get("financialTransferBatches", args.batchId);
+    if (batch) await continueTransferBatch(ctx, batch, args.expectedGeneration);
+    return {
+      ...(await transferReaderState(ctx)),
+      batch: batch
+        ? await ctx.db.get("financialTransferBatches", batch._id)
+        : null,
     };
   },
 });

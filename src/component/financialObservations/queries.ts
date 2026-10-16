@@ -1,3 +1,4 @@
+import { transferReferenceDoc } from "./transferReferenceSchema.js";
 import { transferReaderState } from "./transferBatches.js";
 import { transferObservationDoc, transferBatchDoc } from "./transferSchema.js";
 import {
@@ -206,4 +207,40 @@ export const transferOwner = query({
       ),
     };
   },
+});
+
+export const transferReferences = query({
+  args: {
+    batchId: v.id("financialTransferBatches"),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: v.object({
+    ...paginationResultValidator(transferReferenceDoc).fields,
+    ...transferReadFields,
+  }),
+  handler: async (ctx, args) => {
+    assertPageSize(args.paginationOpts.numItems);
+    const page = await paginator(ctx.db, schema)
+      .query("financialTransferBatchReferences")
+      .withIndex("by_batch_position", (q) => q.eq("batchId", args.batchId))
+      .order("asc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+    return { ...page, ...(await transferReaderState(ctx)) };
+  },
+});
+
+export const transferBatch = query({
+  args: { batchId: v.id("financialTransferBatches") },
+  returns: v.object({
+    ...transferReadFields,
+    batch: v.union(transferBatchDoc, v.null()),
+  }),
+  handler: async (ctx, args) => ({
+    ...(await transferReaderState(ctx)),
+    batch: await ctx.db.get("financialTransferBatches", args.batchId),
+  }),
 });

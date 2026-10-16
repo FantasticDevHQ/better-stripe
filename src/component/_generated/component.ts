@@ -3380,6 +3380,213 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    operationEvidence: {
+      mutations: {
+        capture: FunctionReference<
+          "mutation",
+          "internal",
+          { sourceId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            status:
+              | "captured"
+              | "updated"
+              | "unchanged"
+              | "unavailable"
+              | "source_unavailable";
+          },
+          Name
+        >;
+      };
+      queries: {
+        headers: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        latest: FunctionReference<
+          "query",
+          "internal",
+          { headerId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            payload: {
+              _creationTime: number;
+              _id: string;
+              commissionExposure?: {
+                chargeAmount: number;
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                finalized: boolean;
+                kind: "refund" | "dispute";
+                principal: number;
+                refundId?: string;
+                refundedPrincipal?: number;
+              };
+              operationId: string;
+              slices: Array<{
+                from: number;
+                stripeTransferId: string;
+                to: number;
+              }>;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+        original: FunctionReference<
+          "query",
+          "internal",
+          { headerId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            payload: {
+              _creationTime: number;
+              _id: string;
+              commissionExposure?: {
+                chargeAmount: number;
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                finalized: boolean;
+                kind: "refund" | "dispute";
+                principal: number;
+                refundId?: string;
+                refundedPrincipal?: number;
+              };
+              operationId: string;
+              slices: Array<{
+                from: number;
+                stripeTransferId: string;
+                to: number;
+              }>;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+        resolve: FunctionReference<
+          "query",
+          "internal",
+          { selector: "operationId" | "sourceChargeId"; value: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+          },
+          Name
+        >;
+      };
+    };
     payoutPolicy: {
       mutations: {
         beginAttempt: FunctionReference<

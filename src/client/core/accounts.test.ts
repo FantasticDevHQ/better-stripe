@@ -54,6 +54,12 @@ const TO_REF = Symbol.for("toReferencePath");
 function makeComponent(): Component {
   const ref = (path: string) => ({ [TO_REF]: `betterStripe/${path}` });
   return {
+    accountClosure: {
+      mutations: {
+        prepare: ref("accountClosure/mutations/prepare"),
+        complete: ref("accountClosure/mutations/complete"),
+      },
+    },
     core: {
       queries: {
         getAccount: ref("core/queries/getAccount"),
@@ -877,111 +883,108 @@ describe("listStripeAccounts", () => {
 });
 
 describe("closeAccount / restartAccountOnboarding", () => {
-  it("uses stored appliedConfigurations from the DB and deletes after Stripe close", async () => {
+  function context(appliedConfigurations?: string[], state = "pending") {
+    const runMutation = vi
+      .fn()
+      .mockResolvedValueOnce({
+        closure: { appliedConfigurations, state },
+        isRetry: false,
+      })
+      .mockResolvedValue(null);
+    return { ctx: { runMutation } as unknown as RunCtx, runMutation };
+  }
+
+  it("pins stored configurations before close and completes without deleting provenance", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const runQuery = vi.fn().mockResolvedValue({
-      appliedConfigurations: ["merchant", "recipient"],
-    });
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = { runQuery, runMutation } as unknown as RunCtx;
-
-    const result = await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_close",
-    });
-
-    expect(result).toEqual({ closed: true });
-    // never falls back to Stripe retrieve when DB has configs
+    const { ctx, runMutation } = context(["merchant", "recipient"]);
+    expect(
+      await closeAccount(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_close",
+      }),
+    ).toEqual({ closed: true });
     expect(stripe.v2.core.accounts.retrieve).not.toHaveBeenCalled();
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_close", {
-      applied_configurations: ["merchant", "recipient"],
-    });
-    expect(runMutation).toHaveBeenCalledWith(
-      refFor("core/mutations/deleteAccountByStripeId"),
-      { stripeAccountId: "acct_close" },
+    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith(
+      "acct_close",
+      { applied_configurations: ["merchant", "recipient"] },
+      { idempotencyKey: "betterstripe-close:acct_close" },
     );
+    expect(runMutation.mock.calls.map((call) => call[0])).toEqual([
+      refFor("accountClosure/mutations/prepare"),
+      refFor("accountClosure/mutations/complete"),
+    ]);
   });
 
-  it("falls back to Stripe retrieve when the DB has no applied configs", async () => {
+  it("retrieves configurations when none were stored", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accounts.retrieve.mockResolvedValue({
       applied_configurations: ["merchant"],
     });
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue(null), // no DB row
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
-
+    const { ctx } = context();
     await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_fb",
+      stripeAccountId: "acct_fallback",
     });
-
-    expect(stripe.v2.core.accounts.retrieve).toHaveBeenCalledWith("acct_fb");
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_fb", {
-      applied_configurations: ["merchant"],
-    });
+    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith(
+      "acct_fallback",
+      { applied_configurations: ["merchant"] },
+      { idempotencyKey: "betterstripe-close:acct_fallback" },
+    );
   });
 
-  it("closes with an empty config list when the Stripe retrieve fallback throws", async () => {
+  it("preserves pending provenance and refuses close when required provider lookup fails", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accounts.retrieve.mockRejectedValue(
-      new Error("no such account"),
+      new Error("retrieve unavailable"),
     );
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue(null),
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
-
-    await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_missing",
-    });
-
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_missing", {
-      applied_configurations: [],
-    });
+    const { ctx, runMutation } = context();
+    await expect(
+      closeAccount(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_missing",
+      }),
+    ).rejects.toThrow("retrieve unavailable");
+    expect(stripe.v2.core.accounts.close).not.toHaveBeenCalled();
+    expect(runMutation).toHaveBeenCalledTimes(1);
   });
 
-  it("does not delete from the DB if the Stripe close fails", async () => {
+  it("does not complete local closure after provider refusal", async () => {
     const stripe = makeStripe();
     stripe.v2.core.accounts.close.mockRejectedValue(new Error("close boom"));
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      runQuery: vi
-        .fn()
-        .mockResolvedValue({ appliedConfigurations: ["merchant"] }),
-      runMutation,
-    } as unknown as RunCtx;
-
+    const { ctx, runMutation } = context(["merchant"]);
     await expect(
       closeAccount(asStripe(stripe), makeComponent(), ctx, {
         stripeAccountId: "acct_err",
       }),
-    ).rejects.toThrow(/close boom/);
-
-    expect(runMutation).not.toHaveBeenCalled();
+    ).rejects.toThrow("close boom");
+    expect(runMutation).toHaveBeenCalledTimes(1);
+    expect(runMutation).toHaveBeenCalledWith(
+      refFor("accountClosure/mutations/prepare"),
+      { stripeAccountId: "acct_err" },
+    );
   });
 
-  it("restartAccountOnboarding delegates to closeAccount", async () => {
+  it("returns an already closed account without another provider operation", async () => {
     const stripe = makeStripe();
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue({ appliedConfigurations: [] }),
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
+    const { ctx } = context([], "closed");
+    expect(
+      await closeAccount(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_done",
+      }),
+    ).toEqual({ closed: true });
+    expect(stripe.v2.core.accounts.close).not.toHaveBeenCalled();
+    expect(stripe.v2.core.accounts.retrieve).not.toHaveBeenCalled();
+  });
 
-    const result = await restartAccountOnboarding(
-      asStripe(stripe),
-      makeComponent(),
-      ctx,
-      { stripeAccountId: "acct_restart" },
-    );
-
-    expect(result).toEqual({ closed: true });
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_restart", {
-      applied_configurations: [],
-    });
+  it("restartAccountOnboarding retains the same closure provenance contract", async () => {
+    const stripe = makeStripe();
+    const { ctx, runMutation } = context([]);
+    expect(
+      await restartAccountOnboarding(asStripe(stripe), makeComponent(), ctx, {
+        stripeAccountId: "acct_restart",
+      }),
+    ).toEqual({ closed: true });
+    expect(runMutation.mock.calls.map((call) => call[0])).toEqual([
+      refFor("accountClosure/mutations/prepare"),
+      refFor("accountClosure/mutations/complete"),
+    ]);
   });
 });
 

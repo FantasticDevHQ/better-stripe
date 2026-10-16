@@ -1,3 +1,4 @@
+import { canUpsertAccount } from "../accountClosure/helpers.js";
 import { assertPayoutResetSafe } from "./resetSafety.js";
 import { v } from "convex/values";
 
@@ -32,6 +33,7 @@ export const upsertAccount = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (!(await canUpsertAccount(ctx, args))) return null;
     const existing = await ctx.db
       .query("accounts")
       .withIndex("by_stripe_account_id", (q) =>
@@ -128,6 +130,7 @@ export const upsertAccountInternal = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (!(await canUpsertAccount(ctx, args))) return null;
     const existing = await ctx.db
       .query("accounts")
       .withIndex("by_stripe_account_id", (q) =>

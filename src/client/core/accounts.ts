@@ -432,39 +432,34 @@ export async function closeAccount(
   ctx: RunCtx,
   opts: { stripeAccountId: string },
 ): Promise<{ closed: boolean }> {
-  // First check our DB for stored applied_configurations
-  let appliedConfigs: string[] = [];
-
-  const dbAccount = await ctx.runQuery(
-    componentRef(component, "core/queries/getAccountByStripeId"),
-    { stripeAccountId: opts.stripeAccountId },
+  const { closure, isRetry } = await runMutationOrThrow(
+    ctx,
+    componentRef(component, "accountClosure/mutations/prepare"),
+    opts,
   );
-  if (dbAccount?.appliedConfigurations) {
-    appliedConfigs = dbAccount.appliedConfigurations;
-  } else {
-    // Fallback: fetch from Stripe
-    try {
-      const stripeAccount = await stripe.v2.core.accounts.retrieve(
-        opts.stripeAccountId,
-      );
-      appliedConfigs = stripeAccount.applied_configurations ?? [];
-    } catch {
-      // Account may not exist on Stripe
-    }
+  if (closure.state === "closed") return { closed: true };
+  let appliedConfigs = closure.appliedConfigurations;
+  let isProviderClosed = false;
+  if (isRetry || appliedConfigs === undefined) {
+    const account = await stripe.v2.core.accounts.retrieve(
+      opts.stripeAccountId,
+    );
+    appliedConfigs ??= account.applied_configurations ?? [];
+    isProviderClosed = account.closed === true;
   }
-
-  // Close the account on Stripe — must pass all applied_configurations
-  // See: https://docs.stripe.com/api/v2/core/accounts/close
-  await stripe.v2.core.accounts.close(opts.stripeAccountId, {
-    applied_configurations: appliedConfigs as V2CloseAppliedConfiguration[],
-  });
-
-  // Only remove from component DB after Stripe close succeeds
-  // This prevents Convex/Stripe getting out of sync if close fails
+  if (!isProviderClosed)
+    await stripe.v2.core.accounts.close(
+      opts.stripeAccountId,
+      {
+        applied_configurations: (appliedConfigs ??
+          []) as V2CloseAppliedConfiguration[],
+      },
+      { idempotencyKey: `betterstripe-close:${opts.stripeAccountId}` },
+    );
   await runMutationOrThrow(
     ctx,
-    componentRef(component, "core/mutations/deleteAccountByStripeId"),
-    { stripeAccountId: opts.stripeAccountId },
+    componentRef(component, "accountClosure/mutations/complete"),
+    opts,
   );
 
   return { closed: true };

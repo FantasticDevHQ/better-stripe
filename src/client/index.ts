@@ -1,3 +1,6 @@
+import * as accountClosuresImpl from "./core/accountClosures.js";
+import type { PaginationOptions } from "convex/server";
+export type { StripeAccountClosure } from "./core/accountClosures.js";
 import { reconcilePayoutAndTrigger } from "./webhooks/payoutReconciliation.js";
 import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
@@ -366,6 +369,29 @@ export class BetterStripe extends InvoiceReadClient {
     opts: { userId: string },
   ): Promise<StripeComponentAccount | null> {
     return accountsImpl.getAccountByUserId(this.component, ctx, opts);
+  }
+
+  /** Authenticate the host actor before consulting closed-account provenance. */
+  async getClosedAccountByStripeId(
+    ctx: RunCtx,
+    opts: { stripeAccountId: string },
+  ) {
+    return accountClosuresImpl.getClosedAccountByStripeId(
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  async listClosedAccountsByUserId(
+    ctx: RunCtx,
+    opts: { userId: string; paginationOpts: PaginationOptions },
+  ) {
+    return accountClosuresImpl.listClosedAccountsByUserId(
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   async getAccountByOrgId(

@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as accountClosure_helpers from "../accountClosure/helpers.js";
+import type * as accountClosure_mutations from "../accountClosure/mutations.js";
+import type * as accountClosure_queries from "../accountClosure/queries.js";
 import type * as affiliateEarnings_mutations from "../affiliateEarnings/mutations.js";
 import type * as affiliatePayouts_mutations from "../affiliatePayouts/mutations.js";
 import type * as affiliatePayouts_queries from "../affiliatePayouts/queries.js";
@@ -99,6 +102,9 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "accountClosure/helpers": typeof accountClosure_helpers;
+  "accountClosure/mutations": typeof accountClosure_mutations;
+  "accountClosure/queries": typeof accountClosure_queries;
   "affiliateEarnings/mutations": typeof affiliateEarnings_mutations;
   "affiliatePayouts/mutations": typeof affiliatePayouts_mutations;
   "affiliatePayouts/queries": typeof affiliatePayouts_queries;

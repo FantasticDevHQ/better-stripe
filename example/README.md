@@ -1383,3 +1383,40 @@ See [refund context](../docs/refund-context.md) for partial-capture minor units,
 bounded history, pending/unknown states and creation-time revalidation. A provider
 observation neither reserves the remaining amount nor authorizes access removal,
 subscription cancellation or a change to the original reversal recipients.
+
+## Closed-account history
+
+`getClosedAccountByStripeId` and `listClosedAccountsByUserId` preserve the
+original account-owner proof after closure. This Vite app uses claimed demo
+personas, not authenticated production identities. A production adapter must
+replace that persona with its verified, enabled session actor and reject
+organization ownership on a personal-history route:
+
+```ts
+const actor = await requireEnabledSessionActor(ctx); // your host auth helper
+const closed = await stripe.getClosedAccountByStripeId(ctx, {
+  stripeAccountId,
+});
+if (!closed || closed.userId !== actor.id || closed.orgId !== undefined) {
+  throw new Error("Account not available");
+}
+return ctx.runQuery(components.betterStripe.connect.queries.paginatePayouts, {
+  accountId: closed.stripeAccountId,
+  paginationOpts,
+});
+```
+
+`requireEnabledSessionActor` above is an application-owned auth boundary, not a
+BetterStripe or demo export. Consult the original closure owner even when the
+person now has a different active recipient. Use the personal discovery API's
+cursor and bounded page size rather than collecting every account or summing
+payout rows. Its personal index excludes organization records.
+
+The package pins ownership before provider closure, retains pending recovery on
+provider failure, and ignores late updates after success. Financial rows remain
+attached to the original Stripe account ID. Closure retry does not create a
+replacement or migrate funds. The existing demo restart action is not a
+production outstanding-obligation authorization policy: consumers must establish
+that separate policy before exposing the React close card. Package regression
+and isolated native evidence simulate provider completion; neither proves live
+Stripe closure or settlement eligibility.

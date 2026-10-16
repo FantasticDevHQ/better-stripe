@@ -1,5 +1,4 @@
 import { convexTest } from "convex-test";
-import { makeFunctionReference } from "convex/server";
 import { expect, it } from "vitest";
 import { api } from "../_generated/api.js";
 import { schema, modules } from "../../test.js";
@@ -13,9 +12,7 @@ const scope = {
   stripeChargeId: "ch_original",
   currency: "jpy",
 };
-const read = makeFunctionReference(
-  "refundHistory/queries:getRefundCommandEvidence",
-);
+const read = api.refundHistory.queries.getRefundCommandEvidence;
 
 it("preserves first observed binding time without treating legacy insertion as provider creation", () => {
   const first = refundCommandBinding({ metadata }, {}, 2000);

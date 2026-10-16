@@ -1,6 +1,6 @@
 # Refund-command evidence
 
-BTS-231 adds a bounded component reader for an opaque host refund-command key. It observes synchronized refund records; it does not contact Stripe, prove provider absence, authorize a retry or certify completed money. Publication verification (BTS-232) and host adoption are separate from source acceptance.
+The package provides a bounded component reader for an opaque host refund-command key. It observes synchronized refund records; it does not contact Stripe, prove provider absence, authorize a retry or certify completed money. Public artifact verification and host adoption are separate from source acceptance.
 
 ```ts
 const evidence = await stripe.getRefundCommandEvidence(ctx, {
@@ -36,4 +36,4 @@ Every current refund upsert normalizes existing metadata before applying incomin
 
 Any row without normalization version 1 keeps the reader unavailable globally. Otherwise an unindexed old metadata key plus an indexed newer duplicate could appear falsely unique. The indexed coverage hold is bounded and deliberately conservative, even for an unrelated legacy row.
 
-BTS-233 separately supplies a bounded trusted-host drain of the pending version index; it is not implemented by BTS-231. Current upserts can reobserve individual legacy rows with the same normalizer. Until all pending rows are normalized, this reader cannot report an observed unique match. Normalization coverage means only the current records written through the trusted component contract have been normalized. It does not establish complete historical Stripe ingestion, discover refunds never delivered to the component or authorize a provider retry.
+A separate legacy-normalization capability must drain the pending version index through bounded trusted-host calls; that drain is not implemented by this reader. Current upserts can reobserve individual legacy rows with the same normalizer. Until all pending rows are normalized, this reader cannot report an observed unique match. Normalization coverage means only the current records written through the trusted component contract have been normalized. It does not establish complete historical Stripe ingestion, discover refunds never delivered to the component or authorize a provider retry.

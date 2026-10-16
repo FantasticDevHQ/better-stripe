@@ -1,0 +1,63 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+ ❯ |client| src/client/connect/payoutOutcomeBatches.test.ts (3 tests | 2 failed) 7ms
+   × bounds transaction work while retaining every outcome in order 3ms
+   × retains a large individual outcome instead of imposing a new lifetime or claim cutoff 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |client| src/client/connect/payoutOutcomeBatches.test.ts > bounds transaction work while retaining every outcome in order
+AssertionError: expected 5 to be greater than 5
+ ❯ src/client/connect/payoutOutcomeBatches.test.ts:10:26
+      8|   const batches = payoutOutcomeBatches(rows);
+      9|   expect(batches.flat()).toEqual(rows);
+     10|   expect(batches.length).toBeGreaterThan(5);
+       |                          ^
+     11|   for (const batch of batches) {
+     12|     expect(batch.length).toBeLessThanOrEqual(25);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |client| src/client/connect/payoutOutcomeBatches.test.ts > retains a large individual outcome instead of imposing a new lifetime or claim cutoff
+AssertionError: expected [ [ …(3) ] ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+@@ -2,18 +2,14 @@
+    [
+      {
+        "allocationCount": 2,
+        "id": 0,
+      },
+-   ],
+-   [
+      {
+        "allocationCount": 2000,
+        "id": 1,
+      },
+-   ],
+-   [
+      {
+        "allocationCount": 1,
+        "id": 2,
+      },
+    ],
+
+ ❯ src/client/connect/payoutOutcomeBatches.test.ts:24:38
+     22|     { id: 2, allocationCount: 1 },
+     23|   ];
+     24|   expect(payoutOutcomeBatches(rows)).toEqual(rows.map((row) => [row]));
+       |                                      ^
+     25| });
+     26| it("also bounds batches when many outcomes have no source movement", (…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  08:28:20
+   Duration  176ms (transform 50%, tests 22%, import 20%, worker 8%)
+

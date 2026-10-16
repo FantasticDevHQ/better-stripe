@@ -26,6 +26,18 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.35.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.34.0...v0.35.0) (2026-10-16)
+
+
+### Features
+
+* **accounts:** register immutable financial bucket ownership (BTS-223) ([#248](https://github.com/FantasticDevHQ/better-stripe/issues/248)) ([dbf39fa](https://github.com/FantasticDevHQ/better-stripe/commit/dbf39fa28ce8e5896aad72a7e14eb0d1a6976caf))
+* normalize legacy refund-command bindings in bounded batches ([#255](https://github.com/FantasticDevHQ/better-stripe/issues/255)) ([12b431f](https://github.com/FantasticDevHQ/better-stripe/commit/12b431fee421894f752f6742ddf0ce14068b207e))
+* observe bounded exact refund-command evidence ([#253](https://github.com/FantasticDevHQ/better-stripe/issues/253)) ([ef8610b](https://github.com/FantasticDevHQ/better-stripe/commit/ef8610b71b5910b7d33ad745224c71590f6db583))
+* observe bounded transfer facts and preserve deferred references ([#252](https://github.com/FantasticDevHQ/better-stripe/issues/252)) ([8f951b2](https://github.com/FantasticDevHQ/better-stripe/commit/8f951b2c75737dceb5f074ae375acff84153b170))
+* resume every deferred transfer reference (BTS-229) ([#254](https://github.com/FantasticDevHQ/better-stripe/issues/254)) ([70ee4b7](https://github.com/FantasticDevHQ/better-stripe/commit/70ee4b76585a2e7ee4acebe54ab92f21b09b1749))
+* resume oversized settlement destination indexing (BTS-228) ([#251](https://github.com/FantasticDevHQ/better-stripe/issues/251)) ([6870b54](https://github.com/FantasticDevHQ/better-stripe/commit/6870b54055508adcc59b11a1da97d75d6079ff9d))
+
 ## [0.34.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.33.0...v0.34.0) (2026-10-16)
 
 ### Features

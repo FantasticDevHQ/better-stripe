@@ -27,5 +27,15 @@
     "Configuration storage only; no Stripe calls, live deployment, schedules, transfers or payouts changed.",
     "Native/cloud runtime and admin UI are not certified by these tests.",
     "Custom activation, recipient consent, automatic jobs and combined-progress integration remain DOJO-2249/2250."
-  ]
+  ],
+  "quality_gates": {
+    "passed": 12,
+    "total": 12,
+    "duration_seconds": 262.5,
+    "backend_passed": 4662,
+    "backend_existing_skips": 1,
+    "web_passed": 7718,
+    "web_existing_skips": 4,
+    "ui_passed": 32
+  }
 }

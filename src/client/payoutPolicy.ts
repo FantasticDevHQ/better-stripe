@@ -1,4 +1,8 @@
 import {
+  readPayoutOperation,
+  readPayoutPolicy,
+} from "./connect/payoutPolicyState.js";
+import {
   runAdoptionMutation,
   discardAdoptionProof,
 } from "./connect/payoutAdoptionCollection.js";
@@ -179,25 +183,13 @@ export class PayoutPolicyClient {
     ctx: RunCtx,
     scope: PayoutPolicyScope,
   ): Promise<PayoutPolicy | null> {
-    validateScope(scope);
-    return ctx.runQuery(
-      componentRef(this.component, "payoutPolicy/queries/get"),
-      { accountId: scope.accountId, ownerKey: scope.ownerKey },
-    );
+    return readPayoutPolicy(this.component, ctx, scope);
   }
   async operation(
     ctx: RunCtx,
     args: PayoutPolicyScope & { operationKey: string },
   ): Promise<PayoutPolicyOperation | null> {
-    validateScope(args);
-    return ctx.runQuery(
-      componentRef(this.component, "payoutPolicy/queries/operation"),
-      {
-        accountId: args.accountId,
-        ownerKey: args.ownerKey,
-        operationKey: args.operationKey,
-      },
-    );
+    return readPayoutOperation(this.component, ctx, args);
   }
   async due(
     ctx: RunCtx,
@@ -518,10 +510,19 @@ export class PayoutPolicyClient {
           return migration;
         }
       }
-      await runAdoptionMutation(this.component, ctx, "beginAttempt", {
-        ...args,
-        ...(freshAdoption ? { adoption: freshAdoption } : {}),
-      });
+      if (!operation.attempted) {
+        const attempt = await runAdoptionMutation(
+          this.component,
+          ctx,
+          "beginAttempt",
+          {
+            ...args,
+            ...(freshAdoption ? { adoption: freshAdoption } : {}),
+          },
+        );
+        if (attempt.status === "operation_changed")
+          return this.apply(ctx, args);
+      }
       try {
         await this.provider().balanceSettings.update(
           {

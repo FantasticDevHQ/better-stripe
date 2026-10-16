@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import type { Component, RunCtx } from "../helpers.js";
-import { componentRef } from "../webhooks/helpers.js";
+import { readPayoutOperation } from "./payoutPolicyState.js";
 import { collectAdoptionProof } from "./payoutActivationProof.js";
 /** A competing identical caller may consume and remove the shared proof cache. */
 export async function collectResumableAdoptionProof(
@@ -13,14 +13,7 @@ export async function collectResumableAdoptionProof(
   phase: "prepare" | "apply",
 ) {
   const changed = async () => {
-    const operation = (await ctx.runQuery(
-      componentRef(component, "payoutPolicy/queries/operation"),
-      {
-        accountId: scope.accountId,
-        ownerKey: scope.ownerKey,
-        operationKey: scope.operationKey,
-      },
-    )) as { status: string; attempted: boolean } | null;
+    const operation = await readPayoutOperation(component, ctx, scope);
     return (
       !!operation &&
       (phase === "prepare" ||

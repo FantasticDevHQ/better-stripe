@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /private/tmp/dojo-payout-minimum-config/packages/backend
+
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  10:47:44
+   Duration  2.88s (transform 1.28s, setup 0ms, import 1.29s, tests 1.24s, environment 48ms)
+

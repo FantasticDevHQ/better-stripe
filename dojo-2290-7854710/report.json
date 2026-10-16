@@ -1,0 +1,31 @@
+{
+  "issue": "DOJO-2290",
+  "repository": "kellykampen/dojo",
+  "head": "7854710346d90283d2b6eee8b89ab77443ca90eb",
+  "focused_tests": {
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "framework": "convex-test with real Dojo and BetterAuth schemas"
+  },
+  "checks": [
+    "enabled authenticated safe reads",
+    "enabled super-admin writes",
+    "disabled/deleted/banned rejection",
+    "positive safe-integer minor units",
+    "ISO currency identity",
+    "currency isolation",
+    "CAS concurrency",
+    "actor-bound operation replay",
+    "changed replay rejection",
+    "bounded admin audit pagination",
+    "explicit provider-minimum reset"
+  ],
+  "typecheck": "passed after adding the module ES2022 Intl type reference",
+  "limitations": [
+    "In-memory isolated test fixtures; no shared anonymous database used.",
+    "Configuration storage only; no Stripe calls, live deployment, schedules, transfers or payouts changed.",
+    "Native/cloud runtime and admin UI are not certified by these tests.",
+    "Custom activation, recipient consent, automatic jobs and combined-progress integration remain DOJO-2249/2250."
+  ]
+}

@@ -1,0 +1,88 @@
+
+ RUN  v4.1.11 /private/tmp/dojo-payout-minimum-config/packages/backend
+
+ ❯ convex/billing/payoutPolicyConfig.test.ts (20 tests | 4 failed) 561ms
+   × reads an explicit provider default without inventing a numeric floor 519ms
+   × persists versioned currency policy and an authenticated actor audit 4ms
+   × replays a lost-response edit without creating a second revision or audit row 2ms
+   × serializes competing revisions and preserves explicit reset history 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/billing/payoutPolicyConfig.test.ts > reads an explicit provider default without inventing a numeric floor
+Error: Could not find module for: "billing/payoutPolicy/config"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+    1466|         const module = modulesWithoutExtension[prefix + path];
+    1467|         if (module === undefined) {
+    1468|             throw new Error(`Could not find module for: "${path}"`);
+       |                   ^
+    1469|         }
+    1470|         return await module();
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.queryFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2071:40
+ ❯ query ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2158:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as query] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payoutPolicyConfig.test.ts:22:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  convex/billing/payoutPolicyConfig.test.ts > persists versioned currency policy and an authenticated actor audit
+Error: Could not find module for: "billing/payoutPolicy/config"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+    1466|         const module = modulesWithoutExtension[prefix + path];
+    1467|         if (module === undefined) {
+    1468|             throw new Error(`Could not find module for: "${path}"`);
+       |                   ^
+    1469|         }
+    1470|         return await module();
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as mutation] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payoutPolicyConfig.test.ts:27:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  convex/billing/payoutPolicyConfig.test.ts > replays a lost-response edit without creating a second revision or audit row
+Error: Could not find module for: "billing/payoutPolicy/config"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+    1466|         const module = modulesWithoutExtension[prefix + path];
+    1467|         if (module === undefined) {
+    1468|             throw new Error(`Could not find module for: "${path}"`);
+       |                   ^
+    1469|         }
+    1470|         return await module();
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.mutationFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2117:40
+ ❯ mutation ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2167:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as mutation] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payoutPolicyConfig.test.ts:36:32
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  convex/billing/payoutPolicyConfig.test.ts > serializes competing revisions and preserves explicit reset history
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ convex/billing/payoutPolicyConfig.test.ts:48:57
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 16 passed (20)
+   Start at  10:40:04
+   Duration  1.29s (transform 383ms, setup 0ms, import 490ms, tests 561ms, environment 38ms)
+
+undefined
+/private/tmp/dojo-payout-minimum-config/packages/backend:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/billing/payoutPolicyConfig.test.ts

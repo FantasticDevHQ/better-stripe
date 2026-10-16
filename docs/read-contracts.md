@@ -278,3 +278,19 @@ The Vite server-only reference `example/convex/billing/invoiceHistory.ts` derive
 V2 account from a retained personal buyer mapping after its caller authorizes
 the buyer. It accepts no account selector from the caller. Production hosts need
 real session authorization; selecting a demo persona does not provide it.
+
+## Provider invoice payment references
+
+`getInvoicePaymentPageFromStripe(ctx, { stripeInvoiceId, customerAccount,
+stripeSubscriptionId, limit, cursor })` verifies the known invoice's canonical
+V2 buyer and subscription on every request, then enumerates the dedicated
+invoice-payments endpoint. Its bounded `{ scope, page, hasMore, continueCursor }`
+result preserves original provider rows and canonical PaymentIntent references;
+unsupported or unavailable references remain visible. Embedded invoice payment
+previews are not complete lists. See [invoice payment references](./invoice-payment-pages.md)
+for the public contract, pagination failures and host obligations.
+
+Invoice allocations are not the PaymentIntent's remaining refundable balance.
+The host authorizes the actual session, verifies original merchant and sale scope,
+and revalidates creation-time eligibility through the existing refund APIs. This
+reader writes no financial records and changes no access or subscription state.

@@ -14,7 +14,7 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { ReadContractClient } from "./readContracts.js";
+import { InvoiceReadClient } from "./invoiceReads.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -55,7 +55,10 @@ export type {
   CouponReadOptions,
 } from "./billing/providerReads.js";
 import * as providerReads from "./billing/providerReads.js";
-import * as invoicePages from "./billing/invoicePages.js";
+export type {
+  InvoicePaymentPageOptions,
+  ProviderInvoicePaymentPage,
+} from "./billing/invoicePaymentPages.js";
 export type {
   InvoicePageOptions,
   ProviderInvoicePage,
@@ -219,7 +222,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends ReadContractClient {
+export class BetterStripe extends InvoiceReadClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -285,7 +288,7 @@ export class BetterStripe extends ReadContractClient {
     return registerClientRoutes(this, http, config);
   }
 
-  private stripe(): Stripe {
+  protected stripe(): Stripe {
     return getStripeClient(this.apiKey, this.stripeApiVersion);
   }
 
@@ -1020,14 +1023,6 @@ export class BetterStripe extends ReadContractClient {
     opts: invoicePreviewImpl.UpcomingInvoicePreviewOptions,
   ) {
     return invoicePreviewImpl.getUpcomingInvoicePreview(this.stripe(), opts);
-  }
-
-  /** Provider page only; the host authorizes scope and verifies historical completeness. */
-  async getInvoicePageFromStripe(
-    _ctx: RunCtx,
-    opts: invoicePages.InvoicePageOptions,
-  ) {
-    return invoicePages.getInvoicePageFromStripe(this.stripe(), opts);
   }
 
   async getInvoiceFromStripe(ctx: RunCtx, opts: { stripeInvoiceId: string }) {

@@ -1,0 +1,23 @@
+Final head: dc396d70ea8d7e8a8c31f2a333028719c31badde
+Node: 24.19.0, repository .nvmrc pin, via fnm exec
+✓ lint                (0.5s)
+✓ format              (34.8s)
+✓ check:design-system (10.8s)
+✓ typecheck           (0.4s)
+✓ check:size          (0.8s)
+✓ check:debt          (0.5s)
+✓ check:circular      (0.6s)
+✓ check:secrets       (0.6s)
+✓ agent-doc validation passed (AGENTS.md, packages/backend/AGENTS.md)
+✓ check:agents        (0.3s)
+✓ check:shadscan      (24.9s)
+@dojo/ui:test:  Test Files  2 passed (2)
+@dojo/ui:test:       Tests  32 passed (32)
+@dojo/web:test:  Test Files  556 passed (556)
+@dojo/web:test:       Tests  7742 passed | 4 skipped (7746)
+@dojo/backend:test:  Test Files  475 passed | 1 skipped (476)
+@dojo/backend:test:       Tests  4668 passed | 1 skipped (4669)
+✓ test                (136.9s)
+✓ CI parity: 1 gate invocation(s) across CI workflows, all reachable from "check:all" (14 scripts in graph).
+✓ check:ci-parity     (0.4s)
+12/12 gates passed (211.5s)

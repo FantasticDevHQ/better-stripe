@@ -1,17 +1,15 @@
-# Platform payout-minimum editor
+# Platform payout-minimum editor verification
 
-DOJO-2292, Dojo source `85cec13e251e2b9fd53a69136b821ec901f98d6c`.
+Final Dojo PR #736 head: `dc396d70ea8d7e8a8c31f2a333028719c31badde`.
 
-All 24 focused React tests, 26 real-schema backend tests and both browser runs pass. The recording shows the actual Dojo Shadcn form and public BetterStripe action lifecycle, with clearly labeled synthetic session/database transport. Desktop and mobile screenshots and video frames were inspected.
+All 12 repository gates pass on the final head in 211.5s using the repository-pinned Node 24.19.0 through fnm. Backend: 4,668 passed with one existing skip. Web: 7,742 passed with four existing skips. UI package: 32 passed. The preceding Homebrew run lost a shared library during worker startup and is not counted as a pass. No rule or baseline was weakened.
 
-The tests prove provider-default presentation without a guessed floor, whole minor-unit validation, independent USD/JPY settings, immutable retry identities, duplicate-submit locking, private-error suppression, fresh admin-session handshake, stale nonce/session/revision disposal, accessible grouped controls and error associations, and sign-out removal. The red logs distinguish missing UI behavior, the missing server handshake and the missing group name before their fixes.
+All 24 focused React tests, 26 real-schema backend tests and both browser runs pass. The videos show the actual Dojo Shadcn form and public BetterStripe action lifecycle, with clearly labeled synthetic auth/database transport. Desktop and mobile screenshots and recorded frames were inspected. Runtime recording head `85cec13e251e2b9fd53a69136b821ec901f98d6c` is unchanged in production on the final head, which adds only seven JSDoc comment lines in three test/fixture files.
 
-React Doctor reports 92/100 with one advisory about form preventDefault. That behavior intentionally keeps the client Convex mutation on the current page and is retained. No rule or gate was weakened.
+Tests cover explicit provider defaults, integer minor units, independent USD/JPY settings, retry identity, duplicate-submit locking, private errors, fresh nonce/session handshake, obsolete nonce/session/revision disposal, server-bound editor saves, revoked backing sessions, accessible radio/error associations and sign-out removal. Existing authorized programmatic callers can omit the optional editor-scope comparison. The red logs establish the missing UI, session and accessibility behavior before their fixes.
 
-Browser transport is mocked; backend persistence/authorization evidence is in merged Dojo PR #735. These tests do not certify cloud deployment, Stripe scheduling, recipient consent or payout release. Those remain DOJO-2249/2250. All 12 local repository gates passed on this final source in 307.0s. Backend 4,668 passed with one existing skip, web 7,742 passed with four existing skips, UI 32 passed. Exact-head CI is being verified before merge: https://github.com/kellykampen/dojo/actions/runs/38850746170
+CodeRabbit reviewed the runtime implementation with no actionable code findings. Its docstring coverage warning is fixed: a TypeScript AST audit verifies 21/21 reviewed named functions have JSDoc. React Doctor reports 92/100 with one advisory about form preventDefault; the client mutation intentionally stays on the current page. Greptile review is unavailable because its trial expired.
 
-Editor saves include the expected nonce-verified session scope. The server compares it with the current enabled admin before persistence or retry replay. Real-schema regressions cover correct, malformed and foreign scope, a replacement session and a revoked backing session. Existing authorized programmatic callers can omit this optional editor comparison. Explicit Dojo-dev read-only code generation passes; no shared anonymous database was used.
+Browser transport is mocked. Backend tests use real Dojo/BetterAuth schemas in isolated in-memory fixtures. Explicit Dojo-dev read-only code generation passes. These tests do not certify cloud deployment, actual app sessions, Stripe schedule changes, recipient consent or payout release. No shared anonymous database was used. Financial activation/progress remain DOJO-2249/2250.
 
-## Review documentation fix
-
-Final head `dc396d70ea8d7e8a8c31f2a333028719c31badde` adds seven JSDoc comments in three test/fixture files after CodeRabbit reported 66.67% coverage. A TypeScript AST audit now verifies 21/21 reviewed named functions have JSDoc. Production implementation and the recorded behavior at `85cec13` are unchanged. Final documentation-head gates and CI are being verified before merge.
+Final exact-head CI is being verified before merge: https://github.com/kellykampen/dojo/actions/runs/38851902086

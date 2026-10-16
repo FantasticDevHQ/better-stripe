@@ -33,10 +33,23 @@
     "editor_session_tests": 6
   },
   "read_only_convex_codegen": "passed against explicit Dojo dev deployment; no application deployment or data changes claimed",
-  "quality_gates": {
+  "runtime_recording_head": "85cec13e251e2b9fd53a69136b821ec901f98d6c",
+  "final_head": "dc396d70ea8d7e8a8c31f2a333028719c31badde",
+  "reviewed_runtime_quality_gates": {
     "passed": 12,
     "total": 12,
     "duration_seconds": 307.0,
+    "backend_passed": 4668,
+    "backend_existing_skips": 1,
+    "web_passed": 7742,
+    "web_existing_skips": 4,
+    "ui_passed": 32
+  },
+  "final_quality_gates": {
+    "passed": 12,
+    "total": 12,
+    "duration_seconds": 211.5,
+    "node": "24.19.0",
     "backend_passed": 4668,
     "backend_existing_skips": 1,
     "web_passed": 7742,

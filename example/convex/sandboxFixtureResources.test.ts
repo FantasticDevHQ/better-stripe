@@ -11,6 +11,11 @@ const stripe = vi.hoisted(() => ({
   v2: { core: { accounts: { retrieve: vi.fn() } } },
 }));
 vi.mock("./lib/stripeClient", () => ({ getStripeClient: () => stripe }));
+const catalog = vi.hoisted(() => ({
+  listProducts: vi.fn(),
+  listPricesByProduct: vi.fn(),
+}));
+vi.mock("./stripe", () => ({ stripe: catalog }));
 
 function context() {
   const runQuery = vi.fn();
@@ -38,6 +43,19 @@ const users = [
 describe("sandbox resource retries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    catalog.listProducts.mockResolvedValue([
+      { stripeProductId: "prod_maya", active: true },
+    ]);
+    catalog.listPricesByProduct.mockResolvedValue([
+      {
+        stripePriceId: "price_maya",
+        stripeProductId: "prod_maya",
+        active: true,
+        currency: "usd",
+        type: "one_time",
+        unitAmount: 10000,
+      },
+    ]);
     stripe.v2.core.accounts.retrieve.mockResolvedValue({
       configuration: {
         recipient: {
@@ -47,6 +65,33 @@ describe("sandbox resource retries", () => {
         },
       },
     });
+  });
+  it("binds fixture charges to their seller's catalog price before a dispute can prevent settlement", async () => {
+    const { ctx, runQuery } = context();
+    runQuery.mockResolvedValueOnce(users).mockResolvedValueOnce(null);
+    stripe.paymentIntents.search.mockResolvedValue({ data: [] });
+    stripe.paymentIntents.create.mockResolvedValue({ id: "pi_dispute" });
+    await fixturePayment(
+      ctx,
+      "maya@example.com",
+      "dispute:open",
+      10000,
+      "pm_card_createDispute",
+      true,
+    );
+    expect(catalog.listProducts).toHaveBeenCalledWith(ctx, {
+      accountId: "acct_maya",
+    });
+    expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          sellerId: "maya",
+          stripePriceId: "price_maya",
+          stripeProductId: "prod_maya",
+        }),
+      }),
+      expect.anything(),
+    );
   });
   it.each(["seller", "affiliate"])(
     "waits for %s transfer capabilities before creating a fixture payment",

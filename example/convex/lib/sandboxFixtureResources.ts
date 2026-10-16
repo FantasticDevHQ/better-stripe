@@ -3,6 +3,7 @@ import { api, internal } from "../_generated/api";
 import { FIXTURE_SELLERS, fixtureKey } from "./sandboxFixturePlan";
 import { canReceiveStorePayments } from "./storeRecipient";
 import { getStripeClient } from "./stripeClient";
+import { stripe } from "../stripe";
 
 export async function ensure<T extends { id: string }>(
   ctx: ActionCtx,
@@ -63,6 +64,21 @@ export async function fixturePayment(
         "Test recipient transfers are not ready yet. Waiting for Stripe verification.",
       );
   }
+  const products = await stripe.listProducts(ctx, {
+    accountId: seller.stripeAccountId!,
+  });
+  const product = products.find((product) => product.active);
+  const prices = product
+    ? await stripe.listPricesByProduct(ctx, {
+        stripeProductId: product.stripeProductId,
+      })
+    : [];
+  const price = prices.find(
+    (price) =>
+      price.active && price.currency === "usd" && price.type === "one_time",
+  );
+  if (!product || !price)
+    throw new Error("The seller's sandbox catalog is not ready yet.");
   const key = fixtureKey(seller.stripeAccountId!, scenario);
   const payment = await ensure(
     ctx,
@@ -93,6 +109,8 @@ export async function fixturePayment(
             fixtureKey: key,
             storeBilling: "sale_v1",
             sellerId: seller._id,
+            stripeProductId: product.stripeProductId,
+            stripePriceId: price.stripePriceId,
             userId: customer._id,
             planId: seller.storePlan?.planId ?? "starter",
             affiliateAccountId: referred ? affiliate.stripeAccountId! : "",

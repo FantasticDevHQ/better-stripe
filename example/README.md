@@ -782,12 +782,27 @@ pnpm exec convex run sandboxFixtures:start
 pnpm exec convex run sandboxFixtureState:status
 ```
 
+Fresh Maya and Sasha demo stores explicitly opt into a 20% affiliate commission
+with the Forever term, so referred sales earn real sandbox funds for Avery's
+payout fixture. This is saved demo-store configuration, not a platform default.
+Ordinary stores still default to zero commission. Reseeding preserves existing
+stores' edited or cleared settings.
+Existing zero-commission fixture sales are not retroactively awarded commissions.
+To refresh an older disposable demo dataset with these fixtures, use Reset All
+Data and then Seed Data. This clears local records, not the old Stripe objects.
+
 The fixture pack creates 40 sandbox sales, six refunds, four disputes with open,
 won, and lost outcomes, referred purchases, a customer subscription, paid monthly
 seller plans, and three connected-account payouts. These are real sandbox Stripe
 objects, created with Stripe's test payment methods. Stripe webhooks populate the
 same component ledger used by interactive purchases. Running the job again
 recovers its existing resources rather than repeating completed charges.
+Fixture payments retain the owning product and price IDs so refund/dispute
+costs can still be attributed when Stripe prevents the original settlement.
+Bulk cost reconciliation schedules retries for pending provider costs and
+continues with other sales. A deliberately pending refund does not prevent
+fixture population from completing, and unavailable costs are never estimated
+as zero or marked collected.
 The Express seller remains an interactive onboarding example; automatic sales
 wait for both the seller and affiliate recipient capabilities to become active
 before creating a payment. Stripe verification can take several minutes; the
@@ -1321,3 +1336,5 @@ callbacks should use the provided mutation context for transactional host writes
 Raw event hooks retain their original event payload and need separate notification
 deduplication. This source behavior requires a verified published package and
 explicit consumer adoption before it can support another application's acceptance.
+
+The embedded payouts panel is read-only for payout creation and schedule changes. Stripe-managed schedules or the BetterStripe custom-minimum worker own bank payout creation, so embedded controls cannot bypass a configured minimum.

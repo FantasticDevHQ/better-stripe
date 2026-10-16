@@ -115,12 +115,23 @@ export const seedMarketplaceDb = internalMutation({
         .withIndex("by_email", (q) => q.eq("email", persona.email))
         .first();
       if (existing) continue;
-      await ctx.db.insert("users", {
+      const userId = await ctx.db.insert("users", {
         name: persona.name,
         email: persona.email,
         role: persona.role,
         ...("storeName" in persona ? { storeName: persona.storeName } : {}),
       });
+      // These two fictional stores explicitly opt into commissions so the
+      // referral and affiliate payout fixtures have real earned funding.
+      // Ordinary stores still default to zero, and reruns preserve edits.
+      if (persona.role === "seller")
+        await ctx.db.insert("affiliateDefaults", {
+          sellerId: userId,
+          affiliateBasisPoints: 2000,
+          affiliateFixedAmount: null,
+          affiliateCommissionTerm: "forever",
+          version: 1,
+        });
       inserted++;
     }
 

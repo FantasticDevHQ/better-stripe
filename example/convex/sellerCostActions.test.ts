@@ -148,6 +148,46 @@ it("waits for Stripe refund costs rather than recording an estimate", async () =
     0,
   );
 });
+it("bulk recovery defers a pending refund and still reconciles other sales, then retries the pending cost", async () => {
+  vi.useFakeTimers();
+  try {
+    const { t, sellerId } = await setup();
+    await t.run(async (ctx) => {
+      const original = await ctx.db.query("storeSales").first();
+      const { _id, _creationTime, ...sale } = original!;
+      void _id;
+      void _creationTime;
+      await ctx.db.insert("storeSales", {
+        ...sale,
+        chargeId: "ch_pending",
+        paymentIntentId: "pi_pending",
+      });
+    });
+    client.getProcessingCostContext.mockImplementation(async (_ctx, args) =>
+      args.paymentIntentId === "pi_pending"
+        ? { status: "not_ready", reason: "refund_pending" }
+        : costContext,
+    );
+    await expect(
+      t.action(internal.sellerCostActions.reconcileExisting, { sellerId }),
+    ).resolves.toBeNull();
+    const first = await t.query(api.sellerCostBilling.list, { sellerId });
+    expect(first).toHaveLength(1);
+    expect(first[0]).toMatchObject({ amountDue: 320, outstanding: 320 });
+    client.getProcessingCostContext.mockImplementation(async (_ctx, args) => ({
+      ...costContext,
+      paymentIntentId: args.paymentIntentId,
+      chargeId:
+        args.paymentIntentId === "pi_pending" ? "ch_pending" : "ch_sale",
+    }));
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(
+      await t.query(api.sellerCostBilling.list, { sellerId }),
+    ).toHaveLength(2);
+  } finally {
+    vi.useRealTimers();
+  }
+});
 it("turns returned Stripe fees into a credit after the seller was already billed", async () => {
   const { t, sellerId } = await setup();
   await t.action(internal.sellerCostActions.reconcile, {

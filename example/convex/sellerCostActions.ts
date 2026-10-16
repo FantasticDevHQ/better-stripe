@@ -126,7 +126,7 @@ export const reconcileExisting = internalAction({
         { sellerId: seller._id as Id<"users"> },
       );
       for (const sale of sales)
-        await ctx.runAction(internal.sellerCostActions.reconcile, {
+        await ctx.runAction(internal.sellerCostActions.reconcileWhenReady, {
           paymentIntentId: sale.paymentIntentId,
         });
     }

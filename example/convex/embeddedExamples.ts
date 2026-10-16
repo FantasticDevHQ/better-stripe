@@ -71,7 +71,8 @@ export const createSession = action({
           payouts: {
             enabled: true,
             features: {
-              standard_payouts: true,
+              // Payout creation belongs to Stripe scheduling or the minimum worker.
+              standard_payouts: false,
               instant_payouts: false,
               external_account_collection: false,
               edit_payout_schedule: false,

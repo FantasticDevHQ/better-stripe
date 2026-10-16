@@ -43,6 +43,11 @@ test("reset and fresh reseed finish automatically, then rerun without duplicate 
   });
   await test.step("Seed accounts and populate all real Stripe fixtures without manually resuming", async () => {
     await page.getByRole("button", { name: "Seed Data", exact: true }).click();
+    // Account/catalog provisioning precedes the resumable activity job. Start
+    // its observation window when that job exists; keep the overall test cap.
+    await expect(
+      page.getByRole("progressbar", { name: "Sandbox fixture progress" }),
+    ).toBeVisible({ timeout: 600000 });
     await Promise.race([
       page
         .getByRole("button", { name: "Fixtures populated", exact: true })

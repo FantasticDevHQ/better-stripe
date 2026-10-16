@@ -33,3 +33,11 @@ export type {
   WebhookActionCtx,
 } from "./types.js";
 export type { PersonalAccountMapping } from "./core/personalAccountMapping.js";
+
+export type {
+  FinancialOwnershipOwner,
+  FinancialOwnershipRegistration,
+  FinancialOwnershipResult,
+  FinancialOwnershipPage,
+  RegisterFinancialOwnershipOptions,
+} from "./financialOwnership.js";

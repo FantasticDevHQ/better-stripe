@@ -2855,6 +2855,94 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    financialOwnership: {
+      mutations: {
+        register: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            bucketKey: string;
+            kind: "stripe_account" | "logical";
+            orgId?: string;
+            source?: { integration: string; recordId: string };
+            userId: string;
+          },
+          {
+            coverage: "unknown";
+            registration: {
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              generation: number;
+              kind: "stripe_account" | "logical";
+              orgId?: string;
+              source: { integration: string; recordId: string };
+              userId: string;
+            };
+            status: "registered";
+          },
+          Name
+        >;
+      };
+      queries: {
+        discover: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              generation: number;
+              kind: "stripe_account" | "logical";
+              orgId?: string;
+              source: { integration: string; recordId: string };
+              userId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        lookup: FunctionReference<
+          "query",
+          "internal",
+          { bucketKey: string },
+          | {
+              coverage: "unknown";
+              registration: {
+                _creationTime: number;
+                _id: string;
+                bucketKey: string;
+                generation: number;
+                kind: "stripe_account" | "logical";
+                orgId?: string;
+                source: { integration: string; recordId: string };
+                userId: string;
+              };
+              status: "registered";
+            }
+          | { coverage: "unknown"; status: "unknown" },
+          Name
+        >;
+      };
+    };
     payoutPolicy: {
       mutations: {
         beginAttempt: FunctionReference<

@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.33.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.32.0...v0.33.0) (2026-10-16)
+
+### Features
+
+- **billing:** expose bounded authorized refund context ([6f4f264](https://github.com/FantasticDevHQ/better-stripe/commit/6f4f264658d48c478165a4e3f3aaa83e6a6cf94b))
+- **billing:** expose bounded buyer Checkout session pages ([f6cb1a6](https://github.com/FantasticDevHQ/better-stripe/commit/f6cb1a64139235ee65f907c3577e4aac75cff96c))
+
 ## [0.32.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.31.0...v0.32.0) (2026-10-16)
 
 ### Features

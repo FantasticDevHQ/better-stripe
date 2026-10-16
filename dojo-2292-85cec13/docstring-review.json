@@ -1,0 +1,114 @@
+{
+  "total": 21,
+  "documented": 21,
+  "functions": [
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-admin.tsx",
+      "name": "isEnabledAdmin",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-admin.tsx",
+      "name": "PayoutMinimumAdmin",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-currency.tsx",
+      "name": "PayoutMinimumCurrency",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-fields.tsx",
+      "name": "PayoutMinimumFields",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-form.tsx",
+      "name": "PayoutMinimumForm",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-session.tsx",
+      "name": "PayoutMinimumSession",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-admin.test.tsx",
+      "name": "widget",
+      "documented": true
+    },
+    {
+      "file": "apps/web/src/features/billing/admin/payout-minimum-admin.test.tsx",
+      "name": "custom",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-fixture.tsx",
+      "name": "Fixture",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "subscribe",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "publish",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useFixture",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "signOut",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useConvexAuth",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useSession",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useQuery",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useMutation",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useFixtureCalls",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useConvex",
+      "documented": true
+    },
+    {
+      "file": "apps/web/tests/e2e/billing/payout-minimum-transport.ts",
+      "name": "useQueries",
+      "documented": true
+    },
+    {
+      "file": "packages/backend/convex/billing/payoutPolicyEditorScope.test.ts",
+      "name": "fixture",
+      "documented": true
+    }
+  ],
+  "final_head": "dc396d70ea8d7e8a8c31f2a333028719c31badde",
+  "reviewed_runtime_head": "85cec13e251e2b9fd53a69136b821ec901f98d6c",
+  "change": "Seven JSDoc comments in three test/fixture files; production implementation unchanged."
+}

@@ -297,3 +297,53 @@ it("rejects duplicate and repeated boundary payment rows", async () => {
     getInvoicePaymentPageFromStripe(f.stripe, f.opts),
   ).rejects.toThrow();
 });
+
+it.each([
+  { amount_paid: Number.MAX_SAFE_INTEGER + 1 },
+  { amount_paid: -1 },
+  { amount_requested: 1.5 },
+  { amount_requested: Number.NaN },
+  { currency: "" },
+])(
+  "rejects unrepresentable original payment units instead of returning rounded evidence %#",
+  async (change) => {
+    const f = fixture();
+    f.list.mockResolvedValue({
+      data: [{ ...f.payment(), ...change }],
+      has_more: false,
+    } as never);
+    await expect(
+      getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+    ).rejects.toThrow(/units|currency/);
+  },
+);
+
+it("rejects noncanonical and invalid-schema cursor payloads before provider reads", async () => {
+  const f = fixture();
+  const payload = btoa(
+    JSON.stringify({ version: 2, scope: f.opts, after: "inpay_previous" }),
+  );
+  for (const cursor of ["%%%", payload, `${payload}=`]) {
+    await expect(
+      getInvoicePaymentPageFromStripe(f.stripe, { ...f.opts, cursor }),
+    ).rejects.toThrow(/cursor/);
+  }
+  expect(f.retrieve).not.toHaveBeenCalled();
+  expect(f.list).not.toHaveBeenCalled();
+});
+it("revalidates invoice ownership on continuation instead of trusting a previous successful page", async () => {
+  const f = fixture();
+  f.list.mockResolvedValue({ data: [f.payment()], has_more: true } as never);
+  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  f.retrieve.mockResolvedValue({
+    ...f.invoice,
+    customer_account: "acct_foreign",
+  } as never);
+  await expect(
+    getInvoicePaymentPageFromStripe(f.stripe, {
+      ...f.opts,
+      cursor: first.continueCursor,
+    }),
+  ).rejects.toThrow(/scope/);
+  expect(f.list).toHaveBeenCalledTimes(1);
+});

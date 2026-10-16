@@ -68,9 +68,22 @@ function decodeCursor(cursor: string, scope: z.infer<typeof scopeSchema>) {
 function referenceId(value: string | { id: string } | null | undefined) {
   return typeof value === "string" ? value : value?.id;
 }
+function assertRepresentableUnits(row: Stripe.InvoicePayment) {
+  const amounts = [
+    row.amount_requested,
+    ...(row.amount_paid === null ? [] : [row.amount_paid]),
+  ];
+  if (
+    amounts.some((amount) => !Number.isSafeInteger(amount) || amount < 0) ||
+    !/^[a-z]{3}$/.test(row.currency)
+  ) {
+    throw new Error("Invalid provider invoice payment units or currency");
+  }
+}
 function paymentReference(
   invoicePayment: Stripe.InvoicePayment,
 ): ProviderInvoicePaymentPage["page"][number] {
+  assertRepresentableUnits(invoicePayment);
   const type = invoicePayment.payment.type;
   const id =
     type === "payment_intent"

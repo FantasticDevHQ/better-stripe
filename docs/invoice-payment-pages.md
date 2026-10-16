@@ -4,6 +4,8 @@
 
 The method returns bounded pages with `hasMore` and a scope-bound `continueCursor`. Stripe's embedded invoice `payments` property contains only a preview. The reader uses the dedicated [invoice payment list endpoint](https://docs.stripe.com/api/invoice-payment/list) instead. A nonterminal empty or nonadvancing provider response fails rather than inventing a cursor or claiming completion. A terminal empty page is valid. Provider failures propagate.
 
+Unsafe, fractional or negative provider amounts and malformed currency identifiers fail rather than returning rounded money evidence. No unit conversion or summation runs in the reader.
+
 Each row retains the provider invoice-payment record's exact currency, requested amount, allocated paid amount and actual status. A canonical PaymentIntent reference has `referenceStatus: "payment_intent"`. Missing or malformed PaymentIntent references are `"unavailable"`; charge-only, payment-record and future payment types are `"unsupported"`. Those rows remain in the page. No records are silently filtered to make a page look complete.
 
 This is a reference reader, not an authorization or refund-eligibility decision. The host must derive its enabled authenticated actor and community permissions, verify original merchant routing against BetterStripe's payment records, and project safe fields before returning data to browsers. A payment reference does not authorize an affiliate or collaborator to refund the merchant's sale. Ownership transfer does not establish historical merchant authority.

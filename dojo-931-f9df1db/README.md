@@ -12,3 +12,8 @@ Full repository gates and CI are pending at this evidence upload. These fixtures
 ## Actual Stripe sandbox adapter read
 
 Final backend test/docs commit `994969e91` retains the exact UI recorded above. The opt-in actual-provider test passes at that commit in 12 seconds. It uses the real Dojo adapter with isolated BetterAuth/component state and the configured Stripe test-mode transport. Only the provisioning idempotency key is namespaced for a fresh QA run. The report records account creation/reuse, real hosted-link generation, a ready owner-bound empty payout snapshot, and verified account closure. Credentials are injected in memory, never included in this evidence. No payout or payment is created. No claim of completed hosted bank verification, cloud adapter deployment or bank delivery is made. Final full gates/CI remain pending until recorded in the PR.
+
+
+## Final documentation review and gates
+
+Head `136f746d1d424408b93fe9437f5e8d6b9c8fc4ba` adds seven JSDoc comments only. A TypeScript AST check confirms all nine reviewed exported UI/fixture functions are documented. Seven focused React tests still pass. All 12 local gates pass on this head in 190.1 seconds: 4,642 backend tests, 7,718 web tests and 32 UI package tests passed, with existing skips unchanged. Preceding source-tree head `5edb47c8c69364feb705ce1d411870ef5fc034c5` also passed independent CI run 38844711795. A final exact-head CI run is being recorded in PR734 before merge. The same video/screenshots and sandbox read apply because the follow-up changes only comments.

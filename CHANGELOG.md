@@ -28,11 +28,10 @@
 
 ## [0.34.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.33.0...v0.34.0) (2026-10-16)
 
-
 ### Features
 
-* **accounts:** expose unambiguous personal account mapping (BTS-222) ([521b73f](https://github.com/FantasticDevHQ/better-stripe/commit/521b73f4174b620b44abf0c569018e3b08227e3b))
-* **accounts:** preserve closed recipient ownership and history (BTS-202) ([c14fd3d](https://github.com/FantasticDevHQ/better-stripe/commit/c14fd3d501ef637d33efdf890694156e66328c71))
+- **accounts:** expose unambiguous personal account mapping ([521b73f](https://github.com/FantasticDevHQ/better-stripe/commit/521b73f4174b620b44abf0c569018e3b08227e3b))
+- **accounts:** preserve closed recipient ownership and history ([c14fd3d](https://github.com/FantasticDevHQ/better-stripe/commit/c14fd3d501ef637d33efdf890694156e66328c71))
 
 ## [0.33.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.32.0...v0.33.0) (2026-10-16)
 

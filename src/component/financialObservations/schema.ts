@@ -15,6 +15,18 @@ export const sourceFields = {
   indexedLegCount: v.number(),
   isOverflow: v.boolean(),
   isContradictory: v.boolean(),
+  continuation: v.optional(
+    v.object({
+      state: v.union(
+        v.literal("indexing"),
+        v.literal("validating"),
+        v.literal("complete"),
+        v.literal("held"),
+      ),
+      nextLeg: v.number(),
+      validatedLegs: v.number(),
+    }),
+  ),
 };
 export const sourceDoc = v.object({
   ...sourceFields,

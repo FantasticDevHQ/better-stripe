@@ -64,3 +64,46 @@ it.each([0, 101])(
     expect(ctx.runQuery).not.toHaveBeenCalled();
   },
 );
+it("drains oversized raw reservations through the installed public client", async () => {
+  const t = initConvexTest();
+  t.registerComponent(
+    "betterStripe",
+    schema,
+    import.meta.glob("../component/**/*.ts"),
+  );
+  const client = new BetterStripe(components.betterStripe);
+  const ctx = { runQuery: t.query, runMutation: t.mutation } as RunCtx;
+  const row = await t.mutation(
+    componentRef(
+      components.betterStripe,
+      "settlement/mutations/reserveSettlementAllocation",
+    ),
+    {
+      sourceChargeId: "ch_sdk_continue",
+      gross: 303,
+      currency: "usd",
+      processingFee: 1,
+      platformNet: 1,
+      transfers: Array.from({ length: 301 }, (_, i) => ({
+        destinationAccountId: `logical_${i}`,
+        role: "store",
+        amount: 1,
+      })),
+    },
+  );
+  let result = await client.financialObservations.source(ctx, {
+    allocationId: row._id,
+  });
+  while (result.observation?.continuation?.state !== "complete")
+    result = await client.financialObservations.resume(ctx, {
+      allocationId: row._id,
+      expectedGeneration: result.observation!.generation,
+    });
+  expect(result).toMatchObject({
+    coverage: "unknown",
+    observation: {
+      indexedLegCount: 301,
+      continuation: { state: "complete", validatedLegs: 301 },
+    },
+  });
+});

@@ -51,6 +51,10 @@ import type * as financialObservations_mutations from "../financialObservations/
 import type * as financialObservations_queries from "../financialObservations/queries.js";
 import type * as financialObservations_settlement from "../financialObservations/settlement.js";
 import type * as financialObservations_settlementHelpers from "../financialObservations/settlementHelpers.js";
+import type * as financialObservations_transferBatches from "../financialObservations/transferBatches.js";
+import type * as financialObservations_transferHelpers from "../financialObservations/transferHelpers.js";
+import type * as financialObservations_transferSchema from "../financialObservations/transferSchema.js";
+import type * as financialObservations_transfers from "../financialObservations/transfers.js";
 import type * as financialOwnership_helpers from "../financialOwnership/helpers.js";
 import type * as financialOwnership_mutations from "../financialOwnership/mutations.js";
 import type * as financialOwnership_queries from "../financialOwnership/queries.js";
@@ -155,6 +159,10 @@ const fullApi: ApiFromModules<{
   "financialObservations/queries": typeof financialObservations_queries;
   "financialObservations/settlement": typeof financialObservations_settlement;
   "financialObservations/settlementHelpers": typeof financialObservations_settlementHelpers;
+  "financialObservations/transferBatches": typeof financialObservations_transferBatches;
+  "financialObservations/transferHelpers": typeof financialObservations_transferHelpers;
+  "financialObservations/transferSchema": typeof financialObservations_transferSchema;
+  "financialObservations/transfers": typeof financialObservations_transfers;
   "financialOwnership/helpers": typeof financialOwnership_helpers;
   "financialOwnership/mutations": typeof financialOwnership_mutations;
   "financialOwnership/queries": typeof financialOwnership_queries;

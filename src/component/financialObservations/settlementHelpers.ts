@@ -13,7 +13,9 @@ type Leg = Omit<Infer<typeof legDoc>, "_id" | "_creationTime">;
 export async function legOwnership(
   ctx: MutationCtx,
   bucketKey: string,
-  prior: Doc<"financialSourceLegs"> | undefined,
+  prior:
+    | Pick<Doc<"financialSourceLegs">, "registrationId" | "userId" | "orgId">
+    | undefined,
 ) {
   const registrations = await ctx.db
     .query("financialOwnership")
@@ -44,7 +46,10 @@ export async function legOwnership(
     ownershipStatus: "registered" as const,
   };
 }
-export async function invalidate(ctx: MutationCtx, legs: Leg[]) {
+export async function invalidate(
+  ctx: MutationCtx,
+  legs: Pick<Leg, "bucketKey" | "userId" | "orgId">[],
+) {
   const scopes = new Set<string>();
   for (const leg of legs) {
     scopes.add(bucketScope(leg.bucketKey));

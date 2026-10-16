@@ -1,3 +1,4 @@
+import { observeTransfer } from "../financialObservations/transfers.js";
 import { updateObligation } from "../affiliateRecovery/accounting.js";
 import { v } from "convex/values";
 import type { Doc } from "../_generated/dataModel.js";
@@ -131,6 +132,7 @@ export const recordTransferReversalDefinition = {
         args.receipt,
       );
     await ctx.db.patch("transfers", transfer._id, derived);
+    await observeTransfer(ctx, (await ctx.db.get("transfers", transfer._id))!);
     const obligation = await ctx.db
       .query("affiliateObligations")
       .withIndex("by_transfer", (q) =>

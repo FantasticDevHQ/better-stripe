@@ -1,0 +1,25 @@
+{
+  "version": "0.30.0",
+  "sha1": "ddfb167e06087f3e53066f632e49cd21ecf47bc0",
+  "integrity": "sha512-QCWDraDeoOHqm/Anx+mIg6N5I+KsqI7/YYL+VuKDGCp4zfnr7vx+2fVzMBNFa7PIpYPo9DPTeIM/uHY3ZN0NJA==",
+  "integrityVerified": true,
+  "entries": 1859,
+  "exports": [
+    ".",
+    "./react",
+    "./testing",
+    "./convex.config",
+    "./convex.config.js",
+    "./_generated/component",
+    "./_generated/component.js"
+  ],
+  "batchAndActivationFixesPresent": true,
+  "sourceDocsByteMatchedRelease": 551,
+  "backendExportsResolved": 32,
+  "reactExportsResolved": 177,
+  "dojoCommit": "4f435c228",
+  "allGates": "12/12 passed in 160.4 seconds",
+  "backendTests": "4635 passed, 1 skipped",
+  "webTests": "7717 passed, 4 skipped",
+  "uiPackageTests": "32 passed"
+}

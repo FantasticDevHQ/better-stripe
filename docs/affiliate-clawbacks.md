@@ -219,7 +219,7 @@ active distinct store/affiliate Connect recipients, run the internal fixture
 from `example/`:
 
 ```sh
-pnpm exec convex run affiliateRecoverySandbox:seed '{"runKey":"recovery-partial-1","storeAccountId":"acct_store","affiliateAccountId":"acct_affiliate","scenario":"refund_partial"}'
+pnpm exec convex run affiliateRecovery/sandbox/actions:seed '{"runKey":"recovery-partial-1","storeAccountId":"acct_store","affiliateAccountId":"acct_affiliate","scenario":"refund_partial"}'
 ```
 
 The driver creates a real test payment, settles the original allocation, creates
@@ -237,7 +237,7 @@ post-settlement dispute workflow for those checks. Do not manufacture terminal
 webhooks as proof that provider funds were restored.
 
 `paid_out` uses Stripe's `pm_card_bypassPending` test method and first returns
-`operator_step_required`. Run internal `affiliateRecoverySandbox:externalPayout`
+`operator_step_required`. Run internal `affiliateRecovery/sandbox/actions:externalPayout`
 with the same `runKey`, `affiliateAccountId` and actual affiliate
 `stripeTransferId`. It verifies fixture provenance, checks actual available
 balance and creates an external test payout for that transfer's amount. Replays
@@ -248,18 +248,18 @@ must be reported as blocked. Recovery may still succeed using other account
 funds; a paid payout does not itself prove insufficient-balance debt.
 
 If prior sandbox refunds/disputes depleted platform funding, internal
-`affiliateRecoverySandbox:fundPlatform` creates a bounded test payment using
+`affiliateRecovery/sandbox/actions:fundPlatform` creates a bounded test payment using
 `runKey` and `amount` of at most 100,000 USD minor units. It returns the actual
 payment and before/after available balances. Balance updates can be asynchronous.
 Retain the funding receipt and do not label it commission recovery.
 
 For isolated recurring sources, run internal
-`affiliateRecoveryBillingSandbox:prepare` with a stable `runKey` and fixed
+`affiliateRecovery/billingSandbox/actions:prepare` with a stable `runKey` and fixed
 `frozenTime` Unix timestamp. Retain those exact arguments on replay. It creates
 an isolated test-clock customer and monthly subscription and returns the actual
 paid `invoiceId`, `paymentIntentId`, `subscriptionId`, `clockId` and `periodEnd`.
 Pass the invoice/payment/subscription references to `seed` with a distinct run
-key per invoice. `affiliateRecoveryBillingSandbox:advance` accepts that fixture's
+key per invoice. `affiliateRecovery/billingSandbox/actions:advance` accepts that fixture's
 `runKey`, `clockId` and a new `frozenTime`; after the clock finishes advancing,
 rerun `prepare` to read the next paid invoice. Existing persona subscriptions
 are not changed by these helpers.

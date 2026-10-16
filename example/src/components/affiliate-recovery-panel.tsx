@@ -27,7 +27,7 @@ export function AffiliateRecoveryPanel({
   const pagination = useCursorPagination(
     `affiliate-recovery:${currentUser.id}:usd`,
   );
-  const snapshot = useQuery(api.affiliateRecovery.snapshot, {
+  const snapshot = useQuery(api.affiliateRecovery.public.queries.snapshot, {
     userId: currentUser.id as Id<"users">,
     currency: "usd",
     paginationOpts: { numItems: 20, cursor: pagination.cursor },

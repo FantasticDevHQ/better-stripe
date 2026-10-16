@@ -20,7 +20,7 @@ import { useEarnings } from "@/lib/stripe-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AFFILIATE_REFERRAL_CODE } from "../../convex/affiliateSplit";
+import { AFFILIATE_REFERRAL_CODE } from "../../convex/marketplace/affiliateSplit";
 
 function AffiliateEmptyState({ children }: { children: ReactNode }) {
   return <p className="text-muted-foreground">{children}</p>;
@@ -136,7 +136,7 @@ export function AffiliateSales() {
     currentUser.stripeAccountId ?? currentUser.id,
   );
   const sales = useQuery(
-    api.queries.paginateAffiliateSales,
+    api.connect.queries.paginateAffiliateSales,
     currentUser.stripeAccountId
       ? {
           accountId: currentUser.stripeAccountId,
@@ -217,7 +217,7 @@ export function AffiliateSales() {
 }
 
 export function AffiliateLinks() {
-  const stores = useQuery(api.storefront.listStores);
+  const stores = useQuery(api.storefront.public.queries.listStores);
   const { copy } = useReferralLinks();
   const copyLink = async (url: string) => {
     if (await copy(url)) toast.success("Referral link copied");

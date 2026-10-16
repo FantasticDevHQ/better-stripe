@@ -53,9 +53,9 @@ export function PayoutPolicyPanel({
   currencies: string[];
 }) {
   const [currency, setCurrency] = useState(currencies[0] ?? "usd");
-  const load = useAction(api.recipientPayoutPolicy.load);
-  const save = useAction(api.recipientPayoutPolicy.save);
-  const retry = useAction(api.recipientPayoutPolicy.retry);
+  const load = useAction(api.recipientPayouts.policy.actions.load);
+  const save = useAction(api.recipientPayouts.policy.actions.save);
+  const retry = useAction(api.recipientPayouts.policy.actions.retry);
   const resource = useWorkflowResource(
     () => load({ userId, currency }),
     `${userId}:${currency}`,

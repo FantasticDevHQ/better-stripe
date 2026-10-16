@@ -24,7 +24,7 @@ async function purchase(
   referral = "avery",
 ) {
   const before = new Set(
-    convex("storeSaleSettlement:listSellerSales", { sellerId }).map(
+    convex("settlement/public/queries:listSellerSales", { sellerId }).map(
       (row: { chargeId: string }) => row.chargeId,
     ),
   );
@@ -40,7 +40,7 @@ async function purchase(
     page.getByText("Payment successful!", { exact: true }),
   ).toBeVisible({ timeout: 60000 });
   const find = () =>
-    convex("storeSaleSettlement:listSellerSales", { sellerId }).find(
+    convex("settlement/public/queries:listSellerSales", { sellerId }).find(
       (row: { chargeId: string; stripePriceId?: string }) =>
         !before.has(row.chargeId) && row.stripePriceId === priceId,
     );
@@ -48,7 +48,7 @@ async function purchase(
     .poll(() => find()?.status, { timeout: 60000, intervals: [1000, 3000] })
     .toBe("settled");
   const sale = find();
-  const plan = convex("storePlanPricing:list").find(
+  const plan = convex("storePlans/pricing/public/queries:list").find(
     (row: { id: string }) => row.id === sale.planId,
   );
   expect(sale.sellingFee).toBe(
@@ -77,7 +77,7 @@ async function purchase(
       sale.sellerNet +
       (sale.costRecoveryAmount ?? 0),
   );
-  const transfers = convex("queries:listTransfersByCharge", {
+  const transfers = convex("connect/queries:listTransfersByCharge", {
     sourceChargeId: sale.chargeId,
   });
   const affiliateTransfers = transfers.filter(
@@ -113,12 +113,14 @@ test("all store referral links preserve attribution and every commission scope r
 }, info) => {
   test.skip(!process.env.E2E_LIVE_BACKEND, "Requires seeded Stripe sandbox");
   test.setTimeout(600000);
-  expect(convex("queries:getPublishableKey")).toMatch(/^pk_test_/);
-  const stores = convex("storefront:listStores");
+  expect(convex("stripe/public/queries:getPublishableKey")).toMatch(
+    /^pk_test_/,
+  );
+  const stores = convex("storefront/public/queries:listStores");
   expect(stores.length).toBeGreaterThan(0);
-  const users = convex("users:list");
+  const users = convex("users/queries:list");
   const admin = users.find((row: { role: string }) => row.role === "admin");
-  const globalOriginal = convex("affiliateDefaults:get");
+  const globalOriginal = convex("affiliateDefaults/queries:get");
   const store = stores.find(
     (row: { products: { prices: { type: string }[] }[] }) =>
       row.products.some((product) =>
@@ -136,9 +138,15 @@ test("all store referral links preserve attribution and every commission scope r
     stripeProductId: product.stripeProductId,
   };
   const priceArgs = { ...productArgs, stripePriceId: price.stripePriceId };
-  const productOriginal = convex("sellerAffiliateRates:get", productArgs);
-  const priceOriginal = convex("sellerAffiliateRates:get", priceArgs);
-  const storeOriginal = convex("affiliateDefaults:get", {
+  const productOriginal = convex(
+    "sellerAffiliateRates/public/queries:get",
+    productArgs,
+  );
+  const priceOriginal = convex(
+    "sellerAffiliateRates/public/queries:get",
+    priceArgs,
+  );
+  const storeOriginal = convex("affiliateDefaults/queries:get", {
     sellerId: store.sellerId,
   });
   const saveRule = (
@@ -146,8 +154,8 @@ test("all store referral links preserve attribution and every commission scope r
     basis: number | null,
     fixed: number | null = null,
   ) => {
-    const current = convex("sellerAffiliateRates:get", args);
-    mutate("sellerAffiliateRates:save", {
+    const current = convex("sellerAffiliateRates/public/queries:get", args);
+    mutate("sellerAffiliateRates/public/mutations:save", {
       ...args,
       affiliateBasisPoints: basis,
       affiliateFixedAmount: fixed,
@@ -160,7 +168,7 @@ test("all store referral links preserve attribution and every commission scope r
   });
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   try {
-    mutate("affiliateDefaults:save", {
+    mutate("affiliateDefaults/mutations:save", {
       actorId: admin._id,
       affiliateBasisPoints: 1250,
       affiliateFixedAmount: null,
@@ -223,7 +231,7 @@ test("all store referral links preserve attribution and every commission scope r
             new RegExp(`priceId=${targetPrice.stripePriceId}.*ref=avery`),
           );
           if (role === "Customer") {
-            const rate = convex("sellerAffiliateRates:get", {
+            const rate = convex("sellerAffiliateRates/public/queries:get", {
               sellerId: target.sellerId,
               stripeProductId: target.products.find(
                 (p: { prices: { stripePriceId: string }[] }) =>
@@ -248,10 +256,10 @@ test("all store referral links preserve attribution and every commission scope r
       }
     }
     await page.getByRole("button", { name: "Visitor", exact: true }).click();
-    const storeCurrent = convex("affiliateDefaults:get", {
+    const storeCurrent = convex("affiliateDefaults/queries:get", {
       sellerId: store.sellerId,
     });
-    mutate("affiliateDefaults:save", {
+    mutate("affiliateDefaults/mutations:save", {
       actorId: store.sellerId,
       sellerId: store.sellerId,
       affiliateBasisPoints: 500,
@@ -334,8 +342,8 @@ test("all store referral links preserve attribution and every commission scope r
       [store.sellerId, storeOriginal],
       [undefined, globalOriginal],
     ] as const) {
-      const current = convex("affiliateDefaults:get", { sellerId });
-      mutate("affiliateDefaults:save", {
+      const current = convex("affiliateDefaults/queries:get", { sellerId });
+      mutate("affiliateDefaults/mutations:save", {
         actorId: sellerId ?? admin._id,
         sellerId,
         affiliateBasisPoints: original.affiliateBasisPoints,

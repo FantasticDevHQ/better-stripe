@@ -98,7 +98,7 @@
     "check:circular": "repo-gates check-circular",
     "check:secrets": "repo-gates check-secrets",
     "check:ci-parity": "repo-gates check-ci-parity",
-    "check:coverage": "repo-gates check-coverage",
+    "check:coverage": "node scripts/check-coverage.mjs",
     "format:check": "pnpm run format",
     "check:agents": "repo-gates check-agents"
   },

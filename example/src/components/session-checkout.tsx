@@ -19,7 +19,7 @@ export function SessionCheckout({
   referralCode?: string;
   publishableKey: string;
 }) {
-  const create = useAction(api.actions.createCheckoutSession);
+  const create = useAction(api.billing.public.actions.createCheckoutSession);
   const { currentUser } = useRole();
   return (
     <Checkout

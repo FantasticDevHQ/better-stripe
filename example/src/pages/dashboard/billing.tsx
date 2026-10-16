@@ -74,32 +74,43 @@ export function Billing({
   integration?: "headless" | "components";
 }) {
   const { currentUser } = useRole();
-  const subscriptions = useQuery(api.queries.listSubscriptionsByUser, {
+  const subscriptions = useQuery(
+    api.billing.public.queries.listSubscriptionsByUser,
+    {
+      userId: currentUser.id,
+    },
+  );
+  const invoices = useQuery(api.billing.public.queries.listInvoicesByUser, {
     userId: currentUser.id,
   });
-  const invoices = useQuery(api.queries.listInvoicesByUser, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
-  const account = useQuery(api.queries.getAccountByUserId, {
-    userId: currentUser.id,
-  });
-  const prices = useQuery(api.queries.listPrices);
+  const prices = useQuery(api.products.queries.listPrices);
 
-  const cancelSubscription = useAction(api.actions.cancelSubscription);
-  const reactivateSubscription = useAction(api.actions.reactivateSubscription);
-  const pauseSubscription = useAction(api.actions.pauseSubscription);
-  const resumeSubscription = useAction(api.actions.resumeSubscription);
+  const cancelSubscription = useAction(
+    api.billing.public.actions.cancelSubscription,
+  );
+  const reactivateSubscription = useAction(
+    api.billing.public.actions.reactivateSubscription,
+  );
+  const pauseSubscription = useAction(
+    api.billing.public.actions.pauseSubscription,
+  );
+  const resumeSubscription = useAction(
+    api.billing.public.actions.resumeSubscription,
+  );
   const updateSubscriptionPrice = useAction(
-    api.actions.updateSubscriptionPrice,
+    api.billing.public.actions.updateSubscriptionPrice,
   );
   const updateSubscriptionQuantity = useAction(
-    api.actions.updateSubscriptionQuantity,
+    api.billing.public.actions.updateSubscriptionQuantity,
   );
   const updateSubscriptionTrialEnd = useAction(
-    api.actions.updateSubscriptionTrialEnd,
+    api.billing.public.actions.updateSubscriptionTrialEnd,
   );
   const createBillingPortalSession = useAction(
-    api.actions.createBillingPortalSession,
+    api.billing.public.actions.createBillingPortalSession,
   );
 
   const subscription = useMemo(

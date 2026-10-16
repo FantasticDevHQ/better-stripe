@@ -47,9 +47,13 @@ test("all checkout types initialize against Stripe and show developer tradeoffs"
   test.skip(!live, "Requires seeded Stripe sandbox");
   test.setTimeout(180000);
   const stores = JSON.parse(
-    execFileSync("pnpm", ["exec", "convex", "run", "storefront:listStores"], {
-      encoding: "utf8",
-    }),
+    execFileSync(
+      "pnpm",
+      ["exec", "convex", "run", "storefront/public/queries:listStores"],
+      {
+        encoding: "utf8",
+      },
+    ),
   );
   const price = stores
     .flatMap(

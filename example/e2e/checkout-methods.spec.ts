@@ -21,7 +21,7 @@ for (const [mode, role, referralCode] of [
   }) => {
     test.skip(!live, "Requires seeded Stripe sandbox");
     test.setTimeout(180000);
-    const stores = convex("storefront:listStores");
+    const stores = convex("storefront/public/queries:listStores");
     const price = stores
       .flatMap(
         (store: {
@@ -72,19 +72,19 @@ for (const [mode, role, referralCode] of [
     const url = new URL(page.url());
     let chargeId: string;
     if (url.searchParams.has("session_id")) {
-      const sale = convex("e2eCheckout:inspectSale", {
+      const sale = convex("e2eCheckout/actions:inspectSale", {
         stripeSessionId: url.searchParams.get("session_id"),
       });
       expect(sale.paymentStatus).toBe("paid");
       chargeId = sale.chargeId;
     } else {
-      const payment = convex("queries:getPaymentByStripeId", {
+      const payment = convex("connect/queries:getPaymentByStripeId", {
         stripePaymentIntentId: url.searchParams.get("payment_intent"),
       });
       expect(payment.status).toBe("succeeded");
       if (role === "customer") expect(payment.userId).not.toBe("");
       const findSale = () =>
-        convex("storeSaleSettlement:listSellerSales", {
+        convex("settlement/public/queries:listSellerSales", {
           sellerId: payment.metadata.sellerId,
         }).find(
           (sale: { paymentIntentId: string }) =>
@@ -98,19 +98,23 @@ for (const [mode, role, referralCode] of [
     expect(chargeId).toMatch(/^ch_/);
     await expect
       .poll(
-        () => convex("storeSaleSettlement:getByCharge", { chargeId })?.status,
+        () =>
+          convex("settlement/internal/queries:getByCharge", { chargeId })
+            ?.status,
         { timeout: 60000, intervals: [1000, 3000] },
       )
       .toBe("settled");
-    const settlement = convex("storeSaleSettlement:getByCharge", { chargeId });
-    const plan = convex("storePlanPricing:list", {}).find(
+    const settlement = convex("settlement/internal/queries:getByCharge", {
+      chargeId,
+    });
+    const plan = convex("storePlans/pricing/public/queries:list", {}).find(
       (row: { id: string }) => row.id === settlement.planId,
     );
     const expectedFee = Math.max(
       settlement.processingFee,
       Math.round((settlement.gross * (plan.feeBasisPoints ?? 0)) / 10000),
     );
-    const affiliateRate = convex("sellerAffiliateRates:get", {
+    const affiliateRate = convex("sellerAffiliateRates/public/queries:get", {
       sellerId: settlement.sellerId,
       stripeProductId: settlement.stripeProductId,
       stripePriceId: settlement.stripePriceId,

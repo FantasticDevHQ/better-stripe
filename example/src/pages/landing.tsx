@@ -14,9 +14,9 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
-import { isAffiliateReferral } from "../../convex/affiliateSplit";
+import { isAffiliateReferral } from "../../convex/marketplace/affiliateSplit";
 export function Landing() {
-  const stores = useQuery(api.storefront.listStores);
+  const stores = useQuery(api.storefront.public.queries.listStores);
   const [params] = useSearchParams();
   const { currentRole } = useRole();
   const referral = params.get("ref");

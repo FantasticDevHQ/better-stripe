@@ -27,8 +27,8 @@ import { api } from "../../../convex/_generated/api";
 
 function AccountDetails() {
   const { currentUser } = useRole();
-  const createLoginLink = useAction(api.actions.createSellerLoginLink);
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const createLoginLink = useAction(api.accounts.actions.createSellerLoginLink);
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
 

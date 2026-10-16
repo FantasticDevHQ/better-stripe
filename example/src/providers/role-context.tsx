@@ -75,7 +75,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // Resolve the active persona from the seeded Convex users so `currentUser.id`
   // is the real `_id` that `getAccountByUserId` resolves, and carries the
   // linked `stripeAccountId`.
-  const users = useQuery(api.users.list);
+  const users = useQuery(api.users.queries.list);
   const sellers: MockUser[] = (users ?? [])
     .filter((u) => u.role === "seller")
     .map((u) => ({

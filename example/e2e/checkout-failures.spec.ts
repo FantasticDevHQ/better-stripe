@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 async function openCheckout(page: Page, mode: string) {
-  const stores = convex("storefront:listStores");
+  const stores = convex("storefront/public/queries:listStores");
   const store = stores.find(
     (s: { name: string }) => s.name === "Sasha's Ceramics",
   );
@@ -84,15 +84,15 @@ async function expectPaidAndSplit(page: Page, mode: string) {
   const params = new URL(page.url()).searchParams;
   let chargeId: string;
   if (params.has("session_id"))
-    chargeId = convex("e2eCheckout:inspectSale", {
+    chargeId = convex("e2eCheckout/actions:inspectSale", {
       stripeSessionId: params.get("session_id"),
     }).chargeId;
   else {
-    const payment = convex("queries:getPaymentByStripeId", {
+    const payment = convex("connect/queries:getPaymentByStripeId", {
       stripePaymentIntentId: params.get("payment_intent"),
     });
     const findSale = () =>
-      convex("storeSaleSettlement:listSellerSales", {
+      convex("settlement/public/queries:listSellerSales", {
         sellerId: payment.metadata.sellerId,
       }).find(
         (s: { paymentIntentId: string }) =>
@@ -105,11 +105,12 @@ async function expectPaidAndSplit(page: Page, mode: string) {
   }
   await expect
     .poll(
-      () => convex("storeSaleSettlement:getByCharge", { chargeId })?.status,
+      () =>
+        convex("settlement/internal/queries:getByCharge", { chargeId })?.status,
       { timeout: 60000 },
     )
     .toBe("settled");
-  const sale = convex("storeSaleSettlement:getByCharge", { chargeId });
+  const sale = convex("settlement/internal/queries:getByCharge", { chargeId });
   expect(sale.affiliateNet).toBe(
     sale.affiliateFixedAmount != null
       ? Math.min(
@@ -159,7 +160,7 @@ for (const [mode, card, message] of [
       );
       await submit(page, mode);
       const sale = await expectPaidAndSplit(page, mode);
-      const transfers = convex("queries:listTransfersByCharge", {
+      const transfers = convex("connect/queries:listTransfersByCharge", {
         sourceChargeId: sale.chargeId,
       });
       expect(

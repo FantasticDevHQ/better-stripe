@@ -55,6 +55,11 @@ export type {
   CouponReadOptions,
 } from "./billing/providerReads.js";
 import * as providerReads from "./billing/providerReads.js";
+import * as invoicePages from "./billing/invoicePages.js";
+export type {
+  InvoicePageOptions,
+  ProviderInvoicePage,
+} from "./billing/invoicePages.js";
 export type { CreateAccountOptions } from "./core/accounts.js";
 import { buildAsyncHookRoutes } from "./webhooks/asyncHooks.js";
 import * as saleContextImpl from "./settlement/verifiedSale.js";
@@ -1015,6 +1020,14 @@ export class BetterStripe extends ReadContractClient {
     opts: invoicePreviewImpl.UpcomingInvoicePreviewOptions,
   ) {
     return invoicePreviewImpl.getUpcomingInvoicePreview(this.stripe(), opts);
+  }
+
+  /** Provider page only; the host authorizes scope and verifies historical completeness. */
+  async getInvoicePageFromStripe(
+    _ctx: RunCtx,
+    opts: invoicePages.InvoicePageOptions,
+  ) {
+    return invoicePages.getInvoicePageFromStripe(this.stripe(), opts);
   }
 
   async getInvoiceFromStripe(ctx: RunCtx, opts: { stripeInvoiceId: string }) {

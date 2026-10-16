@@ -19,7 +19,7 @@
 // check catches that whole class of bug without needing Convex credentials in CI.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -181,7 +181,8 @@ function checkExampleApp(exampleRoot = root) {
     const rel = relative(convexDir, path);
     if (rel.startsWith("_generated" + sep)) return false;
     if (rel.endsWith(".test.ts")) return false;
-    if (rel === "schema.ts") return false;
+    // Convex bundler entryPoints excludes schema.ts at every directory depth.
+    if (basename(path) === "schema.ts") return false;
     if (rel === "convex.config.ts") return false;
     return true;
   });

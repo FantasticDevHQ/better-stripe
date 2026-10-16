@@ -32,6 +32,9 @@ importers:
       stripe:
         specifier: ~23.0.0
         version: 23.0.0(@types/node@26.6.4)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@convex-dev/eslint-plugin':
         specifier: ^5.0.0

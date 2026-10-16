@@ -138,6 +138,26 @@ describe("checkExampleApp", () => {
     );
   }
 
+  it("excludes nested schemas but still detects missing domain functions", () => {
+    const root = makeFixtureRoot();
+    const convex = join(root, "example", "convex");
+    mkdirSync(join(convex, "_generated"), { recursive: true });
+    mkdirSync(join(convex, "billing"), { recursive: true });
+    writeFileSync(
+      join(convex, "billing", "schema.ts"),
+      "export const tables = {};\n",
+    );
+    writeGeneratedApi(root, []);
+    expect(checkExampleApp(root).ok).toBe(true);
+    writeFileSync(
+      join(convex, "billing", "queries.ts"),
+      "export const list = {};\n",
+    );
+    const missing = checkExampleApp(root);
+    expect(missing.ok).toBe(false);
+    expect(missing.message).toContain("billing/queries.ts: missing import");
+  });
+
   it("passes when every source module has a matching generated entry", () => {
     const root = makeFixtureRoot();
     mkdirSync(join(root, "example", "convex", "_generated"), {

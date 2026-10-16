@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.30.3",
+  "version": "0.31.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -108,7 +108,8 @@
     "@stripe/react-stripe-js": "^7.0.0",
     "@stripe/stripe-js": "^10.0.0",
     "convex-helpers": "^0.1.128",
-    "stripe": "~23.0.0"
+    "stripe": "~23.0.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^5.0.0",

@@ -794,6 +794,12 @@ seller plans, and three connected-account payouts. These are real sandbox Stripe
 objects, created with Stripe's test payment methods. Stripe webhooks populate the
 same component ledger used by interactive purchases. Running the job again
 recovers its existing resources rather than repeating completed charges.
+Fixture payments retain the owning product and price IDs so refund/dispute
+costs can still be attributed when Stripe prevents the original settlement.
+Bulk cost reconciliation schedules retries for pending provider costs and
+continues with other sales. A deliberately pending refund does not prevent
+fixture population from completing, and unavailable costs are never estimated
+as zero or marked collected.
 The Express seller remains an interactive onboarding example; automatic sales
 wait for both the seller and affiliate recipient capabilities to become active
 before creating a payment. Stripe verification can take several minutes; the

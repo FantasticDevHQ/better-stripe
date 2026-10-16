@@ -35,6 +35,11 @@ const cursorSchema = z
   .strict();
 export type InvoicePaymentPageOptions = z.input<typeof optionsSchema>;
 export type ProviderInvoicePaymentPage = {
+  scope: {
+    stripeInvoiceId: string;
+    customerAccount: string;
+    stripeSubscriptionId: string;
+  };
   page: {
     invoicePayment: Stripe.InvoicePayment;
     paymentIntentId: string | null;
@@ -43,12 +48,14 @@ export type ProviderInvoicePaymentPage = {
   hasMore: boolean;
   continueCursor: string | null;
 };
+/** Bind a continuation to the verified invoice, buyer and subscription selectors. */
 function encodeCursor(scope: z.infer<typeof scopeSchema>, after: string) {
   return btoa(JSON.stringify({ version: 1, scope, after }))
     .replaceAll("+", "-")
     .replaceAll("/", "_")
     .replace(/=+$/, "");
 }
+/** Reject malformed continuations and accidental cross-scope reuse before provider reads. */
 function decodeCursor(cursor: string, scope: z.infer<typeof scopeSchema>) {
   try {
     if (!/^[A-Za-z0-9_-]+$/.test(cursor)) throw new Error();
@@ -65,9 +72,11 @@ function decodeCursor(cursor: string, scope: z.infer<typeof scopeSchema>) {
     throw new Error("Invalid invoice payment page cursor or scope");
   }
 }
+/** Normalize provider references without inferring missing identifiers. */
 function referenceId(value: string | { id: string } | null | undefined) {
   return typeof value === "string" ? value : value?.id;
 }
+/** Keep financial evidence exact; reject units that JavaScript cannot safely represent. */
 function assertRepresentableUnits(row: Stripe.InvoicePayment) {
   const amounts = [
     row.amount_requested,
@@ -80,6 +89,7 @@ function assertRepresentableUnits(row: Stripe.InvoicePayment) {
     throw new Error("Invalid provider invoice payment units or currency");
   }
 }
+/** Retain unsupported rows while distinguishing canonical and unavailable references. */
 function paymentReference(
   invoicePayment: Stripe.InvoicePayment,
 ): ProviderInvoicePaymentPage["page"][number] {
@@ -147,6 +157,7 @@ export async function getInvoicePaymentPageFromStripe(
       "Provider invoice payment page has no advancing continuation",
     );
   return {
+    scope,
     page: response.data.map(paymentReference),
     hasMore: response.has_more,
     continueCursor: response.has_more ? encodeCursor(scope, last!) : null,

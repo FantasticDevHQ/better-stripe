@@ -1351,3 +1351,20 @@ account and preserves bounded continuation and filter arguments. It is not an
 unauthenticated invoice endpoint or a complete-history assertion. No new UI or
 settlement is activated. See the package read-contract documentation for
 unknown legacy history and provider-read/database ordering limits.
+
+### Invoice payment selector reference
+
+`convex/billing/invoicePayments.ts` derives the personal V2 buyer mapping and
+calls public `getInvoicePaymentPageFromStripe` after its caller authorizes the
+buyer. It registers no browser endpoint and does not trust demo persona selection
+as authentication. `src/components/invoice-payment-selector.tsx` shows safe
+projected references using the public React `formatRefundAmount` helper with
+Shadcn presentation. Keep unsupported and unavailable rows visible, and wire
+bounded continuation through an authorized host adapter. A selected reference
+opens review only; it does not issue a refund or prove eligibility.
+
+`amount_paid` is the amount credited to this invoice, and a PaymentIntent can
+fund multiple invoices. The host must deny ambiguous sale/merchant scope,
+correlate existing component payment records and revalidate the remaining
+refundable balance at creation. No new refund ledger, provider write or
+entitlement cancellation is activated by this reference.

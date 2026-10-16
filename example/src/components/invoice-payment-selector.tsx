@@ -17,6 +17,7 @@ export type InvoicePaymentOption = {
   currency: string;
   status: string;
 };
+/** Present host-authorized references for review without declaring refund eligibility. */
 export function InvoicePaymentSelector(props: {
   rows: InvoicePaymentOption[];
   isLoading: boolean;

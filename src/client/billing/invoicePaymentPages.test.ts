@@ -1,13 +1,14 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import { getStripeClient } from "../helpers.js";
-import { getInvoicePaymentPageFromStripe } from "./invoicePaymentPages.js";
+import { BetterStripe } from "../index.js";
 
 afterEach(() => vi.restoreAllMocks());
 function fixture() {
-  const stripe = getStripeClient(
-    `sk_test_invoice_payments_${crypto.randomUUID()}`,
-  );
+  const key = `sk_test_invoice_payments_${crypto.randomUUID()}`;
+  const stripe = getStripeClient(key);
+  const client = new BetterStripe({} as never, { STRIPE_SECRET_KEY: key });
+  const ctx = { runQuery: vi.fn() };
   const invoice = {
     id: "in_buyer",
     customer_account: "acct_buyer",
@@ -41,19 +42,20 @@ function fixture() {
     customerAccount: "acct_buyer",
     stripeSubscriptionId: "sub_buyer",
   };
-  return { stripe, invoice, retrieve, list, payment, opts };
+  return { stripe, client, ctx, invoice, retrieve, list, payment, opts };
 }
 it("verifies invoice scope before enumerating canonical payment references, ignoring truncated previews", async () => {
   const f = fixture();
   const row = f.payment();
   f.list.mockResolvedValue({ data: [row], has_more: false } as never);
-  const result = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const result = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   expect(f.retrieve).toHaveBeenCalledExactlyOnceWith("in_buyer");
   expect(f.list).toHaveBeenCalledExactlyOnceWith({
     invoice: "in_buyer",
     limit: 25,
   });
   expect(result).toEqual({
+    scope: f.opts,
     page: [
       {
         invoicePayment: row,
@@ -76,8 +78,8 @@ it("resumes all invoice payments and preserves unsupported and unavailable refer
       ],
       has_more: false,
     } as never);
-  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
-  const second = await getInvoicePaymentPageFromStripe(f.stripe, {
+  const first = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
+  const second = await f.client.getInvoicePaymentPageFromStripe(f.ctx, {
     ...f.opts,
     cursor: first.continueCursor,
   });
@@ -109,7 +111,7 @@ it.each([
     const f = fixture();
     f.retrieve.mockResolvedValue({ ...f.invoice, ...change } as never);
     await expect(
-      getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+      f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
     ).rejects.toThrow();
     expect(f.list).not.toHaveBeenCalled();
   },
@@ -125,7 +127,7 @@ it.each([
 ])("rejects invalid selectors before provider reads %#", async (change) => {
   const f = fixture();
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, { ...f.opts, ...change }),
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, { ...f.opts, ...change }),
   ).rejects.toThrow();
   expect(f.retrieve).not.toHaveBeenCalled();
   expect(f.list).not.toHaveBeenCalled();
@@ -133,14 +135,14 @@ it.each([
 it("binds continuation to invoice, buyer and subscription selectors", async () => {
   const f = fixture();
   f.list.mockResolvedValue({ data: [f.payment()], has_more: true } as never);
-  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const first = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   for (const change of [
     { stripeInvoiceId: "in_other" },
     { customerAccount: "acct_other" },
     { stripeSubscriptionId: "sub_other" },
   ])
     await expect(
-      getInvoicePaymentPageFromStripe(f.stripe, {
+      f.client.getInvoicePaymentPageFromStripe(f.ctx, {
         ...f.opts,
         ...change,
         cursor: first.continueCursor,
@@ -153,7 +155,7 @@ it("propagates provider failure without an empty success page", async () => {
   const f = fixture();
   f.retrieve.mockRejectedValue(new Error("Provider unavailable"));
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
   ).rejects.toThrow("Provider unavailable");
   expect(f.list).not.toHaveBeenCalled();
 });
@@ -176,7 +178,7 @@ it("preserves open and canceled rows, null and zero paid amounts and original cu
     data: [open, canceled],
     has_more: false,
   } as never);
-  const result = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const result = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   expect(result.page.map((row) => row.invoicePayment)).toEqual([
     open,
     canceled,
@@ -200,7 +202,7 @@ it("resolves expanded canonical references without using metadata or invoice pre
   } as never);
   f.list.mockResolvedValue({ data: [row], has_more: false } as never);
   expect(
-    (await getInvoicePaymentPageFromStripe(f.stripe, f.opts)).page[0]
+    (await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts)).page[0]
       ?.paymentIntentId,
   ).toBe("pi_expanded");
 });
@@ -213,7 +215,7 @@ it("retains unknown payment types and malformed PaymentIntent identifiers as uns
     ],
     has_more: false,
   } as never);
-  const result = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const result = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   expect(result.page.map((row) => row.referenceStatus)).toEqual([
     "unsupported",
     "unavailable",
@@ -230,18 +232,21 @@ it.each([
     const f = fixture();
     f.list.mockResolvedValue(response as never);
     await expect(
-      getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+      f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
     ).rejects.toThrow();
   },
 );
 it("allows a terminal empty page", async () => {
   const f = fixture();
   f.list.mockResolvedValue({ data: [], has_more: false } as never);
-  expect(await getInvoicePaymentPageFromStripe(f.stripe, f.opts)).toEqual({
-    page: [],
-    hasMore: false,
-    continueCursor: null,
-  });
+  expect(await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts)).toEqual(
+    {
+      scope: f.opts,
+      page: [],
+      hasMore: false,
+      continueCursor: null,
+    },
+  );
 });
 it("rejects a provider page exceeding the requested bound", async () => {
   const f = fixture();
@@ -250,22 +255,22 @@ it("rejects a provider page exceeding the requested bound", async () => {
     has_more: false,
   } as never);
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, { ...f.opts, limit: 1 }),
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, { ...f.opts, limit: 1 }),
   ).rejects.toThrow();
 });
 it("propagates payment-list failure after verified invoice scope", async () => {
   const f = fixture();
   f.list.mockRejectedValue(new Error("Payment list unavailable"));
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
   ).rejects.toThrow("Payment list unavailable");
 });
 it("rejects nonadvancing continuation instead of repeating indefinitely", async () => {
   const f = fixture();
   f.list.mockResolvedValue({ data: [f.payment()], has_more: true } as never);
-  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const first = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, {
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, {
       ...f.opts,
       cursor: first.continueCursor,
     }),
@@ -278,13 +283,13 @@ it("rejects duplicate and repeated boundary payment rows", async () => {
     data: [f.payment()],
     has_more: true,
   } as never);
-  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const first = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   f.list.mockResolvedValueOnce({
     data: [f.payment(), f.payment("inpay_second")],
     has_more: false,
   } as never);
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, {
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, {
       ...f.opts,
       cursor: first.continueCursor,
     }),
@@ -294,7 +299,7 @@ it("rejects duplicate and repeated boundary payment rows", async () => {
     has_more: false,
   } as never);
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
   ).rejects.toThrow();
 });
 
@@ -313,7 +318,7 @@ it.each([
       has_more: false,
     } as never);
     await expect(
-      getInvoicePaymentPageFromStripe(f.stripe, f.opts),
+      f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts),
     ).rejects.toThrow(/units|currency/);
   },
 );
@@ -325,7 +330,7 @@ it("rejects noncanonical and invalid-schema cursor payloads before provider read
   );
   for (const cursor of ["%%%", payload, `${payload}=`]) {
     await expect(
-      getInvoicePaymentPageFromStripe(f.stripe, { ...f.opts, cursor }),
+      f.client.getInvoicePaymentPageFromStripe(f.ctx, { ...f.opts, cursor }),
     ).rejects.toThrow(/cursor/);
   }
   expect(f.retrieve).not.toHaveBeenCalled();
@@ -334,13 +339,13 @@ it("rejects noncanonical and invalid-schema cursor payloads before provider read
 it("revalidates invoice ownership on continuation instead of trusting a previous successful page", async () => {
   const f = fixture();
   f.list.mockResolvedValue({ data: [f.payment()], has_more: true } as never);
-  const first = await getInvoicePaymentPageFromStripe(f.stripe, f.opts);
+  const first = await f.client.getInvoicePaymentPageFromStripe(f.ctx, f.opts);
   f.retrieve.mockResolvedValue({
     ...f.invoice,
     customer_account: "acct_foreign",
   } as never);
   await expect(
-    getInvoicePaymentPageFromStripe(f.stripe, {
+    f.client.getInvoicePaymentPageFromStripe(f.ctx, {
       ...f.opts,
       cursor: first.continueCursor,
     }),

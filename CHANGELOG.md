@@ -28,10 +28,9 @@
 
 ## [0.32.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.31.0...v0.32.0) (2026-10-16)
 
-
 ### Features
 
-* **billing:** expose verified invoice payment references (BTS-197) ([dc1245c](https://github.com/FantasticDevHQ/better-stripe/commit/dc1245c686aa924c0920ae5a6cbd1b3fba895713))
+- **billing:** expose verified invoice payment references ([dc1245c](https://github.com/FantasticDevHQ/better-stripe/commit/dc1245c686aa924c0920ae5a6cbd1b3fba895713))
 
 ## [0.31.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.3...v0.31.0) (2026-10-16)
 

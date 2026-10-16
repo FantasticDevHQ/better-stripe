@@ -7,3 +7,8 @@ Recorded browser assertions pass: private error hidden; explicit retry; USD/JPY/
 Seven backend regressions use real BetterAuth/BetterStripe schemas with a mocked provider snapshot. They cover the authenticated account, bounded pagination, anonymous/foreign/org and disabled/deleted callers, mapping changes during reads, safe failure and retry. Provider creation/provisioning is not invoked. Seven React tests use the real public workflow. Red logs precede the new implementation. Read-only Convex code generation and both backend/web type checks succeeded.
 
 Full repository gates and CI are pending at this evidence upload. These fixtures do not prove hosted bank setup, Dojo deployment or actual bank delivery. DOJO-2249/2250 retain custom minimum configuration and progress.
+
+
+## Actual Stripe sandbox adapter read
+
+Final backend test/docs commit `994969e91` retains the exact UI recorded above. The opt-in actual-provider test passes at that commit in 12 seconds. It uses the real Dojo adapter with isolated BetterAuth/component state and the configured Stripe test-mode transport. Only the provisioning idempotency key is namespaced for a fresh QA run. The report records account creation/reuse, real hosted-link generation, a ready owner-bound empty payout snapshot, and verified account closure. Credentials are injected in memory, never included in this evidence. No payout or payment is created. No claim of completed hosted bank verification, cloud adapter deployment or bank delivery is made. Final full gates/CI remain pending until recorded in the PR.

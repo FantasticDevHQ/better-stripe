@@ -1,3 +1,7 @@
+import {
+  ownershipTable,
+  generationsTable,
+} from "./financialOwnership/schema.js";
 import { accountClosuresTable } from "./accountClosure/schema.js";
 import { jobsTable as payoutWorkerJobsTable } from "./payoutWorker/schema.js";
 import {
@@ -60,6 +64,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  financialOwnership: ownershipTable,
+  financialOwnershipGenerations: generationsTable,
   payoutWorkerJobs: payoutWorkerJobsTable,
   payoutFinancialRevisions: financialRevisionsTable,
   payoutRiskEvents: riskEventsTable,

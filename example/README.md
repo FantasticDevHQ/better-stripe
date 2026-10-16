@@ -1430,3 +1430,7 @@ owner's unique mapping; it rejects unavailable, organization and replacement
 accounts. Claimed demo personas still require replacement with real host session
 authorization. See [the bounded mapping contract](../docs/personal-account-mapping.md)
 for reciprocal checks, closed-account handling and provider-state limitations.
+
+## Financial bucket ownership reference
+
+The public `betterStripe.financialOwnership` server API is documented in [financial ownership provenance](../docs/financial-ownership.md). Reuse the example's server-side billing adapters and replace demo identities with actual host authorization. Register verified physical account keys or explicitly verified logical source owners, then use exact-key lookup and bounded owner discovery. Every response retains unknown financial coverage; this reference does not activate account closing or declare outstanding obligations clear. The example's public React workflows and render props remain the UI reference; an application such as Dojo supplies its own Shadcn/OKLCH styling and translations. This provenance-only API adds no React money action or browser-owned registration.

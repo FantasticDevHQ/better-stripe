@@ -93,3 +93,35 @@ it.each(["charge", undefined])(
     expectUnavailable(await f.read());
   },
 );
+
+it.each([
+  { refunded: false, amount: 1000 },
+  { refunded: true, amount: 200 },
+])(
+  "holds contradictory full-refund lifecycle flags %j",
+  async ({ refunded, amount }) => {
+    const f = fixture();
+    f.chargeRead.mockResolvedValue({
+      ...f.charge,
+      amount_refunded: amount,
+      refunded,
+    });
+    f.refundRead.mockResolvedValue(page([refund("re_returned", amount)]));
+    expectUnavailable(await f.read());
+  },
+);
+
+it.each([false, true])(
+  "holds a zero capture instead of a ready free-payment observation (refunded=%s)",
+  async (refunded) => {
+    const f = fixture();
+    f.intentRead.mockResolvedValue({ ...f.payment, amount_received: 0 });
+    f.chargeRead.mockResolvedValue({
+      ...f.charge,
+      amount_captured: 0,
+      refunded,
+    });
+    expectUnavailable(await f.read());
+    expect(f.refundRead).not.toHaveBeenCalled();
+  },
+);

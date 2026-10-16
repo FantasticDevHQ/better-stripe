@@ -109,7 +109,7 @@ export async function getRefundContext(
   if (charge.currency !== payment.currency)
     return unavailable("currency_mismatch");
   if (!amountsAgree(payment, charge)) return unavailable("amount_unavailable");
-  if (!charge.paid || !charge.captured)
+  if (!charge.paid || !charge.captured || charge.amount_captured === 0)
     return unavailable("charge_not_captured");
   if (charge.disputed) return unavailable("charge_disputed");
   const history = await readRefundHistory(stripe, {
@@ -123,7 +123,7 @@ export async function getRefundContext(
   if (history.status !== "complete") return history;
   if (
     history.refundedAmount !== charge.amount_refunded ||
-    (charge.refunded && history.refundedAmount !== charge.amount_captured)
+    charge.refunded !== (history.refundedAmount === charge.amount_captured)
   )
     return unavailable("refund_counter_mismatch");
   return {

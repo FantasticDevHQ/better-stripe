@@ -32,7 +32,7 @@ with the live PaymentIntent; the original currency, PaymentIntent, latest charge
 and charge's PaymentIntent reference must agree. Nullable legacy customer
 references must also be canonical and agree; they do not replace the V2 buyer.
 Malformed provider objects or contradictory lifecycle flags cannot produce a
-ready result. A disputed or uncaptured charge is unavailable.
+ready result. A disputed, uncaptured or zero-captured charge is unavailable.
 
 `stripeAccountId`, when supplied, is a **server-owned provider request scope**,
 not the buyer account or merchant identity. Derive it from the original payment's
@@ -55,7 +55,8 @@ or fixed two-decimal assumption is applied. `capturedAmount` comes from
 Authorized `paymentIntent.amount`, `charge.amount` and synchronized payment
 amount can exceed a partial capture and are not refund limits. `refundedAmount`
 is the complete succeeded-refund total, reconciled with `charge.amount_refunded`.
-The remaining amount is captured principal minus that total. Dispute principal,
+The full-refund flag must agree in both directions with whether that total equals
+captured principal. The remaining amount is captured principal minus that total. Dispute principal,
 processing fees, balance transactions and invoice allocations are not subtracted
 or substituted into this calculation.
 

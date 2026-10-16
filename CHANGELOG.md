@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.30.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.1...v0.30.2) (2026-10-16)
+
+### Bug Fixes
+
+- **example:** complete sandbox fixtures and deferred recovery ([#229](https://github.com/FantasticDevHQ/better-stripe/issues/229)) ([84b0dc6](https://github.com/FantasticDevHQ/better-stripe/commit/84b0dc6f93512ec6021ec5a15b702abd320a7762))
+
 ## [0.30.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.0...v0.30.1) (2026-10-16)
 
 ### Bug Fixes

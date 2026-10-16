@@ -63,6 +63,10 @@ export type {
   InvoicePageOptions,
   ProviderInvoicePage,
 } from "./billing/invoicePages.js";
+export type {
+  CheckoutSessionPageOptions,
+  ProviderCheckoutSessionPage,
+} from "./billing/checkoutPages.js";
 export type { CreateAccountOptions } from "./core/accounts.js";
 import { buildAsyncHookRoutes } from "./webhooks/asyncHooks.js";
 import * as saleContextImpl from "./settlement/verifiedSale.js";

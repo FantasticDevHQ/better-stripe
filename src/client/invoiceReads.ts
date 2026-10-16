@@ -3,10 +3,19 @@ import { ReadContractClient } from "./readContracts.js";
 import type { RunCtx } from "./helpers.js";
 import * as invoicePages from "./billing/invoicePages.js";
 import * as invoicePaymentPages from "./billing/invoicePaymentPages.js";
+import * as checkoutPages from "./billing/checkoutPages.js";
 
-/** Provider invoice readers inherited by BetterStripe; hosts authorize their caller. */
+/** Provider billing history readers inherited by BetterStripe; hosts authorize their caller. */
 export abstract class InvoiceReadClient extends ReadContractClient {
   protected abstract stripe(): Stripe;
+
+  /** Buyer-scoped discovery, not an atomic snapshot or a claim of complete purchase coverage. */
+  async getCheckoutSessionPageFromStripe(
+    _ctx: RunCtx,
+    opts: checkoutPages.CheckoutSessionPageOptions,
+  ) {
+    return checkoutPages.getCheckoutSessionPageFromStripe(this.stripe(), opts);
+  }
 
   /** Provider page only; the host authorizes scope and verifies historical completeness. */
   async getInvoicePageFromStripe(

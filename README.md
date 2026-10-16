@@ -101,7 +101,10 @@ Node.js 22.12+ and a configured Convex development deployment; see
 [the example setup guide](example/README.md).
 
 The BetterStripe example separates visitor, customer, affiliate, seller, and
-platform-admin workflows. Its resumable Stripe sandbox fixtures populate sales,
+platform-admin workflows. Fresh fictional Maya and Sasha stores explicitly
+configure 20% Forever referral commissions to fund the affiliate payout example;
+ordinary stores still default to zero, and seed reruns preserve later edits.
+Its resumable Stripe sandbox fixtures populate sales,
 referrals, refunds, disputes, subscriptions, and payouts. Seller plans include
 monthly billing, actual Stripe fee reconciliation, and refund/dispute cost
 recovery. The example also demonstrates optional balance-funded subscriptions

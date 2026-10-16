@@ -782,6 +782,12 @@ pnpm exec convex run sandboxFixtures:start
 pnpm exec convex run sandboxFixtureState:status
 ```
 
+Fresh Maya and Sasha demo stores explicitly opt into a 20% affiliate commission
+with the Forever term, so referred sales earn real sandbox funds for Avery's
+payout fixture. This is saved demo-store configuration, not a platform default.
+Ordinary stores still default to zero commission. Reseeding preserves existing
+stores' edited or cleared settings.
+
 The fixture pack creates 40 sandbox sales, six refunds, four disputes with open,
 won, and lost outcomes, referred purchases, a customer subscription, paid monthly
 seller plans, and three connected-account payouts. These are real sandbox Stripe

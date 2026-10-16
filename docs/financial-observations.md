@@ -60,3 +60,55 @@ Completion describes a historical validated traversal of this one original alloc
 ## Verification boundary
 
 Real-schema tests exercise raw-context reservation, persisted-original replay, late observations, source/owner contradictions, organization isolation, more than one page, empty allocations and allocations over the synchronous bound. Public SDK tests dispatch into the actual component without Stripe credentials. Native evidence uses an isolated local component. These tests perform no provider financial operations, closure, payout, settlement transfer or admission fencing.
+
+## Transfer facts and deferred batches
+
+`stripe.financialObservations.transfer(ctx, { transferId })` reads one exact
+component transfer document reference. `transferBucket` and `transferOwner`
+paginate the original destination and trusted registered owner. Personal and
+organization scopes stay separate. `transferBatches` paginates one exact
+operation identifier. All four readers always return `coverage: "unknown"`.
+The host must authorize each selector before exposing these server APIs.
+
+The package records transfer observations atomically with Connect upserts,
+confirmed reversal receipts, affiliate recovery/restoration, claim-frontier
+updates and releases. Derived earnings backfill also observes its stored fact.
+Original transfer, source, destination and first registered owner references stay
+pinned. Matching observations replay without advancing their generation; later
+financial facts advance it. Missing or ambiguous ownership stays unknown.
+Contradictory original identity remains diagnostic and never repairs a monetary
+row. Only the derived `totalsRecorded` flag is excluded from the financial
+fingerprint. Metadata and other persisted financial fields are included.
+
+Claim and release batches synchronously observe at most 100 affected transfers.
+Larger financial operations still process their complete existing slices. In the
+same transaction they retain a pending batch with the original operation document
+reference, source charge, producer/version, fingerprint/generation and every
+compact original transfer document reference. The two producer kinds are
+`transfer_frontier_claim` and `transfer_frontier_release`. A release can delete its
+original operation while its reference and deferred transfer references survive.
+These records contain provenance, not another monetary ledger. This contract
+retains references only; resumable traversal is a separate prerequisite and is
+not implemented by these readers.
+
+Every transfer reader includes `producerGeneration` and `hasDeferredWork`.
+Pending batches invalidate any inference that an older owner or destination page
+reflects the latest batch. Exhausting a page does not clear pending work or prove
+complete financial history. Missing legacy observations and producer versions
+remain unknown. A completed historical observation never certifies current
+ownership, current liabilities or account-closure eligibility. Initial ownership
+registration after an observation does not automatically refresh it.
+
+Native checks preserve the previously supported 1,000-transfer claim across four
+shared destination buckets, with registered personal/organization and unknown
+ownership, and the 100-transfer synchronous boundary. Historical public claims
+with 1,001 transfers can still be released without per-row observation work.
+The accepted baseline separately exceeds native read limits for a claim with
+1,000 distinct destinations because of existing earnings-summary work; this
+observation contract does not fix or claim support for that shape.
+
+Observations rely on package-owned append/patch writers and their transactional
+generation changes. They do not certify arbitrary privileged database edits,
+selective deletion of historical observations or forged diagnostic markers.
+No provider operation, financial-attempt admission or positive closure clearance
+is part of this contract.

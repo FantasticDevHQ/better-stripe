@@ -1,3 +1,4 @@
+import { observeTransfer } from "../financialObservations/transfers.js";
 import { registerPayoutRevisions } from "../payoutSnapshots/revisions.js";
 import { Triggers } from "convex-helpers/server/triggers";
 import {
@@ -68,8 +69,15 @@ triggers.register("transfers", async (ctx, change) => {
     await adjust(ctx, "earnings", contribution(change.oldDoc), -1);
   if (change.newDoc) {
     await adjust(ctx, "earnings", contribution(change.newDoc), 1);
-    if (!change.newDoc.totalsRecorded)
+    if (!change.newDoc.totalsRecorded) {
       await ctx.innerDb.patch("transfers", change.id, { totalsRecorded: true });
+      // Frontier producers own bounded batch observation, including oversized release deferral.
+      if (
+        change.oldDoc?.reversalClaimedAmount ===
+        change.newDoc.reversalClaimedAmount
+      )
+        await observeTransfer(ctx, { ...change.newDoc, totalsRecorded: true });
+    }
   }
 });
 triggers.register("payouts", async (ctx, change) => {

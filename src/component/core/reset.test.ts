@@ -108,10 +108,17 @@ describe("core — clearAllTables", () => {
       eventType: "invoice.paid",
     });
 
+    const seededCount = await t.run(async (ctx) => {
+      let count = 0;
+      for (const tableName of Object.keys(schema.tables) as TableNames[])
+        count += (await ctx.db.query(tableName).collect()).length;
+      return count;
+    });
+    expect(seededCount).toBeGreaterThan(0);
     const result = await t.mutation(api.core.mutations.clearAllTables, {});
     const tableCount = Object.keys(schema.tables).length;
 
-    expect(result.cleared).toBe(20);
+    expect(result.cleared).toBe(seededCount);
     expect(result.tables).toHaveLength(tableCount);
 
     for (const tableName of Object.keys(schema.tables) as TableNames[]) {

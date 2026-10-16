@@ -116,16 +116,20 @@ describe("getAccountEarnings — exact totals past the 50-row cap (BTS-64)", () 
 
     // 450 transfers, each 100 gross / 10 reversed → exact 45000 / 4500 only if
     // every page is summed (a single 200-row page would give 20000 / 2000).
-    for (let i = 0; i < 450; i++) {
-      await t.mutation(api.connect.mutations.upsertTransfer, {
-        stripeTransferId: `tr_mp_${i}`,
-        destinationAccountId: "acct_mp",
-        amount: 100,
-        reversedAmount: 10,
-        currency: "usd",
-        status: "paid",
-      });
-    }
+    // Persisted-history fixture isolates the pagination reader from unrelated
+    // upsert diagnostics. The 120-row and small-account cases cover actual upserts.
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 450; i++) {
+        await ctx.db.insert("transfers", {
+          stripeTransferId: `tr_mp_${i}`,
+          destinationAccountId: "acct_mp",
+          amount: 100,
+          reversedAmount: 10,
+          currency: "usd",
+          status: "paid",
+        });
+      }
+    });
     // A second account's rows must not leak in across pages either.
     await t.mutation(api.connect.mutations.upsertTransfer, {
       stripeTransferId: "tr_mp_other",

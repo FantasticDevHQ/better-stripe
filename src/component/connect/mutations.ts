@@ -1,4 +1,10 @@
 import { refundCommandBinding } from "../refundHistory/commandBinding.js";
+import {
+  deferTransferFacts,
+  synchronousTransferFactLimit,
+} from "../financialObservations/transferBatches.js";
+import { observeTransfer } from "../financialObservations/transfers.js";
+
 import { syncCommissionTransfer } from "../settlement/clawbacks.js";
 import { recordTransferReversalDefinition } from "./reversalReceipts.js";
 import { claimReversalSlicesDefinition } from "./reversalClaims.js";
@@ -322,13 +328,21 @@ export const upsertTransfer = mutation({
       );
       await syncCommissionTransfer(ctx, { ...existing, ...args, ...derived });
       await ctx.db.patch("transfers", existing._id, { ...args, ...derived });
+      await observeTransfer(
+        ctx,
+        (await ctx.db.get("transfers", existing._id))!,
+      );
     } else {
       const derived = deriveReversalState(
         args.amount,
         args.reversedAmount ?? 0,
         args.status,
       );
-      await ctx.db.insert("transfers", { ...args, ...derived });
+      const transferId = await ctx.db.insert("transfers", {
+        ...args,
+        ...derived,
+      });
+      await observeTransfer(ctx, (await ctx.db.get("transfers", transferId))!);
     }
 
     return null;
@@ -453,8 +467,16 @@ export const releaseReversalClaim = mutation({
       await ctx.db.patch("transfers", p.legId, {
         reversalClaimedAmount: p.from,
       });
+      if (plan.length <= synchronousTransferFactLimit)
+        await observeTransfer(ctx, (await ctx.db.get("transfers", p.legId))!);
       rewound.push({ stripeTransferId: p.stripeTransferId, to: p.from });
     }
+    if (plan.length > synchronousTransferFactLimit)
+      await deferTransferFacts(
+        ctx,
+        op,
+        plan.map((p) => p.legId),
+      );
     await ctx.db.delete("transferReversalOps", op._id);
 
     return { released: true, rewound };

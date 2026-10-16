@@ -1440,3 +1440,12 @@ For server-only original allocation diagnostics and the explicit UNKNOWN/oversiz
 ### Exact refund-command observation
 
 `convex/connect/refundCommandEvidence.ts` is a server-only reference for the public `getRefundCommandEvidence` reader. Pass a qualified immutable original command, authenticate the demo persona in the real host, and preserve unavailable legacy coverage/conflicts. It checks the original personal merchant mapping; it neither executes a refund nor grants retry authority. See [the complete contract](../docs/refund-command-evidence.md), including the separate legacy normalization gate and first-observed provenance.
+
+Transfer diagnostics are available through the trusted server-side
+`stripe.financialObservations.transfer`, `transferBucket`, `transferOwner` and
+`transferBatches` APIs. Use authenticated host selectors and preserve the returned
+native pagination metadata. These APIs always report UNKNOWN coverage; pending
+claim/release batch references and their producer generation are diagnostics,
+not spendable balances or account-closure permission. See the packaged
+[financial observation guide](../docs/financial-observations.md#transfer-facts-and-deferred-batches)
+for synchronous bounds, preserved financial behavior and deferred-reference limits.

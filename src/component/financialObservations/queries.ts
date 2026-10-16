@@ -1,3 +1,5 @@
+import { transferReaderState } from "./transferBatches.js";
+import { transferObservationDoc, transferBatchDoc } from "./transferSchema.js";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -14,6 +16,12 @@ import {
   ownerScope,
 } from "./generations.js";
 import { legDoc, sourceDoc } from "./schema.js";
+
+const transferReadFields = {
+  coverage: v.literal("unknown"),
+  producerGeneration: v.union(v.number(), v.null()),
+  hasDeferredWork: v.boolean(),
+};
 
 export const source = query({
   args: { allocationId: v.id("settlementAllocations") },
@@ -91,6 +99,107 @@ export const owner = query({
     return {
       ...page,
       coverage: "unknown" as const,
+      generation: await observationGeneration(
+        ctx,
+        ownerScope(args.userId, args.orgId),
+      ),
+    };
+  },
+});
+
+export const transfer = query({
+  args: { transferId: v.id("transfers") },
+  returns: v.object({
+    ...transferReadFields,
+    observation: v.union(transferObservationDoc, v.null()),
+  }),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("financialTransferObservations")
+      .withIndex("by_transfer_id", (q) => q.eq("transferId", args.transferId))
+      .take(2);
+    const row = rows.length === 1 ? rows[0] : null;
+    return {
+      ...(await transferReaderState(ctx)),
+      observation:
+        row && Number.isSafeInteger(row.generation) && row.generation >= 1
+          ? row
+          : null,
+    };
+  },
+});
+export const transferBatches = query({
+  args: { operationId: v.string(), paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    ...paginationResultValidator(transferBatchDoc).fields,
+    coverage: v.literal("unknown"),
+    hasDeferredWork: v.boolean(),
+    producerGeneration: v.union(v.number(), v.null()),
+  }),
+  handler: async (ctx, args) => {
+    assertSelector(args.operationId);
+    assertPageSize(args.paginationOpts.numItems);
+    const page = await paginator(ctx.db, schema)
+      .query("financialTransferBatches")
+      .withIndex("by_operation_id", (q) =>
+        q.eq("operationId", args.operationId),
+      )
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+    return { ...page, ...(await transferReaderState(ctx)) };
+  },
+});
+const transferPageResult = v.object({
+  ...paginationResultValidator(transferObservationDoc).fields,
+  ...transferReadFields,
+  generation: v.union(v.number(), v.null()),
+});
+export const transferBucket = query({
+  args: { bucketKey: v.string(), paginationOpts: paginationOptsValidator },
+  returns: transferPageResult,
+  handler: async (ctx, args) => {
+    assertSelector(args.bucketKey);
+    assertPageSize(args.paginationOpts.numItems);
+    const page = await paginator(ctx.db, schema)
+      .query("financialTransferObservations")
+      .withIndex("by_bucket_key", (q) => q.eq("bucketKey", args.bucketKey))
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+    return {
+      ...page,
+      ...(await transferReaderState(ctx)),
+      generation: await observationGeneration(ctx, bucketScope(args.bucketKey)),
+    };
+  },
+});
+export const transferOwner = query({
+  args: { ...ownerFields, paginationOpts: paginationOptsValidator },
+  returns: transferPageResult,
+  handler: async (ctx, args) => {
+    assertOwner(args);
+    assertPageSize(args.paginationOpts.numItems);
+    const page = await paginator(ctx.db, schema)
+      .query("financialTransferObservations")
+      .withIndex("by_owner", (q) =>
+        q.eq("userId", args.userId).eq("orgId", args.orgId),
+      )
+      .order("desc")
+      .paginate({
+        ...args.paginationOpts,
+        maximumRowsRead: 200,
+        maximumBytesRead: 1_000_000,
+      });
+    return {
+      ...page,
+      ...(await transferReaderState(ctx)),
       generation: await observationGeneration(
         ctx,
         ownerScope(args.userId, args.orgId),

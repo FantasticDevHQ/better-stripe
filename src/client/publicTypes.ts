@@ -54,3 +54,11 @@ export type {
   RefundCommandEvidence,
   RefundCommandEvidenceOptions,
 } from "./connect/refundCommandEvidence.js";
+export type {
+  FinancialTransferObservation,
+  FinancialTransferBatch,
+  FinancialTransferReadState,
+  FinancialTransferResult,
+  FinancialTransferPage,
+  FinancialTransferBatchPage,
+} from "./transferObservations.js";

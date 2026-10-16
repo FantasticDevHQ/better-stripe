@@ -1,3 +1,5 @@
+import { TransferObservationsClient } from "./transferObservations.js";
+import { observationPagination } from "./observationPagination.js";
 import type { PaginationOptions, PaginationResult } from "convex/server";
 import type { Infer } from "convex/values";
 import { z } from "zod";
@@ -25,19 +27,11 @@ export type FinancialObservationPage = PaginationResult<FinancialSourceLeg> & {
   generation: number | null;
 };
 export type FinancialObservationOwner = { userId: string; orgId?: string };
-const pagination = z
-  .object({
-    numItems: z.number().int().min(1).max(100),
-    cursor: z.string().nullable(),
-    id: z.number().optional(),
-    endCursor: z.string().nullable().optional(),
-    maximumRowsRead: z.number().optional(),
-    maximumBytesRead: z.number().optional(),
-  })
-  .strict();
 /** Trusted host diagnostics only; neither caller selectors nor exhausted pages authorize closure. */
-export class FinancialObservationsClient {
-  constructor(private component: Component) {}
+export class FinancialObservationsClient extends TransferObservationsClient {
+  constructor(component: Component) {
+    super(component);
+  }
   async source(
     ctx: RunCtx,
     input: { allocationId: string },
@@ -77,7 +71,7 @@ export class FinancialObservationsClient {
     input: { bucketKey: string; paginationOpts: PaginationOptions },
   ): Promise<FinancialObservationPage> {
     const args = z
-      .object({ bucketKey: z.string(), paginationOpts: pagination })
+      .object({ bucketKey: z.string(), paginationOpts: observationPagination })
       .strict()
       .parse(input);
     assertSelector(args.bucketKey);
@@ -94,7 +88,7 @@ export class FinancialObservationsClient {
       .object({
         userId: z.string(),
         orgId: z.string().optional(),
-        paginationOpts: pagination,
+        paginationOpts: observationPagination,
       })
       .strict()
       .parse(input);

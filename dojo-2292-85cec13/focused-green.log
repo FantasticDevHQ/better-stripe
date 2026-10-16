@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 <worktree>/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  11:24:58
+   Duration  1.31s (transform 411ms, setup 107ms, import 586ms, tests 235ms, environment 209ms)
+

@@ -1,7 +1,7 @@
 {
   "issue": "DOJO-2292",
   "repository": "kellykampen/dojo",
-  "head": "115467b7524c8186c30404e5bc99040b75b3c5e5",
+  "head": "85cec13e251e2b9fd53a69136b821ec901f98d6c",
   "focused_tests": {
     "passed": 24,
     "failed": 0
@@ -25,5 +25,12 @@
     "Real backend authorization and configuration persistence are separately covered by merged PR735.",
     "No provider call, cloud deployment, bank schedule activation or payout is certified by this UI evidence.",
     "Custom recipient acceptance, eligibility and release/expiry/recovery jobs remain DOJO-2249/2250."
-  ]
+  ],
+  "backend_tests": {
+    "passed": 26,
+    "suites": 2,
+    "existing_configuration_tests": 20,
+    "editor_session_tests": 6
+  },
+  "read_only_convex_codegen": "passed against explicit Dojo dev deployment; no application deployment or data changes claimed"
 }

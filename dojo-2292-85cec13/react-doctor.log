@@ -16,7 +16,7 @@ Agent guidance
   - For confirmed issues that cannot be fixed now, create GitHub issues with the rule, file/line, confidence, impact, and proposed fix.
   - If a fix needs an API, UX, or architecture decision, stop and ask before editing.
 
-✔ Scanned 10 files in 3.5s
+✔ Scanned 10 files in 5.9s
 
 React Doctor — @dojo/web
 Score: 92 / 100 Great
@@ -26,8 +26,8 @@ Bugs: 1 warning
 
 ⚠ preventDefault on a form or link
   react-doctor/no-prevent-default
-  src/features/billing/admin/payout-minimum-form.tsx:50
-  Full diagnostics written to /var/folders/f3/_6wf4t2j04d77051fw3p1k4w0000gn/T/react-doctor-fe604fc9-3f2a-48e0-8c4e-10667cb4376e
+  src/features/billing/admin/payout-minimum-form.tsx:51
+  Full diagnostics written to /var/folders/f3/_6wf4t2j04d77051fw3p1k4w0000gn/T/react-doctor-106dd777-8795-4710-bec0-8ce5aabddc8e
 
   ────────────────────────────────────────────────────────────
 
@@ -41,4 +41,4 @@ Bugs: 1 warning
   GitHub: https://github.com/millionco/react-doctor
   Report issues and star the repository!
 
-Done in 6.1s using pnpm v12.11.2
+Done in 8.8s using pnpm v12.11.2

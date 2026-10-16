@@ -1,9 +1,0 @@
-
-Running 2 tests using 1 worker
-
-(node:70442) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-(Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  1 tests/e2e/billing/payout-minimum-browser.spec.ts:16:3 › platform configuration preserves retry, currency and auth boundaries at 1280px (5.1s)
-  ✓  2 tests/e2e/billing/payout-minimum-browser.spec.ts:16:3 › platform configuration preserves retry, currency and auth boundaries at 390px (5.0s)
-
-  2 passed (11.8s)

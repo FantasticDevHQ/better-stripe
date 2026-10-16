@@ -23,3 +23,7 @@ Actual Stripe events were fetched, scoped to owned QA recipients/charges, and re
 ## Earlier linked acceptance
 
 The package's existing public evidence remains relevant: payout-adoption-26f3ca8 for 205 real transfer sources and 101 historical payouts plus production worker execution; payout-attempt-f2536dd for genuine Stripe insufficient-balance rejection; payout-expiry-recovery-aabb797 for expiry/recovery/reset refusal and schedule restoration; bts-171-final-audit for the combined-role exact-threshold and concurrency audit. Those are separately recorded tests, not rerun or simulated by this final cost test. Dojo adoption is independently tracked under Kelly's explicitly approved completion boundary.
+
+## Final release verification
+
+Release PR #230 merged f0e6571af02b155ffb232c89bfb6efd873d1bca6 after all three CI checks passed. Release workflow 38877100159 succeeded, including trusted npm publish and provenance. npm initially reported processing; availability was verified afterward. npm-0.30.2-verified.json records the downloaded artifact's SHA-512 integrity, exact release gitHead, latest dist-tag 0.30.2, all 556 source/docs files byte-matching the release tag and all 1308 compiled files byte-matching the tested worktree. React/testing/component exports are present. release-pr.json and release-workflow.json retain the checks and publication outcome.

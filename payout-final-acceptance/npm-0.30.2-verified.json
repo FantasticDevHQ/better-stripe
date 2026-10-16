@@ -1,0 +1,19 @@
+{
+  "version": "0.30.2",
+  "gitHead": "f0e6571af02b155ffb232c89bfb6efd873d1bca6",
+  "integrityVerified": "sha512-XDE3uTMQopnJhOu6Heng6SqNw60NS7nNEfDihy+A66LaQu+MstdOD0reNl7yAX22m7TZ4T6g3+IZjcI5EeeIOw==",
+  "sourceAndDocsFilesByteMatchedToTag": 556,
+  "compiledFilesByteMatchedToVerifiedWorktree": 1308,
+  "exports": [
+    ".",
+    "./react",
+    "./testing",
+    "./convex.config",
+    "./convex.config.js",
+    "./_generated/component",
+    "./_generated/component.js"
+  ],
+  "tarballFiles": 1864,
+  "tarballBytes": 1464875,
+  "latestDistTag": "0.30.2"
+}

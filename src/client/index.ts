@@ -72,6 +72,10 @@ export type {
   ProviderCheckoutSessionPage,
 } from "./billing/checkoutPages.js";
 export type { CreateAccountOptions } from "./core/accounts.js";
+export {
+  canReceiveTransfers,
+  type TransferCapabilityAccount,
+} from "./core/accountCapabilities.js";
 import { buildAsyncHookRoutes } from "./webhooks/asyncHooks.js";
 import * as saleContextImpl from "./settlement/verifiedSale.js";
 import * as settlementImpl from "./settlement/settleSale.js";
@@ -464,11 +468,7 @@ export class BetterStripe extends FinancialOwnershipHost {
     );
   }
 
-  /**
-   * Apply the V2 recipient configuration to an existing account, and record
-   * the applied configurations on the component account. The account must
-   * already exist in the component DB (e.g. from {@link createAccount}).
-   */
+  /** Request recipient transfers and persist the provider configurations for this account. */
   async addRecipientConfiguration(
     ctx: RunCtx,
     opts: { stripeAccountId: string },
@@ -481,17 +481,25 @@ export class BetterStripe extends FinancialOwnershipHost {
     );
   }
 
-  /**
-   * Apply the V2 customer configuration to an existing account, making it
-   * billable (subscriptions, invoices, billing portal via `customer_account`),
-   * and record the applied configurations on the component account. The account
-   * must already exist in the component DB (e.g. from {@link createAccount}).
-   */
+  /** Make an existing account billable and persist its provider configurations. */
   async addCustomerConfiguration(
     ctx: RunCtx,
     opts: { stripeAccountId: string },
   ) {
     return accountsImpl.addCustomerConfiguration(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  /** Request merchant card payments and persist only this account's provider configurations. */
+  async addMerchantConfiguration(
+    ctx: RunCtx,
+    opts: { stripeAccountId: string },
+  ) {
+    return accountsImpl.addMerchantConfiguration(
       this.stripe(),
       this.component,
       ctx,

@@ -21,7 +21,7 @@ import {
   type PayoutCollectionScope,
 } from "./connect/payoutCollection.js";
 export type * from "./connect/payoutCollection.js";
-import { collectAdoptionProof } from "./connect/payoutActivationProof.js";
+import { collectResumableAdoptionProof as collectAdoptionProof } from "./connect/payoutResumableProof.js";
 import {
   adoptRecipientPayouts,
   type PayoutAdoptionOptions,
@@ -361,7 +361,10 @@ export class PayoutPolicyClient {
           opts,
           policy!.revision,
           thresholds.map((t) => t.currency),
+          "prepare",
         );
+        if (proof.status === "operation_changed")
+          return this.prepare(ctx, opts);
         if (proof.status !== "verified")
           return {
             status: "migration_required",
@@ -475,8 +478,11 @@ export class PayoutPolicyClient {
               args,
               policy.revision,
               operation.thresholds.map((t) => t.currency),
+              "apply",
             )
           : null;
+        if (result?.status === "operation_changed")
+          return this.apply(ctx, args);
         if (result?.status === "verified") freshAdoption = result.proof;
         const ageExpired =
           result?.status === "verified" &&

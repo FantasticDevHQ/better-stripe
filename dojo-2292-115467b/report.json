@@ -1,0 +1,29 @@
+{
+  "issue": "DOJO-2292",
+  "repository": "kellykampen/dojo",
+  "head": "115467b7524c8186c30404e5bc99040b75b3c5e5",
+  "focused_tests": {
+    "passed": 24,
+    "failed": 0
+  },
+  "browser": {
+    "passed": 2,
+    "widths": [
+      1280,
+      390
+    ],
+    "synthetic_transport": true,
+    "screenshots_and_video_visually_reviewed": true
+  },
+  "react_doctor": {
+    "score": 92,
+    "warnings": 1,
+    "reviewed_advisory": "preventDefault keeps the Convex mutation form on the current page; standard navigation would discard the edit."
+  },
+  "limits": [
+    "Actual Dojo form and public BetterStripe useWorkflowAction; session and database transport mocked in browser.",
+    "Real backend authorization and configuration persistence are separately covered by merged PR735.",
+    "No provider call, cloud deployment, bank schedule activation or payout is certified by this UI evidence.",
+    "Custom recipient acceptance, eligibility and release/expiry/recovery jobs remain DOJO-2249/2250."
+  ]
+}

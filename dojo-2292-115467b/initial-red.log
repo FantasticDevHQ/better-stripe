@@ -1,0 +1,244 @@
+
+ RUN  v4.1.11 <worktree>/apps/web
+
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx (20 tests | 13 failed) 27ms
+   × shows the provider default without inventing a numeric floor 13ms
+   × saves integer minor units with a stable identity and prevents duplicate submits 1ms
+   × retries a failed response with the same payload and hides private errors 1ms
+   × uses a new edit identity after fields change following an error 1ms
+   × isolates currencies and disposes completion from the old currency 1ms
+   × discards stale revision and session completions 1ms
+   × rejects invalid minimum 0 before mutation 0ms
+   × rejects invalid minimum -1 before mutation 0ms
+   × rejects invalid minimum 1.5 before mutation 1ms
+   × rejects invalid minimum 1e3 before mutation 1ms
+   × rejects invalid minimum 9007199254740992 before mutation 0ms
+   × rejects unknown currency without loading another policy 1ms
+   × saves an explicit return to provider minimum without a fabricated amount 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > shows the provider default without inventing a numeric floor
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Provider minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:56:17
+     54| it('shows the provider default without inventing a numeric floor', () …
+     55|   render(widget());
+     56|   expect(screen.getByRole('radio', { name: 'Provider minimum' })).toBe…
+       |                 ^
+     57|   expect(screen.queryByLabelText('Minimum in minor units')).not.toBeIn…
+     58|   expect(screen.getByText(/does not change a recipient.*schedule/i)).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > saves integer minor units with a stable identity and prevents duplicate submits
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:78:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > retries a failed response with the same payload and hides private errors
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:89:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > uses a new edit identity after fields change following an error
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:99:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > isolates currencies and disposes completion from the old currency
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:110:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > discards stale revision and session completions
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:123:37
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects invalid minimum 0 before mutation
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects invalid minimum -1 before mutation
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects invalid minimum 1.5 before mutation
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects invalid minimum 1e3 before mutation
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects invalid minimum 9007199254740992 before mutation
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Custom combined minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ custom src/features/billing/admin/payout-minimum-admin.test.tsx:43:26
+     41| }
+     42| function custom(value = '1000') {
+     43|   fireEvent.click(screen.getByRole('radio', { name: 'Custom combined m…
+       |                          ^
+     44|   fireEvent.change(screen.getByLabelText('Minimum in minor units'), { …
+     45| }
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:134:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > rejects unknown currency without loading another policy
+TestingLibraryElementError: Unable to find a label with the text of: Settlement currency
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:140:27
+    138| it('rejects unknown currency without loading another policy', () => {
+    139|   render(widget()); mocks.read.mockClear();
+    140|   fireEvent.change(screen.getByLabelText('Settlement currency'), { tar…
+       |                           ^
+    141|   expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid t…
+    142|   expect(mocks.read).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > saves an explicit return to provider minimum without a fabricated amount
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "Provider minimum"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div />[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:147:26
+    145|   mocks.policy = { currency: 'usd', revision: 4, config: { mode: 'cust…
+    146|   render(widget());
+    147|   fireEvent.click(screen.getByRole('radio', { name: 'Provider minimum'…
+       |                          ^
+    148|   fireEvent.click(screen.getByRole('button', { name: 'Save minimum' })…
+    149|   await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.o…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 7 passed (20)
+   Start at  11:06:24
+   Duration  626ms (transform 41ms, setup 110ms, import 76ms, tests 27ms, environment 214ms)
+
+undefined
+<worktree>/apps/web:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/features/billing/admin/payout-minimum-admin.test.tsx

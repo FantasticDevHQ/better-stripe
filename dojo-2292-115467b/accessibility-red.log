@@ -1,0 +1,329 @@
+
+ RUN  v4.1.11 <worktree>/apps/web
+
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx (24 tests | 1 failed) 240ms
+   × names the policy radio group and associates invalid input with its error 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/billing/admin/payout-minimum-admin.test.tsx > names the policy radio group and associates invalid input with its error
+TestingLibraryElementError: Unable to find an accessible element with the role "radiogroup" and name "Minimum policy"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Platform payout minimums":
+  [36m<h3[39m
+    [33mclass[39m=[32m"font-heading leading-none font-semibold tracking-tight"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+    [33mid[39m=[32m"_r_4_-help"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"max-w-2xl text-sm text-muted-foreground"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Settlement currency":
+  [36m<input[39m
+    [33maria-describedby[39m=[32m"_r_4_-help"[39m
+    [33mautocapitalize[39m=[32m"characters"[39m
+    [33mautocomplete[39m=[32m"off"[39m
+    [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive"[39m
+    [33mid[39m=[32m"_r_4_"[39m
+    [33mmaxlength[39m=[32m"3"[39m
+    [33mtype[39m=[32m"text"[39m
+    [33mvalue[39m=[32m"USD"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  form:
+
+  Name "Platform payout minimums":
+  [36m<form[39m
+    [33maria-label[39m=[32m"Platform payout minimums"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  group:
+
+  Name "Minimum policy":
+  [36m<fieldset[39m
+    [33mclass[39m=[32m"space-y-3"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  radiogroup:
+
+  Name "":
+  [36m<div[39m
+    [33maria-required[39m=[32m"false"[39m
+    [33mclass[39m=[32m"grid gap-2"[39m
+    [33mdir[39m=[32m"ltr"[39m
+    [33mrole[39m=[32m"radiogroup"[39m
+    [33mstyle[39m=[32m"outline-color: none; outline-style: none; outline-width: initial;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  radio:
+
+  Name "Provider minimum":
+  [36m<button[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33mclass[39m=[32m"aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow-2xs focus:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"[39m
+    [33mdata-radix-collection-item[39m=[32m""[39m
+    [33mdata-state[39m=[32m"checked"[39m
+    [33mid[39m=[32m"_r_5_-provider"[39m
+    [33mrole[39m=[32m"radio"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+    [33mtype[39m=[32m"button"[39m
+    [33mvalue[39m=[32m"provider_minimum"[39m
+  [36m/>[39m
+
+  Name "Custom combined minimum":
+  [36m<button[39m
+    [33maria-checked[39m=[32m"false"[39m
+    [33mclass[39m=[32m"aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow-2xs focus:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"[39m
+    [33mdata-radix-collection-item[39m=[32m""[39m
+    [33mdata-state[39m=[32m"unchecked"[39m
+    [33mid[39m=[32m"_r_5_-custom"[39m
+    [33mrole[39m=[32m"radio"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+    [33mtype[39m=[32m"button"[39m
+    [33mvalue[39m=[32m"custom"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Save minimum":
+  [36m<button[39m
+    [33mclass[39m=[32m"inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow-2xs hover:bg-primary/90 h-9 px-4 py-2"[39m
+    [33mtype[39m=[32m"submit"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-xl border bg-card text-card-foreground"[39m
+      [33mdata-testid[39m=[32m"payout-minimum-admin"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 p-6"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-heading leading-none font-semibold tracking-tight"[39m
+        [36m>[39m
+          [0mPlatform payout minimums[0m
+        [36m</h3>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+        [36m>[39m
+          [0mSet one combined creator and affiliate minimum per settlement currency.[0m
+        [36m</p>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-xs space-y-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+              [33mfor[39m=[32m"_r_4_"[39m
+            [36m>[39m
+              [0mSettlement currency[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33maria-describedby[39m=[32m"_r_4_-help"[39m
+              [33mautocapitalize[39m=[32m"characters"[39m
+              [33mautocomplete[39m=[32m"off"[39m
+              [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive"[39m
+              [33mid[39m=[32m"_r_4_"[39m
+              [33mmaxlength[39m=[32m"3"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m"USD"[39m
+            [36m/>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+              [33mid[39m=[32m"_r_4_-help"[39m
+            [36m>[39m
+              [0mUse a three-letter currency code, for example USD or JPY.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<form[39m
+            [33maria-label[39m=[32m"Platform payout minimums"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<fieldset[39m
+                [33mclass[39m=[32m"space-y-3"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"mb-2 text-sm font-medium"[39m
+                [36m>[39m
+                  [0mMinimum policy[0m
+                [36m</legend>[39m
+                [36m<div[39m
+                  [33maria-required[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"grid gap-2"[39m
+                  [33mdir[39m=[32m"ltr"[39m
+                  [33mrole[39m=[32m"radiogroup"[39m
+                  [33mstyle[39m=[32m"outline-color: none; outline-style: none; outline-width: initial;"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow-2xs focus:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"[39m
+                      [33mdata-radix-collection-item[39m=[32m""[39m
+                      [33mdata-state[39m=[32m"checked"[39m
+                      [33mid[39m=[32m"_r_5_-provider"[39m
+                      [33mrole[39m=[32m"radio"[39m
+                      [33mtabindex[39m=[32m"-1"[39m
+                      [33mtype[39m=[32m"button"[39m
+                      [33mvalue[39m=[32m"provider_minimum"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33mclass[39m=[32m"flex items-center justify-center"[39m
+                        [33mdata-state[39m=[32m"checked"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33mclass[39m=[32m"h-3.5 w-3.5 fill-primary"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"15"[39m
+                          [33mviewBox[39m=[32m"0 0 15 15"[39m
+                          [33mwidth[39m=[32m"15"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33mclip-rule[39m=[32m"evenodd"[39m
+                            [33md[39m=[32m"M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3355 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.55529 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z"[39m
+                            [33mfill[39m=[32m"currentColor"[39m
+                            [33mfill-rule[39m=[32m"evenodd"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                    [36m<input[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mstyle[39m=[32m"position: absolute; pointer-events: none; opacity: 0; margin: 0px; transform: translateX(-100%); width: 0px; height: 0px;"[39m
+                      [33mtabindex[39m=[32m"-1"[39m
+                      [33mtype[39m=[32m"radio"[39m
+                      [33mvalue[39m=[32m"provider_minimum"[39m
+                    [36m/>[39m
+                    [36m<label[39m
+                      [33mclass[39m=[32m"text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                      [33mfor[39m=[32m"_r_5_-provider"[39m
+                    [36m>[39m
+                      [0mProvider minimum[0m
+                    [36m</label>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<button[39m
+                      [33maria-checked[39m=[32m"false"[39m
+                      [33mclass[39m=[32m"aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow-2xs focus:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"[39m
+                      [33mdata-radix-collection-item[39m=[32m""[39m
+                      [33mdata-state[39m=[32m"unchecked"[39m
+                      [33mid[39m=[32m"_r_5_-custom"[39m
+                      [33mrole[39m=[32m"radio"[39m
+                      [33mtabindex[39m=[32m"-1"[39m
+                      [33mtype[39m=[32m"button"[39m
+                      [33mvalue[39m=[32m"custom"[39m
+                    [36m/>[39m
+                    [36m<input[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mstyle[39m=[32m"position: absolute; pointer-events: none; opacity: 0; margin: 0px; transform: translateX(-100%); width: 0px; height: 0px;"[39m
+                      [33mtabindex[39m=[32m"-1"[39m
+                      [33mtype[39m=[32m"radio"[39m
+                      [33mvalue[39m=[32m"custom"[39m
+                    [36m/>[39m
+                    [36m<label[39m
+                      [33mclass[39m=[32m"text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                      [33mfor[39m=[32m"_r_5_-custom"[39m
+                    [36m>[39m
+                      [0mCustom combined minimum[0m
+                    [36m</label>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</fieldset>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"max-w-2xl text-sm text-muted-foreground"[39m
+              [36m>[39m
+                [0mThis saves platform configuration. It does not change a recipient’s Stripe schedule. A custom policy still requires recipient acceptance and verified account support; the provider floor always applies. Creator and affiliate funds share one minimum in each currency.[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+              [36m>[39m
+                [0mNo custom platform configuration has been saved for this currency. The provider minimum applies.[0m
+              [36m</p>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow-2xs hover:bg-primary/90 h-9 px-4 py-2"[39m
+                [33mtype[39m=[32m"submit"[39m
+              [36m>[39m
+                [0mSave minimum[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</form>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/billing/admin/payout-minimum-admin.test.tsx:138:17
+    136| it('names the policy radio group and associates invalid input with its…
+    137|   render(widget());
+    138|   expect(screen.getByRole('radiogroup', { name: 'Minimum policy' })).t…
+       |                 ^
+    139|   custom('0');
+    140|   const field = screen.getByLabelText('Minimum in minor units');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  11:17:05
+   Duration  1.43s (transform 438ms, setup 108ms, import 657ms, tests 240ms, environment 234ms)
+
+undefined
+<worktree>/apps/web:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/features/billing/admin/payout-minimum-admin.test.tsx

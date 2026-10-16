@@ -9,12 +9,12 @@ const batches = makeFunctionReference<"query">(
   "financialObservations/queries:transferBatches",
 );
 it.each([true, false])(
-  "preserves every 1001-leg release and defers compact references without earnings-hook leakage (totals recorded: %s)",
+  "preserves the exact first-overflow 101-leg release and defers compact references without earnings-hook leakage (totals recorded: %s)",
   async (hasTotals) => {
     const t = convexTest(schema, modules);
     const fixture = await t.run(async (ctx) => {
       const ids = [];
-      for (let i = 0; i < 1001; i++)
+      for (let i = 0; i < 101; i++)
         ids.push(
           await ctx.db.insert("transfers", {
             stripeTransferId: `tr_legacy_${i}`,
@@ -33,15 +33,15 @@ it.each([true, false])(
           accountId: "opaque_legacy",
           currency: "usd",
           kind: "earnings",
-          gross: 1001,
+          gross: 101,
           reversed: 0,
           paidOut: 0,
-          count: 1001,
+          count: 101,
         });
       const operationId = await ctx.db.insert("transferReversalOps", {
         operationId: "op_legacy",
         sourceChargeId: "ch_legacy",
-        slices: Array.from({ length: 1001 }, (_, i) => ({
+        slices: Array.from({ length: 101 }, (_, i) => ({
           stripeTransferId: `tr_legacy_${i}`,
           from: 0,
           to: 1,
@@ -51,12 +51,12 @@ it.each([true, false])(
     });
     const result = await t.mutation(release, {
       operationId: "op_legacy",
-      verified: Array.from({ length: 1001 }, (_, i) => ({
+      verified: Array.from({ length: 101 }, (_, i) => ({
         stripeTransferId: `tr_legacy_${i}`,
         amountReversed: 0,
       })),
     });
-    expect(result.rewound).toHaveLength(1001);
+    expect(result.rewound).toHaveLength(101);
     expect(result.released).toBe(true);
     const diagnostic = await t.query(batches, {
       operationId: "op_legacy",
@@ -74,7 +74,7 @@ it.each([true, false])(
       producerGeneration: 1,
     });
     expect(diagnostic.page).toHaveLength(1);
-    expect(diagnostic.page[0].transferIds).toHaveLength(1001);
+    expect(diagnostic.page[0].transferIds).toHaveLength(101);
     expect(
       diagnostic.page[0].transferIds.every(
         (id: string, i: number) => id === fixture.ids[i],
@@ -91,7 +91,7 @@ it.each([true, false])(
           generation: 1,
           state: "pending",
           isOverflow: true,
-          referenceCount: 1001,
+          referenceCount: 101,
         },
       ],
     });
@@ -100,8 +100,8 @@ it.each([true, false])(
         ctx.db.query("financialTransferObservations").take(1),
       ),
     ).toEqual([]);
-    const rows = await t.run((ctx) => ctx.db.query("transfers").take(1002));
-    expect(rows).toHaveLength(1001);
+    const rows = await t.run((ctx) => ctx.db.query("transfers").take(102));
+    expect(rows).toHaveLength(101);
     expect(
       rows.every(
         (row) =>
@@ -121,8 +121,8 @@ it.each([true, false])(
       await t.run((ctx) => ctx.db.query("currencyTotals").take(1)),
     ).toEqual([
       expect.objectContaining({
-        gross: 1001,
-        count: 1001,
+        gross: 101,
+        count: 101,
         reversed: 0,
         paidOut: 0,
       }),

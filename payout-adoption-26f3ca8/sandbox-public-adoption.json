@@ -1,0 +1,111 @@
+{
+  "financialScenarioRevision": "48d6f3c338d0b07f587848dfd84d786181a2ce09",
+  "concurrencyFixRevision": "5036093",
+  "sandboxAccount": "acct_1UQybP5OnKKxRL8Q",
+  "sourceTransfers": 205,
+  "historicalPayouts": 101,
+  "publicCalls": {
+    "adopted": {
+      "status": "adopted",
+      "elapsedMs": 162095
+    },
+    "preparedPolicy": {
+      "status": "prepared",
+      "elapsedMs": 254344
+    },
+    "appliedPolicy": {
+      "status": "ready",
+      "elapsedMs": 251381
+    }
+  },
+  "afterReplay": {
+    "providerPayoutCount": 102,
+    "providerPaidTotal": 10250,
+    "newPayouts": [
+      {
+        "id": "po_1UQz5b5OnKKxRL8QnRO5zbse",
+        "amount": 150,
+        "currency": "usd",
+        "status": "paid"
+      }
+    ],
+    "balance": {
+      "object": "balance",
+      "available": [
+        {
+          "amount": 0,
+          "currency": "usd",
+          "source_types": {
+            "card": 0
+          }
+        }
+      ],
+      "instant_available": [
+        {
+          "amount": 0,
+          "currency": "usd",
+          "source_types": {
+            "card": 0
+          }
+        }
+      ],
+      "livemode": false,
+      "pending": [
+        {
+          "amount": 0,
+          "currency": "usd",
+          "source_types": {
+            "card": 0
+          }
+        }
+      ],
+      "refund_and_dispute_prefunding": {
+        "available": [
+          {
+            "amount": 0,
+            "currency": "usd"
+          }
+        ],
+        "pending": [
+          {
+            "amount": 0,
+            "currency": "usd"
+          }
+        ]
+      }
+    },
+    "policy": {
+      "mode": "custom",
+      "revision": 1,
+      "status": "ready",
+      "thresholds": [
+        {
+          "amount": 100,
+          "currency": "usd"
+        }
+      ]
+    },
+    "worker": {
+      "generation": 2,
+      "completedGeneration": 1,
+      "hasOperation": true,
+      "lastReason": "paid",
+      "lastAttemptAt": 1792111130810,
+      "lastResultAt": 1792110820997
+    },
+    "allocations": 205,
+    "paidPrincipal": 10250,
+    "reservedPrincipal": 0,
+    "proofCacheCount": 0
+  },
+  "cleanup": {
+    "scheduleRestored": true,
+    "accountClosed": true
+  },
+  "currentRuntimeReplay": {
+    "revision": "503609388c537b60666da760b5a1958842befd19",
+    "status": "ready",
+    "workerLastReason": "below_threshold",
+    "workerHasOperation": false
+  }
+}

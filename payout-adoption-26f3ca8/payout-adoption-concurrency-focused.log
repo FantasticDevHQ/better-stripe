@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 /Users/kellykampen/.codex/worktrees/9d5f/better-stripe
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  07:38:11
+   Duration  9.00s (tests 94%, transform 3%, import 2%, environment 1%)
+

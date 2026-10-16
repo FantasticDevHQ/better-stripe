@@ -8,12 +8,6 @@
  * @module
  */
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
-import { anyApi, componentsGeneric } from "convex/server";
 import type * as accounts_actions from "../accounts/actions.js";
 import type * as accounts_helpers from "../accounts/helpers.js";
 import type * as accounts_queries from "../accounts/queries.js";
@@ -30,7 +24,6 @@ import type * as adminTesting_queries from "../adminTesting/queries.js";
 import type * as affiliateDefaults_helpers from "../affiliateDefaults/helpers.js";
 import type * as affiliateDefaults_mutations from "../affiliateDefaults/mutations.js";
 import type * as affiliateDefaults_queries from "../affiliateDefaults/queries.js";
-import type * as affiliateDefaults_schema from "../affiliateDefaults/schema.js";
 import type * as affiliateRecovery_billingSandbox_actions from "../affiliateRecovery/billingSandbox/actions.js";
 import type * as affiliateRecovery_helpers from "../affiliateRecovery/helpers.js";
 import type * as affiliateRecovery_internal_queries from "../affiliateRecovery/internal/queries.js";
@@ -39,6 +32,7 @@ import type * as affiliateRecovery_public_actions from "../affiliateRecovery/pub
 import type * as affiliateRecovery_public_queries from "../affiliateRecovery/public/queries.js";
 import type * as affiliateRecovery_sandbox_actions from "../affiliateRecovery/sandbox/actions.js";
 import type * as billing_events_actions from "../billing/events/actions.js";
+import type * as billing_invoiceHistory from "../billing/invoiceHistory.js";
 import type * as billing_public_actions from "../billing/public/actions.js";
 import type * as billing_public_queries from "../billing/public/queries.js";
 import type * as billing_subscriptionLifecycle from "../billing/subscriptionLifecycle.js";
@@ -66,7 +60,6 @@ import type * as marketplace_helpers from "../marketplace/helpers.js";
 import type * as marketplace_model from "../marketplace/model.js";
 import type * as marketplace_personaQueries from "../marketplace/personaQueries.js";
 import type * as marketplace_queries from "../marketplace/queries.js";
-import type * as marketplace_schema from "../marketplace/schema.js";
 import type * as payoutWorkers_actions from "../payoutWorkers/actions.js";
 import type * as payoutWorkers_helpers from "../payoutWorkers/helpers.js";
 import type * as payoutWorkers_scope_helpers from "../payoutWorkers/scope/helpers.js";
@@ -90,7 +83,6 @@ import type * as sandboxFixtures_renewals_helpers from "../sandboxFixtures/renew
 import type * as sandboxFixtures_renewals_mutations from "../sandboxFixtures/renewals/mutations.js";
 import type * as sandboxFixtures_renewals_queries from "../sandboxFixtures/renewals/queries.js";
 import type * as sandboxFixtures_resources from "../sandboxFixtures/resources.js";
-import type * as sandboxFixtures_schema from "../sandboxFixtures/schema.js";
 import type * as sandboxFixtures_state_helpers from "../sandboxFixtures/state/helpers.js";
 import type * as sandboxFixtures_state_internal_mutations from "../sandboxFixtures/state/internal/mutations.js";
 import type * as sandboxFixtures_state_internal_queries from "../sandboxFixtures/state/internal/queries.js";
@@ -99,7 +91,6 @@ import type * as sellerAffiliateRates_helpers from "../sellerAffiliateRates/help
 import type * as sellerAffiliateRates_internal_queries from "../sellerAffiliateRates/internal/queries.js";
 import type * as sellerAffiliateRates_public_mutations from "../sellerAffiliateRates/public/mutations.js";
 import type * as sellerAffiliateRates_public_queries from "../sellerAffiliateRates/public/queries.js";
-import type * as sellerAffiliateRates_schema from "../sellerAffiliateRates/schema.js";
 import type * as sellerCosts_actions from "../sellerCosts/actions.js";
 import type * as sellerCosts_billing_internal_mutations from "../sellerCosts/billing/internal/mutations.js";
 import type * as sellerCosts_billing_public_queries from "../sellerCosts/billing/public/queries.js";
@@ -112,7 +103,6 @@ import type * as sellerCosts_migration_queries from "../sellerCosts/migration/qu
 import type * as sellerCosts_recovery from "../sellerCosts/recovery.js";
 import type * as sellerCosts_recoveryInvoices_actions from "../sellerCosts/recoveryInvoices/actions.js";
 import type * as sellerCosts_recoveryInvoices_mutations from "../sellerCosts/recoveryInvoices/mutations.js";
-import type * as sellerCosts_schema from "../sellerCosts/schema.js";
 import type * as sellerCosts_unsettledCostSource from "../sellerCosts/unsettledCostSource.js";
 import type * as sellerCosts_validators from "../sellerCosts/validators.js";
 import type * as settlement_internal_actions from "../settlement/internal/actions.js";
@@ -120,13 +110,11 @@ import type * as settlement_internal_mutations from "../settlement/internal/muta
 import type * as settlement_internal_queries from "../settlement/internal/queries.js";
 import type * as settlement_public_queries from "../settlement/public/queries.js";
 import type * as settlement_recovery from "../settlement/recovery.js";
-import type * as settlement_schema from "../settlement/schema.js";
 import type * as storeBalance_actions from "../storeBalance/actions.js";
 import type * as storeBalance_funding_helpers from "../storeBalance/funding/helpers.js";
 import type * as storeBalance_funding_internal_mutations from "../storeBalance/funding/internal/mutations.js";
 import type * as storeBalance_funding_internal_queries from "../storeBalance/funding/internal/queries.js";
 import type * as storeBalance_funding_public_queries from "../storeBalance/funding/public/queries.js";
-import type * as storeBalance_schema from "../storeBalance/schema.js";
 import type * as storeBalance_stripe from "../storeBalance/stripe.js";
 import type * as storePlans_billing_helpers from "../storePlans/billing/helpers.js";
 import type * as storePlans_billing_internal_mutations from "../storePlans/billing/internal/mutations.js";
@@ -140,7 +128,6 @@ import type * as storePlans_pricing_internal_queries from "../storePlans/pricing
 import type * as storePlans_pricing_public_actions from "../storePlans/pricing/public/actions.js";
 import type * as storePlans_pricing_public_queries from "../storePlans/pricing/public/queries.js";
 import type * as storePlans_public_actions from "../storePlans/public/actions.js";
-import type * as storePlans_schema from "../storePlans/schema.js";
 import type * as storePlans_validators from "../storePlans/validators.js";
 import type * as storefront_checkout from "../storefront/checkout.js";
 import type * as storefront_helpers from "../storefront/helpers.js";
@@ -152,14 +139,19 @@ import type * as stripe_helpers from "../stripe/helpers.js";
 import type * as stripe_http from "../stripe/http.js";
 import type * as stripe_public_actions from "../stripe/public/actions.js";
 import type * as stripe_public_queries from "../stripe/public/queries.js";
-import type * as stripe_schema from "../stripe/schema.js";
 import type * as stripe_setup_actions from "../stripe/setup/actions.js";
 import type * as stripe_triggerLog_mutations from "../stripe/triggerLog/mutations.js";
 import type * as stripe_triggerLog_queries from "../stripe/triggerLog/queries.js";
 import type * as stripe_webhooks from "../stripe/webhooks.js";
 import type * as users_authorization from "../users/authorization.js";
 import type * as users_queries from "../users/queries.js";
-import type * as users_schema from "../users/schema.js";
+
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
+import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
   "accounts/actions": typeof accounts_actions;
@@ -178,7 +170,6 @@ const fullApi: ApiFromModules<{
   "affiliateDefaults/helpers": typeof affiliateDefaults_helpers;
   "affiliateDefaults/mutations": typeof affiliateDefaults_mutations;
   "affiliateDefaults/queries": typeof affiliateDefaults_queries;
-  "affiliateDefaults/schema": typeof affiliateDefaults_schema;
   "affiliateRecovery/billingSandbox/actions": typeof affiliateRecovery_billingSandbox_actions;
   "affiliateRecovery/helpers": typeof affiliateRecovery_helpers;
   "affiliateRecovery/internal/queries": typeof affiliateRecovery_internal_queries;
@@ -187,6 +178,7 @@ const fullApi: ApiFromModules<{
   "affiliateRecovery/public/queries": typeof affiliateRecovery_public_queries;
   "affiliateRecovery/sandbox/actions": typeof affiliateRecovery_sandbox_actions;
   "billing/events/actions": typeof billing_events_actions;
+  "billing/invoiceHistory": typeof billing_invoiceHistory;
   "billing/public/actions": typeof billing_public_actions;
   "billing/public/queries": typeof billing_public_queries;
   "billing/subscriptionLifecycle": typeof billing_subscriptionLifecycle;
@@ -214,7 +206,6 @@ const fullApi: ApiFromModules<{
   "marketplace/model": typeof marketplace_model;
   "marketplace/personaQueries": typeof marketplace_personaQueries;
   "marketplace/queries": typeof marketplace_queries;
-  "marketplace/schema": typeof marketplace_schema;
   "payoutWorkers/actions": typeof payoutWorkers_actions;
   "payoutWorkers/helpers": typeof payoutWorkers_helpers;
   "payoutWorkers/scope/helpers": typeof payoutWorkers_scope_helpers;
@@ -238,7 +229,6 @@ const fullApi: ApiFromModules<{
   "sandboxFixtures/renewals/mutations": typeof sandboxFixtures_renewals_mutations;
   "sandboxFixtures/renewals/queries": typeof sandboxFixtures_renewals_queries;
   "sandboxFixtures/resources": typeof sandboxFixtures_resources;
-  "sandboxFixtures/schema": typeof sandboxFixtures_schema;
   "sandboxFixtures/state/helpers": typeof sandboxFixtures_state_helpers;
   "sandboxFixtures/state/internal/mutations": typeof sandboxFixtures_state_internal_mutations;
   "sandboxFixtures/state/internal/queries": typeof sandboxFixtures_state_internal_queries;
@@ -247,7 +237,6 @@ const fullApi: ApiFromModules<{
   "sellerAffiliateRates/internal/queries": typeof sellerAffiliateRates_internal_queries;
   "sellerAffiliateRates/public/mutations": typeof sellerAffiliateRates_public_mutations;
   "sellerAffiliateRates/public/queries": typeof sellerAffiliateRates_public_queries;
-  "sellerAffiliateRates/schema": typeof sellerAffiliateRates_schema;
   "sellerCosts/actions": typeof sellerCosts_actions;
   "sellerCosts/billing/internal/mutations": typeof sellerCosts_billing_internal_mutations;
   "sellerCosts/billing/public/queries": typeof sellerCosts_billing_public_queries;
@@ -260,7 +249,6 @@ const fullApi: ApiFromModules<{
   "sellerCosts/recovery": typeof sellerCosts_recovery;
   "sellerCosts/recoveryInvoices/actions": typeof sellerCosts_recoveryInvoices_actions;
   "sellerCosts/recoveryInvoices/mutations": typeof sellerCosts_recoveryInvoices_mutations;
-  "sellerCosts/schema": typeof sellerCosts_schema;
   "sellerCosts/unsettledCostSource": typeof sellerCosts_unsettledCostSource;
   "sellerCosts/validators": typeof sellerCosts_validators;
   "settlement/internal/actions": typeof settlement_internal_actions;
@@ -268,13 +256,11 @@ const fullApi: ApiFromModules<{
   "settlement/internal/queries": typeof settlement_internal_queries;
   "settlement/public/queries": typeof settlement_public_queries;
   "settlement/recovery": typeof settlement_recovery;
-  "settlement/schema": typeof settlement_schema;
   "storeBalance/actions": typeof storeBalance_actions;
   "storeBalance/funding/helpers": typeof storeBalance_funding_helpers;
   "storeBalance/funding/internal/mutations": typeof storeBalance_funding_internal_mutations;
   "storeBalance/funding/internal/queries": typeof storeBalance_funding_internal_queries;
   "storeBalance/funding/public/queries": typeof storeBalance_funding_public_queries;
-  "storeBalance/schema": typeof storeBalance_schema;
   "storeBalance/stripe": typeof storeBalance_stripe;
   "storePlans/billing/helpers": typeof storePlans_billing_helpers;
   "storePlans/billing/internal/mutations": typeof storePlans_billing_internal_mutations;
@@ -288,7 +274,6 @@ const fullApi: ApiFromModules<{
   "storePlans/pricing/public/actions": typeof storePlans_pricing_public_actions;
   "storePlans/pricing/public/queries": typeof storePlans_pricing_public_queries;
   "storePlans/public/actions": typeof storePlans_public_actions;
-  "storePlans/schema": typeof storePlans_schema;
   "storePlans/validators": typeof storePlans_validators;
   "storefront/checkout": typeof storefront_checkout;
   "storefront/helpers": typeof storefront_helpers;
@@ -300,14 +285,12 @@ const fullApi: ApiFromModules<{
   "stripe/http": typeof stripe_http;
   "stripe/public/actions": typeof stripe_public_actions;
   "stripe/public/queries": typeof stripe_public_queries;
-  "stripe/schema": typeof stripe_schema;
   "stripe/setup/actions": typeof stripe_setup_actions;
   "stripe/triggerLog/mutations": typeof stripe_triggerLog_mutations;
   "stripe/triggerLog/queries": typeof stripe_triggerLog_queries;
   "stripe/webhooks": typeof stripe_webhooks;
   "users/authorization": typeof users_authorization;
   "users/queries": typeof users_queries;
-  "users/schema": typeof users_schema;
 }> = anyApi as any;
 
 /**

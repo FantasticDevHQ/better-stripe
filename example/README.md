@@ -1341,3 +1341,13 @@ deduplication. This source behavior requires a verified published package and
 explicit consumer adoption before it can support another application's acceptance.
 
 The embedded payouts panel is read-only for payout creation and schedule changes. Stripe-managed schedules or the BetterStripe custom-minimum worker own bank payout creation, so embedded controls cannot bypass a configured minimum.
+
+### Provider invoice history reference
+
+`convex/billing/invoiceHistory.ts` is a server-only binding to the public
+`getInvoicePageFromStripe` API. Invoke it from an authorized action with the
+server-resolved buyer user ID. The binding derives the retained personal V2
+account and preserves bounded continuation and filter arguments. It is not an
+unauthenticated invoice endpoint or a complete-history assertion. No new UI or
+settlement is activated. See the package read-contract documentation for
+unknown legacy history and provider-read/database ordering limits.

@@ -65,3 +65,8 @@ export type {
   FinancialTransferBatchResult,
   FinancialTransferReferencePage,
 } from "./transferObservations.js";
+
+export type {
+  RefundCommandNormalizationOptions,
+  RefundCommandNormalizationResult,
+} from "./connect/refundCommandNormalization.js";

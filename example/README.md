@@ -1450,6 +1450,8 @@ not spendable balances or account-closure permission. See the packaged
 [financial observation guide](../docs/financial-observations.md#transfer-facts-and-deferred-batches)
 for synchronous bounds, preserved financial behavior and deferred-reference limits.
 
+The server-only [legacy refund-command maintenance reference](convex/connect/refundCommandNormalization.ts) runs one bounded projection-only batch through the public SDK. Authenticate a trusted platform operator or internal deployment task first; do not mount it as a demo-persona or browser endpoint. Repeat while `hasMore` is true. Empty pending coverage is not complete provider history or retry authority.
+
 Trusted hosts can explicitly drain every retained claim/release reference with
 `stripe.financialObservations.transferBatch`, `resumeTransferBatch` and
 `transferReferences`. Each step indexes or validates a bounded prefix and commits

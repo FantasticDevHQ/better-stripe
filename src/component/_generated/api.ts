@@ -59,6 +59,7 @@ import type * as payoutRelease_fees from "../payoutRelease/fees.js";
 import type * as payoutRelease_helpers from "../payoutRelease/helpers.js";
 import type * as payoutRelease_mutations from "../payoutRelease/mutations.js";
 import type * as payoutRelease_observation from "../payoutRelease/observation.js";
+import type * as payoutRelease_outcome from "../payoutRelease/outcome.js";
 import type * as payoutRelease_planning from "../payoutRelease/planning.js";
 import type * as payoutRelease_preview from "../payoutRelease/preview.js";
 import type * as payoutRelease_progress from "../payoutRelease/progress.js";
@@ -149,6 +150,7 @@ const fullApi: ApiFromModules<{
   "payoutRelease/helpers": typeof payoutRelease_helpers;
   "payoutRelease/mutations": typeof payoutRelease_mutations;
   "payoutRelease/observation": typeof payoutRelease_observation;
+  "payoutRelease/outcome": typeof payoutRelease_outcome;
   "payoutRelease/planning": typeof payoutRelease_planning;
   "payoutRelease/preview": typeof payoutRelease_preview;
   "payoutRelease/progress": typeof payoutRelease_progress;

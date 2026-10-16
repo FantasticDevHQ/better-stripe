@@ -1,9 +1,10 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
 import { makeFunctionReference } from "convex/server";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import type { Doc } from "./_generated/dataModel.js";
 import schema from "./schema.js";
+import { cacheSource } from "./payoutSnapshots/localState.js";
 import { transferFingerprint } from "./payoutRelease/helpers.js";
 const modules = import.meta.glob("./**/*.*s");
 const m = (name: string) =>
@@ -391,5 +392,48 @@ it("retains a risk-journal continuation when changes exceed one page", async () 
     phase: "local_ready",
     riskRevision: 31,
     sourceCount: 1,
+  });
+});
+
+it("retains immutable primary source IDs in the disposable verification cache", async () => {
+  const s = await setup(2);
+  await s.finish(await s.begin());
+  const rows = await s.t.run(async (ctx) => ({
+    sources: await ctx.db.query("transfers").collect(),
+    cache: await ctx.db.query("payoutSnapshotSources").collect(),
+  }));
+  expect(rows.cache).toHaveLength(2);
+  for (const cached of rows.cache)
+    expect(
+      (cached as typeof cached & { transferDocId?: string }).transferDocId,
+    ).toBe(
+      rows.sources.find(
+        (row) => row.stripeTransferId === cached.stripeTransferId,
+      )!._id,
+    );
+});
+
+it("does not rewrite an unchanged source already cached in the same collection", async () => {
+  const s = await setup(2);
+  const started = await s.begin();
+  const h = await s.step(started.step);
+  await s.t.run(async (ctx) => {
+    const transfer = await ctx.db.query("transfers").first();
+    if (!transfer) throw Error("Missing source");
+    const patch = vi.spyOn(ctx.db, "patch");
+    await cacheSource(
+      ctx,
+      h,
+      transfer.stripeTransferId,
+      {
+        sourceCount: h.sourceCount,
+        allocationCount: h.allocationCount,
+        claimCount: h.claimCount,
+        feeCount: h.feeCount,
+      },
+      transfer,
+    );
+    expect(patch).not.toHaveBeenCalled();
+    patch.mockRestore();
   });
 });

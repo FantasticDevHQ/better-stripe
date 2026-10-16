@@ -1,10 +1,12 @@
+import { large, withHistory } from "./payoutLargeAdoptionTestHelpers.js";
+import { componentRef } from "../webhooks/helpers.js";
 import { makeFunctionReference } from "convex/server";
 // @vitest-environment edge-runtime
 import { afterEach, expect, it, vi } from "vitest";
 afterEach(() => vi.restoreAllMocks());
 import type Stripe from "stripe";
 import { adoptRecipientPayouts } from "./payoutAdoption.js";
-import { setup, scope, component } from "./payoutAdoptionTestHelpers.js";
+import { scope, component } from "./payoutAdoptionTestHelpers.js";
 it("verifies all 205 existing funding sources through public adoption without a lifetime cutoff", async () => {
   const s = await large();
   const result = await adoptRecipientPayouts(
@@ -33,29 +35,6 @@ it("verifies all 205 existing funding sources through public adoption without a 
   ).toEqual([]);
 });
 
-async function large(count = 205, amount = 10) {
-  const s = await setup(Array.from({ length: count }, () => amount));
-  s.provider.balanceTransactions.list.mockImplementation(async (params) => {
-    const p = params as typeof params & {
-      currency?: string;
-      starting_after?: string;
-    };
-    const all = s
-      .transactions()
-      .filter(
-        (t) =>
-          (!p.source || t.source === p.source) &&
-          (!p.currency || t.currency === p.currency),
-      );
-    const start = p.starting_after
-      ? all.findIndex((t) => t.id === p.starting_after) + 1
-      : 0;
-    const data = all.slice(start, start + (p.limit ?? 100));
-    return { data, has_more: start + data.length < all.length };
-  });
-  return s;
-}
-
 it("atomically adopts 101 prior payouts against 205 verified sources and replays without duplicate principal", async () => {
   const { s, adopt } = await withHistory();
   const result = await adopt();
@@ -81,55 +60,6 @@ it("atomically adopts 101 prior payouts against 205 verified sources and replays
   ).toEqual([]);
   expect(s.provider.payouts.create).not.toHaveBeenCalled();
 }, 15000);
-
-async function withHistory(count = 205, amount = 10) {
-  const s = await large(count, amount);
-  const payouts: {
-    stripePayoutId: string;
-    allocations: { stripeTransferId: string; amount: number }[];
-  }[] = [];
-  const history: Record<string, unknown>[] = [];
-  for (let i = 0; i < 101; i++) {
-    const p = await s.provider.payouts.create({
-      amount: 10,
-      currency: "usd",
-      metadata: {},
-    });
-    history.push(p);
-    payouts.push({
-      stripePayoutId: String(p.id),
-      allocations: [{ stripeTransferId: `tr_${i % count}`, amount: 10 }],
-    });
-  }
-  s.provider.payouts.create.mockClear();
-  s.provider.payouts.list.mockImplementation(async (...args: unknown[]) => {
-    const params = (args[0] ?? {}) as {
-      limit?: number;
-      starting_after?: string;
-    };
-    const all = [...history].reverse();
-    const start = params.starting_after
-      ? all.findIndex((p) => p.id === params.starting_after) + 1
-      : 0;
-    const data = all.slice(start, start + (params.limit ?? 100));
-    return { data, has_more: start + data.length < all.length };
-  });
-  const opts = {
-    accountId: scope.accountId,
-    ownerKey: scope.ownerKey,
-    currency: "usd",
-    expectedRevision: 0,
-    payouts,
-  };
-  const adopt = () =>
-    adoptRecipientPayouts(
-      s.provider as unknown as Stripe,
-      component,
-      s.ctx,
-      opts,
-    );
-  return { s, adopt, opts };
-}
 
 it("activates an adopted 205-source and 101-payout history then releases only 1040 unpaid cents", async () => {
   const { s, adopt } = await withHistory();
@@ -528,3 +458,84 @@ it("retains each historical payout's complete allocated-source proof without cop
       claim.allocations.map((a) => a.stripeTransferId).sort(),
     );
 });
+
+it("reconciles 101 known payouts with bounded outcome transactions", async () => {
+  const { s, adopt } = await withHistory();
+  expect(await adopt()).toMatchObject({ status: "adopted" });
+  const mutation = s.ctx.runMutation!;
+  let outcomeTransactions = 0;
+  s.ctx.runMutation = async (ref, ...args) => {
+    const path = (ref as Record<symbol, string>)[Symbol.for("toReferencePath")];
+    if (/payoutRelease\/mutations\/recordOutcomes?$/.test(path))
+      outcomeTransactions++;
+    return mutation(ref, ...args);
+  };
+  expect(await adopt()).toMatchObject({ status: "adopted" });
+  expect(outcomeTransactions).toBeGreaterThan(0);
+  expect(outcomeTransactions).toBeLessThanOrEqual(5);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("payoutReleaseClaims").collect()),
+  ).toHaveLength(101);
+}, 15000);
+
+it("rolls back a whole outcome batch if a later receipt is invalid", async () => {
+  const { s, adopt } = await withHistory();
+  expect(await adopt()).toMatchObject({ status: "adopted" });
+  const state = () =>
+    s.t.run(async (ctx) => ({
+      claims: await ctx.db.query("payoutReleaseClaims").collect(),
+      allocations: await ctx.db.query("payoutSourceAllocations").collect(),
+    }));
+  const before = await state();
+  const [first, second] = before.claims;
+  const outcome = (c: typeof first) => ({
+    accountId: c.accountId,
+    ownerKey: c.ownerKey,
+    operationKey: c.operationKey,
+    stripePayoutId: c.stripePayoutId!,
+    amount: c.amount,
+    currency: c.currency,
+    providerStatus: "paid" as const,
+    debitTransactionId: c.debitTransactionId,
+    debitFee: c.debitFee,
+  });
+  await expect(
+    s.ctx.runMutation!(
+      componentRef(component, "payoutRelease/mutations/recordOutcomes"),
+      {
+        accountId: scope.accountId,
+        ownerKey: scope.ownerKey,
+        outcomes: [
+          {
+            ...outcome(first),
+            providerStatus: "failed",
+            returnTransactionId: "txn_atomic_return",
+            returnFee: 0,
+          },
+          { ...outcome(second), amount: second.amount + 1 },
+        ],
+      },
+    ),
+  ).rejects.toThrow("identity or amount");
+  expect(await state()).toEqual(before);
+}, 15000);
+
+it("bounds parallel historical receipt reads to five", async () => {
+  const { s, adopt } = await withHistory();
+  const retrieve = s.provider.payouts.retrieve.getMockImplementation()!;
+  let active = 0,
+    peak = 0;
+  s.provider.payouts.retrieve.mockImplementation(async (id) => {
+    active++;
+    peak = Math.max(peak, active);
+    try {
+      await Promise.resolve();
+      return await retrieve(id);
+    } finally {
+      active--;
+    }
+  });
+  expect(await adopt()).toMatchObject({ status: "adopted" });
+  expect(peak).toBeGreaterThan(1);
+  expect(peak).toBeLessThanOrEqual(5);
+}, 15000);

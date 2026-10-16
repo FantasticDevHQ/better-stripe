@@ -50,7 +50,9 @@ export async function validateAdoption(
     );
   const owed = new Map<string, number>();
   for (const o of proof.observations) {
-    const source = await sourceById(ctx, o.stripeTransferId);
+    const source = collected?.allocations?.has(o.stripeTransferId)
+      ? collected.allocations.get(o.stripeTransferId)
+      : await sourceById(ctx, o.stripeTransferId);
     if (
       source &&
       (source.accountId !== scope.accountId ||

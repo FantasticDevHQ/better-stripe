@@ -83,12 +83,13 @@ function fingerprint(t: Stripe.Transfer) {
     t.metadata?.bsReinstateOf,
   ]);
 }
-/** Recipient-scoped received credit. Previous payouts are deliberately not allocated here. */
+/** Recipient-scoped credit. An optional already-read baseline never replaces the final live ledger check. */
 export async function getTransferFundingReceipt(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
   opts: TransferReceiptOptions,
+  baseline?: LedgerTransfer,
 ): Promise<TransferFundingReceipt> {
   const max = opts.maxRequests ?? 20;
   if (!Number.isInteger(max) || max < 1 || max > 100)
@@ -107,7 +108,7 @@ export async function getTransferFundingReceipt(
       componentRef(component, "connect/queries/getTransferByStripeId"),
       { stripeTransferId: opts.stripeTransferId },
     ) as Promise<LedgerTransfer | null>;
-  const ledger = await read();
+  const ledger = baseline ?? (await read());
   if (!ledger)
     return { status: "not_ready", ...scope, reason: "not_in_ledger" };
   if (

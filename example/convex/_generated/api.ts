@@ -26,6 +26,7 @@ import type * as embeddedExamples from "../embeddedExamples.js";
 import type * as http from "../http.js";
 import type * as lib_affiliateCommission from "../lib/affiliateCommission.js";
 import type * as lib_balanceStripe from "../lib/balanceStripe.js";
+import type * as lib_invoiceHistory from "../lib/invoiceHistory.js";
 import type * as lib_invoiceRecoverySource from "../lib/invoiceRecoverySource.js";
 import type * as lib_marketplace from "../lib/marketplace.js";
 import type * as lib_payoutPolicyView from "../lib/payoutPolicyView.js";
@@ -100,6 +101,7 @@ const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/affiliateCommission": typeof lib_affiliateCommission;
   "lib/balanceStripe": typeof lib_balanceStripe;
+  "lib/invoiceHistory": typeof lib_invoiceHistory;
   "lib/invoiceRecoverySource": typeof lib_invoiceRecoverySource;
   "lib/marketplace": typeof lib_marketplace;
   "lib/payoutPolicyView": typeof lib_payoutPolicyView;

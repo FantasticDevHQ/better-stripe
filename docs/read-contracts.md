@@ -246,3 +246,35 @@ explicit consumer adoption, authorized adapters, translated UI, and their own
 acceptance evidence. These package changes do not complete those tickets or add
 a second Dojo financial ledger, payout table, catalog store, or webhook processor.
 Use the repository release workflow; do not publish npm manually.
+
+## Provider invoice pages
+
+`getInvoicePageFromStripe(ctx, { customerAccount, limit, cursor, status, created })`
+reads one provider invoice page for a canonical V2 buyer account. `limit` is an
+integer from 1 to 100, default 25. `created` optionally supplies inclusive Unix-second
+`gte`/`lte` bounds. An omitted status includes all statuses. Return values are
+`{ page, hasMore, continueCursor }`; pass the opaque continuation unchanged with
+its original account, status and time-window scope. The cursor binds selectors,
+not authorization or tamper-proof completeness. Hosts must retain server-owned continuation checkpoints when deriving historical coverage; a browser-supplied cursor cannot prove complete enumeration. The host must derive and authorize the buyer account before
+every invocation. Do not expose arbitrary account selectors through a browser.
+
+Invoice objects retain original provider units, currencies, subscription
+references and `status_transitions.paid_at`. Nested `lines.has_more` is preserved;
+a partial line preview cannot prove a complete invoice. A foreign buyer row,
+invalid continuation or non-advancing has-more response rejects. Provider failures
+retain their original identity rather than becoming empty completed pages.
+
+This action is distinct from webhook-synchronized `listInvoices` and from the
+reactive component pagination hook. Enumerating provider pages does not prove
+that no earlier paid purchase exists, that every purchase is represented, or
+that payment state remains unchanged after a read. Do not use webhook retention,
+local installation dates, arrival timestamps or a capped subscription preview
+as proof of absence. Hosts must retain unknown historical gaps, correlate actual
+community/episode resources, handle repeated observations and guard the
+provider-read/database race before granting referral attribution. This API
+creates no financial records, commission awards, locks or settlement operations.
+
+The Vite server-only reference `example/convex/lib/invoiceHistory.ts` derives the
+V2 account from a retained personal buyer mapping after its caller authorizes
+the buyer. It accepts no account selector from the caller. Production hosts need
+real session authorization; selecting a demo persona does not provide it.

@@ -1,0 +1,93 @@
+
+ RUN  v5.0.3 BETTER_STRIPE_WORKTREE
+
+ ❯ |example| example/convex/embeddedExamples.test.ts (4 tests | 2 failed) 27ms
+   × scopes seller payout sessions to its canonical account 21ms
+   × scopes affiliate payout sessions to its canonical account 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |example| example/convex/embeddedExamples.test.ts > scopes seller payout sessions to its canonical account
+AssertionError: expected "vi.fn()" to be called with arguments: [ ObjectContaining{…} ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+-   ObjectContaining {
++   {
+      "account": "acct_seller",
+      "components": {
+        "payouts": {
+          "enabled": true,
+          "features": {
+            "edit_payout_schedule": false,
+            "external_account_collection": false,
+            "instant_payouts": false,
+-           "standard_payouts": false,
++           "standard_payouts": true,
+          },
+        },
+      },
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ example/convex/embeddedExamples.test.ts:35:40
+     33|       }),
+     34|     ).toEqual({ clientSecret: "test_secret", expiresAt: 123 });
+     35|     expect(raw.accountSessions.create).toHaveBeenCalledWith(
+       |                                        ^
+     36|       expect.objectContaining({
+     37|         account: `acct_${role}`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |example| example/convex/embeddedExamples.test.ts > scopes affiliate payout sessions to its canonical account
+AssertionError: expected "vi.fn()" to be called with arguments: [ ObjectContaining{…} ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+-   ObjectContaining {
++   {
+      "account": "acct_affiliate",
+      "components": {
+        "payouts": {
+          "enabled": true,
+          "features": {
+            "edit_payout_schedule": false,
+            "external_account_collection": false,
+            "instant_payouts": false,
+-           "standard_payouts": false,
++           "standard_payouts": true,
+          },
+        },
+      },
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ example/convex/embeddedExamples.test.ts:35:40
+     33|       }),
+     34|     ).toEqual({ clientSecret: "test_secret", expiresAt: 123 });
+     35|     expect(raw.accountSessions.create).toHaveBeenCalledWith(
+       |                                        ^
+     36|       expect.objectContaining({
+     37|         account: `acct_${role}`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 passed (4)
+   Start at  15:45:26
+   Duration  755ms (transform 66%, import 24%, environment 5%, tests 4%)
+

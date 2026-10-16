@@ -1,0 +1,732 @@
+{
+  "sourceRevision": "691ac73f10b8b9b7878352e756aacae48eb39b96",
+  "userId": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+  "expectedAccountId": "acct_1UR67b7stADwEsXA",
+  "runKey": "bts-native-cost-20261016-691ac73",
+  "phases": {
+    "initialize": {
+      "observedAt": 1792138573225,
+      "result": {
+        "status": "ready",
+        "operation": {
+          "_creationTime": 1792138571589.639,
+          "_id": "md77r9zkr3t43ntx6b8qbw4c498gc7cg",
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "country": "US",
+          "expectedRevision": -1,
+          "mode": "stripe_managed",
+          "observedAt": 1792138570920,
+          "observedSchedule": {
+            "interval": "daily"
+          },
+          "operationKey": "bts-native-cost-20261016-691ac73:initialize",
+          "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+          "previousSchedule": {
+            "interval": "daily"
+          },
+          "revision": 0,
+          "status": "complete",
+          "targetSchedule": {
+            "interval": "daily"
+          },
+          "thresholds": []
+        }
+      }
+    },
+    "adopt": {
+      "observedAt": 1792138921888,
+      "result": {
+        "status": "adopted",
+        "claims": [
+          {
+            "_creationTime": 1792138921795.0386,
+            "_id": "mh7fnpdsk0tbe3gxngmwg9w8qx8gd3nr",
+            "accountId": "acct_1UR67b7stADwEsXA",
+            "allocations": [
+              {
+                "amount": 1000,
+                "role": "store",
+                "stripeTransferId": "tr_3UR6Fr6JR7kThJog1D77O5eh"
+              }
+            ],
+            "amount": 1000,
+            "attemptedAt": 1792138413000,
+            "currency": "usd",
+            "debitFee": 0,
+            "debitTransactionId": "txn_1UR6Gf7stADwEsXALswkhFmg",
+            "destinationId": "ba_1UR6Gd7stADwEsXArb1tIJu3",
+            "expectedRevision": 0,
+            "historical": true,
+            "observations": [
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Fr6JR7kThJog1D77O5eh\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Fr6JR7kThJog1AIN7tU0\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138921505,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Fr6JR7kThJog1D77O5eh",
+                "transactionIds": [
+                  "txn_1UR6G07stADwEsXAbXcmI5Lh"
+                ]
+              }
+            ],
+            "operationKey": "bs:historical:po_1UR6Gf7stADwEsXATiyhBvqz",
+            "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+            "providerFee": 0,
+            "status": "paid",
+            "stripePayoutId": "po_1UR6Gf7stADwEsXATiyhBvqz"
+          }
+        ],
+        "observations": [
+          {
+            "stripeTransferId": "tr_3UR6Cc6JR7kThJog1fBLtBgD",
+            "currency": "usd",
+            "matureNet": 9815,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Cc6JR7kThJog1fBLtBgD\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Cc6JR7kThJog1RFulOsi\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Cl7stADwEsXABLr2sRB2"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Co6JR7kThJog0sjxRi1G",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Co6JR7kThJog0sjxRi1G\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Co6JR7kThJog0q1Z5h66\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Cx7stADwEsXAdsM1I9P3"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Cz6JR7kThJog013ahORM",
+            "currency": "usd",
+            "matureNet": 19629,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Cz6JR7kThJog013ahORM\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Cz6JR7kThJog0e10rery\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6D97stADwEsXAkFSSJI6c"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6DC6JR7kThJog06GQc2rL",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6DC6JR7kThJog06GQc2rL\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6DC6JR7kThJog0VBdSXRK\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6DL7stADwEsXAWaHNlRIz"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6DN6JR7kThJog00hJjmQJ",
+            "currency": "usd",
+            "matureNet": 9815,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6DN6JR7kThJog00hJjmQJ\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6DN6JR7kThJog0mSoIMoK\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6DX7stADwEsXAOCtCnhIR"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Da6JR7kThJog0ts3QJKY",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Da6JR7kThJog0ts3QJKY\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Da6JR7kThJog0LjdFQ0h\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Dj7stADwEsXAO3yIxkU8"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Dl6JR7kThJog1Df6XDaj",
+            "currency": "usd",
+            "matureNet": 0,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Dl6JR7kThJog1Df6XDaj\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Dl6JR7kThJog1RGmucTk\",19629,\"usd\",\"store\",\"reversed\",19629,19629,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Du7stADwEsXAAhZaUrtk",
+              "txn_1UR6La7stADwEsXA8Li1088h"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Dx6JR7kThJog1VnpGWl9",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Dx6JR7kThJog1VnpGWl9\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Dx6JR7kThJog1aqKZ6Iu\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6E67stADwEsXAchS5XM8B"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6E86JR7kThJog1QYLIpKT",
+            "currency": "usd",
+            "matureNet": 9815,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6E86JR7kThJog1QYLIpKT\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6E86JR7kThJog1YoLTBIl\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6EH7stADwEsXAndEXpre4"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6EK6JR7kThJog0yDN9vht",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6EK6JR7kThJog0yDN9vht\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6EK6JR7kThJog0pJJK9Vt\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6ET7stADwEsXAouTBste6"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6EW6JR7kThJog1zQqo6lG",
+            "currency": "usd",
+            "matureNet": 19629,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6EW6JR7kThJog1zQqo6lG\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6EW6JR7kThJog1y1FwnZI\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Ef7stADwEsXAJg33r5LU"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Ei6JR7kThJog1e6RKd83",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Ei6JR7kThJog1e6RKd83\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Ei6JR7kThJog1D46swpa\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Er7stADwEsXAvUmzDvl2"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Et6JR7kThJog139BJp71",
+            "currency": "usd",
+            "matureNet": 9815,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Et6JR7kThJog139BJp71\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Et6JR7kThJog1ZvzSzDE\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6F37stADwEsXAICCjU39X"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6F66JR7kThJog0Vfau5Ek",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6F66JR7kThJog0Vfau5Ek\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6F66JR7kThJog00olyOSM\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6FE7stADwEsXAA6gxqrV3"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6FH6JR7kThJog1XgxZ5td",
+            "currency": "usd",
+            "matureNet": 19629,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6FH6JR7kThJog1XgxZ5td\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6FH6JR7kThJog15TVrZB6\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6FR7stADwEsXAWwFAL91S"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6FU6JR7kThJog0pCIkEKN",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6FU6JR7kThJog0pCIkEKN\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6FU6JR7kThJog0eq13vmg\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Fd7stADwEsXAYZ7K3poO"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Ff6JR7kThJog0ZyGdNXV",
+            "currency": "usd",
+            "matureNet": 9815,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Ff6JR7kThJog0ZyGdNXV\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Ff6JR7kThJog0DIgOFqn\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6Fo7stADwEsXAp9f5QqGU"
+            ]
+          },
+          {
+            "stripeTransferId": "tr_3UR6Fr6JR7kThJog1D77O5eh",
+            "currency": "usd",
+            "matureNet": 12268,
+            "pendingCredits": 0,
+            "ledgerFingerprint": "[\"tr_3UR6Fr6JR7kThJog1D77O5eh\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Fr6JR7kThJog1AIN7tU0\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+            "observedAt": 1792138921505,
+            "transactionIds": [
+              "txn_1UR6G07stADwEsXAbXcmI5Lh"
+            ]
+          }
+        ],
+        "historyCurrencies": [
+          "usd"
+        ],
+        "oldestHeldAt": 1792138171000,
+        "observedAt": 1792138921831
+      }
+    },
+    "hold": {
+      "observedAt": 1792138963153,
+      "result": {
+        "status": "ready",
+        "operation": {
+          "_creationTime": 1792138949165.403,
+          "_id": "md73r7v8fe46vk4pcp7ckeaxvx8gd3m7",
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "adoption": {
+            "claims": [
+              {
+                "fingerprint": "[\"acct_1UR67b7stADwEsXA\",\"kn738rv27f27qphpkq6zcbb3ys8gday1\",\"bs:historical:po_1UR6Gf7stADwEsXATiyhBvqz\",true,null,null,null,\"usd\",1000,\"paid\",1792138413000,\"po_1UR6Gf7stADwEsXATiyhBvqz\",\"ba_1UR6Gd7stADwEsXArb1tIJu3\",\"txn_1UR6Gf7stADwEsXALswkhFmg\",0,0,null,[[\"tr_3UR6Fr6JR7kThJog1D77O5eh\",1000,\"store\"]]]",
+                "operationKey": "bs:historical:po_1UR6Gf7stADwEsXATiyhBvqz"
+              }
+            ],
+            "observations": [
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Cc6JR7kThJog1fBLtBgD\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Cc6JR7kThJog1RFulOsi\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 9815,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Cc6JR7kThJog1fBLtBgD",
+                "transactionIds": [
+                  "txn_1UR6Cl7stADwEsXABLr2sRB2"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Co6JR7kThJog0sjxRi1G\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Co6JR7kThJog0q1Z5h66\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Co6JR7kThJog0sjxRi1G",
+                "transactionIds": [
+                  "txn_1UR6Cx7stADwEsXAdsM1I9P3"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Cz6JR7kThJog013ahORM\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Cz6JR7kThJog0e10rery\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 19629,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Cz6JR7kThJog013ahORM",
+                "transactionIds": [
+                  "txn_1UR6D97stADwEsXAkFSSJI6c"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6DC6JR7kThJog06GQc2rL\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6DC6JR7kThJog0VBdSXRK\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6DC6JR7kThJog06GQc2rL",
+                "transactionIds": [
+                  "txn_1UR6DL7stADwEsXAWaHNlRIz"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6DN6JR7kThJog00hJjmQJ\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6DN6JR7kThJog0mSoIMoK\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 9815,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6DN6JR7kThJog00hJjmQJ",
+                "transactionIds": [
+                  "txn_1UR6DX7stADwEsXAOCtCnhIR"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Da6JR7kThJog0ts3QJKY\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Da6JR7kThJog0LjdFQ0h\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Da6JR7kThJog0ts3QJKY",
+                "transactionIds": [
+                  "txn_1UR6Dj7stADwEsXAO3yIxkU8"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Dl6JR7kThJog1Df6XDaj\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Dl6JR7kThJog1RGmucTk\",19629,\"usd\",\"store\",\"reversed\",19629,19629,false]",
+                "matureNet": 0,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Dl6JR7kThJog1Df6XDaj",
+                "transactionIds": [
+                  "txn_1UR6Du7stADwEsXAAhZaUrtk",
+                  "txn_1UR6La7stADwEsXA8Li1088h"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Dx6JR7kThJog1VnpGWl9\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Dx6JR7kThJog1aqKZ6Iu\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Dx6JR7kThJog1VnpGWl9",
+                "transactionIds": [
+                  "txn_1UR6E67stADwEsXAchS5XM8B"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6E86JR7kThJog1QYLIpKT\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6E86JR7kThJog1YoLTBIl\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 9815,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6E86JR7kThJog1QYLIpKT",
+                "transactionIds": [
+                  "txn_1UR6EH7stADwEsXAndEXpre4"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6EK6JR7kThJog0yDN9vht\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6EK6JR7kThJog0pJJK9Vt\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6EK6JR7kThJog0yDN9vht",
+                "transactionIds": [
+                  "txn_1UR6ET7stADwEsXAouTBste6"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6EW6JR7kThJog1zQqo6lG\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6EW6JR7kThJog1y1FwnZI\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 19629,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6EW6JR7kThJog1zQqo6lG",
+                "transactionIds": [
+                  "txn_1UR6Ef7stADwEsXAJg33r5LU"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Ei6JR7kThJog1e6RKd83\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Ei6JR7kThJog1D46swpa\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Ei6JR7kThJog1e6RKd83",
+                "transactionIds": [
+                  "txn_1UR6Er7stADwEsXAvUmzDvl2"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Et6JR7kThJog139BJp71\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Et6JR7kThJog1ZvzSzDE\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 9815,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Et6JR7kThJog139BJp71",
+                "transactionIds": [
+                  "txn_1UR6F37stADwEsXAICCjU39X"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6F66JR7kThJog0Vfau5Ek\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6F66JR7kThJog00olyOSM\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6F66JR7kThJog0Vfau5Ek",
+                "transactionIds": [
+                  "txn_1UR6FE7stADwEsXAA6gxqrV3"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6FH6JR7kThJog1XgxZ5td\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6FH6JR7kThJog15TVrZB6\",19629,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 19629,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6FH6JR7kThJog1XgxZ5td",
+                "transactionIds": [
+                  "txn_1UR6FR7stADwEsXAWwFAL91S"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6FU6JR7kThJog0pCIkEKN\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6FU6JR7kThJog0eq13vmg\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6FU6JR7kThJog0pCIkEKN",
+                "transactionIds": [
+                  "txn_1UR6Fd7stADwEsXAYZ7K3poO"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Ff6JR7kThJog0ZyGdNXV\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Ff6JR7kThJog0DIgOFqn\",9815,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 9815,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Ff6JR7kThJog0ZyGdNXV",
+                "transactionIds": [
+                  "txn_1UR6Fo7stADwEsXAp9f5QqGU"
+                ]
+              },
+              {
+                "currency": "usd",
+                "ledgerFingerprint": "[\"tr_3UR6Fr6JR7kThJog1D77O5eh\",\"acct_1UR67b7stADwEsXA\",\"ch_3UR6Fr6JR7kThJog1AIN7tU0\",12268,\"usd\",\"store\",\"paid\",0,0,false]",
+                "matureNet": 12268,
+                "observedAt": 1792138961479,
+                "pendingCredits": 0,
+                "stripeTransferId": "tr_3UR6Fr6JR7kThJog1D77O5eh",
+                "transactionIds": [
+                  "txn_1UR6G07stADwEsXAbXcmI5Lh"
+                ]
+              }
+            ],
+            "oldestHeldAt": 1792138171000
+          },
+          "attempted": true,
+          "country": "US",
+          "expectedRevision": 0,
+          "mode": "custom",
+          "observedAt": 1792138936651,
+          "observedSchedule": {
+            "interval": "daily"
+          },
+          "operationKey": "bts-native-cost-20261016-691ac73:hold",
+          "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+          "previousSchedule": {
+            "interval": "daily"
+          },
+          "revision": 1,
+          "status": "complete",
+          "targetSchedule": {
+            "interval": "manual"
+          },
+          "thresholds": [
+            {
+              "amount": 10000000,
+              "currency": "usd"
+            }
+          ]
+        }
+      }
+    },
+    "preview": {
+      "observedAt": 1792139062572,
+      "result": {
+        "quote": {
+          "independentLiabilities": 4418,
+          "liabilityRevision": 11
+        },
+        "preview": {
+          "accounting": {
+            "carriedForwardAmount": 212956,
+            "releasedAmount": 1000,
+            "reservedAmount": 0,
+            "withheldAmount": 4418
+          },
+          "amount": 0,
+          "confirmedFees": 0,
+          "currency": "usd",
+          "holdDeadline": 1855210171000,
+          "independentLiabilities": 4418,
+          "matureUnpaid": 212956,
+          "minimumWaived": false,
+          "observedAt": 1792139060322,
+          "pendingCredits": 0,
+          "providerAvailable": 217374,
+          "providerMinimum": null,
+          "reason": "below_threshold",
+          "sources": [
+            {
+              "matureUnpaid": 217374,
+              "pendingCredits": 0,
+              "releasedAmount": 1000,
+              "reservedAmount": 0,
+              "role": "store"
+            },
+            {
+              "matureUnpaid": 0,
+              "pendingCredits": 0,
+              "releasedAmount": 0,
+              "reservedAmount": 0,
+              "role": "affiliate"
+            },
+            {
+              "matureUnpaid": 0,
+              "pendingCredits": 0,
+              "releasedAmount": 0,
+              "reservedAmount": 0,
+              "role": "other"
+            }
+          ],
+          "status": "held",
+          "threshold": 10000000
+        },
+        "policy": {
+          "_creationTime": 1792138571589.6392,
+          "_id": "m97277q938x41gxqw5rvb27e3d8gd5tf",
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "country": "US",
+          "holdDeadline": 1855210171000,
+          "mode": "custom",
+          "operationKey": "bts-native-cost-20261016-691ac73:hold",
+          "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+          "previousSchedule": {
+            "interval": "daily"
+          },
+          "revision": 1,
+          "status": "ready",
+          "thresholds": [
+            {
+              "amount": 10000000,
+              "currency": "usd"
+            }
+          ]
+        },
+        "job": null,
+        "balance": {
+          "available": [
+            {
+              "amount": 217374,
+              "currency": "usd",
+              "source_types": {
+                "card": 217374
+              }
+            }
+          ],
+          "pending": [
+            {
+              "amount": 0,
+              "currency": "usd",
+              "source_types": {
+                "card": 0
+              }
+            }
+          ]
+        },
+        "schedule": {
+          "interval": "manual"
+        },
+        "payouts": [
+          {
+            "id": "po_1UR6Gf7stADwEsXATiyhBvqz",
+            "amount": 1000,
+            "currency": "usd",
+            "status": "paid",
+            "metadata": {
+              "accountId": "acct_1UR67b7stADwEsXA",
+              "fixtureKey": "betterstripe_sandbox_v1:acct_1UR67b7stADwEsXA:payout"
+            }
+          }
+        ]
+      }
+    },
+    "proof": {
+      "observedAt": 1792140552162,
+      "result": {
+        "quote": {
+          "independentLiabilities": 4418,
+          "liabilityRevision": 49
+        },
+        "preview": {
+          "status": "held",
+          "reason": "not_configured",
+          "amount": 0
+        },
+        "policy": {
+          "_creationTime": 1792138571589.6392,
+          "_id": "m97277q938x41gxqw5rvb27e3d8gd5tf",
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "country": "US",
+          "mode": "stripe_managed",
+          "operationKey": "example:payout-settings:acct_1UR67b7stADwEsXA:kn738rv27f27qphpkq6zcbb3ys8gday1:2:stripe_managed:usd:default",
+          "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+          "revision": 3,
+          "status": "ready",
+          "thresholds": []
+        },
+        "job": {
+          "_creationTime": 1792139240499.793,
+          "_id": "nn7c1sewcab9jtsvzbcv09e6p18gca09",
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "cadenceMs": 300000,
+          "completedGeneration": 3,
+          "completedOperationKey": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3",
+          "currency": "usd",
+          "generation": 3,
+          "hasOperation": false,
+          "lastAttemptAt": 1792140440469,
+          "lastReason": "paid",
+          "lastResultAt": 1792140452565,
+          "nextAttemptAt": 1792140752565,
+          "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+          "sequence": 3
+        },
+        "balance": {
+          "available": [
+            {
+              "amount": 4418,
+              "currency": "usd",
+              "source_types": {
+                "card": 4418
+              }
+            }
+          ],
+          "pending": [
+            {
+              "amount": 0,
+              "currency": "usd",
+              "source_types": {
+                "card": 0
+              }
+            }
+          ]
+        },
+        "schedule": {
+          "interval": "daily"
+        },
+        "payouts": [
+          {
+            "id": "po_1UR6nW7stADwEsXADqIlV5IA",
+            "amount": 212956,
+            "currency": "usd",
+            "status": "paid",
+            "metadata": {
+              "bsPayoutClaim": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3"
+            }
+          },
+          {
+            "id": "po_1UR6Gf7stADwEsXATiyhBvqz",
+            "amount": 1000,
+            "currency": "usd",
+            "status": "paid",
+            "metadata": {
+              "accountId": "acct_1UR67b7stADwEsXA",
+              "fixtureKey": "betterstripe_sandbox_v1:acct_1UR67b7stADwEsXA:payout"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

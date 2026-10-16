@@ -1,0 +1,26 @@
+[
+  {
+    "at": "2026-10-16T08:46:47.179Z",
+    "test": "real refund/dispute costs withheld",
+    "passed": true,
+    "available": 217374,
+    "withheld": 4418,
+    "qualifies": 212956
+  },
+  {
+    "at": "2026-10-16T08:47:03.111Z",
+    "test": "real reusable settings saved minimum through authorized callback",
+    "passed": true
+  },
+  {
+    "at": "2026-10-16T08:47:16.401Z",
+    "test": "installed cron payout observation",
+    "iteration": 0,
+    "payouts": [
+      {
+        "amount": 1000,
+        "status": "paid"
+      }
+    ]
+  }
+]

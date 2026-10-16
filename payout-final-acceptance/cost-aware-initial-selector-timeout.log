@@ -1,0 +1,19 @@
+{"test":"real refund/dispute costs withheld","passed":true,"available":217374,"withheld":4418,"qualifies":212956}
+{"test":"real reusable settings saved minimum through authorized callback","passed":true}
+{"test":"installed cron payout observation","iteration":0,"payouts":[{"amount":1000,"status":"paid"}]}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Refresh policy', exact: true })[22m
+
+    at /private/tmp/bts-final-acceptance-e2e/cost-ui.mjs:16:326 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'Refresh policy', exact: true })"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.1

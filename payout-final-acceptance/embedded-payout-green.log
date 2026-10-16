@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 BETTER_STRIPE_WORKTREE
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  15:45:47
+   Duration  719ms (transform 68%, import 23%, environment 5%, tests 3%)
+

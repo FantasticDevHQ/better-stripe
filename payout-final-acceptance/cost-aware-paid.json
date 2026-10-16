@@ -1,0 +1,133 @@
+{
+  "quote": {
+    "independentLiabilities": 4418,
+    "liabilityRevision": 49
+  },
+  "preview": {
+    "accounting": {
+      "carriedForwardAmount": 0,
+      "releasedAmount": 213956,
+      "reservedAmount": 0,
+      "withheldAmount": 4418
+    },
+    "amount": 0,
+    "confirmedFees": 0,
+    "currency": "usd",
+    "holdDeadline": 1855210171000,
+    "independentLiabilities": 4418,
+    "matureUnpaid": 0,
+    "minimumWaived": false,
+    "observedAt": 1792140544044,
+    "pendingCredits": 0,
+    "providerAvailable": 4418,
+    "providerMinimum": null,
+    "reason": "below_threshold",
+    "sources": [
+      {
+        "matureUnpaid": 4418,
+        "pendingCredits": 0,
+        "releasedAmount": 213956,
+        "reservedAmount": 0,
+        "role": "store"
+      },
+      {
+        "matureUnpaid": 0,
+        "pendingCredits": 0,
+        "releasedAmount": 0,
+        "reservedAmount": 0,
+        "role": "affiliate"
+      },
+      {
+        "matureUnpaid": 0,
+        "pendingCredits": 0,
+        "releasedAmount": 0,
+        "reservedAmount": 0,
+        "role": "other"
+      }
+    ],
+    "status": "held",
+    "threshold": 100
+  },
+  "policy": {
+    "_creationTime": 1792138571589.6392,
+    "_id": "m97277q938x41gxqw5rvb27e3d8gd5tf",
+    "accountId": "acct_1UR67b7stADwEsXA",
+    "country": "US",
+    "holdDeadline": 1855210171000,
+    "mode": "custom",
+    "operationKey": "example:payout-settings:acct_1UR67b7stADwEsXA:kn738rv27f27qphpkq6zcbb3ys8gday1:1:custom:usd:100",
+    "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+    "previousSchedule": {
+      "interval": "daily"
+    },
+    "revision": 2,
+    "status": "ready",
+    "thresholds": [
+      {
+        "amount": 100,
+        "currency": "usd"
+      }
+    ]
+  },
+  "job": {
+    "_creationTime": 1792139240499.793,
+    "_id": "nn7c1sewcab9jtsvzbcv09e6p18gca09",
+    "accountId": "acct_1UR67b7stADwEsXA",
+    "cadenceMs": 300000,
+    "completedGeneration": 3,
+    "completedOperationKey": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3",
+    "currency": "usd",
+    "generation": 3,
+    "hasOperation": false,
+    "lastAttemptAt": 1792140440469,
+    "lastReason": "paid",
+    "lastResultAt": 1792140452565,
+    "nextAttemptAt": 1792140752565,
+    "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+    "sequence": 3
+  },
+  "balance": {
+    "available": [
+      {
+        "amount": 4418,
+        "currency": "usd",
+        "source_types": {
+          "card": 4418
+        }
+      }
+    ],
+    "pending": [
+      {
+        "amount": 0,
+        "currency": "usd",
+        "source_types": {
+          "card": 0
+        }
+      }
+    ]
+  },
+  "schedule": {
+    "interval": "manual"
+  },
+  "payouts": [
+    {
+      "id": "po_1UR6nW7stADwEsXADqIlV5IA",
+      "amount": 212956,
+      "currency": "usd",
+      "status": "paid",
+      "metadata": {
+        "bsPayoutClaim": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3"
+      }
+    },
+    {
+      "id": "po_1UR6Gf7stADwEsXATiyhBvqz",
+      "amount": 1000,
+      "currency": "usd",
+      "status": "paid",
+      "metadata": {
+        "accountId": "acct_1UR67b7stADwEsXA",
+        "fixtureKey": "betterstripe_sandbox_v1:acct_1UR67b7stADwEsXA:payout"
+      }
+    }
+  ]
+}

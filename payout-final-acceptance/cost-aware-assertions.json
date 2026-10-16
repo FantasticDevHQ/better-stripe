@@ -1,0 +1,43 @@
+[
+  {
+    "at": "2026-10-16T08:49:05.978Z",
+    "test": "installed cron paid212956 exactly once and left4418 actual costs",
+    "passed": true,
+    "payouts": [
+      {
+        "id": "po_1UR6nW7stADwEsXADqIlV5IA",
+        "amount": 212956,
+        "currency": "usd",
+        "status": "paid",
+        "metadata": {
+          "bsPayoutClaim": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3"
+        }
+      },
+      {
+        "id": "po_1UR6Gf7stADwEsXATiyhBvqz",
+        "amount": 1000,
+        "currency": "usd",
+        "status": "paid",
+        "metadata": {
+          "accountId": "acct_1UR67b7stADwEsXA",
+          "fixtureKey": "betterstripe_sandbox_v1:acct_1UR67b7stADwEsXA:payout"
+        }
+      }
+    ],
+    "quote": {
+      "independentLiabilities": 4418,
+      "liabilityRevision": 49
+    }
+  },
+  {
+    "at": "2026-10-16T08:49:12.169Z",
+    "test": "original daily schedule restored via reusable UI",
+    "passed": true
+  },
+  {
+    "at": "2026-10-16T08:49:12.232Z",
+    "test": "page errors",
+    "passed": true,
+    "errors": []
+  }
+]

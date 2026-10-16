@@ -1,0 +1,64 @@
+import type { FunctionReturnType } from "convex/server";
+import { v } from "convex/values";
+import { internalAction, env } from "./_generated/server";
+import { internal, components } from "./_generated/api";
+import { stripe } from "./stripe";
+import { getStripeClient } from "./lib/stripeClient";
+import { assertTestModeStripeKey } from "./authz";
+
+/** Private QA orchestration. All financial state and provider operations use the public package. */
+export const run = internalAction({
+  args: { userId: v.id("users"), expectedAccountId: v.string(), runKey: v.string(), phase: v.union(v.literal("initialize"),v.literal("adopt"),v.literal("hold"),v.literal("lower"),v.literal("preview"),v.literal("proof"),v.literal("restore")) },
+  returns: v.string(),
+  handler: async (ctx, args): Promise<string> => {
+    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
+    if(!/^bts-native-cost-[a-z0-9-]{1,60}$/.test(args.runKey))throw new Error("Exact QA run identity required");
+    const seller = await ctx.runQuery(internal.storePlanBilling.getSeller,{sellerId:args.userId});
+    if(seller.email!=="sasha@example.com"||seller.stripeAccountId!==args.expectedAccountId)throw new Error("Owned QA seller required");
+    const raw=getStripeClient(),accountId=args.expectedAccountId;
+    const account=await raw.v2.core.accounts.retrieve(accountId);
+    if(account.livemode||account.metadata?.userId!==args.userId)throw new Error("Provider QA owner binding required");
+    const scope={accountId,ownerKey:args.userId};
+    const policy=await stripe.payoutPolicy.get(ctx,scope);
+    if(policy && !policy.operationKey.startsWith(args.runKey+":") && !["proof","preview"].includes(args.phase))throw new Error("Refuse an unrelated payout policy");
+    let result: unknown;
+    if(["initialize","hold","lower","restore"].includes(args.phase)){
+      const operationKey=`${args.runKey}:${args.phase}`;
+      const prior=await stripe.payoutPolicy.operation(ctx,{...scope,operationKey});
+      const custom=args.phase==="hold"||args.phase==="lower";
+      const options={...scope,operationKey,expectedRevision:prior?.expectedRevision??policy?.revision??-1,mode:prior?.mode??(custom?"custom" as const:"stripe_managed" as const),thresholds:prior?.thresholds??(custom?[{currency:"usd",amount:args.phase==="hold"?10000000:100}]:[]),...(custom?{consent:true as const}:{}),...((prior?.adoption||(!prior&&args.phase==="hold"))?{adoptExistingBalance:true as const}:{})};
+      const prepared=await stripe.payoutPolicy.prepare(ctx,options);
+      result=prepared.status==="prepared"?await stripe.payoutPolicy.apply(ctx,{...scope,operationKey}):prepared;
+    }else if(args.phase==="adopt"){
+      if(!policy||policy.mode!=="stripe_managed")throw new Error("Initial managed policy required");
+      const payouts=await raw.payouts.list({limit:100},{stripeAccount:accountId});
+      if(payouts.has_more||payouts.data.length!==1||payouts.data[0].status!=="paid"||payouts.data[0].amount!==1000)throw new Error("One verified paid fixture payout required");
+      const payout=payouts.data[0];
+      let cursor:string|null=null;const rows=[];
+      for(let i=0;i<5;i++){
+        const page: FunctionReturnType<typeof components.betterStripe.connect.queries.paginateTransfersByAccount>=await ctx.runQuery(components.betterStripe.connect.queries.paginateTransfersByAccount,{destinationAccountId:accountId,paginationOpts:{cursor,numItems:50}});
+        rows.push(...page.page);if(page.isDone){cursor=null;break;}cursor=page.continueCursor;
+      }
+      if(cursor!==null)throw new Error("Complete bounded fixture ledger required");
+      let selected:string|undefined;
+      for(const row of rows){
+        if(row.currency!=="usd"||row.role!=="store"||row.amount-(row.reversedAmount??0)<payout.amount)continue;
+        const provider=await raw.transfers.retrieve(row.stripeTransferId);
+        if(provider.created>payout.created)continue;
+        const receipt=await stripe.payoutPolicy.transferReceipt(ctx,{accountId,stripeTransferId:row.stripeTransferId});
+        if(receipt.status==="ready"&&receipt.matureNet>=payout.amount&&receipt.transactions.some(t=>t.status==="available"&&t.created<=payout.created)){selected=row.stripeTransferId;break;}
+      }
+      if(!selected)throw new Error("Verified pre-payout funding source required");
+      result=await stripe.payoutPolicy.adoptPayouts(ctx,{...scope,currency:"usd",expectedRevision:policy.revision,maxPages:5,payouts:[{stripePayoutId:payout.id,allocations:[{stripeTransferId:selected,amount:payout.amount}]}]});
+    }else{
+      const quote=await ctx.runQuery(internal.payoutWorkerScope.liabilities,{...scope,currency:"usd"});
+      const preview=await stripe.payoutPolicy.preview(ctx,{...scope,currency:"usd",...quote,maxPages:5});
+      const balance=await raw.balance.retrieve(undefined,{stripeAccount:accountId});
+      const payouts=await raw.payouts.list({limit:100},{stripeAccount:accountId});
+      if(payouts.has_more)throw new Error("Complete fixture payout history required");
+      const settings=await raw.balanceSettings.retrieve(undefined,{stripeAccount:accountId});
+      result={quote,preview,policy,job:await stripe.payoutPolicy.worker.get(ctx,{...scope,currency:"usd"}),balance:{available:balance.available,pending:balance.pending},schedule:settings.payments.payouts?.schedule,payouts:payouts.data.map(p=>({id:p.id,amount:p.amount,currency:p.currency,status:p.status,metadata:p.metadata}))};
+    }
+    return JSON.stringify(result);
+  },
+});

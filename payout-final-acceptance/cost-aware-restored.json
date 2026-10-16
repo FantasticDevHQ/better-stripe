@@ -1,0 +1,84 @@
+{
+  "quote": {
+    "independentLiabilities": 4418,
+    "liabilityRevision": 49
+  },
+  "preview": {
+    "status": "held",
+    "reason": "not_configured",
+    "amount": 0
+  },
+  "policy": {
+    "_creationTime": 1792138571589.6392,
+    "_id": "m97277q938x41gxqw5rvb27e3d8gd5tf",
+    "accountId": "acct_1UR67b7stADwEsXA",
+    "country": "US",
+    "mode": "stripe_managed",
+    "operationKey": "example:payout-settings:acct_1UR67b7stADwEsXA:kn738rv27f27qphpkq6zcbb3ys8gday1:2:stripe_managed:usd:default",
+    "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+    "revision": 3,
+    "status": "ready",
+    "thresholds": []
+  },
+  "job": {
+    "_creationTime": 1792139240499.793,
+    "_id": "nn7c1sewcab9jtsvzbcv09e6p18gca09",
+    "accountId": "acct_1UR67b7stADwEsXA",
+    "cadenceMs": 300000,
+    "completedGeneration": 3,
+    "completedOperationKey": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3",
+    "currency": "usd",
+    "generation": 3,
+    "hasOperation": false,
+    "lastAttemptAt": 1792140440469,
+    "lastReason": "paid",
+    "lastResultAt": 1792140452565,
+    "nextAttemptAt": 1792140752565,
+    "ownerKey": "kn738rv27f27qphpkq6zcbb3ys8gday1",
+    "sequence": 3
+  },
+  "balance": {
+    "available": [
+      {
+        "amount": 4418,
+        "currency": "usd",
+        "source_types": {
+          "card": 4418
+        }
+      }
+    ],
+    "pending": [
+      {
+        "amount": 0,
+        "currency": "usd",
+        "source_types": {
+          "card": 0
+        }
+      }
+    ]
+  },
+  "schedule": {
+    "interval": "daily"
+  },
+  "payouts": [
+    {
+      "id": "po_1UR6nW7stADwEsXADqIlV5IA",
+      "amount": 212956,
+      "currency": "usd",
+      "status": "paid",
+      "metadata": {
+        "bsPayoutClaim": "bs:auto:nn7c1sewcab9jtsvzbcv09e6p18gca09:3"
+      }
+    },
+    {
+      "id": "po_1UR6Gf7stADwEsXATiyhBvqz",
+      "amount": 1000,
+      "currency": "usd",
+      "status": "paid",
+      "metadata": {
+        "accountId": "acct_1UR67b7stADwEsXA",
+        "fixtureKey": "betterstripe_sandbox_v1:acct_1UR67b7stADwEsXA:payout"
+      }
+    }
+  ]
+}

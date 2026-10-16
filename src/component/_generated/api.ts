@@ -29,6 +29,7 @@ import type * as connect_reversalDiagnostics from "../connect/reversalDiagnostic
 import type * as connect_reversalReceipts from "../connect/reversalReceipts.js";
 import type * as connect_validators from "../connect/validators.js";
 import type * as core_mutations from "../core/mutations.js";
+import type * as core_personalAccountMapping from "../core/personalAccountMapping.js";
 import type * as core_queries from "../core/queries.js";
 import type * as core_resetSafety from "../core/resetSafety.js";
 import type * as core_validators from "../core/validators.js";
@@ -123,6 +124,7 @@ const fullApi: ApiFromModules<{
   "connect/reversalReceipts": typeof connect_reversalReceipts;
   "connect/validators": typeof connect_validators;
   "core/mutations": typeof core_mutations;
+  "core/personalAccountMapping": typeof core_personalAccountMapping;
   "core/queries": typeof core_queries;
   "core/resetSafety": typeof core_resetSafety;
   "core/validators": typeof core_validators;

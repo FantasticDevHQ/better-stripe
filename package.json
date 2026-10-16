@@ -67,7 +67,8 @@
     "docs/read-contracts.md",
     "docs/invoice-payment-pages.md",
     "docs/checkout-session-pages.md",
-    "docs/refund-context.md"
+    "docs/refund-context.md",
+    "docs/personal-account-mapping.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",

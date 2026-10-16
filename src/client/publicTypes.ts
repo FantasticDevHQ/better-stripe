@@ -32,3 +32,4 @@ export type {
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";
+export type { PersonalAccountMapping } from "./core/personalAccountMapping.js";

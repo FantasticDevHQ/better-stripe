@@ -1420,3 +1420,13 @@ production outstanding-obligation authorization policy: consumers must establish
 that separate policy before exposing the React close card. Package regression
 and isolated native evidence simulate provider completion; neither proves live
 Stripe closure or settlement eligibility.
+
+## Unique personal account routing
+
+Use `getPersonalAccountMapping` when a server adapter needs unambiguous personal
+account identity. The [original-account reference](convex/billing/personalAccountMapping.ts)
+checks a server-verified original payment merchant against the authenticated
+owner's unique mapping; it rejects unavailable, organization and replacement
+accounts. Claimed demo personas still require replacement with real host session
+authorization. See [the bounded mapping contract](../docs/personal-account-mapping.md)
+for reciprocal checks, closed-account handling and provider-state limitations.

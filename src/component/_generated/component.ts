@@ -2309,6 +2309,46 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           } | null,
           Name
         >;
+        getPersonalAccountMapping: FunctionReference<
+          "query",
+          "internal",
+          { userId: string },
+          | {
+              account: {
+                _creationTime: number;
+                _id: string;
+                appliedConfigurations?: Array<
+                  "customer" | "merchant" | "recipient"
+                >;
+                capabilities?: any;
+                configuration?: any;
+                country?: string;
+                email?: string;
+                metadata?: any;
+                missingRequirements?: Array<string>;
+                name?: string;
+                onboardingStatus:
+                  "pending" | "in_progress" | "complete" | "restricted";
+                orgId?: string;
+                requirements?: any;
+                statementDescriptor?: string;
+                stripeAccountId: string;
+                userId: string;
+              };
+              status: "unique";
+            }
+          | {
+              reason:
+                | "missing"
+                | "ambiguous"
+                | "organization"
+                | "invalid_account"
+                | "closure_unresolved"
+                | "closed";
+              status: "unavailable";
+            },
+          Name
+        >;
         getPublishableKey: FunctionReference<
           "query",
           "internal",

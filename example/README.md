@@ -1437,6 +1437,10 @@ The public `betterStripe.financialOwnership` server API is documented in [financ
 
 For server-only original allocation diagnostics and the explicit UNKNOWN/oversized-destination boundary, see [Settlement source observations](../docs/financial-observations.md). Reuse the public `financialObservations` client after host authorization. Its explicit `resume` method drains oversized original allocations through durable indexing and validation batches; callers must continue until complete or held and never infer aggregate coverage from that result. This reference does not enable closure or add a provider operation.
 
+### Exact refund-command observation
+
+`convex/connect/refundCommandEvidence.ts` is a server-only reference for the public `getRefundCommandEvidence` reader. Pass a qualified immutable original command, authenticate the demo persona in the real host, and preserve unavailable legacy coverage/conflicts. It checks the original personal merchant mapping; it neither executes a refund nor grants retry authority. See [the complete contract](../docs/refund-command-evidence.md), including the separate legacy normalization gate and first-observed provenance.
+
 Transfer diagnostics are available through the trusted server-side
 `stripe.financialObservations.transfer`, `transferBucket`, `transferOwner` and
 `transferBatches` APIs. Use authenticated host selectors and preserve the returned

@@ -1792,6 +1792,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "fraudulent"
               | "requested_by_customer"
               | "expired_uncaptured_charge";
+            refundCommandConflict?: boolean;
+            refundCommandKey?: string;
+            refundCommandNormalizationVersion?: 1;
+            refundCommandObservedAt?: number;
             status:
               | "pending"
               | "requires_action"
@@ -1954,6 +1958,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "fraudulent"
               | "requested_by_customer"
               | "expired_uncaptured_charge";
+            refundCommandConflict?: boolean;
+            refundCommandKey?: string;
+            refundCommandNormalizationVersion?: 1;
+            refundCommandObservedAt?: number;
             status:
               | "pending"
               | "requires_action"
@@ -5386,6 +5394,58 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     refundHistory: {
       queries: {
+        getRefundCommandEvidence: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            commandKey: string;
+            currency: string;
+            stripeChargeId: string;
+            stripePaymentIntentId: string;
+          },
+          | {
+              refund: {
+                _creationTime: number;
+                _id: string;
+                accountId?: string;
+                amount: number;
+                currency: string;
+                failureReason?: string;
+                metadata?: any;
+                reason?:
+                  | "duplicate"
+                  | "fraudulent"
+                  | "requested_by_customer"
+                  | "expired_uncaptured_charge";
+                refundCommandConflict?: boolean;
+                refundCommandKey?: string;
+                refundCommandNormalizationVersion?: 1;
+                refundCommandObservedAt?: number;
+                status:
+                  | "pending"
+                  | "requires_action"
+                  | "succeeded"
+                  | "failed"
+                  | "canceled";
+                stripeChargeId?: string;
+                stripePaymentIntentId?: string;
+                stripeRefundId: string;
+              };
+              status: "observed";
+            }
+          | {
+              reason:
+                | "missing"
+                | "normalization_incomplete"
+                | "ambiguous"
+                | "correlation_conflict"
+                | "scope_mismatch"
+                | "invalid_receipt";
+              status: "unavailable";
+            },
+          Name
+        >;
         paginateRefunds: FunctionReference<
           "query",
           "internal",
@@ -5423,6 +5483,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "fraudulent"
                 | "requested_by_customer"
                 | "expired_uncaptured_charge";
+              refundCommandConflict?: boolean;
+              refundCommandKey?: string;
+              refundCommandNormalizationVersion?: 1;
+              refundCommandObservedAt?: number;
               status:
                 | "pending"
                 | "requires_action"

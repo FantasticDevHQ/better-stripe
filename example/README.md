@@ -787,6 +787,9 @@ with the Forever term, so referred sales earn real sandbox funds for Avery's
 payout fixture. This is saved demo-store configuration, not a platform default.
 Ordinary stores still default to zero commission. Reseeding preserves existing
 stores' edited or cleared settings.
+Existing zero-commission fixture sales are not retroactively awarded commissions.
+To refresh an older disposable demo dataset with these fixtures, use Reset All
+Data and then Seed Data. This clears local records, not the old Stripe objects.
 
 The fixture pack creates 40 sandbox sales, six refunds, four disputes with open,
 won, and lost outcomes, referred purchases, a customer subscription, paid monthly

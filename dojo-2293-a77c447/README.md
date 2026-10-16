@@ -1,8 +1,8 @@
 # Automatic recipient payout worker verification
 
-Dojo source head `a77c447a3`, including the latest main checkout-flow delivery. Ticket DOJO-2293.
+Dojo source head `a77c447a3ce6fbf06b380adfeadf2e81fc01238b`, including the latest main checkout-flow delivery. Ticket DOJO-2293.
 
-The initial implementation passed all 12 repository gates in 327.5 seconds on pinned Node 24.19.0. Backend 4,695 passed, one existing skip; frontend 7,742 passed, four existing skips; UI 32 passed. All 27 focused worker regressions passed. Final combined-branch gates and CI are running before merge; this report will be updated with their results.
+The initial implementation passed all 12 repository gates in 327.5 seconds on pinned Node 24.19.0. Backend 4,695 passed, one existing skip; frontend 7,742 passed, four existing skips; UI 32 passed. All 27 focused worker regressions passed. Final combined-branch verification passes all 12 gates in 320.4 seconds: backend 4,737 passed, one existing skip; frontend 7,742 passed, four existing skips; UI 32 passed. The final log includes all five worker suites and 27 passing regressions. Expected synthetic lost-response and missing-owner jobs fail independently during the tests, while recovery and other recipient payouts complete. All seven registered worker functions are internal and have explicit argument and return validators. Exact-head CI is running before merge: https://github.com/kellykampen/dojo/actions/runs/38855757082 .
 
 The tests execute actual internal scheduled actions and the installed BetterStripe 0.30.0 worker/policy APIs against real in-memory Dojo, BetterAuth and component schemas. Provider HTTP transport is synthetic. The provider fixture supplies receipts; the package makes qualification, claim, lease and recovery decisions. No financial service or parallel ledger was introduced in Dojo.
 

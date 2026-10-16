@@ -41,3 +41,11 @@ export type {
   FinancialOwnershipPage,
   RegisterFinancialOwnershipOptions,
 } from "./financialOwnership.js";
+
+export type {
+  FinancialSourceObservation,
+  FinancialSourceLeg,
+  FinancialSourceResult,
+  FinancialObservationPage,
+  FinancialObservationOwner,
+} from "./financialObservations.js";

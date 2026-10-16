@@ -1738,5 +1738,10 @@
         "monday"
       ]
     }
+  },
+  "initialHoldingAge": {
+    "oldestUnpaidSourceAt": 1792113859000,
+    "preparedAnchor": 1792113859000,
+    "preparationStartedAt": 1792114412981
   }
 }

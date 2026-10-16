@@ -65,7 +65,8 @@
     "CHANGELOG.md",
     "MIGRATION.md",
     "docs/read-contracts.md",
-    "docs/invoice-payment-pages.md"
+    "docs/invoice-payment-pages.md",
+    "docs/checkout-session-pages.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",

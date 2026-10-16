@@ -1754,6 +1754,12 @@ See the [read contract guide](docs/read-contracts.md) for reactive product, pric
 cursors, exact currency summaries, legacy backfill, payout failure details, and
 published-version adoption requirements.
 
+For buyer purchase-history discovery, use the public invoice and
+[Checkout-session page readers](docs/checkout-session-pages.md). Checkout pages
+also reveal open/asynchronous sessions with no invoice. They preserve raw
+references and require host authorization, continuation checkpoints and
+historical reconciliation; they do not attest complete history or award credit.
+
 Custom recipient payout minimums are waived during the final day before the verified holding deadline. Provider limits and all financial checks still apply. See [settlement and deadline handling](docs/settlement.md) for worker cadence, retries and expiry limitations.
 
 Holding-expiry recovery remains visible and retryable after schedule restoration. The package preserves unresolved provider balances and payout claims, and prevents reset or custom reactivation from erasing them. See [expiry recovery](docs/settlement.md) for operator handling.

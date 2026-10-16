@@ -294,3 +294,20 @@ Invoice allocations are not the PaymentIntent's remaining refundable balance.
 The host authorizes the actual session, verifies original merchant and sale scope,
 and revalidates creation-time eligibility through the existing refund APIs. This
 reader writes no financial records and changes no access or subscription state.
+
+## Provider Checkout-session pages
+
+`getCheckoutSessionPageFromStripe(ctx, { customerAccount, status?, created?,
+limit?, cursor? })` discovers actual V2 buyer Checkout sessions, including open
+or asynchronous sessions that have no invoice yet. It preserves raw lifecycle,
+metadata and payment/subscription references and performs no synchronization or
+financial write. The server-only Vite adapter derives its account from the
+host-authorized personal buyer mapping.
+
+See [Checkout-session discovery](./checkout-session-pages.md) for public types,
+scope-bound continuation, response validation and host obligations. Within-page
+duplicates and immediately repeated continuation IDs reject; cross-page overlap
+requires host checkpoints and seen-ID reconciliation. Neither an exhausted page
+nor a complete Checkout status proves historical absence or payment. Unknown
+provenance, mutable provider states and provider-read/database races remain host
+responsibilities before any referral qualification or award.

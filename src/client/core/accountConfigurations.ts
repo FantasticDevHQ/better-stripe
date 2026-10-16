@@ -59,6 +59,7 @@ export async function addCustomerConfiguration(
     {
       stripeAccountId: opts.stripeAccountId,
       userId: existing.userId,
+      ...(existing.orgId !== undefined ? { orgId: existing.orgId } : {}),
       appliedConfigurations,
     },
   );
@@ -116,6 +117,7 @@ export async function addRecipientConfiguration(
     {
       stripeAccountId: opts.stripeAccountId,
       userId: existing.userId,
+      ...(existing.orgId !== undefined ? { orgId: existing.orgId } : {}),
       appliedConfigurations,
     },
   );
@@ -151,6 +153,7 @@ export async function addMerchantConfiguration(
     {
       stripeAccountId: opts.stripeAccountId,
       userId: existing.userId,
+      ...(existing.orgId !== undefined ? { orgId: existing.orgId } : {}),
       appliedConfigurations,
     },
   );

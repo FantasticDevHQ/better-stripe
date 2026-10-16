@@ -70,6 +70,38 @@ describe("merchant configuration", () => {
     ).toMatchObject({ appliedConfigurations: ["recipient"] });
   });
 
+  it.each([
+    "addMerchantConfiguration",
+    "addCustomerConfiguration",
+    "addRecipientConfiguration",
+  ] as const)(
+    "%s preserves organization ownership pinned by a pending closure",
+    async (method) => {
+      const { t, component, ctx, stripe } = setup();
+      await t.mutation(component.core.mutations.upsertAccount, {
+        stripeAccountId: "acct_merchant",
+        userId: "owner",
+        orgId: "org",
+        appliedConfigurations: ["recipient"],
+      });
+      await t.mutation(component.accountClosure.mutations.prepare, {
+        stripeAccountId: "acct_merchant",
+      });
+      await accounts[method](stripe, component, ctx, {
+        stripeAccountId: "acct_merchant",
+      });
+      expect(
+        await t.query(component.core.queries.getAccountByStripeId, {
+          stripeAccountId: "acct_merchant",
+        }),
+      ).toMatchObject({
+        userId: "owner",
+        orgId: "org",
+        appliedConfigurations: ["recipient", "merchant"],
+      });
+    },
+  );
+
   it("rejects missing component ownership before provider mutation", async () => {
     const { component, ctx, stripe, update } = setup();
     expect(typeof accounts.addMerchantConfiguration).toBe("function");

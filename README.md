@@ -1390,6 +1390,13 @@ function BuyerBilling({ userId, customerAccount }: Props) {
 
 ### Payouts and Earnings
 
+Use React's `formatPayoutAmount(amount, currency, locale?)` when rendering
+observed ordinary Stripe balances and payouts. It preserves supported currency
+units, including JPY and fractional ISK/UGX compatibility values. Unknown
+precision is shown explicitly as raw minor units with `display unavailable`.
+This display helper does not establish payout eligibility or Global Payouts
+currency support. See the [React workflow guide](docs/react-workflows.md).
+
 | Component         | Description                                                                                                                                                                                                                                               |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PayoutSchedule`  | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. Payouts are automatic/rolling — no manual-withdrawal action is offered.                                                                                      |

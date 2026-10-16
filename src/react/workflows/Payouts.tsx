@@ -12,7 +12,7 @@ import {
   type CollectionProps,
   type WorkflowColumn,
 } from "./Collection.js";
-import { formatPrice } from "../lib/price-helpers.js";
+import { formatPayoutAmount } from "../lib/payout-format.js";
 export type PayoutRow = RecipientPayoutRow;
 export type PayoutSnapshot = Pick<
   RecipientPayoutSnapshot,
@@ -130,7 +130,7 @@ export function PayoutHistory<Row extends PayoutHistoryRow>(
       id: "amount",
       label: "Amount",
       align: "end",
-      cell: (row) => formatPrice(row.amount, row.currency),
+      cell: (row) => formatPayoutAmount(row.amount, row.currency),
     },
     { id: "status", label: "Status", cell: (row) => row.status },
     {
@@ -176,15 +176,17 @@ function NativePayouts({
             {data.balances.map((balance) => (
               <div key={balance.currency}>
                 <dt>Available</dt>
-                <dd>{formatPrice(balance.available, balance.currency)}</dd>
+                <dd>
+                  {formatPayoutAmount(balance.available, balance.currency)}
+                </dd>
                 <dt>Pending</dt>
-                <dd>{formatPrice(balance.pending, balance.currency)}</dd>
+                <dd>{formatPayoutAmount(balance.pending, balance.currency)}</dd>
               </div>
             ))}
             <dt>Next payout</dt>
             <dd>
               {nextPayout
-                ? `${formatPrice(nextPayout.amount, nextPayout.currency)} · ${date(nextPayout.arrivalDate)}`
+                ? `${formatPayoutAmount(nextPayout.amount, nextPayout.currency)} · ${date(nextPayout.arrivalDate)}`
                 : "Not scheduled"}
             </dd>
           </dl>

@@ -20,16 +20,14 @@ import type { FunctionReturnType } from "convex/server";
 import {
   PayoutHistory,
   Payouts as BetterStripePayouts,
+  formatPayoutAmount,
 } from "@fantastic.dev/better-stripe/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 type PayoutData = FunctionReturnType<typeof api.recipientPayouts.load>;
 type Payout = PayoutData["payouts"][number];
-const currency = (amount: number, code: string) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: code }).format(
-    amount / 100,
-  );
+const currency = formatPayoutAmount;
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",

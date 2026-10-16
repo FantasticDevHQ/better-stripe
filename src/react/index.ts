@@ -295,6 +295,7 @@ export { SaveCard } from "./workflows/SaveCard.js";
 export type { SaveCardProps, SaveCardFormState } from "./workflows/SaveCard.js";
 
 export { createUseCurrencyEarnings } from "./hooks/useCurrencyEarnings.js";
+export { formatPayoutAmount } from "./lib/payout-format.js";
 export type {
   CurrencyEarningsTotal,
   CurrencyPayoutTotal,

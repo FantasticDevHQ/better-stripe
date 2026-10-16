@@ -242,10 +242,15 @@ inventing a date.
 
 Payout, invoice-estimate, cost, and webhook timestamps use Unix milliseconds.
 Subscription period/trial fields use ISO date strings, matching the existing
-subscription API. Convert raw Stripe Unix seconds in your adapter. Money values use integer minor units. The current decimal refund
-input and price-formatting helpers use two decimal places, as in the USD
-example. Supply custom rendering/input conversion for zero-decimal and
-three-decimal currencies. Never combine balances across currencies.
+subscription API. Convert raw Stripe Unix seconds in your adapter. Money values
+use integer minor units. `formatPayoutAmount(amount, currency, locale?)` formats
+observed ordinary Stripe balances and payouts using the package's supported
+currency precision, including JPY and fractional compatibility units for ISK/UGX.
+Unsupported precision, including KWD, stays visible as raw minor units with
+`display unavailable`; the helper never guesses a divisor. It is a display
+helper, not payout eligibility or a Global Payouts amount converter. `Payouts`,
+`PayoutHistory` and the example's seller/affiliate payouts use it. Never combine
+balances across currencies.
 
 Sale fees, affiliate shares, recovery costs, invoice estimates, and settlement
 statuses come from server data. The UI does not recalculate the example's fee

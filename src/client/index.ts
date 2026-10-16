@@ -1,3 +1,4 @@
+import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
 import type { PaginationOptions } from "convex/server";
@@ -336,6 +337,15 @@ export class BetterStripe extends InvoiceReadClient {
     opts: { userId: string },
   ): Promise<StripeComponentAccount | null> {
     return accountsImpl.getAccountByUserId(this.component, ctx, opts);
+  }
+
+  /** Unambiguous personal mapping only; host authentication and provider usability remain separate. */
+  getPersonalAccountMapping(ctx: RunCtx, opts: { userId: string }) {
+    return personalAccountMappingImpl.getPersonalAccountMapping(
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   /** Authenticate the host actor before consulting closed-account provenance. */

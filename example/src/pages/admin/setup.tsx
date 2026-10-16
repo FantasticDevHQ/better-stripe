@@ -85,9 +85,13 @@ function EnvCommandRow({
 }
 
 function WebhookSetupCard() {
-  const setupWebhooks = useAction(api.actions.setupWebhooks);
-  const getWebhookStatus = useAction(api.actions.getWebhookStatus);
-  const verifyWebhookEnvs = useAction(api.actions.verifyWebhookEnvs);
+  const setupWebhooks = useAction(api.stripe.public.actions.setupWebhooks);
+  const getWebhookStatus = useAction(
+    api.stripe.public.actions.getWebhookStatus,
+  );
+  const verifyWebhookEnvs = useAction(
+    api.stripe.public.actions.verifyWebhookEnvs,
+  );
 
   const siteUrl = import.meta.env.VITE_CONVEX_SITE_URL as string | undefined;
   const {
@@ -231,11 +235,11 @@ function WebhookSetupCard() {
 // ---------------------------------------------------------------------------
 
 function SeedDataCard() {
-  const seedDemoData = useAction(api.actions.seedDemoData);
-  const seedStatus = useQuery(api.queries.getSeedStatus);
-  const fixtures = useQuery(api.sandboxFixtureState.status);
-  const populateSandbox = useAction(api.sandboxFixtures.start);
-  const products = useQuery(api.queries.listProducts);
+  const seedDemoData = useAction(api.admin.actions.seedDemoData);
+  const seedStatus = useQuery(api.admin.queries.getSeedStatus);
+  const fixtures = useQuery(api.sandboxFixtures.state.public.queries.status);
+  const populateSandbox = useAction(api.sandboxFixtures.public.actions.start);
+  const products = useQuery(api.products.queries.listProducts);
 
   const tasks = useTaskRunner({ scopeKey: "seed" });
   const isSeeding = tasks.isPending;
@@ -374,9 +378,9 @@ function SeedDataCard() {
 // ---------------------------------------------------------------------------
 
 function SyncCard() {
-  const syncProducts = useAction(api.actions.syncProducts);
-  const syncSubscriptions = useAction(api.actions.syncSubscriptions);
-  const syncAccounts = useAction(api.actions.syncAccounts);
+  const syncProducts = useAction(api.admin.actions.syncProducts);
+  const syncSubscriptions = useAction(api.admin.actions.syncSubscriptions);
+  const syncAccounts = useAction(api.admin.actions.syncAccounts);
 
   const {
     pendingOperation: syncing,
@@ -441,7 +445,7 @@ function SyncCard() {
 // ---------------------------------------------------------------------------
 
 function ResetCard() {
-  const resetAll = useAction(api.actions.resetAll);
+  const resetAll = useAction(api.admin.actions.resetAll);
   const reset = useWorkflowAction(async () => {
     await resetAll({});
     return true;

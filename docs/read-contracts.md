@@ -274,7 +274,7 @@ community/episode resources, handle repeated observations and guard the
 provider-read/database race before granting referral attribution. This API
 creates no financial records, commission awards, locks or settlement operations.
 
-The Vite server-only reference `example/convex/lib/invoiceHistory.ts` derives the
+The Vite server-only reference `example/convex/billing/invoiceHistory.ts` derives the
 V2 account from a retained personal buyer mapping after its caller authorizes
 the buyer. It accepts no account selector from the caller. Production hosts need
 real session authorization; selecting a demo persona does not provide it.

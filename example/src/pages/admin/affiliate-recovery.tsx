@@ -26,7 +26,7 @@ export function AdminAffiliateRecovery() {
     `affiliate-attempts:${currentUser.id}:${selected}`,
   );
   const snapshot = useQuery(
-    api.affiliateRecovery.snapshot,
+    api.affiliateRecovery.public.queries.snapshot,
     account && validCurrency
       ? {
           userId: currentUser.id as Id<"users">,
@@ -37,7 +37,7 @@ export function AdminAffiliateRecovery() {
       : "skip",
   );
   const history = useQuery(
-    api.affiliateRecovery.history,
+    api.affiliateRecovery.public.queries.history,
     selected
       ? {
           userId: currentUser.id as Id<"users">,
@@ -46,7 +46,7 @@ export function AdminAffiliateRecovery() {
         }
       : "skip",
   );
-  const retry = useAction(api.affiliateRecovery.retry);
+  const retry = useAction(api.affiliateRecovery.public.actions.retry);
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Affiliate commission recovery</h1>

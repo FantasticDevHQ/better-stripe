@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.30.2",
+  "version": "0.30.3",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -98,7 +98,7 @@
     "check:circular": "repo-gates check-circular",
     "check:secrets": "repo-gates check-secrets",
     "check:ci-parity": "repo-gates check-ci-parity",
-    "check:coverage": "repo-gates check-coverage",
+    "check:coverage": "node scripts/check-coverage.mjs",
     "format:check": "pnpm run format",
     "check:agents": "repo-gates check-agents"
   },

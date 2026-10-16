@@ -45,17 +45,17 @@ import { api } from "../../../convex/_generated/api";
 
 export function SellerProducts() {
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
   const products = useQuery(
-    api.queries.listProductsWithPricesByAccount,
+    api.products.queries.listProductsWithPricesByAccount,
     account?.stripeAccountId ? { accountId: account.stripeAccountId } : "skip",
   );
   const convex = useConvex();
-  const createProduct = useAction(api.actions.createProductForAccount);
-  const createPrice = useAction(api.actions.createPrice);
-  const deactivatePrice = useAction(api.actions.deactivatePrice);
+  const createProduct = useAction(api.accounts.actions.createProductForAccount);
+  const createPrice = useAction(api.products.actions.createPrice);
+  const deactivatePrice = useAction(api.products.actions.deactivatePrice);
 
   const {
     expandedProduct,
@@ -322,10 +322,13 @@ export function SellerProducts() {
                       stripeProductId={product.stripeProductId}
                       currency={product.prices[0]?.currency}
                       onSave={(values) =>
-                        convex.mutation(api.sellerAffiliateRates.save, {
-                          ...values,
-                          sellerId: currentUser.id as Id<"users">,
-                        })
+                        convex.mutation(
+                          api.sellerAffiliateRates.public.mutations.save,
+                          {
+                            ...values,
+                            sellerId: currentUser.id as Id<"users">,
+                          },
+                        )
                       }
                     />
                   </TableCell>
@@ -528,7 +531,8 @@ export function SellerProducts() {
                                       currency={price.currency}
                                       onSave={(values) =>
                                         convex.mutation(
-                                          api.sellerAffiliateRates.save,
+                                          api.sellerAffiliateRates.public
+                                            .mutations.save,
                                           {
                                             ...values,
                                             sellerId:

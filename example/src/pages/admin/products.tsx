@@ -40,12 +40,12 @@ import { api } from "../../../convex/_generated/api";
 
 export function AdminProducts() {
   const { currentUser } = useRole();
-  const products = useQuery(api.queries.listProductsWithPrices);
-  const createProduct = useAction(api.actions.createProduct);
-  const createPrice = useAction(api.actions.createPrice);
-  const updateProduct = useAction(api.actions.updateProduct);
-  const deactivateProduct = useAction(api.actions.deactivateProduct);
-  const deactivatePrice = useAction(api.actions.deactivatePrice);
+  const products = useQuery(api.products.queries.listProductsWithPrices);
+  const createProduct = useAction(api.products.actions.createProduct);
+  const createPrice = useAction(api.products.actions.createPrice);
+  const updateProduct = useAction(api.products.actions.updateProduct);
+  const deactivateProduct = useAction(api.products.actions.deactivateProduct);
+  const deactivatePrice = useAction(api.products.actions.deactivatePrice);
 
   const {
     expandedProduct,

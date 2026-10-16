@@ -26,7 +26,12 @@ import type {
 } from "convex/server";
 
 import type { api } from "../../../convex/_generated/api";
-import type * as AdminTestingModule from "../../../convex/adminTesting";
+import type * as AdminTestingActionModule from "../../../convex/adminTesting/actions";
+import type * as AdminTestingQueryModule from "../../../convex/adminTesting/queries";
+type AdminTestingModule = typeof AdminTestingActionModule &
+  typeof AdminTestingQueryModule;
+type AdminTestingApi = typeof api.adminTesting.actions &
+  typeof api.adminTesting.queries;
 import type { adminTestingActions } from "./adminTestingActions";
 
 type Visibility = "public" | "internal";
@@ -62,20 +67,20 @@ type Equal<A, B> =
 // (a generic alias body must satisfy its own constraints independent of any
 // later instantiation, so `Equal<A, B>` would still be the open `boolean`
 // type there). Every check below is therefore inlined directly against
-// concrete `typeof realExport` / `typeof api.adminTesting.x` pairs.
+// concrete `typeof realExport` / `AdminTestingApi.x` pairs.
 type Expect<T extends true> = T;
 
-type RealArgs<Name extends keyof typeof AdminTestingModule> = HandlerArgs<
-  (typeof AdminTestingModule)[Name]
+type RealArgs<Name extends keyof AdminTestingModule> = HandlerArgs<
+  AdminTestingModule[Name]
 >;
-type RealReturn<Name extends keyof typeof AdminTestingModule> = HandlerReturn<
-  (typeof AdminTestingModule)[Name]
+type RealReturn<Name extends keyof AdminTestingModule> = HandlerReturn<
+  AdminTestingModule[Name]
 >;
-type ApiArgs<Name extends keyof typeof api.adminTesting> = FunctionArgs<
-  (typeof api.adminTesting)[Name]
+type ApiArgs<Name extends keyof AdminTestingApi> = FunctionArgs<
+  AdminTestingApi[Name]
 >;
-type ApiReturn<Name extends keyof typeof api.adminTesting> = FunctionReturnType<
-  (typeof api.adminTesting)[Name]
+type ApiReturn<Name extends keyof AdminTestingApi> = FunctionReturnType<
+  AdminTestingApi[Name]
 >;
 type PageActionName =
   | "fireAccountUpdated"

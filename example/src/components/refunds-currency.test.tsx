@@ -22,7 +22,7 @@ vi.mock("react-router-dom", () => ({
 }));
 vi.mock("convex/react", () => ({
   useAction: (fn: Parameters<typeof getFunctionName>[0]) =>
-    getFunctionName(fn) === "actions:issueRefund"
+    getFunctionName(fn) === "connect/actions:issueRefund"
       ? mocks.refund
       : mocks.reverse,
   useQuery: (
@@ -30,14 +30,14 @@ vi.mock("convex/react", () => ({
     args: { stripePaymentIntentId?: string; sourceChargeId?: string } | "skip",
   ) => {
     const name = getFunctionName(fn);
-    if (name === "queries:getAccountByUserId")
+    if (name === "accounts/queries:getAccountByUserId")
       return { stripeAccountId: "acct_test" };
-    if (name === "queries:listRefunds") return mocks.refunds;
-    if (name === "queries:getRefundChargeContext")
+    if (name === "connect/queries:listRefunds") return mocks.refunds;
+    if (name === "connect/queries:getRefundChargeContext")
       return args !== "skip" && args.sourceChargeId === "ch_test"
         ? mocks.chargeContext
         : null;
-    if (name === "queries:getPaymentByStripeId")
+    if (name === "connect/queries:getPaymentByStripeId")
       return args !== "skip" && args.stripePaymentIntentId === "pi_test"
         ? {
             stripePaymentIntentId: "pi_test",

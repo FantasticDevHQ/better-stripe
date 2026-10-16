@@ -164,7 +164,7 @@ test.describe("live marketplace roles and payments", () => {
     page,
   }) => {
     await role(page, "visitor");
-    const stores = convex("storefront:listStores");
+    const stores = convex("storefront/public/queries:listStores");
     const store = stores.find(
       (s: { name: string }) => s.name === "Sasha's Ceramics",
     );
@@ -173,12 +173,15 @@ test.describe("live marketplace roles and payments", () => {
     await page.getByRole("link", { name: /^Buy / }).click();
     await expect(page).toHaveURL(/ref=avery/);
     const sessionId = await pay(page, "guest-qa@example.com");
-    const session = convex("queries:getCheckoutSessionByStripeId", {
-      stripeSessionId: sessionId,
-    });
+    const session = convex(
+      "billing/public/queries:getCheckoutSessionByStripeId",
+      {
+        stripeSessionId: sessionId,
+      },
+    );
     expect(session.userId).toBe("");
     expect(session.mode).toBe("payment");
-    const sale = convex("e2eCheckout:inspectSale", {
+    const sale = convex("e2eCheckout/actions:inspectSale", {
       stripeSessionId: sessionId,
     });
     expect(sale.amount).toBe(12900);
@@ -186,16 +189,16 @@ test.describe("live marketplace roles and payments", () => {
     await expect
       .poll(
         () =>
-          convex("storeSaleSettlement:getByCharge", {
+          convex("settlement/internal/queries:getByCharge", {
             chargeId: sale.chargeId,
           })?.status,
         { timeout: 90_000 },
       )
       .toBe("settled");
-    const transfers = convex("queries:listTransfersByCharge", {
+    const transfers = convex("connect/queries:listTransfersByCharge", {
       sourceChargeId: sale.chargeId,
     });
-    const settlement = convex("storeSaleSettlement:getByCharge", {
+    const settlement = convex("settlement/internal/queries:getByCharge", {
       chargeId: sale.chargeId,
     });
     expect(settlement.status).toBe("settled");
@@ -236,32 +239,36 @@ test.describe("live marketplace roles and payments", () => {
     page,
   }) => {
     await role(page, "customer");
-    const stores = convex("storefront:listStores");
+    const stores = convex("storefront/public/queries:listStores");
     const store = stores.find(
       (s: { name: string }) => s.name === "Maya's Fitness Studio",
     );
     await page.goto(`/stores?store=${store.accountId}`);
     await page.getByRole("link", { name: /^Buy / }).click();
     const sessionId = await pay(page, "alex@example.com");
-    const session = convex("queries:getCheckoutSessionByStripeId", {
-      stripeSessionId: sessionId,
-    });
-    expect(session.userId).toBe(
-      convex("users:getByRole", { role: "customer" })._id,
+    const session = convex(
+      "billing/public/queries:getCheckoutSessionByStripeId",
+      {
+        stripeSessionId: sessionId,
+      },
     );
-    const sale = convex("e2eCheckout:inspectSale", {
+    expect(session.userId).toBe(
+      convex("users/queries:getByRole", { role: "customer" })._id,
+    );
+    const sale = convex("e2eCheckout/actions:inspectSale", {
       stripeSessionId: sessionId,
     });
     expect(sale.amount).toBe(10000);
     await expect
       .poll(
         () =>
-          convex("storeSaleSettlement:getByCharge", { chargeId: sale.chargeId })
-            ?.status,
+          convex("settlement/internal/queries:getByCharge", {
+            chargeId: sale.chargeId,
+          })?.status,
         { timeout: 90000 },
       )
       .toBe("settled");
-    const settlement = convex("storeSaleSettlement:getByCharge", {
+    const settlement = convex("settlement/internal/queries:getByCharge", {
       chargeId: sale.chargeId,
     });
     expect(settlement.sellerAccountId).toBe(store.accountId);
@@ -280,7 +287,7 @@ test.describe("live marketplace roles and payments", () => {
     page,
   }) => {
     await role(page, "customer");
-    const stores = convex("storefront:listStores");
+    const stores = convex("storefront/public/queries:listStores");
     const store = stores.find(
       (s: { name: string }) => s.name === "Maya's Fitness Studio",
     );
@@ -289,16 +296,19 @@ test.describe("live marketplace roles and payments", () => {
       .find((p: { interval?: string }) => p.interval === "month");
     await page.goto(`/checkout?priceId=${monthly.stripePriceId}`);
     const sessionId = await pay(page, "alex@example.com");
-    const customer = convex("users:getByRole", { role: "customer" });
-    const session = convex("queries:getCheckoutSessionByStripeId", {
-      stripeSessionId: sessionId,
-    });
+    const customer = convex("users/queries:getByRole", { role: "customer" });
+    const session = convex(
+      "billing/public/queries:getCheckoutSessionByStripeId",
+      {
+        stripeSessionId: sessionId,
+      },
+    );
     expect(session.userId).toBe(customer._id);
     expect(session.mode).toBe("subscription");
     await expect
       .poll(
         () =>
-          convex("queries:listSubscriptionsByUser", {
+          convex("billing/public/queries:listSubscriptionsByUser", {
             userId: customer._id,
           }).some(
             (s: { priceId: string; status: string }) =>

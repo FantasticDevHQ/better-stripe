@@ -18,7 +18,7 @@ export function CheckoutStatusPage() {
   const sessionId = searchParams.get("session_id");
 
   const session = useQuery(
-    api.queries.getCheckoutSessionByStripeId,
+    api.billing.public.queries.getCheckoutSessionByStripeId,
     sessionId ? { stripeSessionId: sessionId } : "skip",
   );
 

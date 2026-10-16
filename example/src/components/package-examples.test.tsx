@@ -24,9 +24,10 @@ vi.mock("convex/react", () => ({
   useQuery: (_fn: Parameters<typeof getFunctionName>[0], args: unknown) =>
     args === "skip"
       ? undefined
-      : ["affiliateDefaults:get", "sellerAffiliateRates:get"].includes(
-            getFunctionName(_fn),
-          )
+      : [
+            "affiliateDefaults/queries:get",
+            "sellerAffiliateRates/public/queries:get",
+          ].includes(getFunctionName(_fn))
         ? {
             affiliateBasisPoints: null,
             affiliateFixedAmount: null,

@@ -15,7 +15,7 @@ export function PaymentIntentCheckout({
   publishableKey: string;
 }) {
   const { currentUser } = useRole();
-  const create = useAction(api.checkoutExamples.createPaymentIntent);
+  const create = useAction(api.checkoutExamples.actions.createPaymentIntent);
   return (
     <Checkout
       mode="payment-intent"

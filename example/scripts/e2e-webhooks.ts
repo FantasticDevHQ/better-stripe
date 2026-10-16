@@ -24,6 +24,7 @@ import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
+import { convex, convexRun, convexEnvSet } from "./convex-cli";
 import { EXPECTED_REVERSED, reversalsMatchExactly } from "./money-assertions";
 
 const exampleDir = resolve(import.meta.dirname, "..");
@@ -34,24 +35,6 @@ const POLL_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 4_000;
 
 // ─── Small helpers ───────────────────────────────────────────────────────
-
-function convex(args: string[], timeoutMs = 120_000): string {
-  return execFileSync("npx", ["convex", ...args], {
-    cwd: exampleDir,
-    encoding: "utf-8",
-    timeout: timeoutMs,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-}
-
-function convexRun<T>(fn: string, args: Record<string, unknown> = {}): T {
-  const out = convex(["run", fn, JSON.stringify(args)]).trim();
-  return (out ? JSON.parse(out) : null) as T;
-}
-
-function convexEnvSet(name: string, value: string): void {
-  convex(["env", "set", name, value]);
-}
 
 function stripeTrigger(event: string, apiKey: string): void {
   // Key passed via env (not argv) so it never shows up in `ps` output.
@@ -217,7 +200,7 @@ async function main(): Promise<void> {
   // ─── 5. Reset triggerLog ────────────────────────────────────────────
   console.log("\n── Reset ──");
   const cleared = convexRun<{ deleted: number }>(
-    "triggerLogger:clearTriggerLog",
+    "stripe/triggerLog/mutations:clearTriggerLog",
   );
   console.log(`  ✅ triggerLog cleared (${cleared.deleted} rows)`);
   // NOTE: we intentionally do NOT clear the component webhook ledger —
@@ -269,7 +252,7 @@ async function main(): Promise<void> {
     console.log(`  SKIP: ${v2SkipReason}`);
   } else {
     try {
-      convexRun("actions:createAccountWithOnboarding", {
+      convexRun("accounts/actions:createAccountWithOnboarding", {
         userId: `e2e-${Date.now()}`,
         email: `e2e-${Date.now()}@example.com`,
         country: "US",
@@ -405,10 +388,16 @@ async function main(): Promise<void> {
   console.log(`\n── Polling assertions (up to ${POLL_TIMEOUT_MS / 1000}s) ──`);
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   for (;;) {
-    const ledger = convexRun<LedgerEvent[]>("queries:listWebhookEvents", {
-      status: "processed",
-    });
-    const log = convexRun<TriggerLogRow[]>("triggerLogger:listTriggerLog", {});
+    const ledger = convexRun<LedgerEvent[]>(
+      "stripe/public/queries:listWebhookEvents",
+      {
+        status: "processed",
+      },
+    );
+    const log = convexRun<TriggerLogRow[]>(
+      "stripe/triggerLog/queries:listTriggerLog",
+      {},
+    );
     let pending = 0;
     for (const c of checks) {
       if (c.status) continue;
@@ -530,11 +519,11 @@ async function runMoneyAssertions(): Promise<Check[]> {
   try {
     console.log("  provisioning test recipients (BTS-9/10 recipe) …");
     storeAccountId = convexRun<{ stripeAccountId: string }>(
-      "e2eMoney:provisionTestRecipient",
+      "e2eMoney/actions:provisionTestRecipient",
       { label: "store" },
     ).stripeAccountId;
     affiliateAccountId = convexRun<{ stripeAccountId: string }>(
-      "e2eMoney:provisionTestRecipient",
+      "e2eMoney/actions:provisionTestRecipient",
       { label: "affiliate" },
     ).stripeAccountId;
     console.log(`  ✅ store=${storeAccountId} affiliate=${affiliateAccountId}`);
@@ -548,12 +537,12 @@ async function runMoneyAssertions(): Promise<Check[]> {
   try {
     console.log("  driving a $100 destination charge (fee $10) …");
     const sale = convexRun<{ stripePaymentIntentId: string }>(
-      "e2eMoney:e2eDestinationFeeSale",
+      "e2eMoney/actions:e2eDestinationFeeSale",
       { storeAccountId, amount: 10_000, applicationFeeAmount: 1_000 },
     );
     const { ok, last } = await pollFor<PaymentRow | null>(
       () =>
-        convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+        convexRun<PaymentRow | null>("e2eMoney/queries:getPaymentRow", {
           stripePaymentIntentId: sale.stripePaymentIntentId,
         }),
       (row) => !!row && (row.feeCollectedAmount ?? 0) > 0,
@@ -581,7 +570,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
     const sale = convexRun<{
       stripePaymentIntentId: string;
       stripeChargeId: string | null;
-    }>("e2eMoney:e2eSplitSale", {
+    }>("e2eMoney/actions:e2eSplitSale", {
       storeAccountId,
       affiliateAccountId,
       amount: 10_000,
@@ -593,7 +582,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
     if (!splitChargeId) throw new Error("no charge id on the split PI");
     const { ok, last } = await pollFor<TransferRow[]>(
       () =>
-        convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+        convexRun<TransferRow[]>("e2eMoney/queries:listTransfersForCharge", {
           sourceChargeId: splitChargeId,
         }),
       (rows) => rows.length >= 2,
@@ -620,13 +609,13 @@ async function runMoneyAssertions(): Promise<Check[]> {
   if (splitChargeId && splitPiId) {
     try {
       console.log("  refunding the split charge (reverseTransfer) …");
-      convexRun("e2eMoney:e2eRefundCharge", {
+      convexRun("e2eMoney/actions:e2eRefundCharge", {
         stripePaymentIntentId: splitPiId,
       });
       const chargeId = splitChargeId;
       const { ok, last } = await pollFor<TransferRow[]>(
         () =>
-          convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+          convexRun<TransferRow[]>("e2eMoney/queries:listTransfersForCharge", {
             sourceChargeId: chargeId,
           }),
         (rows) => reversalsMatchExactly(rows, EXPECTED_REVERSED),
@@ -668,7 +657,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
     const sale = convexRun<{
       stripePaymentIntentId: string;
       stripeChargeId: string | null;
-    }>("e2eMoney:e2ePerChargeFeeSale", {
+    }>("e2eMoney/actions:e2ePerChargeFeeSale", {
       storeAccountId,
       amount: 10_000,
       feePercent: 3.2,
@@ -681,7 +670,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
     // The BTS-60 webhook path must first collect the fee by partial reversal.
     const fee = await pollFor<PaymentRow | null>(
       () =>
-        convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+        convexRun<PaymentRow | null>("e2eMoney/queries:getPaymentRow", {
           stripePaymentIntentId: sale.stripePaymentIntentId,
         }),
       (row) => (row?.feeCollectedAmount ?? 0) > 0,
@@ -703,7 +692,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
       // A refund error here is the ticket's feared outcome — report it as a
       // genuine FAIL, with the Stripe error in the detail.
       try {
-        convexRun("e2eMoney:e2eRefundCharge", {
+        convexRun("e2eMoney/actions:e2eRefundCharge", {
           stripePaymentIntentId: sale.stripePaymentIntentId,
         });
       } catch (err) {
@@ -719,7 +708,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
       // refunded for the full charge amount.
       const refunded = await pollFor<PaymentRow | null>(
         () =>
-          convexRun<PaymentRow | null>("e2eMoney:getPaymentRow", {
+          convexRun<PaymentRow | null>("e2eMoney/queries:getPaymentRow", {
             stripePaymentIntentId: sale.stripePaymentIntentId,
           }),
         (row) => row?.refundStatus === "fully_refunded",
@@ -730,7 +719,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
       // exactly two reversals — the preserved 320 fee + the capped 9680 — and
       // the transfer exactly (never over-) reversed.
       const state = convexRun<TransferState | null>(
-        "e2eMoney:e2eTransferState",
+        "e2eMoney/actions:e2eTransferState",
         {
           stripeChargeId: chargeId,
         },
@@ -776,7 +765,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
     const sale = convexRun<{
       stripePaymentIntentId: string;
       stripeChargeId: string | null;
-    }>("e2eMoney:e2eSplitSale", {
+    }>("e2eMoney/actions:e2eSplitSale", {
       storeAccountId,
       affiliateAccountId,
       amount: 10_000,
@@ -790,7 +779,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
 
     const { ok, last } = await pollFor<TransferRow[]>(
       () =>
-        convexRun<TransferRow[]>("e2eMoney:listTransfersForCharge", {
+        convexRun<TransferRow[]>("e2eMoney/queries:listTransfersForCharge", {
           sourceChargeId: chargeId,
         }),
       (rows) => reversalsMatchExactly(rows, EXPECTED_REVERSED),
@@ -808,7 +797,7 @@ async function runMoneyAssertions(): Promise<Check[]> {
       // The clawback didn't reach the exact amounts in-window. Whether that's a
       // FAIL or a legitimate SKIP depends on whether the dispute even landed.
       const disputes = convexRun<DisputeRow[]>(
-        "e2eMoney:listDisputesForPaymentIntent",
+        "e2eMoney/queries:listDisputesForPaymentIntent",
         { stripePaymentIntentId: piId },
       );
       if (disputes.length > 0) {

@@ -42,14 +42,18 @@ export function SellerOnboarding({
 }: { embedded?: boolean } = {}) {
   const Heading = embedded ? "h2" : "h1";
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
   const createAccountWithOnboarding = useAction(
-    api.actions.createAccountWithOnboarding,
+    api.accounts.actions.createAccountWithOnboarding,
   );
-  const getAccountLink = useAction(api.actions.getAccountLinkWithStatus);
-  const restartOnboarding = useAction(api.actions.restartAccountOnboarding);
+  const getAccountLink = useAction(
+    api.accounts.actions.getAccountLinkWithStatus,
+  );
+  const restartOnboarding = useAction(
+    api.accounts.actions.restartAccountOnboarding,
+  );
   const {
     selectedCountry,
     setSelectedCountry,

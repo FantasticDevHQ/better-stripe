@@ -65,11 +65,11 @@ function Figure({
 
 export function SellerRefunds() {
   const { currentUser } = useRole();
-  const account = useQuery(api.queries.getAccountByUserId, {
+  const account = useQuery(api.accounts.queries.getAccountByUserId, {
     userId: currentUser.id,
   });
-  const issueRefund = useAction(api.actions.issueRefund);
-  const reverseTransfers = useAction(api.actions.reverseSaleTransfers);
+  const issueRefund = useAction(api.connect.actions.issueRefund);
+  const reverseTransfers = useAction(api.connect.actions.reverseSaleTransfers);
 
   const [params] = useSearchParams();
   const selectionScope = JSON.stringify([
@@ -84,13 +84,13 @@ export function SellerRefunds() {
   const [selection, setSelection] = useState(initialSelection);
   if (selection.scope !== selectionScope) setSelection(initialSelection);
   const payment = useQuery(
-    api.queries.getPaymentByStripeId,
+    api.connect.queries.getPaymentByStripeId,
     selection.paymentIntentId.trim()
       ? { stripePaymentIntentId: selection.paymentIntentId.trim() }
       : "skip",
   );
   const chargeContext = useQuery(
-    api.queries.getRefundChargeContext,
+    api.connect.queries.getRefundChargeContext,
     selection.sourceChargeId.trim()
       ? {
           userId: currentUser.id,
@@ -143,7 +143,7 @@ export function SellerRefunds() {
     : { accountId: stripeAccountId };
 
   const refunds = useQuery(
-    api.queries.listRefunds,
+    api.connect.queries.listRefunds,
     stripeAccountId ? refundHistoryArgs : "skip",
   );
 

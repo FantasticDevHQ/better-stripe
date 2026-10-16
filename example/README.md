@@ -63,7 +63,7 @@ defaults and reconcile pending payouts first. A refused reset preserves owner
 bindings and schedule restoration records so these operations can still finish.
 
 ```bash
-pnpm exec convex run reset:run   # Clear all data (app DB + better-stripe component DB)
+pnpm exec convex run admin/reset/actions:run   # Clear all data (app DB + better-stripe component DB)
 pnpm run setup               # Re-set the Stripe key
 ```
 
@@ -77,7 +77,7 @@ preserves the demo owner bindings needed for recovery.
 
 The seed is **idempotent and resumable**: every step guards on what already
 exists (users by email, accounts by their linked `stripeAccountId`, catalogs by
-store-tagged products), so re-running `seed:run` — with or without a prior
+store-tagged products), so re-running `admin/seed/actions:run` — with or without a prior
 reset — never duplicates data and backfills only whatever is missing (e.g.
 after a partial failure).
 
@@ -107,7 +107,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
   Existing customer renewals continue using the seller's current or last paid
   tier, even if the store has closed to new purchases. Use Stripe's billing
   portal for paid plan changes, payment details, invoices, and cancellation.
-  The older fee configuration in `convex/stripe.ts` remains for standalone
+  The older fee configuration in `convex/stripe/helpers.ts` remains for standalone
   legacy component demos.
 - **Affiliate** (`Avery Affiliate`) -- a recipient-only account, activated the
   same way, for referral-share transfers in split sales.
@@ -148,10 +148,13 @@ to the same claim for reconciliation. See the package's
 All Stripe data flows through the `better-stripe` Convex component.
 The app uses the component for account and billing data. Seller plans and sale settlement also use the Stripe SDK to verify paid subscriptions and read actual processing fees. The main integration files are:
 
-- **`convex/stripe.ts`** -- `BetterStripe` client instance with triggers and hooks
-- **`convex/queries.ts`** -- Query wrappers exposing component data to the frontend
-- **`convex/actions.ts`** -- Action wrappers for Stripe API calls (checkout, accounts, webhooks, payment methods)
-- **`convex/http.ts`** -- Webhook endpoint via `registerRoutes()` with dual webhook secrets (V1 + V2)
+- `convex/stripe/helpers.ts` configures the `BetterStripe` client, triggers, and hooks.
+- Each domain owns its queries, mutations, actions, helpers, and tests. Domains with both internal and client-callable functions use `internal/` and `public/` folders. This example uses demo personas rather than authenticated sessions, so no functions are classified as `private/`.
+- `convex/schema.ts` composes domain table definitions. Table names, validators, and indexes are unchanged.
+- `convex/http.ts` composes the Stripe webhook routes from `convex/stripe/http.ts`. The webhook handler references live under `internal.stripe.webhooks`.
+- `test.ts` supplies a shared Convex module map so co-located tests resolve modules from the backend root.
+
+Function paths follow the folders. For example, `api.users.queries.list`, `api.products.actions.createProduct`, and `internal.admin.seed.actions.run` replace the old flat bindings. CLI calls use the same module paths, such as `pnpm exec convex run users/queries:list`.
 
 ## Roles
 
@@ -390,7 +393,7 @@ E2E_LIVE_BACKEND=1 pnpm e2e e2e/affiliate-split.spec.ts e2e/express-login.spec.t
 Express login requires the seeded seller to use an Express dashboard and have
 completed sandbox onboarding. Use Stripe's test phone/code and test bank
 credentials during hosted onboarding. Inspect readiness from `example/` with
-`pnpm exec convex run e2eCheckout:inspectSeller '{}'`; expect `dashboard: express`,
+`pnpm exec convex run e2eCheckout/actions:inspectSeller '{}'`; expect `dashboard: express`,
 `detailsSubmitted`, `chargesEnabled`, and `payoutsEnabled` to be true, with no
 currently due requirements. The login test verifies the hosted login handoff for the account displayed by
 the app. Stripe may challenge headless browsers with CAPTCHA; opt into full
@@ -475,7 +478,7 @@ The one-time checkout demo has two layers:
   ```
 
 The session's mode is derived server-side in
-`convex/actions.ts#createCheckoutSession`: one-time prices get
+`convex/billing/public/actions.ts#createCheckoutSession`: one-time prices get
 `mode: "payment"`, recurring prices `mode: "subscription"`.
 
 #### Customer purchases and seller finances (`e2e/marketplace-roles.spec.ts`)
@@ -497,7 +500,7 @@ stack. It offers two surfaces via tabs:
 - **Headless components:** `useDisputes` → `DisputesList` (status + due-by
   countdown), and on selecting a row `useDisputeWithCountdown` →
   `DisputeDetail` + `EvidenceForm`. Submitting evidence calls the
-  `submitDisputeEvidence` action (`convex/actions.ts`), which forwards to
+  `submitDisputeEvidence` action (`convex/connect/actions.ts`), which forwards to
   `stripe.updateDispute`.
 - **Embedded (Stripe Connect):** `ConnectProvider` + `EmbeddedDisputes`, fed by
   the `createDisputeSession` action (`stripe.createDisputeSession`).
@@ -756,18 +759,18 @@ example/
 
 ## Scripts
 
-| Command                          | Description                                 |
-| -------------------------------- | ------------------------------------------- |
-| `pnpm run setup`                 | Set STRIPE_SECRET_KEY in Convex environment |
-| `npm run e2e`                    | Playwright browser E2E suite (see below)    |
-| `npm run e2e:report`             | Open the last Playwright HTML report        |
-| `npm run e2e:webhooks`           | Automated E2E webhook test (see below)      |
-| `pnpm run dev`                   | Start Vite + Convex dev in parallel         |
-| `npm run typecheck`              | TypeScript check (frontend)                 |
-| `npm run typecheck:convex`       | TypeScript check (Convex functions)         |
-| `npm run lint`                   | ESLint                                      |
-| `npm run build`                  | Production build                            |
-| `pnpm exec convex run reset:run` | Clear all data                              |
+| Command                                        | Description                                 |
+| ---------------------------------------------- | ------------------------------------------- |
+| `pnpm run setup`                               | Set STRIPE_SECRET_KEY in Convex environment |
+| `npm run e2e`                                  | Playwright browser E2E suite (see below)    |
+| `npm run e2e:report`                           | Open the last Playwright HTML report        |
+| `npm run e2e:webhooks`                         | Automated E2E webhook test (see below)      |
+| `pnpm run dev`                                 | Start Vite + Convex dev in parallel         |
+| `npm run typecheck`                            | TypeScript check (frontend)                 |
+| `npm run typecheck:convex`                     | TypeScript check (Convex functions)         |
+| `npm run lint`                                 | ESLint                                      |
+| `npm run build`                                | Production build                            |
+| `pnpm exec convex run admin/reset/actions:run` | Clear all data                              |
 
 ## Populated Stripe sandbox
 
@@ -778,8 +781,8 @@ Its progress and any retryable failure appear on that page. You can also start
 or resume it from the example directory:
 
 ```sh
-pnpm exec convex run sandboxFixtures:start
-pnpm exec convex run sandboxFixtureState:status
+pnpm exec convex run sandboxFixtures/public/actions:start
+pnpm exec convex run sandboxFixtures/state/public/queries:status
 ```
 
 Fresh Maya and Sasha demo stores explicitly opt into a 20% affiliate commission
@@ -1277,12 +1280,12 @@ receipts before claiming live recovery; do not route Global Payouts through
 Connect reversal APIs. See the [full recovery guide](../docs/affiliate-clawbacks.md)
 for field meanings, bounds, webhook subscriptions, migration and rollout limits.
 
-The internal `affiliateRecoverySandbox:seed` action creates actual test-mode
+The internal `affiliateRecovery/sandbox/actions:seed` action creates actual test-mode
 payment/refund fixtures using a stable run key and existing Connect recipients.
 It supports full/partial refunds, dispute-producing cards, recurring invoice
 sources, future commissions and verification of an actual completed test payout.
-Internal `affiliateRecoveryBillingSandbox:prepare` and `:advance` create isolated
-recurring invoice sources. `affiliateRecoverySandbox:externalPayout` creates a
+Internal `affiliateRecovery/billingSandbox/actions:prepare` and `:advance` create isolated
+recurring invoice sources. `affiliateRecovery/sandbox/actions:externalPayout` creates a
 fixture-scoped test payout; `:fundPlatform` supplies bounded sandbox funding when
 needed. All helpers reject live keys. A dispute created before settlement returns
 `not_payable` and does not verify post-transfer recovery.
@@ -1341,7 +1344,7 @@ The embedded payouts panel is read-only for payout creation and schedule changes
 
 ### Provider invoice history reference
 
-`convex/lib/invoiceHistory.ts` is a server-only binding to the public
+`convex/billing/invoiceHistory.ts` is a server-only binding to the public
 `getInvoicePageFromStripe` API. Invoke it from an authorized action with the
 server-resolved buyer user ID. The binding derives the retained personal V2
 account and preserves bounded continuation and filter arguments. It is not an

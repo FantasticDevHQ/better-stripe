@@ -25,8 +25,8 @@ const titles = {
 export function ConnectExample({ kind }: { kind: ConnectComponent }) {
   const { currentUser } = useRole();
   const { resolvedTheme } = useTheme();
-  const publishableKey = useQuery(api.queries.getPublishableKey);
-  const create = useAction(api.embeddedExamples.createSession);
+  const publishableKey = useQuery(api.stripe.public.queries.getPublishableKey);
+  const create = useAction(api.embeddedExamples.public.actions.createSession);
   if (!currentUser.stripeAccountId)
     return (
       <Alert>

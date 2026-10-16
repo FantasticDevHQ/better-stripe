@@ -1,4 +1,8 @@
 import {
+  transferObservationsTable,
+  transferBatchesTable,
+} from "./financialObservations/transferSchema.js";
+import {
   sourceObservationsTable,
   sourceLegsTable,
   observationGenerationsTable,
@@ -69,6 +73,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  financialTransferObservations: transferObservationsTable,
+  financialTransferBatches: transferBatchesTable,
   financialSourceObservations: sourceObservationsTable,
   financialSourceLegs: sourceLegsTable,
   financialObservationGenerations: observationGenerationsTable,

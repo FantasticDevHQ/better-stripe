@@ -49,3 +49,11 @@ export type {
   FinancialObservationPage,
   FinancialObservationOwner,
 } from "./financialObservations.js";
+export type {
+  FinancialTransferObservation,
+  FinancialTransferBatch,
+  FinancialTransferReadState,
+  FinancialTransferResult,
+  FinancialTransferPage,
+  FinancialTransferBatchPage,
+} from "./transferObservations.js";

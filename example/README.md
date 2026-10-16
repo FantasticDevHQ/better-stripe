@@ -1436,3 +1436,12 @@ for reciprocal checks, closed-account handling and provider-state limitations.
 The public `betterStripe.financialOwnership` server API is documented in [financial ownership provenance](../docs/financial-ownership.md). Reuse the example's server-side billing adapters and replace demo identities with actual host authorization. Register verified physical account keys or explicitly verified logical source owners, then use exact-key lookup and bounded owner discovery. Every response retains unknown financial coverage; this reference does not activate account closing or declare outstanding obligations clear. The example's public React workflows and render props remain the UI reference; an application such as Dojo supplies its own Shadcn/OKLCH styling and translations. This provenance-only API adds no React money action or browser-owned registration.
 
 For server-only original allocation diagnostics and the explicit UNKNOWN/oversized-destination boundary, see [Settlement source observations](../docs/financial-observations.md). Reuse the public `financialObservations` client after host authorization. Its explicit `resume` method drains oversized original allocations through durable indexing and validation batches; callers must continue until complete or held and never infer aggregate coverage from that result. This reference does not enable closure or add a provider operation.
+
+Transfer diagnostics are available through the trusted server-side
+`stripe.financialObservations.transfer`, `transferBucket`, `transferOwner` and
+`transferBatches` APIs. Use authenticated host selectors and preserve the returned
+native pagination metadata. These APIs always report UNKNOWN coverage; pending
+claim/release batch references and their producer generation are diagnostics,
+not spendable balances or account-closure permission. See the packaged
+[financial observation guide](../docs/financial-observations.md#transfer-facts-and-deferred-batches)
+for synchronous bounds, preserved financial behavior and deferred-reference limits.

@@ -1,3 +1,4 @@
+import { observeTransfer } from "../financialObservations/transfers.js";
 import { commissionExposureValidator } from "../settlement/clawbackSchema.js";
 import { applyObligationExposure } from "../settlement/clawbacks.js";
 import { v } from "convex/values";
@@ -169,6 +170,10 @@ export const completeOperation = mutation({
             transfer.status,
           ),
         );
+        await observeTransfer(
+          ctx,
+          (await ctx.db.get("transfers", transfer._id))!,
+        );
         const duplicate = await ctx.db
           .query("affiliateReversalReceipts")
           .withIndex("by_receipt", (q) =>
@@ -187,7 +192,7 @@ export const completeOperation = mutation({
         });
         await updateObligation(ctx, row, { ...patch, recoveredAmount: total });
       } else {
-        await ctx.db.insert("transfers", {
+        const transferId = await ctx.db.insert("transfers", {
           stripeTransferId: args.receiptId!,
           sourceChargeId: row.sourceChargeId,
           sourceInvoiceId: row.sourceInvoiceId,
@@ -199,6 +204,10 @@ export const completeOperation = mutation({
           reinstatement: true,
           metadata: { bsRecoveryOperation: op._id },
         });
+        await observeTransfer(
+          ctx,
+          (await ctx.db.get("transfers", transferId))!,
+        );
         await updateObligation(ctx, row, {
           ...patch,
           restoredAmount: (row.restoredAmount ?? 0) + op.amount,

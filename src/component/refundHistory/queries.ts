@@ -1,3 +1,5 @@
+import { refundCommandEvidenceValidator } from "./commandEvidenceValidator.js";
+import { readRefundCommandEvidence } from "./commandEvidence.js";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -97,3 +99,16 @@ function scopedRefunds(
     return refunds.withIndex("by_status", (q) => q.eq("status", status));
   return refunds;
 }
+
+/** Exact command evidence is read-only and never authorizes a provider retry. */
+export const getRefundCommandEvidence = query({
+  args: {
+    commandKey: v.string(),
+    accountId: v.string(),
+    stripePaymentIntentId: v.string(),
+    stripeChargeId: v.string(),
+    currency: v.string(),
+  },
+  returns: refundCommandEvidenceValidator,
+  handler: readRefundCommandEvidence,
+});

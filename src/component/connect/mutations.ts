@@ -1,8 +1,10 @@
+import { refundCommandBinding } from "../refundHistory/commandBinding.js";
 import {
   deferTransferFacts,
   synchronousTransferFactLimit,
 } from "../financialObservations/transferBatches.js";
 import { observeTransfer } from "../financialObservations/transfers.js";
+
 import { syncCommissionTransfer } from "../settlement/clawbacks.js";
 import { recordTransferReversalDefinition } from "./reversalReceipts.js";
 import { claimReversalSlicesDefinition } from "./reversalClaims.js";
@@ -145,7 +147,11 @@ export const upsertRefund = mutation({
 
     const accountId =
       args.accountId ?? (await paymentSeller(ctx, args.stripePaymentIntentId));
-    const record = { ...args, ...(accountId ? { accountId } : {}) };
+    const record = {
+      ...args,
+      ...(accountId ? { accountId } : {}),
+      ...refundCommandBinding(existing, args, Date.now()),
+    };
     if (existing) {
       await ctx.db.patch("refunds", existing._id, record);
     } else {

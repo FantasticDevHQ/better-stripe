@@ -68,6 +68,7 @@
     "docs/invoice-payment-pages.md",
     "docs/checkout-session-pages.md",
     "docs/refund-context.md",
+    "docs/refund-command-evidence.md",
     "docs/personal-account-mapping.md",
     "docs/financial-ownership.md",
     "docs/financial-observations.md"

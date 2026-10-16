@@ -43,6 +43,7 @@ import type * as checkoutExamples_actions from "../checkoutExamples/actions.js";
 import type * as checkoutExamples_queries from "../checkoutExamples/queries.js";
 import type * as connect_actions from "../connect/actions.js";
 import type * as connect_queries from "../connect/queries.js";
+import type * as connect_refundCommandEvidence from "../connect/refundCommandEvidence.js";
 import type * as connect_refundContext from "../connect/refundContext.js";
 import type * as crons from "../crons.js";
 import type * as e2eCheckout_actions from "../e2eCheckout/actions.js";
@@ -193,6 +194,7 @@ const fullApi: ApiFromModules<{
   "checkoutExamples/queries": typeof checkoutExamples_queries;
   "connect/actions": typeof connect_actions;
   "connect/queries": typeof connect_queries;
+  "connect/refundCommandEvidence": typeof connect_refundCommandEvidence;
   "connect/refundContext": typeof connect_refundContext;
   crons: typeof crons;
   "e2eCheckout/actions": typeof e2eCheckout_actions;

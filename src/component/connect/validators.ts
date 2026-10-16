@@ -1,3 +1,4 @@
+import { refundCommandFields } from "../refundHistory/commandFields.js";
 import { commissionExposureValidator } from "../settlement/clawbackSchema.js";
 import { type Infer, v } from "convex/values";
 
@@ -154,6 +155,7 @@ export const refundDocValidator = v.object({
   _id: v.id("refunds"),
   _creationTime: v.number(),
   ...refundFields,
+  ...refundCommandFields,
 });
 
 // =============================================================================

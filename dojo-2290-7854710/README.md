@@ -8,4 +8,6 @@ The API persists versioned per-currency intent and an append-only admin audit. L
 
 No Stripe operation or bank payout is performed. This evidence does not certify a cloud deployment, native Convex runtime, custom-policy activation or admin UI. No shared anonymous database was used.
 
-All 12 local repository gates passed in 262.5s. Backend 4,662 passed with one existing skip; web 7,718 passed with four existing skips; UI package 32 passed. Existing lint warnings remain unchanged. The exact-head manual CI run is being verified before merge: https://github.com/kellykampen/dojo/actions/runs/38847810000
+All 12 local repository gates passed in 262.5s. Backend 4,662 passed with one existing skip; web 7,718 passed with four existing skips; UI package 32 passed. Existing lint warnings remain unchanged. The exact-head manual CI run passed before merge: https://github.com/kellykampen/dojo/actions/runs/38847810000
+
+Merged Dojo PR #735 at `2c2cff5d48505fe4b940d05b1997e2fdb5ccd5e6`. DOJO-2290 is Done. The editor remains DOJO-2292 and financial activation/progress remain DOJO-2249/2250.

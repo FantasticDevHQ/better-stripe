@@ -18,7 +18,7 @@ function input(i = 0) {
     destinationAccountId: "opaque",
     amount: 1,
     currency: "usd",
-    status: "paid",
+    status: "paid" as const,
   };
 }
 it("preserves ambiguous observation rows instead of choosing or repairing one", async () => {

@@ -1,0 +1,171 @@
+
+ RUN  v4.1.11 /private/tmp/dojo-automatic-payouts/apps/web
+
+ ❯ src/features/user/settings/payments/recipient-balance.test.tsx (7 tests | 1 failed) 1076ms
+   × shows the verified next bank payout and paginates previous payouts through the real workflow 1006ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/user/settings/payments/recipient-balance.test.tsx > shows the verified next bank payout and paginates previous payouts through the real workflow
+TestingLibraryElementError: Unable to find an element with the text: /Next payout/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-busy[39m=[32m"false"[39m
+      [33mclass[39m=[32m"space-y-4 border-t pt-6"[39m
+      [33mdata-testid[39m=[32m"recipient-balance"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-3"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold"[39m
+        [36m>[39m
+          [0mAccount balance[0m
+        [36m</h3>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-2xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [0mRefresh balances[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+      [36m>[39m
+        [0mAccount-wide funds across your communities and affiliate activity. Available and pending funds are reported separately in each currency.[0m
+      [36m</p>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+      [36m>[39m
+        [0mAutomatic payouts follow the provider's applicable minimum. Pending funds do not qualify, and currencies are never combined.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-4 sm:grid-cols-2"[39m
+      [36m>[39m
+        [36m<dl[39m
+          [33mclass[39m=[32m"min-w-0 space-y-2 rounded-lg border p-4"[39m
+          [33mdata-testid[39m=[32m"recipient-currency-balance"[39m
+        [36m>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"font-semibold"[39m
+          [36m>[39m
+            [0mUSD[0m
+          [36m</dt>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mAvailable[0m
+          [36m</dt>[39m
+          [36m<dd[39m
+            [33mclass[39m=[32m"font-medium break-words tabular-nums"[39m
+          [36m>[39m
+            [0m$12.50[0m
+          [36m</dd>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mPending[0m
+          [36m</dt>[39m
+          [36m<dd[39m
+            [33mclass[39m=[32m"break-words tabular-nums"[39m
+          [36m>[39m
+            [0m$5.00[0m
+          [36m</dd>[39m
+        [36m</dl>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<section[39m
+      [33maria-busy[39m=[32m"false"[39m
+      [33mclass[39m=[32m"space-y-4 border-t pt-6"[39m
+      [33mdata-testid[39m=[32m"recipient-balance"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-3"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"font-semibold"[39m
+        [36m>[39m
+          [0mAccount balance[0m
+        [36m</h3>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-2xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [0mRefresh balances[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+      [36m>[39m
+        [0mAccount-wide funds across your communities and affiliate activity. Available and pending funds are reported separately in each currency.[0m
+      [36m</p>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+      [36m>[39m
+        [0mAutomatic payouts follow the provider's applicable minimum. Pending funds do not qualify, and currencies are never combined.[0m
+      [36m</p>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-4 sm:grid-cols-2"[39m
+      [36m>[39m
+        [36m<dl[39m
+          [33mclass[39m=[32m"min-w-0 space-y-2 rounded-lg border p-4"[39m
+          [33mdata-testid[39m=[32m"recipient-currency-balance"[39m
+        [36m>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"font-semibold"[39m
+          [36m>[39m
+            [0mUSD[0m
+          [36m</dt>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mAvailable[0m
+          [36m</dt>[39m
+          [36m<dd[39m
+            [33mclass[39m=[32m"font-medium break-words tabular-nums"[39m
+          [36m>[39m
+            [0m$12.50[0m
+          [36m</dd>[39m
+          [36m<dt[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mPending[0m
+          [36m</dt>[39m
+          [36m<dd[39m
+            [33mclass[39m=[32m"break-words tabular-nums"[39m
+          [36m>[39m
+            [0m$5.00[0m
+          [36m</dd>[39m
+        [36m</dl>[39m
+      [36m</div>[39m
+    [36m</section>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/features/user/settings/payments/recipient-balance.test.tsx:131:23
+    129|   });
+    130|   render(widget());
+    131|   expect(await screen.findByText(/Next payout/i)).toBeVisible();
+       |                       ^
+    132|   expect(screen.getAllByText('$7.00').length).toBeGreaterThan(0);
+    133|   expect(screen.getByText('po_previous')).toBeVisible();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  09:55:24
+   Duration  2.21s (transform 422ms, setup 115ms, import 613ms, tests 1.08s, environment 226ms)
+
+undefined
+/private/tmp/dojo-automatic-payouts/apps/web:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run src/features/user/settings/payments/recipient-balance.test.tsx

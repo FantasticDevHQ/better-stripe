@@ -1,0 +1,119 @@
+
+ RUN  v4.1.11 /private/tmp/dojo-automatic-payouts/packages/backend
+
+ ❯ convex/billing/recipient-payout-snapshot.test.ts (7 tests | 7 failed) 685ms
+   × reads the session-owned recipient with bounded public package pagination 643ms
+   × rejects anonymous, foreign and organization scopes before provider access 12ms
+   × rejects disabled recipient before provider access 0 7ms
+   × rejects disabled recipient before provider access 1 6ms
+   × rejects disabled recipient before provider access 2 8ms
+   × discards a snapshot if the account mapping changes during provider retrieval 4ms
+   × masks provider failures and permits the next explicit retry 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > reads the session-owned recipient with bounded public package pagination
+Error: Could not find module for: "billing/recipient/payoutSnapshot"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+    1466|         const module = modulesWithoutExtension[prefix + path];
+    1467|         if (module === undefined) {
+    1468|             throw new Error(`Could not find module for: "${path}"`);
+       |                   ^
+    1469|         }
+    1470|         return await module();
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.actionFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2130:36
+ ❯ action ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as action] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/recipient-payout-snapshot.test.ts:29:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > rejects anonymous, foreign and organization scopes before provider access
+AssertionError: expected [Function] to throw error matching /authenticated/i but got 'Could not find module for: "billing/r…'
+
+- Expected:
+/authenticated/i
+
++ Received:
+"Could not find module for: \"billing/recipient/payoutSnapshot\""
+
+ ❯ convex/billing/recipient-payout-snapshot.test.ts:39:72
+     37|   const f = await billingAuthorizationFixture();
+     38|   const provider = vi.spyOn(stripe, 'getPayoutSnapshot');
+     39|   await expect(f.t.action(read, { expectedAccountId: 'acct_qa_buyer' }…
+       |                                                                        ^
+     40|   await expect(f.asMember.action(read, { expectedAccountId: 'acct_qa_f…
+     41|   await f.t.run(ctx => stripe.upsertAccount(ctx, { stripeAccountId: 'a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > rejects disabled recipient before provider access 0
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > rejects disabled recipient before provider access 1
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > rejects disabled recipient before provider access 2
+AssertionError: expected [Function] to throw error matching /permission|authenticated/i but got 'Could not find module for: "billing/r…'
+
+- Expected:
+/permission|authenticated/i
+
++ Received:
+"Could not find module for: \"billing/recipient/payoutSnapshot\""
+
+ ❯ convex/billing/recipient-payout-snapshot.test.ts:50:79
+     48|   await f.t.run(ctx => ctx.runMutation(components.betterAuth.mutations…
+     49|   const provider = vi.spyOn(stripe, 'getPayoutSnapshot');
+     50|   await expect(f.asMember.action(read, { expectedAccountId: 'acct_qa_b…
+       |                                                                               ^
+     51|   expect(provider).not.toHaveBeenCalled();
+     52| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > discards a snapshot if the account mapping changes during provider retrieval
+AssertionError: expected [Function] to throw error matching /permission/i but got 'Could not find module for: "billing/r…'
+
+- Expected:
+/permission/i
+
++ Received:
+"Could not find module for: \"billing/recipient/payoutSnapshot\""
+
+ ❯ convex/billing/recipient-payout-snapshot.test.ts:63:79
+     61|     return snapshot;
+     62|   });
+     63|   await expect(f.asMember.action(read, { expectedAccountId: 'acct_qa_b…
+       |                                                                               ^
+     64| });
+     65|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  convex/billing/recipient-payout-snapshot.test.ts > masks provider failures and permits the next explicit retry
+AssertionError: expected [Function] to throw error matching /Stripe|payment|processor/i but got 'Could not find module for: "billing/r…'
+
+- Expected:
+/Stripe|payment|processor/i
+
++ Received:
+"Could not find module for: \"billing/recipient/payoutSnapshot\""
+
+ ❯ convex/billing/recipient-payout-snapshot.test.ts:69:79
+     67|   const f = await billingAuthorizationFixture();
+     68|   vi.spyOn(stripe, 'getPayoutSnapshot').mockRejectedValueOnce(new Erro…
+     69|   await expect(f.asMember.action(read, { expectedAccountId: 'acct_qa_b…
+       |                                                                               ^
+     70|   await expect(f.asMember.action(read, { expectedAccountId: 'acct_qa_b…
+     71| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed (7)
+   Start at  09:52:46
+   Duration  5.35s (transform 3.68s, setup 0ms, import 4.31s, tests 685ms, environment 67ms)
+
+undefined
+/private/tmp/dojo-automatic-payouts/packages/backend:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/billing/recipient-payout-snapshot.test.ts

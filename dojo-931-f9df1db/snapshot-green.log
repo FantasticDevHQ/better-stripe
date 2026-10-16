@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /private/tmp/dojo-automatic-payouts/packages/backend
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  09:53:30
+   Duration  3.92s (transform 1.98s, setup 0ms, import 2.15s, tests 1.45s, environment 64ms)
+

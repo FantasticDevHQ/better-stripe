@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:61011) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/billing/recipient-balance-browser.spec.ts:13:1 › account availability preserves currency units, retry and session boundaries (9.2s)
+
+  1 passed (11.4s)

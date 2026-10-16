@@ -28,10 +28,9 @@
 
 ## [0.30.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.30.0...v0.30.1) (2026-10-16)
 
-
 ### Bug Fixes
 
-* **react:** preserve currency units in payout displays ([#227](https://github.com/FantasticDevHQ/better-stripe/issues/227)) ([584df38](https://github.com/FantasticDevHQ/better-stripe/commit/584df3892dd20a1e05276194b0ecd03904afbccf))
+- **react:** preserve currency units in payout displays ([#227](https://github.com/FantasticDevHQ/better-stripe/issues/227)) ([584df38](https://github.com/FantasticDevHQ/better-stripe/commit/584df3892dd20a1e05276194b0ecd03904afbccf))
 
 ## [0.30.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.29.0...v0.30.0) (2026-10-16)
 

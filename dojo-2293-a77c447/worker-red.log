@@ -1,0 +1,106 @@
+
+ RUN  v4.1.11 <dojo-worktree>/packages/backend
+
+ ❯ convex/billing/payout-workers.test.ts (6 tests | 6 failed) 568ms
+   × dispatches four bounded scans and finishes an empty queue 544ms
+   × uses the public worker for a retained owner with no custom policy 4ms
+   × rejects a foreign mapping before SDK execution 0 5ms
+   × rejects a foreign mapping before SDK execution 1 3ms
+   × rejects a foreign mapping before SDK execution 2 3ms
+   × does not invent a policy operation or currency for idle restoration 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/billing/payout-workers.test.ts > dispatches four bounded scans and finishes an empty queue
+AssertionError: promise rejected "Error: Could not find module for: "billin…" instead of resolving
+ ❯ convex/billing/payout-workers.test.ts:49:40
+     47| it('dispatches four bounded scans and finishes an empty queue', async …
+     48|   const f = await fixture();
+     49|   await expect(f.t.action(dispatch, {})).resolves.toBeNull();
+       |                                        ^
+     50|   const scheduled = await f.t.run((ctx) =>
+     51|     ctx.db.system.query('_scheduled_functions').take(10),
+
+Caused by: Error: Could not find module for: "billing/payoutPolicy/workers"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.actionFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2130:36
+ ❯ action ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as action] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-workers.test.ts:49:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  convex/billing/payout-workers.test.ts > uses the public worker for a retained owner with no custom policy
+AssertionError: promise rejected "Error: Could not find module for: "billin…" instead of resolving
+ ❯ convex/billing/payout-workers.test.ts:71:3
+     69|   await expect(
+     70|     f.t.action(attempt, { ...f.args, currency: 'jpy' }),
+     71|   ).resolves.toBeNull();
+       |   ^
+     72|   expect(await f.t.run((ctx) => stripe.payoutPolicy.worker.get(ctx, {
+     73|     ...f.args, currency: 'jpy',
+
+Caused by: Error: Could not find module for: "billing/payoutPolicy/workers"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.actionFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2130:36
+ ❯ action ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as action] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-workers.test.ts:70:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  convex/billing/payout-workers.test.ts > rejects a foreign mapping before SDK execution 0
+ FAIL  convex/billing/payout-workers.test.ts > rejects a foreign mapping before SDK execution 1
+ FAIL  convex/billing/payout-workers.test.ts > rejects a foreign mapping before SDK execution 2
+AssertionError: expected [Function] to throw error matching /owner|permission/i but got 'Could not find module for: "billing/p…'
+
+- Expected:
+/owner|permission/i
+
++ Received:
+"Could not find module for: \"billing/payoutPolicy/workers\""
+
+ ❯ convex/billing/payout-workers.test.ts:85:43
+     83|   const name = getFunctionName(ref);
+     84|   await expect(f.t.action(ref, name.endsWith(':attempt')
+     85|     ? { ...args, currency: 'usd' } : args)).rejects.toThrow(/owner|per…
+       |                                           ^
+     86|   expect(run).not.toHaveBeenCalled();
+     87|   expect(expiry).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  convex/billing/payout-workers.test.ts > does not invent a policy operation or currency for idle restoration
+AssertionError: promise rejected "Error: Could not find module for: "billin…" instead of resolving
+ ❯ convex/billing/payout-workers.test.ts:95:41
+     93|   const quote = vi.spyOn(stripe.costRecovery, 'payoutQuote');
+     94|   const change = vi.spyOn(stripe.payoutPolicy, 'apply');
+     95|   await expect(f.t.action(apply, f.args)).resolves.toBeNull();
+       |                                         ^
+     96|   expect(quote).not.toHaveBeenCalled();
+     97|   expect(change).not.toHaveBeenCalled();
+
+Caused by: Error: Could not find module for: "billing/payoutPolicy/workers"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.actionFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2130:36
+ ❯ action ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2174:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as action] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-workers.test.ts:95:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+   Start at  12:10:01
+   Duration  1.47s (transform 490ms, setup 0ms, import 739ms, tests 568ms, environment 39ms)
+
+undefined
+<dojo-worktree>/packages/backend:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/billing/payout-workers.test.ts

@@ -1,0 +1,33 @@
+
+ RUN  v4.1.11 <dojo-worktree>/packages/backend
+
+ ❯ convex/billing/payout-workers.test.ts (7 tests | 1 failed) 610ms
+   × installs the five-minute payout maintenance cron 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/billing/payout-workers.test.ts > installs the five-minute payout maintenance cron
+AssertionError: expected '{"email-request-retention":{"name":"e…' to contain 'recipient-payout-maintenance'
+
+Expected: "recipient-payout-maintenance"
+Received: "{"email-request-retention":{"name":"emails/requests:cleanup","args":[{}],"schedule":{"hours":1,"type":"interval"}},"email-content-retention":{"name":"emailContentCleanup:cleanup","args":[{}],"schedule":{"hours":1,"type":"interval"}},"bio-link-metric-recovery":{"name":"bioLinkAnalytics/internal/recovery:tick","args":[{}],"schedule":{"minutes":5,"type":"interval"}}}"
+
+ ❯ convex/billing/payout-workers.test.ts:35:26
+     33|
+     34| it('installs the five-minute payout maintenance cron', () => {
+     35|   expect(crons.export()).toContain('recipient-payout-maintenance');
+       |                          ^
+     36|   expect(crons.export()).toContain('billing/payoutPolicy/workers:dispa…
+     37| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  12:11:17
+   Duration  1.62s (transform 639ms, setup 0ms, import 847ms, tests 610ms, environment 35ms)
+
+undefined
+<dojo-worktree>/packages/backend:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/billing/payout-workers.test.ts

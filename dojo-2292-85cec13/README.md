@@ -12,4 +12,6 @@ CodeRabbit reviewed the runtime implementation with no actionable code findings.
 
 Browser transport is mocked. Backend tests use real Dojo/BetterAuth schemas in isolated in-memory fixtures. Explicit Dojo-dev read-only code generation passes. These tests do not certify cloud deployment, actual app sessions, Stripe schedule changes, recipient consent or payout release. No shared anonymous database was used. Financial activation/progress remain DOJO-2249/2250.
 
-Final exact-head CI is being verified before merge: https://github.com/kellykampen/dojo/actions/runs/38851902086
+Final exact-head CI passed: https://github.com/kellykampen/dojo/actions/runs/38851902086
+
+PR #736 merged at `c01c0a7249d1579f52ce3e55792ef0b826e0be96`. DOJO-2292 is Done.

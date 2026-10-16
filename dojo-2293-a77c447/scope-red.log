@@ -1,0 +1,127 @@
+
+ RUN  v4.1.11 <dojo-worktree>/packages/backend
+
+ ❯ convex/billing/payout-worker-scope.test.ts (9 tests | 9 failed) 769ms
+   × authorizes background ownership without an interactive session 665ms
+   × retains earned-fund ownership when login is disabled 0 6ms
+   × retains earned-fund ownership when login is disabled 1 3ms
+   × retains earned-fund ownership when login is disabled 2 3ms
+   × rejects missing, foreign and organization mappings 14ms
+   × rejects malformed currency USD 3ms
+   × rejects malformed currency  2ms
+   × rejects malformed currency usd-extra 2ms
+   × quotes all canonical recipient costs with a current account revision 70ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  convex/billing/payout-worker-scope.test.ts > authorizes background ownership without an interactive session
+AssertionError: promise rejected "Error: Could not find module for: "billin…" instead of resolving
+ ❯ convex/billing/payout-worker-scope.test.ts:35:40
+     33| it('authorizes background ownership without an interactive session', a…
+     34|   const f = await fixture();
+     35|   await expect(f.t.query(owner, f.args)).resolves.toBeNull();
+       |                                        ^
+     36| });
+     37|
+
+Caused by: Error: Could not find module for: "billing/payoutPolicy/workerScope"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.queryFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2071:40
+ ❯ query ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2158:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as query] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-worker-scope.test.ts:35:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  convex/billing/payout-worker-scope.test.ts > retains earned-fund ownership when login is disabled 0
+ FAIL  convex/billing/payout-worker-scope.test.ts > retains earned-fund ownership when login is disabled 1
+ FAIL  convex/billing/payout-worker-scope.test.ts > retains earned-fund ownership when login is disabled 2
+AssertionError: promise rejected "Error: Could not find module for: "billin…" instead of resolving
+ ❯ convex/billing/payout-worker-scope.test.ts:50:40
+     48|     }),
+     49|   );
+     50|   await expect(f.t.query(owner, f.args)).resolves.toBeNull();
+       |                                        ^
+     51| });
+     52|
+
+Caused by: Error: Could not find module for: "billing/payoutPolicy/workerScope"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.queryFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2071:40
+ ❯ query ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2158:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as query] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-worker-scope.test.ts:50:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  convex/billing/payout-worker-scope.test.ts > rejects missing, foreign and organization mappings
+AssertionError: expected [Function] to throw error matching /owner|permission/i but got 'Could not find module for: "billing/p…'
+
+- Expected:
+/owner|permission/i
+
++ Received:
+"Could not find module for: \"billing/payoutPolicy/workerScope\""
+
+ ❯ convex/billing/payout-worker-scope.test.ts:57:3
+     55|   await expect(
+     56|     f.t.query(owner, { ...f.args, ownerKey: 'missing-owner' }),
+     57|   ).rejects.toThrow(/owner|permission/i);
+       |   ^
+     58|   await expect(
+     59|     f.t.query(owner, { ...f.args, accountId: 'acct_qa_foreign' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  convex/billing/payout-worker-scope.test.ts > rejects malformed currency USD
+ FAIL  convex/billing/payout-worker-scope.test.ts > rejects malformed currency 
+ FAIL  convex/billing/payout-worker-scope.test.ts > rejects malformed currency usd-extra
+AssertionError: expected [Function] to throw error matching /currency/i but got 'Could not find module for: "billing/p…'
+
+- Expected:
+/currency/i
+
++ Received:
+"Could not find module for: \"billing/payoutPolicy/workerScope\""
+
+ ❯ convex/billing/payout-worker-scope.test.ts:73:63
+     71| it.each(['USD', '', 'usd-extra'])('rejects malformed currency %s', asy…
+     72|   const f = await fixture();
+     73|   await expect(f.t.query(liabilities, { ...f.args, currency })).reject…
+       |                                                               ^
+     74|     /currency/i,
+     75|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  convex/billing/payout-worker-scope.test.ts > quotes all canonical recipient costs with a current account revision
+Error: Could not find module for: "billing/payoutPolicy/workerScope"
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1468:19
+    1466|         const module = modulesWithoutExtension[prefix + path];
+    1467|         if (module === undefined) {
+    1468|             throw new Error(`Could not find module for: "${path}"`);
+       |                   ^
+    1469|         }
+    1470|         return await module();
+ ❯ resolveFunction ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2402:76
+ ❯ Object.queryFromPath ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2071:40
+ ❯ query ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:2158:41
+ ❯ ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:80
+ ❯ Object.result.<computed> [as query] ../../node_modules/.pnpm/convex-test@0.0.60_convex@1.46.0_react@19.3.0_/node_modules/convex-test/dist/index.js:1886:56
+ ❯ convex/billing/payout-worker-scope.test.ts:97:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed (9)
+   Start at  12:08:34
+   Duration  1.95s (transform 703ms, setup 0ms, import 988ms, tests 769ms, environment 40ms)
+
+undefined
+<dojo-worktree>/packages/backend:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run convex/billing/payout-worker-scope.test.ts

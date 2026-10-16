@@ -1,4 +1,8 @@
-import { allocateSale } from "@fantastic.dev/better-stripe";
+import {
+  allocateSale,
+  getChargeCurrencyMetadata,
+  parseChargeAmount,
+} from "@fantastic.dev/better-stripe";
 export type StorePlanId = "starter" | "growth" | "pro";
 export const STORE_PLANS = [
   {
@@ -83,10 +87,9 @@ export function settleStoreSale(args: {
           destinationAccountId: "affiliate",
           ...(args.affiliateFixedAmount != null
             ? {
-                fixedAmount: Math.floor(
-                  (Math.round(args.affiliateFixedAmount * 100) *
-                    stripeCurrencyScale(args.currency ?? "usd")) /
-                    100,
+                fixedAmount: fixedAffiliateAmountInMinorUnits(
+                  args.affiliateFixedAmount,
+                  args.currency ?? "usd",
                 ),
               }
             : { basisPoints: affiliateBasisPoints }),
@@ -122,23 +125,19 @@ export function validateFixedAffiliateAmount(
     );
 }
 export function stripeCurrencyScale(currency: string) {
-  return [
-    "bif",
-    "clp",
-    "djf",
-    "gnf",
-    "jpy",
-    "kmf",
-    "krw",
-    "mga",
-    "pyg",
-    "rwf",
-    "vnd",
-    "vuv",
-    "xaf",
-    "xof",
-    "xpf",
-  ].includes(currency.toLowerCase())
-    ? 1
-    : 100;
+  const metadata = getChargeCurrencyMetadata(currency);
+  if (!metadata)
+    throw new Error("Unsupported fixed affiliate payout currency.");
+  return 10 ** metadata.apiDecimals;
+}
+
+/** Preserve the app's two-decimal budget, flooring zero-decimal commissions. */
+function fixedAffiliateAmountInMinorUnits(amount: number, currency: string) {
+  // This is a commission budget, not a customer charge input. Its historical
+  // two-decimal policy also applies to ISK/UGX despite their display precision.
+  // USD supplies the package's exact two-decimal parser; target units come from
+  // package metadata. Unsupported currencies now reject instead of assuming 100.
+  const cents = parseChargeAmount(amount.toFixed(2), "usd");
+  if (cents === null) throw new Error("Invalid fixed affiliate payout amount.");
+  return Number((BigInt(cents) * BigInt(stripeCurrencyScale(currency))) / 100n);
 }

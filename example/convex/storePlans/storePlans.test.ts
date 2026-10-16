@@ -192,3 +192,40 @@ it("supports zero and full affiliate shares, ignores direct sales, and rejects i
       settleStoreSale({ ...base, affiliateBasisPoints: rate }),
     ).toThrow(/affiliate/i);
 });
+
+it.each([
+  ["usd", 0.29, 29],
+  ["JPY", 1.99, 1],
+  ["jpy", 0.99, 0],
+  ["isk", 1.99, 199],
+  ["ugx", 1.99, 199],
+] as const)(
+  "preserves historical fixed commission units for %s",
+  (currency, affiliateFixedAmount, affiliateNet) => {
+    const sale = settleStoreSale({
+      gross: 1000,
+      processingFee: 0,
+      planId: "pro",
+      referred: true,
+      currency,
+      affiliateFixedAmount,
+    });
+    expect(sale.affiliateNet).toBe(affiliateNet);
+    expect(sale.sellerNet + sale.affiliateNet).toBe(1000);
+  },
+);
+it.each(["kwd", "not-a-currency"])(
+  "rejects unsupported fixed commission currency %s before allocation",
+  (currency) => {
+    expect(() =>
+      settleStoreSale({
+        gross: 1000,
+        processingFee: 0,
+        planId: "pro",
+        referred: true,
+        currency,
+        affiliateFixedAmount: 1.99,
+      }),
+    ).toThrow(/currency/i);
+  },
+);

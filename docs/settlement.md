@@ -303,11 +303,14 @@ release an unaccepted claim within a conservative 23-hour window. It requires
 its own unique Stripe request receipt; ambiguous errors and older attempts stay
 held. This window stays below Stripe's [24-hour v1 idempotency retention minimum](https://docs.stripe.com/api/idempotent_requests).
 
-Current atomic snapshots support 100 account transfers, 100 historical claims and
-1,000 receipt IDs per source. Larger/incomplete histories hold the whole operation
-without partial totals. Resumable larger-account collection, other provider-debit
-allocation and recurring/UI integration remain required. The package does not
-claim that component tests alone demonstrate a Stripe bank payout.
+The legacy direct snapshot supports 100 account transfers and historical claims.
+Public release, preview and historical-adoption flows switch to complete paginated
+collections beyond that boundary. The per-source observation guard still permits
+at most 1,000 receipt IDs; incomplete provider history never supplies partial
+financial totals. Native platform limits still apply to the atomic boundary.
+Hosts install the scheduled runner and authenticated UI adapters. Unknown provider
+debits need explicit accounting before qualification. Verify actual Stripe payout
+receipts rather than treating component-only tests as proof of bank payment.
 
 ## Verified recipient funding receipts
 

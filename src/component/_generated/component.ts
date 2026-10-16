@@ -2887,6 +2887,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        resumeTransferBatch: FunctionReference<
+          "mutation",
+          "internal",
+          { batchId: string; expectedGeneration: number },
+          {
+            batch: {
+              _creationTime: number;
+              _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              isOverflow: true;
+              observedFingerprint: string;
+              operationId: string;
+              originalOperationId: string;
+              producer: "transfer_frontier_release" | "transfer_frontier_claim";
+              producerVersion: 1;
+              referenceCount: number;
+              sourceChargeId: string;
+              state: "pending" | "complete";
+              transferIds: Array<string>;
+            } | null;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            producerGeneration: number | null;
+          },
+          Name
+        >;
       };
       queries: {
         bucket: FunctionReference<
@@ -3029,6 +3064,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        transferBatch: FunctionReference<
+          "query",
+          "internal",
+          { batchId: string },
+          {
+            batch: {
+              _creationTime: number;
+              _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              isOverflow: true;
+              observedFingerprint: string;
+              operationId: string;
+              originalOperationId: string;
+              producer: "transfer_frontier_release" | "transfer_frontier_claim";
+              producerVersion: 1;
+              referenceCount: number;
+              sourceChargeId: string;
+              state: "pending" | "complete";
+              transferIds: Array<string>;
+            } | null;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            producerGeneration: number | null;
+          },
+          Name
+        >;
         transferBatches: FunctionReference<
           "query",
           "internal",
@@ -3051,6 +3121,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             page: Array<{
               _creationTime: number;
               _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
               fingerprint: string;
               generation: number;
               isContradictory: boolean;
@@ -3062,7 +3139,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               producerVersion: 1;
               referenceCount: number;
               sourceChargeId: string;
-              state: "pending";
+              state: "pending" | "complete";
               transferIds: Array<string>;
             }>;
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
@@ -3161,6 +3238,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               stripeTransferId: string;
               transferId: string;
               userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            producerGeneration: number | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        transferReferences: FunctionReference<
+          "query",
+          "internal",
+          {
+            batchId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              batchId: string;
+              observationGeneration: number;
+              observationId: string;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              position: number;
+              sourceFingerprint: string;
+              transferId: string;
             }>;
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
             producerGeneration: number | null;

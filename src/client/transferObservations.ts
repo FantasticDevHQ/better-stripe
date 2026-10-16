@@ -1,3 +1,5 @@
+import type { transferReferenceDoc } from "../component/financialObservations/transferReferenceSchema.js";
+import { runMutationOrThrow } from "./helpers.js";
 import type { PaginationOptions, PaginationResult } from "convex/server";
 import type { Infer } from "convex/values";
 import { z } from "zod";
@@ -29,9 +31,77 @@ export type FinancialTransferPage = FinancialTransferReadState &
   };
 export type FinancialTransferBatchPage = FinancialTransferReadState &
   PaginationResult<FinancialTransferBatch>;
+export type FinancialTransferReference = Infer<typeof transferReferenceDoc>;
+export type FinancialTransferBatchResult = FinancialTransferReadState & {
+  batch: FinancialTransferBatch | null;
+};
+export type FinancialTransferReferencePage = FinancialTransferReadState &
+  PaginationResult<FinancialTransferReference>;
 /** Trusted host diagnostics. Pending batches invalidate historical pages, never financial state. */
 export class TransferObservationsClient {
   constructor(protected component: Component) {}
+  async transferBatch(
+    ctx: RunCtx,
+    input: { batchId: string },
+  ): Promise<FinancialTransferBatchResult> {
+    const args = z
+      .object({ batchId: z.string().min(1).max(256) })
+      .strict()
+      .parse(input);
+    return ctx.runQuery(
+      componentRef(
+        this.component,
+        "financialObservations/queries/transferBatch",
+      ),
+      args,
+    );
+  }
+  async resumeTransferBatch(
+    ctx: RunCtx,
+    input: { batchId: string; expectedGeneration: number },
+  ): Promise<FinancialTransferBatchResult> {
+    const args = z
+      .object({
+        batchId: z.string().min(1).max(256),
+        expectedGeneration: z
+          .number()
+          .int()
+          .min(1)
+          .max(Number.MAX_SAFE_INTEGER),
+      })
+      .strict()
+      .parse(input);
+    return runMutationOrThrow(
+      ctx,
+      componentRef(
+        this.component,
+        "financialObservations/mutations/resumeTransferBatch",
+      ),
+      args,
+    );
+  }
+  async transferReferences(
+    ctx: RunCtx,
+    input: {
+      batchId: string;
+      paginationOpts: PaginationOptions & { id?: number };
+    },
+  ): Promise<FinancialTransferReferencePage> {
+    const args = z
+      .object({
+        batchId: z.string().min(1).max(256),
+        paginationOpts: observationPagination,
+      })
+      .strict()
+      .parse(input);
+    return ctx.runQuery(
+      componentRef(
+        this.component,
+        "financialObservations/queries/transferReferences",
+      ),
+      args,
+    );
+  }
   async transfer(
     ctx: RunCtx,
     input: { transferId: string },

@@ -1445,3 +1445,12 @@ claim/release batch references and their producer generation are diagnostics,
 not spendable balances or account-closure permission. See the packaged
 [financial observation guide](../docs/financial-observations.md#transfer-facts-and-deferred-batches)
 for synchronous bounds, preserved financial behavior and deferred-reference limits.
+
+Trusted hosts can explicitly drain every retained claim/release reference with
+`stripe.financialObservations.transferBatch`, `resumeTransferBatch` and
+`transferReferences`. Each step indexes or validates a bounded prefix and commits
+its generation with compact provenance receipts. Stop on a held cursor; historical
+completion always retains UNKNOWN coverage. Reuse the packaged
+[transfer continuation contract](../docs/financial-observations.md#resume-every-retained-transfer-reference)
+for ownership snapshots, inter-commit invalidation and authority limits. No money
+operation or account-close control is enabled by these diagnostics.

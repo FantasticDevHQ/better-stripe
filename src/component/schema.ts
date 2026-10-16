@@ -1,3 +1,4 @@
+import { transferBatchReferencesTable } from "./financialObservations/transferReferenceSchema.js";
 import {
   transferObservationsTable,
   transferBatchesTable,
@@ -75,6 +76,7 @@ import { webhookEventsTable } from "./webhooks/schema";
 export default defineSchema({
   financialTransferObservations: transferObservationsTable,
   financialTransferBatches: transferBatchesTable,
+  financialTransferBatchReferences: transferBatchReferencesTable,
   financialSourceObservations: sourceObservationsTable,
   financialSourceLegs: sourceLegsTable,
   financialObservationGenerations: observationGenerationsTable,

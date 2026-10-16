@@ -23,6 +23,92 @@ import type { FunctionReference } from "convex/server";
  */
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
+    accountClosure: {
+      mutations: {
+        complete: FunctionReference<
+          "mutation",
+          "internal",
+          { stripeAccountId: string },
+          null,
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          { stripeAccountId: string },
+          {
+            closure: {
+              _creationTime: number;
+              _id: string;
+              appliedConfigurations?: Array<
+                "customer" | "merchant" | "recipient"
+              >;
+              closedAt?: number;
+              orgId?: string;
+              state: "pending" | "closed";
+              stripeAccountId: string;
+              userId?: string;
+            };
+            isRetry: boolean;
+          },
+          Name
+        >;
+      };
+      queries: {
+        getClosedAccountByStripeId: FunctionReference<
+          "query",
+          "internal",
+          { stripeAccountId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            appliedConfigurations?: Array<
+              "customer" | "merchant" | "recipient"
+            >;
+            closedAt?: number;
+            orgId?: string;
+            state: "pending" | "closed";
+            stripeAccountId: string;
+            userId?: string;
+          } | null,
+          Name
+        >;
+        listClosedAccountsByUserId: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              appliedConfigurations?: Array<
+                "customer" | "merchant" | "recipient"
+              >;
+              closedAt?: number;
+              orgId?: string;
+              state: "pending" | "closed";
+              stripeAccountId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     affiliateEarnings: {
       mutations: {
         confirmEarning: FunctionReference<

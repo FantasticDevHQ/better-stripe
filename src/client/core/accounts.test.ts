@@ -29,7 +29,6 @@ import {
   addCustomerConfiguration,
   addRecipientConfiguration,
   ensureCustomerAccount,
-  closeAccount,
   createAccount,
   createAccountWithOnboarding,
   getAccount,
@@ -40,7 +39,6 @@ import {
   getOrCreateAccount,
   getV2Account,
   listStripeAccounts,
-  restartAccountOnboarding,
   setAccountStatementDescriptor,
   syncAllAccounts,
   updateAccount,
@@ -873,115 +871,6 @@ describe("listStripeAccounts", () => {
 
     expect(result).toHaveLength(250);
     expect(result.map((a) => a.id)).toEqual(manyAccounts.map((a) => a.id));
-  });
-});
-
-describe("closeAccount / restartAccountOnboarding", () => {
-  it("uses stored appliedConfigurations from the DB and deletes after Stripe close", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const runQuery = vi.fn().mockResolvedValue({
-      appliedConfigurations: ["merchant", "recipient"],
-    });
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = { runQuery, runMutation } as unknown as RunCtx;
-
-    const result = await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_close",
-    });
-
-    expect(result).toEqual({ closed: true });
-    // never falls back to Stripe retrieve when DB has configs
-    expect(stripe.v2.core.accounts.retrieve).not.toHaveBeenCalled();
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_close", {
-      applied_configurations: ["merchant", "recipient"],
-    });
-    expect(runMutation).toHaveBeenCalledWith(
-      refFor("core/mutations/deleteAccountByStripeId"),
-      { stripeAccountId: "acct_close" },
-    );
-  });
-
-  it("falls back to Stripe retrieve when the DB has no applied configs", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.retrieve.mockResolvedValue({
-      applied_configurations: ["merchant"],
-    });
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue(null), // no DB row
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
-
-    await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_fb",
-    });
-
-    expect(stripe.v2.core.accounts.retrieve).toHaveBeenCalledWith("acct_fb");
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_fb", {
-      applied_configurations: ["merchant"],
-    });
-  });
-
-  it("closes with an empty config list when the Stripe retrieve fallback throws", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.retrieve.mockRejectedValue(
-      new Error("no such account"),
-    );
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue(null),
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
-
-    await closeAccount(asStripe(stripe), makeComponent(), ctx, {
-      stripeAccountId: "acct_missing",
-    });
-
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_missing", {
-      applied_configurations: [],
-    });
-  });
-
-  it("does not delete from the DB if the Stripe close fails", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.close.mockRejectedValue(new Error("close boom"));
-    const runMutation = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      runQuery: vi
-        .fn()
-        .mockResolvedValue({ appliedConfigurations: ["merchant"] }),
-      runMutation,
-    } as unknown as RunCtx;
-
-    await expect(
-      closeAccount(asStripe(stripe), makeComponent(), ctx, {
-        stripeAccountId: "acct_err",
-      }),
-    ).rejects.toThrow(/close boom/);
-
-    expect(runMutation).not.toHaveBeenCalled();
-  });
-
-  it("restartAccountOnboarding delegates to closeAccount", async () => {
-    const stripe = makeStripe();
-    stripe.v2.core.accounts.close.mockResolvedValue({});
-    const ctx = {
-      runQuery: vi.fn().mockResolvedValue({ appliedConfigurations: [] }),
-      runMutation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as RunCtx;
-
-    const result = await restartAccountOnboarding(
-      asStripe(stripe),
-      makeComponent(),
-      ctx,
-      { stripeAccountId: "acct_restart" },
-    );
-
-    expect(result).toEqual({ closed: true });
-    expect(stripe.v2.core.accounts.close).toHaveBeenCalledWith("acct_restart", {
-      applied_configurations: [],
-    });
   });
 });
 

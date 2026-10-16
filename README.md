@@ -329,6 +329,35 @@ Methods named `get<Entity>` take the component document ID (exception: `getInvoi
 
 ### Account
 
+`closeAccount` and its `restartAccountOnboarding` alias retain a durable closure
+record before contacting Stripe. Successful closure removes the active account
+mapping but preserves the original user/organization ownership, close timestamp
+and financial rows. A pending attempt pins its owner through retry; delayed
+account upserts cannot revive a closed recipient. Retrying after provider success
+and local persistence failure retrieves provider state and completes locally
+without closing an already closed account again. A required provider lookup that
+fails now stops closure rather than submitting an empty configuration guess.
+
+`getClosedAccountByStripeId(ctx, { stripeAccountId })` retrieves closed provenance;
+`listClosedAccountsByUserId(ctx, { userId, paginationOpts })` discovers personal
+closed accounts using indexed pages of 1–100 records. Organization accounts are
+excluded from personal discovery. These are trusted host APIs: authenticate the
+actor and check both original user and organization scope before passing the
+historical Stripe account ID to existing payout, transfer or commission readers.
+A supplied userId or a replacement account never proves historical ownership.
+An untracked legacy closure has no invented owner and is not discoverable as a
+personal account. Records deleted before this contract cannot be reconstructed.
+
+Closure provenance does not evaluate outstanding funds, reservations, recovery
+liabilities or permission to create a replacement. Applications must enforce
+those policies before exposing `AccountCloseCard`; its render props provide
+presentation and confirmation, not financial authorization. Do not use closure
+as an automatic delete-and-recreate onboarding reset. Existing active-account
+getters keep their signatures and exclude completed closures; historical readers
+retain original financial references. The Vite reference's
+[closed-account authorization example](example/README.md#closed-account-history)
+shows where the host's authenticated-actor check belongs.
+
 | Method                                                                            | Description                                                                  |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `createAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })`      | Create a V2 account in Stripe and the component database                     |

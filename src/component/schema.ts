@@ -1,3 +1,4 @@
+import { accountClosuresTable } from "./accountClosure/schema.js";
 import { jobsTable as payoutWorkerJobsTable } from "./payoutWorker/schema.js";
 import {
   financialRevisionsTable,
@@ -90,6 +91,7 @@ export default defineSchema({
   commissionDecisions: commissionDecisionsTable,
   // Core
   accounts: accountsTable,
+  accountClosures: accountClosuresTable,
 
   // Products
   products: productsTable,

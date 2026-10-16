@@ -61,4 +61,7 @@ export type {
   FinancialTransferResult,
   FinancialTransferPage,
   FinancialTransferBatchPage,
+  FinancialTransferReference,
+  FinancialTransferBatchResult,
+  FinancialTransferReferencePage,
 } from "./transferObservations.js";

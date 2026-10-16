@@ -49,6 +49,19 @@ export async function deferTransferFacts(
       observedFingerprint: fingerprint,
       generation,
       isContradictory: isContradictory || generation === 0,
+      ...(isContradictory || generation === 0
+        ? {
+            state: "pending" as const,
+            ...(prior.continuation
+              ? {
+                  continuation: {
+                    ...prior.continuation,
+                    state: "held" as const,
+                  },
+                }
+              : {}),
+          }
+        : {}),
     });
   }
   if (existing.length === 0)

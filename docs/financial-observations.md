@@ -87,9 +87,8 @@ reference, source charge, producer/version, fingerprint/generation and every
 compact original transfer document reference. The two producer kinds are
 `transfer_frontier_claim` and `transfer_frontier_release`. A release can delete its
 original operation while its reference and deferred transfer references survive.
-These records contain provenance, not another monetary ledger. This contract
-retains references only; resumable traversal is a separate prerequisite and is
-not implemented by these readers.
+These records contain provenance, not another monetary ledger. Trusted hosts
+explicitly drain them through the bounded continuation API below.
 
 Every transfer reader includes `producerGeneration` and `hasDeferredWork`.
 Pending batches invalidate any inference that an older owner or destination page
@@ -112,3 +111,49 @@ generation changes. They do not certify arbitrary privileged database edits,
 selective deletion of historical observations or forged diagnostic markers.
 No provider operation, financial-attempt admission or positive closure clearance
 is part of this contract.
+
+## Resume every retained transfer reference
+
+Use `stripe.financialObservations.transferBatch(ctx, { batchId })` to read an
+exact marker, then call `resumeTransferBatch(ctx, { batchId, expectedGeneration })`
+with its returned generation. One transaction indexes at most 50 original
+transfer document references or validates at most 50 committed reference receipts.
+Repeat until the marker reports historical completion or a held cursor. Callers
+never supply cursor state or a complete flag. A stale acknowledgement returns the
+current marker without advancing twice. There is no fixed lifetime reference cap.
+The original financial operation and every retained reference stay intact.
+
+`transferReferences(ctx, { batchId, paginationOpts })` exposes compact provenance
+receipts through exact indexed pagination, up to 100 rows per page. Preserve native
+cursor, split and page-status metadata. Receipts hold original transfer and
+observation references, position, generation and fingerprints. They contain no
+duplicated amounts. A successful final pass checks every retained slot and its
+actual source/observation before the marker leaves pending state. Missing or
+duplicate sources, ambiguous provenance, contradictory identities, cursor drift
+and supersession hold the marker with UNKNOWN coverage rather than recreate or
+repin history. Both claim and release markers use this same protocol, including
+releases whose original operation document was deleted.
+
+Each active cursor binds immutable marker source/version/fingerprint and the
+global transfer-producer generation. Its own indexing writes and checkpoint
+commit atomically. A financial write between commits holds the cursor without
+resetting or silently accepting a previously validated prefix. This conservative
+global fence can also hold traversal after an unrelated transfer changes; it is
+not an availability guarantee under continuous writes. Held references remain
+pending, with no automatic restart or closure permission.
+
+Existing registered owner pins and explicitly unregistered ownership snapshots
+survive traversal. A late first registration does not repin an already unknown
+observation. A legacy transfer's first observation may bind its current trusted
+registration, but that is not proof of who historically owned the original sale.
+Completed traversals remain historical after later financial or ownership facts.
+They never certify fresh ownership, current liabilities, complete financial
+coverage or safe account closure. Aggregate coverage always remains UNKNOWN.
+
+The final pass relies on supported package-owned append/patch writers and atomic
+generation invalidation. It does not certify arbitrary privileged marker forgery
+or deletion of an already validated prefix. The native capacity proof drains every
+reference from an actual old-public 1,001-transfer claim/release and a current
+1,000-transfer mixed-owner claim across separate committed calls, while retaining
+all financial rows and amounts. No provider operation or financial-attempt
+admission is part of this continuation API.

@@ -8,7 +8,11 @@ import {
   transferProducerScope,
 } from "./transferHelpers.js";
 /** Record references only; never reject or rewrite a financial source to repair diagnostics. */
-export async function observeTransfer(ctx: MutationCtx, row: Doc<"transfers">) {
+export async function observeTransfer(
+  ctx: MutationCtx,
+  row: Doc<"transfers">,
+  options: { preserveUnregisteredOwnership?: boolean } = {},
+) {
   const markers = await ctx.db
     .query("financialTransferObservations")
     .withIndex("by_transfer_id", (q) => q.eq("transferId", row._id))
@@ -22,11 +26,19 @@ export async function observeTransfer(ctx: MutationCtx, row: Doc<"transfers">) {
   const { totalsRecorded, ...financial } = row;
   void totalsRecorded;
   const observedFingerprint = await transferFingerprint(financial);
-  const ownership = await legOwnership(
-    ctx,
-    prior?.bucketKey ?? row.destinationAccountId,
-    prior,
-  );
+  const ownership =
+    options.preserveUnregisteredOwnership && prior && !prior.registrationId
+      ? {
+          registrationId: prior.registrationId,
+          userId: prior.userId,
+          orgId: prior.orgId,
+          ownershipStatus: prior.ownershipStatus,
+        }
+      : await legOwnership(
+          ctx,
+          prior?.bucketKey ?? row.destinationAccountId,
+          prior,
+        );
   const ownershipFingerprint = await transferFingerprint(ownership);
   const sourceRows = await ctx.db
     .query("transfers")

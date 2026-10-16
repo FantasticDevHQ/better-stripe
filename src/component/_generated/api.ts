@@ -52,7 +52,11 @@ import type * as financialObservations_queries from "../financialObservations/qu
 import type * as financialObservations_settlement from "../financialObservations/settlement.js";
 import type * as financialObservations_settlementHelpers from "../financialObservations/settlementHelpers.js";
 import type * as financialObservations_transferBatches from "../financialObservations/transferBatches.js";
+import type * as financialObservations_transferContinuation from "../financialObservations/transferContinuation.js";
+import type * as financialObservations_transferContinuationState from "../financialObservations/transferContinuationState.js";
+import type * as financialObservations_transferContinuationSteps from "../financialObservations/transferContinuationSteps.js";
 import type * as financialObservations_transferHelpers from "../financialObservations/transferHelpers.js";
+import type * as financialObservations_transferReferenceSchema from "../financialObservations/transferReferenceSchema.js";
 import type * as financialObservations_transferSchema from "../financialObservations/transferSchema.js";
 import type * as financialObservations_transfers from "../financialObservations/transfers.js";
 import type * as financialOwnership_helpers from "../financialOwnership/helpers.js";
@@ -164,7 +168,11 @@ const fullApi: ApiFromModules<{
   "financialObservations/settlement": typeof financialObservations_settlement;
   "financialObservations/settlementHelpers": typeof financialObservations_settlementHelpers;
   "financialObservations/transferBatches": typeof financialObservations_transferBatches;
+  "financialObservations/transferContinuation": typeof financialObservations_transferContinuation;
+  "financialObservations/transferContinuationState": typeof financialObservations_transferContinuationState;
+  "financialObservations/transferContinuationSteps": typeof financialObservations_transferContinuationSteps;
   "financialObservations/transferHelpers": typeof financialObservations_transferHelpers;
+  "financialObservations/transferReferenceSchema": typeof financialObservations_transferReferenceSchema;
   "financialObservations/transferSchema": typeof financialObservations_transferSchema;
   "financialObservations/transfers": typeof financialObservations_transfers;
   "financialOwnership/helpers": typeof financialOwnership_helpers;

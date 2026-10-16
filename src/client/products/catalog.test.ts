@@ -282,6 +282,49 @@ describe("lookup-key catalog", () => {
     expect(await client.listPrices(ctx)).toHaveLength(1);
     expect(await client.listProducts(ctx)).toHaveLength(1);
   });
+  it("atomically rejects concurrent adoption into different owning accounts", async () => {
+    let reads = 0;
+    let release!: () => void;
+    const bothRead = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const synchronized = {
+      ...ctx,
+      runQuery: async (
+        ref: FunctionReference<"query">,
+        args: Record<string, unknown>,
+      ) => {
+        const result = await ctx.runQuery(ref, args);
+        if (++reads <= 2) {
+          if (reads === 2) release();
+          await bothRead;
+        }
+        return result;
+      },
+    } as RunCtx;
+    const outcomes = await Promise.allSettled([
+      client.adoptProduct(synchronized, {
+        stripeProductId: options.stripeProductId,
+        accountId: "acct_a",
+      }),
+      client.adoptProduct(synchronized, {
+        stripeProductId: options.stripeProductId,
+        accountId: "acct_b",
+      }),
+    ]);
+    expect(
+      outcomes.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    const rejected = outcomes.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" && String(rejected.reason)).toMatch(
+      /ownership/,
+    );
+    const stored = await client.getProductByStripeId(ctx, {
+      stripeProductId: options.stripeProductId,
+    });
+    const winner = outcomes[0].status === "fulfilled" ? "acct_a" : "acct_b";
+    expect(stored?.accountId).toBe(winner);
+  });
   it("adopts products without changing existing ownership", async () => {
     await client.upsertProduct(ctx, {
       stripeProductId: options.stripeProductId,
@@ -303,6 +346,39 @@ describe("lookup-key catalog", () => {
         accountId: "acct_other",
       }),
     ).rejects.toThrow(/ownership/);
+  });
+  it("rejects a different explicit owner when the stored owner is an empty string", async () => {
+    await client.upsertProduct(ctx, {
+      stripeProductId: options.stripeProductId,
+      accountId: "",
+      name: "Existing",
+      active: true,
+    });
+    const mutation = vi.fn().mockResolvedValue(null);
+    await expect(
+      client.adoptProduct({ ...ctx, runMutation: mutation } as RunCtx, {
+        stripeProductId: options.stripeProductId,
+        accountId: "acct_other",
+      }),
+    ).rejects.toThrow(/ownership/);
+    expect(mutation).not.toHaveBeenCalled();
+  });
+  it("retains deliberate legacy upsert ownership changes", async () => {
+    await client.adoptProduct(ctx, {
+      stripeProductId: options.stripeProductId,
+      accountId: "acct_a",
+    });
+    await client.upsertProduct(ctx, {
+      stripeProductId: options.stripeProductId,
+      accountId: "acct_b",
+      name: "Deliberately reassigned",
+      active: true,
+    });
+    expect(
+      await client.getProductByStripeId(ctx, {
+        stripeProductId: options.stripeProductId,
+      }),
+    ).toMatchObject({ accountId: "acct_b", name: "Deliberately reassigned" });
   });
   it("rejects deleted products", async () => {
     retrieve.mockResolvedValue({ id: options.stripeProductId, deleted: true });

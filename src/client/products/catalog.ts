@@ -57,7 +57,7 @@ export async function adoptProduct(
     { stripeProductId: opts.stripeProductId },
   );
   if (
-    stored?.accountId &&
+    stored?.accountId !== undefined &&
     opts.accountId !== undefined &&
     stored.accountId !== opts.accountId
   )
@@ -67,7 +67,7 @@ export async function adoptProduct(
     );
   await runMutationOrThrow(
     ctx,
-    componentRef(component, "products/mutations/upsertProduct"),
+    componentRef(component, "products/mutations/adoptProduct"),
     {
       stripeProductId: product.id,
       accountId: stored?.accountId ?? opts.accountId,

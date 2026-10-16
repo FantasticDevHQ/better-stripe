@@ -1,6 +1,6 @@
 # Automatic recipient payout worker verification
 
-Dojo source head `a77c447a3ce6fbf06b380adfeadf2e81fc01238b`, including the latest main checkout-flow delivery. Ticket DOJO-2293.
+Current Dojo source head `e0cdc2df0bb1cc6088303e258777ae621101b64a`, including the latest main checkout-flow delivery. Ticket DOJO-2293.
 
 The initial implementation passed all 12 repository gates in 327.5 seconds on pinned Node 24.19.0. Backend 4,695 passed, one existing skip; frontend 7,742 passed, four existing skips; UI 32 passed. All 27 focused worker regressions passed. Final combined-branch verification passes all 12 gates in 320.4 seconds: backend 4,737 passed, one existing skip; frontend 7,742 passed, four existing skips; UI 32 passed. The final log includes all five worker suites and 27 passing regressions. Expected synthetic lost-response and missing-owner jobs fail independently during the tests, while recovery and other recipient payouts complete. All seven registered worker functions are internal and have explicit argument and return validators. Exact-head CI is running before merge: https://github.com/kellykampen/dojo/actions/runs/38855757082 .
 
@@ -11,3 +11,8 @@ Covered behavior: combined creator and affiliate 999/1,000/1,100 threshold bound
 The canonical cost scope is `dojo:recipient:<ownerKey>` per account and settlement currency. Source completeness, historical migration, consent, live financial settlement, bank delivery and production deployment are not established by synthetic tests. DOJO-2214 and parent DOJO-2249/2250 retain the outstanding financial adoption and activation requirements. The old mixed anonymous database was not used.
 
 The red logs show the missing owner/quote functions, worker entry points and cron before implementation. Native code generation passes against the explicitly configured Dojo cloud development target. No gate policy, budget or floor was weakened.
+
+
+After PR #737 merged, its commission-policy documentation and this worker documentation overlapped. Both sections are preserved in the current head. All 12 current-head local gates pass in 283.3s: backend 4,766 passed, one existing skip; frontend 7,751 passed, four existing skips; UI 32 passed. `reviewed-runtime-proof.json` verifies every worker source/test, fixture and cron is byte-identical to reviewed head a77c447a3. CodeRabbit's actual included review reports no actionable findings and 100% docstring coverage. Its current status is green. Greptile is unavailable because its trial expired.
+
+Current-head CI is running before merge: https://github.com/kellykampen/dojo/actions/runs/38857591639 . The preceding a77 head CI passed, but that earlier run is not substituted for the current-head check. No shared anonymous database was used.

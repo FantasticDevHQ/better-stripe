@@ -1,0 +1,26 @@
+✓ lint                (21.1s)
+✓ format              (34.2s)
+✓ check:design-system (9.7s)
+✓ typecheck           (36.3s)
+✓ check:size          (1.0s)
+✓ check:debt          (0.5s)
+✓ check:circular      (0.7s)
+✓ check:secrets       (0.6s)
+✓ agent-doc validation passed (AGENTS.md, packages/backend/AGENTS.md)
+✓ check:agents        (0.3s)
+✓ check:shadscan      (28.2s)
+@dojo/ui:test:  Test Files  2 passed (2)
+@dojo/ui:test:       Tests  32 passed (32)
+@dojo/backend:test:  ✓ convex/billing/payout-worker-execution.test.ts (5 tests) 2109ms
+@dojo/web:test:  Test Files  557 passed (557)
+@dojo/web:test:       Tests  7751 passed | 4 skipped (7755)
+@dojo/backend:test:  ✓ convex/billing/payout-worker-lifecycle.test.ts (4 tests) 442ms
+@dojo/backend:test:  ✓ convex/billing/payout-worker-scans.test.ts (2 tests) 416ms
+@dojo/backend:test:  ✓ convex/billing/payout-workers.test.ts (7 tests) 365ms
+@dojo/backend:test:  ✓ convex/billing/payout-worker-scope.test.ts (9 tests) 338ms
+@dojo/backend:test:  Test Files  489 passed | 1 skipped (490)
+@dojo/backend:test:       Tests  4766 passed | 1 skipped (4767)
+✓ test                (150.3s)
+✓ CI parity: 1 gate invocation(s) across CI workflows, all reachable from "check:all" (14 scripts in graph).
+✓ check:ci-parity     (0.3s)
+12/12 gates passed (283.3s)

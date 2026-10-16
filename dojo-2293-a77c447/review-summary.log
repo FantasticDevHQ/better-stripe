@@ -1,0 +1,4 @@
+No actionable comments were generated in the recent review. 🎉
+<!-- final_review_risk_coverage:{"sourceCommitId":"a77c447a3ce6fbf06b380adfeadf2e81fc01238b","coveredCommitId":"a77c447a3ce6fbf06b380adfeadf2e81fc01238b","kind":"reviewed"} -->
+This change adds scheduled recipient payout maintenance scans and workers. No actionable merge-blocking risk remains after review. The provider-managed default stays in place.
+|     Docstring Coverage     | ![Passed](https://storage.googleapis.com/coderabbit_public_assets/pre-merge-checks-passed.svg) | Docstring coverage is 100.00% which is sufficient. The required threshold is 80.00%. Docstring coverage is scoped to functions touched by this diff. Analyzed 6 functions across 10 files. (1 skipped: 1… |

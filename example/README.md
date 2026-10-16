@@ -1368,3 +1368,18 @@ fund multiple invoices. The host must deny ambiguous sale/merchant scope,
 correlate existing component payment records and revalidate the remaining
 refundable balance at creation. No new refund ledger, provider write or
 entitlement cancellation is activated by this reference.
+
+### Refund context reference
+
+`convex/connect/refundContext.ts` is a server-only platform-charge binding to
+public `getRefundContext`. It derives a personal seller account, verifies the
+original destination or store leg, and supplies the required seller actor rather
+than trusting browser authority fields. Production callers must authenticate the
+session and authorize tenant/community scope; demo persona selection is not
+authentication. The helper registers no endpoint or new UI. Reuse the public
+React refund workflow with host styling for review after qualification.
+
+See [refund context](../docs/refund-context.md) for partial-capture minor units,
+bounded history, pending/unknown states and creation-time revalidation. A provider
+observation neither reserves the remaining amount nor authorizes access removal,
+subscription cancellation or a change to the original reversal recipients.

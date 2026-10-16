@@ -362,5 +362,77 @@ describe("createRefund — actor scoping (BTS-35)", () => {
       stripePaymentIntentId: "pi_1",
     });
     expect(stripe.refunds.create).toHaveBeenCalledTimes(1);
+    expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
+    expect(stripe.charges.retrieve).toHaveBeenCalledTimes(2);
+    expect(stripe.refunds.create).toHaveBeenCalledWith(
+      { charge: "ch_1", reverse_transfer: true },
+      undefined,
+    );
   });
+});
+
+it("keeps explicit charge-first lookup and original request/idempotency flags", async () => {
+  const stripe = makeStripe({ transfer: "tr_one", application_fee: "fee_one" });
+  await createRefund(asStripe(stripe), makeComponent(), noCtx, {
+    stripeChargeId: "ch_1",
+    stripeAccountId: "acct_request_scope",
+    idempotencyKey: "refund_same_intent",
+    amount: 123,
+  });
+  expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
+  expect(stripe.charges.retrieve).toHaveBeenCalledTimes(1);
+  expect(stripe.refunds.create).toHaveBeenCalledWith(
+    {
+      charge: "ch_1",
+      amount: 123,
+      refund_application_fee: true,
+      reverse_transfer: true,
+    },
+    {
+      stripeAccount: "acct_request_scope",
+      idempotencyKey: "refund_same_intent",
+    },
+  );
+});
+
+it("rejects both target selectors before authorization, lookup or money movement", async () => {
+  const stripe = makeStripe({});
+  const ctx = makeCtx();
+  await expect(
+    createRefund(asStripe(stripe), makeComponent(), ctx, {
+      stripePaymentIntentId: "pi_1",
+      stripeChargeId: "ch_1",
+      actor: { type: "seller", accountId: "acct_store" },
+    }),
+  ).rejects.toMatchObject({ data: { code: "REFUND_CREATE_FAILED" } });
+  expect(ctx.runQuery).not.toHaveBeenCalled();
+  expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
+  expect(stripe.charges.retrieve).not.toHaveBeenCalled();
+  expect(stripe.refunds.create).not.toHaveBeenCalled();
+});
+
+it("preserves structured createRefund error wrapping on charge-only lookup failure", async () => {
+  const stripe = makeStripe({});
+  const failure = Object.assign(new Error("Fixture provider failure"), {
+    type: "StripeAPIError",
+    code: "api_error",
+  });
+  stripe.charges.retrieve.mockRejectedValue(failure);
+  await expect(
+    createRefund(asStripe(stripe), makeComponent(), noCtx, {
+      stripeChargeId: "ch_1",
+    }),
+  ).rejects.toMatchObject({
+    data: {
+      code: "REFUND_CREATE_FAILED",
+      message: "Failed to create refund",
+      stripeError: {
+        type: "StripeAPIError",
+        code: "api_error",
+        message: "Fixture provider failure",
+      },
+    },
+  });
+  expect(stripe.paymentIntents.retrieve).not.toHaveBeenCalled();
+  expect(stripe.refunds.create).not.toHaveBeenCalled();
 });

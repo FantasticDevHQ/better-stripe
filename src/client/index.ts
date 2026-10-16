@@ -125,6 +125,11 @@ export {
   disputeEvidenceCountdown,
 } from "./connect/disputes.js";
 export type { RefundActor } from "./connect/refunds.js";
+export type {
+  RefundContextOptions,
+  RefundContext,
+  RefundContextUnavailableReason,
+} from "./connect/refundContextTypes.js";
 import type { RefundActor } from "./connect/refunds.js";
 export type { AccountBalance } from "./connect/payouts.js";
 export type { WedgedReversalClaim } from "./connect/transfers.js";

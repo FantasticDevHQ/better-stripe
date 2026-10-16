@@ -35,7 +35,17 @@ for (const role of ["seller", "affiliate"] as const)
     expect(raw.accountSessions.create).toHaveBeenCalledWith(
       expect.objectContaining({
         account: `acct_${role}`,
-        components: { payouts: expect.objectContaining({ enabled: true }) },
+        components: {
+          payouts: {
+            enabled: true,
+            features: {
+              standard_payouts: false,
+              instant_payouts: false,
+              external_account_collection: false,
+              edit_payout_schedule: false,
+            },
+          },
+        },
       }),
     );
   });

@@ -1336,3 +1336,5 @@ callbacks should use the provided mutation context for transactional host writes
 Raw event hooks retain their original event payload and need separate notification
 deduplication. This source behavior requires a verified published package and
 explicit consumer adoption before it can support another application's acceptance.
+
+The embedded payouts panel is read-only for payout creation and schedule changes. Stripe-managed schedules or the BetterStripe custom-minimum worker own bank payout creation, so embedded controls cannot bypass a configured minimum.

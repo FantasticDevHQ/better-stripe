@@ -19,6 +19,15 @@ fields as unavailable rather than zero. No table migration is required.
 
 ## Package and runtime
 
+Nested durable execution requires Convex 1.46.0 or newer. The package peer
+minimum changes from `^1.29.3` to `^1.46.0`; upgrade older consumers before
+installing this change. Existing public methods remain available. Workflow
+0.4.10 and Workpool 0.4.14 are pinned, and Workflow installs its own nested
+Workpool/Batch Worker. Regenerate bindings and deploy the component through your
+normal upgrade process. Existing financial jobs are not migrated automatically.
+See [runtime compatibility and execution boundaries](docs/architecture/durable-execution.md)
+for the version comparison, host credential actions, replay and cancellation.
+
 Payout worker discovery, expiry, local snapshot collection, pending affiliate
 payouts and seller cost history now use component-compatible pagination. The
 page result shape is unchanged. Clear cached pagination cursors and reload from

@@ -110,6 +110,8 @@
     "check:agents": "repo-gates check-agents"
   },
   "dependencies": {
+    "@convex-dev/workflow": "0.4.10",
+    "@convex-dev/workpool": "0.4.14",
     "@stripe/connect-js": "^3.4.6",
     "@stripe/react-connect-js": "^3.4.4",
     "@stripe/react-stripe-js": "^7.0.0",
@@ -145,7 +147,7 @@
     "vitest": "^5.0.3"
   },
   "peerDependencies": {
-    "convex": "^1.29.3",
+    "convex": "^1.46.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0"
   },

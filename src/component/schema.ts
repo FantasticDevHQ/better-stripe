@@ -1,4 +1,9 @@
 import {
+  preparationsTable as balanceFundingPreparations,
+  operationsTable as balanceFundingOperations,
+  requestsTable as balanceFundingRequests,
+} from "./balanceFunding/schema.js";
+import {
   payloadsTable as operationEvidencePayloads,
   headersTable as operationEvidenceHeaders,
 } from "./operationEvidence/schema.js";
@@ -78,6 +83,9 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  balanceFundingPreparations,
+  balanceFundingOperations,
+  balanceFundingRequests,
   operationEvidencePayloads,
   operationEvidenceHeaders,
   financialTransferObservations: transferObservationsTable,

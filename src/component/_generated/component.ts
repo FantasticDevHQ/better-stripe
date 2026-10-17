@@ -608,6 +608,593 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    balanceFunding: {
+      mutations: {
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            consent?: true;
+            enabled: boolean;
+            preparationId: string;
+            requestKey: string;
+            scopeKey: string;
+          },
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "accepted";
+            }
+          | { enabled: boolean; status: "unchanged" }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | { reason: "policy_invalid"; retryable: false; status: "rejected" }
+          | {
+              reason: "provider_pending";
+              retryable: true;
+              status: "not_ready";
+            },
+          Name
+        >;
+        failBeforeStart: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            failureCode:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        finish: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            enabled: boolean;
+            operationId: string;
+            receipt: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        finishPreparation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            preparation: {
+              customerAccount: string;
+              paymentMethodId: string;
+              previousPaymentMethodId: string | null;
+              previousPaymentMethodTypes: Array<string> | null;
+              stripeSubscriptionId: string;
+            };
+            providerApiVersion: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        importPreparation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            consentAt: number;
+            consentReference: string;
+            enabled: boolean;
+            operationVersion: number;
+            pending?: {
+              enabled: boolean;
+              kind?: "prepare" | "apply";
+              providerKey: string;
+              requestKey: string;
+            };
+            preparation: {
+              customerAccount: string;
+              paymentMethodId?: string;
+              previousPaymentMethodId: string | null;
+              previousPaymentMethodTypes: Array<string> | null;
+              stripeSubscriptionId: string;
+            };
+            providerApiVersion: string;
+            scopeKey: string;
+            sourceKey: string;
+          },
+          {
+            operation?: {
+              accountId: string;
+              operationId: string;
+              scopeKey: string;
+              version: number;
+            };
+            preparationId: string;
+          },
+          Name
+        >;
+        markUnknown: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            consent: true;
+            consentAt: number;
+            consentReference: string;
+            preparation: {
+              customerAccount: string;
+              previousPaymentMethodId: string | null;
+              previousPaymentMethodTypes: Array<string> | null;
+              stripeSubscriptionId: string;
+            };
+            providerApiVersion: string;
+            requestKey: string;
+            scopeKey: string;
+          },
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "accepted";
+            }
+          | { enabled: boolean; status: "unchanged" }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | { reason: "policy_invalid"; retryable: false; status: "rejected" }
+          | {
+              reason: "provider_pending";
+              retryable: true;
+              status: "not_ready";
+            },
+          Name
+        >;
+        requestCancel: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        savePreparation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            consentAt: number;
+            consentReference: string;
+            preparation: {
+              customerAccount: string;
+              paymentMethodId: string;
+              previousPaymentMethodId: string | null;
+              previousPaymentMethodTypes: Array<string> | null;
+              stripeSubscriptionId: string;
+            };
+            providerApiVersion: string;
+            scopeKey: string;
+          },
+          { preparationId: string },
+          Name
+        >;
+        setStartsPaused: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            paused: boolean;
+            preparationId: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+          },
+          null,
+          Name
+        >;
+        start: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+      };
+      queries: {
+        getOperation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          {
+            accountId: string;
+            cancelRequested: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            operationId: string;
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          } | null,
+          Name
+        >;
+        getPreparation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              preparationId: string;
+              status: "prepared";
+              stripeSubscriptionId: string;
+            }
+          | {
+              failureCode?:
+                "invalid_scope" | "unsupported_source" | "policy_invalid";
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "pending" | "running" | "unknown" | "canceled" | "failed";
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | { reason: "invalid_scope"; retryable: false; status: "rejected" }
+          | null,
+          Name
+        >;
+        inspectOperation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            operationId: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            cancelRequested: boolean;
+            enabled: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            kind: "prepare" | "apply";
+            preparationId: string;
+            providerKey: string;
+            providerKeys: {
+              attach?: string;
+              create?: string;
+              disable: string;
+              enable: string;
+            };
+            receipt?: {
+              customerAccount: string;
+              paymentMethodId: string | null;
+              paymentMethodTypes: Array<string> | null;
+              providerApiVersion: string;
+              stripeSubscriptionId: string;
+            };
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          } | null,
+          Name
+        >;
+        readPreparation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            preparationId: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            activeOperationId?: string;
+            consentAt: number;
+            consentReference: string;
+            enabled: boolean;
+            operationVersion: number;
+            preparation: {
+              customerAccount: string;
+              paymentMethodId?: string;
+              previousPaymentMethodId: string | null;
+              previousPaymentMethodTypes: Array<string> | null;
+              stripeSubscriptionId: string;
+            };
+            preparationOperationId?: string;
+            providerApiVersion: string;
+            scopeKey: string;
+            startsPaused: boolean;
+            verified: boolean;
+          } | null,
+          Name
+        >;
+      };
+    };
     billing: {
       mutations: {
         upsertCheckoutSession: FunctionReference<

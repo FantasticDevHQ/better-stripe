@@ -28,41 +28,36 @@
 
 ## [0.38.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.37.1...v0.38.0) (2026-10-17)
 
-
 ### Features
 
-* **accounts:** add merchant configuration and transfer readiness (BTS-215) ([e9994a9](https://github.com/FantasticDevHQ/better-stripe/commit/e9994a9e49295ebd963cf30ecd3fb6d62d38a409))
-* add typed financial readiness and bounded retry policy ([9dae843](https://github.com/FantasticDevHQ/better-stripe/commit/9dae843d17d1a83fed9f496bb28f10e902b69170))
-* **billing:** add typed portal configuration APIs (BTS-214) ([f43f5f6](https://github.com/FantasticDevHQ/better-stripe/commit/f43f5f670a894d48f9bc29ba18f82c0b4ad5e369))
-* **billing:** add typed portal configuration APIs (BTS-214) ([8ff5510](https://github.com/FantasticDevHQ/better-stripe/commit/8ff5510ba6e9135bf7a4d48610a3cc85dbe8aff4))
-* **catalog:** ensure lookup-key prices and adopt products (BTS-213) ([e3f75fc](https://github.com/FantasticDevHQ/better-stripe/commit/e3f75fce959256dafa3475f67e9a2b65c4faeb71))
-* **catalog:** ensure lookup-key prices and adopt products (BTS-213) ([9dcc092](https://github.com/FantasticDevHQ/better-stripe/commit/9dcc0927543f87bb932e24e38811b413a07c97e4))
-* standardize financial readiness and bounded retries (BTS-207) ([06ae478](https://github.com/FantasticDevHQ/better-stripe/commit/06ae478ff2ee5c9e89f79d109ae1e92a3f8510b7))
-
+- **accounts:** add merchant configuration and transfer readiness ([e9994a9](https://github.com/FantasticDevHQ/better-stripe/commit/e9994a9e49295ebd963cf30ecd3fb6d62d38a409))
+- add typed financial readiness and bounded retry policy ([9dae843](https://github.com/FantasticDevHQ/better-stripe/commit/9dae843d17d1a83fed9f496bb28f10e902b69170))
+- **billing:** add typed portal configuration APIs ([f43f5f6](https://github.com/FantasticDevHQ/better-stripe/commit/f43f5f670a894d48f9bc29ba18f82c0b4ad5e369))
+- **billing:** add typed portal configuration APIs ([8ff5510](https://github.com/FantasticDevHQ/better-stripe/commit/8ff5510ba6e9135bf7a4d48610a3cc85dbe8aff4))
+- **catalog:** ensure lookup-key prices and adopt products ([e3f75fc](https://github.com/FantasticDevHQ/better-stripe/commit/e3f75fce959256dafa3475f67e9a2b65c4faeb71))
+- **catalog:** ensure lookup-key prices and adopt products ([9dcc092](https://github.com/FantasticDevHQ/better-stripe/commit/9dcc0927543f87bb932e24e38811b413a07c97e4))
+- standardize financial readiness and bounded retries ([06ae478](https://github.com/FantasticDevHQ/better-stripe/commit/06ae478ff2ee5c9e89f79d109ae1e92a3f8510b7))
 
 ### Bug Fixes
 
-* **catalog:** enforce adoption ownership atomically ([afd9909](https://github.com/FantasticDevHQ/better-stripe/commit/afd9909f93973af329abe46858f646d03d1d24d2))
-
+- **catalog:** enforce adoption ownership atomically ([afd9909](https://github.com/FantasticDevHQ/better-stripe/commit/afd9909f93973af329abe46858f646d03d1d24d2))
 
 ### Documentation
 
-* complete durable preparation handoff contracts (BTS-239) ([066dda2](https://github.com/FantasticDevHQ/better-stripe/commit/066dda2626f6f713af95bb5cb34bc09ddca2e8b9))
-* define component extraction and durable execution contracts ([c27a215](https://github.com/FantasticDevHQ/better-stripe/commit/c27a21577e9f52ab62f3c45f14f484e584e9d0db))
-* define scoped preparation results and migration pauses ([1d0a07f](https://github.com/FantasticDevHQ/better-stripe/commit/1d0a07f8b634182dc04ade4c36cca7311e2c3773))
-* refresh extraction contract review baseline ([070ba5f](https://github.com/FantasticDevHQ/better-stripe/commit/070ba5f6ec833ee780414d2fae0ca6498699121e))
-
+- complete durable preparation handoff contracts ([066dda2](https://github.com/FantasticDevHQ/better-stripe/commit/066dda2626f6f713af95bb5cb34bc09ddca2e8b9))
+- define component extraction and durable execution contracts ([c27a215](https://github.com/FantasticDevHQ/better-stripe/commit/c27a21577e9f52ab62f3c45f14f484e584e9d0db))
+- define scoped preparation results and migration pauses ([1d0a07f](https://github.com/FantasticDevHQ/better-stripe/commit/1d0a07f8b634182dc04ade4c36cca7311e2c3773))
+- refresh extraction contract review baseline ([070ba5f](https://github.com/FantasticDevHQ/better-stripe/commit/070ba5f6ec833ee780414d2fae0ca6498699121e))
 
 ### Maintenance
 
-* ratchet portal coverage after earnings integration ([a179036](https://github.com/FantasticDevHQ/better-stripe/commit/a17903630339e00041c0e86c5da3e223a6a0b084))
-* ratchet portal coverage after merged contracts integration ([5faff9a](https://github.com/FantasticDevHQ/better-stripe/commit/5faff9aa5206bbcadf8086a966162631c5b7ac42))
-* ratchet portal coverage after seller attribution integration ([fdcb303](https://github.com/FantasticDevHQ/better-stripe/commit/fdcb3033df39b43d2d33bb8e41ef7397ad36509d))
-
+- ratchet portal coverage after earnings integration ([a179036](https://github.com/FantasticDevHQ/better-stripe/commit/a17903630339e00041c0e86c5da3e223a6a0b084))
+- ratchet portal coverage after merged contracts integration ([5faff9a](https://github.com/FantasticDevHQ/better-stripe/commit/5faff9aa5206bbcadf8086a966162631c5b7ac42))
+- ratchet portal coverage after seller attribution integration ([fdcb303](https://github.com/FantasticDevHQ/better-stripe/commit/fdcb3033df39b43d2d33bb8e41ef7397ad36509d))
 
 ### Refactoring
 
-* reuse package currency and embedded session APIs ([#247](https://github.com/FantasticDevHQ/better-stripe/issues/247)) ([c4ab43c](https://github.com/FantasticDevHQ/better-stripe/commit/c4ab43cc9bccf631fd5a576131ddc65f489fead5))
+- reuse package currency and embedded session APIs ([#247](https://github.com/FantasticDevHQ/better-stripe/issues/247)) ([c4ab43c](https://github.com/FantasticDevHQ/better-stripe/commit/c4ab43cc9bccf631fd5a576131ddc65f489fead5))
 
 ## [0.37.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.37.0...v0.37.1) (2026-10-17)
 

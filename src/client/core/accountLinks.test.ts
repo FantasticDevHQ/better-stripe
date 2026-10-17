@@ -169,10 +169,11 @@ describe("createV2AccountLink", () => {
 });
 
 describe("createAccountSession", () => {
-  it("returns the client secret on success", async () => {
+  it("returns the provider client secret and expiry on success", async () => {
     const stripe = makeStripe();
     stripe.accountSessions.create.mockResolvedValue({
       client_secret: "secret_123",
+      expires_at: 1234567890,
     });
 
     const result = await createAccountSession(asStripe(stripe), ctx, {
@@ -180,7 +181,10 @@ describe("createAccountSession", () => {
       components: { account_onboarding: { enabled: true } },
     });
 
-    expect(result).toEqual({ clientSecret: "secret_123" });
+    expect(result).toEqual({
+      clientSecret: "secret_123",
+      expiresAt: 1234567890,
+    });
     expect(stripe.accountSessions.create).toHaveBeenCalledWith({
       account: "acct_5",
       components: { account_onboarding: { enabled: true } },

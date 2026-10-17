@@ -18,6 +18,7 @@ export type CreatePriceOptions = {
   type: "one_time" | "recurring";
   interval?: "day" | "week" | "month" | "year";
   intervalCount?: number;
+  lookupKey?: string;
   nickname?: string;
   metadata?: Record<string, string>;
   idempotencyKey?: string;
@@ -45,6 +46,7 @@ export async function createPrice(
 
   const priceParams: Stripe.PriceCreateParams = {
     product: opts.stripeProductId,
+    ...(opts.lookupKey !== undefined ? { lookup_key: opts.lookupKey } : {}),
     unit_amount: opts.unitAmount,
     currency: opts.currency ?? "usd",
     nickname: opts.nickname ?? undefined,

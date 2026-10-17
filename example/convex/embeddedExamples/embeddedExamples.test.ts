@@ -6,7 +6,11 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
 const raw = vi.hoisted(() => ({ accountSessions: { create: vi.fn() } }));
-vi.mock("../stripe/client", () => ({ getStripeClient: () => raw }));
+vi.mock("stripe", () => ({
+  default: class {
+    accountSessions = raw.accountSessions;
+  },
+}));
 beforeEach(() => {
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_unit");
   vi.resetAllMocks();
@@ -85,4 +89,23 @@ it("enables refund management only in the refund example", async () => {
     raw.accountSessions.create.mock.calls[0][0].components.payments.features
       .refund_management,
   ).toBe(true);
+});
+
+it("uses package error normalization for an authorized session request", async () => {
+  const t = convexTest(schema, modules);
+  const userId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      role: "seller",
+      name: "Seller",
+      email: "s@example.com",
+      stripeAccountId: "acct_s",
+    }),
+  );
+  raw.accountSessions.create.mockRejectedValue(new Error("upstream failed"));
+  await expect(
+    t.action(api.embeddedExamples.public.actions.createSession, {
+      userId,
+      kind: "account",
+    }),
+  ).rejects.toThrow(/Failed to create account session/);
 });

@@ -39,3 +39,14 @@ notes through an ordinary reviewed PR and complete the normal reviewed release a
 public-artifact verification before application adoption. Never substitute a local
 tarball, a workflow conclusion or a later audit for the required public artifact or
 premerge acceptance.
+
+## Compiled public exports
+
+`pnpm build` compiles the package and runs `scripts/check-public-exports.mjs`
+against the emitted public SDK, React and testing exports using Node's standard
+ESM resolver. It performs no provider calls. Keep this check in the existing
+build path: bundled source tests and successful Convex registration did not catch
+the extensionless import exposed by the public SDK in 0.47.0. Use explicit `.js`
+extensions for reachable relative imports; do not hide failures behind a custom
+resolver. A corrected local build is candidate evidence; verify the normal
+published artifact before application adoption.

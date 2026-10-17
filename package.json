@@ -84,7 +84,7 @@
     "docs/release-handoff.md"
   ],
   "scripts": {
-    "build": "tsc --project ./tsconfig.build.json",
+    "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",
     "dev": "cd example && pnpm run dev",
     "clean": "rm -rf dist",
     "codegen": "pnpm run codegen:lib && pnpm run codegen:example",

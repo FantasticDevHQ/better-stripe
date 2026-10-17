@@ -26,6 +26,27 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.45.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.44.0...v0.45.0) (2026-10-17)
+
+### Features
+
+- migrate example recovery to component workflows ([13ca8ea](https://github.com/FantasticDevHQ/better-stripe/commit/13ca8ea48a9f014838dad56f5bcf04300f4bba5e))
+- migrate example recovery to component workflows ([a60dd5a](https://github.com/FantasticDevHQ/better-stripe/commit/a60dd5a18869feb5dd9906333cabe8dcf11be53d))
+
+### Bug Fixes
+
+- preserve affiliate offsets and fence direct recovery payouts ([782264c](https://github.com/FantasticDevHQ/better-stripe/commit/782264c1d55c4177607ebd76f4fa83266900956f))
+
+### Documentation
+
+- fix balance-funding preview configuration ([bc427aa](https://github.com/FantasticDevHQ/better-stripe/commit/bc427aa8d89b700481725efd391eab187c5118dc))
+
+### Tests
+
+- ratchet recovery migration coverage floors ([4e79b74](https://github.com/FantasticDevHQ/better-stripe/commit/4e79b74468bab0dfc3020f6ce99a03edb738018b))
+- run commission regressions through nested recovery workflows ([7343bd2](https://github.com/FantasticDevHQ/better-stripe/commit/7343bd2f7dec240f5c7c3b85b1722e2d80e72b36))
+- verify bounded invoice proof and isolate provider fixtures ([39c3ae3](https://github.com/FantasticDevHQ/better-stripe/commit/39c3ae33ba8189d54e1a926deca0cb4ec74c11ae))
+
 ## [0.44.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.43.0...v0.44.0) (2026-10-17)
 
 ### Features

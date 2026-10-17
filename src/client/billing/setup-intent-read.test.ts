@@ -9,6 +9,7 @@ import { BetterStripe } from "../index.js";
 function fixture() {
   const requests: { method: string; path: string }[] = [];
   const realms: (string | null)[] = [];
+  const payloads: string[] = [];
   const setup = {
     id: "seti_original",
     object: "setup_intent",
@@ -24,6 +25,7 @@ function fixture() {
     maxNetworkRetries: 0,
     httpClient: Stripe.createFetchHttpClient(async (url, init) => {
       realms.push(new Headers(init?.headers).get("Stripe-Account"));
+      payloads.push(String(init?.body ?? ""));
       requests.push({
         method: init?.method ?? "GET",
         path: new URL(String(url)).pathname,
@@ -31,7 +33,7 @@ function fixture() {
       if (failure) return failure.clone();
       return new Response(
         JSON.stringify(
-          new URL(String(url)).pathname.includes("/setup_intents/")
+          new URL(String(url)).pathname.startsWith("/v1/setup_intents")
             ? setup
             : {
                 id: "sub_original",
@@ -68,6 +70,7 @@ function fixture() {
     ctx,
     requests,
     realms,
+    payloads,
     setup,
     runQuery,
     opts,
@@ -217,7 +220,7 @@ it("preserves provider failure without searching or creating a setup", async () 
 });
 
 it.each([
-  { userId: " owner" },
+  { userId: "" },
   { customerAccount: "acct_bad/realm" },
   { setupIntentId: "seti_bad?query" },
   { usage: "unsupported" },
@@ -242,5 +245,40 @@ it.each([undefined, "payment_intent"])(
     await expect(
       f.client.getSetupIntentFromStripe(f.ctx, f.opts),
     ).rejects.toThrow(/original request/);
+  },
+);
+
+it.each(["o".repeat(300), " opaque owner "])(
+  "reads an original setup provisioned for opaque host userId %s",
+  async (userId) => {
+    const f = fixture();
+    f.opts.userId = userId;
+    f.setup.metadata.userId = userId;
+    f.runQuery.mockResolvedValue({
+      userId,
+      stripeAccountId: f.opts.customerAccount,
+    });
+    expect(
+      await f.client.createSetupIntent(f.ctx, {
+        userId,
+        customerAccount: f.opts.customerAccount,
+        usage: f.opts.usage,
+        consent: true,
+        idempotencyKey: "original-opaque-user-setup",
+      }),
+    ).toMatchObject({ setupIntentId: f.opts.setupIntentId });
+    expect(new URLSearchParams(f.payloads[0]).get("metadata[userId]")).toBe(
+      userId,
+    );
+    expect(
+      await f.client.getSetupIntentFromStripe(f.ctx, f.opts),
+    ).toMatchObject({
+      setupIntentId: f.opts.setupIntentId,
+      customerAccount: f.opts.customerAccount,
+    });
+    expect(f.requests).toEqual([
+      { method: "POST", path: "/v1/setup_intents" },
+      { method: "GET", path: "/v1/setup_intents/seti_original" },
+    ]);
   },
 );

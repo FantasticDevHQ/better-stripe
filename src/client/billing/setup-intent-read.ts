@@ -26,9 +26,6 @@ function validate(opts: SetupIntentReadOptions) {
   if (
     typeof opts.userId !== "string" ||
     !opts.userId ||
-    opts.userId.length > 255 ||
-    opts.userId.trim() !== opts.userId ||
-    /[\u0000-\u001f\u007f]/.test(opts.userId) ||
     typeof opts.customerAccount !== "string" ||
     opts.customerAccount.length > 255 ||
     !/^acct_[A-Za-z0-9]+$/.test(opts.customerAccount) ||

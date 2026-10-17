@@ -20,7 +20,7 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { CatalogClient } from "./products/catalogClient.js";
+import { PaymentSourceClient } from "./paymentSource/client.js";
 export type {
   CreateBillingPortalConfigurationOptions,
   RetrieveBillingPortalConfigurationOptions,
@@ -91,6 +91,10 @@ export type {
   VerifiedSale,
   VerifiedSaleOptions,
 } from "./settlement/verifiedSale.js";
+export type {
+  VerifiedPaymentSource,
+  VerifiedPaymentSourceOptions,
+} from "./paymentSource/contracts.js";
 export type { SettleSaleOptions } from "./settlement/settleSale.js";
 export type { SettlementResult } from "./settlement/execution.js";
 export type {
@@ -205,7 +209,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends CatalogClient {
+export class BetterStripe extends PaymentSourceClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;

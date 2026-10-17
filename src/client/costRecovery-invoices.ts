@@ -1,3 +1,4 @@
+import { singleInvoiceFunding } from "./paymentSource/funding.js";
 import { getProcessingCostContext } from "./settlement/processingCosts.js";
 import type Stripe from "stripe";
 import type { RecoveryGroup, RecoveryScope } from "./costRecovery.js";
@@ -152,13 +153,8 @@ export async function readInvoiceFunding(stripe: Stripe, group: RecoveryGroup) {
       throw new Error("Invoice payment identity or currency does not match.");
     if (payment.status === "paid") payments.push(payment);
   }
-  const payment = payments[0];
-  if (
-    payments.length !== 1 ||
-    payment?.payment.type !== "payment_intent" ||
-    !payment.payment.payment_intent ||
-    payment.amount_paid !== invoice.amount_paid
-  )
+  const payment = singleInvoiceFunding(payments, invoice.amount_paid);
+  if (!payment)
     return {
       status: "not_ready" as const,
       reason: "invoice_funding_allocation_required" as const,

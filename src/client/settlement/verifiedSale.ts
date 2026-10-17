@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { saleAmountFailure } from "../paymentSource/economics.js";
 import { isBetterStripeError, throwStripeError } from "../errors.js";
 export type VerifiedSaleOptions = {
   paymentIntentId: string;
@@ -62,20 +63,13 @@ export async function getVerifiedSale(
         reason: "processing_fee_unavailable",
         retryable: true,
       };
-    if (
-      balance.currency !== payment.currency ||
-      charge.currency !== payment.currency
-    )
+    const amountFailure = saleAmountFailure(payment, charge, balance);
+    if (amountFailure === "currency")
       throwStripeError(
         "INVALID_CONFIGURATION",
         "Settlement currency must match the payment and processing currency.",
       );
-    if (
-      ![payment.amount_received, balance.fee].every(Number.isSafeInteger) ||
-      balance.fee < 0 ||
-      balance.fee > payment.amount_received ||
-      charge.amount !== payment.amount_received
-    )
+    if (amountFailure === "amounts")
       throwStripeError(
         "INVALID_CONFIGURATION",
         "Unsupported payment or processing amounts.",

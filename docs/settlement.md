@@ -5,6 +5,54 @@ and recovery. Your server authenticates the caller, resolves recipient accounts,
 selects rates, and authorizes the allocation. Never accept these values directly
 from a browser. Amounts below are integer minor units in one currency.
 
+## Resolve original payment provenance
+
+Use `getVerifiedPaymentSource` when the host has an authorized PaymentIntent and
+needs its original invoice price for settlement or processing-cost recovery:
+
+```ts
+const source = await stripe.getVerifiedPaymentSource(ctx, {
+  paymentIntentId,
+  customerAccountId, // Optional expected binding; authorize this in your host.
+  stripeAccountId, // Optional connected-account execution scope.
+  gross: expectedGross,
+  currency: expectedCurrency,
+  maxHistoryPages: 5,
+  maxHistoryItems: 500,
+});
+if (source.status !== "ready") return source;
+// Authorize source.value.stripeProductId before applying application policy.
+```
+
+The read-only result contains provider IDs, original gross and processing fee,
+currency and live/test mode. Optional expected `invoiceId` and `subscriptionId`
+are also checked. Provider reads inherit the SDK's configured Stripe API version
+and connected-account scope. Authentication, seller/product ownership, metadata
+interpretation, commission and retry scheduling remain host responsibilities.
+
+Resolution requires complete inverse PaymentIntent funding history, complete
+invoice funding history, one fully paid PaymentIntent allocation and one original
+priced invoice line. It verifies customer, invoice, subscription, charge and
+balance-transaction bindings, currencies and reconciled gross/fee/net amounts.
+Current subscription items and metadata never establish the original price.
+Prorations, partial/credit/multiple-payment funding and ambiguous price allocation
+are rejected instead of guessed. Refunded or disputed charges retain their
+original provenance; a ready source does **not** establish settlement eligibility
+or calculate subsequent refund/dispute costs.
+
+Each of the three history walks has independent validated limits: 1–20 pages and
+1–2,000 items (defaults 5 and 500), at most 100 items per page. Reaching a limit
+before `has_more: false`, malformed pages, repeated IDs or failed history reads
+returns `unknown/history_incomplete`, with `retryable: false`. Missing processing
+fees return `not_ready/fee_pending`; only a provider-verified zero fee becomes
+zero. Identity conflicts and unsupported sources are terminal typed outcomes.
+Other failed provider reads return sanitized `unknown/provider_outcome_unknown`.
+The method performs no writes or automatic financial-operation retries.
+
+`getVerifiedSale` and the existing cost readers keep their existing contracts,
+including settlement eligibility checks. The new resolver shares their pure
+currency/amount and single-funding checks without changing their result shapes.
+
 ## Read, allocate, settle
 
 ```ts

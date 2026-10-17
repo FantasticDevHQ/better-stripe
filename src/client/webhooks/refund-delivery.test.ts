@@ -449,6 +449,11 @@ it("runs existing platform split recovery from current success despite pending s
   expect(f.providerReversed()).toBe(250);
   expect((await f.send("evt_split", "pending")).status).toBe(200);
   expect(f.reversalRequests).toHaveLength(1);
+  // A distinct ledger event must still reuse the existing refund operation.
+  expect((await f.send("evt_split_distinct", "pending")).status).toBe(200);
+  expect(f.reversalRequests).toHaveLength(1);
+  expect(f.providerReversed()).toBe(250);
+  expect(f.callbackStatuses).toEqual(["succeeded"]);
 });
 
 it("retries an existing failed reversal after unchanged mirror without repeating changed callback", async () => {

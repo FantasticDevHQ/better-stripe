@@ -355,3 +355,48 @@ The example settlement and processing-cost wrappers use ten retries, a one-secon
 initial delay and a one-minute cap. They retry structured readiness observations.
 Revision conflicts and terminal errors now propagate for fresh-state handling
 instead of matching English text and rerunning the financial action.
+
+## Exact cached PaymentIntent identity
+
+Trusted hosts can opt in to global exact-ID uniqueness through the supported
+public generated component query:
+
+```ts
+// Authenticated server callback reference, not a public browser-PI endpoint.
+const actor = await historyActor(ctx);
+const original = await resolveAuthorizedOriginalPayment(
+  ctx,
+  actor,
+  hostSelectionId,
+);
+const payment = await ctx.runQuery(
+  components.betterStripe.connect.queries.getPaymentByStripeId,
+  { stripePaymentIntentId: original.paymentIntentId, requireUnique: true },
+);
+if (!payment || !matchesOriginalPaymentScope(payment, original)) {
+  throw new Error("Original payment unavailable");
+}
+return toSafeOriginalPayment(payment);
+```
+
+The host resolver, permission check, exact original buyer/customer/merchant and
+currency comparison, and redaction in this authenticated Vite-style callback
+remain application responsibilities. `historyActor` refers to the existing
+[authenticated Vite history actor](../example/convex/billing/history/actor.ts);
+the original-payment resolver, scope comparison and redactor are host-policy
+pseudocode, not new package exports or an added endpoint. Never accept browser account,
+PI or user IDs as authorization. Reauthorize reactive reads and after external I/O.
+
+`requireUnique: true` reads at most two rows from the existing global PI index
+before any caller qualification. It returns the unchanged document for exactly
+one match and `null` for missing or ambiguous keys, including duplicates with
+foreign ownership, organization, currency or status. An unrelated PI does not
+make the requested key ambiguous. This is cached original identity, not proof of
+permission, current provider usability, live refund eligibility or a payable
+balance. Failed or historical sole records are not filtered out.
+
+Omitting the flag or passing `false` retains the legacy first-row behavior and
+`Doc | null` return shape. Existing refund execution/recovery and webhook callers
+are unchanged. The query performs no provider calls, writes or financial work.
+Native-generated component references carry the optional boolean; hosts must
+adopt a normally published, independently verified artifact before using it.

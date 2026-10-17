@@ -30,27 +30,51 @@
 
 ### Features
 
-- preserve lossless operation evidence with bounded readers ([b409fd4](https://github.com/FantasticDevHQ/better-stripe/commit/b409fd4af5afdec303747c8c5b78accb3ef02ee9))
+- Preserve exact original/latest operation evidence through explicit trusted
+  maintenance, headerless payload storage and bounded read APIs. Maintenance
+  evidence generations do not track unobserved raw financial writes or establish
+  complete lifecycle, ownership or closure coverage. See the
+  [financial observation guide](docs/financial-observations.md).
+  ([b409fd4](https://github.com/FantasticDevHQ/better-stripe/commit/b409fd4af5afdec303747c8c5b78accb3ef02ee9))
 
 ### Bug Fixes
 
-- **refunds:** bind ownerless evidence to immutable original allocation ([ce8dfdb](https://github.com/FantasticDevHQ/better-stripe/commit/ce8dfdb75f486d3207173e47ab99b49bd0055fd6))
-- **refunds:** qualify ownerless command receipts by original seller ([bbe399d](https://github.com/FantasticDevHQ/better-stripe/commit/bbe399da4caad0c60623487cc932059753772884))
-- **refunds:** qualify ownerless receipts by immutable original store ([173f0e1](https://github.com/FantasticDevHQ/better-stripe/commit/173f0e1be7963485ee67042b36704387815f6db0))
-- use component-compatible bounded evidence pagination ([78a524c](https://github.com/FantasticDevHQ/better-stripe/commit/78a524cb13900a2a111183e41ac53cd2e9b038bb))
+- Qualify ownerless refund-command receipts against a unique immutable original
+  settlement allocation with exact charge, payment intent and currency. Normal
+  same-payment routing updates cannot redirect the original store; affiliates,
+  replacement stores, conflicting persisted accounts and ambiguous allocation
+  routes remain unavailable. Persisted destination-account receipts retain parity.
+  ([173f0e1](https://github.com/FantasticDevHQ/better-stripe/commit/173f0e1be7963485ee67042b36704387815f6db0))
+- Use component-compatible bounded operation-evidence pagination.
+  ([78a524c](https://github.com/FantasticDevHQ/better-stripe/commit/78a524cb13900a2a111183e41ac53cd2e9b038bb))
 
 ### Performance
 
-- reuse validated same-bucket earnings summary reads ([47449d2](https://github.com/FantasticDevHQ/better-stripe/commit/47449d241354eb1e21ef4b3538263b2400c1aa03))
-- validate same-bucket earnings updates with one summary read ([5421d3b](https://github.com/FantasticDevHQ/better-stripe/commit/5421d3bfaa5bdf54f4e9e8c38cf19599cb485d15))
+- Reuse one exact same-bucket earnings summary read while preserving subtract,
+  zero-count reset, reapply and safe-integer validation before any no-op persistence
+  decision. Financial/risk callbacks remain unchanged.
+  ([47449d2](https://github.com/FantasticDevHQ/better-stripe/commit/47449d241354eb1e21ef4b3538263b2400c1aa03))
 
-### Maintenance
+### Scope and limitations
 
-- integrate accepted summary source preserving stricter floors ([bbd8402](https://github.com/FantasticDevHQ/better-stripe/commit/bbd84025a43a88a1ee8d7b360548fd74c1b84ece))
-- retain measured operation evidence coverage floors ([91a34a8](https://github.com/FantasticDevHQ/better-stripe/commit/91a34a8a035a1a81b53ffdec6e3c50b1bfa445ca))
-- retain measured stricter precursor coverage floors ([4fb3917](https://github.com/FantasticDevHQ/better-stripe/commit/4fb391718fb2503371b1d7c2a87884f11f1b0ac3))
-- retain measured stricter refund evidence coverage floors ([5c92c67](https://github.com/FantasticDevHQ/better-stripe/commit/5c92c6765de70e919c877f956a81bd050f031a5d))
-- retain measured validated-summary coverage floors ([7d83807](https://github.com/FantasticDevHQ/better-stripe/commit/7d838070d21cbd40c1bdce9cf63517ea59c89016))
+- Original-seller qualification requires immutable allocation authority. Ownerless
+  payment-only legacy receipts, missing allocation payment intents and ownerless
+  destination history without that authority stay unavailable. Mutable payment
+  routing or metadata cannot reconstruct original merchant identity. No migration
+  or first-read ownership pin is introduced; existing account-filtered history and
+  the 100-row ingestion owner backfill retain their prior limits. Hosts still own
+  original command/fingerprint, charge verification and authorization. See the
+  [refund-command evidence guide](docs/refund-command-evidence.md).
+- The earnings optimization does not fix the admitted 1,000-distinct-destination
+  reversal claim's native read-budget failure. Resource failures remain atomic;
+  they do not reject the original financial contract by adding a smaller cap or
+  truncate transfer references. Existing native document/read/write limits apply.
+- Operation evidence remains explicit trusted-maintenance evidence, not automatic
+  financial-writer observation, migration/backfill completion, liability admission
+  fencing or account-closure readiness. Financial observation coverage remains
+  UNKNOWN. No host reconciliation, provider execution, refund retry authority,
+  money/access change or Dojo adoption is enabled by this release alone.
+- Retain measured stricter quality floors without relaxing existing gates.
 
 ## [0.35.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.34.0...v0.35.0) (2026-10-16)
 

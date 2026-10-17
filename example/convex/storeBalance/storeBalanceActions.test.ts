@@ -19,11 +19,36 @@ it("reconciles a legacy provider success without re-preparing or rewriting the o
     operationPending: true,
     targetEnabled: true,
   });
-  await f.t.action(api.storeBalance.actions.setFunding, {
+  const enable = {
     sellerId: f.sellerId,
     enabled: true,
-    consent: true,
+    consent: true as const,
+  };
+  await expect(
+    f.t.action(api.storeBalance.actions.setFunding, enable),
+  ).rejects.toThrow(/reconciliation/);
+  const runId = await f.t.mutation(
+    internal.storeBalance.backfill.mutations.start,
+    {},
+  );
+  expect(
+    await f.t.action(internal.storeBalance.backfill.actions.step, { runId }),
+  ).toMatchObject({ scanned: 1, held: 1, active: 0, state: "held" });
+  const paused = (await f.t.mutation(
+    internal.storeBalance.funding.internal.migration.pause,
+    { sellerId: f.sellerId },
+  ))!;
+  await f.t.mutation(
+    internal.storeBalance.funding.internal.quiescence.confirm,
+    { ...paused, reference: "fixture:all-old-workers-drained" },
+  );
+  await f.t.action(api.storeBalance.actions.setFunding, enable);
+  await f.t.mutation(internal.storeBalance.backfill.mutations.start, {
+    rescan: true,
   });
+  expect(
+    await f.t.action(internal.storeBalance.backfill.actions.step, { runId }),
+  ).toMatchObject({ scanned: 1, active: 1, held: 0, state: "verified" });
   expect(wire.requests.every((r) => r.method === "GET")).toBe(true);
   expect(
     await f.t.query(api.storeBalance.funding.public.queries.state, {

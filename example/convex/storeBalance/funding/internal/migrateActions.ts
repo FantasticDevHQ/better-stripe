@@ -112,6 +112,8 @@ export const migrateSeller = internalAction({
           expectedTypes === null ? null : [...expectedTypes].sort(),
         );
     if (!matches) return { status: "held", fundingId: row._id };
+    if (link.operation && row.legacyQuiescence?.snapshot !== paused.snapshot)
+      return { status: "held", fundingId: row._id };
     if (link.operation) {
       // Imported UNKNOWN has no journal. Only verified read receipts may finish it.
       await ctx.runMutation(

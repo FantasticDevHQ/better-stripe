@@ -26,7 +26,12 @@ export const advance = internalAction({
     const request = await ctx.runQuery(refs.requests.read, {
       requestId: args.requestId,
     });
-    if (!request || request.state === "finished") return null;
+    if (
+      !request ||
+      request.state === "finished" ||
+      (request.state === "held" && !args.retryRequested)
+    )
+      return null;
     const hold = () =>
       ctx.runMutation(refs.requests.hold, { requestId: request._id });
     const poll = async (reconciling = false) => {

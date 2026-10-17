@@ -126,6 +126,7 @@ import type * as storeBalance_funding_internal_migrateActions from "../storeBala
 import type * as storeBalance_funding_internal_migration from "../storeBalance/funding/internal/migration.js";
 import type * as storeBalance_funding_internal_mutations from "../storeBalance/funding/internal/mutations.js";
 import type * as storeBalance_funding_internal_queries from "../storeBalance/funding/internal/queries.js";
+import type * as storeBalance_funding_internal_quiescence from "../storeBalance/funding/internal/quiescence.js";
 import type * as storeBalance_funding_migration from "../storeBalance/funding/migration.js";
 import type * as storeBalance_funding_public_queries from "../storeBalance/funding/public/queries.js";
 import type * as storeBalance_ownership from "../storeBalance/ownership.js";
@@ -290,6 +291,7 @@ const fullApi: ApiFromModules<{
   "storeBalance/funding/internal/migration": typeof storeBalance_funding_internal_migration;
   "storeBalance/funding/internal/mutations": typeof storeBalance_funding_internal_mutations;
   "storeBalance/funding/internal/queries": typeof storeBalance_funding_internal_queries;
+  "storeBalance/funding/internal/quiescence": typeof storeBalance_funding_internal_quiescence;
   "storeBalance/funding/migration": typeof storeBalance_funding_migration;
   "storeBalance/funding/public/queries": typeof storeBalance_funding_public_queries;
   "storeBalance/ownership": typeof storeBalance_ownership;

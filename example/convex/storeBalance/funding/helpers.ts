@@ -33,9 +33,15 @@ export const migrationLink = v.object({
   ),
 });
 
+export const quiescence = v.object({
+  snapshot: v.string(),
+  reference: v.string(),
+  confirmedAt: v.number(),
+});
 export const doc = v.object({
   ...fields,
   migrationPaused: v.optional(v.boolean()),
+  legacyQuiescence: v.optional(quiescence),
   componentMigration: v.optional(migrationLink),
   _id: v.id("storeBalanceFunding"),
   _creationTime: v.number(),

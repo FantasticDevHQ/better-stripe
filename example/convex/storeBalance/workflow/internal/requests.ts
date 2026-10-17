@@ -43,16 +43,21 @@ export const queue = internalMutation({
         throw new Error(
           "Another funding request is pending; reconcile it first.",
         );
-      if (previous.state === "held") {
-        await ctx.db.patch("storeBalanceRequests", previous._id, {
-          state: "pending",
-        });
-        await ctx.scheduler.runAfter(
-          0,
-          internal.storeBalance.workflow.internal.actions.advance,
-          { requestId: previous._id, attempt: 0, retryRequested: true },
-        );
-      }
+      const observationEpoch = (previous.observationEpoch ?? 0) + 1;
+      await ctx.db.patch("storeBalanceRequests", previous._id, {
+        state: "pending",
+        observationEpoch,
+      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.storeBalance.workflow.internal.actions.advance,
+        { requestId: previous._id, attempt: 0, retryRequested: true },
+      );
+      await ctx.scheduler.runAfter(
+        600000,
+        internal.storeBalance.workflow.internal.requests.expire,
+        { requestId: previous._id, observationEpoch },
+      );
       return previous._id;
     }
     const saved = await ctx.runQuery(
@@ -81,11 +86,17 @@ export const queue = internalMutation({
       enabled: args.enabled,
       consentAt: Date.now(),
       state: "pending",
+      observationEpoch: 1,
     });
     await ctx.scheduler.runAfter(
       0,
       internal.storeBalance.workflow.internal.actions.advance,
       { requestId, attempt: 0, retryRequested: true },
+    );
+    await ctx.scheduler.runAfter(
+      600000,
+      internal.storeBalance.workflow.internal.requests.expire,
+      { requestId, observationEpoch: 1 },
     );
     return requestId;
   },
@@ -121,6 +132,7 @@ export const bind = internalMutation({
         throw new Error("Finished funding request identity changed.");
       return null;
     }
+    if (row.state === "held") return null;
     const { kind, ...reference } = args.operation;
     const op = await ctx.runQuery(
       components.betterStripe.balanceFunding.queries.inspectOperation,
@@ -182,6 +194,24 @@ export const complete = internalMutation({
         "Funding has not completed its verified component operation.",
       );
     await ctx.db.patch("storeBalanceRequests", row._id, { state: "finished" });
+    return null;
+  },
+});
+
+/** A crashed observer becomes explicitly retryable without changing financial identity. */
+export const expire = internalMutation({
+  args: {
+    requestId: v.id("storeBalanceRequests"),
+    observationEpoch: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get("storeBalanceRequests", args.requestId);
+    if (
+      row?.state === "pending" &&
+      row.observationEpoch === args.observationEpoch
+    )
+      await ctx.db.patch("storeBalanceRequests", row._id, { state: "held" });
     return null;
   },
 });

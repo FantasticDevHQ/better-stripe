@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { fields, migrationLink } from "./funding/helpers";
+import { fields, migrationLink, quiescence } from "./funding/helpers";
 import { runFields } from "./backfill/validators";
 import { requestFields } from "./workflow/validators";
 export const storeBalanceTables = {
@@ -13,6 +13,7 @@ export const storeBalanceTables = {
   storeBalanceFunding: defineTable({
     ...fields,
     migrationPaused: v.optional(v.boolean()),
+    legacyQuiescence: v.optional(quiescence),
     componentMigration: v.optional(migrationLink),
   }).index("by_seller", ["sellerId"]),
 };

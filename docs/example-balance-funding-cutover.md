@@ -3,8 +3,10 @@
 The cutover moves the example's financial preparation and execution into the installed
 BetterStripe component. `storeBalanceRequests` stores host consent intents and
 component references, not provider execution history. Queueing and initial
-scheduling happen in one mutation. Later observer interruptions can leave a held
-intent; an explicit same-target retry retains the original request and operation.
+scheduling happen in one mutation. A ten-minute observer watchdog makes abandoned pending intents held and
+retryable. Watchdogs are fenced by an observation epoch; an obsolete timeout
+cannot hold a newer retry. Same-target retries reschedule even an existing pending
+intent and retain its original request and financial operation.
 Provider writes and uncertain outcomes belong to the component workflow.
 
 The example still enforces sandbox mode, seller role, current account and plan,
@@ -24,14 +26,25 @@ It never prepares again from a subscription whose settings have already changed.
 Before import, old starts are paused. A late old finish is allowed before the
 snapshot is imported; the snapshot hash then changes and must be read again.
 After import, old finishes are rejected and must reconcile the component receipt.
-Unknown legacy operations have no workflow journal. Only scoped, verified Stripe
-readback can finish them. Missing, mismatched or ambiguous evidence stays held;
+Unknown legacy operations have no workflow journal. First stop and drain every legacy worker that could still dispatch its old
+provider key, then record an operator audit reference for that exact source
+snapshot. Only after this attestation can scoped, verified Stripe readback finish
+the operation. Matching target settings alone do not prove an old worker stopped. Missing, mismatched or ambiguous evidence stays held;
 it does not start another workflow or provider write.
 
 The action verifies original account, subscription metadata and payment-method
 ownership. Import and its checkpoint commit together, with the source hash and
 current seller binding checked again. Replacement accounts or subscriptions are
 held for explicit review. Original source rows are never deleted by this adapter.
+
+For a pending legacy row, pause and read its `fundingId` and `snapshot` using
+`storeBalance/funding/internal/migration:pause`. After independently stopping and
+draining old workers, call
+`storeBalance/funding/internal/quiescence:confirm` with those values and a bounded
+`reference` identifying the operational audit. This is a trusted operator
+attestation, not an automated proof. Do not confirm it while an old provider call
+could still complete. Re-run the seller migration or backfill after confirmation.
+A changed legacy snapshot invalidates the attestation.
 
 ## Bounded backfill
 

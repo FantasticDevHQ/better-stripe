@@ -13,6 +13,7 @@ export const requestFields = {
   subscriptionId: v.string(),
   enabled: v.boolean(),
   consentAt: v.number(),
+  observationEpoch: v.optional(v.number()),
   state: v.union(
     v.literal("pending"),
     v.literal("held"),

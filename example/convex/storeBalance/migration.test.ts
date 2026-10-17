@@ -212,6 +212,17 @@ it("reconciles an imported pending receipt without starting another provider ope
       providerApiVersion: "2026-09-30.preview",
     },
   });
+  await expect(
+    f.t.mutation(mutation("activate"), { fundingId: f.fundingId }),
+  ).rejects.toThrow(/worker drain/);
+  await f.t.mutation(
+    internal.storeBalance.funding.internal.quiescence.confirm,
+    {
+      fundingId: f.fundingId,
+      snapshot: saved.snapshot,
+      reference: "fixture:old-workers-stopped",
+    },
+  );
   await f.t.mutation(mutation("activate"), { fundingId: f.fundingId });
   await expect(
     f.t.mutation(mutation("rollback"), { fundingId: f.fundingId }),
@@ -318,4 +329,15 @@ it("counts active imports from verified component state and retains their source
   expect(
     await f.t.run((ctx) => ctx.db.get("storeBalanceFunding", f.fundingId)),
   ).not.toBeNull();
+});
+
+it("does not pause the restored legacy writer when migration is retried after rollback", async () => {
+  const f = await fixture();
+  await f.importRow();
+  await f.t.mutation(mutation("activate"), { fundingId: f.fundingId });
+  await f.t.mutation(mutation("rollback"), { fundingId: f.fundingId });
+  await expect(f.pause()).rejects.toThrow(/rollback/);
+  expect(
+    await f.t.run((ctx) => ctx.db.get("storeBalanceFunding", f.fundingId)),
+  ).toMatchObject({ migrationPaused: false });
 });

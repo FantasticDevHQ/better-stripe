@@ -56,6 +56,12 @@ export const state = query({
       )
       .order("desc")
       .first();
+    if (
+      request &&
+      (request.accountId !== seller.stripeAccountId ||
+        request.scopeKey !== fundingScope(seller._id, subscriptionId))
+    )
+      return { enabled: false, status: "held" as const };
     if (saved && "status" in saved)
       return { enabled: false, status: "held" as const };
     let status: "idle" | "pending" | "held" =
@@ -64,8 +70,12 @@ export const state = query({
         : request?.state === "pending"
           ? "pending"
           : "idle";
-    if (saved?.startsPaused || (saved && !saved.verified)) status = "held";
-    if (saved?.activeOperationId) {
+    if (
+      saved?.startsPaused ||
+      (saved && !saved.verified && !saved.activeOperationId)
+    )
+      status = "held";
+    if (saved?.activeOperationId && status !== "held") {
       const op = await ctx.runQuery(
         components.betterStripe.balanceFunding.queries.getOperation,
         {

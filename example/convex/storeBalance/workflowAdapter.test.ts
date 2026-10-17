@@ -1,6 +1,6 @@
 // @vitest-environment edge-runtime
 import { expect, it } from "vitest";
-import { api, internal } from "../_generated/api";
+import { api, internal, components } from "../_generated/api";
 import { setup, wire } from "../../test/store-balance-fixtures";
 const updates = () =>
   wire.requests.filter(
@@ -143,4 +143,112 @@ it("reads only verified, idle component funding for invoice collection", async (
   });
   await f.drain();
   expect(await f.t.query(reader, { sellerId: f.sellerId })).toBeNull();
+});
+
+it("reschedules a pending intent and fences an obsolete observer timeout", async () => {
+  const f = await setup();
+  const args = { sellerId: f.sellerId, enabled: true, consent: true as const };
+  await f.t.action(api.storeBalance.actions.setFunding, args);
+  const first = (await f.t.run((ctx) =>
+    ctx.db.query("storeBalanceRequests").first(),
+  ))!;
+  await f.t.action(api.storeBalance.actions.setFunding, args);
+  const second = (await f.t.run((ctx) =>
+    ctx.db.get("storeBalanceRequests", first._id),
+  ))!;
+  expect(second.observationEpoch).toBeGreaterThan(first.observationEpoch!);
+  await f.t.mutation(internal.storeBalance.workflow.internal.requests.expire, {
+    requestId: first._id,
+    observationEpoch: first.observationEpoch!,
+  });
+  expect(
+    await f.t.run((ctx) => ctx.db.get("storeBalanceRequests", first._id)),
+  ).toMatchObject({ state: "pending" });
+  await f.drain();
+  expect(updates()).toHaveLength(1);
+});
+it("makes an abandoned observer explicitly retryable while retaining its financial request", async () => {
+  const f = await setup();
+  const args = { sellerId: f.sellerId, enabled: true, consent: true as const };
+  await f.t.action(api.storeBalance.actions.setFunding, args);
+  const request = (await f.t.run((ctx) =>
+    ctx.db.query("storeBalanceRequests").first(),
+  ))!;
+  await f.t.mutation(internal.storeBalance.workflow.internal.requests.expire, {
+    requestId: request._id,
+    observationEpoch: request.observationEpoch!,
+  });
+  expect(
+    await f.t.query(api.storeBalance.funding.public.queries.state, {
+      sellerId: f.sellerId,
+    }),
+  ).toMatchObject({ status: "held" });
+  await f.t.action(api.storeBalance.actions.setFunding, args);
+  expect(
+    (await f.t.run((ctx) => ctx.db.query("storeBalanceRequests").take(2))).map(
+      (r) => r._id,
+    ),
+  ).toEqual([request._id]);
+  await f.drain();
+  expect(updates()).toHaveLength(1);
+});
+
+it("holds an intent if its seller account is replaced after authorization", async () => {
+  const f = await setup();
+  await f.t.action(api.storeBalance.actions.setFunding, {
+    sellerId: f.sellerId,
+    enabled: true,
+    consent: true,
+  });
+  await f.t.run((ctx) =>
+    ctx.db.patch("users", f.sellerId, { stripeAccountId: "acct_replacement" }),
+  );
+  expect(
+    await f.t.query(api.storeBalance.funding.public.queries.state, {
+      sellerId: f.sellerId,
+    }),
+  ).toMatchObject({ enabled: false, status: "held" });
+  await f.drain();
+  expect(updates()).toHaveLength(0);
+});
+
+it("shows active preparation as pending while preserving an observer timeout hold", async () => {
+  const f = await setup();
+  await f.t.action(api.storeBalance.actions.setFunding, {
+    sellerId: f.sellerId,
+    enabled: true,
+    consent: true,
+  });
+  await f.t.mutation(components.betterStripe.balanceFunding.mutations.prepare, {
+    accountId: "acct_store",
+    scopeKey: `example:store-balance:${f.sellerId}:sub_store`,
+    requestKey: "fixture-active-preparation",
+    consent: true,
+    consentAt: 123,
+    consentReference: "fixture-consent",
+    providerApiVersion: "2026-09-30.preview",
+    preparation: {
+      customerAccount: "acct_store",
+      stripeSubscriptionId: "sub_store",
+      previousPaymentMethodId: "pm_card",
+      previousPaymentMethodTypes: ["card"],
+    },
+  });
+  expect(
+    await f.t.query(api.storeBalance.funding.public.queries.state, {
+      sellerId: f.sellerId,
+    }),
+  ).toMatchObject({ enabled: false, status: "pending" });
+  const request = (await f.t.run((ctx) =>
+    ctx.db.query("storeBalanceRequests").first(),
+  ))!;
+  await f.t.mutation(internal.storeBalance.workflow.internal.requests.expire, {
+    requestId: request._id,
+    observationEpoch: request.observationEpoch!,
+  });
+  expect(
+    await f.t.query(api.storeBalance.funding.public.queries.state, {
+      sellerId: f.sellerId,
+    }),
+  ).toMatchObject({ enabled: false, status: "held" });
 });

@@ -23,6 +23,8 @@ export const pause = internalMutation({
       throw new Error("Ambiguous legacy balance funding rows.");
     const row = rows[0];
     if (!row) return null;
+    if (row.componentMigration?.state === "rolled_back")
+      throw new Error("Compatibility rollback is active.");
     await ctx.db.patch("storeBalanceFunding", row._id, {
       migrationPaused: true,
     });
@@ -129,6 +131,13 @@ export const activate = internalMutation({
       (await legacySnapshot(row)) !== link.snapshot
     )
       throw new Error("Legacy funding checkpoint changed.");
+    if (
+      row.operationPending &&
+      row.legacyQuiescence?.snapshot !== link.snapshot
+    )
+      throw new Error(
+        "Pending legacy reconciliation requires confirmed worker drain.",
+      );
     const seller = await ctx.db.get("users", row.sellerId);
     if (
       seller?.role !== "seller" ||

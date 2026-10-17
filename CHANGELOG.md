@@ -28,15 +28,13 @@
 
 ## [0.42.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.41.0...v0.42.0) (2026-10-17)
 
-
 ### Features
 
-* add durable balance funding workflows (BTS-209) ([59c46e7](https://github.com/FantasticDevHQ/better-stripe/commit/59c46e7c0a41aee3df0b743099bf57d67921046b))
-
+- add durable balance funding workflows ([59c46e7](https://github.com/FantasticDevHQ/better-stripe/commit/59c46e7c0a41aee3df0b743099bf57d67921046b))
 
 ### Tests
 
-* ratchet integrated funding and recovery coverage ([deb5249](https://github.com/FantasticDevHQ/better-stripe/commit/deb524903b9c51ba2173df4063add29e85f4fdf7))
+- ratchet integrated funding and recovery coverage ([deb5249](https://github.com/FantasticDevHQ/better-stripe/commit/deb524903b9c51ba2173df4063add29e85f4fdf7))
 
 ## [0.41.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.40.0...v0.41.0) (2026-10-17)
 

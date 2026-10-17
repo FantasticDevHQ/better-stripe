@@ -26,11 +26,17 @@ import { componentRef } from "./webhooks/helpers.js";
 export class ReadContractClient {
   constructor(public component: Component) {}
   /** Cached buyer observations only; the host authorizes exact selectors on every page. */
-  paginateSubscriptions(ctx: RunCtx, opts: historyPages.SubscriptionHistoryPageOptions) {
+  paginateSubscriptions(
+    ctx: RunCtx,
+    opts: historyPages.SubscriptionHistoryPageOptions,
+  ) {
     return historyPages.paginateSubscriptions(this.component, ctx, opts);
   }
 
-  paginateCheckoutSessions(ctx: RunCtx, opts: historyPages.CheckoutSessionHistoryPageOptions) {
+  paginateCheckoutSessions(
+    ctx: RunCtx,
+    opts: historyPages.CheckoutSessionHistoryPageOptions,
+  ) {
     return historyPages.paginateCheckoutSessions(this.component, ctx, opts);
   }
 

@@ -1,3 +1,5 @@
+import type { PaginationResult } from "convex/server";
+import type { Doc } from "../_generated/dataModel.js";
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
 import { expect, it } from "vitest";
@@ -14,16 +16,21 @@ it("pages all 67 original buyer Checkout rows instead of the legacy first50", as
       mode: i % 2 ? "subscription" : "payment",
       status: "complete",
     });
-  expect(await t.query(api.billing.queries.listCheckoutSessionsByUser, {
-    userId: "buyer_original",
-  })).toHaveLength(50);
+  expect(
+    await t.query(api.billing.queries.listCheckoutSessionsByUser, {
+      userId: "buyer_original",
+    }),
+  ).toHaveLength(50);
   const ids: string[] = [];
   let cursor: string | null = null;
   for (let i = 0; i < 8; i++) {
-    const result = await t.query(api.billingHistory.queries.paginateCheckoutSessions, {
-      userId: "buyer_original",
-      paginationOpts: { numItems: 17, cursor },
-    });
+    const result: PaginationResult<Doc<"checkoutSessions">> = await t.query(
+      api.billingHistory.queries.paginateCheckoutSessions,
+      {
+        userId: "buyer_original",
+        paginationOpts: { numItems: 17, cursor },
+      },
+    );
     ids.push(...result.page.map((row) => row.stripeSessionId));
     if (result.isDone) break;
     cursor = result.continueCursor;
@@ -43,16 +50,21 @@ it("pages 67 recurring and trial rows including accountless legacy subscriptions
       isTrialing: i % 2 === 0,
       cancelAtPeriodEnd: false,
     });
-  expect(await t.query(api.billing.queries.listSubscriptionsByUser, {
-    userId: "buyer_original",
-  })).toHaveLength(67);
+  expect(
+    await t.query(api.billing.queries.listSubscriptionsByUser, {
+      userId: "buyer_original",
+    }),
+  ).toHaveLength(67);
   const ids: string[] = [];
   let cursor: string | null = null;
   for (let i = 0; i < 8; i++) {
-    const result = await t.query(api.billingHistory.queries.paginateSubscriptions, {
-      userId: "buyer_original",
-      paginationOpts: { numItems: 17, cursor },
-    });
+    const result: PaginationResult<Doc<"subscriptions">> = await t.query(
+      api.billingHistory.queries.paginateSubscriptions,
+      {
+        userId: "buyer_original",
+        paginationOpts: { numItems: 17, cursor },
+      },
+    );
     ids.push(...result.page.map((row) => row.stripeSubscriptionId));
     if (result.isDone) break;
     cursor = result.continueCursor;

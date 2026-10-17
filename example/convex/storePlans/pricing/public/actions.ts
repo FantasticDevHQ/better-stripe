@@ -53,7 +53,8 @@ export const update = action({
           storePlanVersion: String(plan.version + 1),
         },
         lookupKey: `${storePlanLookupKey(args.planId)}_${plan.version + 1}_${args.monthlyAmount}`,
-        idempotencyKey: `example_store_price_${args.planId}_${plan.version + 1}_${args.monthlyAmount}_${args.feeBasisPoints}`,
+        // The legacy create payload had no lookup key. Never reuse its provider key.
+        idempotencyKey: `example_store_lookup_price_v1_${args.planId}_${plan.version + 1}_${args.monthlyAmount}_${args.feeBasisPoints}`,
       });
       stripePriceId = price.stripePriceId;
     }

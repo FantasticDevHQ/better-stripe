@@ -122,7 +122,7 @@ it("updates the Stripe price for future subscriptions without changing or archiv
     nickname: "Growth",
     metadata: { storePlanId: "growth", storePlanVersion: "1" },
     lookupKey: "better_stripe_example_store_growth_usd_month_v2_1_5900",
-    idempotencyKey: "example_store_price_growth_1_5900_490",
+    idempotencyKey: "example_store_lookup_price_v1_growth_1_5900_490",
   });
   expect(raw.prices.create).not.toHaveBeenCalled();
   expect(

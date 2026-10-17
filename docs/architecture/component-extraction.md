@@ -1,8 +1,8 @@
 # Component extraction and durable execution contracts
 
-Status: accepted design, pending implementation and the nested-component
+Status: design contracts, pending implementation and the nested-component
 composition spike. These are proposed additive APIs, not shipped exports.
-Reviewed against main `c14fd3d501ef637d33efdf890694156e66328c71` on 2026-10-16.
+Reviewed against main `e9994a9` on 2026-10-17.
 Implementation PRs must reference this decision and document changes to the
 contracts before dependent work starts.
 
@@ -121,7 +121,44 @@ balanceFunding.begin(ctx, {
 balanceFunding.start(ctx, { ...operation }); // => OperationStatus
 balanceFunding.getOperation(ctx, { ...operation }); // => OperationStatus | null
 balanceFunding.requestCancel(ctx, { ...operation }); // => OperationStatus
+
+type PreparationLookup =
+  | {
+      status: "prepared";
+      operation: OperationRef;
+      stripeSubscriptionId: string;
+      preparationId: string;
+    }
+  | {
+      status: "pending" | "running" | "unknown" | "failed" | "canceled";
+      operation: OperationRef;
+    };
+balanceFunding.getPreparation(ctx, {
+  ...operation, // Account, scope, operation ID and version are all required.
+  stripeSubscriptionId,
+}); // => PreparationLookup | Unavailable | null
 ```
+
+`getPreparation` reads the result of an existing preparation operation. It never
+provisions a payment method or captures restoration settings. It validates the
+saved account, subscription, scope, operation ID and version together; an
+existing foreign or contradictory binding returns `invalid_scope` or
+`identity_changed`, never a foreign preparation reference. `null` means no
+matching operation was found, not proof that a provider write did not happen or
+permission to start a new one. Pending, running, unknown, failed and canceled
+results expose no preparation ID. Only a successfully verified and durably
+saved preparation returns `prepared`, with the original server-owned ID.
+Replays keep that result stable. Status and lookup results expose neither
+restoration settings nor credentials.
+
+If a prepare response is lost, repeat `prepare` with the original request key
+and unchanged payload to recover the same operation, then call `getPreparation`
+for its reference. Hold pending or unknown work and reconcile that operation;
+do not create another payment method. Pass the returned preparation ID to
+`begin`. `begin` independently validates its saved account/subscription binding
+and verified state before accepting the new setting intent. A browser-supplied
+ID alone proves neither ownership nor readiness. `savePreparation` remains the
+explicit path for verified legacy imports, not the new preparation handoff.
 
 `accountId` must equal the preparation's `customerAccount`; scope identifies one
 subscription. Enforce one active operation per account/subscription even if a
@@ -209,7 +246,7 @@ automatically releases an uncertain reservation.
 The provenance resolver workstream resolves original
 invoice/payment/subscription/price provenance with bounded complete provider
 history and typed unavailable outcomes. Reject partial or ambiguous funding
-instead of guessing. the explicit-policy pure deficit helper requires explicit
+instead of guessing. The explicit-policy pure deficit helper requires explicit
 liability and rounding policy. The processing-cost reconciliation workstream
 uses both in revision-guarded cost claim reconciliation and retains the original
 recovery receipt for rollback. Current tier prices, affiliate rates or webhook
@@ -273,8 +310,12 @@ authorization/mapping runs before imports. Use server-side checkpoints and per-
 scope reconciliation, not a browser cursor, as migration evidence. Keep host
 reporting projections replay-safe by source identity.
 
-For every scope: disable old mutation entry points, reconcile in-flight
-operations, import and verify state, then enable one new writer. Queries may
+For every scope: pause old entry points that start new effects, retain authorized
+receipt reconciliation and finish for existing operations, reconcile in-flight
+operations, import and verify state, then enable one new writer. Reconciliation
+must retain the original operation and phase keys; it cannot start a replacement
+effect or admit a new intent. Retire the remaining old mutation entry points
+only after the verified handoff accounts for their operations. Queries may
 read projections, but never sum old and new balances. Record migration version
 and source checkpoint. Do not delete legacy restoration/provenance until
 rollback and retention needs end. Rollback first stops new starts, drains or
@@ -308,22 +349,25 @@ parallel model of production state. Domain PRs turn the relevant rows into tests
 against real component mutations/actions. The integration verification
 workstream verifies their combined behavior.
 
-| Fixture                                                 | Required observation                                                     |
-| ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Same request key and payload arrives twice              | One operation, one original payload, same phase keys                     |
-| Same key with a different account, currency or target   | Conflict before provider mutation                                        |
-| Enable pending, then disable requested                  | Scope remains owned by enable; disable conflicts                         |
-| Stripe applies enable, component finish fails           | Replay verifies provider state and finishes the original version         |
-| Old action finishes after another version               | No newer setting or ledger update                                        |
-| Recovery needs 101 claims at batch limit 100            | Two bounded calls, distinct reservation IDs, one sealed target           |
-| Empty reservation or already finished group replay      | No reused batch identity, extra collection or release                    |
-| Two recovery groups compete for one scope               | One active boundary; loser receives scope_busy                           |
-| Cancellation races a successful provider call           | Receipt reconciled; successful money effect retained                     |
-| Queue retry occurs after provider key retention expires | Verify full authoritative receipts or hold unknown; never blind recreate |
-| Migration page retries or conflicts                     | Exact replay is a no-op; conflict rolls back the page                    |
-| Legacy funding is enabled with original card settings   | Import preserves card restoration and pending provider key               |
-| Definition upgrade resumes an old operation             | Compatible old definition runs or explicit hold; no effect replay        |
-| Provider history is partial, multi-funded or foreign    | Explicit unavailable/rejected result; no inferred zero or guessed source |
+| Fixture                                                   | Required observation                                                                                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Same request key and payload arrives twice                | One operation, one original payload, same phase keys                                                                            |
+| Prepare response is lost after successful provisioning    | Replay finds the same operation; scoped lookup returns the original preparation ID; begin uses it without another create/attach |
+| Preparation lookup is pending, unknown or foreign         | No preparation reference or new provider effect; pending/unknown holds and foreign scope rejects                                |
+| Same key with a different account, currency or target     | Conflict before provider mutation                                                                                               |
+| Enable pending, then disable requested                    | Scope remains owned by enable; disable conflicts                                                                                |
+| Stripe applies enable, component finish fails             | Replay verifies provider state and finishes the original version                                                                |
+| Old action finishes after another version                 | No newer setting or ledger update                                                                                               |
+| Recovery needs 101 claims at batch limit 100              | Two bounded calls, distinct reservation IDs, one sealed target                                                                  |
+| Empty reservation or already finished group replay        | No reused batch identity, extra collection or release                                                                           |
+| Two recovery groups compete for one scope                 | One active boundary; loser receives scope_busy                                                                                  |
+| Cancellation races a successful provider call             | Receipt reconciled; successful money effect retained                                                                            |
+| Queue retry occurs after provider key retention expires   | Verify full authoritative receipts or hold unknown; never blind recreate                                                        |
+| Migration page retries or conflicts                       | Exact replay is a no-op; conflict rolls back the page                                                                           |
+| Migration pauses starts with an in-flight provider result | New effects stay paused while original receipt reconciliation and finish remain authorized                                      |
+| Legacy funding is enabled with original card settings     | Import preserves card restoration and pending provider key                                                                      |
+| Definition upgrade resumes an old operation               | Compatible old definition runs or explicit hold; no effect replay                                                               |
+| Provider history is partial, multi-funded or foreign      | Explicit unavailable/rejected result; no inferred zero or guessed source                                                        |
 
 Run `pnpm run check:all` for every implementation handoff. Preserve all gate
 floors and budgets. Put sanitized logs/results directly in each ready PR and

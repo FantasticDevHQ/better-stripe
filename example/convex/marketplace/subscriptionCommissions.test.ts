@@ -1,3 +1,5 @@
+import { runAction } from "../../testing/settlement/providerFixture";
+import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
@@ -24,11 +26,11 @@ vi.mock("../stripe/helpers", async () => {
     await import("../../../src/client/settlement/settleSale");
   const { components } = await import("../_generated/api");
   const sdk = raw as unknown as import("stripe").default;
-  const { CostRecoveryClient } =
-    await import("../../../src/client/costRecovery");
+  const { fixtureRecoveryClient } =
+    await import("../../testing/settlement/providerFixture");
   return {
     stripe: {
-      costRecovery: new CostRecoveryClient(components.betterStripe, () => sdk),
+      costRecovery: fixtureRecoveryClient(components.betterStripe, sdk),
       getVerifiedSale: async (
         _ctx: unknown,
         opts: Parameters<typeof getVerifiedSale>[1],
@@ -79,6 +81,7 @@ vi.mock("../stripe/helpers", async () => {
 });
 const componentModules = import.meta.glob("../../../dist/component/**/*.js");
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.resetAllMocks();
   raw.charges.retrieve.mockResolvedValue({ created: 1 });
   raw.transfers.list.mockResolvedValue({ data: [] });
@@ -94,6 +97,7 @@ async function setup(
 ) {
   const t = convexTest(schema, modules);
   t.registerComponent("betterStripe", componentSchema, componentModules);
+  workflowTest.register(t, "betterStripe/workflow");
   await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
     stripeProductId: "prod_default",
     accountId: "acct_store",
@@ -177,7 +181,7 @@ it.each([
       metadata: { ...payment.metadata, affiliateCommissionTerm: term },
     });
     const settle = (invoiceId: string, paymentIntentId: string) =>
-      t.action(internal.settlement.internal.actions.settle, {
+      runAction(t, internal.settlement.internal.actions.settle, {
         paymentIntentId,
         subscriptionId: "sub_term",
         invoiceId,
@@ -258,7 +262,7 @@ it("does not give a delayed renewal the one-time commission before the first inv
     ],
     has_more: false,
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
     subscriptionId: "sub_delayed",
     invoiceId: "in_renewal",
@@ -275,7 +279,7 @@ it("does not give a delayed renewal the one-time commission before the first inv
     id: "pi_first",
     latest_charge: { ...payment.latest_charge, id: "ch_first" },
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_first",
     subscriptionId: "sub_delayed",
     invoiceId: "in_first",

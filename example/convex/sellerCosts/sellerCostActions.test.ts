@@ -1,12 +1,16 @@
+import { runAction } from "../../testing/settlement/providerFixture";
+import { anyApi } from "convex/server";
+import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import componentSchema from "../../../dist/component/schema.js";
-import { api, internal } from "../_generated/api";
+import { api, components, internal } from "../_generated/api";
 import schema from "../schema";
 const raw = vi.hoisted(() => ({
+  paymentIntents: { retrieve: vi.fn() },
   invoices: { retrieve: vi.fn(), listLineItems: vi.fn() },
   invoiceItems: { list: vi.fn(), create: vi.fn() },
   invoicePayments: { list: vi.fn() },
@@ -19,15 +23,16 @@ const client = vi.hoisted(() => ({
   getProductByStripeId: vi.fn(),
 }));
 vi.mock("../stripe/helpers", async () => {
-  const { CostRecoveryClient } =
-    await import("../../../src/client/costRecovery");
+  const { fixtureRecoveryClient } =
+    await import("../../testing/settlement/providerFixture");
   const { components } = await import("../_generated/api");
   return {
     stripe: {
       ...client,
-      costRecovery: new CostRecoveryClient(
+      costRecovery: fixtureRecoveryClient(
         components.betterStripe,
-        () => raw as unknown as import("stripe").default,
+        raw as unknown as import("stripe").default,
+        client.getProcessingCostContext,
       ),
     },
   };
@@ -45,7 +50,14 @@ const costContext = {
   principalReturned: 10000,
   disputes: [],
 };
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.resetAllMocks();
+  raw.paymentIntents.retrieve.mockImplementation(async (id) => ({
+    id,
+    customer_account: "acct_buyer",
+  }));
+});
 async function setup() {
   const t = convexTest(schema, modules);
   t.registerComponent(
@@ -53,6 +65,28 @@ async function setup() {
     componentSchema,
     import.meta.glob("../../../dist/component/**/*.js"),
   );
+  workflowTest.register(t, "betterStripe/workflow");
+  for (const [product, prices] of [
+    ["prod_default", ["price_default"]],
+    ["prod_store", ["price_store", "price_original"]],
+  ] as const) {
+    await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+      stripeProductId: product,
+      accountId: "acct_store",
+      name: "Original",
+      active: false,
+    });
+    for (const price of prices)
+      await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+        stripePriceId: price,
+        stripeProductId: product,
+        productId: "fixture",
+        unitAmount: 10000,
+        currency: "usd",
+        type: "one_time",
+        active: false,
+      });
+  }
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       role: "seller",
@@ -105,7 +139,7 @@ async function setup() {
 }
 it("records actual non-refundable costs and adds them to the monthly invoice once", async () => {
   const { t, sellerId } = await setup();
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -113,11 +147,11 @@ it("records actual non-refundable costs and adds them to the monthly invoice onc
       await t.query(api.sellerCosts.billing.public.queries.list, { sellerId })
     )[0],
   ).toMatchObject({ amountDue: 320, outstanding: 320 });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -176,11 +210,12 @@ it("bulk recovery defers a pending refund and still reconciles other sales, then
     await expect(
       t.action(internal.sellerCosts.actions.reconcileExisting, { sellerId }),
     ).resolves.toBeNull();
-    const first = await t.query(api.sellerCosts.billing.public.queries.list, {
+    const first = await t.query(anyApi.sellerCosts.workflow.queries.list, {
       sellerId,
     });
-    expect(first).toHaveLength(1);
-    expect(first[0]).toMatchObject({ amountDue: 320, outstanding: 320 });
+    expect(first).toMatchObject([
+      { kind: "cost", sourceId: "ch_sale", status: "queued" },
+    ]);
     client.getProcessingCostContext.mockImplementation(async (_ctx, args) => ({
       ...costContext,
       paymentIntentId: args.paymentIntentId,
@@ -197,10 +232,10 @@ it("bulk recovery defers a pending refund and still reconciles other sales, then
 });
 it("turns returned Stripe fees into a credit after the seller was already billed", async () => {
   const { t, sellerId } = await setup();
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -208,7 +243,7 @@ it("turns returned Stripe fees into a credit after the seller was already billed
     ...costContext,
     refundFeeAdjustment: -320,
   });
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -236,12 +271,13 @@ it("refuses another seller's invoice and keeps missing finalized adjustments hel
     currency: "usd",
     status: "open",
   });
-  await expect(
-    t.action(internal.sellerCosts.actions.attachToInvoice, {
-      sellerId,
-      invoiceId: "in_monthly",
-    }),
-  ).rejects.toThrow(/missing/i);
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
+    sellerId,
+    invoiceId: "in_monthly",
+  });
+  expect(
+    await t.query(anyApi.sellerCosts.workflow.queries.list, { sellerId }),
+  ).toMatchObject([{ kind: "invoice", status: "unknown" }]);
   expect(raw.invoiceItems.create).not.toHaveBeenCalled();
 });
 it("retries when the actual refund fee is delayed", async () => {
@@ -295,7 +331,7 @@ it("records actual costs for a disputed source that never settled without paying
     disputeFeeAdjustment: 1500,
     disputes: [{ id: "dp_original" }],
   });
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -389,7 +425,7 @@ it("resolves a disputed subscription source through its verified paid invoice in
       stripeProductId: "prod_store",
     },
   });
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -422,10 +458,10 @@ it("resolves a disputed subscription source through its verified paid invoice in
 });
 it("commits recovery on paid invoice outcomes and releases void outcomes without double collection", async () => {
   const { t, sellerId } = await setup();
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -435,7 +471,7 @@ it("commits recovery on paid invoice outcomes and releases void outcomes without
     currency: "usd",
     status: "open",
   });
-  await t.action(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -450,11 +486,11 @@ it("commits recovery on paid invoice outcomes and releases void outcomes without
     currency: "usd",
     status: "paid",
   });
-  await t.action(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId,
     invoiceId: "in_monthly",
   });
-  await t.action(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -464,10 +500,10 @@ it("commits recovery on paid invoice outcomes and releases void outcomes without
     )[0],
   ).toMatchObject({ collectedAmount: 320, reservedAmount: 0, outstanding: 0 });
   const other = await setup();
-  await other.t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(other.t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
-  await other.t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(other.t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId: other.sellerId,
     invoiceId: "in_monthly",
   });
@@ -477,7 +513,8 @@ it("commits recovery on paid invoice outcomes and releases void outcomes without
     currency: "usd",
     status: "void",
   });
-  await other.t.action(
+  await runAction(
+    other.t,
     internal.sellerCosts.recoveryInvoices.actions.reconcile,
     {
       sellerId: other.sellerId,

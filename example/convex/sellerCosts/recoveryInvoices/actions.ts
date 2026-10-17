@@ -1,3 +1,4 @@
+import { anyApi } from "convex/server";
 import { v } from "convex/values";
 
 import { internalAction } from "../../_generated/server";
@@ -30,13 +31,25 @@ export const reconcile = internalAction({
       ...costScope(args.sellerId, seller.stripeAccountId, group.currency),
       groupKey,
     };
-    let done: boolean;
-    do {
-      const receipt = await stripe.costRecovery.reconcileInvoice(ctx, opts);
-      done =
-        receipt.isDone ||
-        !["paid", "void"].includes(receipt.invoiceStatus ?? "");
-    } while (!done);
+    const operation = await ctx.runMutation(
+      anyApi.sellerCosts.recoveryInvoices.workflow.mutations.start,
+      { ...args, currency: group.currency },
+    );
+    if (["legacy_terminal", "legacy_inflight"].includes(operation.status)) {
+      const receipt = await stripe.costRecovery.verifyInvoiceReceipt(ctx, opts);
+      // Missing, ambiguous or incomplete evidence leaves the persisted direction and reservations held.
+      if (receipt.status !== "ready") return null;
+      await ctx.runMutation(
+        anyApi.sellerCosts.recoveryInvoices.workflow.mutations.finishLegacy,
+        {
+          ...args,
+          currency: group.currency,
+          outcome: receipt.outcome,
+          invoiceItemId: receipt.invoiceItemId,
+          amount: receipt.group.amount,
+        },
+      );
+    }
     return null;
   },
 });
@@ -98,24 +111,11 @@ export const attach = internalAction({
         sellerId: args.sellerId,
       },
     );
-    let prepared: boolean | null;
-    do {
-      prepared = await ctx.runMutation(
-        internal.sellerCosts.recoveryInvoices.mutations.prepare,
-        {
-          ...args,
-          currency: invoice.currency,
-        },
-      );
-    } while (prepared === false);
-    if (prepared === null) return null;
-    const opts = {
-      ...costScope(args.sellerId, seller.stripeAccountId, invoice.currency),
-      groupKey: `example:cost-invoice:${invoice.id}`,
-    };
-    if (invoice.status === "draft")
-      await stripe.costRecovery.attachInvoice(ctx, opts);
-    else
+    const operation = await ctx.runMutation(
+      anyApi.sellerCosts.recoveryInvoices.workflow.mutations.start,
+      { ...args, currency: invoice.currency },
+    );
+    if (["legacy_terminal", "legacy_inflight"].includes(operation.status))
       await ctx.runAction(
         internal.sellerCosts.recoveryInvoices.actions.reconcile,
         args,

@@ -1,0 +1,21 @@
+# Example recovery cutover
+
+The example keeps seller eligibility, original catalog ownership, affiliate allocation, store plan commission, webhook routing and reporting projections. The component owns reservation preparation, provider execution, retries, receipt persistence, collection and processing-cost rollback.
+
+Settlement and plan-invoice entry points enqueue component recovery workflows. A provider action reads its credentials at execution time. The host `recoveryJobs` table contains routing and operation references only; component claims and reservations remain the financial ledger. `sellerCosts.workflow.queries.list` exposes bounded operation status, and `blockedSummary` returns at most 100 blocked jobs with an explicit `hasMore` flag. These queries follow the example's existing selected-seller authorization model.
+
+A settlement with no owned recovery reservation retains the existing direct payout policy, including when another invoice owns the active recovery group. An owned reservation uses the durable workflow. Replayed events resume the same operation; a saved receipt can finish a failed database projection without another provider call. Processing-cost reconciliation supplies the host's explicit deficit policy, independently pins main and rollback claim revisions, and adopts an eligible legacy claim and its host marker in the same transaction as the final projection.
+
+## Legacy records
+
+Existing sealed, unattempted groups can start the new workflow. Existing collected settlement groups require exact transfer mirrors for every positive allocation leg before the host marks the sale settled. A partially collecting settlement group uses those same verified mirrors and finishes one bounded database batch per invocation. It never creates a new transfer or provider idempotency key.
+
+Invoice compatibility uses `costRecovery.verifyInvoiceReceipt`. This read-only method requires the previously bound item, exact account/scope/invoice/currency/amount bindings, one unambiguous item and complete history within five pages and 500 items. It uses GETs only and performs no item binding or financial mutation. Unknown, incomplete or malformed evidence leaves reservations held. A verified paid invoice can continue an already collecting group; a verified void invoice can continue an already releasing group. The host never switches the persisted direction because a later invoice was canceled. Each invocation finishes one bounded database batch and schedules another invocation if needed.
+
+Legacy transfer attempts with no conclusive mirror, unmapped historical recovery amounts, and unknown in-flight groups stay blocked. Their status identifies `legacy_inflight_unknown`, `legacy_mapping_required` or `settlement_pending`. Operators must establish an explicit historical mapping and receipt before retrying. The cutover does not infer a collected group, forgive a claim, run a backfill, or release an unknown provider attempt. The legacy import helper retains its invoice and pending-settlement guards.
+
+A refund before new settlement dispatch cancels the workflow and keeps the sealed reservation held. An in-flight refund also holds the reservation until the existing settlement is reconciled. Cancellation alone does not release financial reservations. These cases require explicit manual resolution when no verified completion exists. If a blocked cost observation was waiting for settlement, a verified settlement projection schedules reconciliation against the now-collected group.
+
+## Verification
+
+Co-located tests run real nested component workflows and cover duplicate events, provider success followed by failed host projection, explicit resume, unknown attempts, original catalog ownership, cancellation, independent revision guards, legacy import/projection atomicity and observable blocked status. Eleven-reservation fixtures cover partially completed legacy settlement and invoice collections, release direction, replay and mismatched proof. Provider-boundary fixtures exercise the host adapters without live Stripe requests; separate package tests use the actual Stripe SDK transport to verify GET-only invoice proof, pagination caps and mismatches.

@@ -28,30 +28,20 @@ export const prepare = internalMutation({
       throw new Error("Migrate legacy recovery before preparing an invoice.");
     const scope = costScope(seller._id, seller.stripeAccountId, args.currency),
       groupKey = `example:cost-invoice:${args.invoiceId}`;
-    const existing = await stripe.costRecovery.getGroup(ctx, { groupKey });
-    if (
-      existing &&
-      (existing.accountId !== scope.accountId ||
-        existing.scopeKey !== scope.scopeKey ||
-        existing.currency !== scope.currency)
-    )
-      throw new Error("Recovery invoice scope changed.");
-    if (existing && existing.status !== "open") return true;
-    const current = await stripe.costRecovery.balance(ctx, scope);
-    if (current.activeGroupKey && current.activeGroupKey !== groupKey)
-      return null;
-    await stripe.costRecovery.reserve(ctx, {
+    const prepared = await stripe.costRecovery.prepareGroup(ctx, {
       ...scope,
       groupKey,
-      operationKey: `${groupKey}:batch:${existing?.pendingOperations ?? 0}`,
       sourceKind: "invoice",
       sourceId: args.invoiceId,
       maxDebit: Number.MAX_SAFE_INTEGER,
       maxCredit: Number.MAX_SAFE_INTEGER,
     });
-    const ledger = await stripe.costRecovery.balance(ctx, scope);
-    if (ledger.outstanding !== 0) return false;
-    await stripe.costRecovery.seal(ctx, { groupKey });
-    return true;
+    if (prepared.status === "conflict" && prepared.reason === "scope_busy")
+      return null;
+    if (prepared.status !== "prepared")
+      throw new Error(
+        `Recovery invoice preparation failed: ${prepared.reason}.`,
+      );
+    return prepared.isDone;
   },
 });

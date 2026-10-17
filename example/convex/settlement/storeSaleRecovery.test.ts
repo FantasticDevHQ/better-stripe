@@ -1,3 +1,6 @@
+import { runAction } from "../../testing/settlement/providerFixture";
+import { anyApi } from "convex/server";
+import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
@@ -24,11 +27,11 @@ vi.mock("../stripe/helpers", async () => {
     await import("../../../src/client/settlement/settleSale");
   const { components } = await import("../_generated/api");
   const sdk = raw as unknown as import("stripe").default;
-  const { CostRecoveryClient } =
-    await import("../../../src/client/costRecovery");
+  const { fixtureRecoveryClient } =
+    await import("../../testing/settlement/providerFixture");
   return {
     stripe: {
-      costRecovery: new CostRecoveryClient(components.betterStripe, () => sdk),
+      costRecovery: fixtureRecoveryClient(components.betterStripe, sdk),
       getVerifiedSale: async (
         _ctx: unknown,
         opts: Parameters<typeof getVerifiedSale>[1],
@@ -79,6 +82,7 @@ vi.mock("../stripe/helpers", async () => {
 });
 const componentModules = import.meta.glob("../../../dist/component/**/*.js");
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.resetAllMocks();
   raw.charges.retrieve.mockResolvedValue({ created: 1 });
   raw.transfers.list.mockResolvedValue({ data: [] });
@@ -110,6 +114,7 @@ async function setup(
     interval: "month",
     active: true,
   });
+  workflowTest.register(t, "betterStripe/workflow");
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Seller",
@@ -156,7 +161,7 @@ async function setup(
   raw.paymentIntents.retrieve.mockResolvedValue(payment);
   return { t, sellerId, payment };
 }
-it("keeps recovery reserved after one successful transfer and collects once when the failed leg retries", async () => {
+it("keeps interrupted recovery held and collects once after positive provider reconciliation", async () => {
   const { t, sellerId } = await setup("growth", true);
   await t.mutation(internal.sellerCosts.billing.internal.mutations.record, {
     sellerId,
@@ -179,11 +184,12 @@ it("keeps recovery reserved after one successful transfer and collects once when
     }
     return { id: `tr_${args.destination}`, ...args };
   });
-  await expect(
-    t.action(internal.settlement.internal.actions.settle, {
-      paymentIntentId: "pi_sale",
-    }),
-  ).rejects.toThrow("affiliate transfer interrupted");
+  await runAction(t, internal.settlement.internal.actions.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(
+    await t.query(anyApi.sellerCosts.workflow.queries.list, { sellerId }),
+  ).toMatchObject([{ kind: "settlement", status: "unknown" }]);
   expect(
     await t.query(components.betterStripe.costRecovery.queries.balance, {
       accountId: "acct_store",
@@ -191,10 +197,34 @@ it("keeps recovery reserved after one successful transfer and collects once when
       currency: "usd",
     }),
   ).toMatchObject({ reservedAmount: 320, collectedAmount: 0 });
-  await t.action(internal.settlement.internal.actions.settle, {
+  const sale = await t.query(internal.settlement.internal.queries.getByCharge, {
+    chargeId: "ch_sale",
+  });
+  raw.transfers.list.mockResolvedValue({
+    data: [
+      {
+        id: "tr_acct_store",
+        destination: "acct_store",
+        amount: sale!.sellerNet,
+        currency: "usd",
+        source_transaction: "ch_sale",
+        metadata: { bsSourceCharge: "ch_sale", bsRole: "store" },
+      },
+      {
+        id: "tr_acct_affiliate",
+        destination: "acct_affiliate",
+        amount: sale!.affiliateNet,
+        currency: "usd",
+        source_transaction: "ch_sale",
+        metadata: { bsSourceCharge: "ch_sale", bsRole: "affiliate" },
+      },
+    ],
+    has_more: false,
+  });
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   expect(

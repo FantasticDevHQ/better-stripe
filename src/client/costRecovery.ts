@@ -145,6 +145,50 @@ export class CostRecoveryClient extends ProcessingCostReconciliationClient {
         }),
     );
   }
+  /** Read-only legacy proof. Hard caps require complete history; never bind, finish or create. */
+  async verifyInvoiceReceipt(
+    ctx: RunCtx,
+    opts: RecoveryScope & { groupKey: string },
+  ) {
+    const unknown = {
+      status: "unknown" as const,
+      reason: "history_incomplete" as const,
+      retryable: false as const,
+    };
+    try {
+      if (!this.provider) return unknown;
+      const group = await this.getGroup(ctx, { groupKey: opts.groupKey });
+      if (!group?.invoiceItemId) return unknown;
+      const receipt = await attachRecoveryInvoice(
+        this.provider(),
+        group,
+        opts,
+        async () => {
+          throw new Error("Read-only invoice verification cannot bind.");
+        },
+        false,
+        500,
+        { maxPages: 5, maxItems: 500 },
+        true,
+      );
+      if (
+        !receipt.invoiceItemId ||
+        !["paid", "void"].includes(receipt.invoiceStatus ?? "")
+      )
+        return unknown;
+      return {
+        status: "ready" as const,
+        ...receipt,
+        outcome:
+          receipt.invoiceStatus === "paid"
+            ? ("collect" as const)
+            : ("release" as const),
+      };
+    } catch {
+      // Provider failures and malformed/incomplete evidence never authorize a financial transition.
+      return unknown;
+    }
+  }
   /** Re-read Stripe; keep unpaid items reserved. Repeat until isDone after terminal outcomes. */
   async reconcileInvoice(
     ctx: RunCtx,

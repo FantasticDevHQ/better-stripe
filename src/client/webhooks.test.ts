@@ -13,6 +13,7 @@ import type {
 // We can't call registerRoutes directly because it needs HttpRouter.
 // Instead, import the module and extract handleWebhookRequest via registerRoutes.
 import { registerRoutes } from "./webhooks.js";
+import { mockQualifiedRefund } from "../../tests/fixtures/qualified-refund.js";
 
 // ---------------------------------------------------------------------------
 // Mock Stripe SDK
@@ -177,28 +178,6 @@ function makeV2ThinEvent(overrides?: Partial<V2ThinEvent>): V2ThinEvent {
     },
     ...overrides,
   };
-}
-
-/**
- * Capture the webhook handler by calling registerRoutes with a fake HttpRouter.
- * Returns a function that calls the handler directly.
- */
-function _setupHandler(
-  config?: RegisterRoutesConfig,
-): (ctx: WebhookActionCtx, request: Request) => Promise<Response> {
-  let handler: any;
-  const fakeRouter = {
-    route: (opts: any) => {
-      handler = opts.handler;
-    },
-  };
-
-  registerRoutes(
-    fakeRouter as any,
-    createMockComponent(),
-    config ?? makeBaseConfig(),
-  );
-  return handler;
 }
 
 async function parseJson(response: Response): Promise<any> {
@@ -1043,36 +1022,7 @@ describe("webhooks", () => {
         metadata: { note: "partial" },
       });
       mockConstructEventAsync.mockResolvedValue(event);
-      mockRefundRetrieve.mockResolvedValue({
-        ...event.data.object,
-        object: "refund",
-      });
-      (ctx.runQuery as Mock)
-        .mockResolvedValueOnce({
-          status: "unknown",
-          merchantAccount: null,
-          requiresChargeProof: false,
-        })
-        .mockResolvedValue([]);
-      (ctx.runMutation as Mock)
-        .mockResolvedValueOnce("inserted")
-        .mockResolvedValueOnce(1)
-        .mockResolvedValueOnce({
-          status: "accepted",
-          generation: 1,
-          changed: true,
-          refund: {
-            _id: "component_refund",
-            _creationTime: 0,
-            stripeRefundId: "re_123",
-            stripePaymentIntentId: "pi_abc",
-            stripeChargeId: "ch_xyz",
-            amount: 500,
-            currency: "usd",
-            status: "succeeded",
-            reason: "requested_by_customer",
-          },
-        });
+      const refund = mockQualifiedRefund(ctx, mockRefundRetrieve, event.data.object);
 
       const request = makeRequest({ type: "refund.created" });
       const response = await handler(ctx, request);
@@ -1083,15 +1033,7 @@ describe("webhooks", () => {
         expect.objectContaining({
           generation: 1,
           apiContext: "platform",
-          refund: expect.objectContaining({
-            stripeRefundId: "re_123",
-            stripePaymentIntentId: "pi_abc",
-            stripeChargeId: "ch_xyz",
-            amount: 500,
-            currency: "usd",
-            status: "succeeded",
-            reason: "requested_by_customer",
-          }),
+          refund: expect.objectContaining(refund),
         }),
       );
       expect(ctx.runMutation).not.toHaveBeenCalledWith(

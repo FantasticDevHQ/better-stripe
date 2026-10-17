@@ -1,3 +1,4 @@
+import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
 import { refundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
 import type { RefundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
 import { reconcileRefundAndTrigger } from "./webhooks/refundReconciliation.js";
@@ -1119,6 +1120,17 @@ export class BetterStripe extends PaymentSourceClient {
   ) {
     return providerReads.getCheckoutSessionFromStripe(this.stripe(), opts);
   }
+  /** Host-authorized existing subscription card selection; never an account-wide default. */
+  updateSubscriptionDefaultPaymentMethod(
+    _ctx: RunCtx,
+    opts: subscriptionPaymentMethod.SubscriptionPaymentMethodOptions,
+  ) {
+    return subscriptionPaymentMethod.updateSubscriptionDefaultPaymentMethod(
+      this.stripe(),
+      opts,
+    );
+  }
+
   async getSubscriptionFromStripe(
     _ctx: RunCtx,
     opts: providerReads.SubscriptionReadOptions,
@@ -1772,3 +1784,8 @@ export class BetterStripe extends PaymentSourceClient {
     return { syncWebhook, asyncWebhook };
   }
 }
+
+export type {
+  SubscriptionPaymentMethodOptions,
+  SubscriptionPaymentMethodResult,
+} from "./billing/subscription-payment-method.js";

@@ -7857,6 +7857,106 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    refundSync: {
+      mutations: {
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          { apiContext: string; stripeRefundId: string },
+          number,
+          Name
+        >;
+        finish: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            apiContext: string;
+            generation: number;
+            refund: {
+              accountId?: string;
+              amount: number;
+              currency: string;
+              failureReason?: string;
+              metadata?: Record<string, string>;
+              reason?:
+                | "duplicate"
+                | "fraudulent"
+                | "requested_by_customer"
+                | "expired_uncaptured_charge";
+              status:
+                | "pending"
+                | "requires_action"
+                | "succeeded"
+                | "failed"
+                | "canceled";
+              stripeChargeId: string;
+              stripePaymentIntentId: string;
+              stripeRefundId: string;
+            };
+            stripeRefundId: string;
+          },
+          | {
+              changed: boolean;
+              generation: number;
+              refund: {
+                _creationTime: number;
+                _id: string;
+                accountId?: string;
+                amount: number;
+                currency: string;
+                failureReason?: string;
+                metadata?: any;
+                reason?:
+                  | "duplicate"
+                  | "fraudulent"
+                  | "requested_by_customer"
+                  | "expired_uncaptured_charge";
+                refundCommandConflict?: boolean;
+                refundCommandKey?: string;
+                refundCommandNormalizationVersion?: 1;
+                refundCommandObservedAt?: number;
+                status:
+                  | "pending"
+                  | "requires_action"
+                  | "succeeded"
+                  | "failed"
+                  | "canceled";
+                stripeChargeId?: string;
+                stripePaymentIntentId?: string;
+                stripeRefundId: string;
+              };
+              status: "accepted";
+            }
+          | { generation: number; status: "superseded" },
+          Name
+        >;
+        markUnknown: FunctionReference<
+          "mutation",
+          "internal",
+          { apiContext: string; generation: number; stripeRefundId: string },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        routing: FunctionReference<
+          "query",
+          "internal",
+          {
+            currency: string;
+            stripeChargeId: string;
+            stripePaymentIntentId: string;
+            stripeRefundId: string;
+          },
+          {
+            merchantAccount: string | null;
+            requiresChargeProof: boolean;
+            status: "known" | "unknown" | "held";
+          },
+          Name
+        >;
+      };
+    };
     settlement: {
       mutations: {
         claimCommissionInvoice: FunctionReference<

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 
 import { STRIPE_API_VERSION } from "../constants.js";
 import type { RunCtx } from "../helpers.js";
@@ -34,6 +34,7 @@ function fixture() {
     customer_account: "acct_original",
   };
   const responses = new Map<string, Response>();
+  const beforeReply = new Map<string, () => void>();
   const counts = new Map<string, number>();
   const sdk = new Stripe("sk_test_subscription_card_fixture", {
     apiVersion: STRIPE_API_VERSION,
@@ -53,7 +54,11 @@ function fixture() {
       const requestKey = `${method} ${path}`;
       const ordinal = (counts.get(requestKey) ?? 0) + 1;
       counts.set(requestKey, ordinal);
-      const override = responses.get(`${requestKey} ${ordinal}`);
+      beforeReply.get(`${requestKey} ${ordinal}`)?.();
+      const override =
+        responses.get(
+          `${headers.get("Stripe-Account") ?? "platform"} ${requestKey} ${ordinal}`,
+        ) ?? responses.get(`${requestKey} ${ordinal}`);
       if (override) return override.clone();
       if (method === "POST" && path === "/v1/subscriptions/sub_original") {
         original.default_payment_method =
@@ -90,7 +95,18 @@ function fixture() {
     paymentMethodId: card.id,
     idempotencyKey: "subscription-card-original-command",
   };
-  return { client, ctx, opts, original, other, card, requests, responses };
+  return {
+    client,
+    ctx,
+    opts,
+    original,
+    other,
+    card,
+    requests,
+    responses,
+    beforeReply,
+    sdk,
+  };
 }
 
 it("retains the actual public subscription provider read as a V2 payer positive control", async () => {
@@ -322,3 +338,91 @@ it.each([
     expect(f.requests).toHaveLength(0);
   },
 );
+
+it("does not borrow a card from platform scope when it is absent in the selected connected realm", async () => {
+  const f = fixture();
+  f.responses.set(
+    "acct_merchant GET /v1/payment_methods/pm_original 1",
+    jsonResponse(
+      {
+        error: {
+          type: "invalid_request_error",
+          code: "resource_missing",
+          message: "No method in selected realm",
+        },
+      },
+      404,
+    ),
+  );
+  expect(
+    await f.client.updateSubscriptionDefaultPaymentMethod(f.ctx, {
+      ...f.opts,
+      connectedAccountId: "acct_merchant",
+    }),
+  ).toEqual({ status: "unavailable", reason: "provider_read_unavailable" });
+  expect(
+    f.requests.every((r) => r.realm === "acct_merchant" && r.method === "GET"),
+  ).toBe(true);
+  expect(f.requests).toHaveLength(2);
+});
+
+it("keeps a lost accepted write unknown rather than inventing provider failure or success", async () => {
+  const f = fixture();
+  f.beforeReply.set("POST /v1/subscriptions/sub_original 1", () => {
+    f.original.default_payment_method = f.opts.paymentMethodId;
+  });
+  f.responses.set(
+    "POST /v1/subscriptions/sub_original 1",
+    jsonResponse(
+      {
+        error: {
+          type: "api_error",
+          message: "Synthetic response lost after acceptance",
+        },
+      },
+      503,
+    ),
+  );
+  expect(
+    await f.client.updateSubscriptionDefaultPaymentMethod(f.ctx, f.opts),
+  ).toEqual({ status: "unknown", reason: "provider_write_unconfirmed" });
+  expect(f.original.default_payment_method).toBe(f.opts.paymentMethodId);
+  expect(f.requests.filter((r) => r.method === "POST")).toHaveLength(1);
+});
+
+it.each(["id", "payer", "managed", "method"] as const)(
+  "does not confirm fresh %s drift after a valid update reply",
+  async (variant) => {
+    const f = fixture();
+    const current = {
+      ...f.original,
+      default_payment_method: f.opts.paymentMethodId,
+    };
+    const contradiction =
+      variant === "id"
+        ? { id: "sub_foreign" }
+        : variant === "payer"
+          ? { customer_account: "acct_foreign" }
+          : variant === "managed"
+            ? { managed_payments: { enabled: true } }
+            : { default_payment_method: "pm_later_selection" };
+    f.responses.set(
+      "GET /v1/subscriptions/sub_original 2",
+      jsonResponse({ ...current, ...contradiction }),
+    );
+    expect(
+      await f.client.updateSubscriptionDefaultPaymentMethod(f.ctx, f.opts),
+    ).toEqual({ status: "unknown", reason: "response_mismatch" });
+  },
+);
+
+it("propagates unexpected programming failures instead of calling them a provider outcome", async () => {
+  const f = fixture();
+  vi.spyOn(f.sdk.subscriptions, "retrieve").mockRejectedValue(
+    new Error("Unexpected synthetic implementation failure"),
+  );
+  await expect(
+    f.client.updateSubscriptionDefaultPaymentMethod(f.ctx, f.opts),
+  ).rejects.toThrow("Unexpected synthetic implementation failure");
+  expect(f.requests).toHaveLength(0);
+});

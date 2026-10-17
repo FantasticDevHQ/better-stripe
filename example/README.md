@@ -1501,3 +1501,15 @@ caller. This is historical identity observation, not current personal-account
 mapping, provider freshness, cancellation admission or permission to refund.
 See the exact-ID section in `docs/personal-account-mapping.md`; default reads
 retain their legacy first-match behavior.
+
+## Existing subscription card selection
+
+The shared `PaymentMethods` / `usePaymentMethodsManager` workflow owns saved-card
+loading, attachment and removal. A community/subscription-specific selection is
+a separate server-authorized operation, not the buyer's global default hint.
+See the maintained [original-subscription card callback](../docs/subscription-payment-methods.md#maintained-vite-server-callback-reference).
+It reuses `updateSubscriptionDefaultPaymentMethod` with an authenticated immutable
+host command, exact original payer/subscription/card/realm and unchanged request
+key. A fresh same-realm read must confirm the selection; a cached update reply
+or unknown outcome is not success. The reference does not enable a permissive
+persona-based write endpoint or replace the example's authentication boundary.

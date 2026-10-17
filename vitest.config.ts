@@ -31,6 +31,7 @@ export default defineConfig({
       exclude: [
         "**/_generated/**",
         "**/*.test.{ts,tsx}",
+        "src/testing/crossDomain/**",
         "example/src/test/**",
       ],
     },

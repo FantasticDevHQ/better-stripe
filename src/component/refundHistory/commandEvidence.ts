@@ -1,3 +1,4 @@
+import { originalRefundSeller } from "./originalSeller.js";
 import type { QueryCtx } from "../_generated/server.js";
 import {
   assertRefundCommandScope,
@@ -37,8 +38,12 @@ export async function readRefundCommandEvidence(
       status: "unavailable" as const,
       reason: "correlation_conflict" as const,
     };
+  const accountId =
+    row.accountId === undefined
+      ? await originalRefundSeller(ctx, scope)
+      : row.accountId;
   if (
-    row.accountId !== scope.accountId ||
+    accountId !== scope.accountId ||
     row.stripePaymentIntentId !== scope.stripePaymentIntentId ||
     row.stripeChargeId !== scope.stripeChargeId ||
     row.currency !== scope.currency
@@ -67,5 +72,5 @@ export async function readRefundCommandEvidence(
     .take(2);
   if (identity.length !== 1 || identity[0]?._id !== row._id)
     return { status: "unavailable" as const, reason: "ambiguous" as const };
-  return { status: "observed" as const, refund: row };
+  return { status: "observed" as const, refund: { ...row, accountId } };
 }

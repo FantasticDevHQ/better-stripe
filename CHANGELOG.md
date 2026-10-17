@@ -26,6 +26,22 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.48.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.48.0...v0.48.1) (2026-10-17)
+
+### Bug Fixes
+
+- add opt-in unique original Stripe ID reads ([1adf7a8](https://github.com/FantasticDevHQ/better-stripe/commit/1adf7a80ce2445daf4435ab975035e50d647d86e))
+- add opt-in unique original Stripe ID reads ([8cbc6b3](https://github.com/FantasticDevHQ/better-stripe/commit/8cbc6b3e779f622f9e94a607d230d7f9a2c4122a))
+
+### Maintenance
+
+- generate unique original ID reader bindings ([a01579f](https://github.com/FantasticDevHQ/better-stripe/commit/a01579f46c1f2145868d57cd9d485fd194651484))
+
+### Tests
+
+- cover unique original ID reads and trusted host use ([bef2882](https://github.com/FantasticDevHQ/better-stripe/commit/bef2882516542d336b7b06c4e6843aa1b7d528d0))
+- ratchet measured original ID reader coverage ([c6a6a10](https://github.com/FantasticDevHQ/better-stripe/commit/c6a6a106281d4320bbf8581294c386650e051bba))
+
 ## [0.48.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.47.1...v0.48.0) (2026-10-17)
 
 ### Features

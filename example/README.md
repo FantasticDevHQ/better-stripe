@@ -1488,3 +1488,16 @@ recovery completion. Generic event hooks retain verified notification bodies rat
 than current-state authority. Connected refunds with platform recovery obligations
 remain held instead of issuing unscoped platform operations. The example adds no
 browser-prepared observation endpoint or new financial retry permission.
+
+### Unique original subscription IDs
+
+The trusted server adapter in
+`convex/billing/history/originalSubscription.ts` demonstrates the optional
+`requireUnique: true` account and subscription reads. Its IDs must come from a
+host-authorized immutable original purchase, never browser account selectors.
+It authenticates the real example buyer, rejects global duplicate IDs, and checks
+both original buyer/account associations before returning records to its server
+caller. This is historical identity observation, not current personal-account
+mapping, provider freshness, cancellation admission or permission to refund.
+See the exact-ID section in `docs/personal-account-mapping.md`; default reads
+retain their legacy first-match behavior.

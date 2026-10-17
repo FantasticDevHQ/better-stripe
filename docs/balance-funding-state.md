@@ -36,8 +36,16 @@ running, unknown, failed and canceled results expose only operation identity and
 with an optional safe failure code.
 Foreign or contradictory bindings return an explicit unavailable outcome. Missing
 operations return null, which does not authorize another provider effect. Recover
-a lost prepare response by replaying its original request key and payload, then
-looking up that same operation.
+a lost prepare response by replaying its original public request key. Before any
+provider/settings/consent-time recapture, call `findPreparationOperation` with
+account, scope, subscription, request key, API version and `consent: true`.
+This read-only lookup verifies the saved prepare-kind and all those bindings,
+returning only safe operation state/reference or conflict/null. Then call
+`getPreparation` for that same operation. Unknown and failed requests recover
+the original identity without exposing restoration data or phase keys. Null is
+not proof of no provider effect or permission to create a replacement. A new key
+never permits recapturing already-enabled settings or replacing unresolved work.
+Exact low-level prepare snapshots, including consent time, remain immutable.
 
 ## Apply, inspect and cancel
 

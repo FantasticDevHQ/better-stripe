@@ -1045,6 +1045,42 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
+        findPreparationOperation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            consent: boolean;
+            providerApiVersion: string;
+            requestKey: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+          },
+          | {
+              accountId: string;
+              cancelRequested: boolean;
+              failureCode?:
+                "invalid_scope" | "unsupported_source" | "policy_invalid";
+              operationId: string;
+              scopeKey: string;
+              state:
+                | "pending"
+                | "running"
+                | "unknown"
+                | "succeeded"
+                | "canceled"
+                | "failed";
+              version: number;
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | { reason: "invalid_scope"; retryable: false; status: "rejected" }
+          | null,
+          Name
+        >;
         getOperation: FunctionReference<
           "query",
           "internal",

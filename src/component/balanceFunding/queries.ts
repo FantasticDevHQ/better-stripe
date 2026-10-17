@@ -7,6 +7,8 @@ import {
   operationRefFields,
   safeStatus,
   preparationLookup,
+  conflict,
+  invalidScope,
 } from "./schema.js";
 import {
   readPreparation as readSavedPreparation,
@@ -15,6 +17,8 @@ import {
   unavailable,
   validateScope,
   integer,
+  text,
+  same,
 } from "./helpers.js";
 const lookupArgs = { ...operationRefFields, stripeSubscriptionId: v.string() };
 /** Server-only provider execution reader. Never expose restoration data to browsers. */
@@ -132,6 +136,85 @@ export const getPreparation = query({
     return {
       status: operation.state,
       operation: ref(operation),
+      ...(operation.failureCode ? { failureCode: operation.failureCode } : {}),
+    };
+  },
+});
+/** Recover the original public request before any provider/settings/consent recapture. */
+export const findPreparationOperation = query({
+  args: {
+    ...scopeFields,
+    stripeSubscriptionId: v.string(),
+    requestKey: v.string(),
+    providerApiVersion: v.string(),
+    consent: v.boolean(),
+  },
+  returns: v.union(safeStatus, conflict, invalidScope, v.null()),
+  handler: async (ctx, args) => {
+    try {
+      validateScope(args);
+      text(args.stripeSubscriptionId);
+      text(args.requestKey);
+      text(args.providerApiVersion);
+    } catch {
+      return {
+        status: "rejected" as const,
+        reason: "invalid_scope" as const,
+        retryable: false as const,
+      };
+    }
+    if (args.consent !== true) return unavailable("identity_changed");
+    const request = await ctx.db
+      .query("balanceFundingRequests")
+      .withIndex("by_request", (q) => q.eq("requestKey", args.requestKey))
+      .unique();
+    if (!request) return null;
+    if (request.result?.status !== "accepted")
+      return unavailable("identity_changed");
+    const operation = await ctx.db.get(
+      "balanceFundingOperations",
+      request.result.operation.operationId,
+    );
+    if (
+      !operation ||
+      operation.kind !== "prepare" ||
+      operation.accountId !== args.accountId ||
+      operation.scopeKey !== args.scopeKey ||
+      !same(ref(operation), request.result.operation) ||
+      request.preparationId !== operation.preparationId
+    )
+      return unavailable("identity_changed");
+    const saved = await ctx.db.get(
+      "balanceFundingPreparations",
+      operation.preparationId,
+    );
+    if (
+      !saved ||
+      saved.accountId !== args.accountId ||
+      saved.scopeKey !== args.scopeKey ||
+      saved.preparation.stripeSubscriptionId !== args.stripeSubscriptionId ||
+      saved.providerApiVersion !== args.providerApiVersion
+    )
+      return unavailable("identity_changed");
+    try {
+      const snapshot = JSON.parse(request.payload);
+      if (
+        snapshot.consent !== true ||
+        snapshot.accountId !== args.accountId ||
+        snapshot.scopeKey !== args.scopeKey ||
+        snapshot.requestKey !== args.requestKey ||
+        snapshot.providerApiVersion !== args.providerApiVersion ||
+        snapshot.preparation?.customerAccount !== args.accountId ||
+        snapshot.preparation?.stripeSubscriptionId !== args.stripeSubscriptionId
+      )
+        return unavailable("identity_changed");
+    } catch {
+      return unavailable("identity_changed");
+    }
+    return {
+      ...ref(operation),
+      state: operation.state,
+      cancelRequested: operation.cancelRequested,
       ...(operation.failureCode ? { failureCode: operation.failureCode } : {}),
     };
   },

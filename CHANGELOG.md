@@ -26,6 +26,36 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.36.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.35.0...v0.36.0) (2026-10-17)
+
+
+### Features
+
+* preserve lossless operation evidence with bounded readers (BTS-234) ([b409fd4](https://github.com/FantasticDevHQ/better-stripe/commit/b409fd4af5afdec303747c8c5b78accb3ef02ee9))
+
+
+### Bug Fixes
+
+* **refunds:** bind ownerless evidence to immutable original allocation ([ce8dfdb](https://github.com/FantasticDevHQ/better-stripe/commit/ce8dfdb75f486d3207173e47ab99b49bd0055fd6))
+* **refunds:** qualify ownerless command receipts by original seller ([bbe399d](https://github.com/FantasticDevHQ/better-stripe/commit/bbe399da4caad0c60623487cc932059753772884))
+* **refunds:** qualify ownerless receipts by immutable original store ([173f0e1](https://github.com/FantasticDevHQ/better-stripe/commit/173f0e1be7963485ee67042b36704387815f6db0))
+* use component-compatible bounded evidence pagination ([78a524c](https://github.com/FantasticDevHQ/better-stripe/commit/78a524cb13900a2a111183e41ac53cd2e9b038bb))
+
+
+### Performance
+
+* reuse validated same-bucket earnings summary reads (BTS-235) ([47449d2](https://github.com/FantasticDevHQ/better-stripe/commit/47449d241354eb1e21ef4b3538263b2400c1aa03))
+* validate same-bucket earnings updates with one summary read ([5421d3b](https://github.com/FantasticDevHQ/better-stripe/commit/5421d3bfaa5bdf54f4e9e8c38cf19599cb485d15))
+
+
+### Maintenance
+
+* integrate accepted summary source preserving stricter floors ([bbd8402](https://github.com/FantasticDevHQ/better-stripe/commit/bbd84025a43a88a1ee8d7b360548fd74c1b84ece))
+* retain measured operation evidence coverage floors ([91a34a8](https://github.com/FantasticDevHQ/better-stripe/commit/91a34a8a035a1a81b53ffdec6e3c50b1bfa445ca))
+* retain measured stricter precursor coverage floors ([4fb3917](https://github.com/FantasticDevHQ/better-stripe/commit/4fb391718fb2503371b1d7c2a87884f11f1b0ac3))
+* retain measured stricter refund evidence coverage floors ([5c92c67](https://github.com/FantasticDevHQ/better-stripe/commit/5c92c6765de70e919c877f956a81bd050f031a5d))
+* retain measured validated-summary coverage floors ([7d83807](https://github.com/FantasticDevHQ/better-stripe/commit/7d838070d21cbd40c1bdce9cf63517ea59c89016))
+
 ## [0.35.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.34.0...v0.35.0) (2026-10-16)
 
 ### Features

@@ -644,6 +644,89 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             },
           Name
         >;
+        cancelWorkflow: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            definitionVersion: string;
+            operationId: string;
+            providerApiVersion: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          {
+            accountId: string;
+            cancelRequested: boolean;
+            failureCode?:
+              "invalid_scope" | "unsupported_source" | "policy_invalid";
+            operationId: string;
+            scopeKey: string;
+            state:
+              | "pending"
+              | "running"
+              | "unknown"
+              | "succeeded"
+              | "canceled"
+              | "failed";
+            version: number;
+          },
+          Name
+        >;
+        claimProviderPhase: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            definitionVersion: string;
+            operationId: string;
+            phase: "create" | "attach" | "apply";
+            providerApiVersion: string;
+            providerKey: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          | {
+              mode: "execute" | "reconcile";
+              paymentMethodId?: string;
+              status: "claimed";
+            }
+          | {
+              status: "ready";
+              value: {
+                customerAccount: string;
+                enabled?: boolean;
+                paymentMethodId: string | null;
+                paymentMethodTypes?: Array<string> | null;
+                phase: "create" | "attach" | "apply";
+                providerApiVersion: string;
+                stripeSubscriptionId: string;
+              };
+            }
+          | {
+              reason: "provider_outcome_unknown" | "history_incomplete";
+              retryable: false;
+              status: "unknown";
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | {
+              reason: "invalid_scope" | "unsupported_source" | "policy_invalid";
+              retryable: false;
+              status: "rejected";
+            }
+          | {
+              reason: "provider_pending";
+              retryable: true;
+              status: "not_ready";
+            },
+          Name
+        >;
         failBeforeStart: FunctionReference<
           "mutation",
           "internal",
@@ -661,6 +744,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -714,6 +839,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -767,6 +934,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -849,6 +1058,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -935,6 +1186,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -963,6 +1256,59 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "failed";
             version: number;
           },
+          Name
+        >;
+        resumeWorkflow: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            definitionVersion: string;
+            operationId: string;
+            providerApiVersion: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "accepted";
+              workflowId?: string;
+            }
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "canceled";
+            }
+          | {
+              reason: "provider_outcome_unknown" | "history_incomplete";
+              retryable: false;
+              status: "unknown";
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | {
+              reason: "invalid_scope" | "unsupported_source" | "policy_invalid";
+              retryable: false;
+              status: "rejected";
+            }
+          | {
+              reason: "provider_pending";
+              retryable: true;
+              status: "not_ready";
+            },
           Name
         >;
         savePreparation: FunctionReference<
@@ -1013,6 +1359,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -1041,6 +1429,60 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "failed";
             version: number;
           },
+          Name
+        >;
+        startWorkflow: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            definitionVersion: string;
+            operationId: string;
+            providerAction: string;
+            providerApiVersion: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+            version: number;
+          },
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "accepted";
+              workflowId?: string;
+            }
+          | {
+              operation: {
+                accountId: string;
+                operationId: string;
+                scopeKey: string;
+                version: number;
+              };
+              status: "canceled";
+            }
+          | {
+              reason: "provider_outcome_unknown" | "history_incomplete";
+              retryable: false;
+              status: "unknown";
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | {
+              reason: "invalid_scope" | "unsupported_source" | "policy_invalid";
+              retryable: false;
+              status: "rejected";
+            }
+          | {
+              reason: "provider_pending";
+              retryable: true;
+              status: "not_ready";
+            },
           Name
         >;
       };
@@ -1166,6 +1608,48 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             cancelRequested: boolean;
             enabled: boolean;
+            execution?: {
+              apply?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              attach?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              create?: {
+                receipt?: {
+                  customerAccount: string;
+                  enabled?: boolean;
+                  paymentMethodId: string | null;
+                  paymentMethodTypes?: Array<string> | null;
+                  phase: "create" | "attach" | "apply";
+                  providerApiVersion: string;
+                  stripeSubscriptionId: string;
+                };
+                state: "running" | "unknown" | "succeeded";
+              };
+              definitionVersion: string;
+              providerAction: string;
+              providerApiVersion: string;
+              workflowId?: string;
+            };
             failureCode?:
               "invalid_scope" | "unsupported_source" | "policy_invalid";
             kind: "prepare" | "apply";
@@ -1227,6 +1711,46 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             startsPaused: boolean;
             verified: boolean;
           } | null,
+          Name
+        >;
+        readScopePreparation: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            providerApiVersion: string;
+            scopeKey: string;
+            stripeSubscriptionId: string;
+          },
+          | {
+              _creationTime: number;
+              _id: string;
+              accountId: string;
+              activeOperationId?: string;
+              consentAt: number;
+              consentReference: string;
+              enabled: boolean;
+              operationVersion: number;
+              preparation: {
+                customerAccount: string;
+                paymentMethodId?: string;
+                previousPaymentMethodId: string | null;
+                previousPaymentMethodTypes: Array<string> | null;
+                stripeSubscriptionId: string;
+              };
+              preparationOperationId?: string;
+              providerApiVersion: string;
+              scopeKey: string;
+              startsPaused: boolean;
+              verified: boolean;
+            }
+          | {
+              reason: "scope_busy" | "identity_changed" | "revision_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | { reason: "invalid_scope"; retryable: false; status: "rejected" }
+          | null,
           Name
         >;
       };

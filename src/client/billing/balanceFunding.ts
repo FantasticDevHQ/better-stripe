@@ -66,6 +66,56 @@ function methodId(sub: Stripe.Subscription) {
   return typeof pm === "string" ? pm : (pm?.id ?? null);
 }
 
+export type BalanceFundingOriginal = Omit<
+  BalanceFundingPreparation,
+  "paymentMethodId"
+>;
+
+/** Read only: persist this snapshot before provisioning any provider resource. */
+export async function captureBalanceFundingOriginal(
+  stripe: Stripe,
+  version: string,
+  opts: BalanceFundingScope & { consent: true },
+): Promise<BalanceFundingOriginal> {
+  if (
+    !getBalanceFundingCapability(version).configured ||
+    stripe.getApiField("version") !== version
+  )
+    throw new Error(
+      "Balance funding capture requires matching explicit Stripe preview API configuration.",
+    );
+  if (opts.consent !== true)
+    throw new Error("Explicit consent is required for balance funding.");
+  const sub = await subscription(stripe, opts);
+  if (sub.id !== opts.stripeSubscriptionId || sub.object !== "subscription")
+    throw new Error("Captured subscription identity does not match.");
+  const previous = methodId(sub);
+  const types = sub.payment_settings?.payment_method_types ?? null;
+  if (types?.includes("stripe_balance"))
+    throw new Error(
+      "Balance funding is already configured; reuse the persisted restoration record.",
+    );
+  if (previous) {
+    const method = await stripe.paymentMethods.retrieve(previous);
+    if (method.id !== previous || method.object !== "payment_method")
+      throw new Error("Captured payment method identity does not match.");
+    if (resolveOwnerAccount(method) !== opts.customerAccount)
+      throw new Error(
+        "Original payment method does not belong to the account.",
+      );
+    if (method.type === "stripe_balance")
+      throw new Error(
+        "Balance funding is already configured; reuse the persisted restoration record.",
+      );
+  }
+  return {
+    customerAccount: opts.customerAccount,
+    stripeSubscriptionId: opts.stripeSubscriptionId,
+    previousPaymentMethodId: previous,
+    previousPaymentMethodTypes: types === null ? null : [...types],
+  };
+}
+
 /** Capture restoration settings, provision and attach; does not enable billing. */
 export async function prepareBalanceFunding(
   stripe: Stripe,

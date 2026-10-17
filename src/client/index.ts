@@ -33,6 +33,13 @@ export type {
 } from "./products/catalog.js";
 export type { CreatePriceOptions } from "./products/prices.js";
 export type { CreateProductOptions } from "./products/products.js";
+import { BalanceFundingWorkflowClient } from "./balanceFundingWorkflow/client.js";
+export type {
+  FundingOperationReference,
+  FundingProviderPhaseOptions,
+  FundingProviderPhaseResult,
+  PrepareFundingWorkflowOptions,
+} from "./balanceFundingWorkflow/client.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -1120,6 +1127,14 @@ export class BetterStripe extends PaymentSourceClient {
   }
   get payoutPolicy() {
     return new PayoutPolicyClient(this.component, () => this.stripe());
+  }
+
+  get balanceFundingWorkflow() {
+    return new BalanceFundingWorkflowClient(
+      this.component,
+      () => this.stripe(),
+      this.stripeApiVersion,
+    );
   }
 
   get costRecovery() {

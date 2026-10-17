@@ -1474,13 +1474,17 @@ The server-only [current refund synchronization reference](convex/connect/refund
 uses the public `syncRefundFromStripe` operation after host authentication and
 original refund/API-scope authorization. It reads current provider state and
 updates the existing component projection under a durable generation. It does not
-create refunds, grant retry authority, or wire the legacy signed webhook pipeline;
-that legacy path remains unfenced until its separate integration. Preserve unknown,
+create refunds or grant retry authority. The maintained signed webhook route
+separately reads current refund state and accepts its generation before changed
+callbacks and existing supported platform recovery. Preserve unknown,
 superseded and native-resource-error states as described in the packaged
 [refund observation contract](../docs/refund-context.md#current-refund-synchronization).
 
 The exported package webhook handler pair retains legacy `null` dispatcher
 returns and supports the internal qualified refund callback/result seam described
 in [the refund contract](../docs/refund-context.md#transactional-callback-seam).
-That seam alone does not switch signed refund delivery or establish financial
-recovery completion; the example adds no browser-prepared observation endpoint.
+The signed route consumes that seam; an accepted/unchanged mirror is not financial
+recovery completion. Generic event hooks retain verified notification bodies rather
+than current-state authority. Connected refunds with platform recovery obligations
+remain held instead of issuing unscoped platform operations. The example adds no
+browser-prepared observation endpoint or new financial retry permission.

@@ -65,9 +65,9 @@ export function PlanPricingEditor({
       fields.monthlyPrice.trim(),
       currency,
     );
-    if (monthlyAmount === null || monthlyAmount <= 0)
+    if (monthlyAmount === null)
       throw new Error(
-        "Enter a positive monthly price in supported currency units.",
+        "Enter a nonnegative monthly price in supported currency units.",
       );
     const feeBasisPoints =
       fields.saleFee.trim() === ""

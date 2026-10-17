@@ -63,6 +63,7 @@ export type RecoveryGroup = RecoveryGroupOptions & {
   _creationTime: number;
   amount: number;
   pendingOperations: number;
+  preparationSequence?: number;
   invoiceItemId?: string;
   invoiceFunding?: {
     sourceChargeId: string;
@@ -82,6 +83,18 @@ export type RecoveryReservation = {
   allocations: { claimId: string; claimKey: string; amount: number }[];
   status: "reserved" | "collected" | "released" | "empty";
 };
+export type RecoveryPreparationResult =
+  | { status: "prepared"; group: RecoveryGroup; isDone: boolean }
+  | {
+      status: "conflict";
+      reason: "scope_busy" | "identity_changed";
+      retryable: false;
+    }
+  | {
+      status: "rejected";
+      reason: "invalid_scope" | "policy_invalid";
+      retryable: false;
+    };
 /** Host authorizes policy and scope. Provider methods verify invoice outcomes. */
 export class CostRecoveryClient {
   constructor(
@@ -212,6 +225,14 @@ export class CostRecoveryClient {
   }
   recordClaim(ctx: RunCtx, opts: RecoveryObservation) {
     return this.mutate<RecoveryClaim>(ctx, "mutations/record", opts);
+  }
+  /** Authorize scope and limits first. Repeat bounded calls until isDone. */
+  prepareGroup(ctx: RunCtx, opts: RecoveryGroupOptions & { limit?: number }) {
+    return this.mutate<RecoveryPreparationResult>(
+      ctx,
+      "preparation/prepare",
+      opts,
+    );
   }
   reserve(
     ctx: RunCtx,

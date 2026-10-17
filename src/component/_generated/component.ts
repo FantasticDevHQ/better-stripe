@@ -2400,6 +2400,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;
+            preparationSequence?: number;
             scopeKey: string;
             sourceGross?: number;
             sourceId: string;
@@ -2435,6 +2436,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;
+            preparationSequence?: number;
             scopeKey: string;
             sourceGross?: number;
             sourceId: string;
@@ -2471,6 +2473,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxCredit: number;
               maxDebit: number;
               pendingOperations: number;
+              preparationSequence?: number;
               scopeKey: string;
               sourceGross?: number;
               sourceId: string;
@@ -2602,6 +2605,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               maxCredit: number;
               maxDebit: number;
               pendingOperations: number;
+              preparationSequence?: number;
               scopeKey: string;
               sourceGross?: number;
               sourceId: string;
@@ -2681,6 +2685,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;
+            preparationSequence?: number;
             scopeKey: string;
             sourceGross?: number;
             sourceId: string;
@@ -2694,6 +2699,70 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "collected"
               | "released";
           },
+          Name
+        >;
+      };
+      preparation: {
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            limit?: number;
+            maxCredit: number;
+            maxDebit: number;
+            scopeKey: string;
+            sourceGross?: number;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            sourceProcessingFee?: number;
+          },
+          | {
+              group: {
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                amount: number;
+                currency: string;
+                groupKey: string;
+                invoiceFunding?: {
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+                invoiceItemId?: string;
+                maxCredit: number;
+                maxDebit: number;
+                pendingOperations: number;
+                preparationSequence?: number;
+                scopeKey: string;
+                sourceGross?: number;
+                sourceId: string;
+                sourceKind: "settlement" | "invoice";
+                sourceProcessingFee?: number;
+                status:
+                  | "open"
+                  | "sealed"
+                  | "collecting"
+                  | "releasing"
+                  | "collected"
+                  | "released";
+              };
+              isDone: boolean;
+              status: "prepared";
+            }
+          | {
+              reason: "scope_busy" | "identity_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | {
+              reason: "invalid_scope" | "policy_invalid";
+              retryable: false;
+              status: "rejected";
+            },
           Name
         >;
       };
@@ -2763,6 +2832,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             maxCredit: number;
             maxDebit: number;
             pendingOperations: number;
+            preparationSequence?: number;
             scopeKey: string;
             sourceGross?: number;
             sourceId: string;

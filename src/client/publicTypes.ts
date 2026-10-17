@@ -98,3 +98,8 @@ export type {
   SubscriptionHistoryPage,
   CheckoutSessionHistoryPage,
 } from "./billing/historyPages.js";
+
+export type {
+  AccountByStripeIdOptions,
+  SubscriptionByStripeIdOptions,
+} from "./originalIdReadOptions.js";

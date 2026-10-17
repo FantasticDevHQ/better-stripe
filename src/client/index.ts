@@ -1,4 +1,8 @@
 import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
+import type {
+  AccountByStripeIdOptions,
+  SubscriptionByStripeIdOptions,
+} from "./originalIdReadOptions.js";
 import { refundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
 import type { RefundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
 import { reconcileRefundAndTrigger } from "./webhooks/refundReconciliation.js";
@@ -404,7 +408,7 @@ export class BetterStripe extends PaymentSourceClient {
 
   async getAccountByStripeId(
     ctx: RunCtx,
-    opts: { stripeAccountId: string },
+    opts: AccountByStripeIdOptions,
   ): Promise<StripeComponentAccount | null> {
     return accountsImpl.getAccountByStripeId(this.component, ctx, opts);
   }
@@ -695,7 +699,7 @@ export class BetterStripe extends PaymentSourceClient {
 
   async getSubscriptionByStripeId(
     ctx: RunCtx,
-    opts: { stripeSubscriptionId: string },
+    opts: SubscriptionByStripeIdOptions,
   ): Promise<StripeComponentSubscription | null> {
     return subscriptionsImpl.getSubscriptionByStripeId(
       this.component,

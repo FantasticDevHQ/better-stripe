@@ -1,3 +1,4 @@
+import type { AccountByStripeIdOptions } from "../originalIdReadOptions.js";
 import { addCustomerConfiguration } from "./accountConfigurations.js";
 import { idempotencyOptions } from "./idempotency.js";
 export type CreateAccountOptions = {
@@ -299,7 +300,7 @@ export async function getAccountByOrgId(
 export async function getAccountByStripeId(
   component: Component,
   ctx: RunCtx,
-  opts: { stripeAccountId: string },
+  opts: AccountByStripeIdOptions,
 ): Promise<StripeComponentAccount | null> {
   return (await ctx.runQuery(
     componentRef(component, "core/queries/getAccountByStripeId"),

@@ -52,3 +52,33 @@ available balance or permission to create a refund. Original invoice allocation,
 buyer, currency, charge, refund history and creation-time revalidation remain
 separate requirements. Closed-account history uses the dedicated historical
 provenance APIs; this reader never revives a closed account.
+
+## Exact original provider-ID reads
+
+For an immutable historical purchase link, use
+`stripe.getAccountByStripeId(ctx, { stripeAccountId, requireUnique: true })` and
+`stripe.getSubscriptionByStripeId(ctx, { stripeSubscriptionId, requireUnique: true })`.
+The exported `AccountByStripeIdOptions` and `SubscriptionByStripeIdOptions` types
+include this optional flag. Each exact provider-ID index examines at most two
+matches and returns the unchanged document only when exactly one exists. Zero
+matches and multiple matches both return `null`; neither result authorizes a
+fallback to another account or subscription. Component errors still propagate.
+
+Ambiguity is global to the provider ID, before any caller ownership, organization,
+status or closure qualification. A canceled subscription or a closed original
+account remains readable when its provider ID is unique, even when the buyer has
+a different current account. This does not revive the account or establish its
+current provider usability. No provider reads or writes occur. Omitting
+`requireUnique`, or passing `false`, preserves the existing first-match behavior.
+Component-ID getters and array readers are unchanged.
+
+Authenticate the host viewer and derive both original IDs from its immutable
+purchase record before these reads. Then compare the returned original buyer,
+account, tenant and purchase bindings under the host's current authorization
+policy before projecting private fields. Uniqueness alone proves none of those
+bindings, provider freshness, paid access or permission to cancel or refund.
+The server-only Vite reference
+[`requireOriginalSubscription`](../example/convex/billing/history/originalSubscription.ts)
+authenticates the actual example buyer and compares both returned records to
+that buyer and the supplied trusted original association. It is not a public
+browser-ID endpoint or a complete historical purchase authorization policy.

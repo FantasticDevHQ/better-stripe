@@ -24,15 +24,20 @@ export const getSubscription = query({
 });
 
 export const getSubscriptionByStripeId = query({
-  args: { stripeSubscriptionId: v.string() },
+  args: {
+    stripeSubscriptionId: v.string(),
+    requireUnique: v.optional(v.boolean()),
+  },
   returns: v.union(subscriptionDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const rows = ctx.db
       .query("subscriptions")
       .withIndex("by_stripe_subscription_id", (q) =>
         q.eq("stripeSubscriptionId", args.stripeSubscriptionId),
-      )
-      .first();
+      );
+    if (!args.requireUnique) return await rows.first();
+    const matches = await rows.take(2);
+    return matches.length === 1 ? (matches[0] ?? null) : null;
   },
 });
 

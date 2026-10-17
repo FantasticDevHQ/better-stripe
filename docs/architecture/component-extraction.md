@@ -146,6 +146,15 @@ balanceFunding.getPreparation(ctx, {
   ...operation, // Account, scope, operation ID and version are all required.
   stripeSubscriptionId,
 }); // => PreparationLookup | Unavailable | null
+
+balanceFunding.findPreparationOperation(ctx, {
+  accountId,
+  scopeKey,
+  stripeSubscriptionId,
+  requestKey,
+  providerApiVersion,
+  consent: true,
+}); // => OperationStatus | Unavailable | null; read-only request recovery
 ```
 
 `getPreparation` reads the result of an existing preparation operation. It never
@@ -159,6 +168,14 @@ results expose no preparation ID. Only a successfully verified and durably
 saved preparation returns `prepared`, with the original server-owned ID.
 Replays keep that result stable. Status and lookup results expose neither
 restoration settings nor credentials.
+
+Before recapturing provider settings or consent time, the runtime queries
+`findPreparationOperation` with the original public request key. It validates
+saved prepare-kind, account, scope, subscription, API version and consent binding,
+returning only safe operation identity/state. Unknown or failed intents retain
+their original identity; a new key never permits recapturing already-enabled
+restoration or replacing unresolved preparation. A null lookup is not proof that
+no provider effect happened. Full low-level captured snapshots remain immutable.
 
 If a prepare response is lost, repeat `prepare` with the original request key
 and unchanged payload to recover the same operation, then call `getPreparation`

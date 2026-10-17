@@ -26,6 +26,18 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.41.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.40.0...v0.41.0) (2026-10-17)
+
+
+### Features
+
+* orchestrate durable recovery groups (BTS-210) ([a140f64](https://github.com/FantasticDevHQ/better-stripe/commit/a140f642977f6816ca39cc817359c2638064ca5d))
+
+
+### Maintenance
+
+* ratchet recovery workflow coverage floors ([30a567b](https://github.com/FantasticDevHQ/better-stripe/commit/30a567b4b3053dd3a622e9ce08a77c79ed3863ed))
+
 ## [0.40.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.39.0...v0.40.0) (2026-10-17)
 
 ### Features

@@ -1,5 +1,15 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+// Browser consumers may start actions in layout effects; initialize before those effects.
+const useCommitEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 export type WorkflowActionState<T, Args extends unknown[]> = {
   isPending: boolean;
   error: string | null;
@@ -26,11 +36,11 @@ export function useWorkflowAction<T, Args extends unknown[]>(
   const success = useRef(onSuccess);
   const lifecycle = useRef({ version: 0, mounted: false });
   const lock = useRef<number | null>(null);
-  useEffect(() => {
+  useCommitEffect(() => {
     callback.current = action;
     success.current = onSuccess;
   }, [action, onSuccess]);
-  useEffect(() => {
+  useCommitEffect(() => {
     const version = ++lifecycle.current.version;
     lifecycle.current.mounted = true;
     lock.current = null;

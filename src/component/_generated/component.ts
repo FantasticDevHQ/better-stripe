@@ -6420,6 +6420,228 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    recoveryWorkflow: {
+      mutations: {
+        requestCancel: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            accountId: string;
+            cancelRequested: boolean;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            outcome?: "collect" | "release";
+            scopeKey: string;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            status:
+              | "queued"
+              | "running"
+              | "waiting"
+              | "unknown"
+              | "completed"
+              | "canceled";
+            version: number;
+          },
+          Name
+        >;
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            accountId: string;
+            cancelRequested: boolean;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            outcome?: "collect" | "release";
+            scopeKey: string;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            status:
+              | "queued"
+              | "running"
+              | "waiting"
+              | "unknown"
+              | "completed"
+              | "canceled";
+            version: number;
+          },
+          Name
+        >;
+        start: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            allocation?: {
+              adjustmentAmount?: number;
+              currency: string;
+              gross: number;
+              paymentId?: string;
+              paymentIntentId?: string;
+              platformNet: number;
+              processingFee: number;
+              sourceChargeId: string;
+              sourceInvoiceId?: string;
+              transfers: Array<{
+                amount: number;
+                destinationAccountId: string;
+                role: "store" | "affiliate" | "other";
+              }>;
+            };
+            completion?: string;
+            currency: string;
+            definitionVersion: number;
+            groupKey: string;
+            maxAttempts: number;
+            provider: string;
+            providerApiVersion: string;
+            releaseUncollectible: boolean;
+            requestKey: string;
+            retryDelayMs: number;
+            scopeKey: string;
+          },
+          | {
+              accountId: string;
+              cancelRequested: boolean;
+              currency: string;
+              groupKey: string;
+              operationId: string;
+              outcome?: "collect" | "release";
+              scopeKey: string;
+              sourceId: string;
+              sourceKind: "settlement" | "invoice";
+              status:
+                | "queued"
+                | "running"
+                | "waiting"
+                | "unknown"
+                | "completed"
+                | "canceled";
+              version: number;
+            }
+          | { reason: "identity_changed"; retryable: false; status: "conflict" }
+          | {
+              reason: "history_incomplete";
+              retryable: true;
+              status: "not_ready";
+            },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            accountId: string;
+            cancelRequested: boolean;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            outcome?: "collect" | "release";
+            scopeKey: string;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            status:
+              | "queued"
+              | "running"
+              | "waiting"
+              | "unknown"
+              | "completed"
+              | "canceled";
+            version: number;
+          },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            groupKey: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            activePhase?: "execute" | "reconcile";
+            allocation?: {
+              adjustmentAmount?: number;
+              currency: string;
+              gross: number;
+              paymentId?: string;
+              paymentIntentId?: string;
+              platformNet: number;
+              processingFee: number;
+              sourceChargeId: string;
+              sourceInvoiceId?: string;
+              transfers: Array<{
+                amount: number;
+                destinationAccountId: string;
+                role: "store" | "affiliate" | "other";
+              }>;
+            };
+            cancelRequested: boolean;
+            completion?: string;
+            currency: string;
+            definitionVersion: number;
+            groupKey: string;
+            maxAttempts: number;
+            outcome?: "collect" | "release";
+            provider: string;
+            providerApiVersion: string;
+            providerStarted: boolean;
+            releaseUncollectible: boolean;
+            resumeQueued: boolean;
+            retryDelayMs: number;
+            scopeKey: string;
+            sourceId: string;
+            sourceKind: "settlement" | "invoice";
+            status:
+              | "queued"
+              | "running"
+              | "waiting"
+              | "unknown"
+              | "completed"
+              | "canceled";
+            version: number;
+            workflowId?: string;
+          },
+          Name
+        >;
+      };
+    };
     refundHistory: {
       mutations: {
         normalizeRefundCommandBindings: FunctionReference<

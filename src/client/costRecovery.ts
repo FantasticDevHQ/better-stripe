@@ -1,3 +1,6 @@
+import { RecoveryWorkflowClient } from "./recoveryWorkflow/client.js";
+export type * from "./recoveryWorkflow/contracts.js";
+export type { RecoveryProviderOptions } from "./recoveryWorkflow/provider.js";
 import type Stripe from "stripe";
 import {
   readInvoiceFunding,
@@ -96,11 +99,13 @@ export type RecoveryPreparationResult =
       retryable: false;
     };
 /** Host authorizes policy and scope. Provider methods verify invoice outcomes. */
-export class CostRecoveryClient {
+export class CostRecoveryClient extends RecoveryWorkflowClient {
   constructor(
-    private readonly component: Component,
+    protected readonly component: Component,
     private readonly provider?: () => Stripe,
-  ) {}
+  ) {
+    super();
+  }
   private async mutate<T>(
     ctx: RunCtx,
     path: string,

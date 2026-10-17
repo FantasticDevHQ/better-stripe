@@ -83,7 +83,8 @@
     "docs/example-balance-funding-cutover.md",
     "docs/example-recovery-cutover.md",
     "docs/releasing.md",
-    "docs/release-handoff.md"
+    "docs/release-handoff.md",
+    "docs/setup-intent-recovery.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

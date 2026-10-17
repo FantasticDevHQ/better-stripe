@@ -1,3 +1,8 @@
+import * as setupIntentRead from "./billing/setup-intent-read.js";
+export type {
+  SetupIntentReadOptions,
+  SetupIntentObservation,
+} from "./billing/setup-intent-read.js";
 import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
 import type {
   AccountByStripeIdOptions,
@@ -1135,6 +1140,19 @@ export class BetterStripe extends PaymentSourceClient {
   ) {
     return subscriptionPaymentMethod.updateSubscriptionDefaultPaymentMethod(
       this.stripe(),
+      opts,
+    );
+  }
+
+  /** Qualified existing setup observation. Host must authenticate the original request. */
+  getSetupIntentFromStripe(
+    ctx: RunCtx,
+    opts: setupIntentRead.SetupIntentReadOptions,
+  ) {
+    return setupIntentRead.getSetupIntentFromStripe(
+      this.stripe(),
+      this.component,
+      ctx,
       opts,
     );
   }

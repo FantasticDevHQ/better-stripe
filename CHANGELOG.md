@@ -26,6 +26,24 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.50.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.49.0...v0.50.0) (2026-10-17)
+
+
+### Features
+
+* read an original qualified SetupIntent ([82301a5](https://github.com/FantasticDevHQ/better-stripe/commit/82301a594c07ae6f290eeba046f47fdbbadd142d))
+* read an original qualified SetupIntent ([209d96b](https://github.com/FantasticDevHQ/better-stripe/commit/209d96b6cbb2970a4c990ac226a0c3293e92c830))
+
+
+### Bug Fixes
+
+* preserve opaque original setup user identity ([e539a4c](https://github.com/FantasticDevHQ/better-stripe/commit/e539a4c0fa66a8f414655ea520da154a1e9de267))
+
+
+### Maintenance
+
+* ratchet measured SetupIntent reader coverage ([4794705](https://github.com/FantasticDevHQ/better-stripe/commit/4794705793190b4cc45346eabed645238944499f))
+
 ## [0.49.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.48.1...v0.49.0) (2026-10-17)
 
 ### Features

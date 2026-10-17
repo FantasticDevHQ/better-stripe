@@ -74,3 +74,37 @@ it("uses the real component through the public recovery client without any provi
     reservedAmount: 0,
   });
 });
+it("prepares recovery through one component mutation without a provider key", async () => {
+  const t = initConvexTest();
+  t.registerComponent("betterStripe", schema, modules);
+  const stripe = new BetterStripe(
+    componentsGeneric().betterStripe as unknown as Component,
+    {},
+  );
+  let writes = 0;
+  const ctx = {
+    runMutation: (
+      ref: FunctionReference<"mutation">,
+      args: Record<string, unknown>,
+    ) => {
+      writes++;
+      return t.mutation(ref, args);
+    },
+  } as unknown as RunCtx;
+  const opts = {
+    accountId: "acct_owner",
+    scopeKey: "store",
+    currency: "usd",
+    groupKey: "empty",
+    sourceKind: "invoice" as const,
+    sourceId: "in_empty",
+    maxDebit: 100,
+    maxCredit: 100,
+  };
+  expect(await stripe.costRecovery.prepareGroup(ctx, opts)).toMatchObject({
+    status: "prepared",
+    isDone: true,
+    group: { status: "sealed", amount: 0 },
+  });
+  expect(writes).toBe(1);
+});

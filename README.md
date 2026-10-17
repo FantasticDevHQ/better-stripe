@@ -512,6 +512,26 @@ an optional `reservedAmount` to distinguish reservations from collected money,
 while preserving the legacy `invoicedAmount` input. See the example README for
 cutover constraints and the sandbox renewal acceptance procedure.
 
+### Atomic recovery preparation
+
+Call `stripe.costRecovery.prepareGroup(ctx, { ...groupOptions, limit: 100 })`
+after authorizing the account, scope, currency, source and debit/credit policy.
+Each call reserves at most one batch and seals the completed target in the same
+component mutation. It returns `{ status: "prepared", group, isDone }`. Continue
+with unchanged group options while `isDone` is false; do not run provider effects
+until it is true. Sealed or finished replay returns the saved group without
+another reservation. Batch identities use a persisted sequence, independent of
+pending or completed reservation counts. The optional limit must be 1 through
+100 and can change between bounded calls.
+
+A competing boundary returns `{ status: "conflict", reason: "scope_busy",
+retryable: false }`. Changed group identity or a legacy operation-key collision
+returns `identity_changed`; invalid scope or policy returns `rejected`. These
+outcomes do not reserve anything. Read current state and let host policy decide
+what to do; conflicts are not automatic retries. Existing `reserve`, `seal` and
+`finish` methods remain available. Host reporting and provider execution remain
+separate from preparation.
+
 ### Importing opening recovery balances
 
 When moving an existing ledger into the component, your server can call

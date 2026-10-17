@@ -7,19 +7,12 @@ import {
 } from "convex-helpers/server/customFunctions";
 import type { DataModel } from "../_generated/dataModel.js";
 import { addSummaryAmounts } from "./arithmetic.js";
+import { replaceContribution, type Contribution } from "./pairedAdjustment.js";
 import {
   mutation as rawMutation,
   type MutationCtx,
 } from "../_generated/server.js";
 
-type Contribution = {
-  accountId: string;
-  currency: string;
-  gross: number;
-  reversed: number;
-  paidOut: number;
-  count: number;
-};
 async function adjust(
   ctx: MutationCtx,
   kind: "earnings" | "payouts",
@@ -65,10 +58,21 @@ triggers.register("transfers", async (ctx, change) => {
     paidOut: 0,
     count: 1,
   });
-  if (change.oldDoc?.totalsRecorded)
+  const canPair =
+    change.oldDoc?.totalsRecorded &&
+    change.newDoc &&
+    change.oldDoc.destinationAccountId === change.newDoc.destinationAccountId &&
+    change.oldDoc.currency === change.newDoc.currency;
+  if (canPair)
+    await replaceContribution(
+      ctx,
+      contribution(change.oldDoc!),
+      contribution(change.newDoc!),
+    );
+  else if (change.oldDoc?.totalsRecorded)
     await adjust(ctx, "earnings", contribution(change.oldDoc), -1);
   if (change.newDoc) {
-    await adjust(ctx, "earnings", contribution(change.newDoc), 1);
+    if (!canPair) await adjust(ctx, "earnings", contribution(change.newDoc), 1);
     if (!change.newDoc.totalsRecorded) {
       await ctx.innerDb.patch("transfers", change.id, { totalsRecorded: true });
       // Frontier producers own bounded batch observation, including oversized release deferral.

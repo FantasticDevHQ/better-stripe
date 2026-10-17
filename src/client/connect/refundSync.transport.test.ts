@@ -5,6 +5,8 @@ import { componentsGeneric, defineSchema } from "convex/server";
 import { expect, it } from "vitest";
 import schema from "../../component/schema.js";
 import { BetterStripe } from "../index.js";
+import { prepareRefundSync } from "./refundSync.js";
+import { componentRef } from "../webhooks/helpers.js";
 import { getStripeClient, type Component, type RunCtx } from "../helpers.js";
 
 const modules = import.meta.glob("../../component/**/*.*s");
@@ -88,6 +90,7 @@ function fixture() {
   return {
     t,
     sdk,
+    stripe,
     ctx,
     calls,
     set: (value: object, status = 200) => {
@@ -300,4 +303,94 @@ it("observes an expired uncaptured authorization release without importing captu
     status: "accepted",
     refund: { reason: "expired_uncaptured_charge" },
   });
+});
+
+it("rechecks original seller routing inside the accepting transaction after the provider read", async () => {
+  const f = fixture();
+  const observation = await prepareRefundSync(
+    f.stripe,
+    component,
+    f.ctx,
+    options,
+  );
+  await f.t.mutation(
+    component.settlement.mutations.reserveSettlementAllocation,
+    {
+      sourceChargeId: "ch_original",
+      paymentIntentId: "pi_original",
+      gross: 1000,
+      currency: "usd",
+      processingFee: 0,
+      platformNet: 100,
+      transfers: [
+        {
+          destinationAccountId: "acct_different_original",
+          role: "store",
+          amount: 900,
+        },
+      ],
+    },
+  );
+  await expect(
+    f.t.mutation(
+      componentRef(component, "refundSync/mutations/finish"),
+      observation,
+    ),
+  ).rejects.toThrow("Original refund merchant");
+  expect(await f.row()).toBeNull();
+  expect(f.calls.map((call) => call.method)).toEqual(["GET"]);
+});
+
+it("rolls back the accepting claim, refund and cumulative payment together if the host transaction aborts", async () => {
+  const f = fixture();
+  await f.t.mutation(component.connect.mutations.upsertPayment, {
+    stripePaymentIntentId: "pi_original",
+    userId: "buyer",
+    amount: 1000,
+    currency: "usd",
+    status: "succeeded",
+  });
+  await f.t.mutation(component.connect.mutations.upsertRefund, {
+    stripeRefundId: "re_original",
+    stripePaymentIntentId: "pi_original",
+    stripeChargeId: "ch_original",
+    amount: 250,
+    currency: "usd",
+    status: "failed",
+  });
+  const observation = await prepareRefundSync(
+    f.stripe,
+    component,
+    f.ctx,
+    options,
+  );
+  await expect(
+    f.t.mutation(async (ctx) => {
+      const accepted: unknown = await ctx.runMutation(
+        componentRef(component, "refundSync/mutations/finish"),
+        observation,
+      );
+      expect(accepted).toMatchObject({ status: "accepted", changed: true });
+      throw new Error("Injected host transaction abort after acceptance");
+    }),
+  ).rejects.toThrow("Injected host transaction abort");
+  expect(await f.row()).toMatchObject({ status: "failed" });
+  expect(
+    await f.t.query(component.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_original",
+    }),
+  ).toMatchObject({ refundedAmount: 0 });
+  // Reusing the same prepared generation is still a first acceptance after rollback.
+  expect(
+    await f.t.mutation(
+      componentRef(component, "refundSync/mutations/finish"),
+      observation,
+    ),
+  ).toMatchObject({ status: "accepted", changed: true });
+  expect(
+    await f.t.query(component.connect.queries.getPaymentByStripeId, {
+      stripePaymentIntentId: "pi_original",
+    }),
+  ).toMatchObject({ refundedAmount: 250 });
+  expect(f.calls.map((call) => call.method)).toEqual(["GET"]);
 });

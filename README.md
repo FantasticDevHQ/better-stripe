@@ -382,6 +382,10 @@ shows where the host's authenticated-actor check belongs.
 
 ### Product and Price
 
+`ensurePrice(ctx, { stripeProductId, lookupKey, unitAmount, type, idempotencyKey, currency?, interval?, intervalCount? })` finds a price by its provider lookup key, verifies its immutable terms, and adopts the price and product into the component mirrors. If absent, it creates the price with the supplied idempotency key. A matching provider result repairs a failed mirror write on retry. Inactive prices, different products or pricing terms, and metered or transformed pricing are rejected. Choose a new versioned lookup key when changing price terms; existing subscriptions retain their current price.
+
+Scope the idempotency key to one catalog operation and reuse it only with identical creation parameters. Authorize product access in your host action. `getStripePriceByLookupKey(ctx, { lookupKey })` reads Stripe without changing mirrors. `adoptProduct(ctx, { stripeProductId, accountId? })` imports an existing provider product, preserving existing ownership and rejecting reassignment. Adoption does not update provider metadata or statement descriptors. `createPrice` also accepts `lookupKey` for callers handling adoption themselves. Tier names, lookup-key version policy, and entitlement mapping remain in the host app.
+
 | Method                                                                                                                | Description                                   |
 | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB     |

@@ -3,6 +3,7 @@ import { ReadContractClient } from "./readContracts.js";
 import type { RunCtx } from "./helpers.js";
 import { getRefundContext } from "./connect/refundContext.js";
 import type { RefundContextOptions } from "./connect/refundContextTypes.js";
+import * as invoicePaymentRead from "./billing/invoicePaymentRead.js";
 import * as invoicePages from "./billing/invoicePages.js";
 import * as invoicePaymentPages from "./billing/invoicePaymentPages.js";
 import * as checkoutPages from "./billing/checkoutPages.js";
@@ -41,5 +42,13 @@ export abstract class InvoiceReadClient extends ReadContractClient {
       this.stripe(),
       opts,
     );
+  }
+
+  /** Exact original reference read; host authorization and post-read checks remain required. */
+  async getInvoicePaymentFromStripe(
+    _ctx: RunCtx,
+    opts: invoicePaymentRead.InvoicePaymentReadOptions,
+  ) {
+    return invoicePaymentRead.getInvoicePaymentFromStripe(this.stripe(), opts);
   }
 }

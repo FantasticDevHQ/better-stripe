@@ -41,3 +41,65 @@ Public exports include `InvoicePaymentPageOptions` and
 needed by that UI after host authorization, rather than returning raw provider
 objects to a browser. Source merge requires a verified published artifact and
 explicit Dojo adoption before its refund workflow can consume this API.
+
+## Re-read one original invoice payment
+
+`getInvoicePaymentFromStripe(ctx, { stripeInvoicePaymentId, stripeInvoiceId,
+customerAccount, stripeSubscriptionId })` retrieves one known invoice-payment ID
+using Stripe's exact [retrieve endpoint](https://docs.stripe.com/api/invoice-payment/retrieve).
+It independently verifies the invoice's original buyer/subscription scope, then
+checks the exact returned invoice-payment ID and parent invoice before returning
+`{ scope, invoicePayment, paymentIntentId, referenceStatus }`. It does not scan
+pages or require a positive balance or paid status. Open, canceled, unsupported
+and missing-reference observations keep the same normalization as the page API.
+Provider errors and mismatched or malformed evidence fail explicitly.
+
+The options and result types are `InvoicePaymentReadOptions` and
+`ProviderInvoicePaymentRead`. This supported platform read does not accept a
+connected-account realm override. The two provider reads are observations, not
+an atomic snapshot. The host must authenticate and authorize its immutable
+original invoice/subscription/payment selection before the call, then recheck
+that live authorization before returning a safe browser projection. Neither this
+read nor a prior page cursor authorizes a refund or proves refundable units.
+There are no provider writes, local mirror updates or eligibility decisions.
+
+### Authenticated host callback reference
+
+The Vite application can pass a server callback with the following shape to its
+history UI. `resolveAuthorizedOriginalSelection` is deliberately application-owned:
+it must establish the current enabled actor/session and permission from server
+state, then resolve the immutable original invoice-payment/invoice/buyer/subscription
+tuple from the selected host record. It must not accept browser-supplied provider
+selectors or authorize a prior owner merely because the record is historical.
+This reference is not a registered demo endpoint or an implementation of that
+host policy.
+
+```ts
+async function readOriginalPayment(hostSelectionId: string) {
+  const before = await resolveAuthorizedOriginalSelection(hostSelectionId);
+  const result = await stripe.getInvoicePaymentFromStripe(ctx, before.scope);
+  const after = await resolveAuthorizedOriginalSelection(hostSelectionId);
+  if (
+    before.actorId !== after.actorId ||
+    before.sessionId !== after.sessionId ||
+    before.originalRevision !== after.originalRevision ||
+    JSON.stringify(before.scope) !== JSON.stringify(after.scope)
+  ) {
+    throw new Error("Original payment selection unavailable");
+  }
+  // Both resolver calls also require current permission; do not catch a failure
+  // and return the provider record anyway. Project only the history UI fields.
+  return {
+    paymentIntentId: result.paymentIntentId,
+    referenceStatus: result.referenceStatus,
+    amountPaid: result.invoicePayment.amount_paid,
+    currency: result.invoicePayment.currency,
+    status: result.invoicePayment.status,
+  };
+}
+```
+
+The resolver should retain the same original selection when its paid balance is
+zero or its current state is pending/canceled, subject to current authorization.
+History readability does not imply a financial action is available. Discard the
+callback result when the UI actor, session or selected host record changes.

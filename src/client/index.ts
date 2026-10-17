@@ -82,6 +82,10 @@ export type {
 } from "./billing/providerReads.js";
 import * as providerReads from "./billing/providerReads.js";
 export type {
+  InvoicePaymentReadOptions,
+  ProviderInvoicePaymentRead,
+} from "./billing/invoicePaymentRead.js";
+export type {
   InvoicePaymentPageOptions,
   ProviderInvoicePaymentPage,
 } from "./billing/invoicePaymentPages.js";

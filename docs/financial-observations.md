@@ -226,3 +226,19 @@ before lifecycle integration. No financial writer hooks, destination/owner slice
 index, provider operations, admission fence or automatic backfill is included.
 Lifecycle/frontier integrations need separate raw-writer hooks and both financial
 fact and evidence invalidators before claiming destination or owner coverage.
+
+## Same-bucket earnings summary updates
+
+When a transfer stays in the same destination and currency, its derived earnings
+update reads the unique summary once. It still validates subtraction, zero-count
+reset/reapplication and safe integer/net arithmetic before deciding whether to
+persist the result. Only an exactly unchanged existing nonzero summary can avoid
+a final patch; zero-count deletion and malformed-summary errors remain required.
+Moved buckets, unrecorded transfers, payout summaries and financial/risk callbacks
+retain their existing behavior.
+
+This is a private derived-summary optimization. Accepted and earnings-only
+candidates still exceed the native read limit for 1,000 distinct destinations.
+It does not lower the admitted financial maximum, establish complete observation
+coverage or prove aggregate financial-hook capacity. Distinct-destination source
+read reuse and complete capacity verification remain separate work.

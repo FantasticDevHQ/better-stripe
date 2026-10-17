@@ -6,8 +6,8 @@
   },
   "packages": {
     "coverage/coverage-summary.json": {
-      "functions": 74.67,
-      "lines": 79.22
+      "functions": 74.69,
+      "lines": 79.25
     }
   }
 }

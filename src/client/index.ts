@@ -1,6 +1,7 @@
 import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
 export * from "./financialOutcomes/index.js";
+export * from "./processingCostDeficit/index.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
 import type { PaginationOptions } from "convex/server";
 import { reconcilePayoutAndTrigger } from "./webhooks/payoutReconciliation.js";

@@ -26,6 +26,15 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.50.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.0...v0.50.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **react:** initialize workflow refs before descendant layout effects ([b6a9da8](https://github.com/FantasticDevHQ/better-stripe/commit/b6a9da8ad0cd3043a575420bd876b1878d9ed9f4))
+* **react:** settle commit-started workflow actions ([f1befb4](https://github.com/FantasticDevHQ/better-stripe/commit/f1befb4194dee87b0b1c54528ae4305b5b749147))
+* **react:** settle workflow actions started during commit ([5d4d2e1](https://github.com/FantasticDevHQ/better-stripe/commit/5d4d2e1fa3623205b3f971f1e5e1c9d24919a091))
+
 ## [0.50.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.49.0...v0.50.0) (2026-10-17)
 
 ### Features

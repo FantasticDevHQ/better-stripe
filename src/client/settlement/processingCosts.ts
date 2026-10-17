@@ -120,6 +120,14 @@ export async function getProcessingCostContext(
         typeof value === "string"
           ? await stripe.balanceTransactions.retrieve(value, {}, requestOptions)
           : value;
+      if (
+        opts.historyBounds &&
+        (tx.object !== "balance_transaction" ||
+          !tx.id ||
+          id(tx.source) !== sourceId ||
+          (typeof value === "string" && tx.id !== value))
+      )
+        throw new Error("Processing-cost transaction identity does not match.");
       if (tx.currency !== currency) throw new NotReady("currency_mismatch");
       [tx.amount, tx.fee, tx.net].forEach(integer);
       if (integer(tx.amount - tx.fee) !== tx.net)

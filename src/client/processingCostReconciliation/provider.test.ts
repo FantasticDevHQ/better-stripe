@@ -285,3 +285,40 @@ it("never contacts the provider for a changed pinned API version", async () => {
   });
   expect(f.requests).toEqual([]);
 });
+
+it.each(["refund_source", "dispute_source", "refund_object", "requested_id"])(
+  "rejects unrelated balance transaction evidence: %s",
+  async (mode) => {
+    const f = await fixture();
+    if (mode === "refund_source")
+      f.refund.balance_transaction.source = "re_foreign";
+    if (mode === "dispute_source")
+      f.dispute.balance_transactions[0]!.source = "dp_foreign";
+    if (mode === "refund_object")
+      f.refund.balance_transaction.object = "foreign_object";
+    if (mode === "requested_id") {
+      const original = f.refund.balance_transaction;
+      (
+        f.refund as unknown as { balance_transaction: string }
+      ).balance_transaction = "txn_requested";
+      f.pages.set("/v1/balance_transactions/txn_requested", {
+        ...original,
+        id: "txn_other",
+      });
+    }
+    const receipt = await f.client.observeProcessingCosts(f.ctx, f.request, {
+      stripeSecretKey: "sk_test_runtime_only",
+      httpClient: f.httpClient,
+    });
+    expect(receipt.outcome).toMatchObject({
+      status: "unknown",
+      retryable: false,
+    });
+    expect(f.writes()).toBe(0);
+    expect(
+      await f.t.query(nested.betterStripe.costRecovery.queries.claim, {
+        claimKey: "cost:pi_a",
+      }),
+    ).toBeNull();
+  },
+);

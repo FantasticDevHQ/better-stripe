@@ -1,10 +1,10 @@
 # Component extraction and durable execution contracts
 
-Status: design contracts, pending implementation and the nested-component
-composition spike. These are proposed additive APIs, not shipped exports.
-Reviewed against main `e9994a9` on 2026-10-17.
-Implementation PRs must reference this decision and document changes to the
-contracts before dependent work starts.
+Status: accepted design record. The implementation and cross-domain acceptance
+suite have merged. The proposal sections below preserve the design
+history reviewed against main `e9994a9`; their illustrative signatures are not
+an export inventory. Use the [release handoff](../release-handoff.md) and linked
+domain guides for the implemented APIs, defaults and migration boundaries.
 
 ## Ownership decision
 

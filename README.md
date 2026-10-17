@@ -4,6 +4,8 @@ A reusable [Convex component](https://docs.convex.dev/components) for the Stripe
 
 Built for Convex + Next.js applications. Follows the conventions established by [`@convex-dev/stripe`](https://github.com/get-convex/stripe) and [`@convex-dev/better-auth`](https://github.com/get-convex/better-auth).
 
+For the component extraction upgrade, see the [migration and release handoff](docs/release-handoff.md), including nested runtime wiring, held operations and rollback boundaries.
+
 ## Accounts v2 customer preview
 
 Choose the setup that matches your Stripe account:
@@ -98,7 +100,7 @@ The private `example` workspace isn't published.
 Install with `pnpm install` from the repository root, then run `pnpm build`
 and `pnpm dev` to start the example at http://localhost:5173. The example needs
 Node.js 22.12+ and a configured Convex development deployment; see
-[the example setup guide](example/README.md).
+[the example setup guide](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md).
 
 The BetterStripe example separates visitor, customer, affiliate, seller, and
 platform-admin workflows. Fresh fictional Maya and Sasha stores explicitly
@@ -117,7 +119,7 @@ Hosted Checkout, Embedded Checkout, custom Checkout Sessions with Payment Elemen
 Payment Intents with Payment Element, and the preview Embedded Checkout Form,
 with pros and cons for each. `createCheckoutSession` accepts `uiMode` values
 `"redirect"`, `"embedded"`, `"custom"`, and `"form"`; the latter two map to Stripe's
-`elements` and preview `form` modes. See [the integration examples](example/README.md#compare-integration-styles).
+`elements` and preview `form` modes. See [the integration examples](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md#compare-integration-styles).
 
 Admins can configure store-plan monthly prices and sale fees. Monthly price changes
 create new Stripe Prices; existing store subscriptions keep their current price.
@@ -126,7 +128,7 @@ optional price, product, store, plan, and platform defaults. Unconfigured payout
 are zero. Subscription commission terms are **Forever** or **One-time**, with
 Forever as the default. The example saves the selected term in Stripe subscription
 metadata and its Convex ledger, then applies it when paid invoices settle.
-See [affiliate configuration and testing](example/README.md#seller-product-and-subscription-affiliate-payouts).
+See [affiliate configuration and testing](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md#seller-product-and-subscription-affiliate-payouts).
 
 The public React exports include `AffiliatePayoutEditor`, `PlanPricingEditor`,
 `Pagination`, and `useCursorPagination`. The example supplies styling through
@@ -355,7 +357,7 @@ presentation and confirmation, not financial authorization. Do not use closure
 as an automatic delete-and-recreate onboarding reset. Existing active-account
 getters keep their signatures and exclude completed closures; historical readers
 retain original financial references. The Vite reference's
-[closed-account authorization example](example/README.md#closed-account-history)
+[closed-account authorization example](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md#closed-account-history)
 shows where the host's authenticated-actor check belongs.
 
 | Method                                                                            | Description                                                                  |
@@ -1717,7 +1719,7 @@ Error codes: `ACCOUNT_NOT_FOUND`, `ACCOUNT_CREATE_FAILED`, `PRODUCT_NOT_FOUND`, 
 - [Convex Component Authoring](https://docs.convex.dev/components/authoring)
 - [Stripe Webhook Event Reference](https://docs.stripe.com/api/events/types)
 - [Stripe Testing Guide](https://docs.stripe.com/testing)
-- [Example checkout tests](example/README.md#test-the-integration-examples), including successful payments, declines, insufficient funds, and 3D Secure
+- [Example checkout tests](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md#test-the-integration-examples), including successful payments, declines, insufficient funds, and 3D Secure
 
 ## License
 

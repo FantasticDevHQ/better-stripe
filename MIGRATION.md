@@ -1,4 +1,6 @@
-# Migrating to 0.5.0 and Stripe Endive
+# Upgrading BetterStripe and Stripe Endive
+
+This guide describes the current source API. Select a reviewed, published package version through the normal release process; a merged PR or local tarball is not proof of npm publication. See the [component migration and release handoff](docs/release-handoff.md) before switching existing financial workers.
 
 ## Combined payout eligibility preview
 
@@ -35,7 +37,7 @@ null after upgrading these readers. Component bindings must be regenerated and
 the component deployed; no table migration or schedule change is required.
 See [collection restart safeguards](docs/settlement.md#resumable-local-collections).
 
-Install `@fantastic.dev/better-stripe@0.5.0`. The old
+Install the reviewed, published version of `@fantastic.dev/better-stripe`. The old
 `@getdojo/better-stripe` name is deprecated. Replace imports and the component
 config import with the new name, retaining your existing component instance
 name (for example `betterStripe`) so its stored data remains attached. Run
@@ -45,8 +47,8 @@ Node.js 20 or newer is required by stripe-node 23.
 The package depends on `stripe ~23.0.0`, whose supported API is exactly
 `2026-09-30.endive`. The typed `STRIPE_API_VERSION` constant in
 `src/client/constants.ts` pins app clients, component actions, and webhook
-resource refreshes. This SDK and pin were already present in the 0.4.0 checkout;
-0.5.0 adds fulfillment retries and completes the V2/React compatibility fixes.
+resource refreshes. This SDK and pin predate the durable workflow extraction. Review the chosen
+release's changelog for its fulfillment retry and V2/React compatibility changes.
 Leave `stripeApiVersion` unset to use this pin. The legacy string override is
 retained for compatibility, but overriding it does not change the SDK's types
 or convert webhook payloads and can make requests inconsistent with them.

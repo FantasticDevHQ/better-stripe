@@ -285,9 +285,9 @@ refund/dispute ordering, partial disputes, lost/won events, receipt matching,
 payout reservations, migration and ownership enforcement. React tests verify
 native/headless figures and unconfirmed restoration states.
 
-[Verification report](evidence/affiliate-recovery-verification.md),
-[UI recording](evidence/affiliate-recovery.webm) and
-[screenshot](evidence/affiliate-recovery.png) show simulated fixtures and both
+[Verification report](https://github.com/FantasticDevHQ/better-stripe/blob/main/docs/evidence/affiliate-recovery-verification.md),
+[UI recording](https://github.com/FantasticDevHQ/better-stripe/blob/main/docs/evidence/affiliate-recovery.webm) and
+[screenshot](https://github.com/FantasticDevHQ/better-stripe/blob/main/docs/evidence/affiliate-recovery.png) show simulated fixtures and both
 presentations. Reproduce with the frontend running, from `example/`:
 
 ```sh

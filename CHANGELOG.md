@@ -28,25 +28,22 @@
 
 ## [0.49.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.48.1...v0.49.0) (2026-10-17)
 
-
 ### Features
 
-* add exact invoice-payment read with original scope verification ([c87abb3](https://github.com/FantasticDevHQ/better-stripe/commit/c87abb3d243f3c18fc2ccf37ef05c22c1eb463c3))
-* read exact invoice payments with verified original scope ([f96853e](https://github.com/FantasticDevHQ/better-stripe/commit/f96853e1656fbc1ded60a87e58920598b90fd62a))
-* scope card selection to an original subscription (BTS-265) ([b1165e2](https://github.com/FantasticDevHQ/better-stripe/commit/b1165e20b058aa064c41b047b4226f709eab7cc6))
-
+- add exact invoice-payment read with original scope verification ([c87abb3](https://github.com/FantasticDevHQ/better-stripe/commit/c87abb3d243f3c18fc2ccf37ef05c22c1eb463c3))
+- read exact invoice payments with verified original scope ([f96853e](https://github.com/FantasticDevHQ/better-stripe/commit/f96853e1656fbc1ded60a87e58920598b90fd62a))
+- scope card selection to an original subscription ([b1165e2](https://github.com/FantasticDevHQ/better-stripe/commit/b1165e20b058aa064c41b047b4226f709eab7cc6))
 
 ### Bug Fixes
 
-* add opt-in exact PaymentIntent uniqueness (BTS-269) ([f440725](https://github.com/FantasticDevHQ/better-stripe/commit/f4407258df63aeb448bb213ce870c70e000be56d))
-* add opt-in unique cached PaymentIntent reads ([0148352](https://github.com/FantasticDevHQ/better-stripe/commit/0148352f011917e45500f8521ae30d0e0682d491))
-* snapshot original subscription card selectors before reads ([eb92b1c](https://github.com/FantasticDevHQ/better-stripe/commit/eb92b1cc84943aef7ea38808cbeb120b7ed0de8e))
-
+- add opt-in exact PaymentIntent uniqueness ([f440725](https://github.com/FantasticDevHQ/better-stripe/commit/f4407258df63aeb448bb213ce870c70e000be56d))
+- add opt-in unique cached PaymentIntent reads ([0148352](https://github.com/FantasticDevHQ/better-stripe/commit/0148352f011917e45500f8521ae30d0e0682d491))
+- snapshot original subscription card selectors before reads ([eb92b1c](https://github.com/FantasticDevHQ/better-stripe/commit/eb92b1cc84943aef7ea38808cbeb120b7ed0de8e))
 
 ### Maintenance
 
-* ratchet measured exact invoice-payment coverage floors ([3fc1443](https://github.com/FantasticDevHQ/better-stripe/commit/3fc1443fd4da8dea011ebf2821f754dad0c4a207))
-* record native-generated strict payment reference ([17198e8](https://github.com/FantasticDevHQ/better-stripe/commit/17198e81733641507c872602d0170c216b42a58f))
+- ratchet measured exact invoice-payment coverage floors ([3fc1443](https://github.com/FantasticDevHQ/better-stripe/commit/3fc1443fd4da8dea011ebf2821f754dad0c4a207))
+- record native-generated strict payment reference ([17198e8](https://github.com/FantasticDevHQ/better-stripe/commit/17198e81733641507c872602d0170c216b42a58f))
 
 ## [0.48.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.48.0...v0.48.1) (2026-10-17)
 

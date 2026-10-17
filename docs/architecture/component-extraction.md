@@ -1,8 +1,8 @@
 # Component extraction and durable execution contracts
 
-Status: accepted design, pending implementation and the nested-component
+Status: proposed design, pending independent acceptance, implementation and the nested-component
 composition spike. These are proposed additive APIs, not shipped exports.
-Reviewed against main `c14fd3d501ef637d33efdf890694156e66328c71` on 2026-10-16.
+Reviewed against main `8ce1301879f476b1472d49e0841c8b8bd894ae0c` on 2026-10-17.
 Implementation PRs must reference this decision and document changes to the
 contracts before dependent work starts.
 
@@ -209,7 +209,7 @@ automatically releases an uncertain reservation.
 The provenance resolver workstream resolves original
 invoice/payment/subscription/price provenance with bounded complete provider
 history and typed unavailable outcomes. Reject partial or ambiguous funding
-instead of guessing. the explicit-policy pure deficit helper requires explicit
+instead of guessing. The explicit-policy pure deficit helper requires explicit
 liability and rounding policy. The processing-cost reconciliation workstream
 uses both in revision-guarded cost claim reconciliation and retains the original
 recovery receipt for rollback. Current tier prices, affiliate rates or webhook

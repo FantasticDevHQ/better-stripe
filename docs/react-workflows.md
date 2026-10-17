@@ -577,6 +577,12 @@ checking that the response still belongs to the mounted scope. `useOnboarding`
 uses this lifecycle for both create and continue navigation, including its
 `window.location.assign` fallback. An old response cannot navigate after unmount
 or scope replacement. Current requests preserve shared pending locks and errors.
+The lifecycle and current action callbacks initialize during the browser commit
+phase, using ref-only insertion effects before parent or child layout effects
+can start work. These effects neither update state nor inspect DOM attachment.
+A layout-started action
+therefore settles normally; later unmount or scope replacement still suppresses
+its stale result. Server rendering remains idle and invokes no action.
 `uploadDisputeEvidence`, `EvidenceUpload` and the onboarding navigation fix shipped
 in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
 Version 0.13.0 does not contain them. Consumers must upgrade to

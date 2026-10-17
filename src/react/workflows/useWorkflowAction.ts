@@ -1,5 +1,15 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useInsertionEffect,
+  useRef,
+  useState,
+} from "react";
+// Ref-only synchronization must precede layout effects in descendants as well.
+const useCommitEffect =
+  typeof window === "undefined" ? useEffect : useInsertionEffect;
+
 export type WorkflowActionState<T, Args extends unknown[]> = {
   isPending: boolean;
   error: string | null;
@@ -26,11 +36,11 @@ export function useWorkflowAction<T, Args extends unknown[]>(
   const success = useRef(onSuccess);
   const lifecycle = useRef({ version: 0, mounted: false });
   const lock = useRef<number | null>(null);
-  useEffect(() => {
+  useCommitEffect(() => {
     callback.current = action;
     success.current = onSuccess;
   }, [action, onSuccess]);
-  useEffect(() => {
+  useCommitEffect(() => {
     const version = ++lifecycle.current.version;
     lifecycle.current.mounted = true;
     lock.current = null;

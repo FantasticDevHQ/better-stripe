@@ -1,3 +1,7 @@
+import {
+  boundedCostHistory,
+  type ProcessingCostHistoryBounds,
+} from "./settlement/processingCostHistory.js";
 import { singleInvoiceFunding } from "./paymentSource/funding.js";
 import { getProcessingCostContext } from "./settlement/processingCosts.js";
 import type Stripe from "stripe";
@@ -22,6 +26,7 @@ export function attachRecoveryInvoice(
   bind: BindInvoiceItem,
   create?: true,
   maxItems?: number,
+  historyBounds?: ProcessingCostHistoryBounds,
 ): Promise<InvoiceReceipt>;
 export function attachRecoveryInvoice(
   stripe: Stripe,
@@ -30,6 +35,7 @@ export function attachRecoveryInvoice(
   bind: BindInvoiceItem,
   create: false,
   maxItems?: number,
+  historyBounds?: ProcessingCostHistoryBounds,
 ): Promise<
   | InvoiceReceipt
   | (Omit<InvoiceReceipt, "invoiceItemId"> & { invoiceItemId: null })
@@ -43,6 +49,7 @@ export async function attachRecoveryInvoice(
   bind: (invoiceItemId: string) => Promise<RecoveryGroup>,
   create = true,
   maxItems = Number.POSITIVE_INFINITY,
+  historyBounds?: ProcessingCostHistoryBounds,
 ) {
   if (
     !group ||
@@ -70,10 +77,18 @@ export async function attachRecoveryInvoice(
     throw new Error("Recovery invoice currency does not match.");
   let found: Stripe.InvoiceItem | undefined;
   let inspected = 0;
-  for await (const item of stripe.invoiceItems.list({
-    invoice: invoice.id,
-    limit: 100,
-  })) {
+  const itemRows = historyBounds
+    ? await boundedCostHistory(
+        (cursor, limit) =>
+          stripe.invoiceItems.list({
+            invoice: invoice.id,
+            limit,
+            ...(cursor ? { starting_after: cursor } : {}),
+          }),
+        historyBounds,
+      )
+    : stripe.invoiceItems.list({ invoice: invoice.id, limit: 100 });
+  for await (const item of itemRows) {
     if (++inspected > maxItems)
       throw new Error("Recovery invoice history exceeded its item bound.");
     if (item.metadata?.[marker] !== group._id) continue;

@@ -1,4 +1,6 @@
-import { RecoveryWorkflowClient } from "./recoveryWorkflow/client.js";
+export type { ProcessingCostProviderOptions } from "./processingCostReconciliation/provider.js";
+import { ProcessingCostReconciliationClient } from "./processingCostReconciliation/client.js";
+export type * from "./processingCostReconciliation/contracts.js";
 export type * from "./recoveryWorkflow/contracts.js";
 export type { RecoveryProviderOptions } from "./recoveryWorkflow/provider.js";
 import type Stripe from "stripe";
@@ -99,7 +101,7 @@ export type RecoveryPreparationResult =
       retryable: false;
     };
 /** Host authorizes policy and scope. Provider methods verify invoice outcomes. */
-export class CostRecoveryClient extends RecoveryWorkflowClient {
+export class CostRecoveryClient extends ProcessingCostReconciliationClient {
   constructor(
     protected readonly component: Component,
     private readonly provider?: () => Stripe,

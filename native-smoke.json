@@ -1,0 +1,15 @@
+{
+  "isolatedBackend": "127.0.0.1:4470",
+  "providerCalls": 0,
+  "emptyCutover": {
+    "_creationTime": 1792224639098.478,
+    "_id": "jx74m4vhmfb920e7c9dj3xhnmn8gf2yq",
+    "active": 0,
+    "cursor": "0768472e1b8f9d20a7ab4f3f88d3fc75aeffaefe74d55192a02d340b1b6a26391800bf2770ec6bfd1ef05c699edacfbd86be9de0203af76f3047bfa0bb9e971937dbbb32abff9988881c",
+    "held": 0,
+    "key": "component-cutover",
+    "scanned": 0,
+    "state": "verified"
+  },
+  "idempotentReplay": true
+}

@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 /private/tmp/bts-217-example-funding
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  15:18:11
+   Duration  5.69s (tests 67%, transform 25%, import 6%, environment 1%)
+

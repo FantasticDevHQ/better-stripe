@@ -1,3 +1,9 @@
+import {
+  financialRetryDecision,
+  readFinancialOutcomeError,
+  throwFinancialOutcome,
+  verifiedSaleOutcome,
+} from "@fantastic.dev/better-stripe";
 import { stripe } from "../../stripe/helpers";
 
 import { v } from "convex/values";
@@ -21,10 +27,9 @@ export const settle = internalAction({
   handler: async (ctx, args): Promise<null> => {
     const verified = await stripe.getVerifiedSale(ctx, args);
     if (verified.status === "not_payable") return null;
-    if (verified.status !== "ready")
-      throw new Error(
-        "Stripe processing fees are not available yet; retry settlement.",
-      );
+    if (verified.status !== "ready") {
+      throwFinancialOutcome(verifiedSaleOutcome(verified));
+    }
     const metadata = verified.metadata;
     if (metadata.storeBilling !== "sale_v1") return null;
     const prior: Doc<"storeSales"> | null = await ctx.runQuery(
@@ -152,8 +157,9 @@ export const settle = internalAction({
           })),
       },
     });
-    if (!("executedTransfers" in settlement))
-      throw new Error("Settlement is not ready.");
+    if (!("executedTransfers" in settlement)) {
+      throwFinancialOutcome(verifiedSaleOutcome(settlement));
+    }
     for (const transfer of settlement.executedTransfers) {
       await ctx.runMutation(
         internal.settlement.internal.mutations.recordTransfer,
@@ -221,18 +227,18 @@ export const settleWhenReady = internalAction({
     try {
       await ctx.runAction(internal.settlement.internal.actions.settle, payment);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (
-        !/processing fees are not available|Charge details are not ready/.test(
-          message,
-        ) ||
-        attempt >= 10
-      )
-        throw error;
+      const outcome = readFinancialOutcomeError(error);
+      if (!outcome) throw error;
+      const decision = financialRetryDecision(outcome, attempt, {
+        maxRetries: 10,
+        initialDelayMs: 1000,
+        maxDelayMs: 60000,
+      });
+      if (decision.status === "stop") throw error;
       await ctx.scheduler.runAfter(
-        Math.min(60000, 1000 * 2 ** attempt),
+        decision.delayMs,
         internal.settlement.internal.actions.settleWhenReady,
-        { ...payment, attempt: attempt + 1 },
+        { ...payment, attempt: decision.nextAttempt },
       );
     }
     return null;

@@ -149,10 +149,24 @@ it("routes a returned invoice funding payment to package rollback and refuses am
     });
   try {
     await expect(
-      t.action(internal.sellerCosts.actions.reconcile, {
+      t.action(internal.sellerCosts.actions.reconcileWhenReady, {
         paymentIntentId: "pi_funding",
       }),
-    ).rejects.toThrow(/allocation_required/);
+    ).rejects.toMatchObject({
+      data: {
+        code: "FINANCIAL_OUTCOME",
+        outcome: {
+          status: "rejected",
+          reason: "unsupported_source",
+          retryable: false,
+        },
+      },
+    });
+    expect(
+      await t.run((ctx) =>
+        ctx.db.system.query("_scheduled_functions").collect(),
+      ),
+    ).toHaveLength(0);
     expect(rollback).toHaveBeenCalledWith(expect.anything(), {
       accountId: "acct_store",
       scopeKey: `example:store:${sellerId}`,

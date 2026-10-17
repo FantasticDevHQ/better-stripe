@@ -13,6 +13,7 @@ import type {
 // We can't call registerRoutes directly because it needs HttpRouter.
 // Instead, import the module and extract handleWebhookRequest via registerRoutes.
 import { registerRoutes } from "./webhooks.js";
+import { mockQualifiedRefund } from "../../tests/fixtures/qualified-refund.js";
 
 // ---------------------------------------------------------------------------
 // Mock Stripe SDK
@@ -22,6 +23,7 @@ const mockConstructEventAsync = vi.fn();
 const mockParseEventNotification = vi.fn();
 const mockParseEventNotificationAsync = vi.fn();
 const mockAccountRetrieve = vi.fn();
+const mockRefundRetrieve = vi.fn();
 
 vi.mock("stripe", () => {
   return {
@@ -31,6 +33,7 @@ vi.mock("stripe", () => {
       parseEventNotificationAsync = mockParseEventNotificationAsync;
       v2 = { core: { accounts: { retrieve: mockAccountRetrieve } } };
       products = { retrieve: vi.fn() };
+      refunds = { retrieve: mockRefundRetrieve };
     },
   };
 });
@@ -175,28 +178,6 @@ function makeV2ThinEvent(overrides?: Partial<V2ThinEvent>): V2ThinEvent {
     },
     ...overrides,
   };
-}
-
-/**
- * Capture the webhook handler by calling registerRoutes with a fake HttpRouter.
- * Returns a function that calls the handler directly.
- */
-function _setupHandler(
-  config?: RegisterRoutesConfig,
-): (ctx: WebhookActionCtx, request: Request) => Promise<Response> {
-  let handler: any;
-  const fakeRouter = {
-    route: (opts: any) => {
-      handler = opts.handler;
-    },
-  };
-
-  registerRoutes(
-    fakeRouter as any,
-    createMockComponent(),
-    config ?? makeBaseConfig(),
-  );
-  return handler;
 }
 
 async function parseJson(response: Response): Promise<any> {
@@ -1029,7 +1010,7 @@ describe("webhooks", () => {
       );
     });
 
-    it("refund events: upserts refund with payment intent + charge link", async () => {
+    it("refund events: qualifies current refund with payment intent + charge link", async () => {
       const event = makeV1Event("refund.created", {
         id: "re_123",
         payment_intent: "pi_abc",
@@ -1041,28 +1022,34 @@ describe("webhooks", () => {
         metadata: { note: "partial" },
       });
       mockConstructEventAsync.mockResolvedValue(event);
+      const refund = mockQualifiedRefund(
+        ctx,
+        mockRefundRetrieve,
+        event.data.object,
+      );
 
       const request = makeRequest({ type: "refund.created" });
       const response = await handler(ctx, request);
       expect(response.status).toBe(200);
 
       expect(ctx.runMutation).toHaveBeenCalledWith(
-        component.connect.mutations.upsertRefund,
+        makeRef("refundSync/mutations/finish"),
         expect.objectContaining({
-          stripeRefundId: "re_123",
-          stripePaymentIntentId: "pi_abc",
-          stripeChargeId: "ch_xyz",
-          amount: 500,
-          currency: "usd",
-          status: "succeeded",
-          reason: "requested_by_customer",
+          generation: 1,
+          apiContext: "platform",
+          refund: expect.objectContaining(refund),
         }),
+      );
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        component.connect.mutations.upsertRefund,
+        expect.anything(),
       );
     });
 
-    it("refund events: clamps an unknown status to pending and drops unknown reason", async () => {
+    it("refund events: holds invalid current status instead of clamping a raw snapshot", async () => {
       const event = makeV1Event("refund.updated", {
         id: "re_456",
+        object: "refund",
         payment_intent: "pi_abc",
         charge: "ch_xyz",
         amount: 500,
@@ -1071,17 +1058,23 @@ describe("webhooks", () => {
         reason: "not_a_real_reason",
       });
       mockConstructEventAsync.mockResolvedValue(event);
-
-      const request = makeRequest({ type: "refund.updated" });
-      await handler(ctx, request);
-
-      const call = (ctx.runMutation as Mock).mock.calls.find(
-        ([ref]) =>
-          ref?.[TO_REFERENCE_PATH] ===
-          component.connect.mutations.upsertRefund[TO_REFERENCE_PATH],
+      mockRefundRetrieve.mockResolvedValue(event.data.object);
+      (ctx.runMutation as Mock)
+        .mockResolvedValueOnce("inserted")
+        .mockResolvedValueOnce(1);
+      const response = await handler(
+        ctx,
+        makeRequest({ type: "refund.updated" }),
       );
-      expect(call?.[1]).toMatchObject({ status: "pending" });
-      expect(call?.[1].reason).toBeUndefined();
+      expect(response.status).toBe(500);
+      expect(ctx.runMutation).not.toHaveBeenCalledWith(
+        component.connect.mutations.upsertRefund,
+        expect.anything(),
+      );
+      expect(ctx.runMutation).toHaveBeenCalledWith(
+        component.webhooks.mutations.markWebhookEventFailed,
+        expect.objectContaining({ stripeEventId: event.id }),
+      );
     });
 
     it("dispute events: upserts dispute and records the originating event suffix", async () => {

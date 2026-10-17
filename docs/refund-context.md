@@ -129,11 +129,11 @@ history is not cardinality bounded: native resource limits can abort the whole
 accepting transaction, preserving the last committed projection. There is no
 partial sum, silent truncation or all-backlog-capacity guarantee.
 
-This primitive does **not** yet route the legacy signed refund webhook pipeline
-through generation qualification. Legacy `upsertRefund` and raw callbacks remain
-unfenced; they can still overwrite observations outside this operation. The
-separate shared-pipeline integration must preserve generation qualification
-through its callback transaction before hosts claim webhook-wide convergence.
+This standalone primitive does not run application callbacks or transfer recovery.
+The maintained signed route uses the qualified callback seam below. Direct legacy
+`upsertRefund`/raw-dispatcher calls remain outside generation fencing; hosts must
+not reapply notification snapshots after qualified acceptance. No convergence
+claim covers independent legacy writers.
 The server-only Vite reference is
 [`example/convex/connect/refundSync.ts`](../example/convex/connect/refundSync.ts).
 
@@ -160,7 +160,40 @@ reconciliation; the package does not silently retry a raw upsert as fallback.
 
 The direct-component path returns the same accepted observation and rejects
 superseded results. It has no application callback because no host handler was
-registered. This seam does not activate signed notification reconciliation or
-change existing reversal recovery. Legacy raw refund delivery remains unfenced
-until that separate consumer is adopted. A successful or unchanged mirror is not
-proof that a prior provider reversal or financial recovery completed.
+registered. A successful or unchanged mirror is not proof that a prior provider
+reversal or financial recovery completed.
+
+### Signed refund delivery and recovery
+
+The existing single `registerRoutes` endpoint verifies the signature before any
+provider access. For `refund.created`, `refund.updated` and `refund.failed`, only
+the signed refund ID and `event.account` select the original refund/API realm.
+The package retrieves current provider state, qualifies it and accepts its durable
+generation through the transaction above. It never substitutes notification
+status, metadata or `event.created` for current state. A legitimate current
+bank-return transition remains valid after a previous succeeded observation.
+
+Required synchronization failures return non-2xx and retain failed/retryable event
+ledger state. This applies independently of optional application-hook retry policy.
+An in-flight duplicate returns retryable failure; a processed duplicate does not
+read or notify again. Existing stale-processing recovery reopens an abandoned
+attempt. Superseded observations cannot invoke changed callbacks or be acknowledged
+as reconciled merely because a later generation started. Retry does not prove that
+a later provider observation or economic operation succeeded.
+
+After acceptance, current succeeded state can select the existing platform split
+recovery operation. An unchanged mirror still checks that operation: an earlier
+reversal failure or lost response is handled by its existing claim, original
+idempotency key and transfer-receipt reconciliation. The synchronization layer
+adds no reversal calculation or new financial retry permission. A connected refund
+with no platform split obligation can synchronize; a connected refund associated
+with platform recovery legs is held before any unscoped platform provider operation.
+Its qualified mirror may already be committed, but the delivery remains retryable
+and must not advertise complete economic recovery.
+
+Refund `onCreate`/`onUpdate` callbacks receive qualified current stored rows and run
+only for changed acceptance. Generic `onEvent`/`events` hooks keep their existing
+verified `Stripe.Event` notification payload; that payload is not authoritative
+current refund state or financial-completion evidence. Async hooks keep their
+existing committed-document/scheduling contract. No live-provider atomicity or
+all-history/native-capacity guarantee is introduced.

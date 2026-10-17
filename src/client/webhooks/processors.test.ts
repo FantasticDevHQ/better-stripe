@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { computeReversalSlices } from "../../component/lib/reversals.js";
 import type { WebhookContext } from "./helpers.js";
 import { processEvent } from "./processors.js";
+import { processRefund } from "../../../tests/fixtures/refund-recovery.js";
 
 const TO_REF = Symbol.for("toReferencePath");
 
@@ -98,6 +99,7 @@ function makeStripe() {
   return {
     payouts: { retrieve: vi.fn() },
     refunds: {
+      retrieve: vi.fn(),
       list: vi.fn(() =>
         (async function* () {
           yield { amount: 5000, status: "succeeded" };
@@ -2382,7 +2384,7 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
       amount_refunded: 5000,
     });
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent());
+    await processRefund(whCtx, refundEvent());
     expect(stripe.transfers.createReversal).toHaveBeenCalledTimes(2);
     expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
       "tr_s",
@@ -2409,7 +2411,7 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
       amount_refunded: 10000,
     });
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent({ amount: 10000 }));
+    await processRefund(whCtx, refundEvent({ amount: 10000 }));
     expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
       "tr_s",
       { amount: 7000 },
@@ -2437,7 +2439,7 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
       amount_refunded: 7000, // cumulative: 5000 + this refund's 2000
     });
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent({ id: "re_2", amount: 2000 }));
+    await processRefund(whCtx, refundEvent({ id: "re_2", amount: 2000 }));
     expect(stripe.transfers.createReversal).toHaveBeenCalledWith(
       "tr_s",
       { amount: 1400 },
@@ -2460,14 +2462,14 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
       amount_refunded: 5000,
     });
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent());
+    await processRefund(whCtx, refundEvent());
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
   it("skips clawback quietly for a refund on a non-split sale", async () => {
     const ctx = makeCtx({ query: [] });
     const stripe = makeStripe();
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent());
+    await processRefund(whCtx, refundEvent());
     expect(stripe.charges.retrieve).not.toHaveBeenCalled();
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
@@ -2475,7 +2477,7 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
     const ctx = makeCtx({ query: ledgerLegs() });
     const stripe = makeStripe();
     const whCtx = makeWhCtx({ ctx, stripe });
-    await processEvent(whCtx, refundEvent({ status: "pending" }));
+    await processRefund(whCtx, refundEvent({ status: "pending" }));
     expect(stripe.transfers.createReversal).not.toHaveBeenCalled();
   });
   it("propagates a reversal failure so the event is marked failed and Stripe retries", async () => {
@@ -2488,7 +2490,7 @@ describe("processEvent — refunds: split clawback + fee-refund denormalization 
     });
     stripe.transfers.createReversal.mockRejectedValue(new Error("stripe down"));
     const whCtx = makeWhCtx({ ctx, stripe });
-    await expect(processEvent(whCtx, refundEvent())).rejects.toThrow(
+    await expect(processRefund(whCtx, refundEvent())).rejects.toThrow(
       "stripe down",
     );
   });

@@ -46,7 +46,7 @@ it("forwards the original buyer/account and independent cursors without provider
 it("propagates component read errors without returning an empty success page", async () => {
   const client = new ReadContractClient(components.betterStripe);
   const runQuery = vi
-    .fn<RunCtx["runQuery"]>()
+    .fn()
     .mockRejectedValue(new Error("read failed"));
   await expect(
     client.paginateSubscriptions(

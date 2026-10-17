@@ -8,7 +8,7 @@ import { internal } from "../../_generated/api";
 
 import { assertTestModeStripeKey } from "../../users/authorization";
 
-import { getStripeClient } from "../../stripe/client";
+import { stripe } from "../../stripe/helpers";
 import { kind } from "../helpers";
 
 export const createSession = action({
@@ -102,13 +102,9 @@ export const createSession = action({
           },
         };
     }
-    const session = await getStripeClient().accountSessions.create({
-      account,
+    return stripe.createAccountSession(ctx, {
+      stripeAccountId: account,
       components,
     });
-    return {
-      clientSecret: session.client_secret,
-      expiresAt: session.expires_at,
-    };
   },
 });

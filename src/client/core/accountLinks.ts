@@ -107,7 +107,10 @@ export async function createAccountSession(
       account: opts.stripeAccountId,
       components: opts.components,
     });
-    return { clientSecret: session.client_secret };
+    return {
+      clientSecret: session.client_secret,
+      expiresAt: session.expires_at,
+    };
   } catch (error) {
     throwStripeError(
       "STRIPE_API_ERROR",

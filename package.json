@@ -71,7 +71,17 @@
     "docs/refund-command-evidence.md",
     "docs/personal-account-mapping.md",
     "docs/financial-ownership.md",
-    "docs/financial-observations.md"
+    "docs/financial-observations.md",
+    "docs/architecture/component-extraction.md",
+    "docs/architecture/durable-execution.md",
+    "docs/architecture/recovery-workflow.md",
+    "docs/balance-funding-state.md",
+    "docs/balance-funding-workflow.md",
+    "docs/processing-cost-reconciliation.md",
+    "docs/example-balance-funding-cutover.md",
+    "docs/example-recovery-cutover.md",
+    "docs/releasing.md",
+    "docs/release-handoff.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json",

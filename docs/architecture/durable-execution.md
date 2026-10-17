@@ -14,8 +14,9 @@ changes require an explicit package update and verification.
 `src/component/durableExecution/runtime.ts` exports `executionWorkflow`, bound
 to the generated `components.workflow` reference. Its pool runs at most two
 steps concurrently and does not retry actions automatically. Domain workflows
-can define versioned internal mutations using this manager. This change adds
-no public financial endpoints and does not migrate existing scheduled jobs.
+can define versioned internal mutations using this manager. The initial runtime spike added no public financial endpoints. The merged
+domain workflows now expose the APIs described in the [release handoff](../release-handoff.md).
+Existing scheduled jobs are not migrated automatically.
 
 Workflow already schedules its handler and steps through its own Workpool.
 Do not enqueue those steps in another pool. A standalone Workpool is appropriate
@@ -28,14 +29,14 @@ child, with its own pool, and no sibling pool.
 
 The installed package manifests declare these peer requirements:
 
-| Package         | Convex peer | Workpool peer |
-| --------------- | ----------- | ------------- |
-| Workflow 0.4.10 | `^1.46.0`   | `^0.4.4`      |
-| Workpool 0.4.14 | `^1.36.1`   | n/a           |
-| Workflow 0.4.4  | `^1.36.1`   | `^0.4.4`      |
-| Workflow 0.3.12 | `^1.31.7`   | `^0.3.0       |     | ^0.4.0` |
-| Workflow 0.3.4  | `^1.24.8`   | `^0.3.0`      |
-| Workpool 0.3.1  | `^1.24.8`   | n/a           |
+| Package         | Convex peer | Workpool peer        |
+| --------------- | ----------- | -------------------- |
+| Workflow 0.4.10 | `^1.46.0`   | `^0.4.4`             |
+| Workpool 0.4.14 | `^1.36.1`   | n/a                  |
+| Workflow 0.4.4  | `^1.36.1`   | `^0.4.4`             |
+| Workflow 0.3.12 | `^1.31.7`   | `^0.3.0 \|\| ^0.4.0` |
+| Workflow 0.3.4  | `^1.24.8`   | `^0.3.0`             |
+| Workpool 0.3.1  | `^1.24.8`   | n/a                  |
 
 Workflow 0.3.4 with Workpool 0.3.1 could accept the old Convex minimum by
 manifest alone. It does not provide the selective failed-step restart required
@@ -161,34 +162,39 @@ credential isolation from durable state, saved-receipt replay, configured retry
 limits, unknown effects, cross-workflow concurrency, cancellation races,
 completion retention, and an independent queue.
 
-Use an isolated anonymous local deployment for an installation smoke test:
+Use a dedicated development deployment or a verified, isolated project-local
+anonymous deployment for installation checks. Before any `dev`, environment or
+`run` command, inspect the selected project-local configuration and confirm its
+identity, data ownership and unused ports. A fresh directory alone is not proof
+of isolation: the CLI can fall back to shared home-directory anonymous state.
+Do not use generic `CONVEX_AGENT_MODE=anonymous` as an isolation guarantee.
+
+For an already verified project-local deployment, keep the explicit deployment
+selector in a private env file and supply it on supported commands. Run commands
+from the owning app directory. For example, after verification:
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm run build
-cd example
-CONVEX_AGENT_MODE=anonymous pnpm exec convex dev --once --typecheck disable --local-cloud-port 3260 --local-site-port 3261
-# On the isolated local deployment only, provide a dummy test key if required.
-pnpm exec convex env set STRIPE_SECRET_KEY sk_test_composition_fixture
-CONVEX_AGENT_MODE=anonymous pnpm exec convex dev --once --typecheck disable --local-cloud-port 3260 --local-site-port 3261
-pnpm exec convex run --component betterStripe core/queries:getStripeMode '{}'
+node node_modules/convex/bin/main.js dev --env-file /absolute/private/local.env --once --typecheck disable --local-cloud-port 3260 --local-site-port 3261
+# Only on that verified fixture deployment, set a dummy key if required:
+node node_modules/convex/bin/main.js env set STRIPE_SECRET_KEY sk_test_composition_fixture --env-file /absolute/private/local.env
+node node_modules/convex/bin/main.js run --component betterStripe core/queries:getStripeMode '{}' --env-file /absolute/private/local.env
 ```
 
-Choose unused ports and a fresh project-local deployment. The anonymous CLI may
-reuse legacy home-directory state when there is no project-local configuration;
-inspect the chosen deployment before modifying its environment. Do not weaken a
-schema or clear unrelated data to make a smoke test pass. The verified fresh
-local push installed `betterStripe`, `betterStripe/workflow`,
+Choose unused ports. Do not weaken a schema, clear unrelated data, or reuse a
+shared deployment to make an installation check pass. The original local spike
+installed `betterStripe`, `betterStripe/workflow`,
 `betterStripe/workflow/workpool` and
 `betterStripe/workflow/workpool/batchWorker`, then returned `"test"` for mode.
 
 Generate references with `pnpm run codegen` against that local deployment. Do
 not edit generated files by hand. Run `pnpm run check:all` before handoff.
 
-The local push proves nested installation and generated references. The real
-component test harness proves the execution scenarios above with persisted test
-state and scheduled functions. No real Stripe credentials or live provider calls
-are used. Production deployment, process-restart recovery against a live backend,
-provider eligibility and reconciliation against actual Stripe effects remain
-acceptance checks for the domain cutovers. These tests do not claim live money
-movement, exactly-once external effects, or financial migration completion.
+The original local push proved nested installation and generated references;
+the runtime harness proved persisted test-state execution. Later domain and
+cross-domain checks added local-backend restart and reconciliation evidence.
+See the [release handoff](../release-handoff.md#verification-and-release) for
+those scopes. Synthetic provider transports and dummy keys do not establish live
+Stripe eligibility or actual money movement. Live provider reconciliation and
+production rollout require separately authorized acceptance. None of these
+checks establishes exactly-once external effects or automatically completes a
+financial migration.

@@ -164,6 +164,12 @@ export const settle = internalAction({
     );
     if (operation?.status === "no_owned_recovery") {
       // This sale owns no recovery reservation. Preserve the existing payout policy while another invoice holds the scope.
+      await ctx.runMutation(
+        internal.settlement.internal.mutations.beginAttempt,
+        {
+          saleId: sale._id,
+        },
+      );
       const settlement = await stripe.settleSale(ctx, {
         ...args,
         allocation: {

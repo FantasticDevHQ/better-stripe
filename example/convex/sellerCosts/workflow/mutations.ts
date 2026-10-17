@@ -80,12 +80,6 @@ export const start = internalMutation({
     )
       throw new Error("Original recovery group ownership changed.");
     if (
-      group &&
-      group.status !== "collected" &&
-      !["released", "open", "sealed"].includes(group.status)
-    )
-      throw new Error("Original recovery outcome is unresolved.");
-    if (
       sale?.settlementAttempted &&
       group &&
       !["collected", "released"].includes(group.status)
@@ -124,6 +118,12 @@ export const start = internalMutation({
         retryable: false,
       };
     }
+    if (
+      group &&
+      group.status !== "collected" &&
+      !["released", "open", "sealed"].includes(group.status)
+    )
+      throw new Error("Original recovery outcome is unresolved.");
     const rollback =
       group?.status === "collected"
         ? {

@@ -505,3 +505,86 @@ it("retries failed opening adoption from the saved observation on a later event"
     }),
   ).toMatchObject({ revision: 1, amountDue: 30, collectedAmount: 20 });
 });
+
+it("holds a cost event during partial settlement collection and resumes after verified legacy completion", async () => {
+  const { t, sellerId, args } = await fixture();
+  const scope = {
+      accountId: "acct_store",
+      scopeKey: `example:store:${sellerId}`,
+      currency: "usd",
+    },
+    groupKey = "example:cost-settlement:ch_sale";
+  for (let i = 0; i < 2; i++) {
+    await t.mutation(components.betterStripe.costRecovery.mutations.record, {
+      ...scope,
+      claimKey: `old:${i}`,
+      sourceChargeId: `ch_old_${i}`,
+      sourceGross: 1000,
+      sourceProcessingFee: 30,
+      amountDue: 1,
+      revision: 0,
+    });
+    await t.mutation(components.betterStripe.costRecovery.mutations.reserve, {
+      ...scope,
+      groupKey,
+      sourceKind: "settlement",
+      sourceId: "ch_sale",
+      sourceGross: 1000,
+      sourceProcessingFee: 30,
+      maxDebit: 900,
+      maxCredit: 100,
+      operationKey: `old:${i}`,
+      limit: 1,
+    });
+  }
+  await t.mutation(components.betterStripe.costRecovery.mutations.seal, {
+    groupKey,
+  });
+  await t.mutation(components.betterStripe.costRecovery.mutations.finish, {
+    groupKey,
+    outcome: "collect",
+    limit: 1,
+  });
+  const saleId = await t.run(async (ctx) => {
+    const sale = (await ctx.db.query("storeSales").first())!;
+    await ctx.db.patch("storeSales", sale._id, {
+      status: "pending",
+      settlementAttempted: true,
+      recoveryReady: true,
+      recoveryGroupKey: groupKey,
+      costRecoveryAmount: 2,
+      sellerNet: 898,
+    });
+    return sale._id;
+  });
+  expect(
+    await t.mutation(anyApi.sellerCosts.workflow.mutations.start, args),
+  ).toMatchObject({ status: "unknown" });
+  expect(
+    await t.query(anyApi.sellerCosts.workflow.queries.blockedSummary, {
+      sellerId,
+    }),
+  ).toEqual({ count: 1, hasMore: false });
+  await t.mutation(components.betterStripe.connect.mutations.upsertTransfer, {
+    stripeTransferId: "tr_original",
+    sourceChargeId: "ch_sale",
+    destinationAccountId: "acct_store",
+    amount: 898,
+    currency: "usd",
+    role: "store",
+    status: "paid",
+  });
+  adapter.outcome = { status: "ready", value: observation };
+  await t.mutation(anyApi.settlement.workflow.mutations.start, { saleId });
+  await t.finishAllScheduledFunctions(vi.runAllTimers, 500);
+  expect(
+    await t.query(anyApi.sellerCosts.workflow.queries.blockedSummary, {
+      sellerId,
+    }),
+  ).toEqual({ count: 0, hasMore: false });
+  expect(
+    await t.query(components.betterStripe.costRecovery.queries.claim, {
+      claimKey: "example:cost:pi_sale",
+    }),
+  ).toMatchObject({ amountDue: 30 });
+});

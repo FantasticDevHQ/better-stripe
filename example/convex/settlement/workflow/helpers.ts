@@ -36,12 +36,51 @@ export async function verifiedSaleTransferUpdates(
     components.betterStripe.connect.queries.listTransfersByCharge,
     { sourceChargeId: sale.chargeId },
   );
-  const legs = saleAllocation(sale).transfers.filter((leg) => leg.amount > 0);
-  if (rows.length !== legs.length)
+  const legs = saleAllocation(sale).transfers;
+  const affiliate = legs.find(
+    (leg) => leg.role === "affiliate" && leg.amount > 0,
+  );
+  const earning = affiliate
+    ? await ctx.runQuery(
+        components.betterStripe.affiliateRecovery.queries.getEarning,
+        {
+          sourceChargeId: sale.chargeId,
+          affiliateAccountId: affiliate.destinationAccountId,
+        },
+      )
+    : null;
+  if (
+    earning &&
+    (earning.sourceChargeId !== sale.chargeId ||
+      earning.affiliateAccountId !== affiliate?.destinationAccountId ||
+      earning.currency !== sale.currency ||
+      earning.paymentIntentId !== sale.paymentIntentId ||
+      earning.sourceInvoiceId !== sale.sourceInvoiceId ||
+      earning.originalCommission !== affiliate.amount ||
+      earning.status !== "paid" ||
+      !Number.isSafeInteger(earning.releaseAmount) ||
+      earning.releaseAmount < 0 ||
+      !Number.isSafeInteger(earning.withheldAmount) ||
+      earning.withheldAmount < 0 ||
+      earning.releaseAmount + earning.withheldAmount !==
+        earning.originalCommission ||
+      earning.releaseAmount > 0 !== !!earning.stripeTransferId)
+  )
+    throw new Error(
+      "Affiliate earning receipt does not match the original allocation.",
+    );
+  const effective = legs
+    .map((leg) =>
+      leg.role === "affiliate" && earning
+        ? { ...leg, amount: earning.releaseAmount }
+        : leg,
+    )
+    .filter((leg) => leg.amount > 0);
+  if (rows.length !== effective.length)
     throw new Error("Settlement transfer mirrors are incomplete or ambiguous.");
   const updates: { sellerTransferId?: string; affiliateTransferId?: string } =
     {};
-  for (const leg of legs) {
+  for (const leg of effective) {
     const matches = rows.filter(
       (row) =>
         row.destinationAccountId === leg.destinationAccountId &&
@@ -58,6 +97,9 @@ export async function verifiedSaleTransferUpdates(
         row.sourceInvoiceId !== sale.sourceInvoiceId) ||
       !["paid", "partially_reversed", "reversed"].includes(row.status) ||
       !row.stripeTransferId ||
+      (leg.role === "affiliate" &&
+        earning !== null &&
+        row.stripeTransferId !== earning.stripeTransferId) ||
       !Number.isSafeInteger(row.reversedAmount ?? 0) ||
       (row.reversedAmount ?? 0) < 0 ||
       (row.reversedAmount ?? 0) > row.amount

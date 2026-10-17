@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@convex-dev/workflow':
+        specifier: 0.4.10
+        version: 0.4.10(@convex-dev/workpool@0.4.14(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))
+      '@convex-dev/workpool':
+        specifier: 0.4.14
+        version: 0.4.14(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       '@stripe/connect-js':
         specifier: ^3.4.6
         version: 3.4.6
@@ -423,10 +429,29 @@ packages:
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
+  '@convex-dev/batch-worker@0.2.2':
+    resolution: {integrity: sha512-3knigElzTVhWw1sN28EYkGBTdrJZ03vMj2PJPuFq3V0Tg41i7tcv/EWDBFQWcUaKzBWWVw693hcJtxCF3CRtEw==}
+    peerDependencies:
+      convex: ^1.36.1
+      react: ^18.3.1 || ^19.0.0
+
   '@convex-dev/eslint-plugin@5.0.0':
     resolution: {integrity: sha512-UFhZ7bJBo4mTfa829/mntoAwyC9aKwXe6dxCV7PianSdAfFIbdCwCjWPBmhqn1hNlpqhVU385C/vjL8CXfxA2Q==}
     peerDependencies:
       convex: ^1.43.0
+
+  '@convex-dev/workflow@0.4.10':
+    resolution: {integrity: sha512-BHEDZEJUhZQOuqtop4bZRgomoKFA+JNECat+c9/cAuQmCegn7F0xlAiFiCPtYNm2xyUh3Rv+fJuNhnqs4th1cw==}
+    peerDependencies:
+      '@convex-dev/workpool': ^0.4.4
+      convex: ^1.46.0
+      convex-helpers: ^0.1.127
+
+  '@convex-dev/workpool@0.4.14':
+    resolution: {integrity: sha512-uTgOlLo7/Sv5OYhb6jjQ/+COAgLhOd1sMfHtJbN5qB298SHJQGoUUab66f6kqfEb8ugD1FnkL0oNZmk6fMqkow==}
+    peerDependencies:
+      convex: ^1.36.1
+      convex-helpers: ^0.1.94
 
   '@csstools/color-helpers@6.1.2':
     resolution: {integrity: sha512-grhRy3OKmniaAEKXMjua5z/EODX0MSqBGjunw8+j/3HQjOnahs2AGhvEOIYVUWcU6ScApbhLhVrQTX8XqrMrow==}
@@ -1967,6 +1992,9 @@ packages:
 
   ast-v8-to-istanbul@1.0.7:
     resolution: {integrity: sha512-kFL68AG6ajd8fg248zwM9GQrUWEp79gsmjum34OEXjs4yHuUMZfYKwOLW9GMmB4oNvVrj+EAGxsP7ye2UR9UlA==}
+
+  async-channel@0.2.0:
+    resolution: {integrity: sha512-BJyjI/sfKlyijaBt2hbOSxT28xGNtLR0QLzAKO1Hlnv5BULY7sAoYoTPW3lfr1ZIC7y+FxabxO9T8GXpyoofGg==}
 
   async-function@1.0.0:
     resolution: {integrity: sha512-hsU18Ae8CDTR6Kgu9DYf0EbCr/a5iGL0rytQDobUcdpYOKokk8LEjVphnXkDkgpi0wYVsqrXuP0bZxJaTqdgoA==}
@@ -4758,6 +4786,11 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
+  '@convex-dev/batch-worker@0.2.2(convex@1.46.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      convex: 1.46.0(react@19.3.0)
+      react: 19.3.0
+
   '@convex-dev/eslint-plugin@5.0.0(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(eslint@10.12.0(jiti@2.7.0))':
     dependencies:
       '@typescript-eslint/types': 8.58.2
@@ -4767,6 +4800,21 @@ snapshots:
       - eslint
       - supports-color
       - typescript
+
+  '@convex-dev/workflow@0.4.10(@convex-dev/workpool@0.4.14(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))':
+    dependencies:
+      '@convex-dev/workpool': 0.4.14(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+      async-channel: 0.2.0
+      convex: 1.46.0(react@19.3.0)
+      convex-helpers: 0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5)
+
+  '@convex-dev/workpool@0.4.14(convex-helpers@0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@convex-dev/batch-worker': 0.2.2(convex@1.46.0(react@19.3.0))(react@19.3.0)
+      convex: 1.46.0(react@19.3.0)
+      convex-helpers: 0.1.128(@typescript/typescript6@6.0.2)(convex@1.46.0(react@19.3.0))(hono@4.13.13)(react@19.3.0)(zod@4.6.5)
+    transitivePeerDependencies:
+      - react
 
   '@csstools/color-helpers@6.1.2': {}
 
@@ -5976,6 +6024,8 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       estree-walker: 3.0.3
       js-tokens: 10.0.0
+
+  async-channel@0.2.0: {}
 
   async-function@1.0.0: {}
 

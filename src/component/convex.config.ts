@@ -1,3 +1,4 @@
+import workflow from "@convex-dev/workflow/convex.config";
 import { defineComponent } from "convex/server";
 import { v } from "convex/values";
 
@@ -15,4 +16,5 @@ const component = defineComponent("betterStripe", {
     STRIPE_PUBLISHABLE_KEY: v.optional(v.string()),
   },
 });
+component.use(workflow);
 export default component;

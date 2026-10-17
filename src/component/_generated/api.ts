@@ -41,6 +41,7 @@ import type * as costRecovery_mutations from "../costRecovery/mutations.js";
 import type * as costRecovery_preparation from "../costRecovery/preparation.js";
 import type * as costRecovery_queries from "../costRecovery/queries.js";
 import type * as costRecovery_reservations from "../costRecovery/reservations.js";
+import type * as durableExecution_runtime from "../durableExecution/runtime.js";
 import type * as earnings_arithmetic from "../earnings/arithmetic.js";
 import type * as earnings_legacyReads from "../earnings/legacyReads.js";
 import type * as earnings_mutations from "../earnings/mutations.js";
@@ -166,6 +167,7 @@ const fullApi: ApiFromModules<{
   "costRecovery/preparation": typeof costRecovery_preparation;
   "costRecovery/queries": typeof costRecovery_queries;
   "costRecovery/reservations": typeof costRecovery_reservations;
+  "durableExecution/runtime": typeof durableExecution_runtime;
   "earnings/arithmetic": typeof earnings_arithmetic;
   "earnings/legacyReads": typeof earnings_legacyReads;
   "earnings/mutations": typeof earnings_mutations;
@@ -277,4 +279,6 @@ export const internal: FilterApi<
   FunctionReference<any, "internal">
 > = anyApi as any;
 
-export const components = componentsGeneric() as unknown as {};
+export const components = componentsGeneric() as unknown as {
+  workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;
+};

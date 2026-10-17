@@ -33,6 +33,8 @@ import type * as affiliateRecovery_public_queries from "../affiliateRecovery/pub
 import type * as affiliateRecovery_sandbox_actions from "../affiliateRecovery/sandbox/actions.js";
 import type * as billing_checkoutHistory from "../billing/checkoutHistory.js";
 import type * as billing_events_actions from "../billing/events/actions.js";
+import type * as billing_history_actor from "../billing/history/actor.js";
+import type * as billing_history_queries from "../billing/history/queries.js";
 import type * as billing_invoiceHistory from "../billing/invoiceHistory.js";
 import type * as billing_invoicePayments from "../billing/invoicePayments.js";
 import type * as billing_personalAccountMapping from "../billing/personalAccountMapping.js";
@@ -209,6 +211,8 @@ const fullApi: ApiFromModules<{
   "affiliateRecovery/sandbox/actions": typeof affiliateRecovery_sandbox_actions;
   "billing/checkoutHistory": typeof billing_checkoutHistory;
   "billing/events/actions": typeof billing_events_actions;
+  "billing/history/actor": typeof billing_history_actor;
+  "billing/history/queries": typeof billing_history_queries;
   "billing/invoiceHistory": typeof billing_invoiceHistory;
   "billing/invoicePayments": typeof billing_invoicePayments;
   "billing/personalAccountMapping": typeof billing_personalAccountMapping;

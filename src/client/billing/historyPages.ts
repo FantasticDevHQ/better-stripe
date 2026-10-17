@@ -21,7 +21,9 @@ export type CheckoutSessionHistoryPageOptions = {
   paginationOpts: PaginationOptions;
 };
 export type SubscriptionHistoryPage = PaginationResult<Doc<"subscriptions">>;
-export type CheckoutSessionHistoryPage = PaginationResult<Doc<"checkoutSessions">>;
+export type CheckoutSessionHistoryPage = PaginationResult<
+  Doc<"checkoutSessions">
+>;
 
 export function paginateSubscriptions(
   component: Component,

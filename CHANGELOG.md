@@ -26,6 +26,15 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.47.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.47.0...v0.47.1) (2026-10-17)
+
+### Bug Fixes
+
+- load compiled public SDK with standard Node ESM ([5b47932](https://github.com/FantasticDevHQ/better-stripe/commit/5b4793231035c60c9958500819494d215dc22907))
+- preserve plain Node ESM public exports ([bb63e21](https://github.com/FantasticDevHQ/better-stripe/commit/bb63e2186f9cab6f8a6408518ee3033d96875b9e))
+- **react:** allow valid zero plan prices ([007825a](https://github.com/FantasticDevHQ/better-stripe/commit/007825a96d4767df5a586428ebcbcc863bdd473c))
+- **react:** allow valid zero plan prices ([6bb7571](https://github.com/FantasticDevHQ/better-stripe/commit/6bb75719891450bbc848a05045b5528e38627fc1))
+
 ## [0.47.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.46.0...v0.47.0) (2026-10-17)
 
 ### Features

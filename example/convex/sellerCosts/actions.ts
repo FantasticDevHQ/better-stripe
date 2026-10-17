@@ -6,8 +6,6 @@ import {
 } from "@fantastic.dev/better-stripe";
 import { reconcileInvoiceFunding } from "./invoiceRecoverySource";
 
-import { costClaimKey } from "./recovery";
-
 import { unsettledCostSource } from "./unsettledCostSource";
 
 import { stripe } from "../stripe/helpers";
@@ -18,7 +16,8 @@ import { internalAction } from "../_generated/server";
 
 import { api, internal } from "../_generated/api";
 
-import { stripeCostDeficit } from "./helpers";
+import { anyApi } from "convex/server";
+import { getStripeClient } from "../stripe/client";
 
 import type { Id } from "../_generated/dataModel";
 
@@ -26,12 +25,12 @@ export const reconcile = internalAction({
   args: { paymentIntentId: v.string() },
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    const observedAt = Date.now();
-    const previousClaim = await stripe.costRecovery.getClaim(ctx, {
-      claimKey: costClaimKey(args.paymentIntentId),
+    // This bounded read routes ownership only. The component re-observes authoritative costs before writing.
+    const cost = await stripe.getProcessingCostContext(ctx, {
+      ...args,
+      historyBounds: { maxPages: 5, maxItems: 500 },
     });
-    const cost = await stripe.getProcessingCostContext(ctx, args);
-    if (cost.status === "not_ready") {
+    if (cost.status !== "ready") {
       if (
         cost.reason === "payment_not_succeeded" ||
         cost.reason === "charge_unavailable"
@@ -63,55 +62,34 @@ export const reconcile = internalAction({
     if (!sale) return null;
     if (sale.currency !== cost.currency || sale.gross !== cost.gross)
       throw new Error("Stripe cost context does not match the original sale.");
-    const disputeFees = Math.max(0, cost.disputeFeeAdjustment);
-    const principalReturned = cost.principalReturned;
-    const processingFee = Math.max(
-      0,
-      cost.processingFee + cost.refundFeeAdjustment,
+    const payment = await getStripeClient().paymentIntents.retrieve(
+      args.paymentIntentId,
     );
-    const processingLoss = stripeCostDeficit({
-      gross: sale.gross,
+    if (payment.id !== args.paymentIntentId || !payment.customer_account)
+      throw new Error("Original customer account is unavailable.");
+    await ctx.runMutation(anyApi.sellerCosts.workflow.mutations.start, {
+      sellerId: sale.sellerId,
+      sourceChargeId: cost.chargeId,
+      paymentIntentId: cost.paymentIntentId,
+      currency: sale.currency,
+      gross: cost.gross,
+      originalProcessingFee: cost.processingFee,
       sellingFee: sale.sellingFee,
-      processingFee,
-      principalReturned,
-      disputeFees: 0,
+      customerAccountId: payment.customer_account,
+      sourceType: cost.disputes.length ? "dispute" : "refund",
+      ...("stripePriceId" in sale && sale.stripePriceId !== undefined
+        ? { stripePriceId: sale.stripePriceId }
+        : {}),
+      ...("stripeProductId" in sale && sale.stripeProductId !== undefined
+        ? { stripeProductId: sale.stripeProductId }
+        : {}),
+      ...(settled?.sourceInvoiceId
+        ? { invoiceId: settled.sourceInvoiceId }
+        : {}),
+      ...(invoiceSource?.invoiceRecoveryGroupKey
+        ? { invoiceRecoveryGroupKey: invoiceSource.invoiceRecoveryGroupKey }
+        : {}),
     });
-    // Returning a payment also returns any previous cost adjustment funded by
-    // that payment. Reinstate that adjustment so old expenses aren't forgiven.
-    const adjustmentRollback = settled?.recoveryGroupKey
-      ? 0
-      : Math.round(
-          ((sale.costRecoveryAmount ?? 0) * principalReturned) / sale.gross,
-        );
-    await ctx.runMutation(
-      internal.sellerCosts.billing.internal.mutations.record,
-      {
-        sellerId: sale.sellerId,
-        sourceChargeId: cost.chargeId,
-        paymentIntentId: cost.paymentIntentId,
-        currency: sale.currency,
-        sourceType: cost.disputes.length ? "dispute" : "refund",
-        amountDue: processingLoss + disputeFees + adjustmentRollback,
-        processingLoss,
-        disputeFees,
-        observedAt,
-        sourceGross: cost.gross,
-        sourceProcessingFee: cost.processingFee,
-        expectedRevision: previousClaim?.revision ?? -1,
-        invoiceRecoveryGroupKey: invoiceSource?.invoiceRecoveryGroupKey,
-      },
-    );
-    if (settled?.recoveryGroupKey) {
-      const group = await stripe.costRecovery.getGroup(ctx, {
-        groupKey: settled.recoveryGroupKey,
-      });
-      if (group?.status === "collected")
-        await stripe.costRecovery.rollback(ctx, {
-          groupKey: group.groupKey,
-          returnedPrincipal: principalReturned,
-          revision: (previousClaim?.revision ?? -1) + 1,
-        });
-    }
     return null;
   },
 });
@@ -152,7 +130,7 @@ export const reconcileExisting = internalAction({
   },
 });
 
-/** Cost balance transactions can arrive after the original refund/dispute event. */
+/** Retry only ownership preflight. Once authorized, the component owns observation retries and revisions. */
 export const reconcileWhenReady = internalAction({
   args: { paymentIntentId: v.string(), attempt: v.optional(v.number()) },
   returns: v.null(),

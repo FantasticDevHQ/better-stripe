@@ -27,6 +27,7 @@ export function attachRecoveryInvoice(
   create?: true,
   maxItems?: number,
   historyBounds?: ProcessingCostHistoryBounds,
+  readOnly?: boolean,
 ): Promise<InvoiceReceipt>;
 export function attachRecoveryInvoice(
   stripe: Stripe,
@@ -36,6 +37,7 @@ export function attachRecoveryInvoice(
   create: false,
   maxItems?: number,
   historyBounds?: ProcessingCostHistoryBounds,
+  readOnly?: boolean,
 ): Promise<
   | InvoiceReceipt
   | (Omit<InvoiceReceipt, "invoiceItemId"> & { invoiceItemId: null })
@@ -50,6 +52,7 @@ export async function attachRecoveryInvoice(
   create = true,
   maxItems = Number.POSITIVE_INFINITY,
   historyBounds?: ProcessingCostHistoryBounds,
+  readOnly = false,
 ) {
   if (
     !group ||
@@ -69,6 +72,7 @@ export async function attachRecoveryInvoice(
     throw new Error("Invoice recovery group must be sealed and active.");
   const invoice = await stripe.invoices.retrieve(group.sourceId);
   if (
+    (readOnly && invoice.object !== "invoice") ||
     invoice.id !== group.sourceId ||
     invoice.customer_account !== group.accountId
   )
@@ -97,6 +101,7 @@ export async function attachRecoveryInvoice(
         "Duplicate recovery invoice items require reconciliation.",
       );
     if (
+      (readOnly && item.object !== "invoiceitem") ||
       id(item.invoice) !== invoice.id ||
       item.customer_account !== group.accountId ||
       item.currency !== group.currency ||
@@ -143,6 +148,10 @@ export async function attachRecoveryInvoice(
       { idempotencyKey: `better-stripe:recovery:${group._id}` },
     );
   }
+  if (readOnly && group.invoiceItemId !== found.id)
+    throw new Error(
+      "Read-only verification requires an existing item binding.",
+    );
   const bound = group.invoiceItemId === found.id ? group : await bind(found.id);
   return {
     group: bound,

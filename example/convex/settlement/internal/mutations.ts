@@ -122,8 +122,29 @@ export const markUnpaidSaleRefunded = internalMutation({
       sale &&
       !sale.settlementAttempted &&
       sale.recoveryGroupKey &&
-      sale.status !== "settled"
+      sale.status !== "settled" &&
+      sale.recoveryReady !== undefined
     ) {
+      const job = await ctx.db
+        .query("recoveryJobs")
+        .withIndex("by_request", (q) =>
+          q.eq("requestKey", `example:settlement-workflow:v1:${sale.chargeId}`),
+        )
+        .unique();
+      // Cancellation holds the owning reservation. It never infers release from an observed refund.
+      if (job) {
+        if (job.operationId && job.version !== undefined)
+          await stripe.costRecovery.requestGroupCancel(ctx, {
+            accountId: job.accountId,
+            scopeKey: job.scopeKey,
+            currency: job.currency,
+            groupKey: sale.recoveryGroupKey,
+            operationId: job.operationId,
+            version: job.version,
+          });
+        return null;
+      }
+      // Compatibility for a known pre-workflow reservation that was never dispatched.
       const result = await stripe.costRecovery.finish(ctx, {
         groupKey: sale.recoveryGroupKey,
         outcome: "release",

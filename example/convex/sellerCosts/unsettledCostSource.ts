@@ -53,6 +53,8 @@ export async function unsettledCostSource(
     currency: cost.currency,
     sellingFee: cost.gross,
     costRecoveryAmount: 0,
+    stripePriceId: metadata.stripePriceId,
+    stripeProductId: price.stripeProductId,
   };
 }
 

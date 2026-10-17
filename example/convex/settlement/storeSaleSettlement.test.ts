@@ -1,3 +1,5 @@
+import { runAction } from "./workflow/providerFixture.testHelpers";
+import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
@@ -24,11 +26,11 @@ vi.mock("../stripe/helpers", async () => {
     await import("../../../src/client/settlement/settleSale");
   const { components } = await import("../_generated/api");
   const sdk = raw as unknown as import("stripe").default;
-  const { CostRecoveryClient } =
-    await import("../../../src/client/costRecovery");
+  const { fixtureRecoveryClient } =
+    await import("./workflow/providerFixture.testHelpers");
   return {
     stripe: {
-      costRecovery: new CostRecoveryClient(components.betterStripe, () => sdk),
+      costRecovery: fixtureRecoveryClient(components.betterStripe, sdk),
       getVerifiedSale: async (
         _ctx: unknown,
         opts: Parameters<typeof getVerifiedSale>[1],
@@ -79,6 +81,7 @@ vi.mock("../stripe/helpers", async () => {
 });
 const componentModules = import.meta.glob("../../../dist/component/**/*.js");
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.resetAllMocks();
   raw.charges.retrieve.mockResolvedValue({ created: 1 });
   raw.transfers.list.mockResolvedValue({ data: [] });
@@ -110,6 +113,7 @@ async function setup(
     interval: "month",
     active: true,
   });
+  workflowTest.register(t, "betterStripe/workflow");
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       name: "Seller",
@@ -164,10 +168,10 @@ it.each([
   "pays the seller and records actual processing on %s, without duplicate payouts",
   async (planId, sellerNet, platformNet) => {
     const { t, sellerId } = await setup(planId);
-    await t.action(internal.settlement.internal.actions.settle, {
+    await runAction(t, internal.settlement.internal.actions.settle, {
       paymentIntentId: "pi_sale",
     });
-    await t.action(internal.settlement.internal.actions.settle, {
+    await runAction(t, internal.settlement.internal.actions.settle, {
       paymentIntentId: "pi_sale",
     });
     expect(raw.transfers.create).toHaveBeenCalledTimes(1);
@@ -207,7 +211,7 @@ it("waits for actual processing fees instead of guessing or overpaying recipient
 });
 it("takes high processing costs from the seller and pays the affiliate from the remainder", async () => {
   const { t, sellerId } = await setup("growth", true, 700);
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   const [sale] = await t.query(api.settlement.public.queries.listSellerSales, {
@@ -235,7 +239,7 @@ it("recovers a Stripe transfer after a crash without paying it twice", async () 
       },
     ],
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   expect(raw.transfers.create).not.toHaveBeenCalled();
@@ -251,7 +255,7 @@ it("settles a recurring invoice from the subscription's seller and referral meta
   const { t, payment, sellerId } = await setup("starter", true);
   raw.subscriptions.retrieve.mockResolvedValue({ metadata: payment.metadata });
   raw.paymentIntents.retrieve.mockResolvedValue({ ...payment, metadata: {} });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
     subscriptionId: "sub_customer",
     invoiceId: "in_monthly",
@@ -282,10 +286,10 @@ it("recovers seller costs once before transferring earnings and bills only the r
     sourceProcessingFee: 320,
     expectedRevision: -1,
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   const [sale] = await t.query(api.settlement.public.queries.listSellerSales, {
@@ -355,7 +359,7 @@ it("returns credited costs once without exceeding the charge transfer limit", as
       observedAt: 1,
     }),
   ).rejects.toThrow(/observation changed/);
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   expect(raw.transfers.create).toHaveBeenCalledWith(
@@ -402,7 +406,7 @@ it("applies admin-configured sale fees and keeps settled economics unchanged on 
       version: 1,
     }),
   );
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   const [sale] = await t.query(api.settlement.public.queries.listSellerSales, {
@@ -421,7 +425,7 @@ it("applies admin-configured sale fees and keeps settled economics unchanged on 
       version: 2,
     }),
   );
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -442,7 +446,7 @@ it("uses the plan's affiliate rate and records it without recalculating settled 
       version: 1,
     }),
   );
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   const [sale] = await t.query(api.settlement.public.queries.listSellerSales, {
@@ -461,7 +465,7 @@ it("uses the plan's affiliate rate and records it without recalculating settled 
       version: 2,
     }),
   );
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
   });
   expect(
@@ -515,7 +519,7 @@ it("uses the current subscription price override on renewals and preserves earli
     id: `tr_${args.source_transaction}_${args.destination}`,
     ...args,
   }));
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_sale",
     subscriptionId: "sub_customer",
     invoiceId: "in_first",
@@ -546,7 +550,7 @@ it("uses the current subscription price override on renewals and preserves earli
     id: "pi_next",
     latest_charge: { ...payment.latest_charge, id: "ch_next" },
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_next",
     subscriptionId: "sub_customer",
     invoiceId: "in_next",
@@ -573,7 +577,7 @@ it("uses the current subscription price override on renewals and preserves earli
     id: "pi_fixed",
     latest_charge: { ...payment.latest_charge, id: "ch_fixed" },
   });
-  await t.action(internal.settlement.internal.actions.settle, {
+  await runAction(t, internal.settlement.internal.actions.settle, {
     paymentIntentId: "pi_fixed",
     subscriptionId: "sub_customer",
     invoiceId: "in_fixed",

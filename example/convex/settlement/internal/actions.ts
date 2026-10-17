@@ -4,6 +4,7 @@ import {
   throwFinancialOutcome,
   verifiedSaleOutcome,
 } from "@fantastic.dev/better-stripe";
+import { anyApi } from "convex/server";
 import { stripe } from "../../stripe/helpers";
 
 import { v } from "convex/values";
@@ -94,7 +95,7 @@ export const settle = internalAction({
         sellerId: seller.sellerId,
       },
     );
-    let sale: Doc<"storeSales"> = await ctx.runMutation(
+    const sale: Doc<"storeSales"> = await ctx.runMutation(
       internal.settlement.internal.mutations.reserve,
       {
         ...economics,
@@ -119,15 +120,6 @@ export const settle = internalAction({
         sourceInvoiceId: args.invoiceId,
       },
     );
-    while (!sale.recoveryReady) {
-      sale = await ctx.runMutation(
-        internal.settlement.internal.mutations.prepareRecovery,
-        { saleId: sale._id },
-      );
-    }
-    await ctx.runMutation(internal.settlement.internal.mutations.beginAttempt, {
-      saleId: sale._id,
-    });
     const legs = [
       {
         role: "store" as const,
@@ -140,36 +132,6 @@ export const settle = internalAction({
         destination: sale.affiliateAccountId,
       },
     ];
-    const settlement = await stripe.settleSale(ctx, {
-      ...args,
-      allocation: {
-        gross: sale.gross,
-        currency: sale.currency,
-        processingFee: sale.processingFee,
-        platformNet: sale.platformNet,
-        adjustmentAmount: sale.costRecoveryAmount ?? 0,
-        transfers: legs
-          .filter((leg) => leg.destination)
-          .map((leg) => ({
-            destinationAccountId: leg.destination!,
-            role: leg.role,
-            amount: leg.amount,
-          })),
-      },
-    });
-    if (!("executedTransfers" in settlement)) {
-      throwFinancialOutcome(verifiedSaleOutcome(settlement));
-    }
-    for (const transfer of settlement.executedTransfers) {
-      await ctx.runMutation(
-        internal.settlement.internal.mutations.recordTransfer,
-        {
-          saleId: sale._id,
-          role: transfer.role as "store" | "affiliate",
-          transferId: transfer.stripeTransferId,
-        },
-      );
-    }
     await ctx.runMutation(
       components.betterStripe.connect.mutations.upsertPayment,
       {
@@ -196,24 +158,52 @@ export const settle = internalAction({
         },
       },
     );
-    while (
-      !(await ctx.runMutation(
-        internal.settlement.internal.mutations.collectRecovery,
-        {
-          saleId: sale._id,
+    const operation = await ctx.runMutation(
+      anyApi.settlement.workflow.mutations.start,
+      { saleId: sale._id },
+    );
+    if (operation?.status === "no_owned_recovery") {
+      // This sale owns no recovery reservation. Preserve the existing payout policy while another invoice holds the scope.
+      const settlement = await stripe.settleSale(ctx, {
+        ...args,
+        allocation: {
+          gross: sale.gross,
+          currency: sale.currency,
+          processingFee: sale.processingFee,
+          platformNet: sale.platformNet,
+          adjustmentAmount: sale.costRecoveryAmount ?? 0,
+          transfers: legs
+            .filter((leg) => leg.destination)
+            .map((leg) => ({
+              destinationAccountId: leg.destination!,
+              role: leg.role,
+              amount: leg.amount,
+            })),
         },
-      ))
-    ) {
-      // Each call completes a bounded batch of reservations in a separate transaction.
+      });
+      if (!("executedTransfers" in settlement)) {
+        throwFinancialOutcome(verifiedSaleOutcome(settlement));
+      }
+      for (const transfer of settlement.executedTransfers) {
+        await ctx.runMutation(
+          internal.settlement.internal.mutations.recordTransfer,
+          {
+            saleId: sale._id,
+            role: transfer.role as "store" | "affiliate",
+            transferId: transfer.stripeTransferId,
+          },
+        );
+      }
+      await ctx.runMutation(
+        internal.settlement.internal.mutations.markSettled,
+        { saleId: sale._id },
+      );
     }
-    await ctx.runMutation(internal.settlement.internal.mutations.markSettled, {
-      saleId: sale._id,
-    });
     return null;
   },
 });
 
-/** Stripe reports processing costs asynchronously, including in sandboxes. */
+/** Retry ownership/economics preflight only. Component Workflow owns the authorized recovery execution. */
 export const settleWhenReady = internalAction({
   args: {
     paymentIntentId: v.string(),

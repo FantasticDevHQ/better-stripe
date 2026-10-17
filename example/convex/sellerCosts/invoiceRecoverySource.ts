@@ -1,13 +1,9 @@
-import {
-  processingCostOutcome,
-  throwFinancialOutcome,
-} from "@fantastic.dev/better-stripe";
+import { throwFinancialOutcome } from "@fantastic.dev/better-stripe";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
 import { getStripeClient } from "../stripe/client";
 import { stripe } from "../stripe/helpers";
-import { costScope } from "./recovery";
 
 const id = (value: string | { id: string } | null | undefined) =>
   typeof value === "string" ? value : value?.id;
@@ -58,27 +54,20 @@ export async function reconcileInvoiceFunding(
   );
   if (seller.stripeAccountId !== matched.accountId)
     throw new Error("Invoice funding recovery owner changed.");
-  const previous = await stripe.costRecovery.getClaim(ctx, {
-    claimKey: `rollback:${matched.groupKey}`,
-  });
+  // Resume the existing invoice operation, then let processing-cost reconciliation verify funding and rollback atomically.
   await ctx.runAction(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId: seller.sellerId,
     invoiceId: matched.sourceId,
   });
-  const result = await stripe.costRecovery.rollbackInvoice(ctx, {
-    ...costScope(seller.sellerId, matched.accountId, matched.currency),
+  const current = await stripe.costRecovery.getGroup(ctx, {
     groupKey: matched.groupKey,
-    revision: (previous?.revision ?? -1) + 1,
   });
-  if (result.status !== "ready") {
-    if (result.reason === "invoice_funding_allocation_required")
-      throwFinancialOutcome({
-        status: "rejected",
-        reason: "unsupported_source",
-        retryable: false,
-      });
-    throwFinancialOutcome(processingCostOutcome(result));
-  }
+  if (current?.status !== "collected")
+    throwFinancialOutcome({
+      status: "not_ready",
+      reason: "provider_pending",
+      retryable: true,
+    });
   if (cost.currency !== matched.currency)
     throw new Error("Invoice funding source currency changed.");
   return {

@@ -1,12 +1,16 @@
+import { runAction } from "../settlement/workflow/providerFixture.testHelpers";
+import { anyApi } from "convex/server";
+import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import componentSchema from "../../../dist/component/schema.js";
-import { api, internal } from "../_generated/api";
+import { api, components, internal } from "../_generated/api";
 import schema from "../schema";
 const raw = vi.hoisted(() => ({
+  paymentIntents: { retrieve: vi.fn() },
   invoices: { retrieve: vi.fn(), listLineItems: vi.fn() },
   invoiceItems: { list: vi.fn(), create: vi.fn() },
   invoicePayments: { list: vi.fn() },
@@ -19,15 +23,16 @@ const client = vi.hoisted(() => ({
   getProductByStripeId: vi.fn(),
 }));
 vi.mock("../stripe/helpers", async () => {
-  const { CostRecoveryClient } =
-    await import("../../../src/client/costRecovery");
+  const { fixtureRecoveryClient } =
+    await import("../settlement/workflow/providerFixture.testHelpers");
   const { components } = await import("../_generated/api");
   return {
     stripe: {
       ...client,
-      costRecovery: new CostRecoveryClient(
+      costRecovery: fixtureRecoveryClient(
         components.betterStripe,
-        () => raw as unknown as import("stripe").default,
+        raw as unknown as import("stripe").default,
+        client.getProcessingCostContext,
       ),
     },
   };
@@ -45,7 +50,14 @@ const costContext = {
   principalReturned: 10000,
   disputes: [],
 };
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.resetAllMocks();
+  raw.paymentIntents.retrieve.mockImplementation(async (id) => ({
+    id,
+    customer_account: "acct_buyer",
+  }));
+});
 async function setup() {
   const t = convexTest(schema, modules);
   t.registerComponent(
@@ -53,6 +65,28 @@ async function setup() {
     componentSchema,
     import.meta.glob("../../../dist/component/**/*.js"),
   );
+  workflowTest.register(t, "betterStripe/workflow");
+  for (const [product, prices] of [
+    ["prod_default", ["price_default"]],
+    ["prod_store", ["price_store", "price_original"]],
+  ] as const) {
+    await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
+      stripeProductId: product,
+      accountId: "acct_store",
+      name: "Original",
+      active: false,
+    });
+    for (const price of prices)
+      await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
+        stripePriceId: price,
+        stripeProductId: product,
+        productId: "fixture",
+        unitAmount: 10000,
+        currency: "usd",
+        type: "one_time",
+        active: false,
+      });
+  }
   const sellerId = await t.run((ctx) =>
     ctx.db.insert("users", {
       role: "seller",
@@ -105,10 +139,10 @@ async function setup() {
 }
 it("routes a returned invoice funding payment to package rollback and refuses ambiguous allocation", async () => {
   const { t, sellerId } = await setup();
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -118,7 +152,7 @@ it("routes a returned invoice funding payment to package rollback and refuses am
     currency: "usd",
     status: "paid",
   });
-  await t.action(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -141,49 +175,56 @@ it("routes a returned invoice funding payment to package rollback and refuses am
     })(),
   );
   const { stripe } = await import("../stripe/helpers");
-  const rollback = vi
-    .spyOn(stripe.costRecovery, "rollbackInvoice")
-    .mockResolvedValue({
-      status: "not_ready",
-      reason: "invoice_funding_allocation_required",
-    });
-  try {
-    await expect(
-      t.action(internal.sellerCosts.actions.reconcileWhenReady, {
-        paymentIntentId: "pi_funding",
-      }),
-    ).rejects.toMatchObject({
-      data: {
-        code: "FINANCIAL_OUTCOME",
-        outcome: {
-          status: "rejected",
-          reason: "unsupported_source",
-          retryable: false,
-        },
+  const observe = vi
+    .spyOn(stripe.costRecovery, "observeProcessingCosts")
+    .mockImplementation(async (_ctx, request) => ({
+      ...request,
+      outcome: {
+        status: "rejected",
+        reason: "unsupported_source",
+        retryable: false,
       },
+    }));
+  try {
+    await runAction(t, internal.sellerCosts.actions.reconcileWhenReady, {
+      paymentIntentId: "pi_funding",
     });
     expect(
-      await t.run((ctx) =>
-        ctx.db.system.query("_scheduled_functions").collect(),
-      ),
-    ).toHaveLength(0);
-    expect(rollback).toHaveBeenCalledWith(expect.anything(), {
-      accountId: "acct_store",
-      scopeKey: `example:store:${sellerId}`,
-      currency: "usd",
-      groupKey: "example:cost-invoice:in_monthly",
-      revision: 0,
-    });
+      await t.query(anyApi.sellerCosts.workflow.queries.list, { sellerId }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "cost",
+          sourceId: "ch_funding",
+          status: "rejected",
+          reason: "unsupported_source",
+        }),
+      ]),
+    );
+    expect(
+      await t.query(components.betterStripe.costRecovery.queries.claim, {
+        claimKey: "example:cost:pi_funding",
+      }),
+    ).toBeNull();
+    expect(observe).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        accountId: "acct_store",
+        scopeKey: `example:store:${sellerId}`,
+        currency: "usd",
+      }),
+      expect.anything(),
+    );
   } finally {
-    rollback.mockRestore();
+    observe.mockRestore();
   }
 });
 it("reinstates refunded invoice-funded recovery and passes uncovered processing fees to the seller", async () => {
   const { t, sellerId } = await setup();
-  await t.action(internal.sellerCosts.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.actions.reconcile, {
     paymentIntentId: "pi_sale",
   });
-  await t.action(internal.sellerCosts.actions.attachToInvoice, {
+  await runAction(t, internal.sellerCosts.actions.attachToInvoice, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -193,7 +234,7 @@ it("reinstates refunded invoice-funded recovery and passes uncovered processing 
     currency: "usd",
     status: "paid",
   });
-  await t.action(internal.sellerCosts.recoveryInvoices.actions.reconcile, {
+  await runAction(t, internal.sellerCosts.recoveryInvoices.actions.reconcile, {
     sellerId,
     invoiceId: "in_monthly",
   });
@@ -240,7 +281,7 @@ it("reinstates refunded invoice-funded recovery and passes uncovered processing 
       };
     });
   try {
-    await t.action(internal.sellerCosts.actions.reconcile, {
+    await runAction(t, internal.sellerCosts.actions.reconcile, {
       paymentIntentId: "pi_funding",
     });
     expect(
@@ -249,10 +290,10 @@ it("reinstates refunded invoice-funded recovery and passes uncovered processing 
       ).find((row) => row.paymentIntentId === "pi_funding"),
     ).toMatchObject({ amountDue: 160, processingLoss: 0, outstanding: 160 });
     returned = 1220;
-    await t.action(internal.sellerCosts.actions.reconcile, {
+    await runAction(t, internal.sellerCosts.actions.reconcile, {
       paymentIntentId: "pi_funding",
     });
-    await t.action(internal.sellerCosts.actions.reconcile, {
+    await runAction(t, internal.sellerCosts.actions.reconcile, {
       paymentIntentId: "pi_funding",
     });
     expect(

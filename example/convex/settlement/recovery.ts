@@ -30,12 +30,10 @@ export async function prepareSaleRecovery(
     await ctx.db.patch("storeSales", sale._id, { recoveryReady: true });
     return (await ctx.db.get("storeSales", sale._id))!;
   }
-  const existing = await stripe.costRecovery.getGroup(ctx, { groupKey });
   const available = sale.sellerNet + (sale.costRecoveryAmount ?? 0);
-  const { group } = await stripe.costRecovery.reserve(ctx, {
+  const prepared = await stripe.costRecovery.prepareGroup(ctx, {
     ...scope,
     groupKey,
-    operationKey: `${groupKey}:batch:${existing?.pendingOperations ?? 0}`,
     sourceKind: "settlement",
     sourceId: sale.chargeId,
     sourceGross: sale.gross,
@@ -43,13 +41,9 @@ export async function prepareSaleRecovery(
     maxDebit: available,
     maxCredit: sale.sellingFee,
   });
-  const after = await stripe.costRecovery.balance(ctx, scope);
-  const target = Math.max(
-    -group.maxCredit,
-    Math.min(group.maxDebit, after.outstanding + group.amount),
-  );
-  const ready = target === group.amount;
-  if (ready) await stripe.costRecovery.seal(ctx, { groupKey });
+  if (prepared.status !== "prepared")
+    throw new Error(`Recovery preparation failed: ${prepared.reason}.`);
+  const { group, isDone: ready } = prepared;
   await ctx.db.patch("storeSales", sale._id, {
     sellerNet: available - group.amount,
     costRecoveryAmount: group.amount,

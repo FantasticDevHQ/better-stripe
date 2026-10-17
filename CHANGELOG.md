@@ -28,12 +28,11 @@
 
 ## [0.37.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.37.0...v0.37.1) (2026-10-17)
 
-
 ### Bug Fixes
 
-* **release:** preserve parseable descriptions and correct release notes ([e3f93d9](https://github.com/FantasticDevHQ/better-stripe/commit/e3f93d9276d5f51468d11fdfa932605db2e748e4))
-* **release:** preserve parseable reviewed release descriptions ([7aaf445](https://github.com/FantasticDevHQ/better-stripe/commit/7aaf445af08ed59d04c0d5e7958dfd82f5282974))
-* **release:** reject nested version selectors in notes ([067b45e](https://github.com/FantasticDevHQ/better-stripe/commit/067b45e575e2b4cadd3e07a2db1a1c9dee73960f))
+- **release:** preserve parseable descriptions and correct release notes ([e3f93d9](https://github.com/FantasticDevHQ/better-stripe/commit/e3f93d9276d5f51468d11fdfa932605db2e748e4))
+- **release:** preserve parseable reviewed release descriptions ([7aaf445](https://github.com/FantasticDevHQ/better-stripe/commit/7aaf445af08ed59d04c0d5e7958dfd82f5282974))
+- **release:** reject nested version selectors in notes ([067b45e](https://github.com/FantasticDevHQ/better-stripe/commit/067b45e575e2b4cadd3e07a2db1a1c9dee73960f))
 
 ## [0.37.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.35.0...v0.37.0) (2026-10-17)
 

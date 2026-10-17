@@ -1,3 +1,9 @@
+import {
+  financialRetryDecision,
+  processingCostOutcome,
+  readFinancialOutcomeError,
+  throwFinancialOutcome,
+} from "@fantastic.dev/better-stripe";
 import { reconcileInvoiceFunding } from "./invoiceRecoverySource";
 
 import { costClaimKey } from "./recovery";
@@ -31,9 +37,7 @@ export const reconcile = internalAction({
         cost.reason === "charge_unavailable"
       )
         return null;
-      throw new Error(
-        `Stripe processing costs are not available yet (${cost.reason}).`,
-      );
+      throwFinancialOutcome(processingCostOutcome(cost));
     }
     const settled = await ctx.runQuery(
       internal.settlement.internal.queries.getByCharge,
@@ -159,18 +163,21 @@ export const reconcileWhenReady = internalAction({
         paymentIntentId: args.paymentIntentId,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (
-        !/Stripe (processing|refund) costs are not available yet|Sale settlement is not ready|Cost observation changed|Recovery revision cannot be reused/.test(
-          message,
-        ) ||
-        attempt >= 10
-      )
-        throw error;
+      const outcome = readFinancialOutcomeError(error);
+      if (!outcome) throw error;
+      const decision = financialRetryDecision(outcome, attempt, {
+        maxRetries: 10,
+        initialDelayMs: 1000,
+        maxDelayMs: 60000,
+      });
+      if (decision.status === "stop") throw error;
       await ctx.scheduler.runAfter(
-        Math.min(60000, 1000 * 2 ** attempt),
+        decision.delayMs,
         internal.sellerCosts.actions.reconcileWhenReady,
-        { paymentIntentId: args.paymentIntentId, attempt: attempt + 1 },
+        {
+          paymentIntentId: args.paymentIntentId,
+          attempt: decision.nextAttempt,
+        },
       );
     }
     return null;

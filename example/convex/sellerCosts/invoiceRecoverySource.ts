@@ -1,3 +1,7 @@
+import {
+  processingCostOutcome,
+  throwFinancialOutcome,
+} from "@fantastic.dev/better-stripe";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import type { ActionCtx } from "../_generated/server";
@@ -66,10 +70,15 @@ export async function reconcileInvoiceFunding(
     groupKey: matched.groupKey,
     revision: (previous?.revision ?? -1) + 1,
   });
-  if (result.status !== "ready")
-    throw new Error(
-      `Stripe refund costs are not available yet (${result.reason}).`,
-    );
+  if (result.status !== "ready") {
+    if (result.reason === "invoice_funding_allocation_required")
+      throwFinancialOutcome({
+        status: "rejected",
+        reason: "unsupported_source",
+        retryable: false,
+      });
+    throwFinancialOutcome(processingCostOutcome(result));
+  }
   if (cost.currency !== matched.currency)
     throw new Error("Invoice funding source currency changed.");
   return {

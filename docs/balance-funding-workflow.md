@@ -1,15 +1,20 @@
 # Durable balance funding
 
-`BetterStripe.balanceFundingWorkflow` adds component-owned preparation and apply workflows. The existing `prepareBalanceFunding` and `setBalanceFunding` methods remain available. The new interface requires explicit `2026-06-30.preview` configuration; the provider action checks the actual Stripe SDK version against the immutable operation snapshot before admitting a provider phase. Stripe still determines live account and preview eligibility.
+`BetterStripe.balanceFundingWorkflow` adds component-owned preparation and apply workflows. The existing `prepareBalanceFunding` and `setBalanceFunding` methods remain available. The new interface requires explicit `STRIPE_CUSTOMER_PREVIEW_API_VERSION` configuration; the provider action checks the actual Stripe SDK version against the immutable operation snapshot before admitting a provider phase. Stripe still determines live account and preview eligibility.
 
 The host authorizes the account, subscription and opaque scope, records consent, and supplies an internal provider action reference. Construct the Stripe client inside that action using the host's runtime secret. The component stores only the function handle, immutable scope/API/definition versions, phase keys and allowlisted receipts. Never put keys, raw provider objects, raw exceptions or restoration settings into workflow arguments or completion context.
 
 ```ts
+import {
+  BetterStripe,
+  STRIPE_CUSTOMER_PREVIEW_API_VERSION,
+} from "@fantastic.dev/better-stripe";
+
 // Host internal action. Instantiate BetterStripe at execution, not in durable args.
 const stripe = () =>
   new BetterStripe(components.betterStripe, {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    stripeApiVersion: "2026-06-30.preview",
+    stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION,
   });
 
 // The action's args validator must match FundingProviderPhaseOptions:

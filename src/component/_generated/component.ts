@@ -2072,7 +2072,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getSubscriptionByStripeId: FunctionReference<
           "query",
           "internal",
-          { stripeSubscriptionId: string },
+          { requireUnique?: boolean; stripeSubscriptionId: string },
           {
             _creationTime: number;
             _id: string;
@@ -3528,7 +3528,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getAccountByStripeId: FunctionReference<
           "query",
           "internal",
-          { stripeAccountId: string },
+          { requireUnique?: boolean; stripeAccountId: string },
           {
             _creationTime: number;
             _id: string;

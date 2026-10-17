@@ -26,6 +26,22 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.44.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.43.0...v0.44.0) (2026-10-17)
+
+### Features
+
+- migrate example balance funding to component workflows ([68f6cb4](https://github.com/FantasticDevHQ/better-stripe/commit/68f6cb471c07b79ca8f0dba6d2d160fd250baf32))
+- move example balance funding into component workflows ([93ac5ce](https://github.com/FantasticDevHQ/better-stripe/commit/93ac5ce036120e42c0dd3b1cb23295965b7da98d))
+
+### Bug Fixes
+
+- fence legacy workers and recover abandoned funding observers ([eaa8c2c](https://github.com/FantasticDevHQ/better-stripe/commit/eaa8c2c214d73f5ee49d76df8b005a2293d02f85))
+
+### Tests
+
+- ratchet balance funding adapter coverage floors ([5cce0eb](https://github.com/FantasticDevHQ/better-stripe/commit/5cce0ebd5114f39c4a17a5f1284d42876304f510))
+- ratchet funding migration recovery coverage floors ([1a1bec5](https://github.com/FantasticDevHQ/better-stripe/commit/1a1bec5215786812734cfe4be0e8027f793c5cb3))
+
 ## [0.43.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.42.0...v0.43.0) (2026-10-17)
 
 ### Features

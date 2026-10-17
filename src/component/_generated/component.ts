@@ -2479,6 +2479,134 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    billingHistory: {
+      queries: {
+        paginateCheckoutSessions: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?: "open" | "complete" | "expired";
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              applicationFeeAmount?: number;
+              applicationFeePercent?: number;
+              chargeType?: "destination" | "separate";
+              clientSecret?: string;
+              currency?: string;
+              destinationAccountId?: string;
+              feeCollectedAmount?: number;
+              feeRefundedAmount?: number;
+              metadata?: any;
+              mode: "payment" | "subscription" | "setup";
+              orgId?: string;
+              priceId?: string;
+              splitRecipients?: Array<{
+                amount?: number;
+                destinationAccountId: string;
+                percent?: number;
+                role: "store" | "affiliate" | "other";
+              }>;
+              status: "open" | "complete" | "expired";
+              stripeSessionId: string;
+              url?: string;
+              userId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        paginateSubscriptions: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?:
+              | "active"
+              | "trialing"
+              | "past_due"
+              | "canceled"
+              | "incomplete"
+              | "incomplete_expired"
+              | "unpaid"
+              | "paused";
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountId?: string;
+              applicationFeeAmount?: number;
+              applicationFeePercent?: number;
+              cancelAtPeriodEnd: boolean;
+              canceledAt?: string;
+              chargeType?: "destination" | "separate";
+              currency?: string;
+              currentPeriodEnd?: string;
+              currentPeriodStart?: string;
+              destinationAccountId?: string;
+              feeCollectedAmount?: number;
+              feeRefundedAmount?: number;
+              isCollectionPaused?: boolean;
+              isTrialing: boolean;
+              metadata?: any;
+              orgId?: string;
+              priceId?: string;
+              quantity?: number;
+              splitRecipients?: Array<{
+                amount?: number;
+                destinationAccountId: string;
+                percent?: number;
+                role: "store" | "affiliate" | "other";
+              }>;
+              status:
+                | "active"
+                | "trialing"
+                | "past_due"
+                | "canceled"
+                | "incomplete"
+                | "incomplete_expired"
+                | "unpaid"
+                | "paused";
+              stripeSubscriptionId: string;
+              trialEnd?: string;
+              trialStart?: string;
+              userId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     connect: {
       mutations: {
         claimReversalSlices: FunctionReference<

@@ -1,3 +1,4 @@
+import * as historyPages from "./billing/historyPages.js";
 import { OperationEvidenceClient } from "./operationEvidence.js";
 import {
   normalizeRefundCommandBindings,
@@ -24,6 +25,21 @@ import { componentRef } from "./webhooks/helpers.js";
 /** Shared component readers inherited by BetterStripe. */
 export class ReadContractClient {
   constructor(public component: Component) {}
+  /** Cached buyer observations only; the host authorizes exact selectors on every page. */
+  paginateSubscriptions(
+    ctx: RunCtx,
+    opts: historyPages.SubscriptionHistoryPageOptions,
+  ) {
+    return historyPages.paginateSubscriptions(this.component, ctx, opts);
+  }
+
+  paginateCheckoutSessions(
+    ctx: RunCtx,
+    opts: historyPages.CheckoutSessionHistoryPageOptions,
+  ) {
+    return historyPages.paginateCheckoutSessions(this.component, ctx, opts);
+  }
+
   get operationEvidence() {
     return new OperationEvidenceClient(this.component);
   }

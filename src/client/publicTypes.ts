@@ -91,3 +91,10 @@ export type {
   PrepareBalanceFundingOptions,
   SetBalanceFundingOptions,
 } from "./billing/balanceFunding.js";
+
+export type {
+  SubscriptionHistoryPageOptions,
+  CheckoutSessionHistoryPageOptions,
+  SubscriptionHistoryPage,
+  CheckoutSessionHistoryPage,
+} from "./billing/historyPages.js";

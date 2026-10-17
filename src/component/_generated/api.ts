@@ -38,6 +38,8 @@ import type * as balanceFunding_workflowValidators from "../balanceFunding/workf
 import type * as billing_mutations from "../billing/mutations.js";
 import type * as billing_queries from "../billing/queries.js";
 import type * as billing_validators from "../billing/validators.js";
+import type * as billingHistory_queries from "../billingHistory/queries.js";
+import type * as billingHistory_scope from "../billingHistory/scope.js";
 import type * as connect_mutations from "../connect/mutations.js";
 import type * as connect_payoutWrites from "../connect/payoutWrites.js";
 import type * as connect_queries from "../connect/queries.js";
@@ -202,6 +204,8 @@ const fullApi: ApiFromModules<{
   "billing/mutations": typeof billing_mutations;
   "billing/queries": typeof billing_queries;
   "billing/validators": typeof billing_validators;
+  "billingHistory/queries": typeof billingHistory_queries;
+  "billingHistory/scope": typeof billingHistory_scope;
   "connect/mutations": typeof connect_mutations;
   "connect/payoutWrites": typeof connect_payoutWrites;
   "connect/queries": typeof connect_queries;

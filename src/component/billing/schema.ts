@@ -13,6 +13,13 @@ export const subscriptionsTable = defineTable(subscriptionFields)
   .index("by_stripe_subscription_id", ["stripeSubscriptionId"])
   .index("by_price_id", ["priceId"])
   .index("by_user_id", ["userId"])
+  .index("by_userId_and_status", ["userId", "status"])
+  .index("by_userId_and_accountId", ["userId", "accountId"])
+  .index("by_userId_and_accountId_and_status", [
+    "userId",
+    "accountId",
+    "status",
+  ])
   .index("by_org_id", ["orgId"])
   .index("by_status", ["status"])
   .index("by_account_id", ["accountId"])
@@ -24,6 +31,12 @@ export const subscriptionsTable = defineTable(subscriptionFields)
 export const checkoutSessionsTable = defineTable(checkoutSessionFields)
   .index("by_stripe_session_id", ["stripeSessionId"])
   .index("by_user_id", ["userId"])
+  .index("by_userId_and_accountId", ["userId", "accountId"])
+  .index("by_userId_and_accountId_and_status", [
+    "userId",
+    "accountId",
+    "status",
+  ])
   .index("by_account_id", ["accountId"])
   .index("by_user_status", ["userId", "status"]);
 

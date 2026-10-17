@@ -1,9 +1,15 @@
+import {
+  boundedCostHistory,
+  type ProcessingCostHistoryBounds,
+} from "./processingCostHistory.js";
 import type Stripe from "stripe";
 
 export type ProcessingCostOptions = {
   /** Host authorizes the payment and optional connected-account context. */
   paymentIntentId: string;
   stripeAccountId?: string;
+  /** Optional complete-history budgets. Existing callers retain their pagination behavior. */
+  historyBounds?: ProcessingCostHistoryBounds;
 };
 export type ProcessingCostTransaction = {
   id: string;
@@ -114,6 +120,14 @@ export async function getProcessingCostContext(
         typeof value === "string"
           ? await stripe.balanceTransactions.retrieve(value, {}, requestOptions)
           : value;
+      if (
+        opts.historyBounds &&
+        (tx.object !== "balance_transaction" ||
+          !tx.id ||
+          id(tx.source) !== sourceId ||
+          (typeof value === "string" && tx.id !== value))
+      )
+        throw new Error("Processing-cost transaction identity does not match.");
       if (tx.currency !== currency) throw new NotReady("currency_mismatch");
       [tx.amount, tx.fee, tx.net].forEach(integer);
       if (integer(tx.amount - tx.fee) !== tx.net)
@@ -162,17 +176,26 @@ export async function getProcessingCostContext(
     if (gross < 0 || original.amount !== gross)
       throw new Error("Payment and processed charge amounts do not reconcile.");
     const refunds = new Map<string, ProcessingCostRecord>();
-    for await (const refund of stripe.refunds.list(
-      {
-        payment_intent: payment.id,
-        limit: 100,
-        expand: [
-          "data.balance_transaction",
-          "data.failure_balance_transaction",
-        ],
-      },
-      requestOptions,
-    )) {
+    const refundParams = {
+      payment_intent: payment.id,
+      limit: 100,
+      expand: ["data.balance_transaction", "data.failure_balance_transaction"],
+    };
+    const refundRows = opts.historyBounds
+      ? await boundedCostHistory(
+          (cursor, limit) =>
+            stripe.refunds.list(
+              {
+                ...refundParams,
+                limit,
+                ...(cursor ? { starting_after: cursor } : {}),
+              },
+              requestOptions,
+            ),
+          opts.historyBounds,
+        )
+      : stripe.refunds.list(refundParams, requestOptions);
+    for await (const refund of refundRows) {
       if (
         id(refund.charge) !== charge.id ||
         (refund.payment_intent && id(refund.payment_intent) !== payment.id)
@@ -213,10 +236,22 @@ export async function getProcessingCostContext(
       });
     }
     const disputes = new Map<string, ProcessingCostRecord>();
-    for await (const dispute of stripe.disputes.list(
-      { payment_intent: payment.id, limit: 100 },
-      requestOptions,
-    )) {
+    const disputeParams = { payment_intent: payment.id, limit: 100 };
+    const disputeRows = opts.historyBounds
+      ? await boundedCostHistory(
+          (cursor, limit) =>
+            stripe.disputes.list(
+              {
+                ...disputeParams,
+                limit,
+                ...(cursor ? { starting_after: cursor } : {}),
+              },
+              requestOptions,
+            ),
+          opts.historyBounds,
+        )
+      : stripe.disputes.list(disputeParams, requestOptions);
+    for await (const dispute of disputeRows) {
       if (
         id(dispute.charge) !== charge.id ||
         (dispute.payment_intent && id(dispute.payment_intent) !== payment.id)

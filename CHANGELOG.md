@@ -26,6 +26,22 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.47.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.46.0...v0.47.0) (2026-10-17)
+
+### Features
+
+- commit qualified refund callbacks with accepted generations ([2b429aa](https://github.com/FantasticDevHQ/better-stripe/commit/2b429aa6a3f91ba39e23e34b0823489719473ce6))
+
+### Bug Fixes
+
+- commit qualified refund callbacks atomically ([076c353](https://github.com/FantasticDevHQ/better-stripe/commit/076c353aef3ad4beaa71ad410551c6076abb861d))
+- validate opaque component IDs in host refund receipts ([56d97ad](https://github.com/FantasticDevHQ/better-stripe/commit/56d97ad9e619299ee37437d7330ffb840a04b730))
+
+### Maintenance
+
+- integrate accepted upstream release metadata ([14d6641](https://github.com/FantasticDevHQ/better-stripe/commit/14d6641c2403c00fe5d5bd014ef3e8206d18b68b))
+- ratchet qualified refund callback coverage floors ([ba11593](https://github.com/FantasticDevHQ/better-stripe/commit/ba1159358b29f5572587113742d67e6ea919a34f))
+
 ## [0.46.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.2...v0.46.0) (2026-10-17)
 
 ### Features

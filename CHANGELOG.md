@@ -28,25 +28,23 @@
 
 ## [0.39.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.38.0...v0.39.0) (2026-10-17)
 
-
 ### Features
 
-* add nested durable execution runtime (BTS-204) ([4e300df](https://github.com/FantasticDevHQ/better-stripe/commit/4e300dfcd12dac3be6a9ee568502766d94b7ac11))
-* add policy-explicit processing cost deficit calculator ([eaab6dc](https://github.com/FantasticDevHQ/better-stripe/commit/eaab6dcaa06554ae7ba3ba7035194758ae0a0926))
-* add policy-explicit processing cost deficit calculator (BTS-211) ([ac18f4e](https://github.com/FantasticDevHQ/better-stripe/commit/ac18f4eaab624730cc45b3a31039809c8a8e8f8a))
-* **cost-recovery:** prepare bounded groups atomically (BTS-205) ([cad0ec7](https://github.com/FantasticDevHQ/better-stripe/commit/cad0ec729a9b72ad17b09311808e524fd73fa667))
-* **cost-recovery:** prepare bounded recovery groups atomically (BTS-205) ([2157234](https://github.com/FantasticDevHQ/better-stripe/commit/215723444c649c341861ec58a030df3331c151b6))
-* persist durable balance funding operations (BTS-206) ([11b81d5](https://github.com/FantasticDevHQ/better-stripe/commit/11b81d5a66548f73d131555dd3034eb79629c39e))
-* persist versioned balance funding preparations and operations ([d8943eb](https://github.com/FantasticDevHQ/better-stripe/commit/d8943ebb251df672b435fe7722877bbd3395c498))
-* recover funding preparation by immutable scoped request ([a2c839c](https://github.com/FantasticDevHQ/better-stripe/commit/a2c839c29faddcc04ac52aeac26dfcfa5c5352da))
-
+- add nested durable execution runtime ([4e300df](https://github.com/FantasticDevHQ/better-stripe/commit/4e300dfcd12dac3be6a9ee568502766d94b7ac11))
+- add policy-explicit processing cost deficit calculator ([eaab6dc](https://github.com/FantasticDevHQ/better-stripe/commit/eaab6dcaa06554ae7ba3ba7035194758ae0a0926))
+- add policy-explicit processing cost deficit calculator ([ac18f4e](https://github.com/FantasticDevHQ/better-stripe/commit/ac18f4eaab624730cc45b3a31039809c8a8e8f8a))
+- **cost-recovery:** prepare bounded groups atomically ([cad0ec7](https://github.com/FantasticDevHQ/better-stripe/commit/cad0ec729a9b72ad17b09311808e524fd73fa667))
+- **cost-recovery:** prepare bounded recovery groups atomically ([2157234](https://github.com/FantasticDevHQ/better-stripe/commit/215723444c649c341861ec58a030df3331c151b6))
+- persist durable balance funding operations ([11b81d5](https://github.com/FantasticDevHQ/better-stripe/commit/11b81d5a66548f73d131555dd3034eb79629c39e))
+- persist versioned balance funding preparations and operations ([d8943eb](https://github.com/FantasticDevHQ/better-stripe/commit/d8943ebb251df672b435fe7722877bbd3395c498))
+- recover funding preparation by immutable scoped request ([a2c839c](https://github.com/FantasticDevHQ/better-stripe/commit/a2c839c29faddcc04ac52aeac26dfcfa5c5352da))
 
 ### Maintenance
 
-* ratchet coverage after durable funding state checks ([a2be05d](https://github.com/FantasticDevHQ/better-stripe/commit/a2be05dd60e12abfdff7d4bafad848f408074b75))
-* ratchet funding coverage after calculator integration ([b709c7d](https://github.com/FantasticDevHQ/better-stripe/commit/b709c7d251ff59ca297f7bfbb3dba0599c8cee7f))
-* ratchet funding coverage after catalog integration ([71ac9b6](https://github.com/FantasticDevHQ/better-stripe/commit/71ac9b60ba6fb76fac0055811fe5ce185a92b145))
-* ratchet funding coverage after outcomes integration ([8e8282c](https://github.com/FantasticDevHQ/better-stripe/commit/8e8282ce9d4584943cb69c71e481e0337a6a7bd7))
+- ratchet coverage after durable funding state checks ([a2be05d](https://github.com/FantasticDevHQ/better-stripe/commit/a2be05dd60e12abfdff7d4bafad848f408074b75))
+- ratchet funding coverage after calculator integration ([b709c7d](https://github.com/FantasticDevHQ/better-stripe/commit/b709c7d251ff59ca297f7bfbb3dba0599c8cee7f))
+- ratchet funding coverage after catalog integration ([71ac9b6](https://github.com/FantasticDevHQ/better-stripe/commit/71ac9b60ba6fb76fac0055811fe5ce185a92b145))
+- ratchet funding coverage after outcomes integration ([8e8282c](https://github.com/FantasticDevHQ/better-stripe/commit/8e8282ce9d4584943cb69c71e481e0337a6a7bd7))
 
 ## [0.38.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.37.1...v0.38.0) (2026-10-17)
 

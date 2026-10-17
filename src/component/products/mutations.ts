@@ -1,7 +1,11 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { mutation } from "../_generated/server";
-import { priceIntervalValidator, priceTypeValidator } from "./validators";
+import {
+  priceIntervalValidator,
+  priceTypeValidator,
+  productFields,
+} from "./validators";
 
 // =============================================================================
 // PRODUCT MUTATIONS
@@ -31,6 +35,39 @@ export const upsertProduct = mutation({
       await ctx.db.insert("products", args);
     }
 
+    return null;
+  },
+});
+
+/** Atomically import provider fields without reassigning a claimed owner. */
+export const adoptProduct = mutation({
+  args: productFields,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("products")
+      .withIndex("by_stripe_product_id", (q) =>
+        q.eq("stripeProductId", args.stripeProductId),
+      )
+      .first();
+    if (
+      existing?.accountId !== undefined &&
+      args.accountId !== undefined &&
+      existing.accountId !== args.accountId
+    ) {
+      throw new ConvexError({
+        code: "INVALID_CONFIGURATION",
+        message: "Product ownership cannot be reassigned by adoption",
+      });
+    }
+    if (existing) {
+      await ctx.db.patch("products", existing._id, {
+        ...args,
+        accountId: existing.accountId ?? args.accountId,
+      });
+    } else {
+      await ctx.db.insert("products", args);
+    }
     return null;
   },
 });

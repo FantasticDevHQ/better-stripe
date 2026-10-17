@@ -70,7 +70,7 @@ claim execution are completed.
 
 ## Status
 
-**Version**: `0.37.1` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.38.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Used in production by its authors. Webhook pipeline is covered by unit tests and a live E2E harness (`npm run e2e:webhooks`) that fires real Stripe-signed events and asserts the ledger.
 
@@ -382,6 +382,10 @@ shows where the host's authenticated-actor check belongs.
 
 ### Product and Price
 
+`ensurePrice(ctx, { stripeProductId, lookupKey, unitAmount, type, idempotencyKey, currency?, interval?, intervalCount? })` finds a price by its provider lookup key, verifies its immutable terms, and adopts the price and product into the component mirrors. If absent, it creates the price with the supplied idempotency key. A matching provider result repairs a failed mirror write on retry. Inactive prices, different products or pricing terms, and metered or transformed pricing are rejected. Choose a new versioned lookup key when changing price terms; existing subscriptions retain their current price.
+
+Scope the idempotency key to one catalog operation and reuse it only with identical creation parameters. Authorize product access in your host action. `getStripePriceByLookupKey(ctx, { lookupKey })` reads Stripe without changing mirrors. `adoptProduct(ctx, { stripeProductId, accountId? })` imports an existing provider product, preserving existing ownership and rejecting reassignment. Adoption does not update provider metadata or statement descriptors. `createPrice` also accepts `lookupKey` for callers handling adoption themselves. Tier names, lookup-key version policy, and entitlement mapping remain in the host app.
+
 | Method                                                                                                                | Description                                   |
 | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB     |
@@ -507,6 +511,26 @@ display metadata; financial totals come from the component. `CostRecovery` accep
 an optional `reservedAmount` to distinguish reservations from collected money,
 while preserving the legacy `invoicedAmount` input. See the example README for
 cutover constraints and the sandbox renewal acceptance procedure.
+
+### Atomic recovery preparation
+
+Call `stripe.costRecovery.prepareGroup(ctx, { ...groupOptions, limit: 100 })`
+after authorizing the account, scope, currency, source and debit/credit policy.
+Each call reserves at most one batch and seals the completed target in the same
+component mutation. It returns `{ status: "prepared", group, isDone }`. Continue
+with unchanged group options while `isDone` is false; do not run provider effects
+until it is true. Sealed or finished replay returns the saved group without
+another reservation. Batch identities use a persisted sequence, independent of
+pending or completed reservation counts. The optional limit must be 1 through
+100 and can change between bounded calls.
+
+A competing boundary returns `{ status: "conflict", reason: "scope_busy",
+retryable: false }`. Changed group identity or a legacy operation-key collision
+returns `identity_changed`; invalid scope or policy returns `rejected`. These
+outcomes do not reserve anything. Read current state and let host policy decide
+what to do; conflicts are not automatic retries. Existing `reserve`, `seal` and
+`finish` methods remain available. Host reporting and provider execution remain
+separate from preparation.
 
 ### Importing opening recovery balances
 

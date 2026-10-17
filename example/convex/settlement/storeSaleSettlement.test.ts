@@ -195,11 +195,15 @@ it.each([
 it("waits for actual processing fees instead of guessing or overpaying recipients", async () => {
   const { t } = await setup("pro", false, null);
   await expect(
-    t.action(internal.settlement.internal.actions.settle, {
+    t.action(internal.settlement.internal.actions.settleWhenReady, {
       paymentIntentId: "pi_sale",
+      attempt: 10,
     }),
-  ).rejects.toThrow(/not available yet/);
+  ).rejects.toThrow(/fee_pending/);
   expect(raw.transfers.create).not.toHaveBeenCalled();
+  expect(
+    await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect()),
+  ).toHaveLength(0);
 });
 it("takes high processing costs from the seller and pays the affiliate from the remainder", async () => {
   const { t, sellerId } = await setup("growth", true, 700);

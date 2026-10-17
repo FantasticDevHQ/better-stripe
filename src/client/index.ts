@@ -1,5 +1,7 @@
 import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
+export * from "./financialOutcomes/index.js";
+export * from "./processingCostDeficit/index.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
 import type { PaginationOptions } from "convex/server";
 import { reconcilePayoutAndTrigger } from "./webhooks/payoutReconciliation.js";
@@ -18,13 +20,19 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { BillingPortalClient } from "./core/billingPortalClient.js";
+import { CatalogClient } from "./products/catalogClient.js";
 export type {
   CreateBillingPortalConfigurationOptions,
   RetrieveBillingPortalConfigurationOptions,
   UpdateBillingPortalConfigurationOptions,
   CreateBillingPortalSessionOptions,
 } from "./core/accountLinks.js";
+export type {
+  AdoptProductOptions,
+  EnsurePriceOptions,
+} from "./products/catalog.js";
+export type { CreatePriceOptions } from "./products/prices.js";
+export type { CreateProductOptions } from "./products/products.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -141,8 +149,6 @@ import type {
   V2AccountUpdateParams,
 } from "./stripe-types.js";
 import { componentRef, DISPATCHER_UPSERT_PATHS } from "./webhooks/helpers.js";
-import * as pricesImpl from "./products/prices.js";
-import * as productsImpl from "./products/products.js";
 import type {
   AccountLinkWithStatus,
   AsyncHookCtx,
@@ -199,7 +205,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends BillingPortalClient {
+export class BetterStripe extends CatalogClient {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -533,148 +539,6 @@ export class BetterStripe extends BillingPortalClient {
       ctx,
       opts,
     );
-  }
-
-  // PRODUCT METHODS
-
-  async createProduct(ctx: RunCtx, opts: productsImpl.CreateProductOptions) {
-    return productsImpl.createProduct(this.stripe(), this.component, ctx, {
-      ...opts,
-      // Stamp the per-store descriptor at create so it covers the first invoice
-      // charge (BTS-67); resolves the store's suffix, else this default.
-      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
-    });
-  }
-
-  async updateProduct(
-    ctx: RunCtx,
-    opts: {
-      stripeProductId: string;
-      name?: string;
-      description?: string;
-      active?: boolean;
-      defaultPrice?: string | null;
-      metadata?: Record<string, string>;
-    },
-  ) {
-    return productsImpl.updateProduct(this.stripe(), this.component, ctx, {
-      ...opts,
-      defaultStatementDescriptorSuffix: this._statementDescriptorSuffix,
-    });
-  }
-
-  async deactivateProduct(ctx: RunCtx, opts: { stripeProductId: string }) {
-    return productsImpl.deactivateProduct(this.stripe(), ctx, opts);
-  }
-
-  async getProduct(
-    ctx: RunCtx,
-    opts: { productId: string },
-  ): Promise<StripeComponentProduct | null> {
-    return productsImpl.getProduct(this.component, ctx, opts);
-  }
-
-  async getProductByStripeId(
-    ctx: RunCtx,
-    opts: { stripeProductId: string },
-  ): Promise<StripeComponentProduct | null> {
-    return productsImpl.getProductByStripeId(this.component, ctx, opts);
-  }
-
-  async listProducts(
-    ctx: RunCtx,
-    opts?: { accountId?: string; active?: boolean; limit?: number },
-  ): Promise<StripeComponentProduct[]> {
-    return productsImpl.listProducts(this.component, ctx, opts);
-  }
-
-  async upsertProduct(
-    ctx: RunCtx,
-    opts: {
-      stripeProductId: string;
-      accountId?: string;
-      name: string;
-      description?: string;
-      active: boolean;
-      metadata?: Record<string, unknown>;
-    },
-  ) {
-    return productsImpl.upsertProduct(this.component, ctx, opts);
-  }
-
-  async listStripeProducts(
-    ctx: RunCtx,
-    opts?: { active?: boolean; limit?: number },
-  ) {
-    return productsImpl.listStripeProducts(this.stripe(), ctx, opts);
-  }
-
-  async deleteProduct(ctx: RunCtx, opts: { stripeProductId: string }) {
-    return productsImpl.deleteProduct(this.stripe(), ctx, opts);
-  }
-
-  // PRICE METHODS
-
-  async createPrice(ctx: RunCtx, opts: pricesImpl.CreatePriceOptions) {
-    return pricesImpl.createPrice(this.stripe(), this.component, ctx, opts);
-  }
-
-  async updatePrice(
-    ctx: RunCtx,
-    opts: {
-      stripePriceId: string;
-      active?: boolean;
-      nickname?: string;
-      metadata?: Record<string, string>;
-    },
-  ) {
-    return pricesImpl.updatePrice(this.stripe(), ctx, opts);
-  }
-
-  async deactivatePrice(ctx: RunCtx, opts: { stripePriceId: string }) {
-    return pricesImpl.deactivatePrice(this.stripe(), ctx, opts);
-  }
-
-  async getPrice(
-    ctx: RunCtx,
-    opts: { priceId: string },
-  ): Promise<StripeComponentPrice | null> {
-    return pricesImpl.getPrice(this.component, ctx, opts);
-  }
-
-  async getPriceByStripeId(
-    ctx: RunCtx,
-    opts: { stripePriceId: string },
-  ): Promise<StripeComponentPrice | null> {
-    return pricesImpl.getPriceByStripeId(this.component, ctx, opts);
-  }
-
-  async listPrices(
-    ctx: RunCtx,
-    opts?: { productId?: string; active?: boolean; limit?: number },
-  ): Promise<StripeComponentPrice[]> {
-    return pricesImpl.listPrices(this.component, ctx, opts);
-  }
-
-  async listPricesByProduct(
-    ctx: RunCtx,
-    opts: { stripeProductId: string },
-  ): Promise<StripeComponentPrice[]> {
-    return pricesImpl.listPricesByProduct(this.component, ctx, opts);
-  }
-
-  async upsertPrice(
-    ctx: RunCtx,
-    opts: Parameters<typeof pricesImpl.upsertPrice>[2],
-  ) {
-    return pricesImpl.upsertPrice(this.component, ctx, opts);
-  }
-
-  async listStripePrices(
-    ctx: RunCtx,
-    opts?: { productId?: string; active?: boolean; limit?: number },
-  ) {
-    return pricesImpl.listStripePrices(this.stripe(), ctx, opts);
   }
 
   /** Card-only one-time checkout. Host authorizes price and authenticated customer. */
@@ -1497,10 +1361,6 @@ export class BetterStripe extends BillingPortalClient {
 
   async syncAllAccounts(ctx: RunCtx) {
     return accountsImpl.syncAllAccounts(this.stripe(), this.component, ctx);
-  }
-
-  async syncAllProducts(ctx: RunCtx) {
-    return productsImpl.syncAllProducts(this.stripe(), this.component, ctx);
   }
 
   async syncAllSubscriptions(ctx: RunCtx) {

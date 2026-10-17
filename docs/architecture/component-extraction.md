@@ -80,6 +80,15 @@ identity internally. A provider write with an uncertain outcome moves the
 operation to `unknown`; it is not a successful, rejected or canceled money
 movement. Exhausted bounded history stays unknown.
 
+The additive SDK adapters return `FinancialOutcome<T>`, with ready data in
+`value`, and preserve existing reader result shapes. The shared
+`FinancialUnavailable` contract extends the examples above with terminal
+`payment_not_payable` and `currency_mismatch` reasons. It also exposes
+`unknown/provider_outcome_unknown` and `unknown/history_incomplete`, both
+nonretryable. Unknown writes require reconciliation, including after bounded
+history exhaustion. The pure retry decision accepts only validated pending
+outcomes and explicit limits. See [financial readiness](../read-contracts.md#financial-readiness-and-bounded-retries).
+
 Derive account, subscription, invoice and source identities on the server.
 Validate complete immutable arguments on every replay, including currency,
 target, provider version and policy snapshot. Status/cancel lookups must match

@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { STORE_PLANS, hasPaidStorePlan, settleStoreSale } from "./helpers";
 
+it("keeps exact fixed commission cents near the safe-integer boundary", () => {
+  expect(
+    settleStoreSale({
+      gross: Number.MAX_SAFE_INTEGER,
+      processingFee: 0,
+      planId: "pro",
+      referred: true,
+      affiliateFixedAmount: 90071992547409.81,
+      currency: "usd",
+    }),
+  ).toMatchObject({ affiliateNet: 9007199254740981, sellerNet: 10 });
+});
+
 describe("seller store plans", () => {
   it("offers the requested monthly prices and inclusive selling fees", () => {
     expect(STORE_PLANS.map((p) => [p.monthlyAmount, p.feeBasisPoints])).toEqual(
@@ -192,3 +205,40 @@ it("supports zero and full affiliate shares, ignores direct sales, and rejects i
       settleStoreSale({ ...base, affiliateBasisPoints: rate }),
     ).toThrow(/affiliate/i);
 });
+
+it.each([
+  ["usd", 0.29, 29],
+  ["JPY", 1.99, 1],
+  ["jpy", 0.99, 0],
+  ["isk", 1.99, 199],
+  ["ugx", 1.99, 199],
+] as const)(
+  "preserves historical fixed commission units for %s",
+  (currency, affiliateFixedAmount, affiliateNet) => {
+    const sale = settleStoreSale({
+      gross: 1000,
+      processingFee: 0,
+      planId: "pro",
+      referred: true,
+      currency,
+      affiliateFixedAmount,
+    });
+    expect(sale.affiliateNet).toBe(affiliateNet);
+    expect(sale.sellerNet + sale.affiliateNet).toBe(1000);
+  },
+);
+it.each(["kwd", "not-a-currency"])(
+  "rejects unsupported fixed commission currency %s before allocation",
+  (currency) => {
+    expect(() =>
+      settleStoreSale({
+        gross: 1000,
+        processingFee: 0,
+        planId: "pro",
+        referred: true,
+        currency,
+        affiliateFixedAmount: 1.99,
+      }),
+    ).toThrow(/currency/i);
+  },
+);

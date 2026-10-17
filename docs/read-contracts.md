@@ -322,3 +322,36 @@ partial-capture units, history budgets and creation-time host obligations are
 specified in [refund context](./refund-context.md). Invoice allocations and
 authorized gross amounts are not remaining refundable principal. No access,
 subscription or financial state is changed by this reader.
+
+## Financial readiness and bounded retries
+
+The additive `verifiedSaleOutcome` and `processingCostOutcome` adapters preserve
+the original SDK reader results. A ready outcome contains that result in
+`value`. Missing provider data becomes `not_ready` with `provider_pending` or
+`fee_pending`; it never becomes a zero fee. Unsupported sources and currency
+mismatches are rejected. Unknown legacy reason strings fail closed.
+
+`FinancialUnavailable` distinguishes pending reads, conflicts, rejections and
+uncertain provider writes. A conflict requires fresh state and a policy decision.
+An `unknown` provider outcome requires reconciliation of the original operation
+and receipts before another write. Bounded history that is still incomplete
+after exhaustion must remain unknown.
+
+`financialRetryDecision(outcome, attempt, policy)` is a pure scheduling decision.
+It retries only validated `not_ready` outcomes. The caller supplies all policy
+fields: `maxRetries` from 0 to 20, positive integer `initialDelayMs`, and
+`maxDelayMs` no greater than one day or less than the initial delay. Attempt zero
+is the initial call; a limit of ten allows ten additional calls. Delays double
+until the configured cap. Exhaustion returns `stop/exhausted`. The helper runs
+no action and provides no permission to repeat an uncertain money movement.
+
+`throwFinancialOutcome` carries only the validated status, reason and retryable
+flag in a structured Convex error. `readFinancialOutcomeError` reads that data
+across action boundaries, without inspecting exception messages. Other errors
+propagate unchanged. These helpers do not classify transport errors or establish
+whether a provider write succeeded.
+
+The example settlement and processing-cost wrappers use ten retries, a one-second
+initial delay and a one-minute cap. They retry structured readiness observations.
+Revision conflicts and terminal errors now propagate for fresh-state handling
+instead of matching English text and rerunning the financial action.

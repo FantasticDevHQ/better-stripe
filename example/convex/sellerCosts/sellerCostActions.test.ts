@@ -148,7 +148,7 @@ it("waits for Stripe refund costs rather than recording an estimate", async () =
     t.action(internal.sellerCosts.actions.reconcile, {
       paymentIntentId: "pi_sale",
     }),
-  ).rejects.toThrow(/not available/);
+  ).rejects.toThrow(/fee_pending/);
   expect(
     await t.query(api.sellerCosts.billing.public.queries.list, { sellerId }),
   ).toHaveLength(0);
@@ -491,4 +491,39 @@ it("commits recovery on paid invoice outcomes and releases void outcomes without
       })
     )[0],
   ).toMatchObject({ collectedAmount: 0, reservedAmount: 0, outstanding: 320 });
+});
+
+it("rejects mismatched cost currency without scheduling retries", async () => {
+  const { t } = await setup();
+  client.getProcessingCostContext.mockResolvedValue({
+    status: "not_ready",
+    paymentIntentId: "pi_sale",
+    reason: "currency_mismatch",
+  });
+  await expect(
+    t.action(internal.sellerCosts.actions.reconcileWhenReady, {
+      paymentIntentId: "pi_sale",
+    }),
+  ).rejects.toThrow(/currency_mismatch/);
+  expect(
+    await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect()),
+  ).toHaveLength(0);
+});
+
+it("stops readiness retries at the explicit limit", async () => {
+  const { t } = await setup();
+  client.getProcessingCostContext.mockResolvedValue({
+    status: "not_ready",
+    paymentIntentId: "pi_sale",
+    reason: "refund_transaction_unavailable",
+  });
+  await expect(
+    t.action(internal.sellerCosts.actions.reconcileWhenReady, {
+      paymentIntentId: "pi_sale",
+      attempt: 10,
+    }),
+  ).rejects.toThrow(/fee_pending/);
+  expect(
+    await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect()),
+  ).toHaveLength(0);
 });

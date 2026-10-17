@@ -38,6 +38,7 @@ import type * as costRecovery_completion from "../costRecovery/completion.js";
 import type * as costRecovery_helpers from "../costRecovery/helpers.js";
 import type * as costRecovery_imports from "../costRecovery/imports.js";
 import type * as costRecovery_mutations from "../costRecovery/mutations.js";
+import type * as costRecovery_preparation from "../costRecovery/preparation.js";
 import type * as costRecovery_queries from "../costRecovery/queries.js";
 import type * as costRecovery_reservations from "../costRecovery/reservations.js";
 import type * as durableExecution_runtime from "../durableExecution/runtime.js";
@@ -163,6 +164,7 @@ const fullApi: ApiFromModules<{
   "costRecovery/helpers": typeof costRecovery_helpers;
   "costRecovery/imports": typeof costRecovery_imports;
   "costRecovery/mutations": typeof costRecovery_mutations;
+  "costRecovery/preparation": typeof costRecovery_preparation;
   "costRecovery/queries": typeof costRecovery_queries;
   "costRecovery/reservations": typeof costRecovery_reservations;
   "durableExecution/runtime": typeof durableExecution_runtime;

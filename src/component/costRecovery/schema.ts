@@ -68,6 +68,7 @@ export const groupFields = {
   ...groupInput,
   amount: v.number(),
   pendingOperations: v.number(),
+  preparationSequence: v.optional(v.number()),
   invoiceItemId: v.optional(v.string()),
   invoiceFunding: v.optional(
     v.object({

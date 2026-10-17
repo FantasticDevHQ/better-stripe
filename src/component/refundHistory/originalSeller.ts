@@ -28,7 +28,10 @@ function seller(allocation: Doc<"settlementAllocations">): string | undefined {
 /** At most two exact-charge allocations; mutable payments never establish original ownership. */
 export async function originalRefundSeller(
   ctx: QueryCtx,
-  scope: RefundCommandScope,
+  scope: Pick<
+    RefundCommandScope,
+    "stripeChargeId" | "stripePaymentIntentId" | "currency"
+  >,
 ): Promise<string | undefined> {
   const allocations = await ctx.db
     .query("settlementAllocations")

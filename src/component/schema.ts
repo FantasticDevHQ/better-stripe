@@ -1,3 +1,4 @@
+import { claimsTable as refundSyncClaimsTable } from "./refundSync/schema.js";
 import { operationsTable as processingCostReconciliationOperations } from "./processingCostReconciliation/schema.js";
 import {
   operationsTable as recoveryWorkflowOperations,
@@ -88,6 +89,7 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,
   recoveryWorkflowRequests,

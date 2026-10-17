@@ -142,7 +142,10 @@ The server-only Vite reference is
 The maintained `webhookHandlers()` host mutation also recognizes the internal
 `refundReconciled` dispatcher. It accepts a prepared current-refund generation,
 commits the qualified component observation and its changed refund callback in
-one host transaction, then returns the accepted observation. A callback failure
+one host transaction, then returns the accepted observation with its verified API context. Component
+document IDs are opaque strings in this host receipt; they are not IDs of host
+tables or application authorization. All original refund fields remain validated.
+A callback failure
 rolls back the refund, accepting claim, cumulative payment and transactional host
 writes together. An unchanged accepted observation returns `changed: false`
 without repeating the changed callback.

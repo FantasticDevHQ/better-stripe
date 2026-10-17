@@ -96,6 +96,7 @@ function fixture() {
   const observations = () =>
     t.run((ctx) => ctx.db.query("observations").collect());
   return {
+    handlers,
     t,
     syncWebhook,
     refund,
@@ -138,6 +139,7 @@ it("returns the qualified accepting result and commits its callback together", a
   });
   expect(result).toMatchObject({
     status: "accepted",
+    apiContext: "platform",
     generation,
     changed: true,
     refund: { stripeRefundId: "re_original", status: "succeeded" },
@@ -303,4 +305,16 @@ it("holds mismatched API context without a callback or accepting write", async (
     status: "accepted",
     changed: true,
   });
+});
+
+it("exports a host receipt schema without component-local table ID validators", () => {
+  const { handlers } = fixture();
+  const registration = handlers.syncWebhook as typeof handlers.syncWebhook & {
+    exportReturns: () => string;
+  };
+  const schema = registration.exportReturns();
+  // Native host validation must not interpret a foreign component ID as a host table ID.
+  expect(schema).not.toContain('"tableName":"refunds"');
+  expect(schema).toContain('"apiContext"');
+  expect(schema).toContain('"refundCommandNormalizationVersion"');
 });

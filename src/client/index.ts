@@ -1,4 +1,5 @@
-import { result as refundSyncResultValidator } from "../component/refundSync/validators.js";
+import { refundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
+import type { RefundReconciliationResult } from "./webhooks/refundReconciliationValidators.js";
 import { reconcileRefundAndTrigger } from "./webhooks/refundReconciliation.js";
 import * as refundSyncImpl from "./connect/refundSync.js";
 export type {
@@ -1535,7 +1536,7 @@ export class BetterStripe extends PaymentSourceClient {
       (
         ctx: SyncTriggerCtx,
         record: Record<string, unknown>,
-      ) => Promise<void | refundSyncImpl.RefundSyncResult>
+      ) => Promise<void | RefundReconciliationResult>
     > = {
       accountUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentAccount>(
@@ -1741,7 +1742,7 @@ export class BetterStripe extends PaymentSourceClient {
 
     const syncWebhook = internalMutationGeneric({
       args: { dispatcher: v.string(), data: v.any() },
-      returns: v.union(v.null(), refundSyncResultValidator),
+      returns: v.union(v.null(), refundReconciliationResult),
       handler: async (ctx, { dispatcher, data }) => {
         const run = SYNC[dispatcher as TriggerDispatcherName];
         if (!run) {

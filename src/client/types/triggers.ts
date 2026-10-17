@@ -1,4 +1,4 @@
-import type { RefundSyncResult } from "../connect/refundSync.js";
+import type { RefundReconciliationResult } from "../webhooks/refundReconciliationValidators.js";
 import type {
   FunctionReference,
   FunctionReturnType,
@@ -285,7 +285,7 @@ export type WebhookHandlerRefs = {
     "mutation",
     "internal",
     { dispatcher: string; data: Record<string, unknown> },
-    null | RefundSyncResult
+    null | RefundReconciliationResult
   >;
   asyncWebhook: FunctionReference<
     "action",

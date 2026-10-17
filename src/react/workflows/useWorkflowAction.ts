@@ -2,13 +2,13 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
+  useInsertionEffect,
   useRef,
   useState,
 } from "react";
-// Browser consumers may start actions in layout effects; initialize before those effects.
+// Ref-only synchronization must precede layout effects in descendants as well.
 const useCommitEffect =
-  typeof window === "undefined" ? useEffect : useLayoutEffect;
+  typeof window === "undefined" ? useEffect : useInsertionEffect;
 
 export type WorkflowActionState<T, Args extends unknown[]> = {
   isPending: boolean;

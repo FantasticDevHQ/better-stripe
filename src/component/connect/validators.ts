@@ -2,7 +2,7 @@ import { refundCommandFields } from "../refundHistory/commandFields.js";
 import { commissionExposureValidator } from "../settlement/clawbackSchema.js";
 import { type Infer, v } from "convex/values";
 
-import { feeRoutingFields, splitRecipientRoleValidator } from "../lib/fees";
+import { feeRoutingFields, splitRecipientRoleValidator } from "../lib/fees.js";
 
 export const paymentStatusValidator = v.union(
   v.literal("succeeded"),

@@ -1,25 +1,25 @@
 import { afterEach, vi } from "vitest";
 import type { convexTest } from "convex-test";
-import { runMutationOrThrow } from "../../../../src/client/helpers";
+import { runMutationOrThrow } from "../../../src/client/helpers";
 afterEach(() => vi.useRealTimers());
 /** Test-only provider boundary fixtures. Real Stripe transport/provenance verification lives in package tests. */
 import type Stripe from "stripe";
 import type { FunctionReference } from "convex/server";
 import { componentsGeneric } from "convex/server";
-import { CostRecoveryClient } from "../../../../src/client/costRecovery";
-import type { Component, RunCtx } from "../../../../src/client/helpers";
-import { executeResolvedTransfers } from "../../../../src/client/settlement/execution";
-import { reconcileRecoverySettlement } from "../../../../src/client/recoveryWorkflow/settlement";
-import { attachRecoveryInvoice } from "../../../../src/client/costRecovery-invoices";
+import { CostRecoveryClient } from "../../../src/client/costRecovery";
+import type { Component, RunCtx } from "../../../src/client/helpers";
+import { executeResolvedTransfers } from "../../../src/client/settlement/execution";
+import { reconcileRecoverySettlement } from "../../../src/client/recoveryWorkflow/settlement";
+import { attachRecoveryInvoice } from "../../../src/client/costRecovery-invoices";
 import type {
   RecoveryProviderRequest,
   RecoverySnapshot,
-} from "../../../../src/client/recoveryWorkflow/contracts";
+} from "../../../src/client/recoveryWorkflow/contracts";
 import type {
   ProcessingCostProviderRequest,
   ProcessingCostSnapshot,
-} from "../../../../src/client/processingCostReconciliation/contracts";
-import type { ProcessingCostContext } from "../../../../src/client/settlement/processingCosts";
+} from "../../../src/client/processingCostReconciliation/contracts";
+import type { ProcessingCostContext } from "../../../src/client/settlement/processingCosts";
 const nested = componentsGeneric().betterStripe;
 const ref = (r: ProcessingCostProviderRequest) => ({
   accountId: r.accountId,

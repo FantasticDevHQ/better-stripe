@@ -54,6 +54,8 @@ export async function attachRecoveryInvoice(
   historyBounds?: ProcessingCostHistoryBounds,
   readOnly = false,
 ) {
+  if (readOnly && create)
+    throw new Error("Read-only verification cannot create invoice items.");
   if (
     !group ||
     group.groupKey !== opts.groupKey ||
@@ -101,7 +103,8 @@ export async function attachRecoveryInvoice(
         "Duplicate recovery invoice items require reconciliation.",
       );
     if (
-      (readOnly && item.object !== "invoiceitem") ||
+      (readOnly &&
+        (item.object !== "invoiceitem" || item.discountable !== false)) ||
       id(item.invoice) !== invoice.id ||
       item.customer_account !== group.accountId ||
       item.currency !== group.currency ||

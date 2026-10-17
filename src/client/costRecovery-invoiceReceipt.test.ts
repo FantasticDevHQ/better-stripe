@@ -32,7 +32,7 @@ async function fixture(mode: string) {
       const path = new URL(String(url));
       const item = {
         id: mode === "identity" ? "ii_foreign" : "ii_original",
-        object: "invoiceitem",
+        object: mode === "malformed" ? "wrong" : "invoiceitem",
         invoice: "in_1",
         customer_account: "acct_owner",
         currency: "usd",
@@ -46,7 +46,8 @@ async function fixture(mode: string) {
             object: "invoice",
             customer_account: "acct_owner",
             currency: "usd",
-            status: mode === "pending" ? "open" : "paid",
+            status:
+              mode === "pending" ? "open" : mode === "void" ? "void" : "paid",
           }
         : {
             object: "list",
@@ -89,20 +90,25 @@ it("verifies an exact terminal invoice receipt with GETs only and no ledger or b
   expect(f.runMutation).not.toHaveBeenCalled();
   expect(f.requests.map((r) => r.method)).toEqual(["GET", "GET"]);
 });
-it.each(["identity", "amount", "duplicate", "incomplete", "pending"])(
-  "fails closed for %s receipts without writes",
-  async (mode) => {
-    const f = await fixture(mode);
-    expect(await f.client.verifyInvoiceReceipt(f.ctx, scope)).toMatchObject({
-      status: "unknown",
-      reason: "history_incomplete",
-      retryable: false,
-    });
-    expect(f.runMutation).not.toHaveBeenCalled();
-    expect(f.requests.every((r) => r.method === "GET")).toBe(true);
-    expect(f.requests.length).toBeLessThanOrEqual(6);
-  },
-);
+it.each([
+  "identity",
+  "amount",
+  "duplicate",
+  "incomplete",
+  "pending",
+  "malformed",
+])("fails closed for %s receipts without writes", async (mode) => {
+  const f = await fixture(mode);
+  expect(await f.client.verifyInvoiceReceipt(f.ctx, scope)).toMatchObject({
+    status: "unknown",
+    reason: "history_incomplete",
+    retryable: false,
+  });
+  expect(f.runMutation).not.toHaveBeenCalled();
+  expect(f.requests.every((r) => r.method === "GET")).toBe(true);
+  expect(f.requests.length).toBeLessThanOrEqual(6);
+  if (mode === "incomplete") expect(f.requests.length).toBe(6);
+});
 it("rejects an unauthorized scope before provider I/O", async () => {
   const f = await fixture("ready");
   expect(
@@ -111,5 +117,24 @@ it("rejects an unauthorized scope before provider I/O", async () => {
       accountId: "acct_other",
     }),
   ).toMatchObject({ status: "unknown" });
+  expect(f.requests).toHaveLength(0);
+});
+
+it("verifies a void receipt without deciding a financial release", async () => {
+  const f = await fixture("void");
+  expect(await f.client.verifyInvoiceReceipt(f.ctx, scope)).toMatchObject({
+    status: "ready",
+    outcome: "release",
+    invoiceStatus: "void",
+    group: { status: "collecting" },
+  });
+  expect(f.runMutation).not.toHaveBeenCalled();
+});
+it("leaves an unbound group unknown before provider I/O", async () => {
+  const f = await fixture("ready");
+  delete f.group.invoiceItemId;
+  expect(await f.client.verifyInvoiceReceipt(f.ctx, scope)).toMatchObject({
+    status: "unknown",
+  });
   expect(f.requests).toHaveLength(0);
 });

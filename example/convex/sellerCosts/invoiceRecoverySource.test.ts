@@ -1,4 +1,4 @@
-import { runAction } from "../settlement/workflow/providerFixture.testHelpers";
+import { runAction } from "../../testing/settlement/providerFixture";
 import { anyApi } from "convex/server";
 import workflowTest from "@convex-dev/workflow/test";
 import { modules } from "../../test";
@@ -24,7 +24,7 @@ const client = vi.hoisted(() => ({
 }));
 vi.mock("../stripe/helpers", async () => {
   const { fixtureRecoveryClient } =
-    await import("../settlement/workflow/providerFixture.testHelpers");
+    await import("../../testing/settlement/providerFixture");
   const { components } = await import("../_generated/api");
   return {
     stripe: {

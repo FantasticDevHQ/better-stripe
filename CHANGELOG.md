@@ -26,6 +26,146 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.37.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.37.0...v0.37.1) (2026-10-17)
+
+### Bug Fixes
+
+- **release:** preserve parseable descriptions and correct release notes ([e3f93d9](https://github.com/FantasticDevHQ/better-stripe/commit/e3f93d9276d5f51468d11fdfa932605db2e748e4))
+- **release:** preserve parseable reviewed release descriptions ([7aaf445](https://github.com/FantasticDevHQ/better-stripe/commit/7aaf445af08ed59d04c0d5e7958dfd82f5282974))
+- **release:** reject nested version selectors in notes ([067b45e](https://github.com/FantasticDevHQ/better-stripe/commit/067b45e575e2b4cadd3e07a2db1a1c9dee73960f))
+
+## [0.37.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.35.0...v0.37.0) (2026-10-17)
+
+### Release correction
+
+The reviewed 0.36 release PR description lost the separators required by
+Release Please. Its normal release run skipped publication. The existing release
+automation then generated and merged 0.37 before independent candidate acceptance.
+That automatic merge did not satisfy the required prepublication review process.
+There was no published 0.36 package. The first generated 0.37 notes repeated older
+history, including an obsolete package-name change and a withdrawn refund-reader
+prototype. Those entries did not describe new 0.37 behavior.
+
+The 0.37 runtime, source, React package, Vite example and packaged guides match
+the reviewed 0.36 candidate. The accepted changes since 0.35 are described below;
+there is no new package rename in 0.37.
+
+### Features
+
+- Preserve exact original/latest operation evidence through explicit trusted
+  maintenance, headerless payload storage and bounded readers. Maintenance
+  evidence generations do not observe raw financial writes or establish complete
+  lifecycle, ownership, liability or closure coverage.
+
+### Bug fixes
+
+- Qualify ownerless refund-command receipts using a unique immutable original
+  settlement allocation with exact charge, PaymentIntent and currency identity.
+  Later same-PaymentIntent payment-routing changes cannot reassign the original
+  store. Missing allocation proof, payment-only legacy receipts, conflicting
+  persisted accounts and ambiguous recipient routes remain unavailable. The
+  withdrawn reader based on mutable payment routing is not the final implementation.
+- Reuse a validated same-currency earnings summary after the existing subtract,
+  reset, reapply and safe-integer checks. This does not fix the native read-limit
+  failure for admitted claims with 1,000 distinct destinations.
+
+Automatic publication is separate from independent public-artifact verification
+and installed application adoption. These changes do not enable financial
+admission, provider execution, refund retry authority, access changes, missing
+history migration or account closure readiness.
+
+## [0.36.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.35.0...v0.36.0) (2026-10-17)
+
+### Features
+
+- Preserve exact original/latest operation evidence through explicit trusted
+  maintenance, headerless payload storage and bounded read APIs. Maintenance
+  evidence generations do not track unobserved raw financial writes or establish
+  complete lifecycle, ownership or closure coverage. See the
+  [financial observation guide](docs/financial-observations.md).
+  ([b409fd4](https://github.com/FantasticDevHQ/better-stripe/commit/b409fd4af5afdec303747c8c5b78accb3ef02ee9))
+
+### Bug Fixes
+
+- Qualify ownerless refund-command receipts against a unique immutable original
+  settlement allocation with exact charge, payment intent and currency. Normal
+  same-payment routing updates cannot redirect the original store; affiliates,
+  replacement stores, conflicting persisted accounts and ambiguous allocation
+  routes remain unavailable. Persisted destination-account receipts retain parity.
+  ([173f0e1](https://github.com/FantasticDevHQ/better-stripe/commit/173f0e1be7963485ee67042b36704387815f6db0))
+- Use component-compatible bounded operation-evidence pagination.
+  ([78a524c](https://github.com/FantasticDevHQ/better-stripe/commit/78a524cb13900a2a111183e41ac53cd2e9b038bb))
+
+### Performance
+
+- Reuse one exact same-bucket earnings summary read while preserving subtract,
+  zero-count reset, reapply and safe-integer validation before any no-op persistence
+  decision. Financial/risk callbacks remain unchanged.
+  ([47449d2](https://github.com/FantasticDevHQ/better-stripe/commit/47449d241354eb1e21ef4b3538263b2400c1aa03))
+
+### Scope and limitations
+
+- Original-seller qualification requires immutable allocation authority. Ownerless
+  payment-only legacy receipts, missing allocation payment intents and ownerless
+  destination history without that authority stay unavailable. Mutable payment
+  routing or metadata cannot reconstruct original merchant identity. No migration
+  or first-read ownership pin is introduced; existing account-filtered history and
+  the 100-row ingestion owner backfill retain their prior limits. Hosts still own
+  original command/fingerprint, charge verification and authorization. See the
+  [refund-command evidence guide](docs/refund-command-evidence.md).
+- The earnings optimization does not fix the admitted 1,000-distinct-destination
+  reversal claim's native read-budget failure. Resource failures remain atomic;
+  they do not reject the original financial contract by adding a smaller cap or
+  truncate transfer references. Existing native document/read/write limits apply.
+- Operation evidence remains explicit trusted-maintenance evidence, not automatic
+  financial-writer observation, migration/backfill completion, liability admission
+  fencing or account-closure readiness. Financial observation coverage remains
+  UNKNOWN. No host reconciliation, provider execution, refund retry authority,
+  money/access change or Dojo adoption is enabled by this release alone.
+- Retain measured stricter quality floors without relaxing existing gates.
+
+## [0.35.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.34.0...v0.35.0) (2026-10-16)
+
+### Features
+
+- **accounts:** register immutable financial bucket ownership ([#248](https://github.com/FantasticDevHQ/better-stripe/issues/248)) ([dbf39fa](https://github.com/FantasticDevHQ/better-stripe/commit/dbf39fa28ce8e5896aad72a7e14eb0d1a6976caf))
+- normalize legacy refund-command bindings in bounded batches ([#255](https://github.com/FantasticDevHQ/better-stripe/issues/255)) ([12b431f](https://github.com/FantasticDevHQ/better-stripe/commit/12b431fee421894f752f6742ddf0ce14068b207e))
+- observe bounded exact refund-command evidence ([#253](https://github.com/FantasticDevHQ/better-stripe/issues/253)) ([ef8610b](https://github.com/FantasticDevHQ/better-stripe/commit/ef8610b71b5910b7d33ad745224c71590f6db583))
+- observe bounded transfer facts and preserve deferred references ([#252](https://github.com/FantasticDevHQ/better-stripe/issues/252)) ([8f951b2](https://github.com/FantasticDevHQ/better-stripe/commit/8f951b2c75737dceb5f074ae375acff84153b170))
+- resume every deferred transfer reference ([#254](https://github.com/FantasticDevHQ/better-stripe/issues/254)) ([70ee4b7](https://github.com/FantasticDevHQ/better-stripe/commit/70ee4b76585a2e7ee4acebe54ab92f21b09b1749))
+- resume oversized settlement destination indexing ([#251](https://github.com/FantasticDevHQ/better-stripe/issues/251)) ([6870b54](https://github.com/FantasticDevHQ/better-stripe/commit/6870b54055508adcc59b11a1da97d75d6079ff9d))
+- observe bounded original settlement destinations ([#250](https://github.com/FantasticDevHQ/better-stripe/pull/250)) ([bfab01e](https://github.com/FantasticDevHQ/better-stripe/commit/bfab01e18b2bbc07b367d7ea2ea12fb78091e20b))
+
+### Scope and limitations
+
+- Ownership registration and financial source observations remain UNKNOWN for
+  coverage. They do not certify complete financial history, fence new financial
+  work or authorize whole-account closure. Synchronous settlement/transfer
+  observations are bounded; oversized source traversal advances through durable
+  bounded continuation and validation. A completed pass applies to the observed
+  generation, not a permanent quiescence or financial-admission guarantee.
+- Exact refund-command evidence observes synchronized original-scope metadata;
+  missing, ambiguous, conflicting or unnormalized legacy evidence stays unavailable.
+  It never proves provider absence, completed money or safe retry. Legacy
+  normalization batches accept 1–100 rows, not a byte guarantee. Native transaction
+  or individual-document limits reject atomically and leave the reader held;
+  smaller batches do not solve an individual document ceiling.
+- The known 1,000-distinct-destination reversal-claim native read-limit failure
+  remains unresolved. Passing 1,000 transfers across four shared destinations and
+  the historical 1,001-leg release scenario are specific verification cases, not
+  general capacity promises. No financial maximum is lowered or error swallowed.
+- This release contains accepted additive ownership, observation and refund
+  correlation APIs. It does not complete the unfinished example Workflow/Workpool
+  migration, producer/backfill/admission chain, account-closure UI or Dojo adoption.
+  Public-artifact verification and explicit host adoption remain separate gates.
+
+## [0.34.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.33.0...v0.34.0) (2026-10-16)
+
+### Features
+
+- **accounts:** expose unambiguous personal account mapping ([521b73f](https://github.com/FantasticDevHQ/better-stripe/commit/521b73f4174b620b44abf0c569018e3b08227e3b))
+- **accounts:** preserve closed recipient ownership and history ([c14fd3d](https://github.com/FantasticDevHQ/better-stripe/commit/c14fd3d501ef637d33efdf890694156e66328c71))
+
 ## [0.33.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.32.0...v0.33.0) (2026-10-16)
 
 ### Features

@@ -32,3 +32,49 @@ export type {
   V2ThinEvent,
   WebhookActionCtx,
 } from "./types.js";
+export type { PersonalAccountMapping } from "./core/personalAccountMapping.js";
+
+export type {
+  FinancialOwnershipOwner,
+  FinancialOwnershipRegistration,
+  FinancialOwnershipResult,
+  FinancialOwnershipPage,
+  RegisterFinancialOwnershipOptions,
+} from "./financialOwnership.js";
+
+export type {
+  FinancialSourceObservation,
+  FinancialSourceLeg,
+  FinancialSourceResult,
+  FinancialObservationPage,
+  FinancialObservationOwner,
+} from "./financialObservations.js";
+
+export type {
+  RefundCommandEvidence,
+  RefundCommandEvidenceOptions,
+} from "./connect/refundCommandEvidence.js";
+export type {
+  FinancialTransferObservation,
+  FinancialTransferBatch,
+  FinancialTransferReadState,
+  FinancialTransferResult,
+  FinancialTransferPage,
+  FinancialTransferBatchPage,
+  FinancialTransferReference,
+  FinancialTransferBatchResult,
+  FinancialTransferReferencePage,
+} from "./transferObservations.js";
+
+export type {
+  RefundCommandNormalizationOptions,
+  RefundCommandNormalizationResult,
+} from "./connect/refundCommandNormalization.js";
+export type {
+  OperationEvidenceHeader,
+  OperationEvidencePayload,
+  OperationEvidenceHeaderResult,
+  OperationEvidencePayloadResult,
+  OperationEvidenceCaptureResult,
+  OperationEvidencePage,
+} from "./operationEvidence.js";

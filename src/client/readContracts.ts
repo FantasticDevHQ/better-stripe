@@ -1,3 +1,12 @@
+import { OperationEvidenceClient } from "./operationEvidence.js";
+import {
+  normalizeRefundCommandBindings,
+  type RefundCommandNormalizationOptions,
+} from "./connect/refundCommandNormalization.js";
+import {
+  getRefundCommandEvidence,
+  type RefundCommandEvidenceOptions,
+} from "./connect/refundCommandEvidence.js";
 import * as checkoutImpl from "./billing/checkout.js";
 import * as subscriptionsImpl from "./billing/subscriptions.js";
 import * as payoutsImpl from "./connect/payouts.js";
@@ -15,6 +24,22 @@ import { componentRef } from "./webhooks/helpers.js";
 /** Shared component readers inherited by BetterStripe. */
 export class ReadContractClient {
   constructor(public component: Component) {}
+  get operationEvidence() {
+    return new OperationEvidenceClient(this.component);
+  }
+
+  /** Trusted-host projection maintenance; never a financial or provider operation. */
+  normalizeRefundCommandBindings(
+    ctx: RunCtx,
+    opts: RefundCommandNormalizationOptions,
+  ) {
+    return normalizeRefundCommandBindings(this.component, ctx, opts);
+  }
+
+  /** Exact component observation only; callers authorize and bind original commands. */
+  getRefundCommandEvidence(ctx: RunCtx, opts: RefundCommandEvidenceOptions) {
+    return getRefundCommandEvidence(this.component, ctx, opts);
+  }
   async paginateProducts(
     ctx: RunCtx,
     opts: {

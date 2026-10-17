@@ -1,3 +1,4 @@
+import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
 import type { PaginationOptions } from "convex/server";
@@ -17,7 +18,7 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { InvoiceReadClient } from "./invoiceReads.js";
+import { FinancialOwnershipHost } from "./financialOwnership.js";
 import { CostRecoveryClient } from "./costRecovery.js";
 export * from "./charge-currency.js";
 export * from "./costRecovery.js";
@@ -201,7 +202,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends InvoiceReadClient {
+export class BetterStripe extends FinancialOwnershipHost {
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -336,6 +337,15 @@ export class BetterStripe extends InvoiceReadClient {
     opts: { userId: string },
   ): Promise<StripeComponentAccount | null> {
     return accountsImpl.getAccountByUserId(this.component, ctx, opts);
+  }
+
+  /** Unambiguous personal mapping only; host authentication and provider usability remain separate. */
+  getPersonalAccountMapping(ctx: RunCtx, opts: { userId: string }) {
+    return personalAccountMappingImpl.getPersonalAccountMapping(
+      this.component,
+      ctx,
+      opts,
+    );
   }
 
   /** Authenticate the host actor before consulting closed-account provenance. */

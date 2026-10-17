@@ -1792,6 +1792,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "fraudulent"
               | "requested_by_customer"
               | "expired_uncaptured_charge";
+            refundCommandConflict?: boolean;
+            refundCommandKey?: string;
+            refundCommandNormalizationVersion?: 1;
+            refundCommandObservedAt?: number;
             status:
               | "pending"
               | "requires_action"
@@ -1954,6 +1958,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "fraudulent"
               | "requested_by_customer"
               | "expired_uncaptured_charge";
+            refundCommandConflict?: boolean;
+            refundCommandKey?: string;
+            refundCommandNormalizationVersion?: 1;
+            refundCommandObservedAt?: number;
             status:
               | "pending"
               | "requires_action"
@@ -2307,6 +2315,46 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             onboardingStatus:
               "pending" | "in_progress" | "complete" | "restricted";
           } | null,
+          Name
+        >;
+        getPersonalAccountMapping: FunctionReference<
+          "query",
+          "internal",
+          { userId: string },
+          | {
+              account: {
+                _creationTime: number;
+                _id: string;
+                appliedConfigurations?: Array<
+                  "customer" | "merchant" | "recipient"
+                >;
+                capabilities?: any;
+                configuration?: any;
+                country?: string;
+                email?: string;
+                metadata?: any;
+                missingRequirements?: Array<string>;
+                name?: string;
+                onboardingStatus:
+                  "pending" | "in_progress" | "complete" | "restricted";
+                orgId?: string;
+                requirements?: any;
+                statementDescriptor?: string;
+                stripeAccountId: string;
+                userId: string;
+              };
+              status: "unique";
+            }
+          | {
+              reason:
+                | "missing"
+                | "ambiguous"
+                | "organization"
+                | "invalid_account"
+                | "closure_unresolved"
+                | "closed";
+              status: "unavailable";
+            },
           Name
         >;
         getPublishableKey: FunctionReference<
@@ -2811,6 +2859,730 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           { cursor: string | null; kind: "earnings" | "payouts" },
           { continueCursor: string; isDone: boolean },
+          Name
+        >;
+      };
+    };
+    financialObservations: {
+      mutations: {
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          { allocationId: string; expectedGeneration: number },
+          {
+            coverage: "unknown";
+            observation: {
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              continuation?: {
+                nextLeg: number;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedLegs: number;
+              };
+              fingerprint: string;
+              generation: number;
+              indexedLegCount: number;
+              isContradictory: boolean;
+              isOverflow: boolean;
+              legCount: number;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              producer: "settlement_allocation";
+              producerVersion: 1;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+        resumeTransferBatch: FunctionReference<
+          "mutation",
+          "internal",
+          { batchId: string; expectedGeneration: number },
+          {
+            batch: {
+              _creationTime: number;
+              _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              isOverflow: true;
+              observedFingerprint: string;
+              operationId: string;
+              originalOperationId: string;
+              producer: "transfer_frontier_release" | "transfer_frontier_claim";
+              producerVersion: 1;
+              referenceCount: number;
+              sourceChargeId: string;
+              state: "pending" | "complete";
+              transferIds: Array<string>;
+            } | null;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            producerGeneration: number | null;
+          },
+          Name
+        >;
+      };
+      queries: {
+        bucket: FunctionReference<
+          "query",
+          "internal",
+          {
+            bucketKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              bucketKey: string;
+              legIndex: number;
+              orgId?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              role: "store" | "affiliate" | "other";
+              sourceChargeId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        owner: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              bucketKey: string;
+              legIndex: number;
+              orgId?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              role: "store" | "affiliate" | "other";
+              sourceChargeId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        source: FunctionReference<
+          "query",
+          "internal",
+          { allocationId: string },
+          {
+            coverage: "unknown";
+            observation: null | {
+              _creationTime: number;
+              _id: string;
+              allocationId: string;
+              continuation?: {
+                nextLeg: number;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedLegs: number;
+              };
+              fingerprint: string;
+              generation: number;
+              indexedLegCount: number;
+              isContradictory: boolean;
+              isOverflow: boolean;
+              legCount: number;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              producer: "settlement_allocation";
+              producerVersion: 1;
+              sourceChargeId: string;
+            };
+          },
+          Name
+        >;
+        transfer: FunctionReference<
+          "query",
+          "internal",
+          { transferId: string },
+          {
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            observation: {
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              observedFingerprint: string;
+              orgId?: string;
+              ownershipFingerprint: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              producer: "transfer_fact";
+              producerVersion: 1;
+              registrationId?: string;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              stripeTransferId: string;
+              transferId: string;
+              userId?: string;
+            } | null;
+            producerGeneration: number | null;
+          },
+          Name
+        >;
+        transferBatch: FunctionReference<
+          "query",
+          "internal",
+          { batchId: string },
+          {
+            batch: {
+              _creationTime: number;
+              _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              isOverflow: true;
+              observedFingerprint: string;
+              operationId: string;
+              originalOperationId: string;
+              producer: "transfer_frontier_release" | "transfer_frontier_claim";
+              producerVersion: 1;
+              referenceCount: number;
+              sourceChargeId: string;
+              state: "pending" | "complete";
+              transferIds: Array<string>;
+            } | null;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            producerGeneration: number | null;
+          },
+          Name
+        >;
+        transferBatches: FunctionReference<
+          "query",
+          "internal",
+          {
+            operationId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              continuation?: {
+                nextReference: number;
+                producerGeneration: number;
+                sourceFingerprint: string;
+                state: "indexing" | "validating" | "complete" | "held";
+                validatedReferences: number;
+              };
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              isOverflow: true;
+              observedFingerprint: string;
+              operationId: string;
+              originalOperationId: string;
+              producer: "transfer_frontier_release" | "transfer_frontier_claim";
+              producerVersion: 1;
+              referenceCount: number;
+              sourceChargeId: string;
+              state: "pending" | "complete";
+              transferIds: Array<string>;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            producerGeneration: number | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        transferBucket: FunctionReference<
+          "query",
+          "internal",
+          {
+            bucketKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            hasDeferredWork: boolean;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              observedFingerprint: string;
+              orgId?: string;
+              ownershipFingerprint: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              producer: "transfer_fact";
+              producerVersion: 1;
+              registrationId?: string;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              stripeTransferId: string;
+              transferId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            producerGeneration: number | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        transferOwner: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            hasDeferredWork: boolean;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              fingerprint: string;
+              generation: number;
+              isContradictory: boolean;
+              observedFingerprint: string;
+              orgId?: string;
+              ownershipFingerprint: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              producer: "transfer_fact";
+              producerVersion: 1;
+              registrationId?: string;
+              role?: "store" | "affiliate" | "other";
+              sourceChargeId?: string;
+              sourceInvoiceId?: string;
+              stripeTransferId: string;
+              transferId: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            producerGeneration: number | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        transferReferences: FunctionReference<
+          "query",
+          "internal",
+          {
+            batchId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            hasDeferredWork: boolean;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              batchId: string;
+              observationGeneration: number;
+              observationId: string;
+              observedFingerprint: string;
+              ownershipFingerprint: string;
+              position: number;
+              sourceFingerprint: string;
+              transferId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            producerGeneration: number | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    financialOwnership: {
+      mutations: {
+        register: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            bucketKey: string;
+            kind: "stripe_account" | "logical";
+            orgId?: string;
+            source?: { integration: string; recordId: string };
+            userId: string;
+          },
+          {
+            coverage: "unknown";
+            registration: {
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              generation: number;
+              kind: "stripe_account" | "logical";
+              orgId?: string;
+              source: { integration: string; recordId: string };
+              userId: string;
+            };
+            status: "registered";
+          },
+          Name
+        >;
+      };
+      queries: {
+        discover: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketKey: string;
+              generation: number;
+              kind: "stripe_account" | "logical";
+              orgId?: string;
+              source: { integration: string; recordId: string };
+              userId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        lookup: FunctionReference<
+          "query",
+          "internal",
+          { bucketKey: string },
+          | {
+              coverage: "unknown";
+              registration: {
+                _creationTime: number;
+                _id: string;
+                bucketKey: string;
+                generation: number;
+                kind: "stripe_account" | "logical";
+                orgId?: string;
+                source: { integration: string; recordId: string };
+                userId: string;
+              };
+              status: "registered";
+            }
+          | { coverage: "unknown"; status: "unknown" },
+          Name
+        >;
+      };
+    };
+    operationEvidence: {
+      mutations: {
+        capture: FunctionReference<
+          "mutation",
+          "internal",
+          { sourceId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            status:
+              | "captured"
+              | "updated"
+              | "unchanged"
+              | "unavailable"
+              | "source_unavailable";
+          },
+          Name
+        >;
+      };
+      queries: {
+        headers: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        latest: FunctionReference<
+          "query",
+          "internal",
+          { headerId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            payload: {
+              _creationTime: number;
+              _id: string;
+              commissionExposure?: {
+                chargeAmount: number;
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                finalized: boolean;
+                kind: "refund" | "dispute";
+                principal: number;
+                refundId?: string;
+                refundedPrincipal?: number;
+              };
+              operationId: string;
+              slices: Array<{
+                from: number;
+                stripeTransferId: string;
+                to: number;
+              }>;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+        original: FunctionReference<
+          "query",
+          "internal",
+          { headerId: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+            payload: {
+              _creationTime: number;
+              _id: string;
+              commissionExposure?: {
+                chargeAmount: number;
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                finalized: boolean;
+                kind: "refund" | "dispute";
+                principal: number;
+                refundId?: string;
+                refundedPrincipal?: number;
+              };
+              operationId: string;
+              slices: Array<{
+                from: number;
+                stripeTransferId: string;
+                to: number;
+              }>;
+              sourceChargeId: string;
+            } | null;
+          },
+          Name
+        >;
+        resolve: FunctionReference<
+          "query",
+          "internal",
+          { selector: "operationId" | "sourceChargeId"; value: string },
+          {
+            coverage: "unknown";
+            evidenceGeneration: number | null;
+            header: {
+              _creationTime: number;
+              _id: string;
+              firstObservedAt: number;
+              generation: number;
+              isContradictory: boolean;
+              latestFingerprint: string;
+              latestPayloadId: string;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalPayloadId: string;
+              producer: "trusted_host_maintenance";
+              producerVersion: 1;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              sourceId: string;
+            } | null;
+          },
           Name
         >;
       };
@@ -4942,7 +5714,68 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       };
     };
     refundHistory: {
+      mutations: {
+        normalizeRefundCommandBindings: FunctionReference<
+          "mutation",
+          "internal",
+          { limit: number },
+          { hasMore: boolean; normalized: number },
+          Name
+        >;
+      };
       queries: {
+        getRefundCommandEvidence: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            commandKey: string;
+            currency: string;
+            stripeChargeId: string;
+            stripePaymentIntentId: string;
+          },
+          | {
+              refund: {
+                _creationTime: number;
+                _id: string;
+                accountId?: string;
+                amount: number;
+                currency: string;
+                failureReason?: string;
+                metadata?: any;
+                reason?:
+                  | "duplicate"
+                  | "fraudulent"
+                  | "requested_by_customer"
+                  | "expired_uncaptured_charge";
+                refundCommandConflict?: boolean;
+                refundCommandKey?: string;
+                refundCommandNormalizationVersion?: 1;
+                refundCommandObservedAt?: number;
+                status:
+                  | "pending"
+                  | "requires_action"
+                  | "succeeded"
+                  | "failed"
+                  | "canceled";
+                stripeChargeId?: string;
+                stripePaymentIntentId?: string;
+                stripeRefundId: string;
+              };
+              status: "observed";
+            }
+          | {
+              reason:
+                | "missing"
+                | "normalization_incomplete"
+                | "ambiguous"
+                | "correlation_conflict"
+                | "scope_mismatch"
+                | "invalid_receipt";
+              status: "unavailable";
+            },
+          Name
+        >;
         paginateRefunds: FunctionReference<
           "query",
           "internal",
@@ -4980,6 +5813,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "fraudulent"
                 | "requested_by_customer"
                 | "expired_uncaptured_charge";
+              refundCommandConflict?: boolean;
+              refundCommandKey?: string;
+              refundCommandNormalizationVersion?: 1;
+              refundCommandObservedAt?: number;
               status:
                 | "pending"
                 | "requires_action"

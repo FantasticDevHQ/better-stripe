@@ -1,3 +1,8 @@
+import {
+  deferTransferFacts,
+  synchronousTransferFactLimit,
+} from "../financialObservations/transferBatches.js";
+import { observeTransfer } from "../financialObservations/transfers.js";
 import { v } from "convex/values";
 import type { MutationCtx } from "../_generated/server.js";
 import { computeReversalSlices } from "../lib/reversals.js";
@@ -203,10 +208,15 @@ export const claimReversalSlicesDefinition = {
       await ctx.db.patch("transfers", byId.get(s.stripeTransferId)!._id, {
         reversalClaimedAmount: s.to,
       });
+      if (slices.length <= synchronousTransferFactLimit)
+        await observeTransfer(
+          ctx,
+          (await ctx.db.get("transfers", byId.get(s.stripeTransferId)!._id))!,
+        );
     }
     // Record the operation even when it claims nothing, so a redelivery is a
     // deterministic no-op instead of a recomputation against newer state.
-    await ctx.db.insert("transferReversalOps", {
+    const operationId = await ctx.db.insert("transferReversalOps", {
       operationId: args.operationId,
       sourceChargeId: args.sourceChargeId,
       slices,
@@ -214,6 +224,14 @@ export const claimReversalSlicesDefinition = {
         ? { commissionExposure: args.commissionExposure }
         : {}),
     });
+
+    if (slices.length > synchronousTransferFactLimit)
+      await deferTransferFacts(
+        ctx,
+        (await ctx.db.get("transferReversalOps", operationId))!,
+        slices.map((s) => byId.get(s.stripeTransferId)!._id),
+        "transfer_frontier_claim",
+      );
 
     return {
       replay: false,

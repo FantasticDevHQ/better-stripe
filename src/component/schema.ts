@@ -1,3 +1,21 @@
+import {
+  payloadsTable as operationEvidencePayloads,
+  headersTable as operationEvidenceHeaders,
+} from "./operationEvidence/schema.js";
+import { transferBatchReferencesTable } from "./financialObservations/transferReferenceSchema.js";
+import {
+  transferObservationsTable,
+  transferBatchesTable,
+} from "./financialObservations/transferSchema.js";
+import {
+  sourceObservationsTable,
+  sourceLegsTable,
+  observationGenerationsTable,
+} from "./financialObservations/schema.js";
+import {
+  ownershipTable,
+  generationsTable,
+} from "./financialOwnership/schema.js";
 import { accountClosuresTable } from "./accountClosure/schema.js";
 import { jobsTable as payoutWorkerJobsTable } from "./payoutWorker/schema.js";
 import {
@@ -60,6 +78,16 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  operationEvidencePayloads,
+  operationEvidenceHeaders,
+  financialTransferObservations: transferObservationsTable,
+  financialTransferBatches: transferBatchesTable,
+  financialTransferBatchReferences: transferBatchReferencesTable,
+  financialSourceObservations: sourceObservationsTable,
+  financialSourceLegs: sourceLegsTable,
+  financialObservationGenerations: observationGenerationsTable,
+  financialOwnership: ownershipTable,
+  financialOwnershipGenerations: generationsTable,
   payoutWorkerJobs: payoutWorkerJobsTable,
   payoutFinancialRevisions: financialRevisionsTable,
   payoutRiskEvents: riskEventsTable,

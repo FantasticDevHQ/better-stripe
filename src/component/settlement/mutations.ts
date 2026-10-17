@@ -1,3 +1,4 @@
+import { observeSettlementAllocation } from "../financialObservations/settlement.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
 import { updateObligation } from "../affiliateRecovery/accounting.js";
@@ -28,6 +29,7 @@ export const reserveSettlementAllocation = mutation({
         existing.sourceInvoiceId !== args.sourceInvoiceId
       )
         throw new Error("Settlement source identity cannot change.");
+      await observeSettlementAllocation(ctx, existing);
       return existing;
     }
     const adjustment = args.adjustmentAmount ?? 0;
@@ -59,7 +61,9 @@ export const reserveSettlementAllocation = mutation({
         "Settlement allocation must reconcile in integer currency units with unique recipient legs.",
       );
     const id = await ctx.db.insert("settlementAllocations", args);
-    return (await ctx.db.get("settlementAllocations", id))!;
+    const stored = (await ctx.db.get("settlementAllocations", id))!;
+    await observeSettlementAllocation(ctx, stored);
+    return stored;
   },
 });
 export const claimCommissionInvoice = mutation({

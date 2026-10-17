@@ -2,6 +2,10 @@ import { v } from "convex/values";
 
 import { query } from "../_generated/server";
 import { accountDocValidator, onboardingStatusValidator } from "./validators";
+import {
+  personalAccountMappingValidator,
+  resolvePersonalAccountMapping,
+} from "./personalAccountMapping.js";
 
 // =============================================================================
 // ACCOUNT QUERIES
@@ -97,4 +101,11 @@ export const getStripeMode = query({
     const secretKey = process.env.STRIPE_SECRET_KEY;
     return secretKey?.startsWith("sk_test_") ? "test" : "live";
   },
+});
+
+/** Unique personal mapping evidence only; the host still authenticates its caller. */
+export const getPersonalAccountMapping = query({
+  args: { userId: v.string() },
+  returns: personalAccountMappingValidator,
+  handler: (ctx, { userId }) => resolvePersonalAccountMapping(ctx, userId),
 });

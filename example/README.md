@@ -1420,3 +1420,52 @@ production outstanding-obligation authorization policy: consumers must establish
 that separate policy before exposing the React close card. Package regression
 and isolated native evidence simulate provider completion; neither proves live
 Stripe closure or settlement eligibility.
+
+## Unique personal account routing
+
+Use `getPersonalAccountMapping` when a server adapter needs unambiguous personal
+account identity. The [original-account reference](convex/billing/personalAccountMapping.ts)
+checks a server-verified original payment merchant against the authenticated
+owner's unique mapping; it rejects unavailable, organization and replacement
+accounts. Claimed demo personas still require replacement with real host session
+authorization. See [the bounded mapping contract](../docs/personal-account-mapping.md)
+for reciprocal checks, closed-account handling and provider-state limitations.
+
+## Financial bucket ownership reference
+
+The public `betterStripe.financialOwnership` server API is documented in [financial ownership provenance](../docs/financial-ownership.md). Reuse the example's server-side billing adapters and replace demo identities with actual host authorization. Register verified physical account keys or explicitly verified logical source owners, then use exact-key lookup and bounded owner discovery. Every response retains unknown financial coverage; this reference does not activate account closing or declare outstanding obligations clear. The example's public React workflows and render props remain the UI reference; an application such as Dojo supplies its own Shadcn/OKLCH styling and translations. This provenance-only API adds no React money action or browser-owned registration.
+
+For server-only original allocation diagnostics and the explicit UNKNOWN/oversized-destination boundary, see [Settlement source observations](../docs/financial-observations.md). Reuse the public `financialObservations` client after host authorization. Its explicit `resume` method drains oversized original allocations through durable indexing and validation batches; callers must continue until complete or held and never infer aggregate coverage from that result. This reference does not enable closure or add a provider operation.
+
+### Exact refund-command observation
+
+`convex/connect/refundCommandEvidence.ts` is a server-only reference for the public `getRefundCommandEvidence` reader. Pass a qualified immutable original command, authenticate the demo persona in the real host, and preserve unavailable legacy coverage/conflicts. It checks the original personal merchant mapping; it neither executes a refund nor grants retry authority. See [the complete contract](../docs/refund-command-evidence.md), including the separate legacy normalization gate and first-observed provenance.
+
+Transfer diagnostics are available through the trusted server-side
+`stripe.financialObservations.transfer`, `transferBucket`, `transferOwner` and
+`transferBatches` APIs. Use authenticated host selectors and preserve the returned
+native pagination metadata. These APIs always report UNKNOWN coverage; pending
+claim/release batch references and their producer generation are diagnostics,
+not spendable balances or account-closure permission. See the packaged
+[financial observation guide](../docs/financial-observations.md#transfer-facts-and-deferred-batches)
+for synchronous bounds, preserved financial behavior and deferred-reference limits.
+
+The server-only [legacy refund-command maintenance reference](convex/connect/refundCommandNormalization.ts) runs one bounded projection-only batch through the public SDK. Authenticate a trusted platform operator or internal deployment task first; do not mount it as a demo-persona or browser endpoint. Repeat while `hasMore` is true. Empty pending coverage is not complete provider history or retry authority.
+
+Trusted hosts can explicitly drain every retained claim/release reference with
+`stripe.financialObservations.transferBatch`, `resumeTransferBatch` and
+`transferReferences`. Each step indexes or validates a bounded prefix and commits
+its generation with compact provenance receipts. Stop on a held cursor; historical
+completion always retains UNKNOWN coverage. Reuse the packaged
+[transfer continuation contract](../docs/financial-observations.md#resume-every-retained-transfer-reference)
+for ownership snapshots, inter-commit invalidation and authority limits. No money
+operation or account-close control is enabled by these diagnostics.
+
+For lossless source evidence, trusted hosts can explicitly call
+`stripe.operationEvidence.capture` with an authorized persisted reversal-operation
+document ID, page compact `headers`, and hydrate `original` or `latest` separately.
+`resolve` verifies unique original selectors after bounded digest lookup. Reuse
+the [packaged maintenance contract](../docs/financial-observations.md#lossless-operation-evidence-maintenance)
+for native byte limits, first-observed meaning, unavailable/collision handling
+and latest-observed generations. This is server-only explicit maintenance, with
+no financial writer hooks, provider action, automatic backfill or closure claim.

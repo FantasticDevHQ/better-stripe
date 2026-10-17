@@ -40,46 +40,23 @@ export const addMarketplaceCustomerConfig = action({
   handler: async (ctx, args) => stripe.addCustomerConfiguration(ctx, args),
 });
 
-/**
- * Add the `recipient` configuration to an account that doesn't have it yet
- * (BTS-46 step 3: "adding merchant/recipient later if desired"). Unlike
- * `addCustomerConfiguration`, the library's `addRecipientConfiguration`
- * does not persist `appliedConfigurations` back to the component DB, so this
- * wrapper resyncs via the public `syncAllAccounts` afterward rather than
- * reaching into component internals.
- */
+/** Add recipient capabilities and persist this account in the component. */
 export const addMarketplaceRecipientConfig = action({
   args: { stripeAccountId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const result = await stripe.addRecipientConfiguration(ctx, args);
-    await stripe.syncAllAccounts(ctx);
-    return result;
+    return { success: result.success };
   },
 });
 
-/**
- * Add the `merchant` configuration to an account (BTS-46 step 3, continued).
- * There is no dedicated `addMerchantConfiguration` wrapper on `BetterStripe`
- * (only `addRecipientConfiguration`/`addCustomerConfiguration` exist), so
- * this applies it directly via the generic `updateV2Account`, mirroring what
- * `DEFAULT_ACCOUNT_CONFIGURATION` requests at account-creation time, then
- * resyncs for the same reason as the recipient case above.
- */
+/** Add merchant capabilities and persist this account in the component. */
 export const addMarketplaceMerchantConfig = action({
   args: { stripeAccountId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    await stripe.updateV2Account(ctx, {
-      stripeAccountId: args.stripeAccountId,
-      updateParams: {
-        configuration: {
-          merchant: { capabilities: { card_payments: { requested: true } } },
-        },
-      },
-    });
-    await stripe.syncAllAccounts(ctx);
-    return { success: true };
+    const result = await stripe.addMerchantConfiguration(ctx, args);
+    return { success: result.success };
   },
 });
 

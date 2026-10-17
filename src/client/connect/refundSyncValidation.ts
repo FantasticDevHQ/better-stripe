@@ -100,8 +100,8 @@ export function refundChargeMerchant(
     originalId(charge.payment_intent, "payment_intent") !==
       row.stripePaymentIntentId ||
     charge.currency !== row.currency ||
-    !Number.isSafeInteger(charge.amount_captured) ||
-    charge.amount_captured < row.amount
+    !Number.isSafeInteger(charge.amount) ||
+    charge.amount < row.amount
   )
     throw new Error("Original refund charge proof does not match.");
   const destination = charge.transfer_data?.destination;

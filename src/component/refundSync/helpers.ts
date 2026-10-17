@@ -9,6 +9,8 @@ export function validateIdentity(input: {
   apiContext: string;
 }) {
   if (
+    typeof input.stripeRefundId !== "string" ||
+    typeof input.apiContext !== "string" ||
     !/^re_[A-Za-z0-9_]{1,252}$/.test(input.stripeRefundId) ||
     (input.apiContext !== "platform" &&
       !/^acct_[A-Za-z0-9_]{1,250}$/.test(input.apiContext))
@@ -43,6 +45,10 @@ export async function refundById(
 }
 export function validateSnapshot(row: Infer<typeof snapshot>) {
   if (
+    typeof row.stripeRefundId !== "string" ||
+    typeof row.stripePaymentIntentId !== "string" ||
+    typeof row.stripeChargeId !== "string" ||
+    typeof row.currency !== "string" ||
     !/^re_[A-Za-z0-9_]{1,252}$/.test(row.stripeRefundId) ||
     !/^pi_[A-Za-z0-9_]{1,252}$/.test(row.stripePaymentIntentId) ||
     !/^ch_[A-Za-z0-9_]{1,252}$/.test(row.stripeChargeId) ||

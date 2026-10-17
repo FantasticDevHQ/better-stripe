@@ -130,6 +130,10 @@ it("rejects malformed API scopes and identifiers before component or provider re
   for (const input of [
     { stripeRefundId: "re_original" },
     {
+      stripeRefundId: { toString: () => "re_original" },
+      scope: { type: "platform" },
+    },
+    {
       stripeRefundId: "re_original",
       scope: { type: "platform", accountId: "acct_guessed" },
     },
@@ -143,8 +147,8 @@ it("rejects malformed API scopes and identifiers before component or provider re
       f.sdk.syncRefundFromStripe!(context, input as Options),
     ).rejects.toThrow();
   }
-  expect(runQuery).not.toHaveBeenCalled();
-  expect(runMutation).not.toHaveBeenCalled();
+  expect(runQuery.mock.calls.length).toBe(0);
+  expect(runMutation.mock.calls.length).toBe(0);
   expect(f.retrieve).not.toHaveBeenCalled();
 });
 

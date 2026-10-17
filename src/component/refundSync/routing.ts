@@ -17,7 +17,15 @@ export async function refundRouting(
     )
     .take(2);
   const merchant = await originalRefundSeller(ctx, input);
+  const payments = await ctx.db
+    .query("payments")
+    .withIndex("by_stripe_payment_intent_id", (q) =>
+      q.eq("stripePaymentIntentId", input.stripePaymentIntentId),
+    )
+    .take(2);
   if (
+    payments.length > 1 ||
+    (payments[0] !== undefined && payments[0].currency !== input.currency) ||
     (allocations.length > 0 && !merchant) ||
     (existing?.accountId !== undefined &&
       !/^acct_[A-Za-z0-9_]{1,250}$/.test(existing.accountId)) ||
@@ -36,12 +44,7 @@ export async function refundRouting(
       merchantAccount: merchant,
       requiresChargeProof: false,
     };
-  const payment = await ctx.db
-    .query("payments")
-    .withIndex("by_stripe_payment_intent_id", (q) =>
-      q.eq("stripePaymentIntentId", input.stripePaymentIntentId),
-    )
-    .first();
+  const payment = payments[0];
   const fallback = payment?.destinationAccountId;
   return {
     status: "unknown",

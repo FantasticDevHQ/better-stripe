@@ -4,10 +4,7 @@ import type {
   SubscriptionStatus,
 } from "../../component/billing/validators.js";
 import type { Component, RunCtx } from "../helpers.js";
-import type {
-  StripeComponentCheckoutSession,
-  StripeComponentSubscription,
-} from "../types/documents.js";
+import type { Doc } from "../../component/_generated/dataModel.js";
 import { componentRef } from "../webhooks/helpers.js";
 
 /** A trusted host supplies the authorized original buyer; the cursor is not authorization. */
@@ -23,10 +20,8 @@ export type CheckoutSessionHistoryPageOptions = {
   status?: CheckoutSessionStatus;
   paginationOpts: PaginationOptions;
 };
-export type SubscriptionHistoryPage =
-  PaginationResult<StripeComponentSubscription>;
-export type CheckoutSessionHistoryPage =
-  PaginationResult<StripeComponentCheckoutSession>;
+export type SubscriptionHistoryPage = PaginationResult<Doc<"subscriptions">>;
+export type CheckoutSessionHistoryPage = PaginationResult<Doc<"checkoutSessions">>;
 
 export function paginateSubscriptions(
   component: Component,

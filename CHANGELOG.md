@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.45.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.1...v0.45.2) (2026-10-17)
+
+### Bug Fixes
+
+- ship complete migration guides and release handoff ([a619b66](https://github.com/FantasticDevHQ/better-stripe/commit/a619b66335d1898fadf6790bc8b878ad7324ce57))
+- ship workflow migration guides and release handoff ([08c870c](https://github.com/FantasticDevHQ/better-stripe/commit/08c870cdcc8cb5e841b0ca522cd58ce8867a7270))
+
 ## [0.45.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.0...v0.45.1) (2026-10-17)
 
 ### Tests

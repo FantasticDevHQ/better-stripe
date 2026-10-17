@@ -1,3 +1,4 @@
+import type { SubscriptionByStripeIdOptions } from "../originalIdReadOptions.js";
 import { subscriptionRouting } from "./subscriptionRouting.js";
 import { cancelsAtPeriodEnd } from "./subscriptionCancellation.js";
 import { resolveOwnerAccount } from "../utils/owner.js";
@@ -240,7 +241,7 @@ export async function getSubscription(
 export async function getSubscriptionByStripeId(
   component: Component,
   ctx: RunCtx,
-  opts: { stripeSubscriptionId: string },
+  opts: SubscriptionByStripeIdOptions,
 ): Promise<StripeComponentSubscription | null> {
   return (await ctx.runQuery(
     componentRef(component, "billing/queries/getSubscriptionByStripeId"),

@@ -426,3 +426,35 @@ it("propagates unexpected programming failures instead of calling them a provide
   ).rejects.toThrow("Unexpected synthetic implementation failure");
   expect(f.requests).toHaveLength(0);
 });
+
+it("retains the invocation's original tuple when the caller changes its options during a read", async () => {
+  const f = fixture();
+  const input: Parameters<
+    BetterStripe["updateSubscriptionDefaultPaymentMethod"]
+  >[1] = { ...f.opts };
+  const original = { ...input };
+  const other = structuredClone(f.other);
+  f.beforeReply.set("GET /v1/payment_methods/pm_original 1", () => {
+    input.stripeSubscriptionId = f.other.id;
+    input.customerAccount = "acct_replacement";
+    input.paymentMethodId = "pm_replacement";
+    input.idempotencyKey = "replacement-command";
+    input.connectedAccountId = "acct_replacement_realm";
+  });
+  const result = await f.client.updateSubscriptionDefaultPaymentMethod(
+    f.ctx,
+    input,
+  );
+  expect(f.requests.filter((r) => r.method === "POST")).toMatchObject([
+    {
+      path: `/v1/subscriptions/${original.stripeSubscriptionId}`,
+      key: original.idempotencyKey,
+    },
+  ]);
+  expect(result).toMatchObject({
+    status: "updated",
+    stripeSubscriptionId: original.stripeSubscriptionId,
+  });
+  expect(f.requests.every((r) => r.realm === null)).toBe(true);
+  expect(f.other).toEqual(other);
+});

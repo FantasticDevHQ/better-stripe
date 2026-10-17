@@ -118,8 +118,15 @@ function readOriginalSubscription(
 /** One SDK update, then a fresh observation. No package retry, shared default update, charge or component write. */
 export async function updateSubscriptionDefaultPaymentMethod(
   stripe: Stripe,
-  opts: SubscriptionPaymentMethodOptions,
+  input: SubscriptionPaymentMethodOptions,
 ): Promise<SubscriptionPaymentMethodResult> {
+  const opts: SubscriptionPaymentMethodOptions = {
+    stripeSubscriptionId: input.stripeSubscriptionId,
+    customerAccount: input.customerAccount,
+    paymentMethodId: input.paymentMethodId,
+    idempotencyKey: input.idempotencyKey,
+    connectedAccountId: input.connectedAccountId,
+  };
   if (!isValidOptions(opts))
     return { status: "unavailable", reason: "invalid_selector" };
   const realm =

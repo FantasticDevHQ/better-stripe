@@ -28,7 +28,10 @@ const original: SubscriptionPaymentMethodOptions = {
 ```
 
 The host must freeze all five selectors, including optional realm, together with
-the command key. Never derive an old subscription's payer from the user's current
+the command key. Each SDK invocation copies those primitive selectors before its
+first asynchronous read, so later changes to the caller's options cannot retarget
+that invocation. This does not authorize a changed tuple on a later retry.
+Never derive an old subscription's payer from the user's current
 account mapping or use a replacement community owner to rewrite its original
 payer. An unattached card, legacy `customer`-only method, foreign payer, non-card
 method or object from another realm does not qualify.

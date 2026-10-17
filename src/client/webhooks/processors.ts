@@ -1,6 +1,6 @@
+import { handleRefundEvent } from "./refundDelivery.js";
 import { handlePayoutEvent } from "./payoutReconciliation.js";
 import { reconcileDisputeMoney } from "./disputeRecovery.js";
-import { successfulRefundPrincipal } from "../connect/refundPrincipal.js";
 import { subscriptionRouting } from "../billing/subscriptionRouting.js";
 import { cancelsAtPeriodEnd } from "../billing/subscriptionCancellation.js";
 import type Stripe from "stripe";
@@ -8,7 +8,6 @@ import type Stripe from "stripe";
 import type { SplitRecipient } from "../../component/lib/fees.js";
 import {
   createSplitTransfers,
-  reverseTransfersForRefund,
 } from "../connect/transfers.js";
 import { validateStatementDescriptorSuffix } from "../core/descriptors.js";
 import { computeFee } from "../core/fees.js";
@@ -110,7 +109,7 @@ export async function processEvent(
     case "refund.created":
     case "refund.updated":
     case "refund.failed":
-      await handleRefundEvent(whCtx, obj as Stripe.Refund);
+      await handleRefundEvent(whCtx, obj as Stripe.Refund, event.account);
       break;
     case "application_fee.refunded":
       // Keep feeCollectedAmount/feeRefundedAmount accurate on the linked
@@ -902,88 +901,6 @@ async function upsertPaymentFromStripe(
 }
 
 // Stripe types Refund.status as `string | null`; clamp to the documented union.
-const REFUND_STATUSES = new Set([
-  "pending",
-  "requires_action",
-  "succeeded",
-  "failed",
-  "canceled",
-]);
-const REFUND_REASONS = new Set([
-  "duplicate",
-  "fraudulent",
-  "requested_by_customer",
-  "expired_uncaptured_charge",
-]);
-
-async function handleRefundEvent(
-  whCtx: WebhookContext,
-  refund: Stripe.Refund,
-): Promise<void> {
-  const paymentIntentId =
-    typeof refund.payment_intent === "string"
-      ? refund.payment_intent
-      : (refund.payment_intent?.id ?? undefined);
-  const chargeId =
-    typeof refund.charge === "string"
-      ? refund.charge
-      : (refund.charge?.id ?? undefined);
-
-  const status =
-    refund.status && REFUND_STATUSES.has(refund.status)
-      ? refund.status
-      : "pending";
-  const reason =
-    refund.reason && REFUND_REASONS.has(refund.reason)
-      ? refund.reason
-      : undefined;
-
-  await dispatchUpsert(whCtx, "refundUpserted", {
-    stripeRefundId: refund.id,
-    stripePaymentIntentId: paymentIntentId,
-    stripeChargeId: chargeId,
-    amount: refund.amount,
-    currency: refund.currency,
-    status,
-    reason,
-    failureReason: refund.failure_reason ?? undefined,
-    metadata: refund.metadata ?? undefined,
-  });
-
-  // Split-sale clawback (BTS-34): when a separate-charges sale is refunded,
-  // pull the refunded share back from each recipient pro-rata. Only ledger
-  // legs identify a split sale — destination-charge auto-transfers are not in
-  // the ledger and are handled by Stripe-native `reverse_transfer` at refund
-  // creation. Runs on `refund.updated` too so a pending→succeeded refund
-  // (e.g. ACH) still claws back. Errors propagate → event `failed` → Stripe
-  // retries; `reverseTransfersForRefund`'s delta-to-target math makes the
-  // re-run converge without double-reversing.
-  if (status !== "succeeded" || !chargeId) return;
-  const legs = ((await whCtx.ctx.runQuery(
-    componentRef(whCtx.component, "connect/queries/listTransfersByCharge"),
-    { sourceChargeId: chargeId },
-  )) ?? []) as unknown[];
-  if (legs.length === 0) {
-    const obligations = (await whCtx.ctx.runQuery(
-      componentRef(
-        whCtx.component,
-        "affiliateRecovery/queries/chargeObligations",
-      ),
-      { sourceChargeId: chargeId },
-    )) as unknown[] | null;
-    if (!obligations?.length) return;
-  }
-
-  // Fetch succeeded refunds: charge.amount_refunded can include pending funds.
-  const charge = await whCtx.stripe.charges.retrieve(chargeId);
-  await reverseTransfersForRefund(whCtx.stripe, whCtx.component, whCtx.ctx, {
-    sourceChargeId: chargeId,
-    refundId: refund.id,
-    chargeAmount: charge.amount,
-    amountRefunded: await successfulRefundPrincipal(whCtx.stripe, chargeId),
-  });
-}
-
 /**
  * Denormalize fee-refund state from `application_fee.refunded` (BTS-34, folded
  * in from BTS-51): set the linked payment's `feeRefundedAmount` and correct

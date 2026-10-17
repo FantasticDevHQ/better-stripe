@@ -186,6 +186,9 @@ export async function handleWebhookRequest(
     console.error("[better-stripe] retryOnHookError selector failed:", error);
     return jsonResponse({ error: "Webhook retry policy failed" }, 500);
   }
+  // Refund synchronization is required independently of optional app hook policy.
+  const requiresLedgerSuccess = requiresHookSuccess ||
+    ["refund.created", "refund.updated", "refund.failed"].includes(event.type);
   // --- Atomic webhook dedup via event ledger ---
   const eventId = event.id;
   console.info(
@@ -202,7 +205,7 @@ export async function handleWebhookRequest(
       },
     );
     if (dedupStatus !== "inserted") {
-      if (requiresHookSuccess && dedupStatus === "processing") {
+      if (requiresLedgerSuccess && dedupStatus === "processing") {
         return jsonResponse({ error: "Event processing in progress" }, 503);
       }
       console.info(`[better-stripe]   ↳ deduplicated (already processed)`);
@@ -214,7 +217,7 @@ export async function handleWebhookRequest(
       `[better-stripe] Webhook ledger insert failed for ${eventId}:`,
       error,
     );
-    if (requiresHookSuccess)
+    if (requiresLedgerSuccess)
       return jsonResponse({ error: "Webhook ledger unavailable" }, 500);
   }
 
@@ -270,7 +273,7 @@ export async function handleWebhookRequest(
       },
     );
   } catch {
-    if (requiresHookSuccess)
+    if (requiresLedgerSuccess)
       return jsonResponse({ error: "Webhook completion unavailable" }, 500);
     /* ledger update best-effort */
   }

@@ -20,15 +20,17 @@ export const getAccount = query({
 });
 
 export const getAccountByStripeId = query({
-  args: { stripeAccountId: v.string() },
+  args: { stripeAccountId: v.string(), requireUnique: v.optional(v.boolean()) },
   returns: v.union(accountDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const rows = ctx.db
       .query("accounts")
       .withIndex("by_stripe_account_id", (q) =>
         q.eq("stripeAccountId", args.stripeAccountId),
-      )
-      .first();
+      );
+    if (!args.requireUnique) return await rows.first();
+    const matches = await rows.take(2);
+    return matches.length === 1 ? (matches[0] ?? null) : null;
   },
 });
 

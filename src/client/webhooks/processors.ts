@@ -6,9 +6,7 @@ import { cancelsAtPeriodEnd } from "../billing/subscriptionCancellation.js";
 import type Stripe from "stripe";
 
 import type { SplitRecipient } from "../../component/lib/fees.js";
-import {
-  createSplitTransfers,
-} from "../connect/transfers.js";
+import { createSplitTransfers } from "../connect/transfers.js";
 import { validateStatementDescriptorSuffix } from "../core/descriptors.js";
 import { computeFee } from "../core/fees.js";
 import type { PlatformFeeConfig } from "../types.js";

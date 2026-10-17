@@ -187,7 +187,8 @@ export async function handleWebhookRequest(
     return jsonResponse({ error: "Webhook retry policy failed" }, 500);
   }
   // Refund synchronization is required independently of optional app hook policy.
-  const requiresLedgerSuccess = requiresHookSuccess ||
+  const requiresLedgerSuccess =
+    requiresHookSuccess ||
     ["refund.created", "refund.updated", "refund.failed"].includes(event.type);
   // --- Atomic webhook dedup via event ledger ---
   const eventId = event.id;

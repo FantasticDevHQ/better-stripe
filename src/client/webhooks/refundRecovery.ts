@@ -37,7 +37,9 @@ export async function recoverRefundTransfers(
   // The existing split recovery engine operates in the platform namespace.
   // A signed connected read cannot authorize unscoped platform money operations.
   if (apiContext !== "platform")
-    throw new Error("Connected refund split recovery requires qualified platform authority.");
+    throw new Error(
+      "Connected refund split recovery requires qualified platform authority.",
+    );
 
   // Fetch succeeded refunds: charge.amount_refunded can include pending funds.
   const charge = await whCtx.stripe.charges.retrieve(chargeId);

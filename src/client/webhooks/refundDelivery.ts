@@ -12,12 +12,15 @@ export async function handleRefundEvent(
   accountId?: string,
 ) {
   const prepared = await prepareRefundSync(
-    whCtx.stripe, whCtx.component, whCtx.ctx,
+    whCtx.stripe,
+    whCtx.component,
+    whCtx.ctx,
     {
       stripeRefundId: notification.id,
-      scope: accountId === undefined
-        ? { type: "platform" }
-        : { type: "connected", accountId },
+      scope:
+        accountId === undefined
+          ? { type: "platform" }
+          : { type: "connected", accountId },
     },
   );
   let accepted: RefundReconciliationResult;

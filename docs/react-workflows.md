@@ -788,3 +788,12 @@ show no invented timestamp. Result/check times are not bank arrival estimates.
 The example uses the same package workflow in API and BetterStripe-component
 views, including seller and affiliate payout panels. No status control is a
 manual withdrawal request. Unknown outcomes reconcile the original operation.
+
+### Authenticated original setup observations
+
+For an acknowledged saved-card request, the server SDK's qualified
+`getSetupIntentFromStripe` reads the exact existing SetupIntent. See
+[original SetupIntent recovery](./setup-intent-recovery.md) for the immutable
+selectors, transient-secret policy and authenticated callback requirements.
+This read does not implement a host redirect/reload route or recover a creation
+whose original ID is unknown.

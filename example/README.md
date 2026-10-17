@@ -1522,3 +1522,13 @@ invoice-payment pages, use public `getInvoicePaymentFromStripe`. The maintained
 keeps original host-selection resolution and before/after session/permission
 checks application-owned. It creates no permissive demo endpoint, provider write
 or financial authority; return only a safe projection to the Vite UI.
+
+### Authenticated saved-card return callback
+
+The dashboard tokenization/attach example is not a completed SetupIntent/SCA
+return route. A maintained host callback using public `SaveCard` must resolve
+its authenticated original request before invoking the qualified SDK
+`getSetupIntentFromStripe` operation, then reauthorize after I/O. Follow
+[original SetupIntent recovery](../docs/setup-intent-recovery.md); never forward
+browser-supplied customer/user/provider selectors or trust redirect status.
+A missing acknowledged setup ID remains unknown without another creation.

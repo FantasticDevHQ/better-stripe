@@ -136,3 +136,31 @@ separate shared-pipeline integration must preserve generation qualification
 through its callback transaction before hosts claim webhook-wide convergence.
 The server-only Vite reference is
 [`example/convex/connect/refundSync.ts`](../example/convex/connect/refundSync.ts).
+
+### Transactional callback seam
+
+The maintained `webhookHandlers()` host mutation also recognizes the internal
+`refundReconciled` dispatcher. It accepts a prepared current-refund generation,
+commits the qualified component observation and its changed refund callback in
+one host transaction, then returns the accepted observation with its verified API context. Component
+document IDs are opaque strings in this host receipt; they are not IDs of host
+tables or application authorization. All original refund fields remain validated.
+A callback failure
+rolls back the refund, accepting claim, cumulative payment and transactional host
+writes together. An unchanged accepted observation returns `changed: false`
+without repeating the changed callback.
+
+This dispatcher is an internal package integration seam. Do not construct its
+prepared payload from browser input or treat it as application authorization.
+Hosts continue to export the maintained handler pair and supply their generated
+refs; existing dispatchers retain their `null` return. Regenerate host refs when
+adopting the result-bearing refund dispatcher. A legacy host returning `null`,
+failed acceptance or superseded generation is unavailable, not a successful
+reconciliation; the package does not silently retry a raw upsert as fallback.
+
+The direct-component path returns the same accepted observation and rejects
+superseded results. It has no application callback because no host handler was
+registered. This seam does not activate signed notification reconciliation or
+change existing reversal recovery. Legacy raw refund delivery remains unfenced
+until that separate consumer is adopted. A successful or unchanged mirror is not
+proof that a prior provider reversal or financial recovery completed.

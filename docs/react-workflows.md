@@ -452,8 +452,12 @@ uses `parseChargeAmount` without floating-point multiplication or rounding.
 JPY/MGA inputs use whole units; ISK/UGX inputs also use whole major units while
 callbacks emit their two-decimal compatibility units. HUF/TWD charge inputs
 retain two decimal places. Unsupported currencies, excess precision, unsafe
-units and nonpositive monthly prices never reach `onSave`. Invalid stored
-amounts initialize blank instead of inventing a valid price.
+units and negative monthly prices never reach `onSave`. Zero is valid in both
+native and render-prop presentations and reaches the callback as exactly zero
+with the original expected version. Blank fees remain `null`, while an explicit
+zero fee stays zero; affiliate values are preserved. This is input validation,
+not free-admission authority or a subscription migration. Invalid stored amounts
+initialize blank instead of inventing a valid price.
 
 Headless state exposes `currency` and nullable `inputDecimalPlaces` in addition
 to editable strings. Use them for your currency label, input mode and step, as

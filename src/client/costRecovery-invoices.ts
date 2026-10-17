@@ -21,6 +21,7 @@ export function attachRecoveryInvoice(
   opts: RecoveryInvoiceOptions,
   bind: BindInvoiceItem,
   create?: true,
+  maxItems?: number,
 ): Promise<InvoiceReceipt>;
 export function attachRecoveryInvoice(
   stripe: Stripe,
@@ -28,6 +29,7 @@ export function attachRecoveryInvoice(
   opts: RecoveryInvoiceOptions,
   bind: BindInvoiceItem,
   create: false,
+  maxItems?: number,
 ): Promise<
   | InvoiceReceipt
   | (Omit<InvoiceReceipt, "invoiceItemId"> & { invoiceItemId: null })
@@ -40,6 +42,7 @@ export async function attachRecoveryInvoice(
   opts: RecoveryInvoiceOptions,
   bind: (invoiceItemId: string) => Promise<RecoveryGroup>,
   create = true,
+  maxItems = Number.POSITIVE_INFINITY,
 ) {
   if (
     !group ||
@@ -66,10 +69,13 @@ export async function attachRecoveryInvoice(
   if (invoice.currency !== group.currency)
     throw new Error("Recovery invoice currency does not match.");
   let found: Stripe.InvoiceItem | undefined;
+  let inspected = 0;
   for await (const item of stripe.invoiceItems.list({
     invoice: invoice.id,
     limit: 100,
   })) {
+    if (++inspected > maxItems)
+      throw new Error("Recovery invoice history exceeded its item bound.");
     if (item.metadata?.[marker] !== group._id) continue;
     if (found)
       throw new Error(

@@ -1,4 +1,8 @@
 import {
+  operationsTable as recoveryWorkflowOperations,
+  requestsTable as recoveryWorkflowRequests,
+} from "./recoveryWorkflow/schema.js";
+import {
   preparationsTable as balanceFundingPreparations,
   operationsTable as balanceFundingOperations,
   requestsTable as balanceFundingRequests,
@@ -83,6 +87,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  recoveryWorkflowOperations,
+  recoveryWorkflowRequests,
   balanceFundingPreparations,
   balanceFundingOperations,
   balanceFundingRequests,

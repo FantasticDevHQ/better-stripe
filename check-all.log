@@ -1,0 +1,28 @@
+
+> @fantastic.dev/better-stripe@0.43.0 check:all /private/tmp/bts-217-example-funding
+> repo-gates check-all
+
+✓ build               (1.8s)
+✓ lint                (7.2s)
+✓ check:design-system (2.5s)
+✓ format:check        (10.4s)
+✓ typecheck           (6.4s)
+✓ codegen:check       (0.4s)
+✓ check:size          (0.4s)
+✓ check:debt          (0.3s)
+✓ check:circular      (0.4s)
+✓ check:secrets       (0.4s)
+✓ check:shadscan      (2.0s)
+✓ test                (26.8s)
+✓ check:coverage      (37.6s)
+✓ check:agents        (0.3s)
+✓ check:ci-parity     (0.3s)
+
+15/15 gates passed (97.1s)
+
+Scores:
+  file-size         tightest src/client/billing/checkout.test.ts 1282/1282 (0 to spare)
+  debt-markers      1 grandfathered, 0 untracked
+  circular-imports  0 grandfathered, 0 new
+  secrets           0 grandfathered, 0 new
+  coverage          lowest coverage/coverage-summary.json 81.5% lines (1 pkgs ≥ floor)

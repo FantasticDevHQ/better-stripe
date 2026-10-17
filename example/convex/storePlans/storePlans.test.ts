@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { STORE_PLANS, hasPaidStorePlan, settleStoreSale } from "./helpers";
 
+it("keeps exact fixed commission cents near the safe-integer boundary", () => {
+  expect(
+    settleStoreSale({
+      gross: Number.MAX_SAFE_INTEGER,
+      processingFee: 0,
+      planId: "pro",
+      referred: true,
+      affiliateFixedAmount: 90071992547409.81,
+      currency: "usd",
+    }),
+  ).toMatchObject({ affiliateNet: 9007199254740981, sellerNet: 10 });
+});
+
 describe("seller store plans", () => {
   it("offers the requested monthly prices and inclusive selling fees", () => {
     expect(STORE_PLANS.map((p) => [p.monthlyAmount, p.feeBasisPoints])).toEqual(

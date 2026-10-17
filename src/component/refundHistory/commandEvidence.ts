@@ -40,11 +40,7 @@ export async function readRefundCommandEvidence(
     };
   const accountId =
     row.accountId === undefined
-      ? await originalRefundSeller(
-          ctx,
-          scope.stripePaymentIntentId,
-          scope.currency,
-        )
+      ? await originalRefundSeller(ctx, scope)
       : row.accountId;
   if (
     accountId !== scope.accountId ||

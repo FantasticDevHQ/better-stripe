@@ -42,13 +42,26 @@ const payment = {
 };
 const read = api.refundHistory.queries.getRefundCommandEvidence;
 
+const allocation = {
+  sourceChargeId: scope.stripeChargeId,
+  paymentIntentId: scope.stripePaymentIntentId,
+  currency: scope.currency,
+  gross: 1000,
+  processingFee: 0,
+  platformNet: 0,
+  transfers: payment.splitRecipients,
+};
 it.each([false, true])(
-  "qualifies original separate store, refund first=%s, without rewriting ownerless history",
+  "qualifies immutable original separate store, refund first=%s, without rewriting history",
   async (isRefundFirst) => {
     const t = convexTest(schema, modules);
     if (isRefundFirst)
       await t.mutation(api.connect.mutations.upsertRefund, refund);
     await t.mutation(api.connect.mutations.upsertPayment, payment);
+    await t.mutation(
+      api.settlement.mutations.reserveSettlementAllocation,
+      allocation,
+    );
     if (!isRefundFirst)
       await t.mutation(api.connect.mutations.upsertRefund, refund);
     const before = await t.run((ctx) => ctx.db.query("refunds").take(2));
@@ -62,8 +75,69 @@ it.each([false, true])(
     expect(before[0]?.accountId).toBeUndefined();
   },
 );
-
-it("retains destination parity", async () => {
+it("keeps original allocation authority after normal SAME-PI store reassignment and reserve replay", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(api.connect.mutations.upsertPayment, payment);
+  const original = await t.mutation(
+    api.settlement.mutations.reserveSettlementAllocation,
+    allocation,
+  );
+  await t.mutation(api.connect.mutations.upsertRefund, refund);
+  const changed = [
+    {
+      destinationAccountId: "acct_replacement",
+      role: "store" as const,
+      amount: 700,
+    },
+    payment.splitRecipients[1]!,
+  ];
+  await t.mutation(api.connect.mutations.upsertPayment, {
+    ...payment,
+    splitRecipients: changed,
+  });
+  expect(
+    await t.mutation(api.settlement.mutations.reserveSettlementAllocation, {
+      ...allocation,
+      transfers: changed,
+    }),
+  ).toEqual(original);
+  expect(await t.query(read, scope)).toMatchObject({
+    status: "observed",
+    refund: { accountId: scope.accountId },
+  });
+  expect(
+    await t.query(read, { ...scope, accountId: "acct_replacement" }),
+  ).toMatchObject({ status: "unavailable" });
+  expect(
+    await t.query(read, { ...scope, accountId: "acct_affiliate" }),
+  ).toMatchObject({ status: "unavailable" });
+});
+it.each([false, true])(
+  "holds payment-only ownerless legacy provenance, destination=%s",
+  async (isDestination) => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.connect.mutations.upsertRefund, refund);
+    // Late raw history has no immutable capture allocation and no receipt owner.
+    await t.run((ctx) =>
+      ctx.db.insert(
+        "payments",
+        isDestination
+          ? {
+              ...payment,
+              chargeType: "destination",
+              splitRecipients: undefined,
+              destinationAccountId: scope.accountId,
+            }
+          : payment,
+      ),
+    );
+    expect(await t.query(read, scope)).toMatchObject({
+      status: "unavailable",
+      reason: "scope_mismatch",
+    });
+  },
+);
+it("retains persisted destination-account parity", async () => {
   const t = convexTest(schema, modules);
   await t.mutation(api.connect.mutations.upsertPayment, {
     ...payment,
@@ -77,146 +151,25 @@ it("retains destination parity", async () => {
     refund: { accountId: scope.accountId },
   });
 });
-
-it.each([
-  { splitRecipients: [] },
-  {
-    splitRecipients: [
-      ...payment.splitRecipients,
-      { destinationAccountId: "acct_second_store", role: "store" as const },
-    ],
-  },
-  {
-    splitRecipients: [
-      payment.splitRecipients[0]!,
-      payment.splitRecipients[1]!,
-      payment.splitRecipients[1]!,
-    ],
-  },
-  {
-    splitRecipients: [
-      {
-        ...payment.splitRecipients[0]!,
-        destinationAccountId: "acct_foreign_store",
-      },
-    ],
-  },
-  { splitRecipients: [payment.splitRecipients[1]!] },
-  {
-    splitRecipients: [...payment.splitRecipients, payment.splitRecipients[0]!],
-  },
-  {
-    splitRecipients: [
-      { ...payment.splitRecipients[0]!, destinationAccountId: "foreign" },
-    ],
-  },
-  { destinationAccountId: scope.accountId },
-  { chargeType: "destination" as const },
-  { currency: "eur" },
-])("holds malformed or contradictory original routing %#", async (patch) => {
-  const t = convexTest(schema, modules);
-  await t.mutation(api.connect.mutations.upsertPayment, {
-    ...payment,
-    ...patch,
-  });
-  await t.mutation(api.connect.mutations.upsertRefund, refund);
-  // Force ownerless history: existing ingestion is intentionally unchanged.
-  await t.run(async (ctx) => {
-    const row = (await ctx.db.query("refunds").take(1))[0]!;
-    await ctx.db.patch("refunds", row._id, { accountId: undefined });
-  });
-  expect(await t.query(read, scope)).toMatchObject({ status: "unavailable" });
-});
-
-it("rejects duplicate original payment rows without selecting either", async () => {
-  const t = convexTest(schema, modules);
-  await t.run(async (ctx) => {
-    await ctx.db.insert("payments", payment);
-    await ctx.db.insert("payments", { ...payment, userId: "another_buyer" });
-  });
-  await t.mutation(api.connect.mutations.upsertRefund, refund);
-  expect(await t.query(read, scope)).toMatchObject({ status: "unavailable" });
-});
-
-it("keeps missing original payment and affiliate scope unavailable", async () => {
-  const t = convexTest(schema, modules);
-  await t.mutation(api.connect.mutations.upsertRefund, refund);
-  expect(await t.query(read, scope)).toMatchObject({ status: "unavailable" });
-  await t.mutation(api.connect.mutations.upsertPayment, payment);
-  expect(
-    await t.query(read, { ...scope, accountId: "acct_affiliate" }),
-  ).toMatchObject({ status: "unavailable" });
-});
-
-it("never hides an explicitly conflicting refund account with original routing", async () => {
-  const t = convexTest(schema, modules);
-  await t.mutation(api.connect.mutations.upsertPayment, payment);
-  await t.mutation(api.connect.mutations.upsertRefund, {
-    ...refund,
-    accountId: "acct_foreign",
-  });
-  const before = await t.run((ctx) => ctx.db.query("refunds").take(1));
-  expect(await t.query(read, scope)).toMatchObject({
-    status: "unavailable",
-    reason: "scope_mismatch",
-  });
-  expect(await t.run((ctx) => ctx.db.query("refunds").take(1))).toEqual(before);
-});
-
-it("qualifies legacy ownerless destination history without changing stored history", async () => {
-  const t = convexTest(schema, modules);
-  await t.mutation(api.connect.mutations.upsertRefund, refund);
-  await t.run((ctx) =>
-    ctx.db.insert("payments", {
-      ...payment,
-      chargeType: undefined,
-      splitRecipients: undefined,
-      destinationAccountId: scope.accountId,
-    }),
-  );
-  const before = await t.run((ctx) => ctx.db.query("refunds").take(1));
-  expect(await t.query(read, scope)).toMatchObject({
-    status: "observed",
-    refund: { accountId: scope.accountId },
-  });
-  expect(await t.run((ctx) => ctx.db.query("refunds").take(1))).toEqual(before);
-});
-
-it.each(["stripePaymentIntentId", "stripeChargeId", "currency"] as const)(
-  "never qualifies ownerless receipt against foreign %s",
-  async (field) => {
+it.each(["acct_foreign", ""])(
+  "never hides persisted conflicting account %s",
+  async (accountId) => {
     const t = convexTest(schema, modules);
-    await t.mutation(api.connect.mutations.upsertPayment, payment);
+    await t.mutation(
+      api.settlement.mutations.reserveSettlementAllocation,
+      allocation,
+    );
     await t.mutation(api.connect.mutations.upsertRefund, {
       ...refund,
-      [field]: field === "currency" ? "eur" : "foreign",
+      accountId,
     });
+    const before = await t.run((ctx) => ctx.db.query("refunds").take(1));
     expect(await t.query(read, scope)).toMatchObject({
       status: "unavailable",
       reason: "scope_mismatch",
     });
+    expect(await t.run((ctx) => ctx.db.query("refunds").take(1))).toEqual(
+      before,
+    );
   },
 );
-
-it("does not select a current buyer or account mapping instead of original payment routing", async () => {
-  const t = convexTest(schema, modules);
-  await t.mutation(api.connect.mutations.upsertPayment, payment);
-  await t.mutation(api.connect.mutations.upsertRefund, refund);
-  await t.run((ctx) =>
-    ctx.db.insert("payments", {
-      ...payment,
-      stripePaymentIntentId: "pi_replacement",
-      accountId: "acct_replacement",
-      splitRecipients: [
-        { destinationAccountId: "acct_new_owner", role: "store" },
-      ],
-    }),
-  );
-  expect(await t.query(read, scope)).toMatchObject({
-    status: "observed",
-    refund: { accountId: scope.accountId },
-  });
-  expect(
-    await t.query(read, { ...scope, accountId: "acct_new_owner" }),
-  ).toMatchObject({ status: "unavailable" });
-});

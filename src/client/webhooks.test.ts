@@ -1022,7 +1022,11 @@ describe("webhooks", () => {
         metadata: { note: "partial" },
       });
       mockConstructEventAsync.mockResolvedValue(event);
-      const refund = mockQualifiedRefund(ctx, mockRefundRetrieve, event.data.object);
+      const refund = mockQualifiedRefund(
+        ctx,
+        mockRefundRetrieve,
+        event.data.object,
+      );
 
       const request = makeRequest({ type: "refund.created" });
       const response = await handler(ctx, request);

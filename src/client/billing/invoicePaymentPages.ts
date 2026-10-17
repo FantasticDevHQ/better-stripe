@@ -1,22 +1,13 @@
 import type Stripe from "stripe";
+import {
+  assertInvoicePaymentScope,
+  invoicePaymentScopeSchema as scopeSchema,
+  paymentReference,
+  referenceId,
+  type ProviderInvoicePaymentReference,
+} from "./invoicePaymentShared.js";
 import { z } from "zod";
 
-const scopeSchema = z
-  .object({
-    stripeInvoiceId: z
-      .string()
-      .max(128)
-      .regex(/^in_[A-Za-z0-9_]+$/),
-    customerAccount: z
-      .string()
-      .max(128)
-      .regex(/^acct_[A-Za-z0-9_]+$/),
-    stripeSubscriptionId: z
-      .string()
-      .max(128)
-      .regex(/^sub_[A-Za-z0-9_]+$/),
-  })
-  .strict();
 const optionsSchema = scopeSchema
   .extend({
     limit: z.number().int().min(1).max(100).default(25),
@@ -40,11 +31,7 @@ export type ProviderInvoicePaymentPage = {
     customerAccount: string;
     stripeSubscriptionId: string;
   };
-  page: {
-    invoicePayment: Stripe.InvoicePayment;
-    paymentIntentId: string | null;
-    referenceStatus: "payment_intent" | "unsupported" | "unavailable";
-  }[];
+  page: ProviderInvoicePaymentReference[];
   hasMore: boolean;
   continueCursor: string | null;
 };
@@ -72,46 +59,6 @@ function decodeCursor(cursor: string, scope: z.infer<typeof scopeSchema>) {
     throw new Error("Invalid invoice payment page cursor or scope");
   }
 }
-/** Normalize provider references without inferring missing identifiers. */
-function referenceId(value: string | { id: string } | null | undefined) {
-  return typeof value === "string" ? value : value?.id;
-}
-/** Keep financial evidence exact; reject units that JavaScript cannot safely represent. */
-function assertRepresentableUnits(row: Stripe.InvoicePayment) {
-  const amounts = [
-    row.amount_requested,
-    ...(row.amount_paid === null ? [] : [row.amount_paid]),
-  ];
-  if (
-    amounts.some((amount) => !Number.isSafeInteger(amount) || amount < 0) ||
-    !/^[a-z]{3}$/.test(row.currency)
-  ) {
-    throw new Error("Invalid provider invoice payment units or currency");
-  }
-}
-/** Retain unsupported rows while distinguishing canonical and unavailable references. */
-function paymentReference(
-  invoicePayment: Stripe.InvoicePayment,
-): ProviderInvoicePaymentPage["page"][number] {
-  assertRepresentableUnits(invoicePayment);
-  const type = invoicePayment.payment.type;
-  const id =
-    type === "payment_intent"
-      ? referenceId(invoicePayment.payment.payment_intent)
-      : undefined;
-  const paymentIntentId = id && /^pi_[A-Za-z0-9_]+$/.test(id) ? id : null;
-  return {
-    invoicePayment,
-    paymentIntentId,
-    referenceStatus:
-      type !== "payment_intent"
-        ? "unsupported"
-        : paymentIntentId
-          ? "payment_intent"
-          : "unavailable",
-  };
-}
-
 /** Canonical provider references only. The host authorizes scope and separately verifies refund eligibility. */
 export async function getInvoicePaymentPageFromStripe(
   stripe: Stripe,
@@ -119,19 +66,7 @@ export async function getInvoicePaymentPageFromStripe(
 ): Promise<ProviderInvoicePaymentPage> {
   const { limit, cursor, ...scope } = optionsSchema.parse(input);
   const after = cursor ? decodeCursor(cursor, scope) : undefined;
-  const invoice = await stripe.invoices.retrieve(scope.stripeInvoiceId);
-  const parent = invoice.parent;
-  if (
-    invoice.id !== scope.stripeInvoiceId ||
-    invoice.customer_account !== scope.customerAccount ||
-    parent?.type !== "subscription_details" ||
-    referenceId(parent.subscription_details?.subscription) !==
-      scope.stripeSubscriptionId
-  ) {
-    throw new Error(
-      "Invalid provider invoice payment buyer or subscription scope",
-    );
-  }
+  await assertInvoicePaymentScope(stripe, scope);
   const response = await stripe.invoicePayments.list({
     invoice: scope.stripeInvoiceId,
     limit,

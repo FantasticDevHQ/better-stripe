@@ -1513,3 +1513,12 @@ host command, exact original payer/subscription/card/realm and unchanged request
 key. A fresh same-realm read must confirm the selection; a cached update reply
 or unknown outcome is not success. The reference does not enable a permissive
 persona-based write endpoint or replace the example's authentication boundary.
+
+### Exact original invoice-payment history observation
+
+For re-reading an already qualified original `inpay_` selection without enumerating
+invoice-payment pages, use public `getInvoicePaymentFromStripe`. The maintained
+[authenticated server callback reference](../docs/invoice-payment-pages.md#authenticated-host-callback-reference)
+keeps original host-selection resolution and before/after session/permission
+checks application-owned. It creates no permissive demo endpoint, provider write
+or financial authority; return only a safe projection to the Vite UI.

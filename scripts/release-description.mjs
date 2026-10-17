@@ -24,6 +24,12 @@ export function validateReleaseDescription(body, version) {
     .slice(separators[0] + 1, separators[1])
     .join("\n")
     .trim();
+  // Release Please prioritizes HTML details summaries over the Markdown version.
+  // This single-package command deliberately refuses that alternate selector form.
+  if (/<\s*(?:details|summary)\b/i.test(content))
+    throw new Error(
+      "Nested release details are not supported in single-package notes.",
+    );
   const headings = content.split("\n").filter((line) => /^## /.test(line));
   if (
     headings.length !== 1 ||

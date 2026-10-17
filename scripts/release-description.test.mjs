@@ -64,6 +64,29 @@ describe("release description maintenance", () => {
     ).toThrow();
   });
 
+  it.each([
+    "<details><summary>0.99.0</summary>Different release</details>",
+    "<DETAILS open><SUMMARY>0.99.0</SUMMARY>Different release</DETAILS>",
+    "<details\n open><summary>other-package: 0.99.0</summary>Different release</details>",
+  ])("rejects nested release selectors in notes: %s", (nested) => {
+    const injected = changelog.replace("- Immutable original seller.", nested);
+    expect(() => releaseDescription(injected, "0.36.0", evidence)).toThrow();
+    const body = releaseDescription(changelog, "0.36.0", evidence).replace(
+      "- Immutable original seller.",
+      nested,
+    );
+    expect(() => validateReleaseDescription(body, "0.36.0")).toThrow();
+  });
+
+  it("preserves HTML review evidence outside the notes section", () => {
+    const proof =
+      evidence +
+      "<details><summary>0.99.0 prior proof</summary>Review history</details>\n";
+    const body = releaseDescription(changelog, "0.36.0", proof);
+    expect(body.endsWith(proof)).toBe(true);
+    expect(validateReleaseDescription(body, "0.36.0")).toBeUndefined();
+  });
+
   it("rejects empty notes and malformed version selectors", () => {
     expect(() =>
       releaseDescription("## [0.36.0]\n\n", "0.36.0", evidence),

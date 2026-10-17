@@ -19,7 +19,8 @@ node scripts/release-description.mjs check 0.37.0 release-body.md
 Use the candidate's actual package version instead of the example version. The
 helper selects only that version's changelog notes. It appends the supplied evidence
 unchanged after the closing delimiter. It refuses missing notes, conflicting
-version headings and evidence containing standalone separators, which would change
+version headings, HTML details/summary release selectors inside notes, and evidence
+containing standalone separators, which would change
 Release Please's parse boundaries. Resolve such input explicitly before updating a
 PR. This local check supports a single-package release; it does not claim to parse
 all Release Please formats.

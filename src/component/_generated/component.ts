@@ -5473,6 +5473,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     products: {
       mutations: {
+        adoptProduct: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId?: string;
+            active: boolean;
+            description?: string;
+            metadata?: any;
+            name: string;
+            stripeProductId: string;
+          },
+          null,
+          Name
+        >;
         upsertPrice: FunctionReference<
           "mutation",
           "internal",

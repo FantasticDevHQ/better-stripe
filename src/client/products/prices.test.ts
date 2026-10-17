@@ -73,6 +73,30 @@ function asyncIterable<T>(items: T[]) {
 }
 
 describe("createPrice", () => {
+  it("passes a lookup key to provider creation", async () => {
+    const stripe = makeStripe();
+    stripe.prices.create.mockResolvedValue({
+      id: "price_lookup",
+      unit_amount: 100,
+      currency: "usd",
+      active: true,
+    });
+    await createPrice(
+      asStripe(stripe),
+      makeComponent(),
+      makeCtx({ _id: "prod_internal" }),
+      {
+        stripeProductId: "prod_1",
+        unitAmount: 100,
+        type: "one_time",
+        lookupKey: "catalog:v1",
+      },
+    );
+    expect(stripe.prices.create.mock.calls[0][0]).toMatchObject({
+      lookup_key: "catalog:v1",
+    });
+  });
+
   it("builds recurring params, upserts the price, and returns the new id", async () => {
     const stripe = makeStripe();
     stripe.prices.create.mockResolvedValue({

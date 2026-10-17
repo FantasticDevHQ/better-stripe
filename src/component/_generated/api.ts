@@ -43,6 +43,7 @@ import type * as costRecovery_reservations from "../costRecovery/reservations.js
 import type * as earnings_arithmetic from "../earnings/arithmetic.js";
 import type * as earnings_legacyReads from "../earnings/legacyReads.js";
 import type * as earnings_mutations from "../earnings/mutations.js";
+import type * as earnings_pairedAdjustment from "../earnings/pairedAdjustment.js";
 import type * as earnings_reads from "../earnings/reads.js";
 import type * as earnings_triggers from "../earnings/triggers.js";
 import type * as financialObservations_continuation from "../financialObservations/continuation.js";
@@ -113,6 +114,7 @@ import type * as refundHistory_commandEvidence from "../refundHistory/commandEvi
 import type * as refundHistory_commandEvidenceValidator from "../refundHistory/commandEvidenceValidator.js";
 import type * as refundHistory_commandFields from "../refundHistory/commandFields.js";
 import type * as refundHistory_mutations from "../refundHistory/mutations.js";
+import type * as refundHistory_originalSeller from "../refundHistory/originalSeller.js";
 import type * as refundHistory_queries from "../refundHistory/queries.js";
 import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js";
 import type * as settlement_clawbacks from "../settlement/clawbacks.js";
@@ -165,6 +167,7 @@ const fullApi: ApiFromModules<{
   "earnings/arithmetic": typeof earnings_arithmetic;
   "earnings/legacyReads": typeof earnings_legacyReads;
   "earnings/mutations": typeof earnings_mutations;
+  "earnings/pairedAdjustment": typeof earnings_pairedAdjustment;
   "earnings/reads": typeof earnings_reads;
   "earnings/triggers": typeof earnings_triggers;
   "financialObservations/continuation": typeof financialObservations_continuation;
@@ -235,6 +238,7 @@ const fullApi: ApiFromModules<{
   "refundHistory/commandEvidenceValidator": typeof refundHistory_commandEvidenceValidator;
   "refundHistory/commandFields": typeof refundHistory_commandFields;
   "refundHistory/mutations": typeof refundHistory_mutations;
+  "refundHistory/originalSeller": typeof refundHistory_originalSeller;
   "refundHistory/queries": typeof refundHistory_queries;
   "settlement/clawbackSchema": typeof settlement_clawbackSchema;
   "settlement/clawbacks": typeof settlement_clawbacks;

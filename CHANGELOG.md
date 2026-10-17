@@ -26,6 +26,30 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.46.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.2...v0.46.0) (2026-10-17)
+
+
+### Features
+
+* qualify current refund observations by generation ([d9832dd](https://github.com/FantasticDevHQ/better-stripe/commit/d9832ddf101cbd19817c7e68bfabc04ff96baecd))
+
+
+### Bug Fixes
+
+* reconcile current refund observations by generation (BTS-241) ([67d6dfc](https://github.com/FantasticDevHQ/better-stripe/commit/67d6dfc4a25521174e64a1df7491dc64670d1e34))
+
+
+### Maintenance
+
+* ratchet measured refund sync coverage floors ([8a8f702](https://github.com/FantasticDevHQ/better-stripe/commit/8a8f702649f19cb86ad3c73c0831c30c22371ee4))
+* regenerate current refund sync references ([bc66934](https://github.com/FantasticDevHQ/better-stripe/commit/bc66934dbcb1f5da3670fb118a33a6389aadc47f))
+
+
+### Tests
+
+* preserve atomic refund acceptance and routing checks ([2b8deb5](https://github.com/FantasticDevHQ/better-stripe/commit/2b8deb5336ad48997f68748a402bae101ea07bb2))
+* verify current refund scope and observation recovery ([aeec291](https://github.com/FantasticDevHQ/better-stripe/commit/aeec291a9c8b5bd57629ff668d5bb5343aa0d32e))
+
 ## [0.45.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.1...v0.45.2) (2026-10-17)
 
 ### Bug Fixes

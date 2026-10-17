@@ -28,20 +28,17 @@
 
 ## [0.40.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.39.0...v0.40.0) (2026-10-17)
 
-
 ### Features
 
-* verify original payment sources and invoice prices (BTS-208) ([a9b4baf](https://github.com/FantasticDevHQ/better-stripe/commit/a9b4baf6fdaa19315411ee9ad15e44cb2ee0a344))
-
+- verify original payment sources and invoice prices ([a9b4baf](https://github.com/FantasticDevHQ/better-stripe/commit/a9b4baf6fdaa19315411ee9ad15e44cb2ee0a344))
 
 ### Maintenance
 
-* ratchet coverage after payment source verification ([50c5b2b](https://github.com/FantasticDevHQ/better-stripe/commit/50c5b2b00d529356a0f7c68524029426b7948846))
-
+- ratchet coverage after payment source verification ([50c5b2b](https://github.com/FantasticDevHQ/better-stripe/commit/50c5b2b00d529356a0f7c68524029426b7948846))
 
 ### Refactoring
 
-* **example:** adopt component catalog, portal and account APIs (BTS-219) ([3168bb2](https://github.com/FantasticDevHQ/better-stripe/commit/3168bb2c197f342cf79b6611d1e74bc5cff74637))
+- **example:** adopt component catalog, portal and account APIs ([3168bb2](https://github.com/FantasticDevHQ/better-stripe/commit/3168bb2c197f342cf79b6611d1e74bc5cff74637))
 
 ## [0.39.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.38.0...v0.39.0) (2026-10-17)
 

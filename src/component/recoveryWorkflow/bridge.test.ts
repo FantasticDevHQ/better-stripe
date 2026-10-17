@@ -1,10 +1,14 @@
+import {
+  CostRecoveryClient,
+  type RecoveryStartOptions,
+} from "../../client/costRecovery.js";
+import type { Component } from "../../client/helpers.js";
 import { invoke } from "./bridge.js";
 import { convexTest } from "convex-test";
 import workflowTest from "@convex-dev/workflow/test";
 import {
   anyApi,
   componentsGeneric,
-  createFunctionHandle,
   defineSchema,
   defineTable,
   internalActionGeneric,
@@ -74,11 +78,13 @@ const host = {
     args: {},
     returns: v.any(),
     handler: async (ctx) =>
-      ctx.runMutation(nested.betterStripe.recoveryWorkflow.mutations.start, {
+      new CostRecoveryClient(
+        nested.betterStripe as unknown as Component,
+      ).startGroup(ctx, {
         ...scope,
         requestKey: "request",
-        provider: await createFunctionHandle(anyApi.host.provider),
-        completion: await createFunctionHandle(anyApi.host.completed),
+        provider: anyApi.host.provider as RecoveryStartOptions["provider"],
+        completion: anyApi.host.completed as RecoveryStartOptions["completion"],
         providerApiVersion: "2026-09-30.endive",
         definitionVersion: 1,
         releaseUncollectible: false,

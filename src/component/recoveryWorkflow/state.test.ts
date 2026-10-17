@@ -147,3 +147,45 @@ it("compares every existing allocation field even when optional requested fields
     retryable: false,
   });
 });
+it("concurrent aliases join one immutable group operation", async () => {
+  const t = await fixture();
+  const outcomes = await Promise.all([
+    t.mutation(start, args),
+    t.mutation(start, { ...args, requestKey: "alias" }),
+  ]);
+  expect(outcomes[0].operationId).toBe(outcomes[1].operationId);
+  expect(
+    await t.run((ctx) => ctx.db.query("recoveryWorkflowOperations").collect()),
+  ).toHaveLength(1);
+  expect(
+    await t.run((ctx) => ctx.db.query("recoveryWorkflowRequests").collect()),
+  ).toHaveLength(2);
+});
+it("admits execution only after preparation has sealed the group", async () => {
+  const t = await fixture();
+  await t.run(async (ctx) => {
+    const group = (await ctx.db.query("recoveryGroups").first())!;
+    await ctx.db.patch(group._id, { status: "open" });
+  });
+  expect(await t.mutation(start, args)).toEqual({
+    status: "not_ready",
+    reason: "history_incomplete",
+    retryable: true,
+  });
+  expect(
+    await t.run((ctx) => ctx.db.query("recoveryWorkflowRequests").collect()),
+  ).toHaveLength(0);
+});
+it.each([
+  { maxAttempts: 0 },
+  { maxAttempts: 21 },
+  { retryDelayMs: 0 },
+  { retryDelayMs: 86400001 },
+  { providerApiVersion: "sk_test_not_a_version" },
+  { definitionVersion: 2 },
+])("rejects invalid durable execution policy %j", async (patch) => {
+  const t = await fixture();
+  await expect(t.mutation(start, { ...args, ...patch })).rejects.toThrow(
+    "Invalid recovery workflow policy",
+  );
+});

@@ -18,6 +18,7 @@ const scope = {
 async function setup(
   kind: "invoice" | "settlement" = "invoice",
   dispatch = true,
+  releaseUncollectible = false,
 ) {
   const t = initConvexTest();
   t.registerComponent("betterStripe", schema, modules);
@@ -86,7 +87,7 @@ async function setup(
       provider: "function://fixture/provider",
       providerApiVersion: "2026-09-30.endive",
       definitionVersion: 1,
-      releaseUncollectible: false,
+      releaseUncollectible,
       maxAttempts: 2,
       retryDelayMs: 1,
       ...(kind === "settlement" ? { allocation } : {}),
@@ -295,3 +296,129 @@ it("refuses provider work without an active persisted dispatch", async () => {
   ).toMatchObject({ status: "unknown" });
   expect(calls).toBe(0);
 });
+it("holds incomplete invoice history instead of creating an item after the scan bound", async () => {
+  const f = await setup();
+  let creates = 0;
+  const httpClient = Stripe.createFetchHttpClient(async (url, init) => {
+    if (init?.method === "POST") creates++;
+    const body = String(url).includes("/invoices/")
+      ? {
+          id: "in_source",
+          customer_account: scope.accountId,
+          currency: "usd",
+          status: "draft",
+        }
+      : {
+          object: "list",
+          data: Array.from({ length: 10001 }, (_, i) => ({
+            id: `ii_other_${i}`,
+            metadata: {},
+          })),
+          has_more: false,
+        };
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  expect(
+    await f.client.executeGroupProvider(f.ctx, f.request, {
+      stripeSecretKey: "sk_test_runtime_only",
+      httpClient,
+    }),
+  ).toMatchObject({ status: "unknown" });
+  expect(creates).toBe(0);
+});
+it("rejects a changed provider definition or API version before transport", async () => {
+  const f = await setup();
+  let calls = 0;
+  const httpClient = Stripe.createFetchHttpClient(async () => {
+    calls++;
+    return new Response("{}", { status: 200 });
+  });
+  for (const patch of [
+    { providerApiVersion: "2026-01-01.changed" },
+    { definitionVersion: 2 },
+    { phase: "reconcile" as const },
+  ]) {
+    expect(
+      await f.client.executeGroupProvider(
+        f.ctx,
+        { ...f.request, ...patch },
+        { stripeSecretKey: "sk_test_runtime_only", httpClient },
+      ),
+    ).toMatchObject({ status: "unknown" });
+  }
+  expect(calls).toBe(0);
+});
+it("accepts a terminal void invoice without attempting to create an item", async () => {
+  const f = await setup();
+  let creates = 0;
+  const httpClient = Stripe.createFetchHttpClient(async (url, init) => {
+    if (init?.method === "POST") creates++;
+    const body = String(url).includes("/invoices/")
+      ? {
+          id: "in_source",
+          customer_account: scope.accountId,
+          currency: "usd",
+          status: "void",
+        }
+      : { object: "list", data: [], has_more: false };
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  expect(
+    await f.client.executeGroupProvider(f.ctx, f.request, {
+      stripeSecretKey: "sk_test_runtime_only",
+      httpClient,
+    }),
+  ).toMatchObject({ status: "ready", outcome: "release" });
+  expect(creates).toBe(0);
+});
+
+it.each([false, true])(
+  "pins explicit uncollectible release policy %s",
+  async (release) => {
+    const f = await setup("invoice", true, release);
+    const httpClient = Stripe.createFetchHttpClient(async (url) => {
+      const body = String(url).includes("/invoices/")
+        ? {
+            id: "in_source",
+            customer_account: scope.accountId,
+            currency: "usd",
+            status: "uncollectible",
+          }
+        : {
+            object: "list",
+            data: [
+              {
+                id: "ii_recovery",
+                invoice: "in_source",
+                customer_account: scope.accountId,
+                currency: "usd",
+                amount: 30,
+                discountable: false,
+                metadata: { bsRecoveryGroup: f.group._id },
+              },
+            ],
+            has_more: false,
+          };
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    expect(
+      await f.client.executeGroupProvider(f.ctx, f.request, {
+        stripeSecretKey: "sk_test_runtime_only",
+        httpClient,
+      }),
+    ).toMatchObject(
+      release
+        ? { status: "ready", outcome: "release" }
+        : { status: "not_ready", reason: "provider_pending" },
+    );
+  },
+);

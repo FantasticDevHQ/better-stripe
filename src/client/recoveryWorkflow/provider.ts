@@ -26,7 +26,10 @@ export async function executeRecoveryProvider(
   options: RecoveryProviderOptions,
 ): Promise<RecoveryProviderReceipt> {
   const unknown = {
-    ...request,
+    ...operationRef(request),
+    phase: request.phase,
+    providerApiVersion: request.providerApiVersion,
+    definitionVersion: request.definitionVersion,
     sourceId: "",
     status: "unknown",
     reason: "provider_outcome_unknown",
@@ -92,10 +95,12 @@ export async function executeRecoveryProvider(
         componentRef(component, "costRecovery/mutations/bindInvoiceItem"),
         { groupKey: op.groupKey, invoiceItemId },
       ) as Promise<RecoveryGroup>;
-    const receipt =
-      request.phase === "execute"
-        ? await attachRecoveryInvoice(stripe, group, op, bind, true, 10000)
-        : await attachRecoveryInvoice(stripe, group, op, bind, false, 10000);
+    const create =
+      request.phase === "execute" &&
+      (await stripe.invoices.retrieve(op.sourceId)).status === "draft";
+    const receipt = create
+      ? await attachRecoveryInvoice(stripe, group, op, bind, true, 10000)
+      : await attachRecoveryInvoice(stripe, group, op, bind, false, 10000);
     const outcome =
       receipt.invoiceStatus === "paid"
         ? "collect"

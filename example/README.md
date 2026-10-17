@@ -1478,3 +1478,9 @@ create refunds, grant retry authority, or wire the legacy signed webhook pipelin
 that legacy path remains unfenced until its separate integration. Preserve unknown,
 superseded and native-resource-error states as described in the packaged
 [refund observation contract](../docs/refund-context.md#current-refund-synchronization).
+
+The exported package webhook handler pair retains legacy `null` dispatcher
+returns and supports the internal qualified refund callback/result seam described
+in [the refund contract](../docs/refund-context.md#transactional-callback-seam).
+That seam alone does not switch signed refund delivery or establish financial
+recovery completion; the example adds no browser-prepared observation endpoint.

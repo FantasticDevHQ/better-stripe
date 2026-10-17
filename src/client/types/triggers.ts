@@ -1,3 +1,4 @@
+import type { RefundSyncResult } from "../connect/refundSync.js";
 import type {
   FunctionReference,
   FunctionReturnType,
@@ -244,6 +245,7 @@ export type TriggerDispatcherName =
   | "paymentUpserted"
   | "payoutUpserted"
   | "payoutReconciled"
+  | "refundReconciled"
   | "refundUpserted"
   | "disputeUpserted";
 
@@ -283,7 +285,7 @@ export type WebhookHandlerRefs = {
     "mutation",
     "internal",
     { dispatcher: string; data: Record<string, unknown> },
-    null
+    null | RefundSyncResult
   >;
   asyncWebhook: FunctionReference<
     "action",

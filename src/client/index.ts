@@ -1,3 +1,5 @@
+import { result as refundSyncResultValidator } from "../component/refundSync/validators.js";
+import { reconcileRefundAndTrigger } from "./webhooks/refundReconciliation.js";
 import * as refundSyncImpl from "./connect/refundSync.js";
 export type {
   RefundSyncOptions,
@@ -1530,7 +1532,10 @@ export class BetterStripe extends PaymentSourceClient {
      */
     const SYNC: Record<
       TriggerDispatcherName,
-      (ctx: SyncTriggerCtx, record: Record<string, unknown>) => Promise<void>
+      (
+        ctx: SyncTriggerCtx,
+        record: Record<string, unknown>,
+      ) => Promise<void | refundSyncImpl.RefundSyncResult>
     > = {
       accountUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentAccount>(
@@ -1696,6 +1701,8 @@ export class BetterStripe extends PaymentSourceClient {
           ),
           record,
         ),
+      refundReconciled: (ctx, record) =>
+        reconcileRefundAndTrigger(component, ctx, record, triggers?.refund),
       refundUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentRefund>(
           ctx,
@@ -1734,17 +1741,18 @@ export class BetterStripe extends PaymentSourceClient {
 
     const syncWebhook = internalMutationGeneric({
       args: { dispatcher: v.string(), data: v.any() },
-      returns: v.null(),
+      returns: v.union(v.null(), refundSyncResultValidator),
       handler: async (ctx, { dispatcher, data }) => {
         const run = SYNC[dispatcher as TriggerDispatcherName];
         if (!run) {
           throw new Error(`[better-stripe] unknown dispatcher: ${dispatcher}`);
         }
-        await run(
-          ctx as unknown as SyncTriggerCtx,
-          data as Record<string, unknown>,
+        return (
+          (await run(
+            ctx as unknown as SyncTriggerCtx,
+            data as Record<string, unknown>,
+          )) ?? null
         );
-        return null;
       },
     });
 

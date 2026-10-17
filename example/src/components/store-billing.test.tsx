@@ -22,6 +22,26 @@ beforeEach(() => {
 });
 
 describe("store billing", () => {
+  it("keeps controls disabled while the durable funding operation is pending", () => {
+    mocks.query.mockReturnValue({ enabled: false, status: "pending" });
+    render(<StorePaymentSource sellerId={sellerId} />);
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByText("Verifying payment source…")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
+    expect(mocks.action).not.toHaveBeenCalled();
+  });
+  it("shows held reconciliation state without claiming the balance change succeeded", () => {
+    mocks.query.mockReturnValue({ enabled: false, status: "held" });
+    render(<StorePaymentSource sellerId={sellerId} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("needs reconciliation");
+    expect(
+      screen.getByText("Pay with saved payment method"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(
+      screen.getByRole("button", { name: "Confirm balance payments" }),
+    ).toBeEnabled();
+  });
   it("shows an invoice estimate with links to the related cases", async () => {
     mocks.action.mockResolvedValue({
       currency: "usd",

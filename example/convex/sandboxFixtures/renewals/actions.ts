@@ -287,12 +287,14 @@ export const retry = internalAction({
         ? sub.latest_invoice
         : sub.latest_invoice!.id;
     const setting = await ctx.runQuery(
-      internal.storeBalance.funding.internal.queries.read,
+      internal.storeBalance.funding.internal.queries.paymentSource,
       args,
     );
+    if (!setting)
+      throw new Error("Balance funding is not verified and active.");
     await raw.invoices.pay(
       invoiceId,
-      { payment_method: setting!.paymentMethodId },
+      { payment_method: setting.paymentMethodId },
       { apiVersion: "2026-09-30.preview" },
     );
     return null;

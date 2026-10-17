@@ -1,16 +1,19 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { fields, migrationLink, quiescence } from "./funding/helpers";
+import { runFields } from "./backfill/validators";
+import { requestFields } from "./workflow/validators";
 export const storeBalanceTables = {
+  storeBalanceMigrationRuns: defineTable(runFields).index("by_key", ["key"]),
+  // Host consent/intent references only. The component owns financial execution.
+  storeBalanceRequests: defineTable(requestFields).index(
+    "by_seller_subscription",
+    ["sellerId", "subscriptionId"],
+  ),
   storeBalanceFunding: defineTable({
-    sellerId: v.id("users"),
-    subscriptionId: v.string(),
-    enabled: v.boolean(),
-    paymentMethodId: v.string(),
-    previousPaymentMethodId: v.optional(v.string()),
-    previousPaymentMethodTypes: v.optional(v.array(v.string())),
-    operationVersion: v.optional(v.number()),
-    operationPending: v.optional(v.boolean()),
-    targetEnabled: v.optional(v.boolean()),
-    consentAt: v.number(),
+    ...fields,
+    migrationPaused: v.optional(v.boolean()),
+    legacyQuiescence: v.optional(quiescence),
+    componentMigration: v.optional(migrationLink),
   }).index("by_seller", ["sellerId"]),
 };

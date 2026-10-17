@@ -1,3 +1,9 @@
+import * as refundSyncImpl from "./connect/refundSync.js";
+export type {
+  RefundSyncOptions,
+  RefundSyncResult,
+} from "./connect/refundSync.js";
+export type { RefundSyncScope } from "./connect/refundSyncValidation.js";
 import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
 export * from "./financialOutcomes/index.js";
@@ -1183,6 +1189,19 @@ export class BetterStripe extends PaymentSourceClient {
     opts: payoutSyncImpl.PayoutSyncOptions,
   ) {
     return payoutSyncImpl.syncPayoutFromStripe(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+
+  /** Host must authorize the explicit API scope; this never creates a refund. */
+  async syncRefundFromStripe(
+    ctx: RunCtx,
+    opts: refundSyncImpl.RefundSyncOptions,
+  ) {
+    return refundSyncImpl.syncRefundFromStripe(
       this.stripe(),
       this.component,
       ctx,

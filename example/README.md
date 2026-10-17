@@ -1469,3 +1469,12 @@ the [packaged maintenance contract](../docs/financial-observations.md#lossless-o
 for native byte limits, first-observed meaning, unavailable/collision handling
 and latest-observed generations. This is server-only explicit maintenance, with
 no financial writer hooks, provider action, automatic backfill or closure claim.
+
+The server-only [current refund synchronization reference](convex/connect/refundSync.ts)
+uses the public `syncRefundFromStripe` operation after host authentication and
+original refund/API-scope authorization. It reads current provider state and
+updates the existing component projection under a durable generation. It does not
+create refunds, grant retry authority, or wire the legacy signed webhook pipeline;
+that legacy path remains unfenced until its separate integration. Preserve unknown,
+superseded and native-resource-error states as described in the packaged
+[refund observation contract](../docs/refund-context.md#current-refund-synchronization).

@@ -1,4 +1,4 @@
-import { refundCommandBinding } from "../refundHistory/commandBinding.js";
+import { writeRefund } from "./refundWrites.js";
 import {
   deferTransferFacts,
   synchronousTransferFactLimit,
@@ -137,72 +137,7 @@ export const upsertPayout = mutation({
 export const upsertRefund = mutation({
   args: refundFields,
   returns: v.null(),
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("refunds")
-      .withIndex("by_stripe_refund_id", (q) =>
-        q.eq("stripeRefundId", args.stripeRefundId),
-      )
-      .first();
-
-    const accountId =
-      args.accountId ?? (await paymentSeller(ctx, args.stripePaymentIntentId));
-    const record = {
-      ...args,
-      ...(accountId ? { accountId } : {}),
-      ...refundCommandBinding(existing, args, Date.now()),
-    };
-    if (existing) {
-      await ctx.db.patch("refunds", existing._id, record);
-    } else {
-      await ctx.db.insert("refunds", record);
-    }
-
-    // Denormalize cumulative refund state onto the linked `payments` row so
-    // consumers can answer "is this payment whole?" in one read. Runs in the
-    // same transaction as the refund upsert.
-    const paymentIntentId = args.stripePaymentIntentId;
-    if (paymentIntentId) {
-      const payment = await ctx.db
-        .query("payments")
-        .withIndex("by_stripe_payment_intent_id", (q) =>
-          q.eq("stripePaymentIntentId", paymentIntentId),
-        )
-        .first();
-
-      if (payment) {
-        // Bounded cardinality: a single payment intent can only be refunded
-        // down to zero, so the number of refund rows per PI is inherently small.
-        // eslint-disable-next-line @convex-dev/no-collect-in-query
-        const refunds = await ctx.db
-          .query("refunds")
-          .withIndex("by_stripe_payment_intent_id", (q) =>
-            q.eq("stripePaymentIntentId", paymentIntentId),
-          )
-          .collect();
-
-        // Money is considered returned for any refund that isn't failed or
-        // canceled (matches Stripe's Charge.amount_refunded semantics).
-        const refundedAmount = refunds
-          .filter((r) => r.status !== "failed" && r.status !== "canceled")
-          .reduce((sum, r) => sum + r.amount, 0);
-
-        const refundStatus =
-          refundedAmount <= 0
-            ? undefined
-            : refundedAmount >= payment.amount
-              ? ("fully_refunded" as const)
-              : ("partially_refunded" as const);
-
-        await ctx.db.patch("payments", payment._id, {
-          refundedAmount,
-          refundStatus,
-        });
-      }
-    }
-
-    return null;
-  },
+  handler: writeRefund,
 });
 
 /**

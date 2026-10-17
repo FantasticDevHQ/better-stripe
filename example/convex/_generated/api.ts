@@ -46,6 +46,7 @@ import type * as connect_queries from "../connect/queries.js";
 import type * as connect_refundCommandEvidence from "../connect/refundCommandEvidence.js";
 import type * as connect_refundCommandNormalization from "../connect/refundCommandNormalization.js";
 import type * as connect_refundContext from "../connect/refundContext.js";
+import type * as connect_refundSync from "../connect/refundSync.js";
 import type * as crons from "../crons.js";
 import type * as e2eCheckout_actions from "../e2eCheckout/actions.js";
 import type * as e2eMoney_actions from "../e2eMoney/actions.js";
@@ -221,6 +222,7 @@ const fullApi: ApiFromModules<{
   "connect/refundCommandEvidence": typeof connect_refundCommandEvidence;
   "connect/refundCommandNormalization": typeof connect_refundCommandNormalization;
   "connect/refundContext": typeof connect_refundContext;
+  "connect/refundSync": typeof connect_refundSync;
   crons: typeof crons;
   "e2eCheckout/actions": typeof e2eCheckout_actions;
   "e2eMoney/actions": typeof e2eMoney_actions;

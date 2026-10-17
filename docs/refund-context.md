@@ -82,3 +82,57 @@ PaymentIntent's refund authority. Deny ambiguous cross-invoice/community scopes
 until a safe original-payment binding is established. A ready zero remainder
 must not enable another refund. This reader does not grant authority to remove
 access, cancel a subscription or change the original financial recipients.
+
+## Current refund synchronization
+
+`betterStripe.syncRefundFromStripe(ctx, { stripeRefundId, scope })` is a separate
+trusted-host operation. It retrieves the current provider refund and synchronizes
+the existing component refund/payment projection. It never creates or cancels a
+refund, reverses transfers, changes access or authorizes a retry. Hosts must
+authenticate and authorize the original refund and provider API scope before
+calling it; the method is not an application authorization boundary.
+
+```ts
+const observation = await betterStripe.syncRefundFromStripe(ctx, {
+  stripeRefundId: originalRefundId,
+  scope: { type: "platform" },
+});
+// Or use { type: "connected", accountId: trustedOriginalApiAccount }.
+```
+
+The API namespace is required and runtime validated before component/provider
+access. A connected API account is not a buyer, destination merchant or seller
+entitlement. Provider metadata cannot select that account. Original merchant
+attribution uses the existing immutable store-allocation proof, or the original
+charge's destination when needed to qualify a legacy destination fallback.
+Known original merchant/PI/charge/currency/amount disagreement or ambiguous evidence
+holds the observation. An unattributed refund can remain unattributed where no
+legacy destination fallback would invent an owner. This does not establish seller
+authorization or historical ingestion completeness.
+
+Each current read receives a durable per-refund generation. Only the newest
+claimed generation can commit the qualified snapshot and existing cumulative
+payment projection together. An older completion returns `superseded` without
+writing that snapshot, including when the newer read failed. Superseded is not
+proof that any newer observation succeeded. `accepted` returns the generation,
+`changed` and stored refund; it is an observation, not financial completion.
+Current `succeeded` may legitimately become `requires_action`, `pending` or later
+failure. No status ordering, provider revision or webhook timestamp is invented.
+
+Provider or accepting-transaction failures propagate rather than falling back to
+a notification snapshot. A failed pending generation is marked unknown when that
+marker can be saved. Lost responses can leave a pending or accepted generation;
+a fresh explicit observation obtains a new generation. It does not dispatch a
+refund. The original cumulative writer remains a complete indexed collection of
+all refund rows for the payment, excluding failed/canceled contributions. Failed
+history is not cardinality bounded: native resource limits can abort the whole
+accepting transaction, preserving the last committed projection. There is no
+partial sum, silent truncation or all-backlog-capacity guarantee.
+
+This primitive does **not** yet route the legacy signed refund webhook pipeline
+through generation qualification. Legacy `upsertRefund` and raw callbacks remain
+unfenced; they can still overwrite observations outside this operation. The
+separate shared-pipeline integration must preserve generation qualification
+through its callback transaction before hosts claim webhook-wide convergence.
+The server-only Vite reference is
+[`example/convex/connect/refundSync.ts`](../example/convex/connect/refundSync.ts).

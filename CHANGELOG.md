@@ -26,6 +26,31 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.43.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.42.0...v0.43.0) (2026-10-17)
+
+### Features
+
+- add guarded processing-cost reconciliation workflow ([79f2741](https://github.com/FantasticDevHQ/better-stripe/commit/79f27416e8cdf13d18c4afe4a90a07f9ba7b4ced))
+- reconcile processing-cost claims with guarded workflow ([96f1fd1](https://github.com/FantasticDevHQ/better-stripe/commit/96f1fd1e93bba08a5182acb1c453e5ea5621fcbd))
+
+### Bug Fixes
+
+- bind bounded processing transactions to original cost sources ([4165f5a](https://github.com/FantasticDevHQ/better-stripe/commit/4165f5af3af550d43c5575652c2a2b162da74748))
+
+### Tests
+
+- ratchet processing-cost reconciliation coverage floors ([d462d9a](https://github.com/FantasticDevHQ/better-stripe/commit/d462d9ad9ee623de2f3460a0979435448ebbab85))
+
+## [0.42.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.41.0...v0.42.0) (2026-10-17)
+
+### Features
+
+- add durable balance funding workflows ([59c46e7](https://github.com/FantasticDevHQ/better-stripe/commit/59c46e7c0a41aee3df0b743099bf57d67921046b))
+
+### Tests
+
+- ratchet integrated funding and recovery coverage ([deb5249](https://github.com/FantasticDevHQ/better-stripe/commit/deb524903b9c51ba2173df4063add29e85f4fdf7))
+
 ## [0.41.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.40.0...v0.41.0) (2026-10-17)
 
 ### Features

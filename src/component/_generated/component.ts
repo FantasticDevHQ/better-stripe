@@ -6688,6 +6688,576 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    processingCostReconciliation: {
+      mutations: {
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              scopeKey: string;
+              status: "queued" | "running";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              result: {
+                claim: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+                deficit: {
+                  amountDue: number;
+                  currency: string;
+                  disputeLiability: number;
+                  processingLiability: number;
+                  retainedFee: number;
+                };
+                observation: {
+                  currency: string;
+                  disputeFees: number;
+                  gross: number;
+                  originalProcessingFee: number;
+                  paymentIntentId: string;
+                  principalReturned: number;
+                  processingFee: number;
+                  provenance: {
+                    customerAccountId: string;
+                    invoiceId: string;
+                    invoicePaymentId: string;
+                    recoveryInvoiceItemId?: string;
+                    stripePriceId?: string;
+                    stripeProductId?: string;
+                    subscriptionId?: string;
+                  };
+                  sourceChargeId: string;
+                };
+                rollbackClaim?: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+              };
+              scopeKey: string;
+              status: "completed";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              reason: string;
+              retryable: boolean;
+              scopeKey: string;
+              status: "not_ready" | "conflict" | "rejected" | "unknown";
+              version: number;
+            },
+          Name
+        >;
+        start: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            accountId: string;
+            claimKey: string;
+            currency: string;
+            definitionVersion: number;
+            expectedRevision: number;
+            importHook?: string;
+            maxAttempts: number;
+            policy: {
+              liability: {
+                disputeCosts: "all" | "none";
+                processingCosts: "uncovered" | "all" | "none";
+              };
+              rounding: "nearest" | "floor" | "ceil";
+              sellingFee: number;
+            };
+            projection?: string;
+            provider: string;
+            providerApiVersion: string;
+            requestKey: string;
+            retryDelayMs: number;
+            rollback?: { expectedRevision: number; groupKey: string };
+            scopeKey: string;
+            source:
+              | {
+                  customerAccountId: string;
+                  gross: number;
+                  invoiceId?: string;
+                  kind: "sale";
+                  paymentIntentId: string;
+                  stripeAccountId?: string;
+                  stripePriceId?: string;
+                  stripeProductId?: string;
+                  subscriptionId?: string;
+                }
+              | {
+                  gross: number;
+                  groupKey: string;
+                  kind: "invoice_recovery";
+                  paymentIntentId: string;
+                };
+          },
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              scopeKey: string;
+              status: "queued" | "running";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              result: {
+                claim: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+                deficit: {
+                  amountDue: number;
+                  currency: string;
+                  disputeLiability: number;
+                  processingLiability: number;
+                  retainedFee: number;
+                };
+                observation: {
+                  currency: string;
+                  disputeFees: number;
+                  gross: number;
+                  originalProcessingFee: number;
+                  paymentIntentId: string;
+                  principalReturned: number;
+                  processingFee: number;
+                  provenance: {
+                    customerAccountId: string;
+                    invoiceId: string;
+                    invoicePaymentId: string;
+                    recoveryInvoiceItemId?: string;
+                    stripePriceId?: string;
+                    stripeProductId?: string;
+                    subscriptionId?: string;
+                  };
+                  sourceChargeId: string;
+                };
+                rollbackClaim?: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+              };
+              scopeKey: string;
+              status: "completed";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              reason: string;
+              retryable: boolean;
+              scopeKey: string;
+              status: "not_ready" | "conflict" | "rejected" | "unknown";
+              version: number;
+            }
+          | {
+              reason: "provider_pending" | "fee_pending" | "history_incomplete";
+              retryable: true;
+              status: "not_ready";
+            }
+          | {
+              reason: "scope_busy" | "revision_changed" | "identity_changed";
+              retryable: false;
+              status: "conflict";
+            }
+          | {
+              reason:
+                | "invalid_scope"
+                | "unsupported_source"
+                | "policy_invalid"
+                | "payment_not_payable"
+                | "currency_mismatch";
+              retryable: false;
+              status: "rejected";
+            }
+          | {
+              reason: "provider_outcome_unknown" | "history_incomplete";
+              retryable: false;
+              status: "unknown";
+            },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              scopeKey: string;
+              status: "queued" | "running";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              result: {
+                claim: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+                deficit: {
+                  amountDue: number;
+                  currency: string;
+                  disputeLiability: number;
+                  processingLiability: number;
+                  retainedFee: number;
+                };
+                observation: {
+                  currency: string;
+                  disputeFees: number;
+                  gross: number;
+                  originalProcessingFee: number;
+                  paymentIntentId: string;
+                  principalReturned: number;
+                  processingFee: number;
+                  provenance: {
+                    customerAccountId: string;
+                    invoiceId: string;
+                    invoicePaymentId: string;
+                    recoveryInvoiceItemId?: string;
+                    stripePriceId?: string;
+                    stripeProductId?: string;
+                    subscriptionId?: string;
+                  };
+                  sourceChargeId: string;
+                };
+                rollbackClaim?: {
+                  _creationTime: number;
+                  _id: string;
+                  accountId: string;
+                  amountDue: number;
+                  claimKey: string;
+                  collectedAmount: number;
+                  currency: string;
+                  openingCollection?: {
+                    amountDue: number;
+                    collectedAmount: number;
+                    operationKey: string;
+                    revision: number;
+                  };
+                  outstanding: number;
+                  reservedAmount: number;
+                  revision: number;
+                  scopeKey: string;
+                  sign: "positive" | "negative" | "zero";
+                  sourceChargeId: string;
+                  sourceGross: number;
+                  sourceProcessingFee: number;
+                };
+              };
+              scopeKey: string;
+              status: "completed";
+              version: number;
+            }
+          | {
+              accountId: string;
+              currency: string;
+              operationId: string;
+              reason: string;
+              retryable: boolean;
+              scopeKey: string;
+              status: "not_ready" | "conflict" | "rejected" | "unknown";
+              version: number;
+            },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          {
+            accountId: string;
+            currency: string;
+            operationId: string;
+            scopeKey: string;
+            version: number;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            accountId: string;
+            claimKey: string;
+            currency: string;
+            definitionVersion: number;
+            expectedRevision: number;
+            failure?:
+              | {
+                  reason:
+                    "provider_pending" | "fee_pending" | "history_incomplete";
+                  retryable: true;
+                  status: "not_ready";
+                }
+              | {
+                  reason:
+                    "scope_busy" | "revision_changed" | "identity_changed";
+                  retryable: false;
+                  status: "conflict";
+                }
+              | {
+                  reason:
+                    | "invalid_scope"
+                    | "unsupported_source"
+                    | "policy_invalid"
+                    | "payment_not_payable"
+                    | "currency_mismatch";
+                  retryable: false;
+                  status: "rejected";
+                }
+              | {
+                  reason: "provider_outcome_unknown" | "history_incomplete";
+                  retryable: false;
+                  status: "unknown";
+                };
+            importHook?: string;
+            maxAttempts: number;
+            policy: {
+              liability: {
+                disputeCosts: "all" | "none";
+                processingCosts: "uncovered" | "all" | "none";
+              };
+              rounding: "nearest" | "floor" | "ceil";
+              sellingFee: number;
+            };
+            projection?: string;
+            provider: string;
+            providerApiVersion: string;
+            requestKey: string;
+            result?: {
+              claim: {
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                amountDue: number;
+                claimKey: string;
+                collectedAmount: number;
+                currency: string;
+                openingCollection?: {
+                  amountDue: number;
+                  collectedAmount: number;
+                  operationKey: string;
+                  revision: number;
+                };
+                outstanding: number;
+                reservedAmount: number;
+                revision: number;
+                scopeKey: string;
+                sign: "positive" | "negative" | "zero";
+                sourceChargeId: string;
+                sourceGross: number;
+                sourceProcessingFee: number;
+              };
+              deficit: {
+                amountDue: number;
+                currency: string;
+                disputeLiability: number;
+                processingLiability: number;
+                retainedFee: number;
+              };
+              observation: {
+                currency: string;
+                disputeFees: number;
+                gross: number;
+                originalProcessingFee: number;
+                paymentIntentId: string;
+                principalReturned: number;
+                processingFee: number;
+                provenance: {
+                  customerAccountId: string;
+                  invoiceId: string;
+                  invoicePaymentId: string;
+                  recoveryInvoiceItemId?: string;
+                  stripePriceId?: string;
+                  stripeProductId?: string;
+                  subscriptionId?: string;
+                };
+                sourceChargeId: string;
+              };
+              rollbackClaim?: {
+                _creationTime: number;
+                _id: string;
+                accountId: string;
+                amountDue: number;
+                claimKey: string;
+                collectedAmount: number;
+                currency: string;
+                openingCollection?: {
+                  amountDue: number;
+                  collectedAmount: number;
+                  operationKey: string;
+                  revision: number;
+                };
+                outstanding: number;
+                reservedAmount: number;
+                revision: number;
+                scopeKey: string;
+                sign: "positive" | "negative" | "zero";
+                sourceChargeId: string;
+                sourceGross: number;
+                sourceProcessingFee: number;
+              };
+            };
+            retryDelayMs: number;
+            rollback?: { expectedRevision: number; groupKey: string };
+            scopeKey: string;
+            source:
+              | {
+                  customerAccountId: string;
+                  gross: number;
+                  invoiceId?: string;
+                  kind: "sale";
+                  paymentIntentId: string;
+                  stripeAccountId?: string;
+                  stripePriceId?: string;
+                  stripeProductId?: string;
+                  subscriptionId?: string;
+                }
+              | {
+                  gross: number;
+                  groupKey: string;
+                  kind: "invoice_recovery";
+                  paymentIntentId: string;
+                };
+            status:
+              | "queued"
+              | "running"
+              | "waiting"
+              | "completed"
+              | "conflict"
+              | "rejected"
+              | "unknown";
+            version: number;
+            workflowId?: string;
+          },
+          Name
+        >;
+      };
+    };
     products: {
       mutations: {
         adoptProduct: FunctionReference<

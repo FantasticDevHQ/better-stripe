@@ -26,6 +26,27 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.48.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.47.1...v0.48.0) (2026-10-17)
+
+### Features
+
+- **billing:** add scoped history pagination ([94d7fb8](https://github.com/FantasticDevHQ/better-stripe/commit/94d7fb8118c57260caeea2fc962248c82bdb1d95))
+- expose bounded cached billing history pages ([4c88eb4](https://github.com/FantasticDevHQ/better-stripe/commit/4c88eb41d514341f9dfafc7822ebba71961d423c))
+- publish generated billing history page contracts ([f834bbe](https://github.com/FantasticDevHQ/better-stripe/commit/f834bbedf029046b9148bea5b0ccaf549a08a308))
+
+### Bug Fixes
+
+- **billing:** derive history pages from authoritative component documents ([a6fe0a0](https://github.com/FantasticDevHQ/better-stripe/commit/a6fe0a00894f6614b9e4555d342c940bf553b421))
+- reconcile signed refund delivery against current provider state ([b228446](https://github.com/FantasticDevHQ/better-stripe/commit/b228446373854ac17e62b6ee091c67959b8f22a3))
+
+### Tests
+
+- **billing:** cover scoped history budgets and authorized projections ([b3c6384](https://github.com/FantasticDevHQ/better-stripe/commit/b3c638439c763e8ee8bdbd49b7f89f50d2de23db))
+- **billing:** preserve generic dispatcher mock compatibility ([c04fcb6](https://github.com/FantasticDevHQ/better-stripe/commit/c04fcb642232f081ac886ea089b1cc720548eb1e))
+- extract refund fixtures within existing file budgets ([705a1dd](https://github.com/FantasticDevHQ/better-stripe/commit/705a1dda944aa5c1a762824f487970a538aac16c))
+- preserve split recovery assertions through current refund qualification ([3697739](https://github.com/FantasticDevHQ/better-stripe/commit/3697739f6a29e34b4cd450eb5e7125e4096a6a05))
+- ratchet measured billing history coverage floors ([39d591e](https://github.com/FantasticDevHQ/better-stripe/commit/39d591e25b0e366404484317dd514be3bb98e610))
+
 ## [0.47.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.47.0...v0.47.1) (2026-10-17)
 
 ### Bug Fixes

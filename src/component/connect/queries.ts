@@ -30,15 +30,20 @@ import {
 // PAYMENT QUERIES
 
 export const getPaymentByStripeId = query({
-  args: { stripePaymentIntentId: v.string() },
+  args: {
+    stripePaymentIntentId: v.string(),
+    requireUnique: v.optional(v.boolean()),
+  },
   returns: v.union(paymentDocValidator, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const rows = ctx.db
       .query("payments")
       .withIndex("by_stripe_payment_intent_id", (q) =>
         q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
-      )
-      .first();
+      );
+    if (!args.requireUnique) return await rows.first();
+    const matches = await rows.take(2);
+    return matches.length === 1 ? matches[0]! : null;
   },
 });
 

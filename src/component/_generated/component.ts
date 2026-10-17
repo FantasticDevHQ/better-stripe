@@ -2974,7 +2974,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getPaymentByStripeId: FunctionReference<
           "query",
           "internal",
-          { stripePaymentIntentId: string },
+          { requireUnique?: boolean; stripePaymentIntentId: string },
           {
             _creationTime: number;
             _id: string;

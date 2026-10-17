@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.45.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.45.0...v0.45.1) (2026-10-17)
+
+### Tests
+
+- verify cross-domain durable execution invariants ([392080f](https://github.com/FantasticDevHQ/better-stripe/commit/392080f5d166ad731864ac0db4897fe6a1b7de63))
+- verify cross-domain durable execution invariants ([c814519](https://github.com/FantasticDevHQ/better-stripe/commit/c8145194ac0b9fb51b92109ffd2d6be5cf44488f))
+
 ## [0.45.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.44.0...v0.45.0) (2026-10-17)
 
 ### Features

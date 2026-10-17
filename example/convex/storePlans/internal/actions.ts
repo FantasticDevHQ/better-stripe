@@ -5,6 +5,7 @@ import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 
 import { getStripeClient } from "../../stripe/client";
+import { stripe } from "../../stripe/helpers";
 
 import { STORE_PLANS, storePlanLookupKey, type StorePlanId } from "../helpers";
 
@@ -46,34 +47,38 @@ export const ensureCatalog = internalAction({
       const key =
         storePlanLookupKey(plan.id) +
         (plan.version ? `_${plan.version}_${plan.monthlyAmount}` : "");
-      const found = await raw.prices.list({ lookup_keys: [key], limit: 1 });
-      let price = found.data[0];
-      if (!price) {
-        const product = await raw.products.create(
-          {
-            name: `BetterStripe ${plan.name} store plan`,
-            metadata: { storeBilling: "plan_v1" },
-          },
-          { idempotencyKey: `example_store_plan_product_${plan.id}_v2` },
-        );
-        price = await raw.prices.create(
-          {
-            product: product.id,
-            currency: "usd",
-            unit_amount: plan.monthlyAmount,
-            recurring: { interval: "month" },
-            lookup_key: key,
-            nickname: plan.name,
-            metadata: { storePlanId: plan.id },
-          },
-          { idempotencyKey: key },
-        );
-      }
+      const found = await stripe.getStripePriceByLookupKey(ctx, {
+        lookupKey: key,
+      });
+      // Product identity and creation keys belong to this app's tier policy.
+      const stripeProductId = found
+        ? typeof found.product === "string"
+          ? found.product
+          : found.product.id
+        : (
+            await raw.products.create(
+              {
+                name: `BetterStripe ${plan.name} store plan`,
+                metadata: { storeBilling: "plan_v1" },
+              },
+              { idempotencyKey: `example_store_plan_product_${plan.id}_v2` },
+            )
+          ).id;
+      const price = await stripe.ensurePrice(ctx, {
+        stripeProductId,
+        lookupKey: key,
+        idempotencyKey: key,
+        currency: "usd",
+        unitAmount: plan.monthlyAmount,
+        type: "recurring",
+        interval: "month",
+        nickname: plan.name,
+        metadata: { storePlanId: plan.id },
+      });
       const entry = {
         planId: plan.id,
-        stripeProductId:
-          typeof price.product === "string" ? price.product : price.product.id,
-        stripePriceId: price.id,
+        stripeProductId,
+        stripePriceId: price.stripePriceId,
       };
       await ctx.runMutation(
         internal.storePlans.billing.internal.mutations.saveCatalogPrice,

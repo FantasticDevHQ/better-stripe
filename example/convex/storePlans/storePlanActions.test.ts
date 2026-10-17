@@ -10,10 +10,19 @@ const raw = vi.hoisted(() => ({
   subscriptions: { retrieve: vi.fn(), list: vi.fn() },
   checkout: { sessions: { retrieve: vi.fn() } },
   testHelpers: { testClocks: { retrieve: vi.fn() } },
+  billingPortal: {
+    configurations: { create: vi.fn() },
+    sessions: { create: vi.fn() },
+  },
 }));
 vi.mock("../stripe/client", () => ({ getStripeClient: () => raw }));
 vi.mock("../stripe/helpers", () => ({
-  stripe: { addCustomerConfiguration: vi.fn(), createCheckoutSession: vi.fn() },
+  stripe: {
+    addCustomerConfiguration: vi.fn(),
+    createCheckoutSession: vi.fn(),
+    createBillingPortalConfiguration: vi.fn(),
+    createBillingPortalSession: vi.fn(),
+  },
 }));
 beforeEach(() => vi.resetAllMocks());
 async function setup() {
@@ -237,4 +246,101 @@ it("recognizes an existing subscription price after the admin publishes a newer 
     hasAccess: true,
     storePlan: { planId: "growth", stripeSubscriptionId: sub.id },
   });
+});
+
+it("keeps the app price allowlist and legacy current price in a configured component portal", async () => {
+  const { t, sellerId, sub } = await setup();
+  await t.action(internal.storePlans.internal.actions.refreshSubscription, {
+    subscriptionId: sub.id,
+  });
+  for (const planId of ["starter", "growth", "pro"] as const)
+    await t.mutation(
+      internal.storePlans.billing.internal.mutations.saveCatalogPrice,
+      {
+        planId,
+        stripeProductId: `prod_${planId}`,
+        stripePriceId: `price_${planId}`,
+      },
+    );
+  Object.assign(sub.items.data[0].price, {
+    id: "price_legacy",
+    product: "prod_legacy",
+  });
+  raw.billingPortal.configurations.create.mockResolvedValue({
+    id: "bpc_store",
+  });
+  raw.billingPortal.sessions.create.mockResolvedValue({
+    url: "https://billing.stripe.test/store",
+  });
+  vi.mocked(stripe.createBillingPortalConfiguration).mockResolvedValue({
+    id: "bpc_store",
+  } as never);
+  vi.mocked(stripe.createBillingPortalSession).mockResolvedValue({
+    url: "https://billing.stripe.test/store",
+  });
+  expect(
+    await t.action(api.storePlans.public.actions.manage, {
+      sellerId,
+      returnUrl: "https://example.test/plan",
+    }),
+  ).toBe("https://billing.stripe.test/store");
+  expect(stripe.createBillingPortalConfiguration).toHaveBeenCalledWith(
+    expect.anything(),
+    {
+      params: {
+        business_profile: { headline: "Manage your BetterStripe store plan" },
+        features: {
+          payment_method_update: { enabled: true },
+          invoice_history: { enabled: true },
+          subscription_cancel: { enabled: true, mode: "at_period_end" },
+          subscription_update: {
+            enabled: true,
+            default_allowed_updates: ["price"],
+            products: expect.arrayContaining([
+              { product: "prod_starter", prices: ["price_starter"] },
+              { product: "prod_growth", prices: ["price_growth"] },
+              { product: "prod_pro", prices: ["price_pro"] },
+              { product: "prod_legacy", prices: ["price_legacy"] },
+            ]),
+            proration_behavior: "always_invoice",
+            schedule_at_period_end: { conditions: [] },
+          },
+        },
+      },
+    },
+  );
+  expect(
+    vi.mocked(stripe.createBillingPortalConfiguration).mock.calls[0][1].params
+      .features?.subscription_update?.products,
+  ).toHaveLength(4);
+  expect(stripe.createBillingPortalSession).toHaveBeenCalledWith(
+    expect.anything(),
+    {
+      stripeAccountId: "acct_store",
+      returnUrl: "https://example.test/plan",
+      configurationId: "bpc_store",
+    },
+  );
+  expect(raw.billingPortal.configurations.create).not.toHaveBeenCalled();
+  expect(raw.billingPortal.sessions.create).not.toHaveBeenCalled();
+});
+
+it("rejects a non-seller before opening a portal", async () => {
+  const { t } = await setup();
+  const buyerId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Buyer",
+      email: "buyer@example.test",
+      role: "customer",
+    }),
+  );
+  await expect(
+    t.action(api.storePlans.public.actions.manage, {
+      sellerId: buyerId,
+      returnUrl: "https://example.test/plan",
+    }),
+  ).rejects.toThrow(/seller/);
+  expect(stripe.createBillingPortalConfiguration).not.toHaveBeenCalled();
+  expect(stripe.createBillingPortalSession).not.toHaveBeenCalled();
+  expect(raw.subscriptions.retrieve).not.toHaveBeenCalled();
 });

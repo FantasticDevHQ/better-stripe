@@ -160,25 +160,27 @@ export const manage = action({
       } else
         products.push({ product: currentProduct, prices: [currentPrice.id] });
     }
-    const configuration = await raw.billingPortal.configurations.create({
-      business_profile: { headline: "Manage your BetterStripe store plan" },
-      features: {
-        payment_method_update: { enabled: true },
-        invoice_history: { enabled: true },
-        subscription_cancel: { enabled: true, mode: "at_period_end" },
-        subscription_update: {
-          enabled: true,
-          default_allowed_updates: ["price"],
-          products,
-          proration_behavior: "always_invoice",
-          schedule_at_period_end: { conditions: [] },
+    const configuration = await stripe.createBillingPortalConfiguration(ctx, {
+      params: {
+        business_profile: { headline: "Manage your BetterStripe store plan" },
+        features: {
+          payment_method_update: { enabled: true },
+          invoice_history: { enabled: true },
+          subscription_cancel: { enabled: true, mode: "at_period_end" },
+          subscription_update: {
+            enabled: true,
+            default_allowed_updates: ["price"],
+            products,
+            proration_behavior: "always_invoice",
+            schedule_at_period_end: { conditions: [] },
+          },
         },
       },
     });
-    const portal = await raw.billingPortal.sessions.create({
-      customer_account: seller.stripeAccountId,
-      return_url: args.returnUrl,
-      configuration: configuration.id,
+    const portal = await stripe.createBillingPortalSession(ctx, {
+      stripeAccountId: seller.stripeAccountId,
+      returnUrl: args.returnUrl,
+      configurationId: configuration.id,
     });
     return portal.url;
   },

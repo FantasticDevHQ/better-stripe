@@ -4,6 +4,8 @@ import { convexTest } from "convex-test";
 import { expect, it, vi } from "vitest";
 import { api, internal } from "../../_generated/api";
 import schema from "../../schema";
+import { stripe } from "../../stripe/helpers";
+vi.mock("../../stripe/helpers", () => ({ stripe: { ensurePrice: vi.fn() } }));
 const raw = vi.hoisted(() => ({
   prices: { create: vi.fn() },
   products: { create: vi.fn() },
@@ -101,6 +103,9 @@ it("updates the Stripe price for future subscriptions without changing or archiv
       },
     );
   raw.prices.create.mockResolvedValue({ id: "price_new" });
+  vi.mocked(stripe.ensurePrice).mockResolvedValue({
+    stripePriceId: "price_new",
+  });
   await t.action(api.storePlans.pricing.public.actions.update, {
     adminId,
     planId: "growth",
@@ -108,15 +113,18 @@ it("updates the Stripe price for future subscriptions without changing or archiv
     feeBasisPoints: 490,
     expectedVersion: 0,
   });
-  expect(raw.prices.create).toHaveBeenCalledWith(
-    expect.objectContaining({
-      product: "prod_growth",
-      unit_amount: 5900,
-      currency: "usd",
-      recurring: { interval: "month" },
-    }),
-    expect.objectContaining({ idempotencyKey: expect.any(String) }),
-  );
+  expect(stripe.ensurePrice).toHaveBeenCalledWith(expect.anything(), {
+    stripeProductId: "prod_growth",
+    unitAmount: 5900,
+    currency: "usd",
+    type: "recurring",
+    interval: "month",
+    nickname: "Growth",
+    metadata: { storePlanId: "growth", storePlanVersion: "1" },
+    lookupKey: "better_stripe_example_store_growth_usd_month_v2_1_5900",
+    idempotencyKey: "example_store_price_growth_1_5900_490",
+  });
+  expect(raw.prices.create).not.toHaveBeenCalled();
   expect(
     (await t.query(api.storePlans.pricing.public.queries.list, {}))[1]
       .monthlyAmount,
@@ -241,4 +249,43 @@ it("keeps fixed plan payouts through billing edits, and can switch back to a per
       expectedVersion: 3,
     }),
   ).rejects.toThrow(/non-negative/);
+});
+
+it("rejects non-admin and stale action edits before asking the component to ensure a price", async () => {
+  vi.mocked(stripe.ensurePrice).mockClear();
+  const t = convexTest(schema, modules);
+  const sellerId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Seller",
+      email: "seller-guard@example.test",
+      role: "seller",
+    }),
+  );
+  const adminId = await t.run((ctx) =>
+    ctx.db.insert("users", {
+      name: "Admin",
+      email: "admin-guard@example.test",
+      role: "admin",
+    }),
+  );
+  const edit = {
+    planId: "growth" as const,
+    monthlyAmount: 5900,
+    feeBasisPoints: 490,
+    expectedVersion: 0,
+  };
+  await expect(
+    t.action(api.storePlans.pricing.public.actions.update, {
+      ...edit,
+      adminId: sellerId,
+    }),
+  ).rejects.toThrow(/admin/i);
+  await expect(
+    t.action(api.storePlans.pricing.public.actions.update, {
+      ...edit,
+      adminId,
+      expectedVersion: 2,
+    }),
+  ).rejects.toThrow(/changed/i);
+  expect(stripe.ensurePrice).not.toHaveBeenCalled();
 });

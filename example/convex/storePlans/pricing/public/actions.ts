@@ -4,9 +4,12 @@ import { action } from "../../../_generated/server";
 
 import { internal } from "../../../_generated/api";
 
-import { validateFixedAffiliateAmount } from "../../helpers";
+import {
+  validateFixedAffiliateAmount,
+  storePlanLookupKey,
+} from "../../helpers";
 
-import { getStripeClient } from "../../../stripe/client";
+import { stripe } from "../../../stripe/helpers";
 import { edit, validatePricing } from "../helpers";
 
 export const update = action({
@@ -38,23 +41,21 @@ export const update = action({
     const entry = catalog.find((row) => row.planId === args.planId)!;
     let stripePriceId = entry.stripePriceId;
     if (args.monthlyAmount !== plan.monthlyAmount) {
-      const price = await getStripeClient().prices.create(
-        {
-          product: entry.stripeProductId,
-          unit_amount: args.monthlyAmount,
-          currency: "usd",
-          recurring: { interval: "month" },
-          nickname: plan.name,
-          metadata: {
-            storePlanId: args.planId,
-            storePlanVersion: String(plan.version + 1),
-          },
+      const price = await stripe.ensurePrice(ctx, {
+        stripeProductId: entry.stripeProductId,
+        unitAmount: args.monthlyAmount,
+        currency: "usd",
+        type: "recurring",
+        interval: "month",
+        nickname: plan.name,
+        metadata: {
+          storePlanId: args.planId,
+          storePlanVersion: String(plan.version + 1),
         },
-        {
-          idempotencyKey: `example_store_price_${args.planId}_${plan.version + 1}_${args.monthlyAmount}_${args.feeBasisPoints}`,
-        },
-      );
-      stripePriceId = price.id;
+        lookupKey: `${storePlanLookupKey(args.planId)}_${plan.version + 1}_${args.monthlyAmount}`,
+        idempotencyKey: `example_store_price_${args.planId}_${plan.version + 1}_${args.monthlyAmount}_${args.feeBasisPoints}`,
+      });
+      stripePriceId = price.stripePriceId;
     }
     await ctx.runMutation(
       internal.storePlans.pricing.internal.mutations.publish,

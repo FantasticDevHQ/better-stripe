@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { workflowBinding } from "./workflowSchema.js";
 export const scopeFields = { accountId: v.string(), scopeKey: v.string() };
 export const originalFields = {
   customerAccount: v.string(),
@@ -77,6 +78,7 @@ export const operationFields = {
   failureCode: v.optional(failureCode),
   providerKeys,
   receipt: v.optional(receiptValue),
+  execution: v.optional(workflowBinding),
 };
 export const operationDoc = v.object({
   ...operationFields,

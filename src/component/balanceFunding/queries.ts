@@ -219,3 +219,41 @@ export const findPreparationOperation = query({
     };
   },
 });
+
+/** Server-only canonical capture lookup. Never forward restoration data to browsers. */
+export const readScopePreparation = query({
+  args: {
+    ...scopeFields,
+    stripeSubscriptionId: v.string(),
+    providerApiVersion: v.string(),
+  },
+  returns: v.union(preparationDoc, conflict, invalidScope, v.null()),
+  handler: async (ctx, args) => {
+    try {
+      validateScope(args);
+      text(args.stripeSubscriptionId);
+      text(args.providerApiVersion);
+    } catch {
+      return {
+        status: "rejected" as const,
+        reason: "invalid_scope" as const,
+        retryable: false as const,
+      };
+    }
+    const saved = await ctx.db
+      .query("balanceFundingPreparations")
+      .withIndex("by_account_subscription", (q) =>
+        q
+          .eq("accountId", args.accountId)
+          .eq("preparation.stripeSubscriptionId", args.stripeSubscriptionId),
+      )
+      .unique();
+    if (!saved) return null;
+    if (
+      saved.scopeKey !== args.scopeKey ||
+      saved.providerApiVersion !== args.providerApiVersion
+    )
+      return unavailable("identity_changed");
+    return saved;
+  },
+});

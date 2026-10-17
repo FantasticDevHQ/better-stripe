@@ -134,3 +134,37 @@ export const failBeforeStart = mutation({
     return { ...op, state: "failed" as const, failureCode: args.failureCode };
   },
 });
+
+import {
+  workflowRefFields,
+  phaseRefFields,
+  workflowStartResult,
+  phaseClaimResult,
+} from "./workflowValidators.js";
+import { safeStatus } from "./schema.js";
+import { claimProviderPhaseHandler } from "./workflowState.js";
+import {
+  startWorkflowHandler,
+  resumeWorkflowHandler,
+  cancelWorkflowHandler,
+} from "./workflowControl.js";
+export const startWorkflow = mutation({
+  args: { ...workflowRefFields, providerAction: v.string() },
+  returns: workflowStartResult,
+  handler: startWorkflowHandler,
+});
+export const resumeWorkflow = mutation({
+  args: workflowRefFields,
+  returns: workflowStartResult,
+  handler: resumeWorkflowHandler,
+});
+export const cancelWorkflow = mutation({
+  args: workflowRefFields,
+  returns: safeStatus,
+  handler: cancelWorkflowHandler,
+});
+export const claimProviderPhase = mutation({
+  args: phaseRefFields,
+  returns: phaseClaimResult,
+  handler: claimProviderPhaseHandler,
+});

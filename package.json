@@ -66,6 +66,7 @@
     "MIGRATION.md",
     "docs/read-contracts.md",
     "docs/billing-history.md",
+    "docs/subscription-payment-methods.md",
     "docs/invoice-payment-pages.md",
     "docs/checkout-session-pages.md",
     "docs/refund-context.md",

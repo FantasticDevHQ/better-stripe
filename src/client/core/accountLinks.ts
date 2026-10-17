@@ -182,16 +182,130 @@ export async function getAccountLinkWithStatus(
   return getOnboardingLink();
 }
 
+/** The connected account that owns the configuration and its customer data.
+ * Omit for platform scope. Hosts must authorize both this scope and the customer.
+ */
+type BillingPortalScope = { connectedAccountId?: string };
+
+export type CreateBillingPortalConfigurationOptions = BillingPortalScope & {
+  /** Host-owned allowlists, proration, cancellation, and branding policy. */
+  params: Stripe.BillingPortal.ConfigurationCreateParams;
+};
+export type RetrieveBillingPortalConfigurationOptions = BillingPortalScope & {
+  configurationId: string;
+};
+export type UpdateBillingPortalConfigurationOptions = BillingPortalScope & {
+  configurationId: string;
+  params: Stripe.BillingPortal.ConfigurationUpdateParams;
+};
+export type CreateBillingPortalSessionOptions = BillingPortalScope & {
+  /** Customer account opening the portal, distinct from connectedAccountId. */
+  stripeAccountId: string;
+  returnUrl: string;
+  /** Omit to use Stripe's default portal configuration. */
+  configurationId?: string;
+};
+
+export async function createBillingPortalConfiguration(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: CreateBillingPortalConfigurationOptions,
+): Promise<Stripe.BillingPortal.Configuration> {
+  try {
+    return opts.connectedAccountId !== undefined
+      ? await stripe.billingPortal.configurations.create(opts.params, {
+          stripeAccount: opts.connectedAccountId,
+        })
+      : await stripe.billingPortal.configurations.create(opts.params);
+  } catch (error) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      "Failed to create Billing Portal configuration",
+      error,
+    );
+  }
+}
+
+export async function retrieveBillingPortalConfiguration(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: RetrieveBillingPortalConfigurationOptions,
+): Promise<Stripe.BillingPortal.Configuration> {
+  try {
+    return opts.connectedAccountId !== undefined
+      ? await stripe.billingPortal.configurations.retrieve(
+          opts.configurationId,
+          {},
+          {
+            stripeAccount: opts.connectedAccountId,
+          },
+        )
+      : await stripe.billingPortal.configurations.retrieve(
+          opts.configurationId,
+        );
+  } catch (error) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      "Failed to retrieve Billing Portal configuration",
+      error,
+    );
+  }
+}
+
+export async function updateBillingPortalConfiguration(
+  stripe: Stripe,
+  _ctx: RunCtx,
+  opts: UpdateBillingPortalConfigurationOptions,
+): Promise<Stripe.BillingPortal.Configuration> {
+  try {
+    return opts.connectedAccountId !== undefined
+      ? await stripe.billingPortal.configurations.update(
+          opts.configurationId,
+          opts.params,
+          {
+            stripeAccount: opts.connectedAccountId,
+          },
+        )
+      : await stripe.billingPortal.configurations.update(
+          opts.configurationId,
+          opts.params,
+        );
+  } catch (error) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      "Failed to update Billing Portal configuration",
+      error,
+    );
+  }
+}
+
 export async function createBillingPortalSession(
   stripe: Stripe,
   _ctx: RunCtx,
-  opts: { stripeAccountId: string; returnUrl: string },
+  opts: CreateBillingPortalSessionOptions,
 ) {
-  const session = await stripe.billingPortal.sessions.create({
+  const params: Stripe.BillingPortal.SessionCreateParams = {
     customer_account: opts.stripeAccountId,
     return_url: opts.returnUrl,
-  });
-  return { url: session.url };
+    ...(opts.configurationId !== undefined
+      ? { configuration: opts.configurationId }
+      : {}),
+  };
+  try {
+    const session =
+      opts.connectedAccountId !== undefined
+        ? await stripe.billingPortal.sessions.create(params, {
+            stripeAccount: opts.connectedAccountId,
+          })
+        : await stripe.billingPortal.sessions.create(params);
+    return { url: session.url };
+  } catch (error) {
+    throwStripeError(
+      "STRIPE_API_ERROR",
+      "Failed to create Billing Portal session",
+      error,
+    );
+  }
 }
 
 export async function getCountrySpecs(

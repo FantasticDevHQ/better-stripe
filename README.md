@@ -694,10 +694,17 @@ changes cause an error instead of being overwritten. Provider errors are
 preserved. Never accept restoration records or account IDs from an unauthenticated
 browser as authority.
 
-Serialize changes per subscription in the host. Persist the operation identity
+The example now uses component-owned
+[`balanceFundingWorkflow`](docs/balance-funding-workflow.md) for preparation,
+apply, receipts and reconciliation. Its host adapter keeps consent and request
+references; it no longer writes a second financial operation ledger. Existing
+example installations should follow the
+[cutover runbook](docs/example-balance-funding-cutover.md) before retiring legacy
+records. The stateless methods above remain supported.
+
+When using those stateless methods, serialize changes per subscription in the host. Persist the operation identity
 before the provider call, reuse it after a timeout or host write failure, and use
-a new identity for each later enable/disable cycle. The example's durable pending
-operation prevents an opposite change from racing an unfinished operation; retry
+a new identity for each later enable/disable cycle. An unfinished operation must prevent an opposite change from racing it; retry
 the pending change first. Preserve the preparation through retries. Keys must be
 nonempty, contain no line breaks, and be at most 247 characters because the package
 adds phase suffixes. Stripe's idempotency retention window still applies.

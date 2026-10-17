@@ -520,14 +520,22 @@ renewals.
 ### Balance funding server adapter
 
 `BalancePaymentSource` and `useBalanceFunding` call host-owned authenticated
-callbacks. Their server adapter can now use the client's
-`prepareBalanceFunding` and `setBalanceFunding` operations. Persist the immutable
-restoration record and explicit consent before enabling, serialize operations per
-subscription, and retain request identities through retries. Opt-out restores the
-original method and types; it does not retry an unpaid invoice or automatically
-fall back to a card. The example demonstrates durable preparation and pending
-operation records in `storeBalanceFunding.ts` with a separate preview client.
-See the [README balance-funding workflow](../README.md#optional-balance-funded-subscriptions).
+callbacks. The example adapter uses `balanceFundingWorkflow.prepare` and `apply`;
+the component stores immutable restoration settings, operation versions, phase
+keys and receipts. The host keeps consent intents and schedules their first
+observer atomically. Retries reuse that intent and its original operation.
+
+The example reports pending or held state while verification is incomplete.
+Unknown provider results need reconciliation before another change. Opt-out
+restores the original method and types; it does not retry an unpaid invoice or
+automatically fall back to a card. The example's renewal fixture reads only
+verified, enabled, idle component funding. Demo personas must be replaced with
+session-derived authorization in production.
+
+See [durable balance funding](balance-funding-workflow.md) and the
+[example cutover runbook](example-balance-funding-cutover.md). The stateless
+`prepareBalanceFunding` and `setBalanceFunding` methods remain available for
+hosts that supply their own durable execution protocol.
 
 ## Dispute evidence uploads and onboarding navigation
 

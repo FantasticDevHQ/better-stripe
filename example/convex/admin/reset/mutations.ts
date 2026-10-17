@@ -15,6 +15,8 @@ export const clearAppDb = internalMutation({
       "sellerCosts",
       "storeCostBills",
       "storeBalanceFunding",
+      "storeBalanceRequests",
+      "storeBalanceMigrationRuns",
       "storePlanCatalog",
       "sandboxFixtureJobs",
       "sandboxFixtureResources",

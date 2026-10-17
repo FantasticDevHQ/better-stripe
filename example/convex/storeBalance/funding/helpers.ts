@@ -13,8 +13,30 @@ export const fields = {
   targetEnabled: v.optional(v.boolean()),
 };
 
+export const migrationLink = v.object({
+  accountId: v.string(),
+  scopeKey: v.string(),
+  preparationId: v.string(),
+  snapshot: v.string(),
+  state: v.union(
+    v.literal("imported"),
+    v.literal("active"),
+    v.literal("rolled_back"),
+  ),
+  operation: v.optional(
+    v.object({
+      accountId: v.string(),
+      scopeKey: v.string(),
+      operationId: v.string(),
+      version: v.number(),
+    }),
+  ),
+});
+
 export const doc = v.object({
   ...fields,
+  migrationPaused: v.optional(v.boolean()),
+  componentMigration: v.optional(migrationLink),
   _id: v.id("storeBalanceFunding"),
   _creationTime: v.number(),
 });

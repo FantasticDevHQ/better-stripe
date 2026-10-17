@@ -7,11 +7,22 @@ export const save = internalMutation({
   args: fields,
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (
+      await ctx.db
+        .query("storeBalanceMigrationRuns")
+        .withIndex("by_key", (q) => q.eq("key", "component-cutover"))
+        .unique()
+    )
+      throw new Error(
+        "Legacy balance funding starts are fenced by the cutover checkpoint.",
+      );
     const existing = await ctx.db
       .query("storeBalanceFunding")
       .withIndex("by_seller", (q) => q.eq("sellerId", args.sellerId))
       .first();
     if (existing) {
+      if (existing.migrationPaused || existing.componentMigration)
+        throw new Error("Legacy balance funding is paused for migration.");
       if (existing.subscriptionId === args.subscriptionId) return null;
       await ctx.db.replace("storeBalanceFunding", existing._id, args);
     } else await ctx.db.insert("storeBalanceFunding", args);
@@ -31,6 +42,15 @@ export const begin = internalMutation({
     v.null(),
   ),
   handler: async (ctx, args) => {
+    if (
+      await ctx.db
+        .query("storeBalanceMigrationRuns")
+        .withIndex("by_key", (q) => q.eq("key", "component-cutover"))
+        .unique()
+    )
+      throw new Error(
+        "Legacy balance funding starts are fenced by the cutover checkpoint.",
+      );
     if (args.enabled && !args.consent)
       throw new Error("Explicit consent is required.");
     const setting = await ctx.db
@@ -38,6 +58,8 @@ export const begin = internalMutation({
       .withIndex("by_seller", (q) => q.eq("sellerId", args.sellerId))
       .first();
     if (!setting) throw new Error("Balance preparation is missing.");
+    if (setting.migrationPaused)
+      throw new Error("Legacy balance funding is paused for migration.");
     if (setting.operationPending && setting.targetEnabled !== args.enabled)
       throw new Error(
         "Another balance funding change is pending; retry it first.",
@@ -76,6 +98,13 @@ export const finish = internalMutation({
     )
       throw new Error(
         "Balance funding operation changed; reconcile before completing.",
+      );
+    if (
+      setting.componentMigration &&
+      setting.componentMigration.state !== "rolled_back"
+    )
+      throw new Error(
+        "Funding migrated; reconcile the original component operation.",
       );
     await ctx.db.patch("storeBalanceFunding", setting._id, {
       enabled: args.enabled,

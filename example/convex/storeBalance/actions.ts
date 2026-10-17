@@ -1,12 +1,7 @@
 import { v } from "convex/values";
-
-import { action, env } from "../_generated/server";
-
+import { action } from "../_generated/server";
 import { internal } from "../_generated/api";
-
-import { balanceStripe } from "./stripe";
-
-import { assertTestModeStripeKey } from "../users/authorization";
+import { ownedBillingSubscription } from "./ownership";
 
 export const setFunding = action({
   args: {
@@ -16,91 +11,45 @@ export const setFunding = action({
   },
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    assertTestModeStripeKey(env.STRIPE_SECRET_KEY);
-    if (args.enabled && !args.consent)
+    if (args.enabled && args.consent !== true)
       throw new Error(
         "Authorize recurring balance payments before confirming.",
       );
-    const seller = await ctx.runQuery(
-      internal.storePlans.billing.internal.queries.getSeller,
+    const { seller, sub } = await ownedBillingSubscription(ctx, args.sellerId);
+    const legacy = await ctx.runQuery(
+      internal.storeBalance.funding.internal.queries.read,
+      { sellerId: args.sellerId },
+    );
+    if (legacy) {
+      if (legacy.componentMigration?.state === "rolled_back")
+        throw new Error("Compatibility rollback is active.");
+      if (
+        legacy.subscriptionId !== sub.id ||
+        (legacy.componentMigration &&
+          legacy.componentMigration.accountId !== seller.stripeAccountId)
+      )
+        throw new Error(
+          "Historical funding identity changed; reconcile before switching writers.",
+        );
+      if (legacy.componentMigration?.state !== "active") {
+        const migrated = await ctx.runAction(
+          internal.storeBalance.funding.internal.migrateActions.migrateSeller,
+          { sellerId: args.sellerId },
+        );
+        if (migrated.status !== "active")
+          throw new Error(
+            "Legacy funding needs receipt reconciliation before new changes.",
+          );
+      }
+    }
+    await ctx.runMutation(
+      internal.storeBalance.workflow.internal.requests.queue,
       {
         sellerId: args.sellerId,
-      },
-    );
-    if (!seller.stripeAccountId || !seller.storePlan)
-      throw new Error("Activate a store plan first.");
-    const sub = await balanceStripe.getSubscriptionFromStripe(ctx, {
-      stripeSubscriptionId: seller.storePlan.stripeSubscriptionId,
-    });
-    if (
-      sub.customer_account !== seller.stripeAccountId ||
-      sub.metadata.storeBilling !== "plan_v1" ||
-      sub.metadata.sellerId !== seller.sellerId
-    )
-      throw new Error("Subscription does not belong to this store.");
-    let setting = await ctx.runQuery(
-      internal.storeBalance.funding.internal.queries.read,
-      {
-        sellerId: seller.sellerId,
-      },
-    );
-    if (!setting || setting.subscriptionId !== sub.id) {
-      if (!args.enabled) return null;
-      const prep = await balanceStripe.prepareBalanceFunding(ctx, {
-        customerAccount: seller.stripeAccountId,
-        stripeSubscriptionId: sub.id,
-        consent: true,
-        idempotencyKey: `example_balance_prepare_${sub.id}`,
-      });
-      await ctx.runMutation(
-        internal.storeBalance.funding.internal.mutations.save,
-        {
-          sellerId: seller.sellerId,
-          subscriptionId: sub.id,
-          enabled: false,
-          paymentMethodId: prep.paymentMethodId,
-          previousPaymentMethodId: prep.previousPaymentMethodId ?? undefined,
-          previousPaymentMethodTypes:
-            prep.previousPaymentMethodTypes ?? undefined,
-          consentAt: Date.now(),
-        },
-      );
-      setting = await ctx.runQuery(
-        internal.storeBalance.funding.internal.queries.read,
-        {
-          sellerId: seller.sellerId,
-        },
-      );
-    }
-    if (!setting)
-      throw new Error("Balance payment settings could not be saved.");
-    const operation = await ctx.runMutation(
-      internal.storeBalance.funding.internal.mutations.begin,
-      {
-        sellerId: seller.sellerId,
+        accountId: seller.stripeAccountId!,
+        subscriptionId: sub.id,
         enabled: args.enabled,
-        consent: args.consent,
-      },
-    );
-    if (!operation) return null;
-    await balanceStripe.setBalanceFunding(ctx, {
-      preparation: {
-        customerAccount: seller.stripeAccountId,
-        stripeSubscriptionId: setting.subscriptionId,
-        paymentMethodId: setting.paymentMethodId,
-        previousPaymentMethodId: setting.previousPaymentMethodId ?? null,
-        previousPaymentMethodTypes: setting.previousPaymentMethodTypes ?? null,
-      },
-      enabled: args.enabled,
-      consent: args.consent,
-      idempotencyKey: operation.key,
-    });
-    await ctx.runMutation(
-      internal.storeBalance.funding.internal.mutations.finish,
-      {
-        sellerId: seller.sellerId,
-        enabled: args.enabled,
-        version: operation.version,
+        ...(args.consent ? { consent: args.consent } : {}),
       },
     );
     return null;

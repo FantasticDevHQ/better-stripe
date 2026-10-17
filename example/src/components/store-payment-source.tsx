@@ -27,6 +27,7 @@ export function StorePaymentSource({ sellerId }: { sellerId: Id<"users"> }) {
     scopeKey: sellerId,
     change: (args) => change({ sellerId, ...args }),
   });
+  const pending = busy || state?.status === "pending";
   return (
     <Card>
       <CardHeader>
@@ -52,7 +53,7 @@ export function StorePaymentSource({ sellerId }: { sellerId: Id<"users"> }) {
             (state.enabled ? (
               <Button
                 variant="outline"
-                disabled={busy}
+                disabled={pending}
                 onClick={() => void confirm(false)}
               >
                 Use saved payment method
@@ -70,13 +71,24 @@ export function StorePaymentSource({ sellerId }: { sellerId: Id<"users"> }) {
                   for recurring platform charges.
                 </label>
                 <Button
-                  disabled={!consent || busy}
+                  disabled={!consent || pending}
                   onClick={() => void confirm(true)}
                 >
-                  {busy ? "Saving…" : "Confirm balance payments"}
+                  {pending ? "Saving…" : "Confirm balance payments"}
                 </Button>
               </>
             ))}
+          {state?.status === "pending" && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Verifying payment source…
+            </p>
+          )}
+          {state?.status === "held" && (
+            <p role="alert" className="text-sm text-destructive">
+              Payment source needs reconciliation. Retry the same change to
+              verify its original operation.
+            </p>
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

@@ -158,6 +158,7 @@ for (const change of [
   "scaledQuantity",
   "schemaVersion",
   "quantity",
+  "noncanonicalQuantity",
   "plan",
   "unknown",
   "nestedUnknown",
@@ -171,6 +172,7 @@ for (const change of [
     if (change === "scaledQuantity") input.scaledQuantity = "121";
     if (change === "schemaVersion") input.schemaVersion = 2;
     if (change === "quantity") input.quantity = "1.21";
+    if (change === "noncanonicalQuantity") input.quantity = "1.20";
     if (change === "plan")
       input.binding = {
         ...prepared.binding,

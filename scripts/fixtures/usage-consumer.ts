@@ -118,7 +118,6 @@ export function startNativeUsageDelivery(
   return stripe.usage.startDelivery(ctx, options);
 }
 
-
 /** The documented prepared callback must typecheck against the packed facade. */
 export function recordAuthorizedUsage(
   stripe: BetterStripe,
@@ -131,7 +130,6 @@ export function recordAuthorizedUsage(
     stripe.usage.record(ctx, { event, subscription }),
   );
 }
-
 
 import type { UsageReconciliationOptions } from "@fantastic.dev/better-stripe/usage";
 export function readUsageStatus(

@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.58.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.57.0...v0.58.0) (2026-10-18)
+
+
+### Features
+
+* add atomic included usage and optional limits ([#333](https://github.com/FantasticDevHQ/better-stripe/issues/333)) ([3980483](https://github.com/FantasticDevHQ/better-stripe/commit/398048346056f5ca85fd0bfafa2fa4cceab40443))
+
 ## [0.57.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.56.0...v0.57.0) (2026-10-18)
 
 ### Features

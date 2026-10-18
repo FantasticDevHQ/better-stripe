@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.61.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.60.1...v0.61.0) (2026-10-18)
+
+### Features
+
+- **react:** reusable metered billing views for all three models ([#341](https://github.com/FantasticDevHQ/better-stripe/issues/341)) ([0eee6cc](https://github.com/FantasticDevHQ/better-stripe/commit/0eee6cc1a6d3ebd821b855a04f98cc017c6198f6))
+
 ## [0.60.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.60.0...v0.60.1) (2026-10-18)
 
 ### Bug Fixes

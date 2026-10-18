@@ -24,30 +24,44 @@ vi.mock("../../stripe/helpers", async () => {
             request: import("@fantastic.dev/better-stripe").RecoveryProviderRequest,
           ) => {
             provider.calls++;
+            const operation = await ctx.runQuery(
+              components.betterStripe.recoveryWorkflow.queries.snapshot,
+              {
+                accountId: request.accountId,
+                scopeKey: request.scopeKey,
+                currency: request.currency,
+                groupKey: request.groupKey,
+                operationId: request.operationId,
+                version: request.version,
+              },
+            );
+            if (!operation.allocation)
+              throw new Error("Missing actual original settlement allocation");
+            expect(operation.allocation).toMatchObject({
+              sourceChargeId: "ch_sale",
+              paymentIntentId: "pi_sale",
+              gross: 1000,
+              processingFee: 30,
+              platformNet: 20,
+              adjustmentAmount: 0,
+              currency: "usd",
+            });
+            expect(operation.allocation.transfers).toEqual([
+              {
+                destinationAccountId: "acct_store",
+                amount: 900,
+                role: "store",
+              },
+              {
+                destinationAccountId: "acct_affiliate",
+                amount: 50,
+                role: "affiliate",
+              },
+            ]);
             await ctx.runMutation(
               components.betterStripe.settlement.mutations
                 .reserveSettlementAllocation,
-              {
-                sourceChargeId: "ch_sale",
-                paymentIntentId: "pi_sale",
-                gross: 1000,
-                processingFee: 30,
-                platformNet: 20,
-                adjustmentAmount: 0,
-                currency: "usd",
-                transfers: [
-                  {
-                    destinationAccountId: "acct_store",
-                    amount: 900,
-                    role: "store",
-                  },
-                  {
-                    destinationAccountId: "acct_affiliate",
-                    amount: 50,
-                    role: "affiliate",
-                  },
-                ],
-              },
+              operation.allocation,
             );
             const earning = await ctx.runMutation(
               components.betterStripe.affiliateEarnings.mutations

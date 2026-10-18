@@ -26,6 +26,14 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.50.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.2...v0.50.3) (2026-10-18)
+
+
+### Documentation
+
+* move detailed reference guides out of README ([4aa27e0](https://github.com/FantasticDevHQ/better-stripe/commit/4aa27e0fbbc275ccbeed64ba6cba51e1c1e73a9e))
+* shorten README and stabilize documentation verification ([de46f55](https://github.com/FantasticDevHQ/better-stripe/commit/de46f55feed4286963e221096ed47eb07d4e6940))
+
 ## [0.50.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.1...v0.50.2) (2026-10-18)
 
 ### Documentation

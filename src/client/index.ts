@@ -1842,3 +1842,19 @@ export type {
   SubscriptionPaymentMethodOptions,
   SubscriptionPaymentMethodResult,
 } from "./billing/subscription-payment-method.js";
+
+export type {
+  UsageDeliveryRequest,
+  UsageDeliveryOutcome,
+  UsageDeliveryProviderOptions,
+} from "./usage/deliveryProvider.js";
+export type {
+  UsageDeliveryRef,
+  UsageDeliveryStatus,
+  UsageDeliveryStartOptions,
+} from "./usage/deliveryClient.js";
+
+export {
+  usageDeliveryArgs,
+  usageDeliveryResult,
+} from "./usage/deliveryProtocol.js";

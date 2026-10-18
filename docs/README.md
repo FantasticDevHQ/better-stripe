@@ -24,7 +24,7 @@ guide for your integration.
 - [SetupIntent recovery](setup-intent-recovery.md).
 - [Balance funding state](balance-funding-state.md) and [workflow](balance-funding-workflow.md).
 - [Example balance funding cutover](example-balance-funding-cutover.md).
-- [Metered usage investigation](metered-usage.md), provider comparison and acceptance requirements. Shared contracts, catalog provisioning and local usage acceptance are available; delivery and credit accounting are in progress.
+- [Metered usage investigation](metered-usage.md), provider comparison and acceptance requirements. Shared contracts, catalog provisioning and local usage acceptance are available; credit accounting is in progress.
 
 ## Marketplace, settlement, and recovery
 
@@ -60,3 +60,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 [Atomic usage ledger and scoped history](usage-ledger.md) describes acceptance and retention.
 
 [Native usage catalog](usage-catalog.md) covers provisioning, immutable versions and typed price observations.
+
+[Durable native delivery](usage-delivery.md) explains host actions, bounded retries, operational holds and asynchronous errors.

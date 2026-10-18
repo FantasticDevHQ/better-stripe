@@ -90,3 +90,30 @@ export async function integrateEachModel(
     reconcile,
   };
 }
+
+import { BetterStripe } from "@fantastic.dev/better-stripe";
+import { internalActionGeneric } from "convex/server";
+import {
+  usageDeliveryArgs,
+  usageDeliveryResult,
+  type UsageDeliveryStartOptions,
+} from "@fantastic.dev/better-stripe/usage";
+
+export function registerInternalUsageProvider(
+  stripe: BetterStripe,
+  resolveSecret: () => string | undefined,
+) {
+  return internalActionGeneric({
+    args: usageDeliveryArgs,
+    returns: usageDeliveryResult,
+    handler: (ctx, request) =>
+      stripe.usage.deliver(ctx, request, { stripeSecretKey: resolveSecret() }),
+  });
+}
+export function startNativeUsageDelivery(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["startDelivery"]>[0],
+  options: UsageDeliveryStartOptions,
+) {
+  return stripe.usage.startDelivery(ctx, options);
+}

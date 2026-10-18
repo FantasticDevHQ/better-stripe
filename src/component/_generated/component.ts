@@ -8454,6 +8454,308 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    usageDelivery: {
+      mutations: {
+        hold: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        recordErrorReport: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            livemode: boolean;
+            meterId?: string;
+            providerEventId: string;
+            samples: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              identifier: string;
+            }>;
+            stripeAccountId: string;
+            truncated: boolean;
+          },
+          { matched: number; truncated: boolean; unattributed: number },
+          Name
+        >;
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        start: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            definitionVersion: 1;
+            eventId: string;
+            provider: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            event: {
+              _creationTime: number;
+              _id: string;
+              acceptedAt: number;
+              identity: string;
+              occurredAt: number;
+              recordJson: string;
+              reservationId?: string;
+              scopeKey: string;
+              subscriptionJson: string;
+            };
+            outbox: {
+              _creationTime: number;
+              _id: string;
+              attempts: number;
+              definitionVersion?: 1;
+              dispatch?: string;
+              eventId: string;
+              firstSendAt?: number;
+              held?: boolean;
+              leaseUntil?: number;
+              nextAttemptAt: number;
+              provider?: string;
+              providerIdentifier: string;
+              reason?:
+                | "rate_limited"
+                | "provider_unavailable"
+                | "provider_outcome_unknown"
+                | "provider_rejected"
+                | "retry_exhausted"
+                | "delivery_window_expired"
+                | "scope_busy"
+                | "administrative_hold";
+              receipt?: { created: number; identifier: string };
+              scopeKey: string;
+              state:
+                | "queued"
+                | "sending"
+                | "provider_accepted"
+                | "rejected"
+                | "unknown"
+                | "held";
+              workflowId?: string;
+            };
+          },
+          Name
+        >;
+      };
+    };
     webhooks: {
       mutations: {
         insertWebhookEvent: FunctionReference<

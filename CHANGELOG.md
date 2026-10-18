@@ -28,10 +28,9 @@
 
 ## [0.59.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.58.0...v0.59.0) (2026-10-18)
 
-
 ### Features
 
-* add auditable usage corrections and invoice adjustment evidence ([#335](https://github.com/FantasticDevHQ/better-stripe/issues/335)) ([6b0ec3a](https://github.com/FantasticDevHQ/better-stripe/commit/6b0ec3adbe87169887afef7ba523644ff1b8c1a2))
+- add auditable usage corrections and invoice adjustment evidence ([#335](https://github.com/FantasticDevHQ/better-stripe/issues/335)) ([6b0ec3a](https://github.com/FantasticDevHQ/better-stripe/commit/6b0ec3adbe87169887afef7ba523644ff1b8c1a2))
 
 ## [0.58.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.57.0...v0.58.0) (2026-10-18)
 

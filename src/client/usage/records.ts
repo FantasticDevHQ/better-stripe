@@ -7,7 +7,7 @@ import {
   type UsagePlan,
 } from "./contracts.js";
 
-const scopeSchema = z.strictObject({
+export const scopeSchema = z.strictObject({
   stripeAccountId: z.string().regex(/^acct_[a-zA-Z0-9]+$/),
   customerAccount: z.string().regex(/^acct_[a-zA-Z0-9]+$/),
   meterId: z.string().regex(/^mtr_[a-zA-Z0-9_]+$/),

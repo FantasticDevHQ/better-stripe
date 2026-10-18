@@ -56,3 +56,5 @@ covers sandbox configuration, checkout comparisons, and test flows.
 
 Start with the [native Stripe setup guide](metering-setup.md), then read the
 [shared contracts and sandbox evidence](metered-usage.md).
+
+[Atomic usage ledger and scoped history](usage-ledger.md) describes acceptance and retention.

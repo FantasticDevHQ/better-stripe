@@ -62,3 +62,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 [Native usage catalog](usage-catalog.md) covers provisioning, immutable versions and typed price observations.
 
 [Durable native delivery](usage-delivery.md) explains host actions, bounded retries, operational holds and asynchronous errors.
+
+[Usage observations and reconciliation](usage-observations.md) covers exact summaries, paginated audit history, native freshness and invoice observations.

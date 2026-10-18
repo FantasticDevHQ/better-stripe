@@ -118,6 +118,7 @@ export function startNativeUsageDelivery(
   return stripe.usage.startDelivery(ctx, options);
 }
 
+
 /** The documented prepared callback must typecheck against the packed facade. */
 export function recordAuthorizedUsage(
   stripe: BetterStripe,
@@ -129,4 +130,24 @@ export function recordAuthorizedUsage(
   return authorizeUsageRecord(ctx, policy, input, (event) =>
     stripe.usage.record(ctx, { event, subscription }),
   );
+}
+
+
+import type { UsageReconciliationOptions } from "@fantastic.dev/better-stripe/usage";
+export function readUsageStatus(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["getSummary"]>[0],
+  request: UsageReconciliationOptions,
+) {
+  return stripe.usage.getReconciliation(ctx, request);
+}
+export function readNativeInvoice(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["readInvoiceUsage"]>[0],
+  request: UsageReconciliationOptions & { invoiceId?: string },
+  resolveSecret: () => string | undefined,
+) {
+  return stripe.usage.readInvoiceUsage(ctx, request, {
+    stripeSecretKey: resolveSecret(),
+  });
 }

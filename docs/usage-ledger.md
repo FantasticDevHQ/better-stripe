@@ -18,7 +18,8 @@ const receipt = await authorizeUsageRecord(ctx, policy, serverEvent, (event) =>
 The facade accepts strict raw events and the complete canonical prepared record
 returned by `authorizeUsageRecord` or `prepareUsageRecord`. Prepared identity,
 schema version and quantity scaling are validated against a fresh canonical
-preparation; forged, partial or unknown fields reject before ledger acceptance.
+preparation; inconsistent derived values, partial prepared shapes and unknown
+fields reject before ledger acceptance.
 Prepared data does not replace host scope or activity authorization.
 
 Acceptance writes an immutable event, durable outbox row and retained-scope counter

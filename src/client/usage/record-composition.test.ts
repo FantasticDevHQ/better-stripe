@@ -121,6 +121,38 @@ it("preserves raw strict validation and authorization denial before ledger accep
   expect(f.fetch).not.toHaveBeenCalled();
 });
 
+it("requires activity approval after successful scope authorization before composing ledger acceptance", async () => {
+  const f = fixture();
+  const order: string[] = [];
+  await expect(
+    f.t.run((ctx) =>
+      authorizeUsageRecord(
+        ctx,
+        {
+          authorize: async () => {
+            order.push("scope");
+          },
+          authorizeActivity: async () => {
+            order.push("activity");
+            throw new Error("Activity denied");
+          },
+        },
+        f.event,
+        (event) => {
+          order.push("record");
+          return f.stripe.usage.record(ctx, {
+            event,
+            subscription: f.subscription,
+          });
+        },
+      ),
+    ),
+  ).rejects.toThrow("Activity denied");
+  expect(order).toEqual(["scope", "activity"]);
+  expect((await f.read()).events).toEqual([]);
+  expect(f.fetch).not.toHaveBeenCalled();
+});
+
 for (const change of [
   "identity",
   "scaledQuantity",

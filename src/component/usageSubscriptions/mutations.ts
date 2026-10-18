@@ -1,3 +1,4 @@
+import { closureByStripeId } from "../accountClosure/helpers.js";
 import { abandonEnrollment } from "./abandonment.js";
 import { retireEnrollment } from "./retirement.js";
 import { appendSnapshot, saveView } from "./history.js";
@@ -20,6 +21,13 @@ export const prepare = mutation({
       (args.method === "checkout")
     )
       throw new Error("Subscription creation method conflict");
+    for (const account of new Set([
+      terms.meters[0].scope.stripeAccountId,
+      terms.meters[0].scope.customerAccount,
+    ])) {
+      if (await closureByStripeId(ctx, account))
+        throw new Error("Account closure prevents managed usage enrollment");
+    }
     const key = await intentKey(subscriptionScope(terms), terms.requestId);
     const prior = await ctx.db
       .query("usageSubscriptionIntents")
@@ -46,6 +54,8 @@ export const prepare = mutation({
       await ctx.db.insert("usageSubscriptionLocks", {
         key: lockKey,
         intentKey: key,
+        stripeAccountId: scope.stripeAccountId,
+        customerAccount: scope.customerAccount,
       });
     }
     const id = await ctx.db.insert("usageSubscriptionIntents", {

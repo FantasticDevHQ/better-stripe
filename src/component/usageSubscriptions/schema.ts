@@ -28,7 +28,12 @@ export const intentsTable = defineTable(intentFields)
 export const locksTable = defineTable({
   key: v.string(),
   intentKey: v.string(),
-}).index("by_key", ["key"]);
+  stripeAccountId: v.string(),
+  customerAccount: v.string(),
+})
+  .index("by_key", ["key"])
+  .index("by_realm", ["stripeAccountId"])
+  .index("by_payer", ["customerAccount"]);
 export const historyFields = {
   intentKey: v.string(),
   kind: v.union(

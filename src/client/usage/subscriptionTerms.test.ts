@@ -139,7 +139,20 @@ it("uses the same subscription contract for all three models without mixing curr
 });
 
 it("rejects native collection-policy drift instead of hiding an automatic charge policy", () => {
-  const sub = { ...nativeSubscription(), collection_method: "charge_automatically", days_until_due: null, default_payment_method: "pm_other" };
+  const sub = {
+    ...nativeSubscription(),
+    collection_method: "charge_automatically",
+    days_until_due: null,
+    default_payment_method: "pm_other",
+  };
   expect(() => subscriptionView(sub, subscriptionTerms(request))).toThrow();
-  expect(subscriptionView(nativeSubscription(), subscriptionTerms(request))).toMatchObject({ collection: { method: "send_invoice", daysUntilDue: 30, defaultPaymentMethod: null } });
+  expect(
+    subscriptionView(nativeSubscription(), subscriptionTerms(request)),
+  ).toMatchObject({
+    collection: {
+      method: "send_invoice",
+      daysUntilDue: 30,
+      defaultPaymentMethod: null,
+    },
+  });
 });

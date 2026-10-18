@@ -179,10 +179,16 @@ There is no managed immediate-delete, mid-cycle price swap, automatic proration,
 credit conversion or account-closure shortcut. Native mid-cycle changes can omit
 old or late usage, including in flexible billing. Use period-end cancellation,
 drain delivery and resolve reservations, then observe the final period invoice.
+Account closure preparation checks indexed enrollment locks for both the payer
+and the billing realm, including retries. Signup checks pending and completed
+closures before reserving enrollment. Both checks run in their respective
+transactions, so concurrent closure and signup cannot both proceed. Retirement
+or verified abandonment releases the locks.
+
 An account closure must follow the same closeout process before deactivating its
 customer configuration or credentials. External changes are detected on refresh;
-they never rewrite retained events. Existing generic APIs can still perform their
-own operations; they do not acquire these managed safeguards.
+they never rewrite retained events. Generic subscription APIs still require host
+policy for lifecycle operations. Account closure uses the enrollment guard above.
 
 After native cancellation, a finalized cycle invoice covering the closed period,
 and no pending local sends, validation errors, reservations or cancellation

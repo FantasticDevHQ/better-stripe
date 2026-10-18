@@ -128,3 +128,78 @@ it("serializes period-end cancellation commands and rejects changed command repl
     }),
   ).rejects.toThrow(/pending/i);
 });
+
+const close = makeFunctionReference<"mutation">(
+  "accountClosure/mutations:prepare",
+);
+it("blocks payer and billing-realm closure while an enrollment owns usage locks, including closure retries", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(prepare, {
+    termsJson: JSON.stringify(terms),
+    method: "direct",
+  });
+  for (const stripeAccountId of ["acct_buyer", "acct_platform"]) {
+    await expect(t.mutation(close, { stripeAccountId })).rejects.toThrow(
+      /managed usage/i,
+    );
+    await t.run(async (ctx) => {
+      await ctx.db.insert("accountClosures", {
+        stripeAccountId,
+        state: "pending",
+      });
+    });
+    await expect(t.mutation(close, { stripeAccountId })).rejects.toThrow(
+      /managed usage/i,
+    );
+  }
+});
+
+it("blocks new and replayed signup after payer or realm closure preparation", async () => {
+  for (const stripeAccountId of ["acct_buyer", "acct_platform"]) {
+    for (const state of ["pending", "closed"] as const) {
+      const t = convexTest(schema, modules);
+      await t.run(async (ctx) => {
+        await ctx.db.insert("accountClosures", { stripeAccountId, state });
+      });
+      await expect(
+        t.mutation(prepare, {
+          termsJson: JSON.stringify(terms),
+          method: "direct",
+        }),
+      ).rejects.toThrow(/account closure/i);
+    }
+  }
+  const t = convexTest(schema, modules);
+  await t.mutation(prepare, {
+    termsJson: JSON.stringify(terms),
+    method: "direct",
+  });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("accountClosures", {
+      stripeAccountId: "acct_buyer",
+      state: "pending",
+    });
+  });
+  await expect(
+    t.mutation(prepare, { termsJson: JSON.stringify(terms), method: "direct" }),
+  ).rejects.toThrow(/account closure/i);
+});
+
+it("allows closure after retirement releases enrollment locks and keeps unrelated accounts independent", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(prepare, {
+    termsJson: JSON.stringify(terms),
+    method: "direct",
+  });
+  expect(
+    await t.mutation(close, { stripeAccountId: "acct_unrelated" }),
+  ).toHaveProperty("closure");
+  await t.run(async (ctx) => {
+    for (const lock of await ctx.db.query("usageSubscriptionLocks").collect()) {
+      await ctx.db.delete("usageSubscriptionLocks", lock._id);
+    }
+  });
+  expect(
+    await t.mutation(close, { stripeAccountId: "acct_buyer" }),
+  ).toHaveProperty("closure");
+});

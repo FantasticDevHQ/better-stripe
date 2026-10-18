@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.50.1",
+  "version": "0.50.2",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -85,6 +85,17 @@
     "docs/releasing.md",
     "docs/release-handoff.md",
     "docs/setup-intent-recovery.md",
+    "docs/metered-usage.md",
+    "docs/README.md",
+    "docs/overview.md",
+    "docs/client-api.md",
+    "docs/webhooks.md",
+    "docs/marketplace.md",
+    "docs/react-api.md",
+    "docs/testing.md",
+    "docs/configuration.md",
+    "docs/architecture.md",
+    "docs/development.md",
     "docs/payout-revision-migration.md"
   ],
   "scripts": {

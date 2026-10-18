@@ -146,10 +146,25 @@ export function verifyMeter(
     meter.customer_mapping.event_payload_key !== "stripe_customer_id" ||
     meter.value_settings.event_payload_key !== "value" ||
     meter.event_time_window !== null ||
+    !["active", "inactive"].includes(meter.status) ||
     (active && meter.status !== "active")
   )
     throw new UsageCatalogError(
       "incompatible_terms",
       "Native meter has incompatible immutable terms or status",
     );
+}
+
+export function meterObservation(meter: Stripe.Billing.Meter) {
+  return {
+    type: "meter",
+    id: meter.id,
+    eventName: meter.event_name,
+    displayName: meter.display_name,
+    active: meter.status === "active",
+    livemode: meter.livemode,
+    aggregation: meter.default_aggregation.formula,
+    customerPayloadKey: meter.customer_mapping.event_payload_key,
+    valuePayloadKey: meter.value_settings.event_payload_key,
+  };
 }

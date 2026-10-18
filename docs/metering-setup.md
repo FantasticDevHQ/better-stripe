@@ -182,3 +182,5 @@ Primary references:
 - [Stripe meter event API](https://docs.stripe.com/api/billing/meter-event/create)
 - [Stripe billing credits](https://docs.stripe.com/billing/subscriptions/usage-based/billing-credits)
 - [Metronome quickstart](https://docs.metronome.com/guides/get-started/api-quickstart)
+
+Use the [native catalog guide](usage-catalog.md) to provision versioned meters and prices through BetterStripe.

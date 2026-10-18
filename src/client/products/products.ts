@@ -1,3 +1,4 @@
+import { isFixedPrice } from "./fixedPrice.js";
 import type Stripe from "stripe";
 import { idempotencyOptions } from "../core/idempotency.js";
 
@@ -289,6 +290,7 @@ export async function syncAllProducts(
   let pricesSynced = 0;
   const productCache = new Map<string, { _id: string } | null>();
   for await (const price of stripe.prices.list({ limit: 100 })) {
+    if (!isFixedPrice(price)) continue;
     try {
       const stripeProductId =
         typeof price.product === "string" ? price.product : "";

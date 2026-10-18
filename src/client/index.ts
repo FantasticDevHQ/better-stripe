@@ -1,3 +1,10 @@
+export { UsageCatalogError } from "./usage/catalogTypes.js";
+export type {
+  UsageCatalogScope,
+  UsageMeterOptions,
+  UsagePriceOptions,
+} from "./usage/catalogTypes.js";
+export type { UsagePriceBinding } from "./usage/catalogRead.js";
 import * as setupIntentRead from "./billing/setup-intent-read.js";
 import { UsageLedgerClient } from "./usage/client.js";
 export type { RecordUsageOptions } from "./usage/client.js";

@@ -2,6 +2,7 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 export const kind = v.union(v.literal("meter"), v.literal("price"));
 export const fields = {
+  observedAt: v.optional(v.number()),
   scopeKey: v.string(),
   kind,
   key: v.string(),

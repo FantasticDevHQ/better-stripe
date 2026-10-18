@@ -8376,6 +8376,84 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    usageCatalog: {
+      mutations: {
+        complete: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            kind: "meter" | "price";
+            observationJson: string;
+            providerId: string;
+            scopeKey: string;
+          },
+          null,
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            kind: "meter" | "price";
+            scopeKey: string;
+            termsJson: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          { key: string; kind: "meter" | "price"; scopeKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        getByProvider: FunctionReference<
+          "query",
+          "internal",
+          { kind: "meter" | "price"; providerId: string; scopeKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          } | null,
+          Name
+        >;
+      };
+    };
     webhooks: {
       mutations: {
         insertWebhookEvent: FunctionReference<

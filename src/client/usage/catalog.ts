@@ -3,6 +3,7 @@ import type { Component, RunCtx } from "../helpers.js";
 import {
   UsageCatalogError,
   verifyMeter,
+  meterObservation,
   meterTerms,
   meterKey,
   verifyRealm,
@@ -20,19 +21,6 @@ export type {
 } from "./catalogTypes.js";
 export { ensureUsagePrice } from "./catalogPrices.js";
 
-function observation(meter: Stripe.Billing.Meter) {
-  return {
-    type: "meter",
-    id: meter.id,
-    eventName: meter.event_name,
-    displayName: meter.display_name,
-    active: meter.status === "active",
-    livemode: meter.livemode,
-    aggregation: meter.default_aggregation.formula,
-    customerPayloadKey: meter.customer_mapping.event_payload_key,
-    valuePayloadKey: meter.value_settings.event_payload_key,
-  };
-}
 export async function ensureUsageMeter(
   stripe: Stripe,
   component: Component,
@@ -59,7 +47,13 @@ export async function ensureUsageMeter(
         "incompatible_terms",
         "Native meter identity changed",
       );
-    await completeCatalog(component, ctx, row, pinned.id, observation(pinned));
+    await completeCatalog(
+      component,
+      ctx,
+      row,
+      pinned.id,
+      meterObservation(pinned),
+    );
     return pinned;
   }
   let match: Stripe.Billing.Meter | undefined;
@@ -118,6 +112,6 @@ export async function ensureUsageMeter(
       "incompatible_terms",
       "Native meter identity changed",
     );
-  await completeCatalog(component, ctx, row, match.id, observation(match));
+  await completeCatalog(component, ctx, row, match.id, meterObservation(match));
   return match;
 }

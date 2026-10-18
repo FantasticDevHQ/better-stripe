@@ -72,6 +72,7 @@ export const complete = mutation({
     await ctx.db.patch("usageCatalog", row._id, {
       providerId: args.providerId,
       observationJson: args.observationJson,
+      observedAt: Math.floor(Date.now() / 1000),
     });
     return null;
   },

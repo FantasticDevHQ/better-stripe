@@ -12,6 +12,7 @@ export type { RecordUsageOptions } from "./usage/client.js";
 export type {
   SetupIntentReadOptions,
   SetupIntentObservation,
+  SetupIntentObservationStatus,
 } from "./billing/setup-intent-read.js";
 import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
 import type {

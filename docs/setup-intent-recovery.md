@@ -18,6 +18,13 @@ The two authorization helpers above belong to the host. They must check the enab
 
 The SDK copies all four primitive selectors before its first await. The host user ID remains a nonempty opaque string, matching existing provisioning. It is compared exactly and is not trimmed or given an invented URL-identifier length limit. It resolves the exact component account with `requireUnique: true`, rejects absent or foreign ownership, and makes one exact platform-realm GET. The result must agree with the original ID, V2 `customer_account`, `metadata.userId` and usage. This matches the platform realm of `createSetupIntent`; it does not infer a connected-account realm or supply host authorization. Provider errors propagate and mismatched observations are rejected.
 
+The exported `SetupIntentObservationStatus` type is the closed union
+`requires_payment_method | requires_confirmation | requires_action | processing | canceled | succeeded`.
+A single runtime allowlist and type guard qualify this union. Unknown or malformed
+provider statuses fail the read instead of widening the public result to Stripe's
+open status type. Hosts can assign `observation.status` directly to a matching
+six-literal Convex DTO without a cast or a second projection.
+
 The narrow result contains `setupIntentId`, `customerAccount`, `usage`, supported `status` and `observedAt` in Unix milliseconds. A transient `clientSecret` is included only for `requires_payment_method`, `requires_confirmation` or `requires_action`; those states require a nonempty secret. `processing`, `canceled` and `succeeded` omit it. Never persist or log the secret, put it in analytics, or expose it outside the authenticated original request. The SDK does not return the raw provider object, metadata, card details or payment method.
 
 A host may resume the original public `SaveCard` confirmation through its authenticated callbacks and refresh the reactive payment-method list only after a qualified `succeeded` observation. A setup observation does not change an account-wide or subscription default. The host still owns redirect routing, reload correlation, stale-form disposal, translated errors and consent policy. The tagged Vite dashboard's tokenization/attach example is not an authenticated SetupIntent return route; its maintained callback must use the server authorization pattern above before adopting this read.

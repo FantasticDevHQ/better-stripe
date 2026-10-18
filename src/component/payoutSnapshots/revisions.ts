@@ -1,9 +1,10 @@
+import { journalHead, appendRevision } from "../payoutRevisionJournal/state.js";
 import type { Infer } from "convex/values";
 import type { riskKind } from "./schema.js";
 import type { Triggers } from "convex-helpers/server/triggers";
 import type { DataModel, Doc } from "../_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "../_generated/server.js";
-import { addSummaryAmounts as add } from "../earnings/arithmetic.js";
+import { bumpLegacyRevision } from "./legacyRevisionWriter.js";
 import {
   transferFingerprint,
   payoutClaimFingerprint,
@@ -12,6 +13,14 @@ export async function financialRevision(
   ctx: QueryCtx | MutationCtx,
   accountId: string,
 ) {
+  const canonical = await journalHead(ctx, accountId);
+  if (canonical)
+    return canonical.financialPresent
+      ? {
+          revision: canonical.revision,
+          riskRevision: canonical.financialRiskRevision,
+        }
+      : { revision: 0, riskRevision: 0 };
   const row = await ctx.db
     .query("payoutFinancialRevisions")
     .withIndex("by_account", (q) => q.eq("accountId", accountId))
@@ -23,6 +32,10 @@ export async function riskRevision(
   ctx: QueryCtx | MutationCtx,
   accountId: string,
 ) {
+  const canonical = await journalHead(ctx, accountId, true);
+  if (canonical) return canonical.riskRevision;
+  if (await journalHead(ctx, accountId))
+    throw new Error("Canonical payout revision journal has no risk fence.");
   const risk = await ctx.db
     .query("payoutRiskRevisions")
     .withIndex("by_account", (q) => q.eq("accountId", accountId))
@@ -38,38 +51,17 @@ async function bump(
   key: string,
   removed = false,
 ) {
-  const row = await ctx.db
-    .query("payoutFinancialRevisions")
-    .withIndex("by_account", (q) => q.eq("accountId", accountId))
-    .unique();
-  const fence = await ctx.db
-    .query("payoutRiskRevisions")
-    .withIndex("by_account", (q) => q.eq("accountId", accountId))
-    .unique();
-  if (row && fence && row.riskRevision !== fence.riskRevision)
-    throw new Error("Financial risk revisions disagree.");
-  const next = {
-    revision: add(row?.revision ?? 0, 1),
-    riskRevision: add(
-      fence?.riskRevision ?? row?.riskRevision ?? 0,
-      risk ? 1 : 0,
-    ),
-  };
-  if (row) await ctx.db.patch("payoutFinancialRevisions", row._id, next);
-  else await ctx.db.insert("payoutFinancialRevisions", { accountId, ...next });
-  if (!fence)
-    await ctx.db.insert("payoutRiskRevisions", {
-      accountId,
-      riskRevision: next.riskRevision,
-    });
-  else if (risk)
-    await ctx.db.patch("payoutRiskRevisions", fence._id, {
-      riskRevision: next.riskRevision,
-    });
+  const canonical = await journalHead(ctx, accountId);
+  let riskCounter: number;
+  if (canonical)
+    riskCounter = (await appendRevision(ctx, canonical, risk)).riskRevision;
+  else {
+    riskCounter = await bumpLegacyRevision(ctx, accountId, risk);
+  }
   if (risk)
     await ctx.db.insert("payoutRiskEvents", {
       accountId,
-      riskRevision: next.riskRevision,
+      riskRevision: riskCounter,
       kind,
       key,
       ...(removed ? { removed: true } : {}),

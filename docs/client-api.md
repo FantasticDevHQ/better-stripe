@@ -584,3 +584,9 @@ This does not establish customer-only preview eligibility for another account.
 See the [sandbox setup findings](accounts-v2-preview.md#connect-sandbox-setup-findings-2026-10-15),
 [authentication and reuse results](react-workflows.md#live-authentication-and-reuse-results-2026-10-15),
 and [uploaded screenshots and provider records](https://github.com/FantasticDevHQ/better-stripe/pull/166#issuecomment-6185124292).
+
+## Reversal history and revision maintenance
+
+`stripe.reversalObservations` reads original claimed-slice history and maintains a bounded diagnostic index. Its physical operation references survive release/deletion and distinguish reuse of a business operation ID. Exact bucket/owner pages, original/latest payloads and generation-aware continuation remain unknown coverage. These methods do not execute reversals, certify current ownership or authorize closure. See [financial observations](financial-observations.md#claimed-reversal-history).
+
+`stripe.payoutRevisionMigration` exposes trusted-host `activateAccount`, `begin`, `resume`, `get` and `results`. Existing destinations keep legacy revision authority until explicitly activated. Activation and inventory are bounded storage maintenance, with held outcomes for ambiguous or unrepresentable legacy authority. Installing the package does not run a migration. See the [migration guide](payout-revision-migration.md) before relying on the tested large-operation path or changing component versions.

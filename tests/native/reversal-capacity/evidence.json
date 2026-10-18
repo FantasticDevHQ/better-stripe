@@ -1,0 +1,1325 @@
+{
+  "date": "2026-10-18",
+  "publishedBaseline": "0.50.1",
+  "baseCommit": "4ec8cb170235921b966b164d37077e6470bfda74",
+  "backend": "precompiled-2026-10-10-72ce13c",
+  "providerRequests": 0,
+  "limitsChanged": false,
+  "packageSha256": "59714c27cc5c1b57465c195fa68cd7343531c74ae7efdfdd8c83b4e94977a415",
+  "checks": {
+    "bts-230-current-baseline-proof": {
+      "host": "/tmp/native-bts230-ed6f16a1c0af",
+      "statePath": "/tmp/native-bts230-ed6f16a1c0af/state",
+      "package": "0.50.1",
+      "providerCalls": 0,
+      "seed": [
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        }
+      ],
+      "rollback": [
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        }
+      ],
+      "claim": {
+        "status": "error",
+        "errorMessage": "[Request ID: bb8ac6765d101c4a] Server Error\nUncaught Error: Too many reads in a single function execution (limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\n    at async replaceContribution (../../node_modules/.pnpm/@fantastic.dev+better-stripe@0.50.1_convex@1.46.0_react@19.3.0__react-dom@19.3.0_react@19.3.0__react@19.3.0/node_modules/@fantastic.dev/better-stripe/src/component/earnings/pairedAdjustment.ts:57:28)\n    at async <anonymous> (../../node_modules/.pnpm/@fantastic.dev+better-stripe@0.50.1_convex@1.46.0_react@19.3.0__react-dom@19.3.0_react@19.3.0__react@19.3.0/node_modules/@fantastic.dev/better-stripe/src/component/earnings/triggers.ts:85:1)\n    at async <anonymous> (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:220:13)\n    at async <anonymous> (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:236:12)\n    at async withLock [as withLock] (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:39:8)\n    at async _execThenTrigger (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:231:12)\n\n    at async handler (../convex/capacity230.ts:4:263)\n",
+        "logLines": [
+          "[ERROR] [Error: Too many reads in a single function execution (limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.]",
+          "[WARN] Function execution took a long time. (maximum duration: 1s, actual duration: 861.725555ms)."
+        ]
+      },
+      "result": "PUBLISHED_0501_NATIVE_1000_DISTINCT_READ_LIMIT_RED_AND_FULL_ROLLBACK_VERIFIED"
+    },
+    "bts-230-candidate-rollback-proof": {
+      "providerCalls": 0,
+      "capacityAccepted": false,
+      "rollbackTables": {
+        "transfers": 1000,
+        "currencyTotals": 1000,
+        "payoutFinancialRevisions": 1000,
+        "payoutRiskRevisions": 1000,
+        "payoutRiskEvents": 0,
+        "transferReversalOps": 0,
+        "financialTransferObservations": 1000
+      },
+      "activatedBaselinesPreserved": 1000,
+      "result": "ALL_FAILED_NATIVE_CANDIDATE_CLAIMS_ROLLED_BACK_1000_ORIGINAL_RECORDS_EXACT"
+    },
+    "bts-230-native-parity-proof": {
+      "providerCalls": 0,
+      "originalCount": 1000,
+      "tables": {
+        "transfers": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 3565
+        },
+        "currencyTotals": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutFinancialRevisions": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutRiskRevisions": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutRiskEvents": {
+          "originalRowsUnchanged": 0,
+          "totalRows": 3630
+        },
+        "transferReversalOps": {
+          "originalRowsUnchanged": 0,
+          "totalRows": 2
+        },
+        "financialTransferObservations": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 3565
+        }
+      },
+      "journalBaselineAndTwoExactBumps": 3000,
+      "result": "ORIGINAL_PHYSICAL_IDS_SOURCE_BYTES_TOTALS_LEGACY_COUNTERS_TRANSFER_OBSERVATIONS_AND_EXACT_RISK_EVENTS_PRESERVED",
+      "transferComparison": "All original transfer fields match exactly except the exercised reversalClaimedAmount field, which is verified zero and may have changed from absent to explicitly persisted zero. Totals, frozen legacy counters and prior observation records are compared exactly."
+    },
+    "bts-230-native-occ-proof": {
+      "providerCalls": 0,
+      "cases": [
+        {
+          "kind": "positive",
+          "probe": {
+            "risk": 0.0
+          },
+          "writer": {
+            "amount": 7.0
+          },
+          "telemetry": [
+            {
+              "identifier": "occ230:funding",
+              "requestId": "673a411ec99a2097",
+              "executionId": "d2d20e73-995f-4c12-aab1-4dec2bf538a5",
+              "executionTime": 0.015809167,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "25c60b0413d2ebb6",
+              "executionId": "3d84ae32-8ca2-4645-9722-d5662e37ec9e",
+              "executionTime": 0.319041916,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            }
+          ]
+        },
+        {
+          "kind": "risk",
+          "probe": {
+            "risk": 1.0
+          },
+          "writer": {
+            "amount": 4.0
+          },
+          "telemetry": [
+            {
+              "identifier": "occ230:funding",
+              "requestId": "751f77e9153a1dfc",
+              "executionId": "88769fc1-ffd2-4bc0-b9b4-64896f243d7a",
+              "executionTime": 0.014002125,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "0f7935cee3fdbd0a",
+              "executionId": "beedf7ba-cc80-405b-9865-aa5f3a67c40d",
+              "executionTime": 0.218743416,
+              "occInfo": {
+                "tableName": "payoutRevisionJournal",
+                "documentId": "ss76j8m2r0f2g10rwjmjsbc71s8gh7tc",
+                "writeSource": "occ230.js:funding",
+                "componentPath": "betterStripe",
+                "retryCount": 0
+              },
+              "willRetry": true,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "0f7935cee3fdbd0a",
+              "executionId": "5fd61210-ccb0-4046-8773-c2cefe663204",
+              "executionTime": 0.16952975,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            }
+          ]
+        }
+      ],
+      "result": "NATIVE_POSITIVE_FUNDING_KEEPS_RISK_RANGE_STABLE_AND_REAL_RISK_CHANGE_RETRIES_READER"
+    },
+    "bts-230-native-activation-race-proof": {
+      "providerCalls": 0,
+      "activation": "activated",
+      "subsequentActivation": "unchanged",
+      "gross": 7,
+      "telemetry": [
+        {
+          "identifier": "occ230:funding",
+          "requestId": "b19ce0f7321cb4ac",
+          "executionTime": 0.028467666,
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "identifier": "occ230:activateProbe",
+          "requestId": "bf79da912d59a5d3",
+          "executionTime": 0.30180575,
+          "occInfo": {
+            "tableName": "payoutFinancialRevisions",
+            "documentId": "ns754mvyqkx205gs3fpg3cf8gn8gh92k",
+            "writeSource": "occ230.js:funding",
+            "componentPath": "betterStripe",
+            "retryCount": 0
+          },
+          "willRetry": true,
+          "error": null
+        },
+        {
+          "identifier": "occ230:activateProbe",
+          "requestId": "bf79da912d59a5d3",
+          "executionTime": 0.220677875,
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        }
+      ],
+      "result": "NATIVE_ACTIVATION_SOURCE_WRITE_RACE_RETRIED_WITHOUT_LOST_FINANCIAL_UPDATE"
+    },
+    "bts-230-historical-release-proof": {
+      "providerCalls": 0,
+      "historicalImportedSlices": 1001,
+      "released": 1001,
+      "diagnostics": "legacy held, deleted, coverage unknown",
+      "result": "NATIVE_HISTORICAL_1001_POSITIVE_SLICE_RELEASE_PASSED",
+      "logLines": [
+        "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions."
+      ],
+      "telemetry": []
+    },
+    "bts-277-native-migration-proof": {
+      "providerCalls": 0,
+      "steps": 8711,
+      "oneInventoryRowPerTransaction": true,
+      "begin": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 0.0,
+        "cursor": null,
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 0.0,
+        "scanned": 0.0,
+        "status": "running",
+        "step": 0.0,
+        "unchanged": 0.0,
+        "visited": 0.0
+      },
+      "staleResumeStable": true,
+      "latest": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 65.0,
+        "cursor": "[1792297993189.1394,\"sd7cn8f8ph5ghz73hce53qp2e18ghcv0\"]",
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 2.0,
+        "scanned": 8498.0,
+        "status": "running",
+        "step": 8500.0,
+        "unchanged": 2504.0,
+        "visited": 2569.0
+      },
+      "wallSeconds": 291.1,
+      "final": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 65.0,
+        "cursor": null,
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 8.0,
+        "scanned": 8703.0,
+        "status": "finished",
+        "step": 8711.0,
+        "unchanged": 2504.0,
+        "visited": 2569.0
+      },
+      "resultPages": 26,
+      "resultCount": 2569,
+      "result": "NATIVE_SERVER_OWNED_INVENTORY_AND_STALE_RESUME_AND_BOUNDED_RESULT_PAGINATION_PASSED"
+    },
+    "bts-227-native-lifecycle-proof": {
+      "providerCalls": 0,
+      "coverage": "unknown",
+      "originalOperationId": "s972gzq0wzth8y9ddrkqzy1sc58ggcza",
+      "lateFactResumedToComplete": 15,
+      "initialGeneration": 1.0,
+      "bucketDiscoveryCount": 1,
+      "ownerDiscoveryCount": 33,
+      "result": "NATIVE_65_SLICE_LATE_FACT_RESUME_TOMBSTONE_BUCKET_OWNER_PAGINATION_ORIGINAL_PAYLOAD_BUSINESS_ID_REUSE_AND_EMPTY_OPERATION_PASSED",
+      "pages": 10,
+      "indexedRows": 65,
+      "businessIdReuseDistinctOriginals": 2
+    },
+    "bts-227-native-large-index-proof": {
+      "providerCalls": 0,
+      "steps": 100,
+      "indexedSlices": 1000,
+      "registeredOwnerPins": 243,
+      "unknownOwnerPins": 757,
+      "allOriginalBucketSelectorsRetained": true,
+      "partialMarkerPageRemainsConservative": true,
+      "coverage": "unknown",
+      "deleted": true,
+      "result": "NATIVE_1000_ORIGINAL_SLICE_TOMBSTONE_INDEX_AND_PARTIAL_MARKER_PAGE_PASSED"
+    },
+    "bts-227-native-headroom-proof": {
+      "providerCalls": 0,
+      "coverage": "unknown",
+      "prefillRows": 9,
+      "bytesPerPrefillRow": 900000,
+      "sourceMetadataBytesPerTransfer": 900000,
+      "zeroProgressFailureRollsBackHeaderExactly": true,
+      "reducedBatchIndexedCount": 1,
+      "reducedBatchNextIndex": 1,
+      "freshContinuationComplete": 2,
+      "result": "NATIVE_READ_HEADROOM_FAILURE_ROLLBACK_AND_PARTIAL_PROGRESS_CONTINUATION_PASSED"
+    },
+    "bts-227-native-packed-proof": {
+      "providerCalls": 0,
+      "installedArchive": "fantastic.dev-better-stripe-0.50.1.tgz",
+      "componentAndSDKFromInstalledArchive": true,
+      "publicSdkSlices": 10,
+      "publicSdkActivation": "activated",
+      "publicSdkMigrationBegin": true,
+      "nativeNearLimitOperationIdBytes": 1000003,
+      "exactPayloadPreserved": true,
+      "result": "INSTALLED_PACKED_PUBLIC_SDK_NATIVE_READ_MIGRATION_ACTIVATION_AND_NEAR_LIMIT_BODY_PASSED"
+    },
+    "bts-230-original-final-proof": {
+      "suffix": "a3c9aefcca8b",
+      "providerCalls": 0,
+      "capacityAcceptance": false,
+      "steps": [
+        {
+          "step": "claim",
+          "wallSeconds": 0.2899,
+          "result": {
+            "status": "success",
+            "value": {
+              "allOriginalSliceBytesEqual": true,
+              "count": 1000.0,
+              "replay": true
+            }
+          }
+        },
+        {
+          "step": "release",
+          "wallSeconds": 1.4625,
+          "result": {
+            "status": "success",
+            "value": {
+              "allOriginalReferencesEqual": true,
+              "count": 1000.0,
+              "released": true
+            },
+            "logLines": [
+              "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.",
+              "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions."
+            ]
+          }
+        }
+      ],
+      "afterReleaseVerified": 1000,
+      "riskInterpretation": "Claim raises risk once; releasing an unused frontier is positiveOnly and preserves risk1 while financial advances twice.",
+      "telemetry": [
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.187857625,
+          "userExecutionTime": 0.068427482,
+          "usageStats": {
+            "databaseReadBytes": 489967,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 489967,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1501,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.330262,
+          "userExecutionTime": 0.100308659,
+          "usageStats": {
+            "databaseReadBytes": 981217,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 981217,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 3001,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.639682417,
+          "userExecutionTime": 0.178184454,
+          "usageStats": {
+            "databaseReadBytes": 1472467,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 1472467,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 4501,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.427947625,
+          "userExecutionTime": 0.150059331,
+          "usageStats": {
+            "databaseReadBytes": 2147213,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 2147213,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 6997,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.693147584,
+          "userExecutionTime": 0.181393392,
+          "usageStats": {
+            "databaseReadBytes": 1891709,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 1891709,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 6001,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.838253542,
+          "userExecutionTime": 0.246078898,
+          "usageStats": {
+            "databaseReadBytes": 645695,
+            "databaseWriteBytes": 528467,
+            "databaseIoReadBytes": 645695,
+            "databaseIoWriteBytes": 528467,
+            "databaseReadDocuments": 1753,
+            "databaseWriteDocuments": 760,
+            "databaseWriteIndexRows": 3285,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.111689458,
+          "userExecutionTime": 0.030002151,
+          "usageStats": {
+            "databaseReadBytes": 205646,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 205646,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 502,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.35895975,
+          "userExecutionTime": 0.102627666,
+          "usageStats": {
+            "databaseReadBytes": 611985,
+            "databaseWriteBytes": 307624,
+            "databaseIoReadBytes": 611985,
+            "databaseIoWriteBytes": 307624,
+            "databaseReadDocuments": 1758,
+            "databaseWriteDocuments": 505,
+            "databaseWriteIndexRows": 2521,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.527774709,
+          "userExecutionTime": 0.157055076,
+          "usageStats": {
+            "databaseReadBytes": 1276118,
+            "databaseWriteBytes": 1048515,
+            "databaseIoReadBytes": 1276118,
+            "databaseIoWriteBytes": 1048515,
+            "databaseReadDocuments": 3478,
+            "databaseWriteDocuments": 1514,
+            "databaseWriteIndexRows": 6547,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.097766375,
+          "userExecutionTime": 0.032795406,
+          "usageStats": {
+            "databaseReadBytes": 410660,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 410660,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1002,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.41623475,
+          "userExecutionTime": 0.120794525,
+          "usageStats": {
+            "databaseReadBytes": 1222763,
+            "databaseWriteBytes": 613388,
+            "databaseIoReadBytes": 1222763,
+            "databaseIoWriteBytes": 613388,
+            "databaseReadDocuments": 3508,
+            "databaseWriteDocuments": 1005,
+            "databaseWriteIndexRows": 5021,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.746829291,
+          "userExecutionTime": 0.215873898,
+          "usageStats": {
+            "databaseReadBytes": 1767368,
+            "databaseWriteBytes": 1513307,
+            "databaseIoReadBytes": 1767368,
+            "databaseIoWriteBytes": 1513307,
+            "databaseReadDocuments": 4978,
+            "databaseWriteDocuments": 2268,
+            "databaseWriteIndexRows": 9809,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.230376417,
+          "userExecutionTime": 0.052536968,
+          "usageStats": {
+            "databaseReadBytes": 615674,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 615674,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1502,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 1.160829208,
+          "userExecutionTime": 0.273444931,
+          "usageStats": {
+            "databaseReadBytes": 1833541,
+            "databaseWriteBytes": 919152,
+            "databaseIoReadBytes": 1833541,
+            "databaseIoWriteBytes": 919152,
+            "databaseReadDocuments": 5258,
+            "databaseWriteDocuments": 1505,
+            "databaseWriteIndexRows": 7521,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.519079542,
+          "userExecutionTime": 0.177793934,
+          "usageStats": {
+            "databaseReadBytes": 2441857,
+            "databaseWriteBytes": 1963163,
+            "databaseIoReadBytes": 2441857,
+            "databaseIoWriteBytes": 1963163,
+            "databaseReadDocuments": 7475,
+            "databaseWriteDocuments": 3022,
+            "databaseWriteIndexRows": 13071,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.192706084,
+          "userExecutionTime": 0.05352715,
+          "usageStats": {
+            "databaseReadBytes": 816908,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 816908,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 2002,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.698418083,
+          "userExecutionTime": 0.225736356,
+          "usageStats": {
+            "databaseReadBytes": 2322419,
+            "databaseWriteBytes": 1213576,
+            "databaseIoReadBytes": 2322419,
+            "databaseIoWriteBytes": 1213576,
+            "databaseReadDocuments": 7008,
+            "databaseWriteDocuments": 2005,
+            "databaseWriteIndexRows": 10021,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 1.095880208,
+          "userExecutionTime": 0.300588654,
+          "usageStats": {
+            "databaseReadBytes": 2185348,
+            "databaseWriteBytes": 1921033,
+            "databaseIoReadBytes": 2185348,
+            "databaseIoWriteBytes": 1921033,
+            "databaseReadDocuments": 6490,
+            "databaseWriteDocuments": 3022,
+            "databaseWriteIndexRows": 13071,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        }
+      ],
+      "result": "SAME_SQLITE_ORIGINAL_1000_DISTINCT_CLAIM_REPLAY_RELEASE_AND_PER_CURRENCY_SOURCE_RISK_PARITY_PASSED"
+    },
+    "bts-230-retained-rollback-proof": {
+      "suffix": "retained_5087b728",
+      "providerCalls": 0,
+      "failedReleaseFrontiersVerified": 1000,
+      "journalEntries": 2000,
+      "operationAnd1000OriginalSlicesRetained": true,
+      "diagnosticGeneration": 1,
+      "transferRowsSha256": "895a9169ca5057f780dee9c1176ed2bbf10bac1c72600ee49b3d0b6da8eda44f",
+      "journalRowsSha256": "40fbf319b7bf2ca1e18a7de4a97a5b3ad26c9307830bf5ca04f388321b372161",
+      "result": "ALL_1000_FAILED_RELEASE_FRONTIERS_JOURNAL_AND_ORIGINAL_OPERATION_ROLLED_BACK"
+    },
+    "bts-native-retained-runner-proof": {
+      "instance": "bts230-ed6f16a1c0af",
+      "suffix": "retained_7e0faa59",
+      "providerCalls": 0,
+      "installedArchive": true,
+      "stages": [
+        {
+          "stage": "seed",
+          "exit": 0,
+          "output": "{\"stage\":\"seed\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "activate",
+          "exit": 0,
+          "output": "{\"stage\":\"activate\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "candidate",
+          "exit": 0,
+          "output": "{\"step\":\"firstClaim\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalSliceBytesEqual\":true,\"count\":1000,\"replay\":false}}\n{\"step\":\"matchingReplay\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalSliceBytesEqual\":true,\"count\":1000,\"replay\":true}}\n{\"step\":\"release\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalReferencesEqual\":true,\"count\":1000,\"released\":true}}\n{\"stage\":\"candidate\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        }
+      ],
+      "result": "REPOSITORY_RETAINED_RUNNER_PASSED_AGAINST_INSTALLED_PACKED_CANDIDATE_1000_DISTINCT"
+    },
+    "bts-native-retained-timeout-proof": {
+      "instance": "bts230-ed6f16a1c0af",
+      "suffix": "retained_5087b728",
+      "providerCalls": 0,
+      "installedArchive": true,
+      "stages": [
+        {
+          "stage": "seed",
+          "exit": 0,
+          "output": "{\"stage\":\"seed\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "activate",
+          "exit": 0,
+          "output": "{\"stage\":\"activate\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "candidate",
+          "exit": 1,
+          "output": "",
+          "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"status\":\"error\",\"errorMessage\":\"[Request ID: 34b18c827436df19] Server Error\\nUncaught Error: Function execution timed out (maximum duration: 1s)\\n\\n    at async handler (../convex/capacity230.ts:5:318)\\n\",\"logLines\":[\"[WARN] Many reads in a single function execution (actual: 3487, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\",\"[WARN] Many reads in a single function execution (actual: 3487, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\"]}\n\n'error' !== 'success'\n\n    at success (file:///private/tmp/bts-217-example-funding/tests/native/reversal-capacity/run.mjs:44:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///private/tmp/bts-217-example-funding/tests/native/reversal-capacity/run.mjs:94:19 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 'error',\n  expected: 'success',\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+        }
+      ]
+    },
+    "bts-native-quiet-recovery-proof": {
+      "suffix": "retained_5087b728",
+      "exit": 0,
+      "stdout": "{\"step\":\"quietReleaseRecovery\",\"suffix\":\"retained_5087b728\",\"result\":{\"allOriginalReferencesEqual\":true,\"count\":1000,\"released\":true}}\n{\"stage\":\"release\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}\n",
+      "stderr": "",
+      "providerCalls": 0,
+      "purpose": "One finite quiet recovery after verifying full rollback; no source or limits changed"
+    },
+    "full-gates": {
+      "command": "pnpm run check:all",
+      "passed": 15,
+      "total": 15,
+      "elapsedSeconds": 384.8,
+      "measuredCoverage": {
+        "lines": 82.16,
+        "functions": 78.19
+      },
+      "raisedFloors": {
+        "lines": 81.66,
+        "functions": 77.69
+      },
+      "limitsOrPoliciesWeakened": false,
+      "firstCI": "https://github.com/FantasticDevHQ/better-stripe/actions/runs/39098390627",
+      "firstCIOutcome": "All tests and gates passed except the required upward coverage ratchet; full CI summary matches the successful local measurement."
+    }
+  },
+  "nativeOutcome": "Finite quiet recovery and a fresh retained-runner first-claim/replay/release sequence passed; the prior timeout and exact rollback are retained. Final CI and independent acceptance remain required."
+}

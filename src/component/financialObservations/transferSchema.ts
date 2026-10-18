@@ -28,6 +28,7 @@ export const transferObservationDoc = v.object({
 });
 export const transferObservationsTable = defineTable(transferFields)
   .index("by_transfer_id", ["transferId"])
+  .index("by_source_charge_id", ["sourceChargeId"])
   .index("by_bucket_key", ["bucketKey"])
   .index("by_owner", ["userId", "orgId"]);
 export const transferBatchFields = {

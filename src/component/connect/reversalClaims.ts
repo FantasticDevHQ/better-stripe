@@ -1,3 +1,4 @@
+import { captureReversal } from "../reversalObservations/capture.js";
 import {
   deferTransferFacts,
   synchronousTransferFactLimit,
@@ -156,6 +157,12 @@ export const claimReversalSlicesDefinition = {
             commissionExposure: exposure,
           });
       }
+      await captureReversal(ctx, {
+        ...existingOp,
+        ...(existingOp.commissionExposure && exposure
+          ? { commissionExposure: exposure }
+          : {}),
+      });
       const slices = [];
       for (const s of existingOp.slices) {
         slices.push({
@@ -225,10 +232,15 @@ export const claimReversalSlicesDefinition = {
         : {}),
     });
 
+    const observedOperation = (await ctx.db.get(
+      "transferReversalOps",
+      operationId,
+    ))!;
+    await captureReversal(ctx, observedOperation, false, rows);
     if (slices.length > synchronousTransferFactLimit)
       await deferTransferFacts(
         ctx,
-        (await ctx.db.get("transferReversalOps", operationId))!,
+        observedOperation,
         slices.map((s) => byId.get(s.stripeTransferId)!._id),
         "transfer_frontier_claim",
       );

@@ -128,6 +128,7 @@ The [documentation index](docs/README.md) lists all guides. Start with:
 - [Webhooks and triggers](docs/webhooks.md), event setup and transactional callbacks.
 - [React API](docs/react-api.md) and [workflow examples](docs/react-workflows.md).
 - [Marketplace economics](docs/marketplace.md) and [settlement and payouts](docs/settlement.md).
+- [Financial observations](docs/financial-observations.md) and [payout revision migration](docs/payout-revision-migration.md).
 - [Migration guide](MIGRATION.md) and [release handoff](docs/release-handoff.md).
 
 The [example app](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md)

@@ -1,3 +1,4 @@
+import { captureReversal } from "../reversalObservations/capture.js";
 import { writeRefund } from "./refundWrites.js";
 import {
   deferTransferFacts,
@@ -412,6 +413,7 @@ export const releaseReversalClaim = mutation({
         op,
         plan.map((p) => p.legId),
       );
+    await captureReversal(ctx, op, true);
     await ctx.db.delete("transferReversalOps", op._id);
 
     return { released: true, rewound };

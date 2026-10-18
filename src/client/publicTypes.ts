@@ -103,3 +103,18 @@ export type {
   AccountByStripeIdOptions,
   SubscriptionByStripeIdOptions,
 } from "./originalIdReadOptions.js";
+
+export type {
+  PayoutRevisionActivation,
+  PayoutRevisionMigrationState,
+  PayoutRevisionMigrationResult,
+} from "./payoutRevisionMigration.js";
+
+export type {
+  ReversalObservation,
+  ReversalObservationSlice,
+  ReversalObservationPayload,
+  ReversalObservationState,
+  ReversalObservationResult,
+  ReversalObservationPage,
+} from "./reversalObservations.js";

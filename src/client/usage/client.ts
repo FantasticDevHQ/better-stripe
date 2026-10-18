@@ -3,7 +3,7 @@ import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
 import {
-  prepareUsageRecord,
+  validateUsageRecordInput,
   type PreparedUsageRecord,
   type UsageScope,
   type UsageDeliveryState,
@@ -51,7 +51,7 @@ export class UsageLedgerClient extends UsageCreditClient {
     super(component);
   }
   async record(ctx: RunCtx, opts: RecordUsageOptions): Promise<UsageReceipt> {
-    const event = prepareUsageRecord(opts.event);
+    const event = validateUsageRecordInput(opts.event);
     const input = {
       scope: event.scope,
       binding: event.binding,

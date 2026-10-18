@@ -63,3 +63,12 @@ export type {
   UsageInvoiceObservation,
   UsageInvoiceLine,
 } from "./invoiceObservation.js";
+
+export type {
+  UsageSubscriptionOptions,
+  UsageSubscriptionView,
+} from "./subscriptionTerms.js";
+export type { UsageSubscriptionRef } from "./subscriptionLifecycle.js";
+export type { UsageSubscriptionInvoice } from "./subscriptionInvoiceSchema.js";
+
+export { UsageSubscriptionError } from "./subscriptionErrors.js";

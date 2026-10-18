@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.56.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.55.0...v0.56.0) (2026-10-18)
+
+### Features
+
+- manage metered subscriptions and invoice lifecycle ([#329](https://github.com/FantasticDevHQ/better-stripe/issues/329)) ([460e473](https://github.com/FantasticDevHQ/better-stripe/commit/460e473fec47da38acde0f1f61c843fe47336071))
+
 ## [0.55.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.54.0...v0.55.0) (2026-10-18)
 
 ### Features

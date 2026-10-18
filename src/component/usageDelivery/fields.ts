@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 export const reason = v.union(
+  v.literal("billing_period_closed"),
   v.literal("rate_limited"),
   v.literal("provider_unavailable"),
   v.literal("provider_outcome_unknown"),
@@ -57,4 +58,5 @@ export const errorDoc = v.object({
 });
 export const errorsTable = defineTable(errorFields)
   .index("by_dedupe", ["dedupe"])
+  .index("by_scope", ["scopeKey"])
   .index("by_event", ["eventId"]);

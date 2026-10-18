@@ -1,7 +1,36 @@
+import type { SettlementPolicyContext } from "@fantastic.dev/better-stripe";
 import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { internal, components } from "../../_generated/api";
+/** Opaque original-sale provenance; current authorization still checks economics and roles. */
+export const storeSalePolicyContext = (
+  sale: Doc<"storeSales">,
+): SettlementPolicyContext => ({
+  namespace: "better-stripe.vite.store-sale",
+  version: 1,
+  fields: {
+    saleId: sale._id,
+    planId: sale.planId,
+    platformNet: String(sale.platformNet),
+  },
+});
+export function matchesStoreSalePolicyContext(
+  sale: Doc<"storeSales">,
+  saved?: SettlementPolicyContext,
+) {
+  const expected = storeSalePolicyContext(sale);
+  return (
+    !!saved &&
+    saved.namespace === expected.namespace &&
+    saved.version === expected.version &&
+    Object.keys(saved.fields).length === Object.keys(expected.fields).length &&
+    Object.entries(expected.fields).every(
+      ([key, value]) => saved.fields[key] === value,
+    )
+  );
+}
 export const saleAllocation = (sale: Doc<"storeSales">) => ({
+  policyContext: storeSalePolicyContext(sale),
   sourceChargeId: sale.chargeId,
   paymentIntentId: sale.paymentIntentId,
   ...(sale.sourceInvoiceId ? { sourceInvoiceId: sale.sourceInvoiceId } : {}),

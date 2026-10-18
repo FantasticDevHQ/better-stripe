@@ -1,3 +1,8 @@
+import {
+  policyContextBinding,
+  assertPolicyContextMatches,
+  type SettlementPolicyContext,
+} from "../../shared/settlementPolicyContext.js";
 import type Stripe from "stripe";
 import type { SplitTransfer } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
@@ -14,6 +19,7 @@ import {
 } from "./execution.js";
 export type SettleSaleOptions = VerifiedSaleOptions & {
   allocation: {
+    policyContext?: SettlementPolicyContext;
     gross: number;
     currency: string;
     processingFee: number;
@@ -35,6 +41,7 @@ export async function settleSale(
   | SettlementResult
   | Exclude<Awaited<ReturnType<typeof getVerifiedSale>>, { status: "ready" }>
 > {
+  policyContextBinding(opts.allocation.policyContext);
   const sale = await getVerifiedSale(stripe, opts);
   if (sale.status !== "ready") return sale;
   const prior = (await ctx.runQuery(
@@ -43,6 +50,11 @@ export async function settleSale(
       sourceChargeId: sale.chargeId,
     },
   )) as SettlementResult | null;
+  if (prior)
+    assertPolicyContextMatches(
+      prior.policyContext,
+      opts.allocation.policyContext,
+    );
   const allocation = prior ?? opts.allocation;
   if (
     allocation.gross !== sale.gross ||

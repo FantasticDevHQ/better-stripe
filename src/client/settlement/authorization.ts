@@ -27,6 +27,7 @@ export async function authorizeSettlement(
 ) {
   if (!authorize) return;
   const source = structuredClone({
+    policyContext: settlement.policyContext,
     sourceChargeId: settlement.sourceChargeId,
     paymentIntentId: settlement.paymentIntentId,
     sourceInvoiceId: settlement.sourceInvoiceId,

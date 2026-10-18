@@ -1,3 +1,4 @@
+import { policyContextBinding } from "../../shared/settlementPolicyContext.js";
 import { allocationFields } from "../settlement/schema.js";
 import { anyApi, type FunctionReference } from "convex/server";
 import type { WorkflowId } from "@convex-dev/workflow";
@@ -21,6 +22,7 @@ export const start = mutation({
   returns: startResult,
   handler: async (ctx, args) => {
     validateScope(args);
+    policyContextBinding(args.allocation?.policyContext);
     if (
       !args.requestKey ||
       !args.provider ||

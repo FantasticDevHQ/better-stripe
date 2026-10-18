@@ -1045,3 +1045,41 @@ format; never clear unresolved financial claims to bypass validation.
 ## Native metered and prepaid sales
 
 Use the [usage settlement guide](usage-settlement.md) for original metered-invoice provenance and issuer-service paid-credit purchases. The usage facade reuses the existing allocation, transfer and recovery ledgers and keeps usage consumption separate from cash settlement.
+
+## Immutable host policy context
+
+`settleSale` accepts optional `allocation.policyContext`:
+
+```ts
+const policyContext = {
+  namespace: "my-app.sale-policy",
+  version: 1 as const,
+  fields: { originalSale: saleId, planVersion: verifiedPlanVersion },
+};
+```
+
+This nonsecret envelope is stored on the first component allocation and returned
+by allocation reads and settlement results. It is opaque provenance, never SDK
+permission or browser-supplied authority. The host must validate its original sale,
+current roles, recipients and exact economics in `authorize` before money writes.
+Namespace is 1–80 characters; at most 32 string fields have 1–64-character keys and
+values of at most 512 characters. Keys also follow Convex object-field rules:
+non-control ASCII, without a leading `$`. Canonical JSON is limited to 8 KiB UTF-8. Reordered
+map keys replay identically. Changed context, including absent versus present,
+rejects without replacing the saved allocation. Existing context-free callers
+remain supported; a legacy allocation cannot acquire context on retry.
+
+Resolve the current paid-tier policy only after verified positive cash is ready,
+at the first reservation for that sale. Checkout creation, a trial or a zero invoice
+does not freeze a future cash fee. On retry, authorize the original saved context
+and immutable allocation rather than interpreting today's policy as historical
+terms. This does not define recurring affiliate terms or supply a host money ledger.
+
+The initial `reserve` callback receives the validated proposal before it is saved.
+Resume admission receives the saved allocation; every new `transfer` callback
+receives its actual saved context and effective leg, including legitimate affiliate
+release reductions. Snapshots are detached, including nested context fields.
+Recovery keeps its earlier group admission and runtime transfer-only callback;
+operation/allocation context mismatch prevents a new transfer POST. No new recovery
+admission callback or distributed atomicity is promised. Prior successful transfers
+and reconciliation are retained when later authorization rejects.

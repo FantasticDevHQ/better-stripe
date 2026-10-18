@@ -1,3 +1,4 @@
+import { storeSalePolicyContext } from "./workflow/helpers";
 // @vitest-environment edge-runtime
 import { expect, it } from "vitest";
 import { setup, storeSaleRaw } from "../../testing/settlement/storeSaleFixture";
@@ -33,11 +34,17 @@ it("rejects a competing saved split with the same recipients but different origi
   });
   let reads = 0;
   raw.paymentIntents.retrieve.mockImplementation(async () => {
-    if (++reads === 2)
+    if (++reads === 2) {
+      const sale = await t.query(
+        internal.settlement.internal.queries.getByCharge,
+        { chargeId: "ch_sale" },
+      );
+      if (!sale) throw new Error("Original sale was not reserved");
       await t.mutation(
         components.betterStripe.settlement.mutations
           .reserveSettlementAllocation,
         {
+          policyContext: storeSalePolicyContext(sale),
           sourceChargeId: "ch_sale",
           paymentIntentId: "pi_sale",
           gross: 10000,
@@ -54,6 +61,7 @@ it("rejects a competing saved split with the same recipients but different origi
           ],
         },
       );
+    }
     return structuredClone(payment);
   });
   await expect(
@@ -89,4 +97,31 @@ it("allows only the real component earning's reduced release while retaining ori
       chargeId: "ch_sale",
     }),
   ).toMatchObject({ sellerNet: 7280, affiliateNet: 1820, status: "settled" });
+});
+
+it("retains the first positive-cash sale policy in the actual public component allocation", async () => {
+  const { t } = await setup("starter", true, 320, 100);
+  await runAction(t, internal.settlement.internal.actions.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  const sale = await t.query(internal.settlement.internal.queries.getByCharge, {
+    chargeId: "ch_sale",
+  });
+  expect(sale).not.toBeNull();
+  expect(
+    await t.query(
+      components.betterStripe.settlement.queries.getSettlementAllocation,
+      { sourceChargeId: "ch_sale" },
+    ),
+  ).toMatchObject({
+    policyContext: {
+      namespace: "better-stripe.vite.store-sale",
+      version: 1,
+      fields: {
+        saleId: sale?._id,
+        planId: sale?.planId,
+        platformNet: String(sale?.platformNet),
+      },
+    },
+  });
 });

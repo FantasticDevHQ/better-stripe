@@ -6,6 +6,7 @@ import { initConvexTest } from "../setup.test.js";
 import schema from "../../component/schema.js";
 import { CostRecoveryClient } from "../costRecovery.js";
 import type { Component, RunCtx } from "../helpers.js";
+import type { SettlementPolicyContext } from "../../shared/settlementPolicyContext.js";
 import type { RecoveryProviderRequest } from "./contracts.js";
 const modules = import.meta.glob("../../component/**/*.ts");
 const nested = componentsGeneric();
@@ -20,6 +21,7 @@ async function setup(
   dispatch = true,
   releaseUncollectible = false,
   twoLegs = false,
+  policyContext?: SettlementPolicyContext,
 ) {
   const t = initConvexTest();
   t.registerComponent("betterStripe", schema, modules);
@@ -53,6 +55,7 @@ async function setup(
     revision: 1,
   });
   const allocation = {
+    ...(policyContext ? { policyContext } : {}),
     sourceChargeId: "ch_source",
     gross: 1000,
     currency: "usd",
@@ -564,3 +567,84 @@ it.each([false, true])(
     ]);
   },
 );
+
+it("keeps saved policy context in genuine recovery and rejects a conflicting operation binding", async () => {
+  const policyContext = {
+    namespace: "host.sale-policy",
+    version: 1 as const,
+    fields: { planVersion: "original-v2" },
+  };
+  const f = await setup("settlement", true, false, false, policyContext);
+  const snapshot = await f.t.query(
+    nested.betterStripe.recoveryWorkflow.queries.snapshot,
+    { ...scope, operationId: f.request.operationId, version: 1 },
+  );
+  expect(snapshot.allocation).toMatchObject({ policyContext });
+  const conflict = await f.t.mutation(
+    nested.betterStripe.recoveryWorkflow.mutations.start,
+    {
+      ...scope,
+      requestKey: "request-conflicting-policy",
+      provider: "function://fixture/provider",
+      providerApiVersion: "2026-09-30.endive",
+      definitionVersion: 1,
+      releaseUncollectible: false,
+      maxAttempts: 2,
+      retryDelayMs: 1,
+      allocation: {
+        ...snapshot.allocation,
+        policyContext: {
+          ...policyContext,
+          fields: { planVersion: "today-v3" },
+        },
+      },
+    },
+  );
+  expect(conflict).toMatchObject({
+    status: "conflict",
+    reason: "identity_changed",
+  });
+  let creates = 0;
+  const phases: string[] = [];
+  const httpClient = Stripe.createFetchHttpClient(async (url, init) => {
+    const path = new URL(String(url)).pathname;
+    let body: unknown;
+    if (path === "/v1/charges/ch_source" && init?.method === "GET")
+      body = { id: "ch_source", created: 1 };
+    else if (path === "/v1/transfers" && init?.method === "GET")
+      body = { object: "list", data: [], has_more: false };
+    else if (path === "/v1/transfers" && init?.method === "POST") {
+      creates++;
+      body = {
+        id: "tr_context",
+        destination: "acct_seller",
+        amount: 900,
+        currency: "usd",
+        source_transaction: "ch_source",
+        metadata: { bsRole: "store", bsSourceCharge: "ch_source" },
+      };
+    } else throw new Error("Unlisted synthetic provider request");
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  expect(
+    await f.client.executeGroupProvider(f.ctx, f.request, {
+      stripeSecretKey: "sk_test_runtime_only",
+      httpClient,
+      authorize: async (context) => {
+        phases.push(context.phase);
+        expect(context.settlement).toMatchObject({ policyContext });
+        if (context.phase !== "transfer")
+          throw new Error("Group admission already occurred");
+        expect(context.transfer).toMatchObject({
+          destinationAccountId: "acct_seller",
+          amount: 900,
+        });
+      },
+    }),
+  ).toMatchObject({ status: "ready", outcome: "collect" });
+  expect(phases).toEqual(["transfer"]);
+  expect(creates).toBe(1);
+});

@@ -68,6 +68,7 @@ import {
   commissionTermsTable,
   commissionDecisionsTable,
 } from "./settlement/schema";
+import { usageCatalogTable } from "./usageCatalog/schema.js";
 import { defineSchema } from "convex/server";
 import {
   usageEventsTable,
@@ -95,6 +96,7 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageCatalog: usageCatalogTable,
   usageEvents: usageEventsTable,
   usageOutbox: usageOutboxTable,
   usageScopeCounters: usageScopeCountersTable,

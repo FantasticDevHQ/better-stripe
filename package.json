@@ -101,7 +101,8 @@
     "docs/configuration.md",
     "docs/architecture.md",
     "docs/development.md",
-    "docs/usage-ledger.md"
+    "docs/usage-ledger.md",
+    "docs/usage-catalog.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

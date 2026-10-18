@@ -13,6 +13,8 @@ export function verifyUsageEvidence(original, fresh) {
       assert.equal(current.snapshot.summary.status, "available");
       const local = current.snapshot.summary.value;
       assert.equal(local.complete, true);
+      assert.deepEqual(current.observe.value.period, local.period);
+      assert.equal(current.observe.value.nextCursor, null);
       assert.equal(local.groups.length, 1);
       const group = local.groups[0];
       assert.equal(group.binding.plan.model, model);
@@ -60,9 +62,16 @@ export function verifyUsageEvidence(original, fresh) {
       assert.equal(invoice.status, "available");
       assert.equal(invoice.value.invoiceId, billing.invoiceId);
       assert.equal(invoice.value.finalized, true);
+      assert.equal(invoice.value.status, "paid");
+      assert.equal(invoice.value.currency, billing.currency);
+      assert.equal(invoice.value.amountDue, String(billing.amountDue));
+      assert.equal(invoice.value.amountPaid, String(billing.amountPaid));
       assert.equal(invoice.value.linesComplete, true);
       assert.equal(invoice.value.meterAmount.status, "available");
+      assert.equal(invoice.value.meterAmount.value.currency, billing.currency);
       let units = 0n;
+      let rated = 0n;
+      let applied = 0n;
       for (const line of invoice.value.lines) {
         assert.equal(line.stripePriceId, group.binding.stripePriceId);
         assert.equal(
@@ -71,9 +80,22 @@ export function verifyUsageEvidence(original, fresh) {
         );
         assert.deepEqual(line.nativePeriod, local.period);
         assert.equal(line.proration, false);
+        assert.equal(line.currency, billing.currency);
+        rated += BigInt(line.amount);
+        applied += BigInt(line.creditAppliedAmount);
         units += BigInt(line.quantity);
       }
       assert.equal(units.toString(), group.effectiveQuantity);
+      const expectedRated =
+        model === "pay_as_you_go"
+          ? 1500n
+          : model === "included_overage"
+            ? 500n
+            : 1000n;
+      assert.equal(rated, expectedRated);
+      assert.equal(invoice.value.meterAmount.value.amount, rated.toString());
+      assert.equal(applied, model === "prepaid" ? 1000n : 0n);
+      assert.equal(rated - applied, BigInt(billing.amountDue));
       assert.equal(
         billing.amountPaid,
         model === "pay_as_you_go"

@@ -45,3 +45,35 @@ it.each([
     expect(() => verifyUsageEvidence(original, fresh)).toThrow();
   },
 );
+it.each(
+  ["pay_as_you_go", "included_overage", "prepaid"].flatMap((model) =>
+    [
+      "native_period",
+      "rated_amount",
+      "rated_currency",
+      "invoice_currency",
+      "line_currency",
+      "line_amount",
+      "invoice_status",
+    ].map((failure) => [model, failure]),
+  ),
+)("rejects %s with corrupted %s", (model, failure) => {
+  const [original, fresh] = proof();
+  const current = fresh.models[`seller:${model}`];
+  const invoice = original.sellerModels[model].invoice[0].observation.value;
+  if (failure === "native_period")
+    current.observe.value.period = { start: 1, end: 2 };
+  if (failure === "rated_amount") invoice.meterAmount.value.amount = "999999";
+  if (failure === "rated_currency") invoice.meterAmount.value.currency = "eur";
+  if (failure === "invoice_currency") invoice.currency = "eur";
+  if (failure === "line_currency") invoice.lines[0].currency = "eur";
+  if (failure === "line_amount") invoice.lines[0].amount = "999999";
+  if (failure === "invoice_status") invoice.status = "open";
+  expect(() => verifyUsageEvidence(original, fresh)).toThrow();
+});
+it("cannot claim a paid prepaid invoice consumed its original credits after the application proof changes", () => {
+  const [original, fresh] = proof();
+  original.sellerModels.prepaid.invoice[0].observation.value.lines[0].creditAppliedAmount =
+    "0";
+  expect(() => verifyUsageEvidence(original, fresh)).toThrow();
+});

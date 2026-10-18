@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import type { CheckoutFormState } from "@fantastic.dev/better-stripe/react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 /** The example's design system. Validation and confirmation belong to BetterStripe. */
-export function CheckoutFormFields(state: CheckoutFormState) {
+export function CheckoutFormFields(
+  state: CheckoutFormState & { beforePayment?: ReactNode },
+) {
   return (
     <form
       className="space-y-5"
@@ -23,6 +26,7 @@ export function CheckoutFormFields(state: CheckoutFormState) {
           onChange={(event) => state.setEmail(event.target.value)}
         />
       </div>
+      {state.beforePayment}
       {state.paymentElement}
       {state.error && (
         <p role="alert" className="text-sm text-destructive">

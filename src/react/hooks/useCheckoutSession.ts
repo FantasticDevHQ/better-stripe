@@ -1,6 +1,16 @@
 "use client";
 
 import { useCheckout } from "@stripe/react-stripe-js/checkout";
+import {
+  checkoutPricing,
+  updatePromotion,
+  type CheckoutPricing,
+  type CheckoutPromotionResult,
+} from "./checkoutPromotions.js";
+export type {
+  CheckoutPricing,
+  CheckoutPromotionResult,
+} from "./checkoutPromotions.js";
 
 /** Extract error message from Stripe's loosely-typed error objects. */
 function extractErrorMessage(error: unknown, fallback: string): string {
@@ -26,6 +36,10 @@ export type CheckoutSessionState =
       sessionId: string;
       /** Whether the checkout form is ready for confirmation */
       canConfirm: boolean;
+      /** Current provider observation only; zero total does not establish cash or free admission. */
+      pricing: CheckoutPricing | null;
+      applyPromotionCode: (code: string) => Promise<CheckoutPromotionResult>;
+      removePromotionCode: () => Promise<CheckoutPromotionResult>;
       /**
        * Confirm the checkout session.
        * @param options - Optional: pass `{ paymentMethod: 'pm_...' }` to use a saved payment method.
@@ -85,6 +99,15 @@ export function useCheckoutSession(): CheckoutSessionState {
     type: "success",
     sessionId: result.checkout.id,
     canConfirm: result.checkout.canConfirm,
+    pricing: checkoutPricing(result.checkout),
+    applyPromotionCode: (code) =>
+      updatePromotion(result.checkout.id, () =>
+        result.checkout.applyPromotionCode(code),
+      ),
+    removePromotionCode: () =>
+      updatePromotion(result.checkout.id, () =>
+        result.checkout.removePromotionCode(),
+      ),
     confirm: async (options) => {
       const confirmResult = await result.checkout.confirm(
         options?.paymentMethod

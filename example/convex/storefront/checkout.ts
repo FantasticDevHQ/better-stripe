@@ -86,6 +86,7 @@ export async function createStoreCheckout(
     amount: price.unitAmount,
     mode: checkoutModeForPrice(price),
     sessionOverrides: {
+      allow_promotion_codes: true,
       adaptive_pricing: { enabled: false },
       ...(args.uiMode === "redirect" && args.cancelUrl
         ? { cancel_url: args.cancelUrl }

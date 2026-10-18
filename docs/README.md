@@ -34,7 +34,8 @@ guide for your integration.
 - [Refund context](refund-context.md) and [refund command evidence](refund-command-evidence.md).
 - [Processing cost reconciliation](processing-cost-reconciliation.md).
 - [Personal account mapping](personal-account-mapping.md).
-- [Financial ownership](financial-ownership.md) and [financial observations](financial-observations.md).
+- [Financial ownership](financial-ownership.md) and [financial observations](financial-observations.md), including claimed reversal history.
+- [Payout revision migration](payout-revision-migration.md), explicit bounded activation before large reversal operations.
 - [Example recovery cutover](example-recovery-cutover.md).
 
 ## Architecture and contributing

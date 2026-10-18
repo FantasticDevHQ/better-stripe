@@ -155,6 +155,7 @@ export async function ensureUsagePrice(
   const meter = await nativeCall(() =>
     stripe.billing.meters.retrieve(terms.meterId),
   );
+  if (meter.id !== terms.meterId) return incompatible();
   verifyMeter(meter, meterOpts);
   const product = await nativeCall(() =>
     stripe.products.retrieve(terms.stripeProductId),

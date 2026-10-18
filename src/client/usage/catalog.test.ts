@@ -439,3 +439,26 @@ it("returns a plain Convex-safe public price binding instead of SDK Decimal obje
   });
   expect(() => convexToJson(price)).not.toThrow();
 });
+
+it("rejects a mismatched meter returned for a pinned price binding", async () => {
+  const f = setup();
+  const meter = await ensureUsageMeter(f.stripe, f.component, f.ctx, {
+    scope,
+    plan,
+    eventName: "calls_v1",
+    displayName: "Calls",
+  });
+  f.meters.get(meter.id)!.id = "mtr_other";
+  await expect(
+    ensureUsagePrice(f.stripe, f.component, f.ctx, {
+      scope,
+      plan,
+      meterId: meter.id,
+      stripeProductId: "prod_calls",
+      lookupKey: "calls_v1",
+    }),
+  ).rejects.toThrow("incompatible immutable terms");
+  expect(
+    f.requests.filter((r) => r.path === "/v1/prices" && r.method === "POST"),
+  ).toHaveLength(0);
+});

@@ -1,3 +1,4 @@
+import { isMeterErrorEvent } from "./meterErrors.js";
 import type Stripe from "stripe";
 
 import type { Component } from "../helpers.js";
@@ -41,7 +42,7 @@ export async function handleWebhookRequest(
   }
 
   const eventType = (parsedBody.type as string) ?? "";
-  const isV2Event = eventType.startsWith("v2.");
+  const isV2Event = eventType.startsWith("v2.") || isMeterErrorEvent(eventType);
 
   const stripeSecretKey = config?.stripeSecretKey;
   const stripeApiVersion = config?.stripeApiVersion;

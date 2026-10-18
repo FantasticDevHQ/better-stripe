@@ -1,3 +1,4 @@
+import { isMeterErrorEvent, handleMeterErrorEvent } from "./meterErrors.js";
 import { STRIPE_CUSTOMER_PREVIEW_API_VERSION } from "../apiVersion.js";
 import type Stripe from "stripe";
 
@@ -44,6 +45,10 @@ export async function handleV2Event(
   thinEvent: V2ThinEvent,
 ): Promise<string | null> {
   const { stripe } = whCtx;
+  if (isMeterErrorEvent(thinEvent.type)) {
+    await handleMeterErrorEvent(whCtx, thinEvent);
+    return null;
+  }
 
   if (!thinEvent.type.startsWith("v2.core.account")) {
     console.info(`[better-stripe] Unhandled V2 event type: ${thinEvent.type}`);

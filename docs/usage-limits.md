@@ -193,7 +193,7 @@ The read is bounded to 500 events and 500 open reservations; larger or conflicti
 histories return `held`, never a false match. It does not repair or restore units.
 Stop new work and investigate a held result through the paged ledger/history
 readers. Native quantity/invoice comparison remains available through
-`getReconciliation`, `readAggregate` and `readInvoiceUsage`; those observations do
+`getReconciliation`, `getProviderUsage` and `readInvoiceUsage`; those observations do
 not enforce or reset access caps. A native invoice's payment status cannot prove
 new cash collection on its own.
 

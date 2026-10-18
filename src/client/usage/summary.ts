@@ -1,3 +1,4 @@
+import { convexToJson } from "convex/values";
 import type { PreparedUsageRecord, UsageDeliveryState } from "./records.js";
 import { parseUsageQuantity } from "./contracts.js";
 import type {
@@ -77,7 +78,9 @@ export function summarizeUsageRecords(
 ): UsageLocalSummary {
   const grouped = new Map<string, UsageSummaryEvent[]>();
   for (const event of events) {
-    const key = JSON.stringify([event.record.binding, event.subscription]);
+    const key = JSON.stringify(
+      convexToJson([event.record.binding, event.subscription]),
+    );
     const group = grouped.get(key) ?? [];
     group.push(event);
     grouped.set(key, group);
@@ -172,10 +175,6 @@ export function summarizeUsageRecords(
         (other) =>
           other !== group &&
           other.binding.stripeCustomerId === group.binding.stripeCustomerId &&
-          (other.subscription.subscriptionId !==
-            group.subscription.subscriptionId ||
-            other.subscription.subscriptionItemId !==
-              group.subscription.subscriptionItemId) &&
           other.subscription.period.start < group.subscription.period.end &&
           other.subscription.period.end > group.subscription.period.start,
       )

@@ -33,8 +33,10 @@ count events with observed errors, not a complete inventory of provider errors.
 
 Pay-as-you-go estimates apply the original exact rate. Included-unit projections
 require a complete original billing period and apply that period's allowance
-before the overage rate. Partial periods and overlapping native subscription
-items return unavailable estimates. Estimates exclude taxes, discounts, fixed
+before the overage rate. Partial periods, overlapping native subscription
+items and multiple original bindings within an overlapping period return
+unavailable estimates. A plan or price change on the same item does not reset
+the local allowance. Estimates exclude taxes, discounts, fixed
 fees, rounding and other invoice lines. They are not finalized amounts or limits
 that authorize work. Strict allowance reservations are implemented separately.
 Prepaid balance/estimate fields remain explicitly unavailable until the prepaid

@@ -48,7 +48,20 @@ function view(model = "pay_as_you_go", quantity = "1.25", currency = "usd") {
 }
 it("keeps exact accepted and transport-accepted quantities and separate currencies", () => {
   const local = summarizeUsageRecords(
-    [view(), { ...view("pay_as_you_go", "2.5", "eur"), delivery: "queued" }],
+    [
+      view(),
+      {
+        ...view("pay_as_you_go", "2.5", "eur"),
+        record: {
+          ...view("pay_as_you_go", "2.5", "eur").record,
+          binding: {
+            ...view("pay_as_you_go", "2.5", "eur").record.binding,
+            stripeCustomerId: "cus_eur",
+          },
+        },
+        delivery: "queued",
+      },
+    ],
     { period, complete: true, observedAt: 1201 },
   );
   expect(local).toMatchObject({
@@ -159,4 +172,51 @@ it("does not estimate invoice usage across overlapping native subscription items
         group.estimate.reason === "ambiguous_subscription_binding",
     ),
   ).toBe(true);
+});
+
+it("withholds allowance estimates across same-item price transitions", () => {
+  const first = view("included_overage", "0.75");
+  const second = structuredClone(first);
+  second.record.binding.plan.version = "v2";
+  second.record.binding.stripePriceId = "price_v2";
+  second.subscription = { ...subscription, stripePriceId: "price_v2" };
+  const result = summarizeUsageRecords([first, second], {
+    period,
+    complete: true,
+    observedAt: 1201,
+  });
+  expect(result.groups).toHaveLength(2);
+  for (const group of result.groups) {
+    expect(group.acceptedQuantity).toBe("0.75");
+    expect(group.included).toMatchObject({
+      status: "unavailable",
+      reason: "ambiguous_subscription_binding",
+    });
+    expect(group.estimate).toMatchObject({
+      status: "unavailable",
+      reason: "ambiguous_subscription_binding",
+    });
+  }
+});
+
+it("combines semantically identical snapshots regardless of property order", () => {
+  const first = view("included_overage", "0.75");
+  const second = structuredClone(first);
+  second.subscription = {
+    interval: subscription.interval,
+    period: { end: period.end, start: period.start },
+    stripePriceId: subscription.stripePriceId,
+    subscriptionItemId: subscription.subscriptionItemId,
+    subscriptionId: subscription.subscriptionId,
+  };
+  const result = summarizeUsageRecords([first, second], {
+    period,
+    complete: true,
+    observedAt: 1201,
+  });
+  expect(result.groups).toHaveLength(1);
+  expect(result.groups[0].included).toMatchObject({
+    status: "available",
+    value: { consumed: "1.5", overage: "0.5" },
+  });
 });

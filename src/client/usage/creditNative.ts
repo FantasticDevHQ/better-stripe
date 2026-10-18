@@ -4,6 +4,9 @@ import { UsageCreditError, UsageCreditRecoveryError } from "./creditTerms.js";
 import { verifyRealm } from "./catalogTypes.js";
 import { verifyPinnedUsagePrice } from "./catalogPrices.js";
 import { paymentCreditProof } from "./creditProofs.js";
+export const nativeCustomerId = (
+  value: string | { id: string } | null | undefined,
+) => (typeof value === "string" ? value : value?.id);
 export async function creditCall<T>(call: () => Promise<T>): Promise<T> {
   try {
     return await call();
@@ -60,6 +63,7 @@ export function paymentIdentity(
     payment.object === "payment_intent" &&
       (!pinned || payment.id === pinned) &&
       payment.customer_account === terms.scope.customerAccount &&
+      nativeCustomerId(payment.customer) === terms.binding.stripeCustomerId &&
       payment.livemode === terms.scope.livemode &&
       payment.currency === terms.binding.plan.rate.currency &&
       payment.amount === terms.amount &&
@@ -82,6 +86,7 @@ export function verifiedCreditPayment(
       typeof charge !== "string" &&
       charge.object === "charge" &&
       charge.payment_intent === payment.id &&
+      nativeCustomerId(charge.customer) === terms.binding.stripeCustomerId &&
       charge.paid &&
       charge.captured &&
       charge.status === "succeeded" &&

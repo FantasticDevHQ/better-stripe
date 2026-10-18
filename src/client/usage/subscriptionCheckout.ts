@@ -15,6 +15,7 @@ import {
   verifySubscriptionPrices,
   discoverSubscription,
   saveSubscription,
+  beginSubscriptionObservation,
 } from "./subscriptionProvider.js";
 export function managedCheckoutParams(
   terms: UsageSubscriptionTerms,
@@ -79,12 +80,16 @@ export async function ensureManagedCheckout(
   ctx: RunCtx,
   input: UsageSubscriptionOptions,
 ) {
-  const terms = subscriptionTerms(input),
-    startedAt = Date.now();
+  const terms = subscriptionTerms(input);
   const params = managedCheckoutParams(terms, "pending");
   return subscriptionCall(async () => {
     await verifySubscriptionRealm(stripe, terms);
     const row = await prepareSubscription(component, ctx, terms, "checkout");
+    const startedAt = await beginSubscriptionObservation(
+      component,
+      ctx,
+      row.key,
+    );
     await discoverSubscription(stripe, terms, row.key);
     let session = row.checkoutId
       ? await stripe.checkout.sessions.retrieve(row.checkoutId)

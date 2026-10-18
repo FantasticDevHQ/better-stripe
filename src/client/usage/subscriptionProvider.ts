@@ -159,6 +159,17 @@ export async function discoverSubscription(
     "Native subscription inventory exceeds bounded history",
   );
 }
+export function beginSubscriptionObservation(
+  component: Component,
+  ctx: RunCtx,
+  key: string,
+) {
+  return runMutationOrThrow(
+    ctx,
+    componentRef(component, "usageSubscriptions/mutations/beginObservation"),
+    { key },
+  ) as Promise<number>;
+}
 export async function saveSubscription(
   component: Component,
   ctx: RunCtx,
@@ -174,7 +185,16 @@ export async function saveSubscription(
     componentRef(component, "usageSubscriptions/mutations/save"),
     { key, nativeJson: JSON.stringify(evidence), startedAt },
   );
-  return view;
+  const retained = (await ctx.runQuery(
+    componentRef(component, "usageSubscriptions/queries/lookup"),
+    { key },
+  )) as Doc<"usageSubscriptionIntents"> | null;
+  if (!retained?.viewJson || retained.providerId !== view.subscriptionId)
+    throw new UsageSubscriptionError(
+      "incompatible_terms",
+      "Retained subscription projection unavailable",
+    );
+  return JSON.parse(retained.viewJson) as ReturnType<typeof subscriptionView>;
 }
 export async function prepareSubscription(
   component: Component,
@@ -194,8 +214,7 @@ export async function ensureManagedSubscription(
   ctx: RunCtx,
   input: UsageSubscriptionOptions,
 ) {
-  const terms = subscriptionTerms(input),
-    startedAt = Date.now();
+  const terms = subscriptionTerms(input);
   return subscriptionCall(async () => {
     if (terms.collection.method === "checkout")
       throw new UsageSubscriptionError(
@@ -204,6 +223,11 @@ export async function ensureManagedSubscription(
       );
     await verifySubscriptionRealm(stripe, terms);
     const row = await prepareSubscription(component, ctx, terms, "direct");
+    const startedAt = await beginSubscriptionObservation(
+      component,
+      ctx,
+      row.key,
+    );
     if (!row.providerId) await verifySubscriptionPrices(stripe, terms);
     let sub = row.providerId
       ? await stripe.subscriptions.retrieve(row.providerId)

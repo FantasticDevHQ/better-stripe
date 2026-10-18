@@ -8978,6 +8978,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     usageCredits: {
       mutations: {
+        beginObservation: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          number,
+          Name
+        >;
         cancelPurchase: FunctionReference<
           "mutation",
           "internal",
@@ -9051,6 +9058,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
             refundedAmount?: number;
             state: "pending" | "ready" | "frozen" | "canceled";
             termsJson: string;
@@ -9100,7 +9109,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         saveObservation: FunctionReference<
           "mutation",
           "internal",
-          { inputJson: string; proofJson: string; startedAt: number },
+          {
+            inputJson: string;
+            proofJson: string;
+            proofStartedAt?: number;
+            startedAt: number;
+          },
           string,
           Name
         >;
@@ -9152,6 +9166,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             historyCount?: number;
             key: string;
             method: "direct" | "checkout";
+            observationStartedAt?: number;
             providerId?: string;
             retiredAt?: number;
             retirementInvoiceId?: string;
@@ -9191,9 +9206,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               nativeExpired?: boolean;
               nativeObservationJson?: string;
               nativeUnused: boolean;
+              observationConflictAt?: number;
+              observationStartedAt?: number;
               observedAt?: number;
               paymentIntentId: string;
               proofJson: string;
+              proofStartedAt?: number;
               purchaseKey: string;
               reserved: string;
             }>;
@@ -9212,6 +9230,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               paymentIntentId?: string;
               paymentKey?: string;
               paymentProofJson?: string;
+              recoveryReason?:
+                | "payment_refunded"
+                | "payment_disputed"
+                | "native_state_changed";
               refundedAmount?: number;
               state: "pending" | "ready" | "frozen" | "canceled";
               termsJson: string;
@@ -9237,6 +9259,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
             refundedAmount?: number;
             state: "pending" | "ready" | "frozen" | "canceled";
             termsJson: string;
@@ -9261,6 +9285,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
             refundedAmount?: number;
             state: "pending" | "ready" | "frozen" | "canceled";
             termsJson: string;
@@ -9313,9 +9339,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               nativeExpired?: boolean;
               nativeObservationJson?: string;
               nativeUnused: boolean;
+              observationConflictAt?: number;
+              observationStartedAt?: number;
               observedAt?: number;
               paymentIntentId: string;
               proofJson: string;
+              proofStartedAt?: number;
               purchaseKey: string;
               reserved: string;
             }>;
@@ -9838,6 +9867,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           null,
           Name
         >;
+        beginObservation: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          number,
+          Name
+        >;
         completeCancellation: FunctionReference<
           "mutation",
           "internal",
@@ -9866,6 +9902,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             historyCount?: number;
             key: string;
             method: "direct" | "checkout";
+            observationStartedAt?: number;
             providerId?: string;
             retiredAt?: number;
             retirementInvoiceId?: string;
@@ -9941,6 +9978,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             historyCount?: number;
             key: string;
             method: "direct" | "checkout";
+            observationStartedAt?: number;
             providerId?: string;
             retiredAt?: number;
             retirementInvoiceId?: string;
@@ -10003,6 +10041,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             historyCount?: number;
             key: string;
             method: "direct" | "checkout";
+            observationStartedAt?: number;
             providerId?: string;
             retiredAt?: number;
             retirementInvoiceId?: string;

@@ -10,6 +10,7 @@ import {
 } from "./creditTerms.js";
 import {
   creditCall,
+  nativeCustomerId,
   creditRequire,
   verifyCreditRealm,
   discoverCredit,
@@ -140,6 +141,7 @@ export async function prepareCreditRefund(
     creditRequire(
       grant.id === row.creditGrantId &&
         grant.customer_account === terms.scope.customerAccount &&
+        nativeCustomerId(grant.customer) === terms.binding.stripeCustomerId &&
         grant.livemode === terms.scope.livemode &&
         grant.metadata?.bsUsageCredit === row.key,
       "Original credit grant identity mismatch",

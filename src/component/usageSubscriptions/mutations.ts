@@ -273,3 +273,26 @@ export const abandon = mutation({
     return null;
   },
 });
+
+/** Reserve a unique order before native I/O, including concurrent same-clock observations. */
+export const beginObservation = mutation({
+  args: { key: v.string() },
+  returns: v.number(),
+  handler: async (ctx, args) => {
+    const intent = await ctx.db
+      .query("usageSubscriptionIntents")
+      .withIndex("by_key", (q) => q.eq("key", args.key))
+      .unique();
+    if (!intent) throw new Error("Subscription intent not found");
+    const startedAt = Math.max(
+      Date.now(),
+      (intent.startedAt ?? -1) + 1,
+      (intent.observationStartedAt ?? -1) + 1,
+    );
+    observationStart(startedAt);
+    await ctx.db.patch("usageSubscriptionIntents", intent._id, {
+      observationStartedAt: startedAt,
+    });
+    return startedAt;
+  },
+});

@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { BetterStripe } from "../index.js";
 import type { RunCtx } from "../helpers.js";
 import { fixture } from "./subscriptionTransport.fixtures.js";
@@ -313,4 +313,63 @@ it("records terminal cancellation refusal without leaving a lock that prevents c
       ),
     ),
   ).toMatchObject({ retired: true });
+});
+
+afterEach(() => vi.useRealTimers());
+it("orders concurrent same-clock native refreshes and returns the retained newer projection", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(700000);
+  let block = false,
+    signal!: () => void,
+    release!: () => void;
+  const entered = new Promise<void>((resolve) => {
+      signal = resolve;
+    }),
+    gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+  const f = fixture(false, false, async (input, init) => {
+    if (
+      block &&
+      new URL(input).pathname === "/v1/subscriptions/sub_calls" &&
+      (init?.method ?? "GET") === "GET"
+    ) {
+      block = false;
+      signal();
+      await gate;
+      return new Response(JSON.stringify(nativeSubscription()), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+  });
+  const client = new BetterStripe(f.component),
+    options = {
+      stripeSecretKey: "sk_test_subscription",
+      httpClient: f.httpClient,
+    };
+  await f.t.action((ctx) =>
+    client.usage.ensureSubscription(ctx as RunCtx, request, options),
+  );
+  block = true;
+  const older = f.t.action((ctx) =>
+    client.usage.observeSubscription(ctx as RunCtx, ref, options),
+  );
+  await entered;
+  f.state.native!.items.data.forEach((item) => {
+    item.current_period_start = 1200;
+    item.current_period_end = 1800;
+  });
+  const newer = await f.t.action((ctx) =>
+    client.usage.observeSubscription(ctx as RunCtx, ref, options),
+  );
+  release();
+  expect(newer.bindings[0].subscription.period.start).toBe(1200);
+  expect((await older).bindings[0].subscription.period.start).toBe(1200);
+  expect(
+    await f.t.query((ctx) => client.usage.getSubscription(ctx as RunCtx, ref)),
+  ).toMatchObject({
+    value: {
+      bindings: [{ subscription: { period: { start: 1200, end: 1800 } } }],
+    },
+  });
 });

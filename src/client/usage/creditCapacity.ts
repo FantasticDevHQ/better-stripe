@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { creditRequire } from "./creditNative.js";
+import { creditRequire, nativeCustomerId } from "./creditNative.js";
 import type { UsageCreditPurchaseTerms } from "./creditTerms.js";
 /** Read-only, bounded prepayment guard. Pending component intents reserve slots separately. */
 export async function verifyNativeCreditCapacity(
@@ -16,9 +16,16 @@ export async function verifyNativeCreditCapacity(
       limit: 100,
       ...(cursor ? { starting_after: cursor } : {}),
     });
+    creditRequire(
+      Array.isArray(result.data) &&
+        result.data.length <= 100 &&
+        typeof result.has_more === "boolean",
+      "Native credit inventory page exceeds proof budget",
+    );
     for (const grant of result.data) {
       creditRequire(
         grant.customer_account === terms.scope.customerAccount &&
+          nativeCustomerId(grant.customer) === terms.binding.stripeCustomerId &&
           grant.livemode === terms.scope.livemode,
         "Native credit inventory scope mismatch",
       );
@@ -58,6 +65,8 @@ export async function verifyNativeCreditCapacity(
       creditRequire(
         balance.livemode === terms.scope.livemode &&
           balance.customer_account === terms.scope.customerAccount &&
+          nativeCustomerId(balance.customer) ===
+            terms.binding.stripeCustomerId &&
           balance.balances.length === 1,
         "Native credit capacity balance unavailable",
       );

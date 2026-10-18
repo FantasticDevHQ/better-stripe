@@ -11,6 +11,7 @@ import {
 } from "./creditTerms.js";
 import {
   creditCall,
+  nativeCustomerId,
   creditRequire,
   verifyCreditRealm,
   paymentIdentity,
@@ -29,8 +30,7 @@ export async function reconcileCreditPurchase(
   input: UsageCreditPurchaseOptions,
 ) {
   return creditCall(async () => {
-    const terms = creditPurchaseTerms(input),
-      startedAt = Date.now();
+    const terms = creditPurchaseTerms(input);
     let source = await findCreditPurchase(component, ctx, input);
     if (!source.row.creditGrantId) {
       await observeCreditPurchase(stripe, component, ctx, input);
@@ -43,6 +43,12 @@ export async function reconcileCreditPurchase(
         reason: "credit_purchase_not_ready",
         retryable: true,
       };
+    const proofStartedAt = Date.now();
+    const startedAt = (await runMutationOrThrow(
+      ctx,
+      componentRef(component, "usageCredits/mutations/beginObservation"),
+      { inputJson: JSON.stringify(input) },
+    )) as number;
     await verifyCreditRealm(stripe, terms, false);
     const payment = await stripe.paymentIntents.retrieve(
       purchase.paymentIntentId,
@@ -76,6 +82,8 @@ export async function reconcileCreditPurchase(
     creditRequire(
       nativeGrant.id === purchase.creditGrantId &&
         nativeGrant.customer_account === terms.scope.customerAccount &&
+        nativeCustomerId(nativeGrant.customer) ===
+          terms.binding.stripeCustomerId &&
         nativeGrant.livemode === terms.scope.livemode &&
         nativeGrant.metadata?.bsUsageCredit === purchase.key &&
         nativeGrant.amount.monetary?.value === terms.amount &&
@@ -113,6 +121,12 @@ export async function reconcileCreditPurchase(
         ledger.currency === terms.binding.plan.rate.currency &&
         available.currency === ledger.currency,
       "Native credit summary currency mismatch",
+    );
+    creditRequire(
+      Array.isArray(transactions.data) &&
+        transactions.data.length <= 100 &&
+        typeof transactions.has_more === "boolean",
+      "Native credit transaction proof budget exceeded",
     );
     let granted = 0,
       applied = 0,
@@ -200,12 +214,13 @@ export async function reconcileCreditPurchase(
         inputJson: JSON.stringify(input),
         proofJson: JSON.stringify(proof),
         startedAt,
+        proofStartedAt,
       },
     )) as string;
     const result = JSON.parse(resultJson) as UsageCreditReconciliation;
     return {
       status: "available" as const,
-      observedAt: Math.floor(startedAt / 1000),
+      observedAt: Math.floor(proofStartedAt / 1000),
       value: result,
     };
   });

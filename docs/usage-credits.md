@@ -236,7 +236,9 @@ It does not silently restore units, refund twice or settle consumption as a sale
 
 Close the managed subscription through its normal usage closeout first.
 closeCreditAccount requires no pending purchases/reservations, complete native
-zero-balance evidence and reconciled consumption. Unspent paid credits require a
+zero-balance evidence no older than 60 seconds and reconciled consumption.
+An unresolved dispute or recovery freeze prevents closure even after an earlier
+zero-balance proof. Unspent paid credits require a
 verified full refund unless they expired under their original configured terms.
 The general account-closure API checks open prepaid ledgers for payer and realm.
 
@@ -253,3 +255,6 @@ required. Keep secrets in the runtime environment and follow the
 demonstrates purchased native credit covering usage without a second usage
 charge. Clock advancement is not ingestion proof. Observe the meter aggregate
 before advancing, then inspect the finalized invoice.
+
+See [metered billing authorization](usage-security.md) for host ownership checks,
+work deduplication, native Customer isolation and bounded recovery evidence.

@@ -26,6 +26,20 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.57.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.56.0...v0.57.0) (2026-10-18)
+
+
+### Features
+
+* add payment-backed prepaid usage accounting ([#331](https://github.com/FantasticDevHQ/better-stripe/issues/331)) ([b38d99c](https://github.com/FantasticDevHQ/better-stripe/commit/b38d99c3c8be133183cf9d8d776dc5149709e7e7))
+
+
+### Bug Fixes
+
+* close qualified SetupIntent status contract (BTS-274) ([#313](https://github.com/FantasticDevHQ/better-stripe/issues/313)) ([7766f7c](https://github.com/FantasticDevHQ/better-stripe/commit/7766f7cd5fc96596f118e63bf3346d578cc8316a))
+* preserve previous subscription identity for delete triggers ([#317](https://github.com/FantasticDevHQ/better-stripe/issues/317)) ([ccc7b07](https://github.com/FantasticDevHQ/better-stripe/commit/ccc7b0793dd8d9892a35c5373b5ea47a88a7b305))
+* **usage:** compose prepared authorization with ledger recording ([#326](https://github.com/FantasticDevHQ/better-stripe/issues/326)) ([8f1b298](https://github.com/FantasticDevHQ/better-stripe/commit/8f1b298e4a9587f6a82d73ffe28e332144988a7f))
+
 ## [0.56.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.55.0...v0.56.0) (2026-10-18)
 
 ### Features

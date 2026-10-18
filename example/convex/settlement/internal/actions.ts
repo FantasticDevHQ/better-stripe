@@ -16,6 +16,92 @@ import { components, internal } from "../../_generated/api";
 import { settleStoreSale, type StorePlanId } from "../../storePlans/helpers";
 
 import type { Doc } from "../../_generated/dataModel";
+import type { SettlementAuthorization } from "@fantastic.dev/better-stripe";
+import type { ActionCtx } from "../../_generated/server";
+
+/** Re-read the original sale and current seller mapping at each SDK write boundary. */
+export function authorizeStoreSale(
+  ctx: ActionCtx,
+  sale: Doc<"storeSales">,
+): SettlementAuthorization {
+  return async (context) => {
+    const current = await ctx.runQuery(
+      internal.settlement.internal.queries.getByCharge,
+      { chargeId: sale.chargeId },
+    );
+    const seller = await ctx.runQuery(
+      internal.storePlans.billing.internal.queries.getSeller,
+      { sellerId: sale.sellerId },
+    );
+    const source = context.settlement;
+    if (
+      !current ||
+      current._id !== sale._id ||
+      current.status === "refunded" ||
+      current.sellerId !== sale.sellerId ||
+      current.sellerAccountId !== seller.stripeAccountId ||
+      source.sourceChargeId !== current.chargeId ||
+      source.paymentIntentId !== current.paymentIntentId ||
+      source.sourceInvoiceId !== current.sourceInvoiceId ||
+      source.gross !== current.gross ||
+      source.currency !== current.currency ||
+      source.processingFee !== current.processingFee ||
+      source.platformNet !== current.platformNet ||
+      (source.adjustmentAmount ?? 0) !== (current.costRecoveryAmount ?? 0)
+    )
+      throw new Error("Settlement authorization changed");
+    const legs =
+      context.phase === "reserve"
+        ? context.settlement.transfers
+        : [context.transfer];
+    if (
+      legs.some((leg) =>
+        leg.role === "store"
+          ? leg.destinationAccountId !== current.sellerAccountId
+          : leg.role !== "affiliate" ||
+            leg.destinationAccountId !== current.affiliateAccountId,
+      )
+    )
+      throw new Error("Settlement authorization changed");
+    if (context.phase === "reserve") {
+      if (
+        context.settlement.transfers.some(
+          (leg) =>
+            leg.amount !==
+            (leg.role === "store" ? current.sellerNet : current.affiliateNet),
+        )
+      )
+        throw new Error("Settlement authorization changed");
+      return;
+    }
+    if (context.transfer.role === "store") {
+      if (context.transfer.amount !== current.sellerNet)
+        throw new Error("Settlement authorization changed");
+      return;
+    }
+    const earning = await ctx.runQuery(
+      components.betterStripe.affiliateRecovery.queries.getEarning,
+      {
+        sourceChargeId: current.chargeId,
+        affiliateAccountId: context.transfer.destinationAccountId,
+      },
+    );
+    if (
+      !earning ||
+      earning.sourceChargeId !== current.chargeId ||
+      earning.affiliateAccountId !== current.affiliateAccountId ||
+      earning.currency !== current.currency ||
+      earning.originalCommission !== current.affiliateNet ||
+      !Number.isSafeInteger(earning.releaseAmount) ||
+      earning.releaseAmount < 0 ||
+      earning.releaseAmount > earning.originalCommission ||
+      earning.withheldAmount !==
+        earning.originalCommission - earning.releaseAmount ||
+      context.transfer.amount !== earning.releaseAmount
+    )
+      throw new Error("Settlement authorization changed");
+  };
+}
 
 /** All new example-store sales settle after Stripe reports the actual payment cost. */
 export const settle = internalAction({
@@ -172,6 +258,7 @@ export const settle = internalAction({
       );
       const settlement = await stripe.settleSale(ctx, {
         ...args,
+        authorize: authorizeStoreSale(ctx, sale),
         allocation: {
           gross: sale.gross,
           currency: sale.currency,

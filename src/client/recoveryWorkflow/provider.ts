@@ -5,6 +5,7 @@ import { componentRef } from "../webhooks/helpers.js";
 import { attachRecoveryInvoice } from "../costRecovery-invoices.js";
 import type { RecoveryGroup } from "../costRecovery.js";
 import { executeResolvedTransfers } from "../settlement/execution.js";
+import type { SettlementAuthorization } from "../settlement/authorization.js";
 import { reconcileRecoverySettlement } from "./settlement.js";
 import { operationRef } from "./contracts.js";
 import type {
@@ -18,6 +19,8 @@ export type RecoveryProviderOptions = {
   httpClient?: NonNullable<
     ConstructorParameters<typeof Stripe>[1]
   >["httpClient"];
+  /** Runtime-only host check before each new settlement transfer; group admission already occurred. */
+  authorize?: SettlementAuthorization;
 };
 export async function executeRecoveryProvider(
   component: Component,
@@ -69,7 +72,13 @@ export async function executeRecoveryProvider(
           reason: "provider_outcome_unknown",
         };
       if (request.phase === "execute")
-        await executeResolvedTransfers(stripe, component, ctx, op.allocation);
+        await executeResolvedTransfers(
+          stripe,
+          component,
+          ctx,
+          op.allocation,
+          options.authorize,
+        );
       else if (
         !(await reconcileRecoverySettlement(
           stripe,

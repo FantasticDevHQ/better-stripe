@@ -1,165 +1,10 @@
+import { setup, storeSaleRaw } from "../../testing/settlement/storeSaleFixture";
 import { runAction } from "../../testing/settlement/providerFixture";
-import workflowTest from "@convex-dev/workflow/test";
-import { schema, modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
-import { convexTest } from "convex-test";
-import { beforeEach, expect, it, vi } from "vitest";
-import componentSchema from "../../../dist/component/schema.js";
+import { expect, it, vi } from "vitest";
 import { api, components, internal } from "../_generated/api";
-import "./internal/actions";
-const raw = vi.hoisted(() => ({
-  charges: { retrieve: vi.fn() },
-  paymentIntents: { retrieve: vi.fn() },
-  subscriptions: { retrieve: vi.fn() },
-  invoices: { list: vi.fn(), retrieve: vi.fn() },
-  invoicePayments: { list: vi.fn() },
-  transfers: { list: vi.fn(), create: vi.fn() },
-}));
-vi.mock("../stripe/client", () => ({ getStripeClient: () => raw }));
-vi.mock("../stripe/helpers", async () => {
-  const { getVerifiedSale } =
-    await import("../../../src/client/settlement/verifiedSale");
-  const { selectCommissionInvoice } =
-    await import("../../../src/client/settlement/commissions");
-  const { settleSale } =
-    await import("../../../src/client/settlement/settleSale");
-  const { components } = await import("../_generated/api");
-  const sdk = raw as unknown as import("stripe").default;
-  const { fixtureRecoveryClient } =
-    await import("../../testing/settlement/providerFixture");
-  return {
-    stripe: {
-      costRecovery: fixtureRecoveryClient(components.betterStripe, sdk),
-      getVerifiedSale: async (
-        _ctx: unknown,
-        opts: Parameters<typeof getVerifiedSale>[1],
-      ) => {
-        if (opts.invoiceId)
-          raw.invoices.retrieve.mockResolvedValue({
-            id: opts.invoiceId,
-            status: "paid",
-            amount_paid: 10000,
-            currency: "usd",
-            parent: {
-              subscription_details: { subscription: opts.subscriptionId },
-            },
-          });
-        raw.invoicePayments.list.mockImplementation(async (params) => ({
-          data: [
-            {
-              status: "paid",
-              payment: { payment_intent: params.payment.payment_intent },
-            },
-          ],
-          has_more: false,
-        }));
-        if (opts.subscriptionId) {
-          const sub = await raw.subscriptions.retrieve(opts.subscriptionId);
-          if (!sub.items)
-            raw.subscriptions.retrieve.mockResolvedValue({
-              ...sub,
-              items: {
-                data: [
-                  { price: { id: "price_default", product: "prod_default" } },
-                ],
-              },
-            });
-        }
-        return getVerifiedSale(sdk, opts);
-      },
-      selectCommissionInvoice: (
-        ctx: Parameters<typeof selectCommissionInvoice>[2],
-        opts: Parameters<typeof selectCommissionInvoice>[3],
-      ) => selectCommissionInvoice(sdk, components.betterStripe, ctx, opts),
-      settleSale: (
-        ctx: Parameters<typeof settleSale>[2],
-        opts: Parameters<typeof settleSale>[3],
-      ) => settleSale(sdk, components.betterStripe, ctx, opts),
-    },
-  };
-});
-const componentModules = import.meta.glob("../../../dist/component/**/*.js");
-beforeEach(() => {
-  vi.useFakeTimers();
-  vi.resetAllMocks();
-  raw.charges.retrieve.mockResolvedValue({ created: 1 });
-  raw.transfers.list.mockResolvedValue({ data: [] });
-  raw.transfers.create.mockImplementation(async (args) => ({
-    id: `tr_${args.destination}`,
-    ...args,
-  }));
-});
-async function setup(
-  planId: "starter" | "growth" | "pro",
-  referred = false,
-  fee: number | null = 320,
-) {
-  const t = convexTest(schema, modules);
-  t.registerComponent("betterStripe", componentSchema, componentModules);
-  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
-    stripeProductId: "prod_default",
-    accountId: "acct_store",
-    name: "Membership",
-    active: true,
-  });
-  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
-    stripePriceId: "price_default",
-    stripeProductId: "prod_default",
-    productId: "product",
-    unitAmount: 10000,
-    currency: "usd",
-    type: "recurring",
-    interval: "month",
-    active: true,
-  });
-  workflowTest.register(t, "betterStripe/workflow");
-  const sellerId = await t.run((ctx) =>
-    ctx.db.insert("users", {
-      name: "Seller",
-      email: "seller@example.com",
-      role: "seller",
-      stripeAccountId: "acct_store",
-      storePlan: {
-        planId,
-        status: "active",
-        paidThrough: Date.now() + 86400000,
-        stripeSubscriptionId: "sub_store",
-        cancelAtPeriodEnd: false,
-      },
-    }),
-  );
-  if (referred)
-    await t.run((ctx) =>
-      ctx.db.insert("affiliateDefaults", {
-        affiliateBasisPoints: 2000,
-        affiliateFixedAmount: null,
-        version: 1,
-      }),
-    );
-  const payment = {
-    id: "pi_sale",
-    status: "succeeded",
-    amount_received: 10000,
-    currency: "usd",
-    metadata: {
-      storeBilling: "sale_v1",
-      sellerId,
-      planId,
-      userId: "customer",
-      affiliateAccountId: referred ? "acct_affiliate" : "",
-    },
-    latest_charge: {
-      id: "ch_sale",
-      amount: 10000,
-      currency: "usd",
-      amount_refunded: 0,
-      balance_transaction: fee === null ? null : { currency: "usd", fee },
-    },
-  };
-  raw.paymentIntents.retrieve.mockResolvedValue(payment);
-  return { t, sellerId, payment };
-}
+const raw = storeSaleRaw();
 it.each([
   ["starter", 9100, 580],
   ["growth", 9510, 170],
@@ -597,4 +442,31 @@ it("uses the current subscription price override on renewals and preserves earli
       chargeId: "ch_sale",
     }),
   ).toEqual(original);
+});
+
+it("denies a new transfer when the original seller mapping changes during provider reconciliation", async () => {
+  const { t, sellerId } = await setup("pro");
+  raw.transfers.list.mockImplementationOnce(async () => {
+    await t.run((ctx) =>
+      ctx.db.patch("users", sellerId, { stripeAccountId: "acct_changed" }),
+    );
+    return { data: [], has_more: false };
+  });
+  await runAction(t, internal.settlement.internal.actions.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(raw.transfers.create).not.toHaveBeenCalled();
+  const job = await t.run((ctx) => ctx.db.query("recoveryJobs").first());
+  if (!job?.operationId || job.version === undefined || !job.groupKey)
+    throw new Error("Missing actual recovery operation fixture");
+  expect(
+    await t.query(components.betterStripe.recoveryWorkflow.queries.get, {
+      accountId: job.accountId,
+      scopeKey: job.scopeKey,
+      currency: job.currency,
+      operationId: job.operationId,
+      version: job.version,
+      groupKey: job.groupKey,
+    }),
+  ).toMatchObject({ status: "unknown" });
 });

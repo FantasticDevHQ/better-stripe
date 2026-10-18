@@ -120,6 +120,62 @@ closed. Existing refund/dispute reversal APIs recover these original legs too.
 Stripe API idempotency is an additional safeguard, not the only recovery record.
 Do not delete financial component records while payments can be retried or reversed.
 
+### Reauthorize before financial dispatch
+
+`settleSale` accepts an optional **server-only** `authorize` callback. Existing
+callers without it retain their behavior. Authenticate the actor and derive the
+original purchase, community, charge and recipient scope on your server first;
+then use the callback to re-read current authorization rather than trusting
+browser account IDs or provider metadata:
+
+```ts
+await stripe.settleSale(ctx, {
+  ...originalSettlement,
+  authorize: async (context) => {
+    // Application-owned check: current actor, original purchase/source and recipients.
+    await authorizeOriginalSale(context);
+  },
+});
+```
+
+The discriminated `SettlementAuthorizationContext` has two phases:
+
+- `reserve`: after provider sale reads and before allocation admission. On replay,
+  the snapshot contains the prior immutable allocation when one exists.
+- `transfer`: after provider transfer reconciliation and immediately before each
+  **new** transfer POST. It contains the actual saved source/economics and the
+  effective leg, including a reduced affiliate release after package-owned debt
+  offsets. A competing reservation cannot substitute an unexamined recipient.
+
+Snapshots are detached from engine inputs; callback mutation cannot change the
+claim or transfer. Throwing from a direct `settleSale` callback propagates the
+host error and prevents that write; the SDK does not retry it. The callback does
+not return replacement economics or establish original cash provenance.
+
+The last check and Stripe are not a distributed transaction. A later denial can
+leave an admitted immutable allocation or earlier successful legs in place;
+partial success is not undone. Retrying reuses the original claim and still
+checks each missing new leg. Already-recovered provider success can be persisted
+without another `transfer` callback or another POST: it is reconciliation of
+money already moved, not new financial dispatch. `onSettled` remains a
+post-execution, replayable completion callback, not an authorization check.
+
+The active Vite adapter uses fresh original-sale and current seller-mapping
+queries; demo metadata is not a production authorization policy. For its actual
+sealed recovery-group path, pass the same server-only callback in the runtime
+options to `costRecovery.executeGroupProvider`. This path already has persisted
+group/allocation admission and dispatch: it invokes only the final `transfer`
+phase for each new settlement transfer, not an earlier `reserve` guarantee.
+The existing snapshot/definition/phase checks still apply. Reconciliation-only
+work never creates a missing transfer or invokes a new-money callback.
+
+A recovery callback rejection uses the existing conservative `unknown` hold
+receipt and does not automatically retry or complete the group. This is the
+workflow's disposition of a denied dispatch, **not** an observed unknown Stripe
+cash result or provider failure. Original group/allocation state and earlier
+success remain retained. No callback, credential or authority flag is persisted
+in workflow arguments; supply it inside the registered internal host action.
+
 The Vite example exposes a [fee-first allocation preview](http://localhost:5173/demo/allocation)
 from Admin → Testing Utilities. Its illustrative inputs use the public helper
 and the package React `SplitBreakdown`; they do not alter store settings.

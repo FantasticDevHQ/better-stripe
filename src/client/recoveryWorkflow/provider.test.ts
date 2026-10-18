@@ -19,6 +19,7 @@ async function setup(
   kind: "invoice" | "settlement" = "invoice",
   dispatch = true,
   releaseUncollectible = false,
+  twoLegs = false,
 ) {
   const t = initConvexTest();
   t.registerComponent("betterStripe", schema, modules);
@@ -58,13 +59,26 @@ async function setup(
     processingFee: 30,
     platformNet: 40,
     adjustmentAmount: 30,
-    transfers: [
-      {
-        destinationAccountId: "acct_seller",
-        role: "store" as const,
-        amount: 900,
-      },
-    ],
+    transfers: twoLegs
+      ? [
+          {
+            destinationAccountId: "acct_seller",
+            role: "store" as const,
+            amount: 800,
+          },
+          {
+            destinationAccountId: "acct_other",
+            role: "other" as const,
+            amount: 100,
+          },
+        ]
+      : [
+          {
+            destinationAccountId: "acct_seller",
+            role: "store" as const,
+            amount: 900,
+          },
+        ],
   };
   await client.prepareGroup(ctx, {
     ...scope,
@@ -420,5 +434,133 @@ it.each([false, true])(
         ? { status: "ready", outcome: "release" }
         : { status: "not_ready", reason: "provider_pending" },
     );
+  },
+);
+
+it("holds partial authorized recovery success and never creates the denied missing leg during reconciliation", async () => {
+  const f = await setup("settlement", true, false, true);
+  let current = true;
+  const transfers: Record<string, unknown>[] = [];
+  const httpClient = Stripe.createFetchHttpClient(async (url, init) => {
+    const path = new URL(String(url)).pathname;
+    let body: unknown;
+    if (path === "/v1/transfers" && init?.method === "POST") {
+      const params = new URLSearchParams(String(init.body));
+      body = {
+        id: "tr_partial",
+        destination: params.get("destination"),
+        amount: Number(params.get("amount")),
+        currency: "usd",
+        source_transaction: "ch_source",
+        amount_reversed: 0,
+        metadata: {
+          bsRole: params.get("metadata[bsRole]"),
+          bsSourceCharge: "ch_source",
+        },
+      };
+      transfers.push(body as Record<string, unknown>);
+      current = false;
+    } else if (path === "/v1/transfers" && init?.method === "GET") {
+      body = { object: "list", data: transfers, has_more: false };
+    } else if (path === "/v1/charges/ch_source" && init?.method === "GET") {
+      body = { id: "ch_source", created: 1 };
+    } else throw new Error("Unlisted synthetic provider request");
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  const authorize = async () => {
+    if (!current) throw new Error("Host authorization denied");
+  };
+  const result = await f.client.executeGroupProvider(f.ctx, f.request, {
+    stripeSecretKey: "sk_test_runtime_only",
+    httpClient,
+    authorize,
+  });
+  expect(result).toMatchObject({ status: "unknown" });
+  if (result.status !== "unknown") throw new Error("Expected a held dispatch");
+  expect(transfers).toHaveLength(1);
+  expect(
+    await f.t.query(nested.betterStripe.connect.queries.listTransfersByCharge, {
+      sourceChargeId: "ch_source",
+    }),
+  ).toMatchObject([{ amount: 800 }]);
+  await f.t.mutation(nested.betterStripe.recoveryWorkflow.steps.saveReceipt, {
+    ...scope,
+    operationId: f.request.operationId,
+    version: 1,
+    result: { status: result.status, reason: result.reason },
+  });
+  await f.dispatchReconcile();
+  expect(
+    await f.client.executeGroupProvider(
+      f.ctx,
+      { ...f.request, phase: "reconcile" },
+      { stripeSecretKey: "sk_test_runtime_only", httpClient, authorize },
+    ),
+  ).toMatchObject({ status: "unknown" });
+  expect(transfers).toHaveLength(1);
+});
+
+it.each([false, true])(
+  "reauthorizes an actual frozen recovery transfer after reconciliation (revoked=%s)",
+  async (revoked) => {
+    const f = await setup("settlement");
+    let current = true;
+    let creates = 0;
+    const checked: { charge: string; destination: string; amount: number }[] =
+      [];
+    const httpClient = Stripe.createFetchHttpClient(async (url, init) => {
+      const path = new URL(String(url)).pathname;
+      let body: unknown;
+      if (path === "/v1/charges/ch_source" && init?.method === "GET") {
+        body = { id: "ch_source", created: 1 };
+      } else if (path === "/v1/transfers" && init?.method === "GET") {
+        if (revoked) current = false;
+        body = { object: "list", data: [], has_more: false };
+      } else if (path === "/v1/transfers" && init?.method === "POST") {
+        creates++;
+        body = {
+          id: "tr_authorized",
+          destination: "acct_seller",
+          amount: 900,
+          currency: "usd",
+          source_transaction: "ch_source",
+          metadata: { bsRole: "store", bsSourceCharge: "ch_source" },
+        };
+      } else throw new Error("Unlisted synthetic provider request");
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const options = {
+      stripeSecretKey: "sk_test_runtime_only",
+      httpClient,
+      authorize: async (
+        context: import("../settlement/authorization.js").SettlementAuthorizationContext,
+      ) => {
+        if (context.phase !== "transfer")
+          throw new Error("Recovery group was already admitted");
+        checked.push({
+          charge: context.settlement.sourceChargeId,
+          destination: context.transfer.destinationAccountId,
+          amount: context.transfer.amount,
+        });
+        if (!current) throw new Error("Current host authority denied");
+      },
+    };
+    expect(
+      await f.client.executeGroupProvider(f.ctx, f.request, options),
+    ).toMatchObject(
+      revoked
+        ? { status: "unknown", reason: "provider_outcome_unknown" }
+        : { status: "ready", outcome: "collect" },
+    );
+    expect(creates).toBe(revoked ? 0 : 1);
+    expect(checked).toEqual([
+      { charge: "ch_source", destination: "acct_seller", amount: 900 },
+    ]);
   },
 );

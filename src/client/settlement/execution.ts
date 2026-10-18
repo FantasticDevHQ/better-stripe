@@ -9,6 +9,10 @@ import type { SplitTransfer } from "../core/fees.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
+import {
+  authorizeSettlement,
+  type SettlementAuthorization,
+} from "./authorization.js";
 export type ResolvedSettlement = {
   sourceChargeId: string;
   paymentIntentId?: string;
@@ -65,6 +69,7 @@ export async function executeResolvedTransfers(
   component: Component,
   ctx: RunCtx,
   opts: ResolvedSettlement,
+  authorize?: SettlementAuthorization,
 ): Promise<SettlementResult> {
   const saved = (await runMutationOrThrow(
     ctx,
@@ -160,9 +165,10 @@ export async function executeResolvedTransfers(
     let transferId = recorded?.stripeTransferId;
     if (!transferId) {
       const recovered = matchingTransfer(provider, claim, leg);
-      const transfer =
-        recovered ??
-        (await stripe.transfers.create(
+      let transfer = recovered;
+      if (!transfer) {
+        await authorizeSettlement(authorize, claim, leg);
+        transfer = await stripe.transfers.create(
           {
             amount: leg.amount,
             currency: claim.currency,
@@ -177,7 +183,8 @@ export async function executeResolvedTransfers(
           {
             idempotencyKey: `bs_split_${claim.sourceChargeId}_${leg.destinationAccountId}_${leg.role}`,
           },
-        ));
+        );
+      }
       transferId = transfer.id;
       await recordSettlementTransfer(component, ctx, claim, leg, transfer);
     }

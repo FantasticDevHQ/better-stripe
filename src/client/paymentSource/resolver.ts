@@ -48,6 +48,15 @@ const integer = (value: number) => Number.isSafeInteger(value) && value >= 0;
 export async function resolveVerifiedPaymentSource(
   stripe: Stripe,
   input: VerifiedPaymentSourceOptions,
+  eligibility?: {
+    requirePayable: true;
+    customerId: string;
+    invoiceLine?: {
+      id: string;
+      subscriptionItemId: string;
+      period: { start: number; end: number };
+    };
+  },
 ): Promise<FinancialOutcome<VerifiedPaymentSource>> {
   const parsed = paymentSourceOptions.safeParse(input);
   if (!parsed.success) return reject("invalid_scope");
@@ -120,6 +129,26 @@ export async function resolveVerifiedPaymentSource(
         identity(),
       );
     const customerAccountId = payment.customer_account!;
+    if (eligibility) {
+      requireSource(
+        charge.amount_refunded === 0 &&
+          charge.disputed === false &&
+          charge.refunded === false,
+        reject("payment_not_payable"),
+      );
+      requireSource(
+        objectId(payment.customer) === eligibility.customerId &&
+          objectId(charge.customer) === eligibility.customerId,
+        identity(),
+      );
+      requireSource(
+        !payment.transfer_data &&
+          !payment.on_behalf_of &&
+          !payment.application_fee_amount &&
+          !charge.transfer,
+        reject("unsupported_source"),
+      );
+    }
     const balanceRef = charge.balance_transaction;
     if (!balanceRef)
       return { status: "not_ready", reason: "fee_pending", retryable: true };
@@ -201,6 +230,11 @@ export async function resolveVerifiedPaymentSource(
         invoice.livemode === payment.livemode,
       identity(),
     );
+    if (eligibility)
+      requireSource(
+        objectId(invoice.customer) === eligibility.customerId,
+        identity(),
+      );
     requireSource(
       invoice.currency === opts.currency,
       reject("currency_mismatch"),
@@ -269,6 +303,11 @@ export async function resolveVerifiedPaymentSource(
         {},
         requestOptions,
       );
+      if (eligibility)
+        requireSource(
+          objectId(subscription.customer) === eligibility.customerId,
+          identity(),
+        );
       requireSource(
         subscription.object === "subscription" &&
           subscription.id === subscriptionId &&
@@ -297,11 +336,24 @@ export async function resolveVerifiedPaymentSource(
     requireSource(
       integer(line.amount) &&
         line.amount > 0 &&
-        Number.isSafeInteger(line.quantity) &&
-        line.quantity! > 0,
+        (line.quantity_decimal != null
+          ? /^\d{1,30}(\.\d{1,12})?$/.test(line.quantity_decimal.toString()) &&
+            /[1-9]/.test(line.quantity_decimal.toString())
+          : Number.isSafeInteger(line.quantity) && line.quantity! > 0),
       reject("unsupported_source"),
     );
     const parent = line.parent;
+    if (eligibility?.invoiceLine) {
+      const expected = eligibility.invoiceLine;
+      requireSource(
+        line.id === expected.id &&
+          line.parent?.subscription_item_details?.subscription_item ===
+            expected.subscriptionItemId &&
+          line.period.start === expected.period.start &&
+          line.period.end === expected.period.end,
+        identity(),
+      );
+    }
     const lineSubscription =
       parent?.subscription_item_details?.subscription ??
       parent?.invoice_item_details?.subscription ??

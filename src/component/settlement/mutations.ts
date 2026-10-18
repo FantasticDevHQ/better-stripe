@@ -1,3 +1,4 @@
+import { canonicalFingerprint } from "../operationEvidence/canonical.js";
 import { observeSettlementAllocation } from "../financialObservations/settlement.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
@@ -16,6 +17,10 @@ export const reserveSettlementAllocation = mutation({
   args: allocationFields,
   returns: doc,
   handler: async (ctx, args) => {
+    if (args.usageSource && args.creditSource)
+      throw new Error(
+        "Settlement cannot combine invoice and credit purchase sources",
+      );
     const existing = await ctx.db
       .query("settlementAllocations")
       .withIndex("by_source_charge", (q) =>
@@ -26,7 +31,11 @@ export const reserveSettlementAllocation = mutation({
       if (
         existing.currency !== args.currency ||
         existing.paymentIntentId !== args.paymentIntentId ||
-        existing.sourceInvoiceId !== args.sourceInvoiceId
+        existing.sourceInvoiceId !== args.sourceInvoiceId ||
+        (await canonicalFingerprint(existing.usageSource ?? null)) !==
+          (await canonicalFingerprint(args.usageSource ?? null)) ||
+        (await canonicalFingerprint(existing.creditSource ?? null)) !==
+          (await canonicalFingerprint(args.creditSource ?? null))
       )
         throw new Error("Settlement source identity cannot change.");
       await observeSettlementAllocation(ctx, existing);

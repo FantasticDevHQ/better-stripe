@@ -7,7 +7,12 @@ const response = (value: unknown) =>
   new Response(JSON.stringify(value), {
     headers: { "content-type": "application/json" },
   });
-export function creditFixture() {
+export function creditFixture(
+  intercept?: (
+    input: string,
+    init?: RequestInit,
+  ) => Promise<Response | undefined>,
+) {
   vi.useFakeTimers();
   vi.setSystemTime(700000);
   const calls: Array<{
@@ -25,6 +30,12 @@ export function creditFixture() {
     incomplete: false,
     canceled: false,
     refunded: false,
+    refundedAmount: 0,
+    disputed: false,
+    feePending: false,
+    processingFee: 1,
+    paymentCustomer: "cus_buyer",
+    chargeCustomer: "cus_buyer",
     failGrant: false,
     wrongPayer: false,
     paymentId: "pi_topup1",
@@ -32,6 +43,8 @@ export function creditFixture() {
     metadata: {} as Record<string, string>,
   };
   const f = fixture(false, false, async (input, init) => {
+    const override = await intercept?.(input, init);
+    if (override) return override;
     const path = new URL(input).pathname,
       method = init?.method ?? "GET",
       body = new URLSearchParams(String(init?.body ?? ""));
@@ -219,7 +232,7 @@ export function creditFixture() {
       id: state.paymentId,
       object: "payment_intent",
       customer_account: state.wrongPayer ? "acct_other" : "acct_buyer",
-      customer: "cus_buyer",
+      customer: state.paymentCustomer,
       livemode: false,
       currency: "usd",
       amount: 20,
@@ -244,8 +257,20 @@ export function creditFixture() {
             currency: "usd",
             livemode: false,
             refunded: state.refunded,
-            amount_refunded: state.refunded ? 20 : 0,
-            disputed: false,
+            amount_refunded: state.refunded ? 20 : state.refundedAmount,
+            disputed: state.disputed,
+            customer: state.chargeCustomer,
+            balance_transaction: state.feePending
+              ? null
+              : {
+                  id: "txn_topup1",
+                  object: "balance_transaction",
+                  source: "ch_topup1",
+                  currency: "usd",
+                  amount: 20,
+                  fee: state.processingFee,
+                  net: 20 - state.processingFee,
+                },
           }
         : null,
     };

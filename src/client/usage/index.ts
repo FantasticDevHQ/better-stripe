@@ -99,3 +99,12 @@ export type {
   UsageCorrectionHistoryPage,
   UsageCorrectionHistoryRecord,
 } from "./correctionRead.js";
+
+export type {
+  UsageInvoiceSaleOptions,
+  VerifiedUsageInvoiceSale,
+} from "./invoiceSale.js";
+export type { UsageInvoiceSettlementOptions } from "./settlement.js";
+export type { UsageCreditRevenue } from "./creditRevenue.js";
+
+export type { UsageCreditSettlementOptions } from "./creditSettlement.js";

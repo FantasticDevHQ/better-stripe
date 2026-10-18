@@ -74,3 +74,57 @@ it("persists the term, identity and earliest invoice despite replay and term cha
     }),
   ).rejects.toThrow();
 });
+
+it("pins original native metering provenance and refuses replay against another meter or invoice payment", async () => {
+  const t = convexTest(schema, modules);
+  const opts = {
+    sourceChargeId: "ch_meter",
+    paymentIntentId: "pi_meter",
+    sourceInvoiceId: "in_meter",
+    gross: 100,
+    currency: "usd",
+    processingFee: 3,
+    platformNet: 7,
+    transfers: [
+      {
+        destinationAccountId: "acct_seller",
+        amount: 90,
+        role: "store" as const,
+      },
+    ],
+    usageSource: {
+      stripeAccountId: "acct_platform",
+      customerAccount: "acct_buyer",
+      livemode: false,
+      meterId: "mtr_calls",
+      stripePriceId: "price_calls",
+      stripeProductId: "prod_calls",
+      subscriptionId: "sub_calls",
+      subscriptionItemId: "si_calls",
+      invoicePaymentId: "inpay_meter",
+      period: { start: 600, end: 1200 },
+      model: "pay_as_you_go" as const,
+    },
+  };
+  const first = await t.mutation(
+    api.settlement.mutations.reserveSettlementAllocation,
+    opts,
+  );
+  expect(first).toMatchObject({ usageSource: opts.usageSource });
+  for (const changed of [
+    { meterId: "mtr_other" },
+    { invoicePaymentId: "inpay_other" },
+  ])
+    await expect(
+      t.mutation(api.settlement.mutations.reserveSettlementAllocation, {
+        ...opts,
+        usageSource: { ...opts.usageSource, ...changed },
+      }),
+    ).rejects.toThrow(/source identity/i);
+  await expect(
+    t.mutation(api.settlement.mutations.reserveSettlementAllocation, {
+      ...opts,
+      usageSource: undefined,
+    }),
+  ).rejects.toThrow(/source identity/i);
+});

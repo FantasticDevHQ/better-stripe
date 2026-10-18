@@ -136,3 +136,5 @@ Native Stripe integration supports shared configuration and exact quantity helpe
 See [payment-backed prepaid usage](docs/usage-credits.md) for purchases, atomic reservations, credit history and recovery.
 
 See [included usage and optional limits](./docs/usage-limits.md) for atomic reservation accounting, monthly resets and overage policy.
+
+See [native usage settlement](./docs/usage-settlement.md) for original paid invoices, issuer-service purchases and affiliate policy.

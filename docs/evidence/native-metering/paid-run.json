@@ -1,0 +1,107 @@
+{
+  "apiVersion": "2026-09-30.endive",
+  "observedAt": "2026-10-18T03:29:41.330Z",
+  "models": [
+    {
+      "model": "pay_as_you_go",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 15,
+      "aggregationVerified": true,
+      "duplicateRetryVerified": true,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 30,
+      "currency": "usd",
+      "paymentVerified": false,
+      "creditPurchaseVerified": false,
+      "invoiceFinalizationVerified": false
+    },
+    {
+      "model": "included_overage",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 0,
+      "aggregationVerified": false,
+      "duplicateRetryVerified": false,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 0,
+      "currency": "usd",
+      "paymentVerified": false,
+      "creditPurchaseVerified": false,
+      "invoiceFinalizationVerified": false
+    },
+    {
+      "model": "prepaid",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 15,
+      "aggregationVerified": true,
+      "duplicateRetryVerified": true,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 0,
+      "currency": "usd",
+      "paymentVerified": true,
+      "creditPurchaseVerified": true,
+      "invoiceFinalizationVerified": false
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "credit",
+      "success": true
+    },
+    {
+      "kind": "test-payment-refund",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    }
+  ],
+  "payerMappingVerified": true
+}

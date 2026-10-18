@@ -1838,4 +1838,4 @@ Historical payout adoption and funded-account activation also use complete pagin
 
 ## Metered usage
 
-Metered billing is under investigation. See the [provider comparison and sandbox acceptance matrix](docs/metered-usage.md) for current status and integration requirements. Public usage APIs are not available yet.
+Metered billing is under investigation. Use the [native Stripe setup guide for developers and AI agents](docs/metering-setup.md). See the [provider comparison and sandbox acceptance matrix](docs/metered-usage.md) for current status and integration requirements. Configuration and exact-quantity helpers are available at `@fantastic.dev/better-stripe/usage`. Operational usage billing APIs are not available yet.

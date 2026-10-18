@@ -348,8 +348,8 @@ normalized immutable terms and rejects changed replay on the original identity,
 including time, currency, mapped customer and version. A transition must never
 turn a prepaid consumption into a new pay-as-you-go charge.
 
-These are shared contracts and host-boundary helpers. Runtime catalog, acceptance,
-delivery, correction and transition adapters are implemented in subsequent tickets.
+These are shared contracts and host-boundary helpers. The [atomic ledger](usage-ledger.md) implements acceptance and local history.
+Catalog, delivery, correction and transition adapters follow in subsequent tickets.
 
 `UsageContractPort` defines shared `record`, paginated `read`, `reconcile` and
 `capabilities` requests/results for host adapters. `record` is an atomic local

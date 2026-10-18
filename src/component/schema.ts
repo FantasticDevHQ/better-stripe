@@ -69,6 +69,12 @@ import {
   commissionDecisionsTable,
 } from "./settlement/schema";
 import { defineSchema } from "convex/server";
+import {
+  usageEventsTable,
+  usageOutboxTable,
+  usageScopeCountersTable,
+  usageReservationsTable,
+} from "./usage/schema.js";
 
 import {
   checkoutSessionsTable,
@@ -89,6 +95,10 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageEvents: usageEventsTable,
+  usageOutbox: usageOutboxTable,
+  usageScopeCounters: usageScopeCountersTable,
+  usageReservations: usageReservationsTable,
   refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,

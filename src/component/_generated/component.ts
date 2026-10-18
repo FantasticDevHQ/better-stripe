@@ -8270,6 +8270,112 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    usage: {
+      mutations: {
+        record: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            dispatch?: string;
+            inputJson: string;
+            quota?: number;
+            reservationId?: string;
+            subscriptionJson: string;
+          },
+          {
+            acceptedAt: number;
+            delivery: "queued";
+            eventId: string;
+            identity: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            delivery:
+              | "queued"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            event: {
+              _creationTime: number;
+              _id: string;
+              acceptedAt: number;
+              identity: string;
+              occurredAt: number;
+              recordJson: string;
+              reservationId?: string;
+              scopeKey: string;
+              subscriptionJson: string;
+            };
+          } | null,
+          Name
+        >;
+        read: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              delivery:
+                | "queued"
+                | "sending"
+                | "provider_accepted"
+                | "rejected"
+                | "unknown"
+                | "held";
+              event: {
+                _creationTime: number;
+                _id: string;
+                acceptedAt: number;
+                identity: string;
+                occurredAt: number;
+                recordJson: string;
+                reservationId?: string;
+                scopeKey: string;
+                subscriptionJson: string;
+              };
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     webhooks: {
       mutations: {
         insertWebhookEvent: FunctionReference<

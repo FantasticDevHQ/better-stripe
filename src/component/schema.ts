@@ -1,3 +1,7 @@
+import {
+  errorsTable as usageDeliveryErrors,
+  locksTable as usageDeliveryLocks,
+} from "./usageDelivery/fields.js";
 import { claimsTable as refundSyncClaimsTable } from "./refundSync/schema.js";
 import { operationsTable as processingCostReconciliationOperations } from "./processingCostReconciliation/schema.js";
 import {
@@ -96,6 +100,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageDeliveryLocks,
+  usageDeliveryErrors,
   usageCatalog: usageCatalogTable,
   usageEvents: usageEventsTable,
   usageOutbox: usageOutboxTable,

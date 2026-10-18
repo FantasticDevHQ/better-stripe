@@ -32,3 +32,16 @@ export type {
   UsageProviderCapabilities,
   UsageContractPort,
 } from "./boundaries.js";
+
+export type {
+  UsageDeliveryRequest,
+  UsageDeliveryOutcome,
+  UsageDeliveryProviderOptions,
+} from "./deliveryProvider.js";
+export type {
+  UsageDeliveryRef,
+  UsageDeliveryStatus,
+  UsageDeliveryStartOptions,
+} from "./deliveryClient.js";
+
+export { usageDeliveryArgs, usageDeliveryResult } from "./deliveryProtocol.js";

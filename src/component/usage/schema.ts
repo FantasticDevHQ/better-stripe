@@ -1,3 +1,4 @@
+import { deliveryFields } from "../usageDelivery/fields.js";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
@@ -32,7 +33,8 @@ export const eventDoc = v.object({
 export const usageEventsTable = defineTable(eventFields)
   .index("by_identity", ["identity"])
   .index("by_scope_time", ["scopeKey", "occurredAt"]);
-export const usageOutboxTable = defineTable({
+export const outboxFields = {
+  ...deliveryFields,
   eventId: v.id("usageEvents"),
   scopeKey: v.string(),
   state: deliveryValidator,
@@ -40,7 +42,14 @@ export const usageOutboxTable = defineTable({
   nextAttemptAt: v.number(),
   providerIdentifier: v.string(),
   dispatch: v.optional(v.string()),
-})
+};
+export const outboxDoc = v.object({
+  _id: v.id("usageOutbox"),
+  _creationTime: v.number(),
+  ...outboxFields,
+});
+export const usageOutboxTable = defineTable(outboxFields)
+  .index("by_provider_identifier", ["providerIdentifier"])
   .index("by_event", ["eventId"])
   .index("by_state_next", ["state", "nextAttemptAt"])
   .index("by_scope_state", ["scopeKey", "state"]);

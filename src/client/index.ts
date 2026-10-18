@@ -2,6 +2,7 @@ import * as setupIntentRead from "./billing/setup-intent-read.js";
 export type {
   SetupIntentReadOptions,
   SetupIntentObservation,
+  SetupIntentObservationStatus,
 } from "./billing/setup-intent-read.js";
 import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
 import type {

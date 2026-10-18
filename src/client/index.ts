@@ -1,4 +1,4 @@
-export { UsageSubscriptionError } from "./usage/subscriptionProvider.js";
+export { UsageSubscriptionError } from "./usage/subscriptionErrors.js";
 export { UsageCatalogError } from "./usage/catalogTypes.js";
 export type {
   UsageCatalogScope,

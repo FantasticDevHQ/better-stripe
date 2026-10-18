@@ -12,20 +12,8 @@ import {
   type UsageSubscriptionTerms,
   type UsageSubscriptionOptions,
 } from "./subscriptionTerms.js";
-export class UsageSubscriptionError extends Error {
-  constructor(
-    public readonly code:
-      | "unsupported_scope"
-      | "overlapping_enrollment"
-      | "incompatible_terms"
-      | "unknown_create_outcome"
-      | "provider_unavailable",
-    message: string,
-  ) {
-    super(message);
-    this.name = "UsageSubscriptionError";
-  }
-}
+import { UsageSubscriptionError } from "./subscriptionErrors.js";
+export { UsageSubscriptionError } from "./subscriptionErrors.js";
 export async function subscriptionCall<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();

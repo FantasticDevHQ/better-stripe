@@ -71,4 +71,4 @@ export type {
 export type { UsageSubscriptionRef } from "./subscriptionLifecycle.js";
 export type { UsageSubscriptionInvoice } from "./subscriptionInvoiceSchema.js";
 
-export { UsageSubscriptionError } from "./subscriptionProvider.js";
+export { UsageSubscriptionError } from "./subscriptionErrors.js";

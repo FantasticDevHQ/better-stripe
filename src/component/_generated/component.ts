@@ -7851,6 +7851,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               paymentId?: string;
               paymentIntentId?: string;
               platformNet: number;
+              policyContext?: {
+                fields: Record<string, string>;
+                namespace: string;
+                version: 1;
+              };
               processingFee: number;
               sourceChargeId: string;
               sourceInvoiceId?: string;
@@ -7978,6 +7983,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               paymentId?: string;
               paymentIntentId?: string;
               platformNet: number;
+              policyContext?: {
+                fields: Record<string, string>;
+                namespace: string;
+                version: 1;
+              };
               processingFee: number;
               sourceChargeId: string;
               sourceInvoiceId?: string;
@@ -8613,6 +8623,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentId?: string;
             paymentIntentId?: string;
             platformNet: number;
+            policyContext?: {
+              fields: Record<string, string>;
+              namespace: string;
+              version: 1;
+            };
             processingFee: number;
             sourceChargeId: string;
             sourceInvoiceId?: string;
@@ -8653,6 +8668,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentId?: string;
             paymentIntentId?: string;
             platformNet: number;
+            policyContext?: {
+              fields: Record<string, string>;
+              namespace: string;
+              version: 1;
+            };
             processingFee: number;
             sourceChargeId: string;
             sourceInvoiceId?: string;
@@ -8713,6 +8733,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             paymentId?: string;
             paymentIntentId?: string;
             platformNet: number;
+            policyContext?: {
+              fields: Record<string, string>;
+              namespace: string;
+              version: 1;
+            };
             processingFee: number;
             sourceChargeId: string;
             sourceInvoiceId?: string;

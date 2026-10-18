@@ -68,3 +68,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 [Managed metered subscriptions and invoice lifecycle](usage-subscriptions.md) covers all three models, Checkout, renewal, closeout and native test clocks.
 
 - [Payment-backed prepaid usage](./usage-credits.md)
+
+- [Included usage and limits](./usage-limits.md) covers atomic caps, reservations, period resets and exact overage estimates.

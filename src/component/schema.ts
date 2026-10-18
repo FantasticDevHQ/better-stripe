@@ -1,4 +1,8 @@
 import {
+  policiesTable as usageAllowancePolicies,
+  historyTable as usageAllowanceHistory,
+} from "./usageAllowance/schema.js";
+import {
   accountsTable as usageCreditAccounts,
   purchasesTable as usageCreditPurchases,
   grantsTable as usageCreditGrants,
@@ -116,6 +120,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageAllowancePolicies,
+  usageAllowanceHistory,
   usageSubscriptionControls,
   usageSubscriptionIntents,
   usageSubscriptionLocks,

@@ -8378,6 +8378,100 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    usageAllowance: {
+      mutations: {
+        configure: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string; expectedRevision: number; policyJson: string },
+          { revision: number },
+          Name
+        >;
+        release: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            reason: "work_failed" | "abandoned_before_work";
+            reservationId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          null,
+          Name
+        >;
+        reserve: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string; subscriptionJson: string },
+          | {
+              reason: "not_entitled" | "hard_limit";
+              revision: number;
+              state: "denied";
+            }
+          | {
+              reservationId: string;
+              revision: number;
+              state: "reserved" | "committed" | "released";
+            },
+          Name
+        >;
+      };
+      queries: {
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              evidenceJson: string;
+              key: string;
+              kind: "policy" | "reservation" | "commit" | "release";
+            }>;
+          },
+          Name
+        >;
+        reconciliation: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            acceptedScaledQuantity: string;
+            consumedScaledQuantity: string;
+            reason: string;
+            repaired: false;
+            reservedScaledQuantity: string;
+            status: "matched" | "held";
+          },
+          Name
+        >;
+        status: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          string | null,
+          Name
+        >;
+      };
+    };
     usageCatalog: {
       mutations: {
         complete: FunctionReference<

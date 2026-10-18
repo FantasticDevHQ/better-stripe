@@ -46,3 +46,11 @@ export type {
   UsageCreditPurchase,
   UsageCreditBalance,
 } from "./usage/creditTerms.js";
+
+export type {
+  UsageAllowanceBinding,
+  UsageAllowanceStatus,
+  UsageAllowanceReconciliation,
+  UsageLimitPolicy,
+} from "./usage/allowanceTerms.js";
+export type { UsageAllowanceReservation } from "./usage/allowanceClient.js";

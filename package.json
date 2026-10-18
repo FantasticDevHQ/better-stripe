@@ -46,6 +46,10 @@
     "./_generated/component.js": {
       "types": "./dist/component/_generated/component.d.ts",
       "default": "./dist/component/_generated/component.js"
+    },
+    "./usage": {
+      "types": "./dist/client/usage/index.d.ts",
+      "default": "./dist/client/usage/index.js"
     }
   },
   "main": "./dist/client/index.js",
@@ -85,7 +89,8 @@
     "docs/releasing.md",
     "docs/release-handoff.md",
     "docs/setup-intent-recovery.md",
-    "docs/metered-usage.md"
+    "docs/metered-usage.md",
+    "docs/metering-setup.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

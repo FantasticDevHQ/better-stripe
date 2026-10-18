@@ -1843,3 +1843,21 @@ export {
   usageDeliveryArgs,
   usageDeliveryResult,
 } from "./usage/deliveryProtocol.js";
+
+export type {
+  UsageObservationOptions,
+  UsageAggregateValue,
+  UsageAggregateObservation,
+} from "./usage/observationTypes.js";
+export type {
+  UsageLocalSummary,
+  UsageLocalGroup,
+  UsageCreditSummary,
+} from "./usage/summary.js";
+export type { UsageComparison } from "./usage/reconciliation.js";
+export type { UsageReconciliationOptions } from "./usage/observationClient.js";
+
+export type {
+  UsageInvoiceObservation,
+  UsageInvoiceLine,
+} from "./usage/invoiceObservation.js";

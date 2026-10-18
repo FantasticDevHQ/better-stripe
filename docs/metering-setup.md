@@ -184,3 +184,5 @@ Primary references:
 - [Metronome quickstart](https://docs.metronome.com/guides/get-started/api-quickstart)
 
 Use the [native catalog guide](usage-catalog.md) to provision versioned meters and prices through BetterStripe.
+
+Use the [usage observation guide](usage-observations.md) for bounded local reads, native aggregate refreshes and honest invoice/credit availability.

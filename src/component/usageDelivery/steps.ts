@@ -1,3 +1,4 @@
+import { appendDeliveryHistory } from "../usageObservations/history.js";
 import { internalMutation } from "../_generated/server.js";
 import { v } from "convex/values";
 import { refFields, request, status } from "./schema.js";
@@ -30,6 +31,13 @@ export const claim = internalMutation({
         state: outbox.firstSendAt === undefined ? "held" : "unknown",
         reason: "delivery_window_expired",
       });
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "window_expired",
+        outbox.attempts,
+        `window:${outbox.attempts}`,
+      );
       return { kind: "done" as const };
     }
     if (outbox.state === "sending") {
@@ -45,6 +53,13 @@ export const claim = internalMutation({
         state: "unknown",
         reason: "provider_outcome_unknown",
       });
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "unknown",
+        outbox.attempts,
+        `result:${outbox.attempts}:unknown`,
+      );
       return { kind: "done" as const };
     }
     const keys = lockKeys(record);
@@ -85,6 +100,13 @@ export const claim = internalMutation({
       leaseUntil: now + 900,
       reason: undefined,
     });
+    await appendDeliveryHistory(
+      ctx,
+      args.eventId,
+      "started",
+      attempt,
+      `started:${attempt}`,
+    );
     return {
       kind: "ready" as const,
       request: {
@@ -153,6 +175,14 @@ export const save = internalMutation({
           eventId: undefined,
         });
     }
+    await appendDeliveryHistory(
+      ctx,
+      args.eventId,
+      result.status,
+      args.attempt,
+      `result:${args.attempt}:${result.status}`,
+      result.status === "accepted" ? result.created : undefined,
+    );
     return statusOf((await read(ctx, args)).outbox);
   },
 });
@@ -161,11 +191,19 @@ export const exhaust = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const { outbox } = await read(ctx, args);
-    if (outbox.state === "queued")
+    if (outbox.state === "queued") {
       await ctx.db.patch("usageOutbox", outbox._id, {
         state: "held",
         reason: "retry_exhausted",
       });
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "retry_exhausted",
+        outbox.attempts,
+        `exhaust:${outbox.attempts}`,
+      );
+    }
     return null;
   },
 });

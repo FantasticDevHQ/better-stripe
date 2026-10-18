@@ -103,7 +103,8 @@
     "docs/development.md",
     "docs/usage-ledger.md",
     "docs/usage-catalog.md",
-    "docs/usage-delivery.md"
+    "docs/usage-delivery.md",
+    "docs/usage-observations.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

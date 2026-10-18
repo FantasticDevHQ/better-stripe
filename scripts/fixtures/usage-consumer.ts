@@ -318,3 +318,23 @@ export function nativeUsageViews(
     formattedEstimate: formatUsageEstimate("0.125", "usd"),
   };
 }
+
+import {
+  UsageConfiguration,
+  useUsageConfiguration,
+  UsagePriceRow,
+  type UsageConfigurationProps,
+  type UsageCatalogPrice,
+} from "@fantastic.dev/better-stripe/react";
+export function nativeUsageConfiguration(
+  props: UsageConfigurationProps,
+  value: UsageCatalogPrice,
+) {
+  return {
+    UsageConfiguration,
+    useUsageConfiguration,
+    UsagePriceRow,
+    props,
+    value,
+  };
+}

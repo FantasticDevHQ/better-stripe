@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BetterStripe configuration verification</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f7f7f1;
+        color: #192c2b;
+        font:
+          15px/1.5 Georgia,
+          serif;
+      }
+      main {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 28px;
+      }
+      h1 {
+        font-size: 36px;
+        letter-spacing: -1px;
+        margin: 4px 0;
+      }
+      header {
+        border-bottom: 3px solid #224d49;
+        padding-bottom: 16px;
+      }
+      button,
+      select {
+        font: inherit;
+        padding: 7px 12px;
+        margin: 4px;
+        border: 1px solid #93aaa5;
+        background: white;
+        color: #192c2b;
+      }
+      button:focus-visible,
+      select:focus-visible {
+        outline: 3px solid #237d68;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      section {
+        margin: 20px 0;
+      }
+      section section {
+        background: white;
+        border: 1px solid #ccd5cc;
+        padding: 18px;
+      }
+      article {
+        border-top: 1px solid #dce2d9;
+        margin-top: 12px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 24px;
+      }
+      dl > div {
+        display: contents;
+      }
+      dt {
+        font-size: 13px;
+        color: #47605c;
+      }
+      dd {
+        margin: 0;
+        font: 15px/1.5 monospace;
+      }
+      p[role="status"] {
+        color: #765c20;
+      }
+      h2 {
+        margin: 4px 0 12px;
+        font-size: 22px;
+      }
+      h3 {
+        font-size: 18px;
+      }
+      progress {
+        width: 100%;
+        accent-color: #267a64;
+      }
+      small {
+        font-family: monospace;
+      }
+      ol {
+        padding-left: 24px;
+      }
+      #controls {
+        margin: 16px 0;
+        padding: 12px;
+        background: #e4ece2;
+      }
+      .case {
+        font-weight: bold;
+      }
+      label {
+        display: block;
+        margin-top: 9px;
+      }
+      input {
+        display: block;
+        width: min(100%, 420px);
+        padding: 7px;
+      }
+      fieldset {
+        border: 1px solid #b6c9c6;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 850px) {
+        .columns {
+          display: block;
+        }
+        dl {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="root"></main>
+    <script
+      type="module"
+      src="/scripts/fixtures/usage-configuration-ui.tsx"
+    ></script>
+  </body>
+</html>

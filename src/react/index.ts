@@ -326,3 +326,19 @@ export type {
   UsageHistoryProps,
   UsageHistoryPage,
 } from "./workflows/UsageHistory.js";
+
+export { UsageConfiguration } from "./workflows/UsageConfiguration.js";
+export { useUsageConfiguration } from "./workflows/useUsageConfiguration.js";
+export type {
+  UsageConfigurationProps,
+  UsageConfigurationScope,
+  UsageConfigurationValue,
+  UsageConfigurationFields,
+  UsageConfigurationState,
+  UsageMeterChoice,
+} from "./workflows/UsageConfiguration.types.js";
+export { UsagePriceRow } from "./workflows/UsagePriceRow.js";
+export type {
+  UsagePriceRowProps,
+  UsageCatalogPrice,
+} from "./workflows/UsagePriceRow.js";

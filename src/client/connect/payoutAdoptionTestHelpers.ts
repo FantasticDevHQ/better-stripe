@@ -7,7 +7,23 @@ import schema from "../../component/schema.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { releaseRecipientPayout } from "./payoutExecution.js";
 import { adoptRecipientPayouts } from "./payoutAdoption.js";
-const modules = import.meta.glob("../../component/**/*.*s");
+// Load Convex functions during fixture import so the first action does not
+// spend its execution timeout compiling the function graph.
+const functionModules = import.meta.glob(
+  [
+    "../../component/**/*.*s",
+    "!../../component/**/*.test.*",
+    "!../../component/**/*.fixtures.ts",
+    "!../../component/**/convex.config.*",
+  ],
+  { eager: true },
+);
+const modules = Object.fromEntries(
+  Object.entries(functionModules).map(([path, module]) => [
+    path,
+    () => Promise.resolve(module),
+  ]),
+);
 const symbol = Symbol.for("toReferencePath");
 export const component = {
   payoutPolicy: {

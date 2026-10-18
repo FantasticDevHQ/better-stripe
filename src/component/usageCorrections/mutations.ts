@@ -1,3 +1,4 @@
+import { locallyCancelable } from "../../client/usage/correctionEligibility.js";
 import { adoptInvoiceCorrection } from "./invoice.js";
 import { closureByStripeId } from "../accountClosure/helpers.js";
 import { correctionOutcome } from "../../client/usage/correctionProofs.js";
@@ -58,10 +59,7 @@ export const prepare = mutation({
       )
     )
       throw new Error("Original usage already has a correction operation");
-    const unsent =
-      outbox.attempts === 0 &&
-      outbox.firstSendAt === undefined &&
-      !outbox.receipt;
+    const unsent = locallyCancelable(outbox);
     const prepaid = record.binding.plan.model === "prepaid";
     const state = partial
       ? ("unsupported" as const)
@@ -71,7 +69,9 @@ export const prepare = mutation({
     const reason = partial
       ? "partial_event_requires_replacement_or_invoice_adjustment"
       : state === "confirmed"
-        ? "canceled_before_delivery"
+        ? outbox.state === "rejected"
+          ? "canceled_after_delivery_rejection"
+          : "canceled_before_delivery"
         : unsent
           ? "credit_backing_verification_required"
           : "native_cancellation_required";
@@ -140,10 +140,7 @@ export const claim = mutation({
       scope: JSON.parse(row.inputJson).scope,
       eventId: row.eventId,
     });
-    const neverDelivered =
-      source.outbox.attempts === 0 &&
-      source.outbox.firstSendAt === undefined &&
-      !source.outbox.receipt;
+    const neverDelivered = locallyCancelable(source.outbox);
     if (
       !neverDelivered &&
       row.attemptedAt !== undefined &&
@@ -232,16 +229,14 @@ export const save = mutation({
         restoredQuantity: confirm ? row.quantity : "0",
       });
     } else if (result.status === "local_complete") {
-      if (
-        outbox.attempts !== 0 ||
-        outbox.firstSendAt !== undefined ||
-        outbox.receipt ||
-        record.binding.plan.model !== "prepaid"
-      )
+      if (!locallyCancelable(outbox) || record.binding.plan.model !== "prepaid")
         throw new Error("Unsent credit correction provenance mismatch");
       await ctx.db.patch("usageCorrections", row._id, {
         state: "confirmed",
-        reason: "canceled_before_delivery",
+        reason:
+          outbox.state === "rejected"
+            ? "canceled_after_delivery_rejection"
+            : "canceled_before_delivery",
         leaseUntil: 0,
         restoredQuantity: row.quantity,
       });

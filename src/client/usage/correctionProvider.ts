@@ -1,3 +1,4 @@
+import { locallyCancelable } from "./correctionEligibility.js";
 import Stripe from "stripe";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
@@ -164,10 +165,7 @@ export async function requestUsageCorrection(
     )) as { event: Doc<"usageEvents">; outbox: Doc<"usageOutbox"> };
     if (saved.outbox.correctionKey !== row.key)
       throw new Error("Native correction intent mismatch");
-    const unsent =
-      saved.outbox.attempts === 0 &&
-      saved.outbox.firstSendAt === undefined &&
-      !saved.outbox.receipt;
+    const unsent = locallyCancelable(saved.outbox);
     if (unsent) {
       await verifyCreditDelivery(stripe, component, ctx, saved.event, record);
       return save({ status: "local_complete", creditBackingVerified: true });

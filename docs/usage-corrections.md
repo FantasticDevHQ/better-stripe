@@ -242,3 +242,8 @@ and original financial outcome is known.
 Native references: [Meter Event Adjustment API](https://docs.stripe.com/api/billing/meter-event-adjustment/create),
 [credit notes](https://docs.stripe.com/invoicing/dashboard/credit-notes), and
 [retrieving a credit note](https://docs.stripe.com/api/credit_notes/retrieve).
+
+A delivery explicitly rejected by the provider with no acceptance receipt can
+also be canceled locally. The original rejection and correction history remain
+available. Paid credits require fresh verification of their original backing
+before restoration. Unknown or in-flight delivery never qualifies for this path.

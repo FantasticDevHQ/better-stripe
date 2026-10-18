@@ -364,3 +364,26 @@ it("retires corrected usage without deleting its original native validation-erro
     await t.run((ctx) => ctx.db.query("usageDeliveryErrors").take(10)),
   ).toHaveLength(1);
 });
+
+it("locally cancels known rejected delivery but keeps ambiguous delivery held", async () => {
+  for (const state of ["rejected", "unknown"] as const) {
+    const { t, correction } = await setup();
+    await t.run(async (ctx) => {
+      const outbox = (await ctx.db.query("usageOutbox").first())!;
+      await ctx.db.patch("usageOutbox", outbox._id, {
+        state,
+        attempts: 1,
+        firstSendAt: 700,
+        reason:
+          state === "rejected"
+            ? "provider_rejected"
+            : "provider_outcome_unknown",
+      });
+    });
+    const result = await t.mutation(ref("prepare"), {
+      inputJson: JSON.stringify(correction),
+    });
+    expect(result.state).toBe(state === "rejected" ? "confirmed" : "requested");
+    expect(result.restoredQuantity).toBe(state === "rejected" ? "6" : "0");
+  }
+});

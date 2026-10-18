@@ -1,4 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
+import workflowTest from "@convex-dev/workflow/test";
+import { componentRef } from "../webhooks/helpers.js";
 import { BetterStripe } from "../index.js";
 import type { RunCtx } from "../helpers.js";
 import { creditFixture } from "./creditTransport.fixtures.js";
@@ -112,4 +114,43 @@ it("can verify and cancel provably unsent prepaid usage after a delayed credenti
       client.usage.getCreditBalance(ctx as RunCtx, f.purchase),
     ),
   ).toMatchObject({ availableQuantity: "10", consumedQuantity: "0" });
+});
+
+it("restores a known rejected prepaid delivery only after fresh backing verification", async () => {
+  for (const refunded of [false, true]) {
+    const { f, client, options, correction } = await ready();
+    workflowTest.register(f.t, "betterStripe/workflow");
+    const delivery = { scope: correction.scope, eventId: correction.eventId };
+    await f.t.mutation(
+      componentRef(f.component, "usageDelivery/mutations/start"),
+      {
+        ...delivery,
+        provider: "function://provider",
+        definitionVersion: 1,
+      },
+    );
+    const claim = (await f.t.mutation(
+      componentRef(f.component, "usageDelivery/steps/claim"),
+      delivery,
+    )) as { request: Record<string, unknown> };
+    await f.t.mutation(componentRef(f.component, "usageDelivery/steps/save"), {
+      ...claim.request,
+      outcome: { status: "rejected" },
+    });
+    f.state.refunded = refunded;
+    expect(
+      await f.t.action((ctx) =>
+        client.usage.requestCorrection(ctx as RunCtx, correction, options),
+      ),
+    ).toMatchObject({
+      state: refunded ? "held" : "confirmed",
+      restoredQuantity: refunded ? "0" : "6",
+    });
+    expect(
+      f.calls.filter(
+        (c) =>
+          c.path.includes("meter_event_adjustments") && c.method === "POST",
+      ),
+    ).toHaveLength(0);
+  }
 });

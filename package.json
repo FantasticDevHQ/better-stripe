@@ -110,6 +110,7 @@
     "docs/usage-limits.md",
     "docs/usage-corrections.md",
     "docs/usage-settlement.md",
+    "docs/usage-security.md",
     "docs/evidence/native-metering"
   ],
   "scripts": {

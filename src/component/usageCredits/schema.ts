@@ -33,6 +33,13 @@ export const purchaseFields = {
   paymentKey: v.optional(v.string()),
   paymentProofJson: v.optional(v.string()),
   refundedAmount: v.optional(v.number()),
+  recoveryReason: v.optional(
+    v.union(
+      v.literal("payment_refunded"),
+      v.literal("payment_disputed"),
+      v.literal("native_state_changed"),
+    ),
+  ),
   grantFirstAttemptAt: v.optional(v.number()),
   creditGrantId: v.optional(v.string()),
 };
@@ -65,6 +72,9 @@ export const grantFields = {
   nativeExpired: v.optional(v.boolean()),
   nativeObservationJson: v.optional(v.string()),
   observedAt: v.optional(v.number()),
+  proofStartedAt: v.optional(v.number()),
+  observationStartedAt: v.optional(v.number()),
+  observationConflictAt: v.optional(v.number()),
 };
 export const grantDoc = v.object({
   _id: v.id("usageCreditGrants"),

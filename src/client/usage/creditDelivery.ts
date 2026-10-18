@@ -8,6 +8,7 @@ import type { PreparedUsageRecord } from "./records.js";
 import { creditNativeObservation } from "./creditProofs.js";
 import { creditPurchaseTerms } from "./creditTerms.js";
 import {
+  nativeCustomerId,
   creditRequire,
   paymentIdentity,
   verifiedCreditPayment,
@@ -84,6 +85,7 @@ export async function verifyCreditDelivery(
       grant.id === local.creditGrantId &&
         !grant.voided_at &&
         grant.customer_account === record.scope.customerAccount &&
+        nativeCustomerId(grant.customer) === record.binding.stripeCustomerId &&
         grant.livemode === record.scope.livemode &&
         grant.metadata?.bsUsageCredit === purchase.key &&
         (grant.expires_at === null ||
@@ -94,6 +96,8 @@ export async function verifyCreditDelivery(
           record.binding.stripePriceId &&
         summary.livemode === record.scope.livemode &&
         summary.customer_account === record.scope.customerAccount &&
+        nativeCustomerId(summary.customer) ===
+          record.binding.stripeCustomerId &&
         summary.balances.length === 1 &&
         native?.currency === terms.binding.plan.rate.currency &&
         native.value === expected &&

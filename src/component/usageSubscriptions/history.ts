@@ -58,7 +58,9 @@ export async function saveView(
     view,
     startedAt,
   );
-  if ((intent.startedAt ?? -1) <= startedAt)
+  if ((intent.startedAt ?? -1) >= startedAt && intent.viewJson)
+    return JSON.parse(intent.viewJson) as ReturnType<typeof subscriptionView>;
+  if ((intent.startedAt ?? -1) < startedAt)
     await ctx.db.patch("usageSubscriptionIntents", intent._id, {
       providerId: view.subscriptionId,
       viewJson: JSON.stringify(view),

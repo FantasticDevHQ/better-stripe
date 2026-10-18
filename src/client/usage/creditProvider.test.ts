@@ -200,3 +200,77 @@ it("cancels an unpaid original purchase and never recreates its payment intent",
     ),
   ).toHaveLength(1);
 });
+
+it("rejects captured credit purchases whose payment or charge uses a foreign mapped Customer", async () => {
+  for (const field of ["paymentCustomer", "chargeCustomer"] as const) {
+    const f = creditFixture();
+    await f.ready();
+    await f.t.action((ctx) =>
+      ensureCreditPurchase(f.stripe, f.component, ctx as RunCtx, f.purchase),
+    );
+    f.state.paid = true;
+    f.state[field] = "cus_other";
+    await expect(
+      f.t.action((ctx) =>
+        observeCreditPurchase(f.stripe, f.component, ctx as RunCtx, f.purchase),
+      ),
+    ).rejects.toThrow(/scope|identity|verified/i);
+    expect(
+      f.calls.filter(
+        (c) => c.path === "/v1/billing/credit_grants" && c.method === "POST",
+      ),
+    ).toHaveLength(0);
+  }
+});
+
+it("rejects adoption of a paid grant whose mapped Customer differs from its original payer binding", async () => {
+  const f = creditFixture();
+  await f.ready();
+  await f.t.action((ctx) =>
+    ensureCreditPurchase(f.stripe, f.component, ctx as RunCtx, f.purchase),
+  );
+  f.state.paid = true;
+  let failed = false;
+  await expect(
+    f.t.action((ctx) =>
+      observeCreditPurchase(
+        f.stripe,
+        f.component,
+        {
+          runQuery: ctx.runQuery,
+          runAction: ctx.runAction,
+          runMutation: async (
+            reference: Parameters<NonNullable<RunCtx["runMutation"]>>[0],
+            args: Record<string, unknown>,
+          ) => {
+            if (
+              String(
+                (reference as unknown as Record<symbol, string>)[
+                  Symbol.for("toReferencePath")
+                ],
+              ).endsWith("/usageCredits/mutations/pinGrant") &&
+              !failed
+            ) {
+              failed = true;
+              throw new Error("simulated persistence failure");
+            }
+            return ctx.runMutation(reference, args);
+          },
+        } as RunCtx,
+        f.purchase,
+      ),
+    ),
+  ).rejects.toThrow();
+  expect(f.state.grant).toBeDefined();
+  f.state.grant!.customer = "cus_other";
+  await expect(
+    f.t.action((ctx) =>
+      observeCreditPurchase(f.stripe, f.component, ctx as RunCtx, f.purchase),
+    ),
+  ).rejects.toThrow(/grant|identity/i);
+  expect(
+    f.calls.filter(
+      (c) => c.path === "/v1/billing/credit_grants" && c.method === "POST",
+    ),
+  ).toHaveLength(1);
+});

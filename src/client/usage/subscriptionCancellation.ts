@@ -11,6 +11,7 @@ import {
 } from "./subscriptionTerms.js";
 import {
   subscriptionCall,
+  beginSubscriptionObservation,
   UsageSubscriptionError,
   verifySubscriptionRealm,
 } from "./subscriptionProvider.js";
@@ -21,8 +22,8 @@ export async function changeManagedCancellation(
   row: Doc<"usageSubscriptionIntents">,
   input: { operationId: string; cancelAtPeriodEnd: boolean },
 ): Promise<UsageSubscriptionView> {
-  const terms = subscriptionTerms(JSON.parse(row.termsJson)),
-    startedAt = Date.now();
+  const terms = subscriptionTerms(JSON.parse(row.termsJson));
+  const startedAt = await beginSubscriptionObservation(component, ctx, row.key);
   return subscriptionCall(async () => {
     if (!row.providerId)
       throw new UsageSubscriptionError(

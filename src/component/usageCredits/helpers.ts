@@ -158,3 +158,11 @@ export async function history(
     historyCount: row.historyCount + 1,
   });
 }
+
+/** Observation order never extends the wall-clock lifetime of native financial evidence. */
+export function freshCreditProof(grant: Doc<"usageCreditGrants">) {
+  const start = grant.proofStartedAt ?? grant.observedAt;
+  return (
+    start !== undefined && start <= Date.now() && Date.now() - start <= 60000
+  );
+}

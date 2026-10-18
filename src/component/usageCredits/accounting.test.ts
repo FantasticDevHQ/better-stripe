@@ -1,7 +1,6 @@
-import { convexTest } from "convex-test";
+import { setupCredits } from "./accounting.fixtures.js";
 import { makeFunctionReference } from "convex/server";
 import { afterEach, expect, it, vi } from "vitest";
-import { schema, modules } from "../../test.js";
 import {
   request,
   nativeSubscription,
@@ -16,86 +15,7 @@ const save = makeFunctionReference<"mutation">(
 );
 const record = makeFunctionReference<"mutation">("usage/mutations:record");
 const balance = makeFunctionReference<"query">("usageCredits/queries:balance");
-export async function setupCredits() {
-  vi.useFakeTimers();
-  vi.setSystemTime(700000);
-  const t = convexTest(schema, modules);
-  const meter = {
-    scope: request.meters[0].scope,
-    binding: {
-      ...request.meters[0].binding,
-      plan: {
-        key: "calls",
-        version: "v1",
-        model: "prepaid",
-        unit: { name: "call", precision: 0 },
-        rate: { currency: "usd", unitAmountDecimal: "2" },
-        insufficientBalance: "reject",
-      } as const,
-    },
-  };
-  const terms = { ...request, meters: [meter] };
-  const intent = await t.mutation(prepare, {
-    termsJson: JSON.stringify(terms),
-    method: "direct",
-  });
-  await t.mutation(save, {
-    key: intent.key,
-    nativeJson: JSON.stringify(nativeSubscription()),
-    startedAt: Date.now(),
-  });
-  const purchase = {
-    ...meter,
-    purchaseId: "topup1",
-    quantity: "10",
-    ownership: "issuer",
-    rollover: "retain_original_terms",
-  };
-  const row = await t.mutation(ref("preparePurchase"), {
-    inputJson: JSON.stringify(purchase),
-  });
-  await t.mutation(ref("pinPayment"), {
-    key: row.key,
-    paymentIntentId: "pi_topup1",
-  });
-  const proof = {
-    paymentIntentId: "pi_topup1",
-    chargeId: "ch_topup1",
-    amount: 20,
-    currency: "usd",
-    customerAccount: "acct_buyer",
-    livemode: false,
-  };
-  await t.mutation(ref("verifyPayment"), {
-    key: row.key,
-    proofJson: JSON.stringify(proof),
-  });
-  await t.mutation(ref("pinGrant"), {
-    key: row.key,
-    proofJson: JSON.stringify({
-      ...proof,
-      creditGrantId: "credgr_topup1",
-      stripePriceId: "price_calls",
-      createdAt: 700,
-      effectiveAt: 700,
-      expiresAt: null,
-    }),
-  });
-  const subscription = {
-    subscriptionId: "sub_calls",
-    subscriptionItemId: "si_calls",
-    stripePriceId: "price_calls",
-    period: { start: 600, end: 1200 },
-    interval: "month",
-  };
-  const event = {
-    ...meter,
-    sourceEventId: "work1",
-    quantity: "6",
-    occurredAt: 700,
-  };
-  return { t, meter, purchase, row, proof, subscription, event };
-}
+
 afterEach(() => vi.useRealTimers());
 it("atomically reserves payment-backed units, commits with ledger acceptance and rejects concurrent overspend", async () => {
   const { t, meter, event, subscription } = await setupCredits();
@@ -386,4 +306,178 @@ it("allocates by provider creation time when native grants are mirrored out of o
     grants.find((g) => g.creditGrantId === "credgr_topup1")?.reserved,
   ).toBe("0");
   expect(reservation.state).toBe("reserved");
+});
+
+it("does not replace credit backing with conflicting same-time evidence or resume through that ambiguity", async () => {
+  const { t, purchase, meter } = await setupCredits();
+  const proof = {
+    creditGrantId: "credgr_topup1",
+    paymentIntentId: "pi_topup1",
+    currency: "usd",
+    ledgerAmount: 8,
+    availableAmount: 8,
+    granted: 20,
+    applied: 12,
+    expired: 0,
+    voided: 0,
+    reinstated: 0,
+    invoicesVerified: true,
+    complete: true,
+    transactions: [],
+  };
+  const saveProof = (value: typeof proof, startedAt = Date.now()) =>
+    t.mutation(ref("saveObservation"), {
+      inputJson: JSON.stringify(purchase),
+      proofJson: JSON.stringify(value),
+      startedAt,
+    });
+  await saveProof(proof);
+  const result = JSON.parse(
+    await saveProof({
+      ...proof,
+      ledgerAmount: 20,
+      availableAmount: 20,
+      applied: 0,
+    }),
+  );
+  expect(result.backing).toBe("held");
+  const grant = await t.run((ctx) => ctx.db.query("usageCreditGrants").first());
+  expect(JSON.parse(grant!.nativeObservationJson!).ledgerAmount).toBe(8);
+  await expect(
+    t.mutation(ref("resumeAccount"), { bindingJson: JSON.stringify(meter) }),
+  ).rejects.toThrow(/reconciliation|ambigu|funding/i);
+});
+
+it("keeps later credit history and grant cursors inside the requested original tenant binding", async () => {
+  const { t, meter } = await setupCredits();
+  const seed = async (binding: typeof meter, suffix: string) => {
+    const row = await t.mutation(ref("preparePurchase"), {
+      inputJson: JSON.stringify({
+        ...binding,
+        purchaseId: suffix,
+        quantity: "10",
+        ownership: "issuer",
+        rollover: "retain_original_terms",
+      }),
+    });
+    await t.mutation(ref("pinPayment"), {
+      key: row.key,
+      paymentIntentId: `pi_${suffix}`,
+    });
+    const proof = {
+      paymentIntentId: `pi_${suffix}`,
+      chargeId: `ch_${suffix}`,
+      amount: 20,
+      currency: "usd",
+      customerAccount: binding.scope.customerAccount,
+      livemode: false,
+    };
+    await t.mutation(ref("verifyPayment"), {
+      key: row.key,
+      proofJson: JSON.stringify(proof),
+    });
+    await t.mutation(ref("pinGrant"), {
+      key: row.key,
+      proofJson: JSON.stringify({
+        ...proof,
+        creditGrantId: `credgr_${suffix}`,
+        stripePriceId: binding.binding.stripePriceId,
+        createdAt: 700,
+        effectiveAt: 700,
+        expiresAt: null,
+      }),
+    });
+    return row;
+  };
+  const original = await seed(meter, "topup2");
+  const foreign = {
+    ...meter,
+    scope: { ...meter.scope, customerAccount: "acct_other" },
+    binding: { ...meter.binding, stripeCustomerId: "cus_other" },
+  };
+  const intent = await t.mutation(prepare, {
+    termsJson: JSON.stringify({ ...request, meters: [foreign] }),
+    method: "direct",
+  });
+  const native = nativeSubscription();
+  native.id = "sub_other";
+  native.customer = "cus_other";
+  native.customer_account = "acct_other";
+  await t.mutation(save, {
+    key: intent.key,
+    nativeJson: JSON.stringify(native),
+    startedAt: Date.now(),
+  });
+  const other = await seed(foreign, "other1");
+  for (const name of ["readHistory", "readGrants"]) {
+    const query = makeFunctionReference<"query">(
+      `usageCredits/queries:${name}`,
+    );
+    const args = {
+      bindingJson: JSON.stringify(meter),
+      paginationOpts: { numItems: 1, cursor: null },
+    };
+    const first = await t.query(query, args);
+    expect(first.isDone).toBe(false);
+    const next = {
+      ...args,
+      paginationOpts: { numItems: 1, cursor: first.continueCursor },
+    };
+    expect(await t.query(query, next)).toEqual(await t.query(query, next));
+    try {
+      const page = await t.query(query, {
+        ...next,
+        bindingJson: JSON.stringify(foreign),
+      });
+      expect(
+        page.page.every(
+          (row: { accountKey: string }) =>
+            row.accountKey === other.accountKey &&
+            row.accountKey !== original.accountKey,
+        ),
+      ).toBe(true);
+    } catch (error) {
+      expect(String(error)).toMatch(/cursor|range|index|position|pagination/i);
+    }
+  }
+});
+
+it("retains open credit liabilities when a dispute freezes a fully consumed grant after a zero-balance observation", async () => {
+  const { t, meter, purchase, row, event, subscription } = await setupCredits();
+  const args = {
+    inputJson: JSON.stringify({ ...event, quantity: "10" }),
+    subscriptionJson: JSON.stringify(subscription),
+  };
+  const reserved = await t.mutation(ref("reserve"), args);
+  await t.mutation(record, { ...args, reservationId: reserved.reservationId });
+  await t.mutation(ref("saveObservation"), {
+    inputJson: JSON.stringify(purchase),
+    startedAt: Date.now(),
+    proofJson: JSON.stringify({
+      creditGrantId: "credgr_topup1",
+      paymentIntentId: "pi_topup1",
+      currency: "usd",
+      ledgerAmount: 0,
+      availableAmount: 0,
+      granted: 20,
+      applied: 20,
+      expired: 0,
+      voided: 0,
+      reinstated: 0,
+      invoicesVerified: true,
+      complete: true,
+      transactions: [],
+    }),
+  });
+  await t.mutation(ref("freezePurchase"), {
+    key: row.key,
+    paymentIntentId: "pi_topup1",
+    reason: "payment_disputed",
+  });
+  await expect(
+    t.mutation(ref("closeAccount"), { bindingJson: JSON.stringify(meter) }),
+  ).rejects.toThrow(/dispute|recovery|reconcil/i);
+  expect(
+    await t.run((ctx) => ctx.db.query("usageCreditAccounts").first()),
+  ).toMatchObject({ closed: false, frozenReason: "payment_disputed" });
 });

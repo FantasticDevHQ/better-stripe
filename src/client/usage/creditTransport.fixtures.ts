@@ -36,6 +36,7 @@ export function creditFixture(
     processingFee: 1,
     paymentCustomer: "cus_buyer",
     chargeCustomer: "cus_buyer",
+    summaryCustomer: "cus_buyer",
     failGrant: false,
     wrongPayer: false,
     paymentId: "pi_topup1",
@@ -81,7 +82,7 @@ export function creditFixture(
       });
     if (path === "/v1/billing/credit_balance_summary")
       return response({
-        customer: "cus_buyer",
+        customer: state.summaryCustomer,
         customer_account: "acct_buyer",
         livemode: false,
         balances: [

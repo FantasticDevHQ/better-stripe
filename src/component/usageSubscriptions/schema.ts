@@ -11,6 +11,7 @@ export const intentFields = {
   checkoutId: v.optional(v.string()),
   viewJson: v.optional(v.string()),
   startedAt: v.optional(v.number()),
+  observationStartedAt: v.optional(v.number()),
   controlKey: v.optional(v.string()),
   historyCount: v.optional(v.number()),
   retiredAt: v.optional(v.number()),

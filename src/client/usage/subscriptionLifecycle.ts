@@ -11,6 +11,7 @@ import {
 } from "./subscriptionTerms.js";
 import {
   saveSubscription,
+  beginSubscriptionObservation,
   subscriptionCall,
   UsageSubscriptionError,
   verifySubscriptionRealm,
@@ -51,8 +52,8 @@ export async function refreshManagedSubscription(
   ctx: RunCtx,
   row: Doc<"usageSubscriptionIntents">,
 ) {
-  const terms = subscriptionTerms(JSON.parse(row.termsJson)),
-    startedAt = Date.now();
+  const terms = subscriptionTerms(JSON.parse(row.termsJson));
+  const startedAt = await beginSubscriptionObservation(component, ctx, row.key);
   return subscriptionCall(async () => {
     if (!row.providerId)
       throw new UsageSubscriptionError(

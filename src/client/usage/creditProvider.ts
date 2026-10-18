@@ -15,6 +15,7 @@ import { grantCreditProof } from "./creditProofs.js";
 import {
   creditCall,
   creditCreateWindow,
+  nativeCustomerId,
   creditRequire,
   discoverCredit,
   paymentIdentity,
@@ -191,6 +192,7 @@ function grantProof(
   creditRequire(
     grant.object === "billing.credit_grant" &&
       grant.customer_account === terms.scope.customerAccount &&
+      nativeCustomerId(grant.customer) === terms.binding.stripeCustomerId &&
       grant.livemode === terms.scope.livemode &&
       grant.metadata?.bsUsageCredit === key &&
       grant.category === "paid" &&

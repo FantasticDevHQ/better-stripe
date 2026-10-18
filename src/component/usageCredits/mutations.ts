@@ -1,3 +1,4 @@
+import { freshCreditProof } from "./helpers.js";
 import { canonicalFingerprint } from "../operationEvidence/canonical.js";
 import { accountTerms, grants } from "./helpers.js";
 import {
@@ -109,6 +110,7 @@ export const freezePurchase = mutation({
       throw new Error("Invalid original credit refund amount");
     await ctx.db.patch("usageCreditPurchases", row._id, {
       state: "frozen",
+      recoveryReason: args.reason,
       refundedAmount: Math.max(
         row.refundedAmount ?? 0,
         args.refundedAmount ?? 0,
@@ -140,7 +142,12 @@ export const freezePurchase = mutation({
 });
 
 export const saveObservation = mutation({
-  args: { inputJson: v.string(), proofJson: v.string(), startedAt: v.number() },
+  args: {
+    inputJson: v.string(),
+    proofJson: v.string(),
+    startedAt: v.number(),
+    proofStartedAt: v.optional(v.number()),
+  },
   returns: v.string(),
   handler: async (ctx, args) => {
     if (
@@ -149,6 +156,15 @@ export const saveObservation = mutation({
       args.startedAt > Date.now() + 300000
     )
       throw new Error("Invalid credit observation time");
+    const proofStartedAt =
+      args.proofStartedAt ?? Math.min(args.startedAt, Date.now());
+    if (
+      !Number.isSafeInteger(proofStartedAt) ||
+      proofStartedAt < 0 ||
+      proofStartedAt > Date.now() ||
+      proofStartedAt > args.startedAt
+    )
+      throw new Error("Invalid credit proof wall time");
     const parsed = await purchaseTerms(args.inputJson),
       row = await purchase(ctx, parsed.key);
     const proof = creditNativeObservation.parse(
@@ -183,11 +199,33 @@ export const saveObservation = mutation({
     for (const tx of proof.transactions)
       await history(ctx, row.accountKey, "observation", tx.id, tx, row.key);
     const ledger = await account(ctx, row.accountKey);
-    if ((grant.observedAt ?? -1) <= args.startedAt) {
+    const tiedConflict =
+      grant.observedAt === args.startedAt &&
+      (await canonicalFingerprint(proof)) !==
+        (await canonicalFingerprint(
+          grant.nativeObservationJson
+            ? JSON.parse(grant.nativeObservationJson)
+            : null,
+        ));
+    if ((grant.observedAt ?? -1) >= args.startedAt) {
+      result.backing = "held";
+      result.reason = "stale_native_observation";
+      if (tiedConflict) {
+        await ctx.db.patch("usageCreditGrants", grant._id, {
+          observationConflictAt: args.startedAt,
+        });
+        await ctx.db.patch("usageCreditAccounts", ledger._id, {
+          frozenReason: "observation_order_conflict",
+        });
+      }
+    }
+    if ((grant.observedAt ?? -1) < args.startedAt) {
       await ctx.db.patch("usageCreditGrants", grant._id, {
         nativeUnused: proof.ledgerAmount > 0,
         nativeObservationJson: JSON.stringify(proof),
         observedAt: args.startedAt,
+        proofStartedAt,
+        observationConflictAt: undefined,
         ...(proof.expired > 0 || proof.voided > 0
           ? { frozen: true, nativeExpired: true }
           : {}),
@@ -232,6 +270,8 @@ export const closeAccount = mutation({
     );
     const ledger = await account(ctx, original.key);
     if (ledger.closed) return null;
+    if (ledger.frozenReason)
+      throw new Error("Credit recovery reconciliation required before closure");
     const purchases = await ctx.db
       .query("usageCreditPurchases")
       .withIndex("by_account", (q) => q.eq("accountKey", original.key))
@@ -248,6 +288,14 @@ export const closeAccount = mutation({
       const purchaseRow = await purchase(ctx, grant.purchaseKey),
         terms = (await purchaseTerms(purchaseRow.termsJson)).terms;
       if (
+        purchaseRow.state === "frozen" &&
+        (purchaseRow.recoveryReason !== "payment_refunded" ||
+          purchaseRow.refundedAmount !== terms.amount)
+      )
+        throw new Error(
+          "Original payment recovery requires reconciliation before closure",
+        );
+      if (
         BigInt(grant.available) > 0n &&
         !(
           terms.expiresAt !== undefined && terms.expiresAt <= Date.now() / 1000
@@ -263,6 +311,8 @@ export const closeAccount = mutation({
           : creditCost(terms.binding.plan, grant.consumed);
       if (
         BigInt(grant.reserved) !== 0n ||
+        grant.observationConflictAt !== undefined ||
+        !freshCreditProof(grant) ||
         !proof?.complete ||
         !proof.invoicesVerified ||
         proof.ledgerAmount !== 0 ||
@@ -338,9 +388,10 @@ export const prepareRefund = mutation({
       : null;
     const terms = (await purchaseTerms(row.termsJson)).terms;
     if (
+      grant.observationConflictAt !== undefined ||
       !proof?.complete ||
       !proof.invoicesVerified ||
-      Date.now() - (grant.observedAt ?? 0) > 60000 ||
+      !freshCreditProof(grant) ||
       proof.ledgerAmount !== terms.amount ||
       proof.applied !== 0 ||
       proof.reinstated !== 0 ||
@@ -382,10 +433,11 @@ export const resumeAccount = mutation({
         ? creditNativeObservation.parse(JSON.parse(grant.nativeObservationJson))
         : null;
       if (
+        grant.observationConflictAt !== undefined ||
         !proof ||
         !proof.complete ||
         !proof.invoicesVerified ||
-        Date.now() - (grant.observedAt ?? 0) > 60000 ||
+        !freshCreditProof(grant) ||
         normalizeCreditState(terms, grant, proof, true).backing !==
           "sufficient" ||
         (row.state === "frozen" &&
@@ -398,7 +450,7 @@ export const resumeAccount = mutation({
         );
       evidence.push({
         creditGrantId: grant.creditGrantId,
-        observedAt: grant.observedAt!,
+        observedAt: grant.proofStartedAt ?? grant.observedAt!,
       });
     }
     await ctx.db.patch("usageCreditAccounts", ledger._id, {
@@ -447,5 +499,31 @@ export const cancelUnstarted = mutation({
       reason: "canceled_before_native_payment_attempt",
     });
     return null;
+  },
+});
+
+/** Trusted host reserves a unique observation order before reading original native backing. */
+export const beginObservation = mutation({
+  args: { inputJson: v.string() },
+  returns: v.number(),
+  handler: async (ctx, args) => {
+    const parsed = await purchaseTerms(args.inputJson),
+      row = await purchase(ctx, parsed.key);
+    const grant = await ctx.db
+      .query("usageCreditGrants")
+      .withIndex("by_purchase", (q) => q.eq("purchaseKey", row.key))
+      .unique();
+    if (!grant) throw new Error("Credit grant unavailable");
+    const startedAt = Math.max(
+      Date.now(),
+      (grant.observedAt ?? -1) + 1,
+      (grant.observationStartedAt ?? -1) + 1,
+    );
+    if (!Number.isSafeInteger(startedAt) || startedAt > Date.now() + 300000)
+      throw new Error("Credit observation order capacity exhausted");
+    await ctx.db.patch("usageCreditGrants", grant._id, {
+      observationStartedAt: startedAt,
+    });
+    return startedAt;
   },
 });

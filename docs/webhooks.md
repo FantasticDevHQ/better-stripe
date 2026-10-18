@@ -144,7 +144,11 @@ interface SyncTriggers {
   subscription?: {
     onCreate?: (ctx, doc) => Promise<void>;
     onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
-    onDelete?: (ctx, doc, oldDoc?: StripeComponentSubscription | null) => Promise<void>;
+    onDelete?: (
+      ctx,
+      doc,
+      oldDoc?: StripeComponentSubscription | null,
+    ) => Promise<void>;
   };
   checkoutSession?: {
     onCompleted?: (ctx, doc) => Promise<void>;

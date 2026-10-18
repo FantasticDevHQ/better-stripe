@@ -1,3 +1,4 @@
+import { formatPrice } from "@fantastic.dev/better-stripe/react";
 import { CheckoutFrame } from "@/components/checkout-frame";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,13 +12,6 @@ import { CheckCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatCurrency(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
-}
 
 function Figure({
   label,
@@ -164,7 +158,7 @@ export function DestinationChargeDemo() {
             <div className="flex justify-between">
               <span>Price</span>
               <span className="font-medium">
-                {formatCurrency(price.unitAmount, price.currency)}
+                {formatPrice(price.unitAmount, price.currency)}
               </span>
             </div>
             <div className="text-muted-foreground flex justify-between text-sm">

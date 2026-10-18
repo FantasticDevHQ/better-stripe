@@ -5,6 +5,7 @@ import { useAction, useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
 import {
   EmbeddedCheckout,
+  formatPrice,
   usePlanBilling,
 } from "@fantastic.dev/better-stripe/react";
 import { useRole } from "@/providers/role-context";
@@ -109,7 +110,7 @@ export function SellerPlan() {
               <CardContent>
                 <div className="space-y-4">
                   <p className="text-3xl font-bold">
-                    ${plan.monthlyAmount / 100}
+                    {formatPrice(plan.monthlyAmount, "usd")}
                     <span className="text-sm font-normal"> / month</span>
                   </p>
                   <p>{plan.feeLabel}</p>

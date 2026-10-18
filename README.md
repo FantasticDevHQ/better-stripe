@@ -226,6 +226,23 @@ The marketplace economics layer includes platform fees, split transfers, rolling
 - **Affiliate commission recovery** — original commission snapshots, shared refund/dispute exposure, reversal receipts, and a resumable backfill are available. Currency-scoped future-commission offsets, receipt-backed dispute restoration, payout reservations, and reusable recovery views are included. See [affiliate commission clawbacks](docs/affiliate-clawbacks.md).
 - **Earnings and split totals** — `useEarnings` reads exact server-side aggregates with bounded drill-down previews. `listTransfersByAccount` remains a preview API; do not sum it for financial totals. `listTransfersByCharge` now returns every original split leg by default, and reversal claims cover up to 1,000 charge-linked transfer rows, failing explicitly above that bound. An explicit list limit requests a preview. Convex read/write/response limits fail loudly rather than silently truncate financial data.
 
+## Package and application responsibilities
+
+BetterStripe owns reusable payment protocols, financial records, durable execution,
+and unstyled React workflows. The example app demonstrates those public APIs with
+Convex bindings and styled renderers. Consumers should not need to copy its payment
+or UI controllers to use the package.
+
+Your application authenticates callers, authorizes the original account or payment,
+selects products and business policy, and decides what a paid purchase unlocks.
+One-time purchases use payment checkout; subscriptions use subscription checkout.
+Digital downloads, access grants, license keys, shipping, and fulfillment belong to
+the consuming application. A successful checkout page alone is not proof of payment.
+Use verified payment state and make fulfillment idempotent.
+
+See [the example boundary audit](docs/react-workflows-audit.md#package-and-example-boundary)
+for concrete ownership rules and the remaining application adapters.
+
 ## Installation
 
 ```bash

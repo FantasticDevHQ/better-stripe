@@ -24,6 +24,7 @@ import {
   BillingPortalLink,
   BuyerBillingView,
   getSubscriptionStatusLabel,
+  formatPrice,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { Clock, ExternalLink } from "lucide-react";
@@ -31,23 +32,9 @@ import { Link } from "react-router-dom";
 
 import { api } from "../../../convex/_generated/api";
 
-const currencyFormatters = new Map<string, Intl.NumberFormat>();
-
 function formatDate(dateStr: string | undefined | null) {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString();
-}
-
-function formatCurrency(amount: number, currency: string | undefined | null) {
-  const normalized = currency?.toUpperCase() || "USD";
-  const formatter =
-    currencyFormatters.get(normalized) ??
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: normalized,
-    });
-  currencyFormatters.set(normalized, formatter);
-  return formatter.format(amount / 100);
 }
 
 function formatPriceLabel(price: {
@@ -57,7 +44,7 @@ function formatPriceLabel(price: {
   interval?: string | null;
   type?: string;
 }) {
-  const amount = formatCurrency(price.unitAmount ?? 0, price.currency);
+  const amount = formatPrice(price.unitAmount ?? 0, price.currency || "usd");
   const interval =
     price.type === "recurring" ? ` / ${price.interval ?? "month"}` : "";
   return `${amount}${interval} (${price.stripePriceId})`;
@@ -544,9 +531,9 @@ export function Billing({
                           {invoice.stripeInvoiceId}
                         </span>
                         <span className="font-medium">
-                          {formatCurrency(
+                          {formatPrice(
                             invoice.amountPaid ?? 0,
-                            invoice.currency,
+                            invoice.currency || "usd",
                           )}
                         </span>
                         <Badge variant="outline">

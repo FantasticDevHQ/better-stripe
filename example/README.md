@@ -145,8 +145,23 @@ to the same claim for reconciliation. See the package's
 
 ## Architecture
 
-All Stripe data flows through the `better-stripe` Convex component.
-The app uses the component for account and billing data. Seller plans and sale settlement also use the Stripe SDK to verify paid subscriptions and read actual processing fees. The main integration files are:
+The example demonstrates the public BetterStripe server and React APIs. Its pages
+bind queries/actions, select demo policy, and style package components or hook
+state. Payment confirmation, financial calculations, provider reconciliation, and
+durable money movement belong in the package.
+
+The example keeps its personas, store joins, routes, authorization, plan choices,
+referral attribution, and sandbox scenarios. It also reads Stripe objects to route
+application events and identify original sources. Those reads do not replace the
+package's verification of financial evidence or execution of transfers and recovery.
+See the [boundary audit](../docs/react-workflows-audit.md#package-and-example-boundary)
+before adding a new workflow or copying example code into an application.
+
+One-time purchases demonstrate payment acceptance. This app intentionally has no
+digital-download delivery or purchase-access system. Each consuming application
+owns fulfillment and entitlements.
+
+The main integration files are:
 
 - `convex/stripe/helpers.ts` configures the `BetterStripe` client, triggers, and hooks.
 - Each domain owns its queries, mutations, actions, helpers, and tests. Domains with both internal and client-callable functions use `internal/` and `public/` folders. This example uses demo personas rather than authenticated sessions, so no functions are classified as `private/`.

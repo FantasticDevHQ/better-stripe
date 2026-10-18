@@ -1,3 +1,4 @@
+import { formatPayoutAmount } from "@fantastic.dev/better-stripe/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,13 +20,6 @@ import {
 import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
 
 export function SellerHome() {
   const { currentUser } = useRole();
@@ -156,7 +150,10 @@ export function SellerHome() {
                             : "\u2014"}
                         </span>
                         <span className="font-medium">
-                          {formatCurrency(payout.amount ?? 0)}
+                          {formatPayoutAmount(
+                            payout.amount ?? 0,
+                            payout.currency,
+                          )}
                         </span>
                         <Badge variant="default">{payout.status}</Badge>
                       </div>

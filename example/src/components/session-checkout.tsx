@@ -6,6 +6,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { useRole } from "@/providers/role-context";
 import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
 import { CheckoutFormFields } from "./checkout-form-fields";
+import { CheckoutPromotionFields } from "./checkout-promotion-fields";
 export function SessionCheckout({
   priceId,
   userId,
@@ -28,7 +29,13 @@ export function SessionCheckout({
       publishableKey={publishableKey}
       email={currentUser.email}
       returnUrl={buildCheckoutReturnUrl(window.location.origin)}
-      renderForm={(state) => <CheckoutFormFields {...state} />}
+      renderForm={(state) =>
+        mode === "custom" ? (
+          <CheckoutPromotionFields {...state} />
+        ) : (
+          <CheckoutFormFields {...state} />
+        )
+      }
       createSession={({ mode, requestId }) =>
         create({
           userId,

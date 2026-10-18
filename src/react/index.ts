@@ -86,6 +86,8 @@ export { useCheckoutSession } from "./hooks/useCheckoutSession.js";
 export type {
   CheckoutSessionState,
   CheckoutConfirmResult,
+  CheckoutPricing,
+  CheckoutPromotionResult,
 } from "./hooks/useCheckoutSession.js";
 
 // Hooks — Payment Confirmation

@@ -803,3 +803,30 @@ For an acknowledged saved-card request, the server SDK's qualified
 selectors, transient-secret policy and authenticated callback requirements.
 This read does not implement a host redirect/reload route or recover a creation
 whose original ID is unknown.
+
+### Promotion codes in custom Checkout Session forms
+
+`useCheckoutSession()` preserves `confirm({ paymentMethod })` and additionally exposes
+`applyPromotionCode(code)` and `removePromotionCode()` when the session is loaded.
+The host must enable eligible promotions in its original server-owned Checkout
+request (for example, `sessionOverrides: { allow_promotion_codes: true }`). Do not
+accept arbitrary session overrides or price/discount identities as browser authority.
+Hosted, embedded and compact forms keep their existing provider-owned promotion UI.
+The matching Vite custom form uses `CheckoutPromotionFields` inside the existing
+Checkout Session provider; it does not replace the provider or confirmation flow.
+
+Promotion actions return `{ type: "success", sessionId }` or
+`{ type: "error", message, code?: "invalidCode" }`. A missing/malformed response,
+transport rejection or mismatched response session remains unconfirmed. These
+results authorize no payment, access, refund or settlement. Keep host actions scoped
+to the authenticated actor and current session with `useWorkflowAction`, and disable
+confirmation while a promotion action is pending. Late completions must not affect
+a replacement checkout. The example keys promotion input by the current session.
+
+`pricing` is the **current provider observation**, or `null` when unavailable:
+`{ currency, subtotal, discount, total }` in integer minor units. It updates from the
+reactive session, never from an old action response. Preserve zero totals and currency
+units; this presentation is neither immutable original-price evidence nor cash
+settlement. The host still owns translated errors, original request binding and
+eligibility. Discounted renewals and fee-first commission settlement remain separate
+server-side consumer responsibilities.

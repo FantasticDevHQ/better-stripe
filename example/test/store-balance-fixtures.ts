@@ -9,6 +9,7 @@ import {
 } from "../../src/test";
 import { schema, modules } from "../test";
 const secret = "sk_test_example_funding_cutover";
+let finishScheduled: (() => Promise<void>)[] = [];
 export const wire = {
   enabled: false,
   methodOwner: null as string | null,
@@ -17,7 +18,7 @@ export const wire = {
   foreign: false,
   requests: [] as { method: string; path: string; key: string | null }[],
 };
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
   vi.stubEnv("STRIPE_SECRET_KEY", secret);
   Object.assign(wire, {
@@ -83,13 +84,29 @@ beforeEach(() => {
       return new Response(JSON.stringify(body), { status: 200 });
     }),
   );
+  // These modules construct their Stripe client at import time, so load them
+  // after installing the test environment and transport, before timed actions.
+  await Promise.all(
+    Object.entries(modules)
+      .filter(
+        ([path]) =>
+          path.startsWith("./convex/storeBalance/") && !path.includes(".test."),
+      )
+      .map(([, load]) => load()),
+  );
 });
-afterEach(() => {
-  vi.useRealTimers();
-  vi.unstubAllEnvs();
+afterEach(async () => {
+  try {
+    await Promise.all(finishScheduled.map((finish) => finish()));
+  } finally {
+    finishScheduled = [];
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  }
 });
 export async function setup() {
   const t = convexTest(schema, modules);
+  finishScheduled.push(() => t.finishInProgressScheduledFunctions());
   t.registerComponent("betterStripe", componentSchema, componentModules);
   workflowTest.register(t, "betterStripe/workflow");
   const sellerId = await t.run((ctx) =>

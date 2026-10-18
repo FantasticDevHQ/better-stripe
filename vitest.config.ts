@@ -20,6 +20,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Bound concurrent Convex/Vite module loading so cold imports do not starve
+    // timed integration tests or leave timed-out workflows running into the next test.
+    maxWorkers: 2,
     silent: true,
     coverage: {
       reporter: ["text", "json-summary", "html"],

@@ -96,8 +96,12 @@ reconciliation before a financial operation.
 The sandbox issuer and eligible seller/affiliate recipients support the recorded
 Accounts v2 and Connect flows. A seller without transfer capability retained paid
 cash evidence but remained held for settlement; cleanup refused to erase it.
-Issuer-only customer billing was also exercised. Eligibility remains tied to the
-original account configuration, currency, API access and native capabilities.
+Issuer-only customer billing was also exercised on the same platform issuer.
+This does not establish a separate non-Connect customer-only preview account's
+eligibility. Billing under connected-account headers is not supported by the
+current usage adapters. Those cases require their own verified API/account
+configuration. Eligibility remains tied to the original account configuration,
+currency, API access and native capabilities.
 
 Native test clocks advanced billing and exposed the next subscription period.
 That future period is outside the real server's current allowance acceptance

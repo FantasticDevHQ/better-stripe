@@ -28,20 +28,17 @@
 
 ## [0.52.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.51.0...v0.52.0) (2026-10-18)
 
-
 ### Features
 
-* add atomic scoped usage ledger and durable outbox ([c4a4f39](https://github.com/FantasticDevHQ/better-stripe/commit/c4a4f39749ec6399514176e1deb02a379278349a))
-
+- add atomic scoped usage ledger and durable outbox ([c4a4f39](https://github.com/FantasticDevHQ/better-stripe/commit/c4a4f39749ec6399514176e1deb02a379278349a))
 
 ### Bug Fixes
 
-* reject unavailable usage reservation references ([d6b7f16](https://github.com/FantasticDevHQ/better-stripe/commit/d6b7f1666a2acf35aae45e590ffc1f5eb3fca8a5))
-
+- reject unavailable usage reservation references ([d6b7f16](https://github.com/FantasticDevHQ/better-stripe/commit/d6b7f1666a2acf35aae45e590ffc1f5eb3fca8a5))
 
 ### Tests
 
-* retain improved atomic ledger coverage floors ([4b88773](https://github.com/FantasticDevHQ/better-stripe/commit/4b88773e3ff5489c4f473f4e4f5a6ecaf2a7cfbf))
+- retain improved atomic ledger coverage floors ([4b88773](https://github.com/FantasticDevHQ/better-stripe/commit/4b88773e3ff5489c4f473f4e4f5a6ecaf2a7cfbf))
 
 ## [0.51.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.3...v0.51.0) (2026-10-18)
 

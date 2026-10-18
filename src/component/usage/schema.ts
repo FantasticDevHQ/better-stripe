@@ -71,4 +71,6 @@ export const usageReservationsTable = defineTable({
     v.literal("released"),
   ),
   eventId: v.optional(v.id("usageEvents")),
-}).index("by_scope_source", ["scopeKey", "sourceEventId"]);
+})
+  .index("by_scope_source", ["scopeKey", "sourceEventId"])
+  .index("by_scope_state", ["scopeKey", "state"]);

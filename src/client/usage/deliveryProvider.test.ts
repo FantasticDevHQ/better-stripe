@@ -32,6 +32,7 @@ function setup(status = 200, errorCode = "parameter_invalid_integer") {
     occurredAt: now,
   });
   const saved = {
+    billingCutoff: null as number | null,
     event: {
       recordJson: JSON.stringify(record),
       subscriptionJson: JSON.stringify({
@@ -204,4 +205,25 @@ it("holds duplicate/uncertain errors and a lost response instead of retrying tra
       f.requests.filter((r) => r.path === "/v1/billing/meter_events"),
     ).toHaveLength(1);
   }
+});
+
+it("withholds a managed send that reaches its billing cutoff during preflight", async () => {
+  const f = setup();
+  const now = Math.floor(Date.now() / 1000);
+  f.saved.billingCutoff = now + 100;
+  let reads = 0;
+  vi.mocked(f.ctx.runQuery).mockImplementation(async () => {
+    reads++;
+    return { ...f.saved, billingCutoff: reads === 1 ? now + 100 : now + 10 };
+  });
+  const result = await deliverUsageProvider(
+    componentsGeneric().betterStripe as unknown as Component,
+    f.ctx,
+    f.request,
+    { stripeSecretKey: "sk_test_usage", httpClient: f.httpClient },
+  );
+  expect(result.outcome.status).toBe("unknown");
+  expect(f.requests.some((r) => r.path === "/v1/billing/meter_events")).toBe(
+    false,
+  );
 });

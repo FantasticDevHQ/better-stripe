@@ -7,7 +7,9 @@ native Stripe integration into the existing BetterStripe Convex component.
 
 Current status: shared configuration/quantity helpers and repository sandbox probes
 are implemented. Atomic recording and bounded local history are available through the
-[usage ledger](usage-ledger.md). [Durable provider delivery](usage-delivery.md) is available. Allowance/credit
+[usage ledger](usage-ledger.md). [Durable provider delivery](usage-delivery.md),
+[scoped observations](usage-observations.md) and [managed metered subscriptions](usage-subscriptions.md)
+are available. Allowance/credit
 accounting and the three example UI flows are still under development. The probes
 below verify provider behavior directly; they are not public BetterStripe billing
 workflows. See [metered usage contracts and evidence](metered-usage.md).
@@ -186,3 +188,5 @@ Primary references:
 Use the [native catalog guide](usage-catalog.md) to provision versioned meters and prices through BetterStripe.
 
 Use the [usage observation guide](usage-observations.md) for bounded local reads, native aggregate refreshes and honest invoice/credit availability.
+
+For managed package enrollment, mixed fixed/metered items, Checkout, period-end cancellation and test-clock invoice verification, follow [usage subscriptions](usage-subscriptions.md).

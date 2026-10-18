@@ -1,3 +1,4 @@
+import { meteringFixture } from "./metering-sandbox.fixtures.mjs";
 import { expect, it } from "vitest";
 import { runMeteringSandbox } from "./metering-sandbox.mjs";
 
@@ -18,80 +19,7 @@ it.each([undefined, "sk_live_invalid"])(
 );
 
 it("probes all three models with provider-mapped payer identity and sanitized evidence", async () => {
-  const calls = [];
-  const method =
-    (name, result) =>
-    async (...args) => {
-      calls.push({ name, args });
-      return typeof result === "function" ? result(...args) : result;
-    };
-  const stripe = {
-    v2: {
-      core: {
-        accounts: {
-          create: method("account.create", {
-            id: "acct_private",
-            livemode: false,
-          }),
-        },
-      },
-    },
-    customers: {
-      retrieve: method("customer.retrieve", {
-        id: "cus_private",
-        customer_account: "acct_private",
-        livemode: false,
-      }),
-    },
-    products: {
-      create: method("product.create", { id: "prod_private", livemode: false }),
-      update: method("product.update", {}),
-    },
-    prices: {
-      create: method("price.create", { id: "price_private", livemode: false }),
-      update: method("price.update", {}),
-    },
-    subscriptions: {
-      create: method("subscription.create", {
-        id: "sub_private",
-        customer_account: "acct_private",
-        customer: "cus_private",
-        livemode: false,
-      }),
-      cancel: method("subscription.cancel", {}),
-    },
-    invoices: {
-      createPreview: method("preview", {
-        customer_account: "acct_private",
-        currency: "usd",
-        total: 0,
-        livemode: false,
-      }),
-    },
-    billing: {
-      meters: {
-        create: method("meter.create", { id: "mtr_private", livemode: false }),
-        deactivate: method("meter.deactivate", {}),
-        listEventSummaries: method("summaries", {
-          data: [{ aggregated_value: 15 }],
-        }),
-      },
-      meterEvents: {
-        create: method("event.create", {
-          livemode: false,
-          identifier: "event_private",
-        }),
-      },
-      creditGrants: {
-        create: method("credit.create", {
-          id: "cred_private",
-          customer_account: "acct_private",
-          livemode: false,
-        }),
-        expire: method("credit.expire", {}),
-      },
-    },
-  };
+  const { calls, stripe } = meteringFixture();
   const result = await runMeteringSandbox({
     apiKey: "sk_test_fixture",
     runId: "fixture",
@@ -328,4 +256,107 @@ it("bounds the run identity before creating a provider client", async () => {
     }),
   ).rejects.toThrow("run identity");
   expect(calls).toBe(0);
+});
+
+it("waits for ingestion before advancing a v2 customer test clock and reads finalized native invoices", async () => {
+  const { calls, stripe } = meteringFixture();
+  let sub = 0;
+  stripe.subscriptions.create = async (params) => {
+    calls.push({ name: "subscription.create", args: [params] });
+    return {
+      id: `sub_private${sub++}`,
+      customer_account: "acct_private",
+      customer: "cus_private",
+      livemode: false,
+      items: { data: [{ current_period_end: 2000 }] },
+    };
+  };
+  stripe.testHelpers = {
+    testClocks: {
+      create: async () => ({ id: "clock_private" }),
+      advance: async () => {
+        calls.push({ name: "clock.advance", args: [] });
+        return {};
+      },
+      retrieve: async () => ({ status: "ready" }),
+      del: async () => {
+        calls.push({ name: "clock.delete", args: [] });
+      },
+    },
+  };
+  stripe.invoices.list = async ({ subscription }) => ({
+    data: [
+      {
+        id: "in_private",
+        customer_account: "acct_private",
+        customer: "cus_private",
+        livemode: false,
+        status: "open",
+        status_transitions: { finalized_at: 2100 },
+        billing_reason: "subscription_cycle",
+        period_end: 2000,
+        parent: { subscription_details: { subscription } },
+        total: [30, 10, 0][Number(subscription.slice(-1))],
+        currency: "usd",
+        lines: { data: [], has_more: false },
+      },
+    ],
+    has_more: false,
+  });
+  const result = await runMeteringSandbox({
+    apiKey: "sk_test_fixture",
+    runId: "clock-fixture",
+    createClient: () => stripe,
+    finalizeInvoices: true,
+    wait: async () => {},
+  });
+  expect(
+    calls.find((x) => x.name === "account.create").args[0].configuration
+      .customer.test_clock,
+  ).toBe("clock_private");
+  expect(calls.findIndex((x) => x.name === "clock.advance")).toBeGreaterThan(
+    calls.map((x) => x.name).lastIndexOf("summaries"),
+  );
+  expect(result.models.map((m) => m.finalizedTotal)).toEqual([30, 10, 0]);
+  expect(result.models.every((m) => m.invoiceFinalizationVerified)).toBe(true);
+  expect(result.testClock.ingestedBeforeAdvance).toBe(true);
+  expect(calls.some((x) => x.name === "clock.delete")).toBe(true);
+  expect(JSON.stringify(result)).not.toContain("private");
+});
+
+it("retains sanitized incomplete evidence and cleanup when clock usage is not ingested", async () => {
+  const { stripe } = meteringFixture();
+  stripe.testHelpers = {
+    testClocks: {
+      create: async () => ({ id: "clock_private", frozen_time: 1000 }),
+      del: async () => ({}),
+    },
+  };
+  stripe.subscriptions.create = async () => ({
+    id: "sub_private",
+    customer_account: "acct_private",
+    customer: "cus_private",
+    livemode: false,
+    items: { data: [{ current_period_end: 2000 }] },
+  });
+  stripe.billing.meters.listEventSummaries = async () => ({ data: [] });
+  try {
+    await runMeteringSandbox({
+      apiKey: "sk_test_fixture",
+      runId: "clock-failure",
+      createClient: () => stripe,
+      finalizeInvoices: true,
+      wait: async () => {},
+    });
+    throw new Error("Expected incomplete probe");
+  } catch (error) {
+    expect(error.evidence.models).toHaveLength(3);
+    expect(
+      error.evidence.models.every((m) => m.aggregationVerified === false),
+    ).toBe(true);
+    expect(error.evidence.cleanup.every((item) => item.success)).toBe(true);
+    expect(JSON.stringify(error.evidence)).not.toMatch(
+      /private|sk_test_fixture/,
+    );
+  }
 });

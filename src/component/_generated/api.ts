@@ -178,6 +178,12 @@ import type * as usageObservations_helpers from "../usageObservations/helpers.js
 import type * as usageObservations_history from "../usageObservations/history.js";
 import type * as usageObservations_mutations from "../usageObservations/mutations.js";
 import type * as usageObservations_queries from "../usageObservations/queries.js";
+import type * as usageSubscriptions_acceptance from "../usageSubscriptions/acceptance.js";
+import type * as usageSubscriptions_helpers from "../usageSubscriptions/helpers.js";
+import type * as usageSubscriptions_history from "../usageSubscriptions/history.js";
+import type * as usageSubscriptions_mutations from "../usageSubscriptions/mutations.js";
+import type * as usageSubscriptions_queries from "../usageSubscriptions/queries.js";
+import type * as usageSubscriptions_retirement from "../usageSubscriptions/retirement.js";
 import type * as webhooks_mutations from "../webhooks/mutations.js";
 import type * as webhooks_queries from "../webhooks/queries.js";
 import type * as webhooks_validators from "../webhooks/validators.js";
@@ -360,6 +366,12 @@ const fullApi: ApiFromModules<{
   "usageObservations/history": typeof usageObservations_history;
   "usageObservations/mutations": typeof usageObservations_mutations;
   "usageObservations/queries": typeof usageObservations_queries;
+  "usageSubscriptions/acceptance": typeof usageSubscriptions_acceptance;
+  "usageSubscriptions/helpers": typeof usageSubscriptions_helpers;
+  "usageSubscriptions/history": typeof usageSubscriptions_history;
+  "usageSubscriptions/mutations": typeof usageSubscriptions_mutations;
+  "usageSubscriptions/queries": typeof usageSubscriptions_queries;
+  "usageSubscriptions/retirement": typeof usageSubscriptions_retirement;
   "webhooks/mutations": typeof webhooks_mutations;
   "webhooks/queries": typeof webhooks_queries;
   "webhooks/validators": typeof webhooks_validators;

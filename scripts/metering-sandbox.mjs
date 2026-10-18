@@ -11,6 +11,7 @@ export async function runMeteringSandbox({
   apiKey,
   runId = randomUUID(),
   verifyPayments = false,
+  finalizeInvoices = false,
   wait = () => setTimeout(5_000),
   createClient = (key) => new Stripe(key, { apiVersion, maxNetworkRetries: 0 }),
 }) {
@@ -34,13 +35,30 @@ export async function runMeteringSandbox({
     return object;
   };
   let step = "account";
+  let clock;
+  const lifecycle = [];
   try {
+    if (finalizeInvoices) {
+      step = "test-clock";
+      clock = await stripe.testHelpers.testClocks.create(
+        {
+          frozen_time: Math.floor(Date.now() / 60000) * 60 - 60,
+          name: `BetterStripe usage ${runId}`,
+        },
+        options("clock"),
+      );
+      cleanup.push([
+        "test-clock",
+        () => stripe.testHelpers.testClocks.del(clock.id),
+      ]);
+    }
+    step = "account";
     const account = testOnly(
       await stripe.v2.core.accounts.create(
         {
           display_name: `BetterStripe metering feasibility ${runId}`,
           contact_email: `metering-${runId}@example.invalid`,
-          configuration: { customer: {} },
+          configuration: { customer: clock ? { test_clock: clock.id } : {} },
           identity: { country: "us" },
         },
         options("account"),
@@ -118,6 +136,7 @@ export async function runMeteringSandbox({
         await stripe.subscriptions.create(
           {
             customer_account: account.id,
+            ...(finalizeInvoices ? { billing_mode: { type: "flexible" } } : {}),
             items: [{ price: price.id }],
             collection_method: "send_invoice",
             days_until_due: 30,
@@ -138,6 +157,12 @@ export async function runMeteringSandbox({
         subscription.customer !== customer.id
       )
         throw new Error("Unverified subscription payer");
+      if (finalizeInvoices) {
+        const periodEnd = subscription.items?.data?.[0]?.current_period_end;
+        if (!Number.isSafeInteger(periodEnd))
+          throw new Error("Unverified test-clock period");
+        lifecycle.push({ model, id: subscription.id, periodEnd });
+      }
       let paymentVerified = false;
       if (model === "prepaid") {
         let payment;
@@ -200,7 +225,7 @@ export async function runMeteringSandbox({
           throw new Error("Unverified credit payer");
       }
       step = `${model}:event`;
-      const timestamp = Math.floor(Date.now() / 1000);
+      const timestamp = clock?.frozen_time ?? Math.floor(Date.now() / 1000);
       const event = {
         event_name: eventName,
         identifier: `bs-${runId}-${model}`,
@@ -255,6 +280,91 @@ export async function runMeteringSandbox({
         invoiceFinalizationVerified: false,
       });
     }
+    if (finalizeInvoices) {
+      step = "test-clock:ingestion";
+      const ingestedBeforeAdvance = evidence.models.every(
+        (model) => model.aggregationVerified,
+      );
+      if (!ingestedBeforeAdvance)
+        throw new Error("Usage ingestion not yet verified");
+      const advanceTo =
+        Math.max(...lifecycle.map((sub) => sub.periodEnd)) + 7200;
+      step = "test-clock:advance";
+      await stripe.testHelpers.testClocks.advance(
+        clock.id,
+        { frozen_time: advanceTo },
+        options("clock-advance"),
+      );
+      let ready = false;
+      for (let attempt = 0; attempt < 24; attempt++) {
+        const state = await stripe.testHelpers.testClocks.retrieve(clock.id);
+        if (state.status === "ready") {
+          ready = true;
+          break;
+        }
+        if (attempt < 23) await wait();
+      }
+      if (!ready) throw new Error("Test clock not ready");
+      evidence.testClock = {
+        ingestedBeforeAdvance,
+        advanced: true,
+        ready: true,
+        advancementDoesNotProveIngestion: true,
+      };
+      for (const sub of lifecycle) {
+        step = `${sub.model}:final-invoice`;
+        const page = await stripe.invoices.list({
+          customer_account: account.id,
+          subscription: sub.id,
+          limit: 100,
+        });
+        if (page.has_more) throw new Error("Incomplete native invoice history");
+        let invoice = page.data.find(
+          (invoice) =>
+            invoice.billing_reason === "subscription_cycle" &&
+            invoice.period_end === sub.periodEnd,
+        );
+        if (!invoice) throw new Error("Period-end invoice unavailable");
+        if (invoice.status === "draft")
+          invoice = await stripe.invoices.finalizeInvoice(
+            invoice.id,
+            {},
+            options(`${sub.model}-finalize`),
+          );
+        const invoiceSubscription =
+          invoice.parent?.subscription_details?.subscription;
+        const nativeId =
+          typeof invoiceSubscription === "string"
+            ? invoiceSubscription
+            : invoiceSubscription?.id;
+        const finalizationVerified =
+          invoice.livemode === false &&
+          invoice.customer_account === account.id &&
+          (typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id) === customer.id &&
+          nativeId === sub.id &&
+          invoice.status !== "draft" &&
+          Number.isSafeInteger(invoice.status_transitions?.finalized_at) &&
+          !invoice.lines.has_more;
+        const expected = {
+          pay_as_you_go: 30,
+          included_overage: 10,
+          prepaid: 0,
+        }[sub.model];
+        const row = evidence.models.find((model) => model.model === sub.model);
+        Object.assign(row, {
+          invoiceFinalizationVerified: finalizationVerified,
+          finalizedTotal: invoice.total,
+          finalizedCurrency: invoice.currency,
+          finalizedAmountVerified:
+            finalizationVerified &&
+            invoice.total === expected &&
+            invoice.currency === "usd",
+          finalizedPaymentEvidence: "not_resolved",
+        });
+      }
+    }
   } catch (error) {
     // A fixed step and numeric status are enough to diagnose access/shape issues.
     // Provider error messages may contain credentials or customer data.
@@ -268,8 +378,11 @@ export async function runMeteringSandbox({
           : "unspecified",
       )
       .join(":");
-    throw new Error(
-      `Metering sandbox failed at ${step}${status} ${classification}; payer mapping and later steps may be unverified`,
+    throw Object.assign(
+      new Error(
+        `Metering sandbox failed at ${step}${status} ${classification}; payer mapping and later steps may be unverified`,
+      ),
+      { evidence },
     );
   } finally {
     for (const [kind, dispose] of cleanup.reverse()) {
@@ -294,6 +407,7 @@ if (
         await runMeteringSandbox({
           apiKey: process.env.STRIPE_SECRET_KEY,
           verifyPayments: process.argv.includes("--verify-test-payment"),
+          finalizeInvoices: process.argv.includes("--finalize-test-invoices"),
         }),
         null,
         2,
@@ -301,6 +415,7 @@ if (
     );
   } catch (error) {
     console.error(error.message);
+    if (error.evidence) console.log(JSON.stringify(error.evidence, null, 2));
     process.exitCode = 1;
   }
 }

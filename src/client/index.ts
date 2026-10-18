@@ -1,3 +1,4 @@
+export { UsageSubscriptionError } from "./usage/subscriptionProvider.js";
 export { UsageCatalogError } from "./usage/catalogTypes.js";
 export type {
   UsageCatalogScope,
@@ -1861,3 +1862,10 @@ export type {
   UsageInvoiceObservation,
   UsageInvoiceLine,
 } from "./usage/invoiceObservation.js";
+
+export type {
+  UsageSubscriptionOptions,
+  UsageSubscriptionView,
+} from "./usage/subscriptionTerms.js";
+export type { UsageSubscriptionRef } from "./usage/subscriptionLifecycle.js";
+export type { UsageSubscriptionInvoice } from "./usage/subscriptionInvoiceSchema.js";

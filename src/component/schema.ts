@@ -1,4 +1,10 @@
 import {
+  controlsTable as usageSubscriptionControls,
+  intentsTable as usageSubscriptionIntents,
+  locksTable as usageSubscriptionLocks,
+  historyTable as usageSubscriptionHistory,
+} from "./usageSubscriptions/schema.js";
+import {
   historyTable as usageDeliveryHistory,
   observationsTable as usageProviderObservations,
 } from "./usageObservations/schema.js";
@@ -104,6 +110,10 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageSubscriptionControls,
+  usageSubscriptionIntents,
+  usageSubscriptionLocks,
+  usageSubscriptionHistory,
   usageProviderObservations,
   usageDeliveryHistory,
   usageDeliveryLocks,

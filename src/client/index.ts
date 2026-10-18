@@ -1,7 +1,18 @@
+export { UsageSubscriptionError } from "./usage/subscriptionErrors.js";
+export { UsageCatalogError } from "./usage/catalogTypes.js";
+export type {
+  UsageCatalogScope,
+  UsageMeterOptions,
+  UsagePriceOptions,
+} from "./usage/catalogTypes.js";
+export type { UsagePriceBinding } from "./usage/catalogRead.js";
 import * as setupIntentRead from "./billing/setup-intent-read.js";
+import { UsageLedgerClient } from "./usage/client.js";
+export type { RecordUsageOptions } from "./usage/client.js";
 export type {
   SetupIntentReadOptions,
   SetupIntentObservation,
+  SetupIntentObservationStatus,
 } from "./billing/setup-intent-read.js";
 import * as subscriptionPaymentMethod from "./billing/subscription-payment-method.js";
 import type {
@@ -183,6 +194,7 @@ import type {
   V2AccountUpdateParams,
 } from "./stripe-types.js";
 import { componentRef, DISPATCHER_UPSERT_PATHS } from "./webhooks/helpers.js";
+import { upsertDeletedSubscriptionAndTrigger } from "./webhooks/subscriptionDeleted.js";
 import type {
   AccountLinkWithStatus,
   AsyncHookCtx,
@@ -240,6 +252,9 @@ export type BetterStripeComponent = ComponentApi;
 // BETTER STRIPE CLIENT
 
 export class BetterStripe extends PaymentSourceClient {
+  get usage() {
+    return new UsageLedgerClient(this.component);
+  }
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -1640,34 +1655,13 @@ export class BetterStripe extends PaymentSourceClient {
           ),
           record,
         ),
-      // Special case: marks the subscription canceled via upsert, then fires
-      // onDelete with the resulting doc. No pre-upsert read is needed.
-      subscriptionDeleted: async (ctx, record) => {
-        const id = record.stripeSubscriptionId;
-        if (typeof id !== "string") {
-          throw new Error(
-            "[better-stripe] subscriptionDeleted: missing stripeSubscriptionId in data",
-          );
-        }
-        await ctx.runMutation(
-          componentRef(component, DISPATCHER_UPSERT_PATHS.subscriptionDeleted),
+      subscriptionDeleted: (ctx, record) =>
+        upsertDeletedSubscriptionAndTrigger(
+          component,
+          ctx,
           record,
-        );
-        if (!onSubscriptionDeleted) return;
-        const doc = (await ctx.runQuery(
-          componentRef(component, "billing/queries/getSubscriptionByStripeId"),
-          { stripeSubscriptionId: id },
-        )) as StripeComponentSubscription | null;
-        if (doc === null) {
-          // Mutations read their own writes, so this cannot happen;
-          // fail loudly if it ever does.
-          throw new Error(
-            "[better-stripe] subscriptionDeleted: doc not found after " +
-              `upsert (stripeSubscriptionId=${id})`,
-          );
-        }
-        await onSubscriptionDeleted(ctx, doc);
-      },
+          onSubscriptionDeleted,
+        ),
       checkoutSessionUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentCheckoutSession>(
           ctx,
@@ -1815,3 +1809,14 @@ export type {
   SubscriptionPaymentMethodOptions,
   SubscriptionPaymentMethodResult,
 } from "./billing/subscription-payment-method.js";
+
+export * from "./usageExports.js";
+
+export type {
+  UsageInvoiceSaleOptions,
+  VerifiedUsageInvoiceSale,
+} from "./usage/invoiceSale.js";
+export type { UsageInvoiceSettlementOptions } from "./usage/settlement.js";
+export type { UsageCreditRevenue } from "./usage/creditRevenue.js";
+
+export type { UsageCreditSettlementOptions } from "./usage/creditSettlement.js";

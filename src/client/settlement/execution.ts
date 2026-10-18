@@ -13,6 +13,28 @@ export type ResolvedSettlement = {
   sourceChargeId: string;
   paymentIntentId?: string;
   sourceInvoiceId?: string;
+  usageSource?: {
+    stripeAccountId: string;
+    customerAccount: string;
+    livemode: boolean;
+    meterId: string;
+    stripePriceId: string;
+    stripeProductId: string;
+    subscriptionId: string;
+    subscriptionItemId: string;
+    invoicePaymentId: string;
+    period: { start: number; end: number };
+    model: "pay_as_you_go" | "included_overage";
+  };
+  creditSource?: {
+    stripeAccountId: string;
+    customerAccount: string;
+    livemode: boolean;
+    purchaseId: string;
+    creditGrantId: string;
+    stripePriceId: string;
+    stripeProductId: string;
+  };
   gross: number;
   currency: string;
   processingFee: number;
@@ -53,6 +75,8 @@ export async function executeResolvedTransfers(
     sourceChargeId: saved.sourceChargeId,
     paymentIntentId: saved.paymentIntentId,
     sourceInvoiceId: saved.sourceInvoiceId,
+    usageSource: saved.usageSource,
+    creditSource: saved.creditSource,
     gross: saved.gross,
     currency: saved.currency,
     processingFee: saved.processingFee,

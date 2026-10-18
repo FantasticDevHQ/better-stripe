@@ -1,0 +1,35 @@
+[
+  {
+    "type": "test_start",
+    "text": "Pay as you go",
+    "at": 1792333192404
+  },
+  {
+    "type": "assertion",
+    "result": "passed",
+    "text": "Pay as you go native invoice $15.00; original cash and settlement verified",
+    "at": 1792333195603
+  },
+  {
+    "type": "test_start",
+    "text": "Included monthly usage",
+    "at": 1792333198805
+  },
+  {
+    "type": "assertion",
+    "result": "passed",
+    "text": "Included monthly usage native invoice $5.00; original cash and settlement verified",
+    "at": 1792333202099
+  },
+  {
+    "type": "test_start",
+    "text": "Prepaid credits",
+    "at": 1792333205301
+  },
+  {
+    "type": "assertion",
+    "result": "passed",
+    "text": "Prepaid credits native invoice $0.00; original cash and settlement verified",
+    "at": 1792333208458
+  }
+]

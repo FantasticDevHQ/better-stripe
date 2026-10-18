@@ -1,17 +1,13 @@
 // @vitest-environment edge-runtime
 import { expect, it, vi } from "vitest";
-import schema from "../component/schema.js";
+import { schema, modules } from "../test.js";
 import { BetterStripe } from "./index.js";
 import type { RunCtx } from "./helpers.js";
 import { components, initConvexTest } from "./setup.test.js";
 import { componentRef } from "./webhooks/helpers.js";
 it("drains every original reference through the actual public SDK and component", async () => {
   const t = initConvexTest();
-  t.registerComponent(
-    "betterStripe",
-    schema,
-    import.meta.glob("../component/**/*.ts"),
-  );
+  t.registerComponent("betterStripe", schema, modules);
   const client = new BetterStripe(components.betterStripe);
   const ctx = { runQuery: t.query, runMutation: t.mutation } as RunCtx;
   for (let i = 0; i < 101; i++)

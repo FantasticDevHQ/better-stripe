@@ -1547,3 +1547,7 @@ its authenticated original request before invoking the qualified SDK
 [original SetupIntent recovery](../docs/setup-intent-recovery.md); never forward
 browser-supplied customer/user/provider selectors or trust redirect status.
 A missing acknowledged setup ID remains unknown without another creation.
+
+## Native metered billing
+
+Open `/demo/metered-usage` as a customer, seller or admin demo persona. Follow the [three-model sandbox walkthrough](../docs/usage-example.md) for native setup, real test payments, corrections, monthly resets and scoped cleanup. Demo personas are not production authentication. No Metronome account is needed.

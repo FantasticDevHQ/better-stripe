@@ -282,3 +282,43 @@ it.each(["o".repeat(300), " opaque owner "])(
     ]);
   },
 );
+
+type QualifiedStatus =
+  | "requires_payment_method"
+  | "requires_confirmation"
+  | "requires_action"
+  | "processing"
+  | "canceled"
+  | "succeeded";
+
+it.each<QualifiedStatus>([
+  "requires_payment_method",
+  "requires_confirmation",
+  "requires_action",
+  "processing",
+  "canceled",
+  "succeeded",
+])("returns the closed public status contract for %s", async (status) => {
+  const f = fixture();
+  f.setup.status = status;
+  const observation = await f.client.getSetupIntentFromStripe(f.ctx, f.opts);
+  const qualified: QualifiedStatus = observation.status;
+  expect(qualified).toBe(status);
+  expect(f.requests).toEqual([
+    { method: "GET", path: "/v1/setup_intents/seti_original" },
+  ]);
+  expect(f.realms).toEqual([null]);
+  expect("clientSecret" in observation).toBe(status.startsWith("requires_"));
+});
+
+it.each([null, undefined, 42, {}, [], "unknown", "toString", "__proto__"])(
+  "rejects malformed or unrecognized provider status %j",
+  async (status) => {
+    const f = fixture();
+    Object.assign(f.setup, { status });
+    await expect(
+      f.client.getSetupIntentFromStripe(f.ctx, f.opts),
+    ).rejects.toThrow(/original request/);
+    expect(f.requests).toHaveLength(1);
+  },
+);

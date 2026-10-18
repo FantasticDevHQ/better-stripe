@@ -1,0 +1,58 @@
+{
+  "branch": "codex/bts-258-usage-react",
+  "environment": "localhost deterministic package UI fixture; no Stripe calls",
+  "capture": "annotated browser screenshot steps",
+  "startedAt": "2026-10-18T12:00:51.598Z",
+  "annotations": [
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "01-payg-delayed",
+      "text": "Local14 and unknown delivery differ from stale partial native7",
+      "at": "2026-10-18T12:00:51.971Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "02-history-page2",
+      "text": "Cursor advances to bounded page2 without replaying work",
+      "at": "2026-10-18T12:00:52.568Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "03-included-overage",
+      "text": "Included10 consumed14 reserved2 shows overage and soft warning",
+      "at": "2026-10-18T12:01:01.654Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "04-prepaid-pending",
+      "text": "Pending purchase grants no new units and exhaustion stays explicit",
+      "at": "2026-10-18T12:01:01.959Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "05-prepaid-held",
+      "text": "Held units stay frozen and are not withdrawable cash",
+      "at": "2026-10-18T12:01:02.209Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "06-tenant-reset",
+      "text": "Tenant switch shows local3 and resets history to page1",
+      "at": "2026-10-18T12:01:02.664Z"
+    },
+    {
+      "type": "assertion",
+      "result": "passed",
+      "name": "07-unavailable",
+      "text": "Unavailable usage does not render an empty or zero bill",
+      "at": "2026-10-18T12:01:02.820Z"
+    }
+  ],
+  "completedAt": "2026-10-18T12:01:02.820Z"
+}

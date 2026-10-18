@@ -1,3 +1,5 @@
+import { syncManagedUsageEvent } from "./usageSubscriptions.js";
+import { isFixedPrice } from "../products/fixedPrice.js";
 import { handleRefundEvent } from "./refundDelivery.js";
 import { handlePayoutEvent } from "./payoutReconciliation.js";
 import { reconcileDisputeMoney } from "./disputeRecovery.js";
@@ -30,6 +32,7 @@ export async function processEvent(
   event: Stripe.Event,
 ): Promise<void> {
   // Stripe guarantees the object type matches event.type, so these casts are safe.
+  await syncManagedUsageEvent(whCtx, event);
   const obj = event.data.object;
 
   switch (event.type) {
@@ -157,6 +160,7 @@ async function handlePriceEvent(
   whCtx: WebhookContext,
   price: Stripe.Price,
 ): Promise<void> {
+  if (!isFixedPrice(price)) return;
   const { ctx, component, stripe } = whCtx;
   const stripeProductId: string =
     typeof price.product === "string"

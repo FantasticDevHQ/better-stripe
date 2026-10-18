@@ -1,13 +1,13 @@
 import { runAction } from "../../testing/settlement/providerFixture";
 import workflowTest from "@convex-dev/workflow/test";
-import { modules } from "../../test";
+import { schema, modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
 import componentSchema from "../../../dist/component/schema.js";
 import { api, components, internal } from "../_generated/api";
-import schema from "../schema";
+import "./internal/actions";
 const raw = vi.hoisted(() => ({
   charges: { retrieve: vi.fn() },
   paymentIntents: { retrieve: vi.fn() },

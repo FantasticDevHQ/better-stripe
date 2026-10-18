@@ -11,11 +11,32 @@ export type SetupIntentReadOptions = {
   usage: "on_session" | "off_session";
 };
 
+const observationStatuses = {
+  requires_payment_method: true,
+  requires_confirmation: true,
+  requires_action: true,
+  processing: true,
+  canceled: true,
+  succeeded: true,
+};
+
+/** Statuses qualified by the exact SetupIntent reader, independent of Stripe's open union. */
+export type SetupIntentObservationStatus = keyof typeof observationStatuses;
+
+function isObservationStatus(
+  value: unknown,
+): value is SetupIntentObservationStatus {
+  return (
+    typeof value === "string" &&
+    Object.prototype.hasOwnProperty.call(observationStatuses, value)
+  );
+}
+
 export type SetupIntentObservation = {
   setupIntentId: string;
   customerAccount: string;
   usage: "on_session" | "off_session";
-  status: Stripe.SetupIntent.Status;
+  status: SetupIntentObservationStatus;
   /** Present only for an incomplete confirmation. Never persist or log it. */
   clientSecret?: string;
   /** Time of this provider observation, in Unix milliseconds. */
@@ -68,14 +89,7 @@ export async function getSetupIntentFromStripe(
     setup.customer_account !== opts.customerAccount ||
     setup.metadata?.userId !== opts.userId ||
     setup.usage !== opts.usage ||
-    ![
-      "requires_payment_method",
-      "requires_confirmation",
-      "requires_action",
-      "processing",
-      "canceled",
-      "succeeded",
-    ].includes(setup.status)
+    !isObservationStatus(setup.status)
   )
     throw new Error("SetupIntent does not match the original request.");
   const isIncomplete = [

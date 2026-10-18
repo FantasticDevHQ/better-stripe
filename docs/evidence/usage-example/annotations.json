@@ -1,0 +1,110 @@
+[
+  {
+    "file": "02-payg-cash.png",
+    "assertion": "Native PAYG invoice paid $15; verified source fee $0.74",
+    "result": "passed",
+    "capturedAt": "2026-10-18T13:55:36.324Z"
+  },
+  {
+    "file": "04-included-overage.png",
+    "assertion": "15 effective calls: 10 included, 5 overage; soft threshold reached",
+    "result": "passed",
+    "capturedAt": "2026-10-18T13:56:14.502Z"
+  },
+  {
+    "file": "05-included-cash.png",
+    "assertion": "Native included-overage invoice paid $5; actual fee $0.45",
+    "result": "passed",
+    "capturedAt": "2026-10-18T13:56:14.836Z"
+  },
+  {
+    "file": "07-prepaid-exhausted.png",
+    "assertion": "Verified prepaid grant consumed 10 calls; available and reserved are zero",
+    "result": "passed",
+    "capturedAt": "2026-10-18T13:58:27.377Z"
+  },
+  {
+    "file": "08-prepaid-cash.png",
+    "assertion": "Prepaid usage invoice paid $0; original $10 capture, fee $0.59, settled",
+    "result": "passed",
+    "capturedAt": "2026-10-18T13:58:27.669Z"
+  },
+  {
+    "file": "09-unfunded-work-held.png",
+    "assertion": "Unfunded prepaid job held; no work performed and no cash collected",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:04:03.975Z"
+  },
+  {
+    "file": "10-purchase-pending.png",
+    "assertion": "Native purchase pending; no units granted and available credits stay zero",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:04:59.200Z"
+  },
+  {
+    "file": "13-grant-ready.png",
+    "assertion": "Original captured payment verified; 10 paid credits available",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:06:41.764Z"
+  },
+  {
+    "file": "14-prepaid-first-work.png",
+    "assertion": "Original held job completed once after payment; 5 credits remain",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:07:32.431Z"
+  },
+  {
+    "file": "15-replay-once.png",
+    "assertion": "Replay reports no new work or units accepted",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:10:22.567Z"
+  },
+  {
+    "file": "17-exhaustion-denied.png",
+    "assertion": "Exhaustion denied work; no work ran and no new cash was collected",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:12:11.862Z"
+  },
+  {
+    "file": "19-settlement-held.png",
+    "assertion": "Paid invoice cash verified; ineligible seller settlement remains unknown",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:13:01.265Z"
+  },
+  {
+    "file": "21-cleanup-held.png",
+    "assertion": "Cleanup failed safely; paid cash and unknown settlement are retained",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:14:11.489Z"
+  },
+  {
+    "file": "23-seller-payg-splits.png",
+    "assertion": "Verified seller $10.80 and affiliate $2.70 from original $15 invoice",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:15:07.206Z"
+  },
+  {
+    "file": "25-seller-overage-splits.png",
+    "assertion": "Verified seller $3.60 and affiliate $0.90 from original $5 overage invoice",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:16:09.722Z"
+  },
+  {
+    "file": "27-prepaid-affiliate.png",
+    "assertion": "Original prepaid purchase paid affiliate $1.80; usage invoice cash remains $0",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:17:28.788Z"
+  },
+  {
+    "file": "29-archived-history.png",
+    "assertion": "Scoped cleanup archived the run; original cash, affiliate transfer and history retained",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:21:07.176Z"
+  },
+  {
+    "file": "30-reset-configuration.png",
+    "assertion": "Archived seller run re-enables configuration and offers a new isolated sandbox run",
+    "result": "passed",
+    "capturedAt": "2026-10-18T14:21:07.461Z"
+  }
+]

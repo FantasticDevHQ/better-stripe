@@ -1,3 +1,7 @@
+import { UsageCatalogError } from "../usage/catalogTypes.js";
+import * as usageCatalog from "../usage/catalog.js";
+import * as usageLifecycle from "../usage/catalogLifecycle.js";
+import { getUsagePriceBinding } from "../usage/catalogRead.js";
 import type Stripe from "stripe";
 import { BillingPortalClient } from "../core/billingPortalClient.js";
 import type { RunCtx } from "../helpers.js";
@@ -9,6 +13,79 @@ import * as catalog from "./catalog.js";
 /** Catalog APIs inherited by BetterStripe. Host authorization remains required. */
 export abstract class CatalogClient extends BillingPortalClient {
   abstract get statementDescriptorSuffix(): string | undefined;
+  ensureUsageMeter(ctx: RunCtx, opts: usageCatalog.UsageMeterOptions) {
+    return usageCatalog.ensureUsageMeter(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+  async ensureUsagePrice(ctx: RunCtx, opts: usageCatalog.UsagePriceOptions) {
+    await usageCatalog.ensureUsagePrice(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+    const binding = await getUsagePriceBinding(this.component, ctx, opts);
+    if (binding.status !== "available")
+      throw new UsageCatalogError(
+        "provider_unavailable",
+        "Native usage price mirror is unavailable",
+      );
+    return binding.value;
+  }
+
+  adoptUsageMeter(
+    ctx: RunCtx,
+    opts: usageCatalog.UsageMeterOptions & { meterId: string },
+  ) {
+    return usageLifecycle.adoptUsageMeter(
+      this.stripe(),
+      this.component,
+      ctx,
+      opts,
+    );
+  }
+  getUsageMeterFromStripe(
+    _ctx: RunCtx,
+    opts: Parameters<typeof usageLifecycle.getUsageMeterFromStripe>[1],
+  ) {
+    return usageLifecycle.getUsageMeterFromStripe(this.stripe(), opts);
+  }
+  listStripeUsageMeters(
+    _ctx: RunCtx,
+    opts: Parameters<typeof usageLifecycle.listStripeUsageMeters>[1],
+  ) {
+    return usageLifecycle.listStripeUsageMeters(this.stripe(), opts);
+  }
+  deactivateUsageMeter(
+    ctx: RunCtx,
+    opts: { scope: usageCatalog.UsageCatalogScope; meterId: string },
+  ) {
+    return usageLifecycle.setUsageMeterActive(
+      this.stripe(),
+      this.component,
+      ctx,
+      { ...opts, active: false },
+    );
+  }
+  reactivateUsageMeter(
+    ctx: RunCtx,
+    opts: { scope: usageCatalog.UsageCatalogScope; meterId: string },
+  ) {
+    return usageLifecycle.setUsageMeterActive(
+      this.stripe(),
+      this.component,
+      ctx,
+      { ...opts, active: true },
+    );
+  }
+  getUsagePrice(ctx: RunCtx, opts: Parameters<typeof getUsagePriceBinding>[2]) {
+    return getUsagePriceBinding(this.component, ctx, opts);
+  }
+
   async getStripePriceByLookupKey(
     _ctx: RunCtx,
     opts: { lookupKey: string },

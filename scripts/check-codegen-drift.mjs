@@ -280,7 +280,7 @@ function main() {
     } else {
       console.error(
         `${result.message}\n\nRegenerate with \`pnpm codegen\` against your dev deployment and commit the result.\n` +
-          `See README § "Regenerating codegen".`,
+          `See docs/development.md#regenerating-codegen.`,
       );
       process.exit(1);
     }

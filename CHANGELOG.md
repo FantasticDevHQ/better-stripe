@@ -26,6 +26,124 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.62.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.61.0...v0.62.0) (2026-10-18)
+
+### Features
+
+- **react:** configure all three native usage billing models ([#343](https://github.com/FantasticDevHQ/better-stripe/issues/343)) ([a6733d6](https://github.com/FantasticDevHQ/better-stripe/commit/a6733d6af8ef12ac6bdd6a736bf9319b1659b2fb))
+
+## [0.61.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.60.1...v0.61.0) (2026-10-18)
+
+### Features
+
+- **react:** reusable metered billing views for all three models ([#341](https://github.com/FantasticDevHQ/better-stripe/issues/341)) ([0eee6cc](https://github.com/FantasticDevHQ/better-stripe/commit/0eee6cc1a6d3ebd821b855a04f98cc017c6198f6))
+
+## [0.60.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.60.0...v0.60.1) (2026-10-18)
+
+### Bug Fixes
+
+- **usage:** enforce original customer and recovery boundaries ([#339](https://github.com/FantasticDevHQ/better-stripe/issues/339)) ([35c0af1](https://github.com/FantasticDevHQ/better-stripe/commit/35c0af1293a78420485bcbb25470c6159ea48d89))
+
+## [0.60.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.59.0...v0.60.0) (2026-10-18)
+
+### Features
+
+- **usage:** settle verified native invoice and issuer credit proceeds ([#337](https://github.com/FantasticDevHQ/better-stripe/issues/337)) ([3c2844a](https://github.com/FantasticDevHQ/better-stripe/commit/3c2844a6a6a51d2a4f884e25a333165314bcc141))
+
+## [0.59.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.58.0...v0.59.0) (2026-10-18)
+
+### Features
+
+- add auditable usage corrections and invoice adjustment evidence ([#335](https://github.com/FantasticDevHQ/better-stripe/issues/335)) ([6b0ec3a](https://github.com/FantasticDevHQ/better-stripe/commit/6b0ec3adbe87169887afef7ba523644ff1b8c1a2))
+
+## [0.58.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.57.0...v0.58.0) (2026-10-18)
+
+### Features
+
+- add atomic included usage and optional limits ([#333](https://github.com/FantasticDevHQ/better-stripe/issues/333)) ([3980483](https://github.com/FantasticDevHQ/better-stripe/commit/398048346056f5ca85fd0bfafa2fa4cceab40443))
+
+## [0.57.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.56.0...v0.57.0) (2026-10-18)
+
+### Features
+
+- add payment-backed prepaid usage accounting ([#331](https://github.com/FantasticDevHQ/better-stripe/issues/331)) ([b38d99c](https://github.com/FantasticDevHQ/better-stripe/commit/b38d99c3c8be133183cf9d8d776dc5149709e7e7))
+
+### Bug Fixes
+
+- close qualified SetupIntent status contract ([#313](https://github.com/FantasticDevHQ/better-stripe/issues/313)) ([7766f7c](https://github.com/FantasticDevHQ/better-stripe/commit/7766f7cd5fc96596f118e63bf3346d578cc8316a))
+- preserve previous subscription identity for delete triggers ([#317](https://github.com/FantasticDevHQ/better-stripe/issues/317)) ([ccc7b07](https://github.com/FantasticDevHQ/better-stripe/commit/ccc7b0793dd8d9892a35c5373b5ea47a88a7b305))
+- **usage:** compose prepared authorization with ledger recording ([#326](https://github.com/FantasticDevHQ/better-stripe/issues/326)) ([8f1b298](https://github.com/FantasticDevHQ/better-stripe/commit/8f1b298e4a9587f6a82d73ffe28e332144988a7f))
+
+## [0.56.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.55.0...v0.56.0) (2026-10-18)
+
+### Features
+
+- manage metered subscriptions and invoice lifecycle ([#329](https://github.com/FantasticDevHQ/better-stripe/issues/329)) ([460e473](https://github.com/FantasticDevHQ/better-stripe/commit/460e473fec47da38acde0f1f61c843fe47336071))
+
+## [0.55.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.54.0...v0.55.0) (2026-10-18)
+
+### Features
+
+- add scoped usage observations, audit history and reconciliation ([#327](https://github.com/FantasticDevHQ/better-stripe/issues/327)) ([b604728](https://github.com/FantasticDevHQ/better-stripe/commit/b6047284b60523827961182045e2643aa7f8ac32))
+
+## [0.54.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.53.0...v0.54.0) (2026-10-18)
+
+### Features
+
+- deliver native Stripe usage with durable scoped workflows ([#324](https://github.com/FantasticDevHQ/better-stripe/issues/324)) ([ca739b4](https://github.com/FantasticDevHQ/better-stripe/commit/ca739b4fd5ed6ad69319d631aaa02b392f941d60))
+
+## [0.53.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.52.0...v0.53.0) (2026-10-18)
+
+### Features
+
+- add native Stripe usage catalog and lifecycle APIs ([#322](https://github.com/FantasticDevHQ/better-stripe/issues/322)) ([19e052d](https://github.com/FantasticDevHQ/better-stripe/commit/19e052d55bc54ba542aca6c0de4e47eb702518c0))
+
+## [0.52.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.51.0...v0.52.0) (2026-10-18)
+
+### Features
+
+- add atomic scoped usage ledger and durable outbox ([c4a4f39](https://github.com/FantasticDevHQ/better-stripe/commit/c4a4f39749ec6399514176e1deb02a379278349a))
+
+### Bug Fixes
+
+- reject unavailable usage reservation references ([d6b7f16](https://github.com/FantasticDevHQ/better-stripe/commit/d6b7f1666a2acf35aae45e590ffc1f5eb3fca8a5))
+
+### Tests
+
+- retain improved atomic ledger coverage floors ([4b88773](https://github.com/FantasticDevHQ/better-stripe/commit/4b88773e3ff5489c4f473f4e4f5a6ecaf2a7cfbf))
+
+## [0.51.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.3...v0.51.0) (2026-10-18)
+
+### Features
+
+- complete scoped usage API and host authorization contracts ([41d58ac](https://github.com/FantasticDevHQ/better-stripe/commit/41d58ac99ff63c89c17143dde5e59de04ee2c80d))
+
+### Documentation
+
+- align metering status and index with native sandbox evidence ([d1c1bf5](https://github.com/FantasticDevHQ/better-stripe/commit/d1c1bf57893c6045c91a8c9103ea02103c871ed9))
+
+### Continuous Integration
+
+- batch coverage floor increases in weekly PRs ([d648b82](https://github.com/FantasticDevHQ/better-stripe/commit/d648b82f6c910b16c6349096a2022c798777f608))
+- batch coverage floor increases in weekly PRs ([8217f1f](https://github.com/FantasticDevHQ/better-stripe/commit/8217f1fe9e1bdac5c730d98cc1022ea7cd1c385c))
+
+### Tests
+
+- ratchet native usage contract coverage floors ([5c8ff1b](https://github.com/FantasticDevHQ/better-stripe/commit/5c8ff1b31913a08db9493cc5a0219601ad540608))
+
+## [0.50.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.2...v0.50.3) (2026-10-18)
+
+### Documentation
+
+- move detailed reference guides out of README ([4aa27e0](https://github.com/FantasticDevHQ/better-stripe/commit/4aa27e0fbbc275ccbeed64ba6cba51e1c1e73a9e))
+- shorten README and stabilize documentation verification ([de46f55](https://github.com/FantasticDevHQ/better-stripe/commit/de46f55feed4286963e221096ed47eb07d4e6940))
+
+## [0.50.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.1...v0.50.2) (2026-10-18)
+
+### Documentation
+
+- start metered billing provider feasibility ([844fb74](https://github.com/FantasticDevHQ/better-stripe/commit/844fb74c30081baac16a8275a1ae73a98a5b3753))
+
 ## [0.50.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.0...v0.50.1) (2026-10-17)
 
 ### Bug Fixes

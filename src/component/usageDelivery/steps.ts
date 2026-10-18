@@ -1,3 +1,5 @@
+import { managedBillingCutoff } from "../usageSubscriptions/acceptance.js";
+import { subscriptionSnapshot } from "../usage/helpers.js";
 import { appendDeliveryHistory } from "../usageObservations/history.js";
 import { internalMutation } from "../_generated/server.js";
 import { v } from "convex/values";
@@ -12,7 +14,7 @@ export const claim = internalMutation({
     v.object({ kind: v.literal("done") }),
   ),
   handler: async (ctx, args) => {
-    const { outbox, record } = await read(ctx, args),
+    const { event, outbox, record } = await read(ctx, args),
       now = Math.floor(Date.now() / 1000);
     if (
       outbox.held ||
@@ -59,6 +61,25 @@ export const claim = internalMutation({
         "unknown",
         outbox.attempts,
         `result:${outbox.attempts}:unknown`,
+      );
+      return { kind: "done" as const };
+    }
+    const cutoff = await managedBillingCutoff(
+      ctx,
+      record,
+      subscriptionSnapshot(event.subscriptionJson),
+    );
+    if (cutoff !== null && now >= cutoff) {
+      await ctx.db.patch("usageOutbox", outbox._id, {
+        state: "held",
+        reason: "billing_period_closed",
+      });
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "held",
+        outbox.attempts,
+        `billing-period:${outbox.attempts}`,
       );
       return { kind: "done" as const };
     }

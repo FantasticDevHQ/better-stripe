@@ -136,3 +136,29 @@ export function readNativeInvoice(
     stripeSecretKey: resolveSecret(),
   });
 }
+
+import type {
+  UsageSubscriptionOptions,
+  UsageSubscriptionRef,
+} from "@fantastic.dev/better-stripe/usage";
+export async function managedUsageSubscription(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["ensureSubscription"]>[0],
+  request: UsageSubscriptionOptions,
+  ref: UsageSubscriptionRef,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const subscription = await stripe.usage.ensureSubscription(
+    ctx,
+    request,
+    provider,
+  );
+  const history = await stripe.usage.readSubscriptionHistory(ctx, {
+    ...ref,
+    kind: "subscription",
+    limit: 20,
+    cursor: null,
+  });
+  return { subscription, history };
+}

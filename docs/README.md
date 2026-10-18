@@ -64,3 +64,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 [Durable native delivery](usage-delivery.md) explains host actions, bounded retries, operational holds and asynchronous errors.
 
 [Usage observations and reconciliation](usage-observations.md) covers exact summaries, paginated audit history, native freshness and invoice observations.
+
+[Managed metered subscriptions and invoice lifecycle](usage-subscriptions.md) covers all three models, Checkout, renewal, closeout and native test clocks.

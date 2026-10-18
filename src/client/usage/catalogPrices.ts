@@ -83,11 +83,12 @@ function verifyPrice(
   opts: UsagePriceOptions,
   rate: string,
   included: number | undefined,
+  requireActive = true,
 ) {
   const product =
     typeof price.product === "string" ? price.product : price.product.id;
   if (
-    !price.active ||
+    (requireActive && !price.active) ||
     price.livemode !== opts.scope.livemode ||
     price.lookup_key !== opts.lookupKey ||
     product !== opts.stripeProductId ||
@@ -256,6 +257,7 @@ export function verifyPinnedUsagePrice(
   scope: UsagePriceOptions["scope"],
   plan: UsagePriceOptions["plan"],
   meterId: string,
+  requireActive = true,
 ) {
   const productId =
     typeof price.product === "string" ? price.product : price.product.id;
@@ -268,5 +270,5 @@ export function verifyPinnedUsagePrice(
     lookupKey: price.lookup_key,
   };
   const { rate, included } = termsFor(opts);
-  verifyPrice(price, opts, rate, included);
+  verifyPrice(price, opts, rate, included, requireActive);
 }

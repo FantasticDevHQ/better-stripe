@@ -7715,6 +7715,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             allocation?: {
               adjustmentAmount?: number;
+              creditSource?: {
+                creditGrantId: string;
+                customerAccount: string;
+                livemode: boolean;
+                purchaseId: string;
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+              };
               currency: string;
               gross: number;
               paymentId?: string;
@@ -7728,6 +7737,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 destinationAccountId: string;
                 role: "store" | "affiliate" | "other";
               }>;
+              usageSource?: {
+                customerAccount: string;
+                invoicePaymentId: string;
+                livemode: boolean;
+                meterId: string;
+                model: "pay_as_you_go" | "included_overage";
+                period: { end: number; start: number };
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionId: string;
+                subscriptionItemId: string;
+              };
             };
             completion?: string;
             currency: string;
@@ -7820,6 +7842,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             activePhase?: "execute" | "reconcile";
             allocation?: {
               adjustmentAmount?: number;
+              creditSource?: {
+                creditGrantId: string;
+                customerAccount: string;
+                livemode: boolean;
+                purchaseId: string;
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+              };
               currency: string;
               gross: number;
               paymentId?: string;
@@ -7833,6 +7864,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 destinationAccountId: string;
                 role: "store" | "affiliate" | "other";
               }>;
+              usageSource?: {
+                customerAccount: string;
+                invoicePaymentId: string;
+                livemode: boolean;
+                meterId: string;
+                model: "pay_as_you_go" | "included_overage";
+                period: { end: number; start: number };
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionId: string;
+                subscriptionItemId: string;
+              };
             };
             cancelRequested: boolean;
             completion?: string;
@@ -8132,6 +8176,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8145,11 +8198,33 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           },
           {
             _creationTime: number;
             _id: string;
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8163,6 +8238,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           },
           Name
         >;
@@ -8188,6 +8276,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8201,6 +8298,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           } | null,
           Name
         >;

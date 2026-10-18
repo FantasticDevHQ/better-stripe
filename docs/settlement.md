@@ -985,3 +985,7 @@ The example's worker and preview adapters do this automatically. Old unattempted
 claims are canceled on replay, rather than retroactively supplied with a guessed
 quote. Restart obsolete read-only collections after upgrading their fingerprint
 format; never clear unresolved financial claims to bypass validation.
+
+## Native metered and prepaid sales
+
+Use the [usage settlement guide](usage-settlement.md) for original metered-invoice provenance and issuer-service paid-credit purchases. The usage facade reuses the existing allocation, transfer and recovery ledgers and keeps usage consumption separate from cash settlement.

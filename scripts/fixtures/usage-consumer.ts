@@ -248,3 +248,39 @@ export async function correctOriginalUsage(
       stripe.usage.observeInvoiceCorrection(ctx, adjustment, options),
   };
 }
+
+import type {
+  UsageInvoiceSettlementOptions,
+  UsageCreditSettlementOptions,
+} from "@fantastic.dev/better-stripe/usage";
+import type {
+  VerifiedUsageInvoiceSale,
+  UsageCreditRevenue,
+} from "@fantastic.dev/better-stripe";
+export async function nativeUsageSettlement(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["settleInvoice"]>[0],
+  invoice: UsageInvoiceSettlementOptions,
+  credit: UsageCreditSettlementOptions,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const sale = await stripe.usage.getInvoiceSale(ctx, invoice, provider);
+  const original: VerifiedUsageInvoiceSale | null =
+    sale.status === "ready" ? sale.value : null;
+  const { policy: _policy, ...purchase } = credit;
+  const revenue = await stripe.usage.getCreditPurchaseRevenue(
+    ctx,
+    purchase,
+    provider,
+  );
+  const creditSource: UsageCreditRevenue | null =
+    revenue.status === "ready" ? revenue.value : null;
+  return {
+    original,
+    creditSource,
+    settleInvoice: () => stripe.usage.settleInvoice(ctx, invoice, provider),
+    settleOriginalCreditPurchase: () =>
+      stripe.usage.settleCreditPurchase(ctx, credit, provider),
+  };
+}

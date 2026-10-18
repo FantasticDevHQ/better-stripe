@@ -1,4 +1,4 @@
-import { UsageCorrectionClient } from "./correctionClient.js";
+import { UsageSettlementClient } from "./settlementClient.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
@@ -46,7 +46,7 @@ function decode({ event, delivery }: StoredView): UsageEventView {
   };
 }
 /** Trusted host facade. Authenticate and authorize each exact scope first. */
-export class UsageLedgerClient extends UsageCorrectionClient {
+export class UsageLedgerClient extends UsageSettlementClient {
   constructor(component: Component) {
     super(component);
   }

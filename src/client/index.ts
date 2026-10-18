@@ -1811,3 +1811,12 @@ export type {
 } from "./billing/subscription-payment-method.js";
 
 export * from "./usageExports.js";
+
+export type {
+  UsageInvoiceSaleOptions,
+  VerifiedUsageInvoiceSale,
+} from "./usage/invoiceSale.js";
+export type { UsageInvoiceSettlementOptions } from "./usage/settlement.js";
+export type { UsageCreditRevenue } from "./usage/creditRevenue.js";
+
+export type { UsageCreditSettlementOptions } from "./usage/creditSettlement.js";

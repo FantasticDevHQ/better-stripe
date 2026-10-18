@@ -15,6 +15,7 @@ import type {
   RecoveryProviderRequest,
   RecoverySnapshot,
 } from "../../../src/client/recoveryWorkflow/contracts";
+import type { RecoveryProviderOptions } from "../../../src/client/recoveryWorkflow/provider";
 import type {
   ProcessingCostProviderRequest,
   ProcessingCostSnapshot,
@@ -41,6 +42,7 @@ export function fixtureRecoveryClient(
     executeGroupProvider: async (
       ctx: RunCtx,
       request: RecoveryProviderRequest,
+      options?: RecoveryProviderOptions,
     ) => {
       const reference = { ...ref(request), groupKey: request.groupKey };
       const saved = (await ctx.runQuery(
@@ -56,6 +58,7 @@ export function fixtureRecoveryClient(
               component,
               ctx,
               saved.allocation,
+              options?.authorize,
             );
           else if (
             !(await reconcileRecoverySettlement(

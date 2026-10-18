@@ -137,6 +137,10 @@ export type {
   VerifiedPaymentSourceOptions,
 } from "./paymentSource/contracts.js";
 export type { SettleSaleOptions } from "./settlement/settleSale.js";
+export type {
+  SettlementAuthorization,
+  SettlementAuthorizationContext,
+} from "./settlement/authorization.js";
 export type { SettlementResult } from "./settlement/execution.js";
 export type {
   CommissionTerm,

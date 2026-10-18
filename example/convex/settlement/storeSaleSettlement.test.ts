@@ -1,11 +1,8 @@
+import { seedStoreSale } from "../../testing/settlement/storeSaleFixture";
 import { runAction } from "../../testing/settlement/providerFixture";
-import workflowTest from "@convex-dev/workflow/test";
-import { schema, modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
-import { convexTest } from "convex-test";
 import { beforeEach, expect, it, vi } from "vitest";
-import componentSchema from "../../../dist/component/schema.js";
 import { api, components, internal } from "../_generated/api";
 import "./internal/actions";
 const raw = vi.hoisted(() => ({
@@ -79,7 +76,6 @@ vi.mock("../stripe/helpers", async () => {
     },
   };
 });
-const componentModules = import.meta.glob("../../../dist/component/**/*.js");
 beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
@@ -95,48 +91,7 @@ async function setup(
   referred = false,
   fee: number | null = 320,
 ) {
-  const t = convexTest(schema, modules);
-  t.registerComponent("betterStripe", componentSchema, componentModules);
-  await t.mutation(components.betterStripe.products.mutations.upsertProduct, {
-    stripeProductId: "prod_default",
-    accountId: "acct_store",
-    name: "Membership",
-    active: true,
-  });
-  await t.mutation(components.betterStripe.products.mutations.upsertPrice, {
-    stripePriceId: "price_default",
-    stripeProductId: "prod_default",
-    productId: "product",
-    unitAmount: 10000,
-    currency: "usd",
-    type: "recurring",
-    interval: "month",
-    active: true,
-  });
-  workflowTest.register(t, "betterStripe/workflow");
-  const sellerId = await t.run((ctx) =>
-    ctx.db.insert("users", {
-      name: "Seller",
-      email: "seller@example.com",
-      role: "seller",
-      stripeAccountId: "acct_store",
-      storePlan: {
-        planId,
-        status: "active",
-        paidThrough: Date.now() + 86400000,
-        stripeSubscriptionId: "sub_store",
-        cancelAtPeriodEnd: false,
-      },
-    }),
-  );
-  if (referred)
-    await t.run((ctx) =>
-      ctx.db.insert("affiliateDefaults", {
-        affiliateBasisPoints: 2000,
-        affiliateFixedAmount: null,
-        version: 1,
-      }),
-    );
+  const { t, sellerId } = await seedStoreSale(planId, referred);
   const payment = {
     id: "pi_sale",
     status: "succeeded",
@@ -597,4 +552,31 @@ it("uses the current subscription price override on renewals and preserves earli
       chargeId: "ch_sale",
     }),
   ).toEqual(original);
+});
+
+it("denies a new transfer when the original seller mapping changes during provider reconciliation", async () => {
+  const { t, sellerId } = await setup("pro");
+  raw.transfers.list.mockImplementationOnce(async () => {
+    await t.run((ctx) =>
+      ctx.db.patch("users", sellerId, { stripeAccountId: "acct_changed" }),
+    );
+    return { data: [], has_more: false };
+  });
+  await runAction(t, internal.settlement.internal.actions.settle, {
+    paymentIntentId: "pi_sale",
+  });
+  expect(raw.transfers.create).not.toHaveBeenCalled();
+  const job = await t.run((ctx) => ctx.db.query("recoveryJobs").first());
+  if (!job?.operationId || job.version === undefined || !job.groupKey)
+    throw new Error("Missing actual recovery operation fixture");
+  expect(
+    await t.query(components.betterStripe.recoveryWorkflow.queries.get, {
+      accountId: job.accountId,
+      scopeKey: job.scopeKey,
+      currency: job.currency,
+      operationId: job.operationId,
+      version: job.version,
+      groupKey: job.groupKey,
+    }),
+  ).toMatchObject({ status: "unknown" });
 });

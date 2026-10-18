@@ -5,6 +5,10 @@ import { componentRef } from "../webhooks/helpers.js";
 import { throwStripeError } from "../errors.js";
 import { getVerifiedSale, type VerifiedSaleOptions } from "./verifiedSale.js";
 import {
+  authorizeSettlement,
+  type SettlementAuthorization,
+} from "./authorization.js";
+import {
   executeResolvedTransfers,
   type SettlementResult,
 } from "./execution.js";
@@ -19,6 +23,8 @@ export type SettleSaleOptions = VerifiedSaleOptions & {
   };
   paymentId?: string;
   onSettled?: (result: SettlementResult) => Promise<void>;
+  /** Reauthorize after source reads and immediately before each new transfer. */
+  authorize?: SettlementAuthorization;
 };
 export async function settleSale(
   stripe: Stripe,
@@ -47,13 +53,21 @@ export async function settleSale(
       "INVALID_CONFIGURATION",
       "Allocation must use verified payment currency, gross and actual processing cost.",
     );
-  const result = await executeResolvedTransfers(stripe, component, ctx, {
+  const request = {
     ...opts.allocation,
     sourceChargeId: sale.chargeId,
     paymentIntentId: sale.paymentIntentId,
     sourceInvoiceId: sale.invoiceId,
     paymentId: opts.paymentId,
-  });
+  };
+  await authorizeSettlement(opts.authorize, prior ?? request);
+  const result = await executeResolvedTransfers(
+    stripe,
+    component,
+    ctx,
+    request,
+    opts.authorize,
+  );
   await opts.onSettled?.(result);
   return result;
 }

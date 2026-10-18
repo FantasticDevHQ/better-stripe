@@ -86,3 +86,31 @@ export const retirementProof = z.strictObject({
   billingReason: z.literal("subscription_cycle"),
   periodEnd: seconds,
 });
+
+const abandonmentCommon = {
+  stripeAccountId: id,
+  customerAccount: id,
+  stripeCustomerId: id,
+  livemode: z.boolean(),
+  nativeId: id,
+};
+export const abandonmentProof = z.discriminatedUnion("kind", [
+  z.strictObject({
+    ...abandonmentCommon,
+    kind: z.literal("checkout"),
+    status: z.literal("expired"),
+    subscription: z.null(),
+    paymentIntent: z.null(),
+    setupIntent: z.null(),
+    paymentStatus: z.enum(["unpaid", "no_payment_required"]),
+  }),
+  z.strictObject({
+    ...abandonmentCommon,
+    kind: z.literal("subscription"),
+    status: z.literal("incomplete_expired"),
+    invoiceId: id,
+    invoiceStatus: z.literal("void"),
+    invoiceAmountPaid: z.literal("0"),
+    billingReason: z.literal("subscription_create"),
+  }),
+]);

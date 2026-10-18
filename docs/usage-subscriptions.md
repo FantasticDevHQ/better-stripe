@@ -80,8 +80,14 @@ Redirect to the returned `url` only while its status is `open`. Open, completed
 and expired sessions retain their original identity. An expired signup is not
 silently replaced. A completed session exposes its verified subscription after
 native retrieval. The redirect is not payment or enrollment evidence; use the
-subscription and invoice observations. Pending or expired signup locks stay held
-until the native outcome is reconciled, preventing another concurrent signup.
+subscription and invoice observations. Pending signup locks stay held until the native outcome is reconciled,
+preventing another concurrent signup. For a verified expired session with no
+subscription, PaymentIntent or SetupIntent and no payment received, call
+`abandonSignup(ctx, ref, providerOptions)`. The same API supports a verified
+`incomplete_expired` subscription only when its original initial invoice is void
+and unpaid, with no recorded usage or pending reservations. It retains the
+original terms and closure evidence, then permits a new request ID. Unknown
+creates, incomplete payments and unresolved financial references stay held.
 
 ## Read current terms and retained history
 
@@ -109,8 +115,10 @@ const history = await stripe.usage.readSubscriptionHistory(ctx, {
 });
 ```
 
-The managed mirror includes every item and original source binding, not only the
-first item. Each metered binding contains its own native subscription/item/price
+The managed mirror includes every item, original source binding and actual
+collection policy. Native collection method, invoice due days and configured
+automatic payment method must match the original agreement. Delivery verifies
+that policy again immediately before sending. Each metered binding contains its own native subscription/item/price
 and half-open Unix-second period. Renewals produce a new snapshot; prior periods
 remain immutable. Refresh before authorizing current work. Cached observation
 times are not a guarantee of current native state. Historical prices are never
@@ -236,7 +244,9 @@ retrieves period-end invoices and explicitly finalizes a matching draft when
 needed. It reports native totals and identity/finalization checks separately from
 payment evidence. Expected totals are 30 USD cents for pay-as-you-go, 10 cents for
 included overages and zero for credit-covered prepaid consumption. The prepaid
-purchase is a separate 100-cent test payment. Cleanup expires the grant, requests
+purchase is a separate 100-cent test payment. Synthetic usage uses the clock's
+frozen timestamp. A bounded final re-read handles delayed aggregates before any
+billing-clock advancement. Cleanup expires the grant, requests
 its test refund, cancels subscriptions, archives catalog resources and deletes the
 clock. Inspect every cleanup result.
 
@@ -246,7 +256,17 @@ rejects live keys before requests. Clock advancement is not evidence that meter
 ingestion has completed. Keep the sanitized output as reviewer evidence and
 report lag or unsupported account modes explicitly.
 
+The [successful sandbox run](evidence/native-metering/clock-finalization-run.json)
+confirmed all three 15-unit aggregates, final totals of 30/10/0 USD cents, the
+separate paid prepaid purchase and all 15 cleanup requests. The
+[earlier bounded lag run](evidence/native-metering/clock-lag-run.json) confirmed
+only the first two aggregates and stopped before clock advancement. Both are
+retained so missing data cannot be mistaken for a zero charge or successful
+finalization.
+
 Primary references: [native usage cutoff rules](https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage-api),
 [finalization grace periods](https://docs.stripe.com/billing/subscriptions/usage-based/configure-grace-period),
 [flexible/classic changes and cancellation](https://docs.stripe.com/billing/subscriptions/usage-based/manage-billing-setup),
-and [Accounts v2 test clocks](https://docs.stripe.com/billing/testing/test-clocks/api-advanced-usage).
+and [Accounts v2 test clocks](https://docs.stripe.com/billing/testing/test-clocks/api-advanced-usage),
+[expired Checkout sessions](https://docs.stripe.com/api/checkout/sessions/expire),
+and [initial payment expiry](https://docs.stripe.com/billing/subscriptions/overview).

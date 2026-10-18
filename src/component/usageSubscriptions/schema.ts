@@ -14,6 +14,7 @@ export const intentFields = {
   controlKey: v.optional(v.string()),
   historyCount: v.optional(v.number()),
   retiredAt: v.optional(v.number()),
+  abandonedId: v.optional(v.string()),
   retirementInvoiceId: v.optional(v.string()),
 };
 export const intentDoc = v.object({

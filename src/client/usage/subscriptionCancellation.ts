@@ -38,8 +38,19 @@ export async function changeManagedCancellation(
       ),
       { key: row.key, ...input },
     )) as Doc<"usageSubscriptionControls">;
-    if (command.resultJson)
-      return JSON.parse(command.resultJson) as UsageSubscriptionView;
+    const resultView = (json: string) => {
+      const view = JSON.parse(json) as UsageSubscriptionView;
+      if (
+        !input.cancelAtPeriodEnd &&
+        ["canceled", "incomplete_expired"].includes(view.status)
+      )
+        throw new UsageSubscriptionError(
+          "incompatible_terms",
+          "A canceled native subscription cannot be reactivated",
+        );
+      return view;
+    };
+    if (command.resultJson) return resultView(command.resultJson);
     let native = await stripe.subscriptions.retrieve(row.providerId);
     if (native.id !== row.providerId)
       throw new UsageSubscriptionError(
@@ -47,12 +58,10 @@ export async function changeManagedCancellation(
         "Pinned subscription identity changed",
       );
     subscriptionView(native, terms);
-    if (native.cancel_at_period_end !== input.cancelAtPeriodEnd) {
-      if (["canceled", "incomplete_expired"].includes(native.status))
-        throw new UsageSubscriptionError(
-          "incompatible_terms",
-          "A canceled native subscription cannot be reactivated",
-        );
+    if (
+      native.cancel_at_period_end !== input.cancelAtPeriodEnd &&
+      !["canceled", "incomplete_expired"].includes(native.status)
+    ) {
       if (Date.now() / 1000 - command.firstAttemptAt >= 23 * 3600)
         throw new UsageSubscriptionError(
           "unknown_create_outcome",
@@ -76,6 +85,6 @@ export async function changeManagedCancellation(
         startedAt,
       },
     );
-    return JSON.parse(result) as UsageSubscriptionView;
+    return resultView(result);
   });
 }

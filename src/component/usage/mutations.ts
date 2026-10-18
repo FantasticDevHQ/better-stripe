@@ -100,6 +100,7 @@ export const record = mutation({
     )
       throw new Error("Usage reservation does not match event");
     const eventId = await ctx.db.insert("usageEvents", {
+      subscriptionId: subscription.subscriptionId,
       reservationId: args.reservationId,
       scopeKey: key,
       identity: event.identity,

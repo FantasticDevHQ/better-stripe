@@ -11,7 +11,11 @@ const scope = {
   meterId: "mtr_calls",
   livemode: false,
 };
-function setup(status = 200, errorCode = "parameter_invalid_integer") {
+function setup(
+  status = 200,
+  errorCode = "parameter_invalid_integer",
+  nativeOverrides: Record<string, unknown> = {},
+) {
   const now = Math.floor(Date.now() / 1000);
   const record = prepareUsageRecord({
     scope,
@@ -33,6 +37,11 @@ function setup(status = 200, errorCode = "parameter_invalid_integer") {
   });
   const saved = {
     billingCutoff: null as number | null,
+    managedCollection: null as {
+      method: "send_invoice" | "charge_automatically";
+      daysUntilDue: number | null;
+      defaultPaymentMethod: string | null;
+    } | null,
     event: {
       recordJson: JSON.stringify(record),
       subscriptionJson: JSON.stringify({
@@ -89,6 +98,7 @@ function setup(status = 200, errorCode = "parameter_invalid_integer") {
                   livemode: false,
                   customer: "cus_buyer",
                   customer_account: "acct_buyer",
+                  ...nativeOverrides,
                 }
               : status === 200
                 ? {
@@ -223,6 +233,43 @@ it("withholds a managed send that reaches its billing cutoff during preflight", 
     { stripeSecretKey: "sk_test_usage", httpClient: f.httpClient },
   );
   expect(result.outcome.status).toBe("unknown");
+  expect(f.requests.some((r) => r.path === "/v1/billing/meter_events")).toBe(
+    false,
+  );
+});
+
+it("withholds a managed send when native manual invoicing drifts to automatic charging", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const f = setup(200, "parameter_invalid_integer", {
+    status: "active",
+    collection_method: "charge_automatically",
+    days_until_due: null,
+    default_payment_method: "pm_owned",
+    items: {
+      has_more: false,
+      data: [
+        {
+          id: "si_calls",
+          price: { id: "price_calls" },
+          current_period_start: now - 1,
+          current_period_end: now + 86400,
+        },
+      ],
+    },
+  });
+  f.saved.billingCutoff = now + 86400 - 60;
+  f.saved.managedCollection = {
+    method: "send_invoice",
+    daysUntilDue: 30,
+    defaultPaymentMethod: null,
+  };
+  const result = await deliverUsageProvider(
+    componentsGeneric().betterStripe as unknown as Component,
+    f.ctx,
+    f.request,
+    { stripeSecretKey: "sk_test_usage", httpClient: f.httpClient },
+  );
+  expect(result.outcome.status).toBe("unavailable");
   expect(f.requests.some((r) => r.path === "/v1/billing/meter_events")).toBe(
     false,
   );

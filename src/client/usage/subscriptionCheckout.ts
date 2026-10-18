@@ -125,16 +125,23 @@ export async function ensureManagedCheckout(
       typeof session.subscription === "string"
         ? session.subscription
         : session.subscription?.id;
-    const view = subscriptionId
-      ? await saveSubscription(
-          component,
-          ctx,
-          row.key,
-          await stripe.subscriptions.retrieve(subscriptionId),
-          terms,
-          startedAt,
-        )
-      : null;
+    let view = null;
+    if (subscriptionId) {
+      const native = await stripe.subscriptions.retrieve(subscriptionId);
+      if (native.id !== subscriptionId)
+        throw new UsageSubscriptionError(
+          "incompatible_terms",
+          "Native Checkout subscription identity mismatch",
+        );
+      view = await saveSubscription(
+        component,
+        ctx,
+        row.key,
+        native,
+        terms,
+        startedAt,
+      );
+    }
     return {
       checkoutId: session.id,
       status: session.status as "open" | "complete" | "expired",

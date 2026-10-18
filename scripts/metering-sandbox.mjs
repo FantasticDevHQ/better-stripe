@@ -161,7 +161,13 @@ export async function runMeteringSandbox({
         const periodEnd = subscription.items?.data?.[0]?.current_period_end;
         if (!Number.isSafeInteger(periodEnd))
           throw new Error("Unverified test-clock period");
-        lifecycle.push({ model, id: subscription.id, periodEnd });
+        lifecycle.push({
+          model,
+          id: subscription.id,
+          periodEnd,
+          meterId: meter.id,
+          timestamp: clock.frozen_time,
+        });
       }
       let paymentVerified = false;
       if (model === "prepaid") {
@@ -282,6 +288,38 @@ export async function runMeteringSandbox({
     }
     if (finalizeInvoices) {
       step = "test-clock:ingestion";
+      for (
+        let attempt = 0;
+        attempt < 24 &&
+        evidence.models.some((model) => !model.aggregationVerified);
+        attempt++
+      ) {
+        for (const pending of lifecycle) {
+          const row = evidence.models.find(
+            (model) => model.model === pending.model,
+          );
+          if (row.aggregationVerified) continue;
+          const summaries = await stripe.billing.meters.listEventSummaries(
+            pending.meterId,
+            {
+              customer: customer.id,
+              start_time: Math.floor(pending.timestamp / 60) * 60,
+              end_time: Math.floor(pending.timestamp / 60) * 60 + 60,
+            },
+          );
+          const quantity = summaries.data.reduce(
+            (sum, summary) => sum + summary.aggregated_value,
+            0,
+          );
+          Object.assign(row, {
+            aggregatedQuantity: quantity,
+            aggregationVerified: quantity === 15,
+            duplicateRetryVerified: quantity === 15,
+          });
+        }
+        if (evidence.models.every((model) => model.aggregationVerified)) break;
+        if (attempt < 23) await wait();
+      }
       const ingestedBeforeAdvance = evidence.models.every(
         (model) => model.aggregationVerified,
       );

@@ -1,3 +1,4 @@
+import { abandonEnrollment } from "./abandonment.js";
 import { retireEnrollment } from "./retirement.js";
 import { appendSnapshot, saveView } from "./history.js";
 import { controlDoc } from "./schema.js";
@@ -219,7 +220,10 @@ export const completeCancellation = mutation({
     if (!intent || intent.controlKey !== command.key)
       throw new Error("Cancellation command ownership conflict");
     const view = await saveView(ctx, intent, args.nativeJson, args.startedAt);
-    if (view.cancelAtPeriodEnd !== command.cancelAtPeriodEnd)
+    if (
+      view.cancelAtPeriodEnd !== command.cancelAtPeriodEnd &&
+      !["canceled", "incomplete_expired"].includes(view.status)
+    )
       throw new Error("Cancellation outcome mismatch");
     const resultJson = JSON.stringify(view);
     await ctx.db.patch("usageSubscriptionControls", command._id, {
@@ -242,6 +246,20 @@ export const retire = mutation({
       .unique();
     if (!intent) throw new Error("Managed subscription unavailable");
     await retireEnrollment(ctx, intent, args.proofJson);
+    return null;
+  },
+});
+
+export const abandon = mutation({
+  args: { key: v.string(), proofJson: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const intent = await ctx.db
+      .query("usageSubscriptionIntents")
+      .withIndex("by_key", (q) => q.eq("key", args.key))
+      .unique();
+    if (!intent) throw new Error("Managed signup unavailable");
+    await abandonEnrollment(ctx, intent, args.proofJson);
     return null;
   },
 });

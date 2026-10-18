@@ -45,6 +45,8 @@ export function fixture(
     missingNative?: boolean;
     realmId?: string;
   } = {};
+  let subscriptionCreates = 0,
+    checkoutCreates = 0;
   const httpClient: Stripe.HttpClient = Stripe.createFetchHttpClient(
     async (input, init) => {
       const path = new URL(String(input)).pathname,
@@ -79,10 +81,14 @@ export function fixture(
         if (failCreate) throw new Error("private transport failure");
         state.native = {
           ...nativeSubscription(),
+          id:
+            ++subscriptionCreates === 1
+              ? "sub_calls"
+              : `sub_calls${subscriptionCreates}`,
           metadata: { bsUsageIntent: body.get("metadata[bsUsageIntent]")! },
         };
         value = state.native;
-      } else if (path === "/v1/subscriptions/sub_calls") {
+      } else if (path.startsWith("/v1/subscriptions/sub_calls")) {
         if (state.missingNative)
           return new Response(
             JSON.stringify({
@@ -102,7 +108,10 @@ export function fixture(
         value = { data: state.session ? [state.session] : [], has_more: false };
       else if (path === "/v1/checkout/sessions" && method === "POST") {
         state.session = {
-          id: "cs_test_example",
+          id:
+            ++checkoutCreates === 1
+              ? "cs_test_example"
+              : `cs_test_example${checkoutCreates}`,
           mode: "subscription",
           status: "open",
           livemode: false,
@@ -113,8 +122,20 @@ export function fixture(
           subscription: null,
         };
         value = state.session;
-      } else if (path === "/v1/checkout/sessions/cs_test_example")
+      } else if (path.startsWith("/v1/checkout/sessions/cs_test_example"))
         value = state.session;
+      else if (path === "/v1/invoices/in_initial")
+        value = {
+          id: "in_initial",
+          livemode: false,
+          customer_account: "acct_buyer",
+          customer: "cus_buyer",
+          currency: "usd",
+          status: "void",
+          amount_paid: 0,
+          billing_reason: "subscription_create",
+          parent: { subscription_details: { subscription: "sub_calls" } },
+        };
       else if (path === "/v1/invoices/in_closeout")
         value = {
           id: "in_closeout",

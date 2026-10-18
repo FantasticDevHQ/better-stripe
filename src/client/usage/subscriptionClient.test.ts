@@ -212,6 +212,8 @@ it("adopts the completed original Checkout subscription and reports unsupported 
   );
   f.state.native = {
     ...nativeSubscription(),
+    collection_method: "charge_automatically",
+    days_until_due: null,
     metadata: f.state.session!.metadata as Record<string, string>,
   };
   f.state.session!.status = "complete";
@@ -241,4 +243,74 @@ it("adopts the completed original Checkout subscription and reports unsupported 
       client.usage.observeSubscription(ctx as RunCtx, ref, options),
     ),
   ).rejects.toMatchObject({ code: "unsupported_scope" });
+});
+
+it("rejects a retrieved Checkout subscription ID that differs from the completed session", async () => {
+  const f = fixture(),
+    client = new BetterStripe(f.component),
+    options = {
+      stripeSecretKey: "sk_test_subscription",
+      httpClient: f.httpClient,
+    };
+  const input = {
+    ...request,
+    collection: {
+      method: "checkout" as const,
+      successUrl: "https://example.test/success",
+      cancelUrl: "https://example.test/cancel",
+    },
+  };
+  await f.t.action((ctx) =>
+    client.usage.ensureCheckout(ctx as RunCtx, input, options),
+  );
+  f.state.native = {
+    ...nativeSubscription(),
+    id: "sub_other",
+    metadata: f.state.session!.metadata as Record<string, string>,
+  };
+  f.state.session!.status = "complete";
+  f.state.session!.subscription = "sub_calls";
+  await expect(
+    f.t.action((ctx) =>
+      client.usage.ensureCheckout(ctx as RunCtx, input, options),
+    ),
+  ).rejects.toThrow("Native Checkout subscription identity mismatch");
+});
+
+it("records terminal cancellation refusal without leaving a lock that prevents closeout", async () => {
+  const f = fixture(),
+    client = new BetterStripe(f.component),
+    options = {
+      stripeSecretKey: "sk_test_subscription",
+      httpClient: f.httpClient,
+    };
+  await f.t.action((ctx) =>
+    client.usage.ensureSubscription(ctx as RunCtx, request, options),
+  );
+  f.state.native!.status = "canceled";
+  f.state.native!.cancel_at_period_end = true;
+  const command = {
+    ...ref,
+    operationId: "late-reactivation",
+    cancelAtPeriodEnd: false,
+  };
+  await expect(
+    f.t.action((ctx) =>
+      client.usage.setCancelAtPeriodEnd(ctx as RunCtx, command, options),
+    ),
+  ).rejects.toThrow(/cannot be reactivated/);
+  await expect(
+    f.t.action((ctx) =>
+      client.usage.setCancelAtPeriodEnd(ctx as RunCtx, command, options),
+    ),
+  ).rejects.toThrow(/cannot be reactivated/);
+  expect(
+    await f.t.action((ctx) =>
+      client.usage.retireSubscription(
+        ctx as RunCtx,
+        { ...ref, invoiceId: "in_closeout" },
+        options,
+      ),
+    ),
+  ).toMatchObject({ retired: true });
 });

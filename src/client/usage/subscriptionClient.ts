@@ -1,3 +1,4 @@
+import { abandonManagedSignup } from "./subscriptionAbandonment.js";
 import Stripe from "stripe";
 import type { RunCtx } from "../helpers.js";
 import type { StripeApiVersion } from "../stripe-types.js";
@@ -146,6 +147,20 @@ export class UsageSubscriptionClient extends UsageObservationClient {
       ctx,
       row,
       input.invoiceId,
+    );
+  }
+  async abandonSignup(
+    ctx: RunCtx,
+    input: UsageSubscriptionRef,
+    options: UsageDeliveryProviderOptions,
+  ) {
+    const row = await getSubscriptionIntent(this.component, ctx, input),
+      terms = subscriptionTerms(JSON.parse(row.termsJson));
+    return abandonManagedSignup(
+      provider(terms.meters[0].binding.apiVersion, options),
+      this.component,
+      ctx,
+      row,
     );
   }
   async readSubscriptionHistory(

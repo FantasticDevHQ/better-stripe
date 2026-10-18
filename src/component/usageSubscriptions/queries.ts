@@ -39,18 +39,6 @@ export const lookup = query({
       .unique();
   },
 });
-export const byProvider = query({
-  args: { subscriptionId: v.string() },
-  returns: v.array(intentDoc),
-  handler: async (ctx, args) => {
-    if (!/^sub_[a-zA-Z0-9]{1,100}$/.test(args.subscriptionId))
-      throw new Error("Invalid native subscription identity");
-    return ctx.db
-      .query("usageSubscriptionIntents")
-      .withIndex("by_provider", (q) => q.eq("providerId", args.subscriptionId))
-      .take(2);
-  },
-});
 export const history = query({
   args: {
     scope,

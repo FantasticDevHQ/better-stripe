@@ -8321,6 +8321,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               recordJson: string;
               reservationId?: string;
               scopeKey: string;
+              subscriptionId?: string;
               subscriptionJson: string;
             };
           } | null,
@@ -8366,6 +8367,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 recordJson: string;
                 reservationId?: string;
                 scopeKey: string;
+                subscriptionId?: string;
                 subscriptionJson: string;
               };
             }>;
@@ -8721,7 +8723,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               recordJson: string;
               reservationId?: string;
               scopeKey: string;
+              subscriptionId?: string;
               subscriptionJson: string;
+            };
+            managedCollection: null | {
+              daysUntilDue: number | null;
+              defaultPaymentMethod: string | null;
+              method: "send_invoice" | "charge_automatically";
             };
             outbox: {
               _creationTime: number;
@@ -8899,6 +8907,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     usageSubscriptions: {
       mutations: {
+        abandon: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
         completeCancellation: FunctionReference<
           "mutation",
           "internal",
@@ -8920,6 +8935,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             _creationTime: number;
             _id: string;
+            abandonedId?: string;
             checkoutId?: string;
             controlKey?: string;
             firstAttemptAt: number;
@@ -8980,29 +8996,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
-        byProvider: FunctionReference<
-          "query",
-          "internal",
-          { subscriptionId: string },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            checkoutId?: string;
-            controlKey?: string;
-            firstAttemptAt: number;
-            historyCount?: number;
-            key: string;
-            method: "direct" | "checkout";
-            providerId?: string;
-            retiredAt?: number;
-            retirementInvoiceId?: string;
-            scopeKey: string;
-            startedAt?: number;
-            termsJson: string;
-            viewJson?: string;
-          }>,
-          Name
-        >;
         get: FunctionReference<
           "query",
           "internal",
@@ -9017,6 +9010,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             _creationTime: number;
             _id: string;
+            abandonedId?: string;
             checkoutId?: string;
             controlKey?: string;
             firstAttemptAt: number;
@@ -9078,6 +9072,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             _creationTime: number;
             _id: string;
+            abandonedId?: string;
             checkoutId?: string;
             controlKey?: string;
             firstAttemptAt: number;

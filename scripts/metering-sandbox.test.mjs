@@ -360,3 +360,62 @@ it("retains sanitized incomplete evidence and cleanup when clock usage is not in
     );
   }
 });
+
+it("rechecks lagging native aggregates before allowing the final billing-clock advance", async () => {
+  const { stripe } = meteringFixture();
+  let subscriptions = 0,
+    reads = 0;
+  stripe.testHelpers = {
+    testClocks: {
+      create: async () => ({ id: "clock_private", frozen_time: 1000 }),
+      advance: async () => ({}),
+      retrieve: async () => ({ status: "ready" }),
+      del: async () => ({}),
+    },
+  };
+  stripe.subscriptions.create = async () => ({
+    id: `sub_private${subscriptions++}`,
+    customer_account: "acct_private",
+    customer: "cus_private",
+    livemode: false,
+    items: { data: [{ current_period_end: 2000 }] },
+  });
+  stripe.billing.meters.listEventSummaries = async () => {
+    reads++;
+    return {
+      data: reads >= 3 && reads <= 14 ? [] : [{ aggregated_value: 15 }],
+    };
+  };
+  stripe.invoices.list = async ({ subscription }) => ({
+    data: [
+      {
+        id: "in_private",
+        customer_account: "acct_private",
+        customer: "cus_private",
+        livemode: false,
+        status: "open",
+        status_transitions: { finalized_at: 2100 },
+        billing_reason: "subscription_cycle",
+        period_end: 2000,
+        parent: { subscription_details: { subscription } },
+        total: [30, 10, 0][Number(subscription.slice(-1))],
+        currency: "usd",
+        lines: { data: [], has_more: false },
+      },
+    ],
+    has_more: false,
+  });
+  const result = await runMeteringSandbox({
+    apiKey: "sk_test_fixture",
+    runId: "clock-lag",
+    createClient: () => stripe,
+    finalizeInvoices: true,
+    wait: async () => {},
+  });
+  expect(reads).toBeGreaterThan(14);
+  expect(
+    result.models.every(
+      (model) => model.aggregationVerified && model.invoiceFinalizationVerified,
+    ),
+  ).toBe(true);
+});

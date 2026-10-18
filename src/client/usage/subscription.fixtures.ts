@@ -29,11 +29,16 @@ export const request = {
 export function nativeSubscription() {
   return {
     id: "sub_calls",
+    latest_invoice: "in_initial",
     livemode: false,
     customer_account: "acct_buyer",
     customer: "cus_buyer",
     status: "active",
     currency: "usd",
+    collection_method: "send_invoice" as
+      "send_invoice" | "charge_automatically",
+    days_until_due: 30 as number | null,
+    default_payment_method: null as string | null,
     billing_mode: { type: "flexible" },
     cancel_at_period_end: false,
     cancel_at: null,

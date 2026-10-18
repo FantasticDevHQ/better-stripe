@@ -178,6 +178,7 @@ import type * as usageObservations_helpers from "../usageObservations/helpers.js
 import type * as usageObservations_history from "../usageObservations/history.js";
 import type * as usageObservations_mutations from "../usageObservations/mutations.js";
 import type * as usageObservations_queries from "../usageObservations/queries.js";
+import type * as usageSubscriptions_abandonment from "../usageSubscriptions/abandonment.js";
 import type * as usageSubscriptions_acceptance from "../usageSubscriptions/acceptance.js";
 import type * as usageSubscriptions_helpers from "../usageSubscriptions/helpers.js";
 import type * as usageSubscriptions_history from "../usageSubscriptions/history.js";
@@ -366,6 +367,7 @@ const fullApi: ApiFromModules<{
   "usageObservations/history": typeof usageObservations_history;
   "usageObservations/mutations": typeof usageObservations_mutations;
   "usageObservations/queries": typeof usageObservations_queries;
+  "usageSubscriptions/abandonment": typeof usageSubscriptions_abandonment;
   "usageSubscriptions/acceptance": typeof usageSubscriptions_acceptance;
   "usageSubscriptions/helpers": typeof usageSubscriptions_helpers;
   "usageSubscriptions/history": typeof usageSubscriptions_history;

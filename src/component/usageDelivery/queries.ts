@@ -1,4 +1,4 @@
-import { managedBillingCutoff } from "../usageSubscriptions/acceptance.js";
+import { managedBillingPolicy } from "../usageSubscriptions/acceptance.js";
 import { subscriptionSnapshot } from "../usage/helpers.js";
 import { query, internalQuery } from "../_generated/server.js";
 import { refFields, status } from "./schema.js";
@@ -17,18 +17,34 @@ const snapshotDefinition = {
     event: eventDoc,
     outbox: outboxDoc,
     billingCutoff: v.union(v.number(), v.null()),
+    managedCollection: v.union(
+      v.null(),
+      v.object({
+        method: v.union(
+          v.literal("send_invoice"),
+          v.literal("charge_automatically"),
+        ),
+        daysUntilDue: v.union(v.number(), v.null()),
+        defaultPaymentMethod: v.union(v.string(), v.null()),
+      }),
+    ),
   }),
   handler: async (
     ctx: import("../_generated/server.js").QueryCtx,
     args: import("convex/values").Infer<typeof _refValidator>,
   ) => {
     const { event, outbox, record } = await read(ctx, args);
-    const billingCutoff = await managedBillingCutoff(
+    const policy = await managedBillingPolicy(
       ctx,
       record,
       subscriptionSnapshot(event.subscriptionJson),
     );
-    return { event, outbox, billingCutoff };
+    return {
+      event,
+      outbox,
+      billingCutoff: policy?.cutoff ?? null,
+      managedCollection: policy?.collection ?? null,
+    };
   },
 };
 const _refValidator = v.object(refFields);

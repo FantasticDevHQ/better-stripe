@@ -1,3 +1,4 @@
+import type { UsageSubscriptionView } from "./subscriptionTerms.js";
 import Stripe from "stripe";
 import type { StripeApiVersion } from "../stripe-types.js";
 import { z } from "zod";
@@ -54,6 +55,7 @@ export async function deliverUsageProvider(
         event: Doc<"usageEvents">;
         outbox: Doc<"usageOutbox">;
         billingCutoff: number | null;
+        managedCollection: UsageSubscriptionView["collection"] | null;
       }>;
     const saved = await read(),
       record = JSON.parse(saved.event.recordJson) as PreparedUsageRecord;
@@ -110,6 +112,19 @@ export async function deliverUsageProvider(
     )
       return done({ status: "unknown" });
     if (current.billingCutoff !== null) {
+      const collection = current.managedCollection;
+      const method =
+        typeof subscription.default_payment_method === "string"
+          ? subscription.default_payment_method
+          : (subscription.default_payment_method?.id ?? null);
+      if (
+        !collection ||
+        collection.method !== subscription.collection_method ||
+        (collection.method === "send_invoice"
+          ? collection.daysUntilDue !== subscription.days_until_due
+          : collection.defaultPaymentMethod !== method)
+      )
+        return done({ status: "unavailable" });
       const item = subscription.items.data.find(
         (item) => item.id === binding.subscriptionItemId,
       );

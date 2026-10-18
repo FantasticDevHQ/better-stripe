@@ -1,0 +1,129 @@
+{
+  "apiVersion": "2026-09-30.endive",
+  "observedAt": "2026-10-18T08:16:50.149Z",
+  "models": [
+    {
+      "model": "pay_as_you_go",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 15,
+      "aggregationVerified": true,
+      "duplicateRetryVerified": true,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 30,
+      "currency": "usd",
+      "paymentVerified": false,
+      "creditPurchaseVerified": false,
+      "invoiceFinalizationVerified": true,
+      "finalizedTotal": 30,
+      "finalizedCurrency": "usd",
+      "finalizedAmountVerified": true,
+      "finalizedPaymentEvidence": "not_resolved"
+    },
+    {
+      "model": "included_overage",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 15,
+      "aggregationVerified": true,
+      "duplicateRetryVerified": true,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 10,
+      "currency": "usd",
+      "paymentVerified": false,
+      "creditPurchaseVerified": false,
+      "invoiceFinalizationVerified": true,
+      "finalizedTotal": 10,
+      "finalizedCurrency": "usd",
+      "finalizedAmountVerified": true,
+      "finalizedPaymentEvidence": "not_resolved"
+    },
+    {
+      "model": "prepaid",
+      "catalogCreated": true,
+      "eventAccepted": true,
+      "aggregatedQuantity": 15,
+      "aggregationVerified": true,
+      "duplicateRetryVerified": true,
+      "invoiceIdentityVerified": true,
+      "previewTotal": 0,
+      "currency": "usd",
+      "paymentVerified": true,
+      "creditPurchaseVerified": true,
+      "invoiceFinalizationVerified": true,
+      "finalizedTotal": 0,
+      "finalizedCurrency": "usd",
+      "finalizedAmountVerified": true,
+      "finalizedPaymentEvidence": "not_resolved"
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "credit",
+      "success": true
+    },
+    {
+      "kind": "test-payment-refund",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    },
+    {
+      "kind": "subscription",
+      "success": true
+    },
+    {
+      "kind": "price",
+      "success": true
+    },
+    {
+      "kind": "product",
+      "success": true
+    },
+    {
+      "kind": "meter",
+      "success": true
+    },
+    {
+      "kind": "test-clock",
+      "success": true
+    }
+  ],
+  "payerMappingVerified": true,
+  "testClock": {
+    "ingestedBeforeAdvance": true,
+    "advanced": true,
+    "ready": true,
+    "advancementDoesNotProveIngestion": true
+  }
+}

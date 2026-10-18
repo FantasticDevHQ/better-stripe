@@ -107,6 +107,12 @@ const nativeSchema = z.object({
     "paused",
   ]),
   currency: z.string().regex(/^[a-z]{3}$/),
+  collection_method: z.enum(["send_invoice", "charge_automatically"]),
+  days_until_due: z.number().int().min(1).max(365).nullable().default(null),
+  default_payment_method: z
+    .union([id("pm"), z.object({ id: id("pm") })])
+    .nullable()
+    .default(null),
   billing_mode: z.object({ type: z.enum(["classic", "flexible"]) }),
   cancel_at_period_end: z.boolean(),
   cancel_at: seconds.nullable().default(null),
@@ -176,6 +182,19 @@ export function subscriptionView(
     sub.billing_mode.type !== "flexible"
   )
     throw new Error("Native subscription scope or billing mode mismatch");
+  const defaultPaymentMethod =
+    typeof sub.default_payment_method === "string"
+      ? sub.default_payment_method
+      : (sub.default_payment_method?.id ?? null);
+  if (
+    terms.collection.method === "send_invoice"
+      ? sub.collection_method !== "send_invoice" ||
+        sub.days_until_due !== terms.collection.daysUntilDue
+      : sub.collection_method !== "charge_automatically" ||
+        (terms.collection.method === "charge_automatically" &&
+          defaultPaymentMethod !== terms.collection.defaultPaymentMethod)
+  )
+    throw new Error("Native subscription collection terms changed");
   const expectedPrices = new Set([
     ...terms.fixedPriceIds,
     ...terms.meters.map((m) => m.binding.stripePriceId),
@@ -238,6 +257,11 @@ export function subscriptionView(
     status: sub.status,
     currency: sub.currency,
     billingMode: sub.billing_mode.type,
+    collection: {
+      method: sub.collection_method,
+      daysUntilDue: sub.days_until_due,
+      defaultPaymentMethod,
+    },
     cancelAtPeriodEnd: sub.cancel_at_period_end,
     cancelAt: sub.cancel_at,
     items,

@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.54.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.53.0...v0.54.0) (2026-10-18)
+
+### Features
+
+- deliver native Stripe usage with durable scoped workflows ([#324](https://github.com/FantasticDevHQ/better-stripe/issues/324)) ([ca739b4](https://github.com/FantasticDevHQ/better-stripe/commit/ca739b4fd5ed6ad69319d631aaa02b392f941d60))
+
 ## [0.53.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.52.0...v0.53.0) (2026-10-18)
 
 ### Features

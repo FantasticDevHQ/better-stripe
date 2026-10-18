@@ -47,7 +47,7 @@ const reportSchema = z.object({
     }),
   }),
 });
-export async function handleMeterErrorEvent(
+async function processMeterErrorEvent(
   whCtx: WebhookContext,
   thin: V2ThinEvent,
 ): Promise<void> {
@@ -104,4 +104,15 @@ export async function handleMeterErrorEvent(
       truncated,
     },
   );
+}
+
+export async function handleMeterErrorEvent(
+  whCtx: WebhookContext,
+  thin: V2ThinEvent,
+): Promise<void> {
+  try {
+    await processMeterErrorEvent(whCtx, thin);
+  } catch {
+    throw new Error("Native usage error report unavailable");
+  }
 }

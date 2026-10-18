@@ -83,3 +83,82 @@ it("verifies and fetches v1 meter thin events without the snapshot parser", asyn
   });
   expect(JSON.stringify(report)).not.toContain("private raw error");
 });
+
+it.each(["event", "account", "balance"])(
+  "sanitizes %s retrieval errors before webhook history and logs",
+  async (failing) => {
+    const privateError = new Error("PRIVATE_PROVIDER_MARKER");
+    fixture.stripe = {
+      parseEventNotificationAsync: vi.fn().mockResolvedValue({}),
+      v2: {
+        core: {
+          events: {
+            retrieve: vi
+              .fn()
+              .mockImplementation(() =>
+                failing === "event"
+                  ? Promise.reject(privateError)
+                  : Promise.resolve({}),
+              ),
+          },
+        },
+      },
+      accounts: {
+        retrieve: vi
+          .fn()
+          .mockImplementation(() =>
+            failing === "account"
+              ? Promise.reject(privateError)
+              : Promise.resolve({ id: "acct_platform" }),
+          ),
+      },
+      balance: {
+        retrieve: vi
+          .fn()
+          .mockImplementation(() =>
+            failing === "balance"
+              ? Promise.reject(privateError)
+              : Promise.resolve({ livemode: false }),
+          ),
+      },
+    };
+    const runMutation = vi.fn(async (_ref, args) =>
+      args.eventType ? "inserted" : null,
+    );
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await handleWebhookRequest(
+        { runMutation, runQuery: vi.fn() } as unknown as WebhookActionCtx,
+        new Request("https://example.test/webhook", {
+          method: "POST",
+          headers: { "stripe-signature": "fixture" },
+          body: JSON.stringify({
+            id: "evt_private",
+            type: "v1.billing.meter.error_report_triggered",
+            livemode: false,
+          }),
+        }),
+        componentsGeneric().betterStripe as unknown as Component,
+        {
+          stripeSecretKey: "sk_test_fixture",
+          webhookSecret: "whsec_snapshot",
+          webhookSecretV2: "whsec_thin",
+        },
+      );
+      expect(response.status).toBe(500);
+      expect(JSON.stringify(runMutation.mock.calls)).not.toContain(
+        "PRIVATE_PROVIDER_MARKER",
+      );
+      expect(
+        logged.mock.calls
+          .flat()
+          .map((value) =>
+            value instanceof Error ? value.message : String(value),
+          )
+          .join(" "),
+      ).not.toContain("PRIVATE_PROVIDER_MARKER");
+    } finally {
+      logged.mockRestore();
+    }
+  },
+);

@@ -455,7 +455,8 @@
         }
       },
       "journalBaselineAndTwoExactBumps": 3000,
-      "result": "ORIGINAL_PHYSICAL_IDS_SOURCE_BYTES_TOTALS_LEGACY_COUNTERS_TRANSFER_OBSERVATIONS_AND_EXACT_RISK_EVENTS_PRESERVED"
+      "result": "ORIGINAL_PHYSICAL_IDS_SOURCE_BYTES_TOTALS_LEGACY_COUNTERS_TRANSFER_OBSERVATIONS_AND_EXACT_RISK_EVENTS_PRESERVED",
+      "transferComparison": "All original transfer fields match exactly except the exercised reversalClaimedAmount field, which is verified zero and may have changed from absent to explicitly persisted zero. Totals, frozen legacy counters and prior observation records are compared exactly."
     },
     "bts-230-native-occ-proof": {
       "providerCalls": 0,
@@ -685,6 +686,640 @@
       "nativeNearLimitOperationIdBytes": 1000003,
       "exactPayloadPreserved": true,
       "result": "INSTALLED_PACKED_PUBLIC_SDK_NATIVE_READ_MIGRATION_ACTIVATION_AND_NEAR_LIMIT_BODY_PASSED"
+    },
+    "bts-230-original-final-proof": {
+      "suffix": "a3c9aefcca8b",
+      "providerCalls": 0,
+      "capacityAcceptance": false,
+      "steps": [
+        {
+          "step": "claim",
+          "wallSeconds": 0.2899,
+          "result": {
+            "status": "success",
+            "value": {
+              "allOriginalSliceBytesEqual": true,
+              "count": 1000.0,
+              "replay": true
+            }
+          }
+        },
+        {
+          "step": "release",
+          "wallSeconds": 1.4625,
+          "result": {
+            "status": "success",
+            "value": {
+              "allOriginalReferencesEqual": true,
+              "count": 1000.0,
+              "released": true
+            },
+            "logLines": [
+              "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.",
+              "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions."
+            ]
+          }
+        }
+      ],
+      "afterReleaseVerified": 1000,
+      "riskInterpretation": "Claim raises risk once; releasing an unused frontier is positiveOnly and preserves risk1 while financial advances twice.",
+      "telemetry": [
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.187857625,
+          "userExecutionTime": 0.068427482,
+          "usageStats": {
+            "databaseReadBytes": 489967,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 489967,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1501,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.330262,
+          "userExecutionTime": 0.100308659,
+          "usageStats": {
+            "databaseReadBytes": 981217,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 981217,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 3001,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.639682417,
+          "userExecutionTime": 0.178184454,
+          "usageStats": {
+            "databaseReadBytes": 1472467,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 1472467,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 4501,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.427947625,
+          "userExecutionTime": 0.150059331,
+          "usageStats": {
+            "databaseReadBytes": 2147213,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 2147213,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 6997,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.693147584,
+          "userExecutionTime": 0.181393392,
+          "usageStats": {
+            "databaseReadBytes": 1891709,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 1891709,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 6001,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": "Uncaught Error: paginate() is only supported in the app. Learn more at https://docs.convex.dev/components/authoring#pagination\n    at async reversalReferences (../../../bts-217-example-funding/src/component/reversalObservations/references.ts:31:21)\n    at async captureReversal (../../../bts-217-example-funding/src/component/reversalObservations/capture.ts:81:20)\n    at async handler (../../../bts-217-example-funding/src/component/connect/reversalClaims.ts:241:8)\n    at async handler (../../../bts-217-example-funding/node_modules/.pnpm/convex-helpers@0.1.128_@typescript+typescript6@6.0.2_convex@1.46.0_react@19.3.0__hono@4.13.13_react@19.3.0_zod@4.6.5/node_modules/convex-helpers/server/customFunctions.js:268:27)\n"
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.838253542,
+          "userExecutionTime": 0.246078898,
+          "usageStats": {
+            "databaseReadBytes": 645695,
+            "databaseWriteBytes": 528467,
+            "databaseIoReadBytes": 645695,
+            "databaseIoWriteBytes": 528467,
+            "databaseReadDocuments": 1753,
+            "databaseWriteDocuments": 760,
+            "databaseWriteIndexRows": 3285,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.111689458,
+          "userExecutionTime": 0.030002151,
+          "usageStats": {
+            "databaseReadBytes": 205646,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 205646,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 502,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.35895975,
+          "userExecutionTime": 0.102627666,
+          "usageStats": {
+            "databaseReadBytes": 611985,
+            "databaseWriteBytes": 307624,
+            "databaseIoReadBytes": 611985,
+            "databaseIoWriteBytes": 307624,
+            "databaseReadDocuments": 1758,
+            "databaseWriteDocuments": 505,
+            "databaseWriteIndexRows": 2521,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.527774709,
+          "userExecutionTime": 0.157055076,
+          "usageStats": {
+            "databaseReadBytes": 1276118,
+            "databaseWriteBytes": 1048515,
+            "databaseIoReadBytes": 1276118,
+            "databaseIoWriteBytes": 1048515,
+            "databaseReadDocuments": 3478,
+            "databaseWriteDocuments": 1514,
+            "databaseWriteIndexRows": 6547,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.097766375,
+          "userExecutionTime": 0.032795406,
+          "usageStats": {
+            "databaseReadBytes": 410660,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 410660,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1002,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.41623475,
+          "userExecutionTime": 0.120794525,
+          "usageStats": {
+            "databaseReadBytes": 1222763,
+            "databaseWriteBytes": 613388,
+            "databaseIoReadBytes": 1222763,
+            "databaseIoWriteBytes": 613388,
+            "databaseReadDocuments": 3508,
+            "databaseWriteDocuments": 1005,
+            "databaseWriteIndexRows": 5021,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.746829291,
+          "userExecutionTime": 0.215873898,
+          "usageStats": {
+            "databaseReadBytes": 1767368,
+            "databaseWriteBytes": 1513307,
+            "databaseIoReadBytes": 1767368,
+            "databaseIoWriteBytes": 1513307,
+            "databaseReadDocuments": 4978,
+            "databaseWriteDocuments": 2268,
+            "databaseWriteIndexRows": 9809,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.230376417,
+          "userExecutionTime": 0.052536968,
+          "usageStats": {
+            "databaseReadBytes": 615674,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 615674,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 1502,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 1.160829208,
+          "userExecutionTime": 0.273444931,
+          "usageStats": {
+            "databaseReadBytes": 1833541,
+            "databaseWriteBytes": 919152,
+            "databaseIoReadBytes": 1833541,
+            "databaseIoWriteBytes": 919152,
+            "databaseReadDocuments": 5258,
+            "databaseWriteDocuments": 1505,
+            "databaseWriteIndexRows": 7521,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.519079542,
+          "userExecutionTime": 0.177793934,
+          "usageStats": {
+            "databaseReadBytes": 2441857,
+            "databaseWriteBytes": 1963163,
+            "databaseIoReadBytes": 2441857,
+            "databaseIoWriteBytes": 1963163,
+            "databaseReadDocuments": 7475,
+            "databaseWriteDocuments": 3022,
+            "databaseWriteIndexRows": 13071,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 0.192706084,
+          "userExecutionTime": 0.05352715,
+          "usageStats": {
+            "databaseReadBytes": 816908,
+            "databaseWriteBytes": 0,
+            "databaseIoReadBytes": 816908,
+            "databaseIoWriteBytes": 0,
+            "databaseReadDocuments": 2002,
+            "databaseWriteDocuments": 0,
+            "databaseWriteIndexRows": 0,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:releaseReversalClaim",
+          "executionTime": 0.698418083,
+          "userExecutionTime": 0.225736356,
+          "usageStats": {
+            "databaseReadBytes": 2322419,
+            "databaseWriteBytes": 1213576,
+            "databaseIoReadBytes": 2322419,
+            "databaseIoWriteBytes": 1213576,
+            "databaseReadDocuments": 7008,
+            "databaseWriteDocuments": 2005,
+            "databaseWriteIndexRows": 10021,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "componentPath": "betterStripe",
+          "identifier": "connect/mutations:claimReversalSlices",
+          "executionTime": 1.095880208,
+          "userExecutionTime": 0.300588654,
+          "usageStats": {
+            "databaseReadBytes": 2185348,
+            "databaseWriteBytes": 1921033,
+            "databaseIoReadBytes": 2185348,
+            "databaseIoWriteBytes": 1921033,
+            "databaseReadDocuments": 6490,
+            "databaseWriteDocuments": 3022,
+            "databaseWriteIndexRows": 13071,
+            "storageReadBytes": 0,
+            "storageWriteBytes": 0,
+            "vectorIndexReadBytes": 0,
+            "vectorIndexWriteBytes": 0,
+            "textIndexQueryBytes": 0,
+            "textIndexWriteQueryBytes": 0,
+            "vectorIndexReadQueryBytes": 0,
+            "vectorIndexWriteQueryBytes": 0,
+            "networkEgressBytes": 0,
+            "memoryUsedMb": 64
+          },
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        }
+      ],
+      "result": "SAME_SQLITE_ORIGINAL_1000_DISTINCT_CLAIM_REPLAY_RELEASE_AND_PER_CURRENCY_SOURCE_RISK_PARITY_PASSED"
+    },
+    "bts-230-retained-rollback-proof": {
+      "suffix": "retained_5087b728",
+      "providerCalls": 0,
+      "failedReleaseFrontiersVerified": 1000,
+      "journalEntries": 2000,
+      "operationAnd1000OriginalSlicesRetained": true,
+      "diagnosticGeneration": 1,
+      "transferRowsSha256": "895a9169ca5057f780dee9c1176ed2bbf10bac1c72600ee49b3d0b6da8eda44f",
+      "journalRowsSha256": "40fbf319b7bf2ca1e18a7de4a97a5b3ad26c9307830bf5ca04f388321b372161",
+      "result": "ALL_1000_FAILED_RELEASE_FRONTIERS_JOURNAL_AND_ORIGINAL_OPERATION_ROLLED_BACK"
+    },
+    "bts-native-retained-runner-proof": {
+      "instance": "bts230-ed6f16a1c0af",
+      "suffix": "retained_7e0faa59",
+      "providerCalls": 0,
+      "installedArchive": true,
+      "stages": [
+        {
+          "stage": "seed",
+          "exit": 0,
+          "output": "{\"stage\":\"seed\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "activate",
+          "exit": 0,
+          "output": "{\"stage\":\"activate\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "candidate",
+          "exit": 0,
+          "output": "{\"step\":\"firstClaim\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalSliceBytesEqual\":true,\"count\":1000,\"replay\":false}}\n{\"step\":\"matchingReplay\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalSliceBytesEqual\":true,\"count\":1000,\"replay\":true}}\n{\"step\":\"release\",\"suffix\":\"retained_7e0faa59\",\"result\":{\"allOriginalReferencesEqual\":true,\"count\":1000,\"released\":true}}\n{\"stage\":\"candidate\",\"suffix\":\"retained_7e0faa59\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        }
+      ],
+      "result": "REPOSITORY_RETAINED_RUNNER_PASSED_AGAINST_INSTALLED_PACKED_CANDIDATE_1000_DISTINCT"
+    },
+    "bts-native-retained-timeout-proof": {
+      "instance": "bts230-ed6f16a1c0af",
+      "suffix": "retained_5087b728",
+      "providerCalls": 0,
+      "installedArchive": true,
+      "stages": [
+        {
+          "stage": "seed",
+          "exit": 0,
+          "output": "{\"stage\":\"seed\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "activate",
+          "exit": 0,
+          "output": "{\"stage\":\"activate\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}",
+          "error": ""
+        },
+        {
+          "stage": "candidate",
+          "exit": 1,
+          "output": "",
+          "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"status\":\"error\",\"errorMessage\":\"[Request ID: 34b18c827436df19] Server Error\\nUncaught Error: Function execution timed out (maximum duration: 1s)\\n\\n    at async handler (../convex/capacity230.ts:5:318)\\n\",\"logLines\":[\"[WARN] Many reads in a single function execution (actual: 3487, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\",\"[WARN] Many reads in a single function execution (actual: 3487, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\"]}\n\n'error' !== 'success'\n\n    at success (file:///private/tmp/bts-217-example-funding/tests/native/reversal-capacity/run.mjs:44:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///private/tmp/bts-217-example-funding/tests/native/reversal-capacity/run.mjs:94:19 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 'error',\n  expected: 'success',\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+        }
+      ]
+    },
+    "bts-native-quiet-recovery-proof": {
+      "suffix": "retained_5087b728",
+      "exit": 0,
+      "stdout": "{\"step\":\"quietReleaseRecovery\",\"suffix\":\"retained_5087b728\",\"result\":{\"allOriginalReferencesEqual\":true,\"count\":1000,\"released\":true}}\n{\"stage\":\"release\",\"suffix\":\"retained_5087b728\",\"shared\":false,\"instance\":\"bts230-ed6f16a1c0af\",\"status\":\"passed\",\"providerCalls\":0}\n",
+      "stderr": "",
+      "providerCalls": 0,
+      "purpose": "One finite quiet recovery after verifying full rollback; no source or limits changed"
+    },
+    "full-gates": {
+      "command": "pnpm run check:all",
+      "passed": 15,
+      "total": 15,
+      "elapsedSeconds": 384.8,
+      "measuredCoverage": {
+        "lines": 82.16,
+        "functions": 78.19
+      },
+      "raisedFloors": {
+        "lines": 81.66,
+        "functions": 77.69
+      },
+      "limitsOrPoliciesWeakened": false,
+      "firstCI": "https://github.com/FantasticDevHQ/better-stripe/actions/runs/39098390627",
+      "firstCIOutcome": "All tests and gates passed except the required upward coverage ratchet; full CI summary matches the successful local measurement."
     }
-  }
+  },
+  "nativeOutcome": "Finite quiet recovery and a fresh retained-runner first-claim/replay/release sequence passed; the prior timeout and exact rollback are retained. Final CI and independent acceptance remain required."
 }

@@ -88,14 +88,30 @@ if (stage === "seed") {
   const first = await success("mutation", "capacity230:claim", { suffix });
   assert.equal(first.replay, false);
   assert.equal(first.count, 1000);
+  console.log(JSON.stringify({ step: "firstClaim", suffix, result: first }));
   const replay = await success("mutation", "capacity230:claim", { suffix });
   assert.equal(replay.replay, true);
   assert.equal(replay.count, 1000);
+  console.log(
+    JSON.stringify({ step: "matchingReplay", suffix, result: replay }),
+  );
   const release = await success("mutation", "capacity230:release", { suffix });
   assert.equal(release.released, true);
   assert.equal(release.count, 1000);
+  console.log(JSON.stringify({ step: "release", suffix, result: release }));
   await verify(shared ? 250 : 1);
-} else throw new Error("Stage must be seed, baseline, activate or candidate.");
+} else if (stage === "release") {
+  const release = await success("mutation", "capacity230:release", { suffix });
+  assert.equal(release.released, true);
+  assert.equal(release.count, 1000);
+  console.log(
+    JSON.stringify({ step: "quietReleaseRecovery", suffix, result: release }),
+  );
+  await verify(shared ? 250 : 1);
+} else
+  throw new Error(
+    "Stage must be seed, baseline, activate, candidate or release.",
+  );
 console.log(
   JSON.stringify({
     stage,

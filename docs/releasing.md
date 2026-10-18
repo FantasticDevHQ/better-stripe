@@ -50,3 +50,22 @@ the extensionless import exposed by the public SDK in 0.47.0. Use explicit `.js`
 extensions for reachable relative imports; do not hide failures behind a custom
 resolver. A corrected local build is candidate evidence; verify the normal
 published artifact before application adoption.
+
+## Release workflow
+
+Releases are automated with [Release Please](https://github.com/googleapis/release-please-action) and published to npmjs.com as `@fantastic.dev/better-stripe`. **Don't bump the version or edit `CHANGELOG.md` by hand.**
+
+1. **Give every PR a Conventional Commit title** (it becomes the squash-merge commit):
+   - `fix: …` makes a patch release.
+   - `feat: …` makes a minor release.
+   - `feat!: …` (or a `BREAKING CHANGE:` footer) makes a minor release while the package is pre-1.0.
+   - `docs:`, `chore:`, `ci:`, `refactor:`, `test:`, `build:` and `perf:` appear in the changelog too. On their own they still open a patch release PR, which auto-merges once its required checks pass.
+
+   Write the title for consumers of the package: it becomes the changelog entry. A title that isn't a Conventional Commit is left out.
+
+2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the README version line and `.release-please-manifest.json`. It formats the generated changelog with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit. After formatting, the workflow enables squash auto-merge for the generated release PR using the release GitHub App.
+3. **Auto-merge waits for green checks**. The active `main` ruleset requires `ci`, `Shadscan UI quality gate (100)` and `codegen`, with no bypass actors. Failed or pending required checks prevent merging. Once GitHub merges the generated release PR, the resulting `Release` workflow run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
+
+Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.
+
+The private `example` workspace isn't published.

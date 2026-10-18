@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.64.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.64.0...v0.64.1) (2026-10-18)
+
+
+### Tests
+
+* **usage:** verify native three-model economics and packed consumers (BTS-261) ([#349](https://github.com/FantasticDevHQ/better-stripe/issues/349)) ([d6f801a](https://github.com/FantasticDevHQ/better-stripe/commit/d6f801ab209f55535fdea075fa5c0072f7da66cd))
+
 ## [0.64.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.63.0...v0.64.0) (2026-10-18)
 
 ### Features

@@ -6176,6 +6176,128 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    payoutRevisionJournal: {
+      mutations: {
+        activateAccount: FunctionReference<
+          "mutation",
+          "internal",
+          { accountId: string },
+          {
+            accountId: string;
+            reason?:
+              | "legacy_ambiguous"
+              | "legacy_invalid"
+              | "legacy_disagreement"
+              | "representation_unavailable";
+            status: "activated" | "unchanged" | "held";
+          },
+          Name
+        >;
+      };
+    };
+    payoutRevisionMigration: {
+      mutations: {
+        begin: FunctionReference<
+          "mutation",
+          "internal",
+          { operationKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            activated: number;
+            cursor: string | null;
+            held: number;
+            operationKey: string;
+            phase: number;
+            scanned: number;
+            status: "running" | "finished";
+            step: number;
+            unchanged: number;
+            visited: number;
+          },
+          Name
+        >;
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          { expectedStep: number; jobId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            activated: number;
+            cursor: string | null;
+            held: number;
+            operationKey: string;
+            phase: number;
+            scanned: number;
+            status: "running" | "finished";
+            step: number;
+            unchanged: number;
+            visited: number;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          { jobId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            activated: number;
+            cursor: string | null;
+            held: number;
+            operationKey: string;
+            phase: number;
+            scanned: number;
+            status: "running" | "finished";
+            step: number;
+            unchanged: number;
+            visited: number;
+          } | null,
+          Name
+        >;
+        results: FunctionReference<
+          "query",
+          "internal",
+          {
+            jobId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountDigest: string;
+              accountId?: string;
+              jobId: string;
+              reason?:
+                | "legacy_ambiguous"
+                | "legacy_invalid"
+                | "legacy_disagreement"
+                | "representation_unavailable";
+              sourceId: string;
+              sourceTable: string;
+              status: "activated" | "unchanged" | "held";
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     payoutSnapshots: {
       mutations: {
         advance: FunctionReference<
@@ -8080,6 +8202,307 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             merchantAccount: string | null;
             requiresChargeProof: boolean;
             status: "known" | "unknown" | "held";
+          },
+          Name
+        >;
+      };
+    };
+    reversalObservations: {
+      mutations: {
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            batchSize?: number;
+            expectedGeneration: number;
+            operationId: string;
+          },
+          {
+            coverage: "unknown";
+            generation: number | null;
+            observation: {
+              _creationTime: number;
+              _id: string;
+              deleted: boolean;
+              fingerprint: string;
+              generation: number;
+              indexTransferGeneration: number | null;
+              indexedCount: number;
+              isContradictory: boolean;
+              latestIdentityFingerprint: string;
+              latestPayloadId: string;
+              legacy: boolean;
+              nextIndex: number;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalOperationId: string;
+              originalPayloadId: string;
+              producer: "reversal_claim_lifecycle";
+              producerVersion: 1;
+              referenceFingerprints: Array<string>;
+              sliceCount: number;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              status: "pending" | "validating" | "complete" | "held";
+            } | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+      };
+      queries: {
+        bucket: FunctionReference<
+          "query",
+          "internal",
+          {
+            bucketKey: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketDigest?: string;
+              bucketKey?: string;
+              generation: number;
+              identityStatus: "matched" | "unknown" | "contradictory";
+              observationId: string;
+              orgId?: string;
+              originalOperationId: string;
+              ownerDigest?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              sliceIndex: number;
+              transferGeneration: number | null;
+              transferId?: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+        history: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            selector: "operationId" | "sourceChargeId";
+            value: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              deleted: boolean;
+              fingerprint: string;
+              generation: number;
+              indexTransferGeneration: number | null;
+              indexedCount: number;
+              isContradictory: boolean;
+              latestIdentityFingerprint: string;
+              latestPayloadId: string;
+              legacy: boolean;
+              nextIndex: number;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalOperationId: string;
+              originalPayloadId: string;
+              producer: "reversal_claim_lifecycle";
+              producerVersion: 1;
+              referenceFingerprints: Array<string>;
+              sliceCount: number;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              status: "pending" | "validating" | "complete" | "held";
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+        operation: FunctionReference<
+          "query",
+          "internal",
+          { operationId: string },
+          {
+            coverage: "unknown";
+            generation: number | null;
+            observation: {
+              _creationTime: number;
+              _id: string;
+              deleted: boolean;
+              fingerprint: string;
+              generation: number;
+              indexTransferGeneration: number | null;
+              indexedCount: number;
+              isContradictory: boolean;
+              latestIdentityFingerprint: string;
+              latestPayloadId: string;
+              legacy: boolean;
+              nextIndex: number;
+              operationDigest: string;
+              originalFingerprint: string;
+              originalIdentityFingerprint: string;
+              originalOperationId: string;
+              originalPayloadId: string;
+              producer: "reversal_claim_lifecycle";
+              producerVersion: 1;
+              referenceFingerprints: Array<string>;
+              sliceCount: number;
+              sourceChargeDigest: string;
+              sourceCreatedAt: number;
+              status: "pending" | "validating" | "complete" | "held";
+            } | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+        owner: FunctionReference<
+          "query",
+          "internal",
+          {
+            orgId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId: string;
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketDigest?: string;
+              bucketKey?: string;
+              generation: number;
+              identityStatus: "matched" | "unknown" | "contradictory";
+              observationId: string;
+              orgId?: string;
+              originalOperationId: string;
+              ownerDigest?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              sliceIndex: number;
+              transferGeneration: number | null;
+              transferId?: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+        payload: FunctionReference<
+          "query",
+          "internal",
+          { operationId: string; version: "original" | "latest" },
+          {
+            coverage: "unknown";
+            generation: number | null;
+            payload: {
+              _creationTime: number;
+              _id: string;
+              commissionExposure?: {
+                chargeAmount: number;
+                disputeId?: string;
+                disputeState?: "open" | "lost" | "won";
+                finalized: boolean;
+                kind: "refund" | "dispute";
+                principal: number;
+                refundId?: string;
+                refundedPrincipal?: number;
+              };
+              operationId: string;
+              slices: Array<{
+                from: number;
+                stripeTransferId: string;
+                to: number;
+              }>;
+              sourceChargeId: string;
+            } | null;
+            transferGeneration: number | null;
+          },
+          Name
+        >;
+        slices: FunctionReference<
+          "query",
+          "internal",
+          {
+            operationId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            coverage: "unknown";
+            generation: number | null;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              bucketDigest?: string;
+              bucketKey?: string;
+              generation: number;
+              identityStatus: "matched" | "unknown" | "contradictory";
+              observationId: string;
+              orgId?: string;
+              originalOperationId: string;
+              ownerDigest?: string;
+              ownershipStatus:
+                "registered" | "unknown" | "ambiguous" | "contradictory";
+              registrationId?: string;
+              sliceIndex: number;
+              transferGeneration: number | null;
+              transferId?: string;
+              userId?: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+            transferGeneration: number | null;
           },
           Name
         >;

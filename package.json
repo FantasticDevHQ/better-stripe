@@ -84,7 +84,8 @@
     "docs/example-recovery-cutover.md",
     "docs/releasing.md",
     "docs/release-handoff.md",
-    "docs/setup-intent-recovery.md"
+    "docs/setup-intent-recovery.md",
+    "docs/payout-revision-migration.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

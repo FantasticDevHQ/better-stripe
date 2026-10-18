@@ -102,9 +102,12 @@ Native checks preserve the previously supported 1,000-transfer claim across four
 shared destination buckets, with registered personal/organization and unknown
 ownership, and the 100-transfer synchronous boundary. Historical public claims
 with 1,001 transfers can still be released without per-row observation work.
-The accepted baseline separately exceeds native read limits for a claim with
-1,000 distinct destinations because of existing earnings-summary work; this
-observation contract does not fix or claim support for that shape.
+The published 0.50.1 baseline separately exceeds native read limits for a claim
+with 1,000 distinct destinations. The explicitly activated payout revision
+journal now preserves that shape in the tested native fixture. See the
+[payout revision migration](./payout-revision-migration.md) for its operational
+precondition and aggregate-limit caveats. Transfer observations alone do not
+provide that capacity.
 
 Observations rely on package-owned append/patch writers and their transactional
 generation changes. They do not certify arbitrary privileged database edits,
@@ -237,8 +240,48 @@ a final patch; zero-count deletion and malformed-summary errors remain required.
 Moved buckets, unrecorded transfers, payout summaries and financial/risk callbacks
 retain their existing behavior.
 
-This is a private derived-summary optimization. Accepted and earnings-only
-candidates still exceed the native read limit for 1,000 distinct destinations.
-It does not lower the admitted financial maximum, establish complete observation
-coverage or prove aggregate financial-hook capacity. Distinct-destination source
-read reuse and complete capacity verification remain separate work.
+This private derived-summary optimization alone does not resolve the
+1,000-distinct-destination read limit. The separately activated
+[payout revision journal](./payout-revision-migration.md) supplies the tested
+large-operation path. Neither optimization grants complete observation coverage
+or changes financial admission or money calculations.
+
+## Claimed reversal slice history
+
+`stripe.reversalObservations` reports the lifecycle of actual component reversal claims. Claim, exposure replay, frontier updates, release and deletion capture diagnostic history in the same transaction as the existing financial writer, including direct calls to the registered handler. The writer keeps its existing slice arithmetic, financial selectors, rollback and provider behavior.
+
+History is keyed by the **original operation document ID**, not its reusable business `operationId`. A released operation retains a tombstone. Reusing the business ID creates a separate history entry. Exact original and latest operation bodies live in separate payload records, with full and identity fingerprints checked before returning or indexing their contents. The original body, transfer references and owner evidence are immutable across exposure updates and deletion.
+
+```ts
+const history = await stripe.reversalObservations.history(ctx, {
+  selector: "sourceChargeId", // or "operationId" for the business identifier
+  value: chargeId,
+  paginationOpts: { numItems: 25, cursor: null },
+});
+const originalOperationId = history.page[0].originalOperationId;
+let observed = await stripe.reversalObservations.operation(ctx, {
+  operationId: originalOperationId,
+});
+// Schedule separate bounded host mutations until complete or held.
+observed = await stripe.reversalObservations.resume(ctx, {
+  operationId: originalOperationId,
+  expectedGeneration: observed.observation!.generation,
+  batchSize: 10, // 1–20 original positions per transaction
+});
+const slices = await stripe.reversalObservations.slices(ctx, {
+  operationId: originalOperationId,
+  paginationOpts: { numItems: 25, cursor: null },
+});
+```
+
+`bucket` discovers original destination references using an exact bucket selector. `owner` accepts `userId` and optional `orgId` for historical owner evidence. Both use bounded component-compatible pagination. Each slice includes `originalOperationId`, so a hit can be opened with `operation` and `payload`. `payload` accepts `version: "original" | "latest"`.
+
+All original slice positions are retained, including empty operations without invented recipients. Compact, chunked references retain original transfer document IDs and identity digests. Destination digests keep the original bucket discoverable if its transfer later disappears. A single byte-bounded marker page may capture existing owner evidence atomically. Missing, omitted, contradictory or ambiguous original pins remain unknown. A later registration never retroactively fills an originally unpinned owner.
+
+Continuation checks the exact original transfer, global transfer and marker correspondence, captured owner evidence and immutable registration. Missing or changed sources remain `unknown` or `contradictory`; they do not get reassigned to replacements. Legacy operations first observed on replay or release have no invented claim-time provenance and stay held. No public backfill declares historical coverage complete.
+
+Bucket and owner discovery use digests and fixed source/registration references. Literal bucket, user and organization labels are included only when each fits within 256 UTF-8 bytes, avoiding oversized diagnostic documents. A digest is a lookup aid, never proof of authorization. Resolve original references through the trusted host and treat missing sources conservatively.
+
+The bounded indexer writes each exact slice slot, then validates its prefix in a second traversal. Each original reference chunk is checked against its immutable header digest before use, including when the original transfer is missing. `expectedGeneration` fences the source lifecycle version; it is not a per-step acknowledgement. Repeating a successful `resume` call may advance another bounded batch of diagnostic work. No money operation is performed or duplicated. Read headroom may reduce the actual batch size; invoke steps in fresh dedicated host transactions rather than an unbounded loop inside one transaction. Exposure changes and deletion advance the operation generation and restart enrichment over the same immutable references. A slice's `generation` is the operation generation when it was indexed. Fetch its owning operation to compare the current generation and indexing status; intermediate pages may contain older-generation slots. Global diagnostic `generation` and `transferGeneration` also expose later transfer facts without pretending a cached slice is the latest receipt. `complete` describes this historical index traversal, not current ownership, current liabilities, financial closure or producer coverage.
+
+Every result remains `coverage: "unknown"`, including completed and exhausted pages. These methods are trusted-host diagnostics. They grant no provider permission, payout eligibility, reversal admission or attempt fencing, and do not replace receipt reconciliation. No Stripe API request is made by the readers or indexer.

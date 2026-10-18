@@ -1835,3 +1835,9 @@ Automatic combined payouts use a complete paginated ledger collection above 100 
 Resolve recovery-backed payout liabilities with `stripe.costRecovery.payoutQuote(ctx, authorizedScope)` and pass its amount/version together to preview or automatic release. The example does this for seller refund/dispute costs; stale or missing required versions fail safely. See [versioned liability guidance](docs/settlement.md#versioned-recovery-liabilities).
 
 Historical payout adoption and funded-account activation also use complete paginated collections beyond the small direct snapshot path. They revalidate complete financial membership atomically, preserve paid principal and holding age, and reject stale funding or recovery changes. See [historical import guidance](docs/settlement.md#historical-import-and-funded-activation).
+
+### Internal payout revision migration
+
+Large financial operations can use an explicitly activated append-only revision journal. The trusted host API provides bounded, resumable inventory and per-account activation. Held accounts remain on the legacy path. See [payout revision migration](docs/payout-revision-migration.md) for rollout, compatibility, and rollback requirements. Inventory completion is not financial coverage or payout eligibility.
+
+Claimed reversal history is also available through `betterStripe.reversalObservations`, with immutable original references, bounded bucket/owner discovery and release tombstones. See [claimed reversal slice history](docs/financial-observations.md#claimed-reversal-slice-history). Every response remains unknown coverage and grants no financial permission.

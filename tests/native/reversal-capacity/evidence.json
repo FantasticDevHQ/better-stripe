@@ -1,0 +1,690 @@
+{
+  "date": "2026-10-18",
+  "publishedBaseline": "0.50.1",
+  "baseCommit": "4ec8cb170235921b966b164d37077e6470bfda74",
+  "backend": "precompiled-2026-10-10-72ce13c",
+  "providerRequests": 0,
+  "limitsChanged": false,
+  "packageSha256": "59714c27cc5c1b57465c195fa68cd7343531c74ae7efdfdd8c83b4e94977a415",
+  "checks": {
+    "bts-230-current-baseline-proof": {
+      "host": "/tmp/native-bts230-ed6f16a1c0af",
+      "statePath": "/tmp/native-bts230-ed6f16a1c0af/state",
+      "package": "0.50.1",
+      "providerCalls": 0,
+      "seed": [
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        },
+        {
+          "inserted": 50.0
+        }
+      ],
+      "rollback": [
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 13.0,
+          "unknown": 12.0,
+          "verified": 25.0
+        },
+        {
+          "financialSourceIdentityPreserved": true,
+          "operationPresent": false,
+          "perCurrencyEarningsExact": true,
+          "registered": 12.0,
+          "unknown": 13.0,
+          "verified": 25.0
+        }
+      ],
+      "claim": {
+        "status": "error",
+        "errorMessage": "[Request ID: bb8ac6765d101c4a] Server Error\nUncaught Error: Too many reads in a single function execution (limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.\n    at async replaceContribution (../../node_modules/.pnpm/@fantastic.dev+better-stripe@0.50.1_convex@1.46.0_react@19.3.0__react-dom@19.3.0_react@19.3.0__react@19.3.0/node_modules/@fantastic.dev/better-stripe/src/component/earnings/pairedAdjustment.ts:57:28)\n    at async <anonymous> (../../node_modules/.pnpm/@fantastic.dev+better-stripe@0.50.1_convex@1.46.0_react@19.3.0__react-dom@19.3.0_react@19.3.0__react@19.3.0/node_modules/@fantastic.dev/better-stripe/src/component/earnings/triggers.ts:85:1)\n    at async <anonymous> (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:220:13)\n    at async <anonymous> (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:236:12)\n    at async withLock [as withLock] (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:39:8)\n    at async _execThenTrigger (../../node_modules/.pnpm/convex-helpers@0.1.128_convex@1.46.0_react@19.3.0__react@19.3.0_zod@4.6.7/node_modules/convex-helpers/server/triggers.js:231:12)\n\n    at async handler (../convex/capacity230.ts:4:263)\n",
+        "logLines": [
+          "[ERROR] [Error: Too many reads in a single function execution (limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions.]",
+          "[WARN] Function execution took a long time. (maximum duration: 1s, actual duration: 861.725555ms)."
+        ]
+      },
+      "result": "PUBLISHED_0501_NATIVE_1000_DISTINCT_READ_LIMIT_RED_AND_FULL_ROLLBACK_VERIFIED"
+    },
+    "bts-230-candidate-rollback-proof": {
+      "providerCalls": 0,
+      "capacityAccepted": false,
+      "rollbackTables": {
+        "transfers": 1000,
+        "currencyTotals": 1000,
+        "payoutFinancialRevisions": 1000,
+        "payoutRiskRevisions": 1000,
+        "payoutRiskEvents": 0,
+        "transferReversalOps": 0,
+        "financialTransferObservations": 1000
+      },
+      "activatedBaselinesPreserved": 1000,
+      "result": "ALL_FAILED_NATIVE_CANDIDATE_CLAIMS_ROLLED_BACK_1000_ORIGINAL_RECORDS_EXACT"
+    },
+    "bts-230-native-parity-proof": {
+      "providerCalls": 0,
+      "originalCount": 1000,
+      "tables": {
+        "transfers": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 3565
+        },
+        "currencyTotals": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutFinancialRevisions": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutRiskRevisions": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 2569
+        },
+        "payoutRiskEvents": {
+          "originalRowsUnchanged": 0,
+          "totalRows": 3630
+        },
+        "transferReversalOps": {
+          "originalRowsUnchanged": 0,
+          "totalRows": 2
+        },
+        "financialTransferObservations": {
+          "originalRowsUnchanged": 1000,
+          "totalRows": 3565
+        }
+      },
+      "journalBaselineAndTwoExactBumps": 3000,
+      "result": "ORIGINAL_PHYSICAL_IDS_SOURCE_BYTES_TOTALS_LEGACY_COUNTERS_TRANSFER_OBSERVATIONS_AND_EXACT_RISK_EVENTS_PRESERVED"
+    },
+    "bts-230-native-occ-proof": {
+      "providerCalls": 0,
+      "cases": [
+        {
+          "kind": "positive",
+          "probe": {
+            "risk": 0.0
+          },
+          "writer": {
+            "amount": 7.0
+          },
+          "telemetry": [
+            {
+              "identifier": "occ230:funding",
+              "requestId": "673a411ec99a2097",
+              "executionId": "d2d20e73-995f-4c12-aab1-4dec2bf538a5",
+              "executionTime": 0.015809167,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "25c60b0413d2ebb6",
+              "executionId": "3d84ae32-8ca2-4645-9722-d5662e37ec9e",
+              "executionTime": 0.319041916,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            }
+          ]
+        },
+        {
+          "kind": "risk",
+          "probe": {
+            "risk": 1.0
+          },
+          "writer": {
+            "amount": 4.0
+          },
+          "telemetry": [
+            {
+              "identifier": "occ230:funding",
+              "requestId": "751f77e9153a1dfc",
+              "executionId": "88769fc1-ffd2-4bc0-b9b4-64896f243d7a",
+              "executionTime": 0.014002125,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "0f7935cee3fdbd0a",
+              "executionId": "beedf7ba-cc80-405b-9865-aa5f3a67c40d",
+              "executionTime": 0.218743416,
+              "occInfo": {
+                "tableName": "payoutRevisionJournal",
+                "documentId": "ss76j8m2r0f2g10rwjmjsbc71s8gh7tc",
+                "writeSource": "occ230.js:funding",
+                "componentPath": "betterStripe",
+                "retryCount": 0
+              },
+              "willRetry": true,
+              "error": null
+            },
+            {
+              "identifier": "occ230:probe",
+              "requestId": "0f7935cee3fdbd0a",
+              "executionId": "5fd61210-ccb0-4046-8773-c2cefe663204",
+              "executionTime": 0.16952975,
+              "occInfo": null,
+              "willRetry": false,
+              "error": null
+            }
+          ]
+        }
+      ],
+      "result": "NATIVE_POSITIVE_FUNDING_KEEPS_RISK_RANGE_STABLE_AND_REAL_RISK_CHANGE_RETRIES_READER"
+    },
+    "bts-230-native-activation-race-proof": {
+      "providerCalls": 0,
+      "activation": "activated",
+      "subsequentActivation": "unchanged",
+      "gross": 7,
+      "telemetry": [
+        {
+          "identifier": "occ230:funding",
+          "requestId": "b19ce0f7321cb4ac",
+          "executionTime": 0.028467666,
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        },
+        {
+          "identifier": "occ230:activateProbe",
+          "requestId": "bf79da912d59a5d3",
+          "executionTime": 0.30180575,
+          "occInfo": {
+            "tableName": "payoutFinancialRevisions",
+            "documentId": "ns754mvyqkx205gs3fpg3cf8gn8gh92k",
+            "writeSource": "occ230.js:funding",
+            "componentPath": "betterStripe",
+            "retryCount": 0
+          },
+          "willRetry": true,
+          "error": null
+        },
+        {
+          "identifier": "occ230:activateProbe",
+          "requestId": "bf79da912d59a5d3",
+          "executionTime": 0.220677875,
+          "occInfo": null,
+          "willRetry": false,
+          "error": null
+        }
+      ],
+      "result": "NATIVE_ACTIVATION_SOURCE_WRITE_RACE_RETRIED_WITHOUT_LOST_FINANCIAL_UPDATE"
+    },
+    "bts-230-historical-release-proof": {
+      "providerCalls": 0,
+      "historicalImportedSlices": 1001,
+      "released": 1001,
+      "diagnostics": "legacy held, deleted, coverage unknown",
+      "result": "NATIVE_HISTORICAL_1001_POSITIVE_SLICE_RELEASE_PASSED",
+      "logLines": [
+        "[WARN] Many reads in a single function execution (actual: 4077, limit: 4096). Consider using smaller limits in your queries, paginating your queries, or using indexed queries with a selective index range expressions."
+      ],
+      "telemetry": []
+    },
+    "bts-277-native-migration-proof": {
+      "providerCalls": 0,
+      "steps": 8711,
+      "oneInventoryRowPerTransaction": true,
+      "begin": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 0.0,
+        "cursor": null,
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 0.0,
+        "scanned": 0.0,
+        "status": "running",
+        "step": 0.0,
+        "unchanged": 0.0,
+        "visited": 0.0
+      },
+      "staleResumeStable": true,
+      "latest": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 65.0,
+        "cursor": "[1792297993189.1394,\"sd7cn8f8ph5ghz73hce53qp2e18ghcv0\"]",
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 2.0,
+        "scanned": 8498.0,
+        "status": "running",
+        "step": 8500.0,
+        "unchanged": 2504.0,
+        "visited": 2569.0
+      },
+      "wallSeconds": 291.1,
+      "final": {
+        "_creationTime": 1792298165292.621,
+        "_id": "t174bzq058cr5dzabdjvs0gsas8ggv91",
+        "activated": 65.0,
+        "cursor": null,
+        "held": 0.0,
+        "operationKey": "native-journal-inventory-1",
+        "phase": 8.0,
+        "scanned": 8703.0,
+        "status": "finished",
+        "step": 8711.0,
+        "unchanged": 2504.0,
+        "visited": 2569.0
+      },
+      "resultPages": 26,
+      "resultCount": 2569,
+      "result": "NATIVE_SERVER_OWNED_INVENTORY_AND_STALE_RESUME_AND_BOUNDED_RESULT_PAGINATION_PASSED"
+    },
+    "bts-227-native-lifecycle-proof": {
+      "providerCalls": 0,
+      "coverage": "unknown",
+      "originalOperationId": "s972gzq0wzth8y9ddrkqzy1sc58ggcza",
+      "lateFactResumedToComplete": 15,
+      "initialGeneration": 1.0,
+      "bucketDiscoveryCount": 1,
+      "ownerDiscoveryCount": 33,
+      "result": "NATIVE_65_SLICE_LATE_FACT_RESUME_TOMBSTONE_BUCKET_OWNER_PAGINATION_ORIGINAL_PAYLOAD_BUSINESS_ID_REUSE_AND_EMPTY_OPERATION_PASSED",
+      "pages": 10,
+      "indexedRows": 65,
+      "businessIdReuseDistinctOriginals": 2
+    },
+    "bts-227-native-large-index-proof": {
+      "providerCalls": 0,
+      "steps": 100,
+      "indexedSlices": 1000,
+      "registeredOwnerPins": 243,
+      "unknownOwnerPins": 757,
+      "allOriginalBucketSelectorsRetained": true,
+      "partialMarkerPageRemainsConservative": true,
+      "coverage": "unknown",
+      "deleted": true,
+      "result": "NATIVE_1000_ORIGINAL_SLICE_TOMBSTONE_INDEX_AND_PARTIAL_MARKER_PAGE_PASSED"
+    },
+    "bts-227-native-headroom-proof": {
+      "providerCalls": 0,
+      "coverage": "unknown",
+      "prefillRows": 9,
+      "bytesPerPrefillRow": 900000,
+      "sourceMetadataBytesPerTransfer": 900000,
+      "zeroProgressFailureRollsBackHeaderExactly": true,
+      "reducedBatchIndexedCount": 1,
+      "reducedBatchNextIndex": 1,
+      "freshContinuationComplete": 2,
+      "result": "NATIVE_READ_HEADROOM_FAILURE_ROLLBACK_AND_PARTIAL_PROGRESS_CONTINUATION_PASSED"
+    },
+    "bts-227-native-packed-proof": {
+      "providerCalls": 0,
+      "installedArchive": "fantastic.dev-better-stripe-0.50.1.tgz",
+      "componentAndSDKFromInstalledArchive": true,
+      "publicSdkSlices": 10,
+      "publicSdkActivation": "activated",
+      "publicSdkMigrationBegin": true,
+      "nativeNearLimitOperationIdBytes": 1000003,
+      "exactPayloadPreserved": true,
+      "result": "INSTALLED_PACKED_PUBLIC_SDK_NATIVE_READ_MIGRATION_ACTIVATION_AND_NEAR_LIMIT_BODY_PASSED"
+    }
+  }
+}

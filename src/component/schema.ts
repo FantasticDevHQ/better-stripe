@@ -1,3 +1,14 @@
+import {
+  observationsTable as reversalObservations,
+  payloadsTable as reversalObservationPayloads,
+  refsTable as reversalObservationRefs,
+  slicesTable as reversalObservationSlices,
+} from "./reversalObservations/schema.js";
+import {
+  jobsTable as payoutRevisionMigrationsTable,
+  resultsTable as payoutRevisionMigrationResultsTable,
+} from "./payoutRevisionMigration/schema.js";
+import { journalTable as payoutRevisionJournal } from "./payoutRevisionJournal/schema.js";
 import { claimsTable as refundSyncClaimsTable } from "./refundSync/schema.js";
 import { operationsTable as processingCostReconciliationOperations } from "./processingCostReconciliation/schema.js";
 import {
@@ -89,6 +100,13 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  reversalObservations,
+  reversalObservationPayloads,
+  reversalObservationRefs,
+  reversalObservationSlices,
+  payoutRevisionJournal,
+  payoutRevisionMigrations: payoutRevisionMigrationsTable,
+  payoutRevisionMigrationResults: payoutRevisionMigrationResultsTable,
   refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,

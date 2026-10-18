@@ -6,7 +6,7 @@ import {
   assertSelector,
 } from "../component/financialOwnership/helpers.js";
 import type { registrationDoc } from "../component/financialOwnership/schema.js";
-import { FinancialObservationsHost } from "./financialObservations.js";
+import { ReversalObservationsHost } from "./reversalObservations.js";
 import type { Component, RunCtx } from "./helpers.js";
 import { runMutationOrThrow } from "./helpers.js";
 import { componentRef } from "./webhooks/helpers.js";
@@ -111,6 +111,6 @@ export class FinancialOwnershipClient {
   }
 }
 /** Extends the existing facade without expanding its frozen entry-file budget. */
-export abstract class FinancialOwnershipHost extends FinancialObservationsHost {
+export abstract class FinancialOwnershipHost extends ReversalObservationsHost {
   readonly financialOwnership = new FinancialOwnershipClient(this.component);
 }

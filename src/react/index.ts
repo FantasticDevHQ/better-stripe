@@ -306,3 +306,39 @@ export type {
 
 // Pins end cursors for the component paginator, including reactive page splits.
 export { usePaginatedQuery as useComponentPaginatedQuery } from "convex-helpers/react";
+
+// Native metered billing views, shared by authenticated component and HTTP adapters.
+export { UsageBilling, useUsageBilling } from "./workflows/UsageBilling.js";
+export type { UsageBillingProps } from "./workflows/UsageBilling.js";
+export { UsageSummary } from "./workflows/UsageSummary.js";
+export type { UsageSummaryProps } from "./workflows/UsageSummary.js";
+export { UsageAllowance } from "./workflows/UsageAllowance.js";
+export type { UsageAllowanceProps } from "./workflows/UsageAllowance.js";
+export { UsageCredits } from "./workflows/UsageCredits.js";
+export type { UsageCreditsProps } from "./workflows/UsageCredits.js";
+export type {
+  UsageViewScope,
+  UsageBillingSnapshot,
+} from "./workflows/Usage.types.js";
+export { formatUsageEstimate } from "./workflows/usage-format.js";
+export { UsageHistory, useUsageHistory } from "./workflows/UsageHistory.js";
+export type {
+  UsageHistoryProps,
+  UsageHistoryPage,
+} from "./workflows/UsageHistory.js";
+
+export { UsageConfiguration } from "./workflows/UsageConfiguration.js";
+export { useUsageConfiguration } from "./workflows/useUsageConfiguration.js";
+export type {
+  UsageConfigurationProps,
+  UsageConfigurationScope,
+  UsageConfigurationValue,
+  UsageConfigurationFields,
+  UsageConfigurationState,
+  UsageMeterChoice,
+} from "./workflows/UsageConfiguration.types.js";
+export { UsagePriceRow } from "./workflows/UsagePriceRow.js";
+export type {
+  UsagePriceRowProps,
+  UsageCatalogPrice,
+} from "./workflows/UsagePriceRow.js";

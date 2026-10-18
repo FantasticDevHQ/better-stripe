@@ -81,6 +81,8 @@ export async function settlementFingerprint(row: Doc<"settlementAllocations">) {
     sourceChargeId: row.sourceChargeId,
     paymentIntentId: row.paymentIntentId,
     sourceInvoiceId: row.sourceInvoiceId,
+    ...(row.usageSource ? { usageSource: row.usageSource } : {}),
+    ...(row.creditSource ? { creditSource: row.creditSource } : {}),
     gross: row.gross,
     currency: row.currency,
     processingFee: row.processingFee,

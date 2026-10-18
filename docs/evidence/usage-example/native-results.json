@@ -1,0 +1,1391 @@
+{
+  "capturedAt": "2026-10-18",
+  "environment": "Existing BetterStripe Stripe sandbox and Convex development deployment; no live billing",
+  "customerModels": {
+    "pay_as_you_go": {
+      "billing": {
+        "status": "paid",
+        "invoiceId": "in_1URuRm6JR7kThJogrZyTlfUT",
+        "currency": "usd",
+        "amountDue": 1500,
+        "amountPaid": 1500,
+        "invoice": [
+          {
+            "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+            "subscriptionItemId": "si_VSq2HG55s7KiHI",
+            "observation": {
+              "status": "available",
+              "observedAt": 1792331567,
+              "value": {
+                "kind": "invoice",
+                "invoiceId": "in_1URuRm6JR7kThJogrZyTlfUT",
+                "status": "paid",
+                "finalized": true,
+                "amountDue": "1500",
+                "amountPaid": "1500",
+                "total": "1500",
+                "currency": "usd",
+                "linesComplete": true,
+                "paymentEvidence": "not_resolved",
+                "meterAmount": {
+                  "status": "available",
+                  "observedAt": 1792331567,
+                  "value": {
+                    "amount": "1500",
+                    "currency": "usd"
+                  }
+                },
+                "lines": [
+                  {
+                    "lineId": "il_1Ud96e6JR7kThJogsVYEnLxW",
+                    "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                    "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                    "amount": "1500",
+                    "currency": "usd",
+                    "quantity": "15",
+                    "providerQuantityDecimal": "15",
+                    "unitAmountDecimal": "100",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792330860,
+                      "end": 1795009260
+                    },
+                    "proration": false
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "revenue": [
+          {
+            "cash": {
+              "status": "ready",
+              "value": {
+                "paymentIntentId": "pi_3URuRr6JR7kThJog0luPpX2d",
+                "chargeId": "ch_3URuRr6JR7kThJog0XbzECVo",
+                "invoiceId": "in_1URuRm6JR7kThJogrZyTlfUT",
+                "invoicePaymentId": "inpay_1URuRs6JR7kThJogFOnROlsG",
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "customerAccountId": "acct_1URuM99lsaWWk3Wg",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "stripeProductId": "prod_VSq29QfoGI0HH4",
+                "gross": 1500,
+                "processingFee": 74,
+                "currency": "usd",
+                "livemode": false,
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "model": "pay_as_you_go"
+              }
+            },
+            "settlement": null,
+            "routing": "direct_issuer"
+          }
+        ],
+        "renewal": {
+          "period": {
+            "start": 1795009260,
+            "end": 1797601260
+          },
+          "allowance": null,
+          "allowanceStatus": "not_active_yet"
+        },
+        "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+      },
+      "retainedSummary": {
+        "status": "available",
+        "observedAt": 1792332277,
+        "value": {
+          "period": {
+            "end": 1795009260,
+            "start": 1792330860
+          },
+          "observedAt": 1792332277,
+          "complete": true,
+          "eventCount": 4,
+          "groups": [
+            {
+              "binding": {
+                "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                "apiVersion": "2026-09-30.endive",
+                "plan": {
+                  "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                  "version": "v1",
+                  "unit": {
+                    "name": "call",
+                    "precision": 0
+                  },
+                  "rate": {
+                    "currency": "usd",
+                    "unitAmountDecimal": "100"
+                  },
+                  "model": "pay_as_you_go"
+                }
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "acceptedScaledQuantity": "20",
+              "providerAcceptedScaledQuantity": "15",
+              "acceptedQuantity": "20",
+              "canceledQuantity": "5",
+              "effectiveQuantity": "15",
+              "effectiveScaledQuantity": "15",
+              "providerAcceptedQuantity": "15",
+              "eventCount": 4,
+              "validationErrorEventCount": 0,
+              "deliveryQuantities": {
+                "canceled": "5",
+                "queued": "0",
+                "sending": "0",
+                "provider_accepted": "15",
+                "rejected": "0",
+                "unknown": "0",
+                "held": "0"
+              },
+              "included": {
+                "status": "unavailable",
+                "reason": "not_included_model",
+                "retryable": false
+              },
+              "estimate": {
+                "status": "available",
+                "observedAt": 1792332277,
+                "value": {
+                  "amountDecimal": "1500",
+                  "currency": "usd"
+                }
+              },
+              "credits": {
+                "status": "unavailable",
+                "reason": "not_prepaid_model",
+                "retryable": false
+              }
+            }
+          ]
+        }
+      },
+      "cleanup": {
+        "status": "archived",
+        "retained": "Native payer, clock, paid evidence and all component history",
+        "newRunAllowed": true
+      }
+    },
+    "included_overage": {
+      "billing": {
+        "status": "paid",
+        "invoiceId": "in_1URuRu6JR7kThJogPGaVR1ay",
+        "currency": "usd",
+        "amountDue": 500,
+        "amountPaid": 500,
+        "invoice": [
+          {
+            "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+            "subscriptionItemId": "si_VSq2xxImhnQL6f",
+            "observation": {
+              "status": "available",
+              "observedAt": 1792331722,
+              "value": {
+                "kind": "invoice",
+                "invoiceId": "in_1URuRu6JR7kThJogPGaVR1ay",
+                "status": "paid",
+                "finalized": true,
+                "amountDue": "500",
+                "amountPaid": "500",
+                "total": "500",
+                "currency": "usd",
+                "linesComplete": true,
+                "paymentEvidence": "not_resolved",
+                "meterAmount": {
+                  "status": "available",
+                  "observedAt": 1792331722,
+                  "value": {
+                    "amount": "500",
+                    "currency": "usd"
+                  }
+                },
+                "lines": [
+                  {
+                    "lineId": "il_1Ud96e6JR7kThJogTmBUv2IE",
+                    "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                    "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                    "amount": "0",
+                    "currency": "usd",
+                    "quantity": "10",
+                    "providerQuantityDecimal": "10",
+                    "unitAmountDecimal": "0",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792330860,
+                      "end": 1795009260
+                    },
+                    "proration": false
+                  },
+                  {
+                    "lineId": "il_1Ud96f6JR7kThJoguP20sshY",
+                    "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                    "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                    "amount": "500",
+                    "currency": "usd",
+                    "quantity": "5",
+                    "providerQuantityDecimal": "5",
+                    "unitAmountDecimal": "100",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792330860,
+                      "end": 1795009260
+                    },
+                    "proration": false
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "revenue": [
+          {
+            "cash": {
+              "status": "ready",
+              "value": {
+                "paymentIntentId": "pi_3URuRz6JR7kThJog0AbKEoyS",
+                "chargeId": "ch_3URuRz6JR7kThJog0OdDCgFv",
+                "invoiceId": "in_1URuRu6JR7kThJogPGaVR1ay",
+                "invoicePaymentId": "inpay_1URuS06JR7kThJogZzMDJ5YG",
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "customerAccountId": "acct_1URuMG5IinsqBwHo",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "stripeProductId": "prod_VSq2wUtb9rRxHj",
+                "gross": 500,
+                "processingFee": 45,
+                "currency": "usd",
+                "livemode": false,
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "model": "included_overage"
+              }
+            },
+            "settlement": null,
+            "routing": "direct_issuer"
+          }
+        ],
+        "renewal": {
+          "period": {
+            "start": 1795009260,
+            "end": 1797601260
+          },
+          "allowance": null,
+          "allowanceStatus": "not_active_yet"
+        },
+        "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+      },
+      "retainedSummary": {
+        "status": "available",
+        "observedAt": 1792332279,
+        "value": {
+          "period": {
+            "end": 1795009260,
+            "start": 1792330860
+          },
+          "observedAt": 1792332279,
+          "complete": true,
+          "eventCount": 4,
+          "groups": [
+            {
+              "binding": {
+                "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                "apiVersion": "2026-09-30.endive",
+                "plan": {
+                  "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                  "version": "v1",
+                  "unit": {
+                    "name": "call",
+                    "precision": 0
+                  },
+                  "rate": {
+                    "currency": "usd",
+                    "unitAmountDecimal": "100"
+                  },
+                  "model": "included_overage",
+                  "includedQuantity": "10",
+                  "reset": "billing_period"
+                }
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "acceptedScaledQuantity": "20",
+              "providerAcceptedScaledQuantity": "15",
+              "acceptedQuantity": "20",
+              "canceledQuantity": "5",
+              "effectiveQuantity": "15",
+              "effectiveScaledQuantity": "15",
+              "providerAcceptedQuantity": "15",
+              "eventCount": 4,
+              "validationErrorEventCount": 0,
+              "deliveryQuantities": {
+                "canceled": "5",
+                "queued": "0",
+                "sending": "0",
+                "provider_accepted": "15",
+                "rejected": "0",
+                "unknown": "0",
+                "held": "0"
+              },
+              "included": {
+                "status": "available",
+                "observedAt": 1792332279,
+                "value": {
+                  "included": "10",
+                  "consumed": "15",
+                  "remaining": "0",
+                  "overage": "5"
+                }
+              },
+              "estimate": {
+                "status": "available",
+                "observedAt": 1792332279,
+                "value": {
+                  "amountDecimal": "500",
+                  "currency": "usd"
+                }
+              },
+              "credits": {
+                "status": "unavailable",
+                "reason": "not_prepaid_model",
+                "retryable": false
+              }
+            }
+          ]
+        }
+      },
+      "cleanup": {
+        "status": "archived",
+        "retained": "Native payer, clock, paid evidence and all component history",
+        "newRunAllowed": true
+      }
+    },
+    "prepaid": {
+      "billing": {
+        "status": "paid",
+        "invoiceId": "in_1URuS16JR7kThJogXoGu0bLh",
+        "currency": "usd",
+        "amountDue": 0,
+        "amountPaid": 0,
+        "invoice": [
+          {
+            "meterId": "mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E",
+            "subscriptionItemId": "si_VSq2D1ENwksCjR",
+            "observation": {
+              "status": "available",
+              "observedAt": 1792331579,
+              "value": {
+                "kind": "invoice",
+                "invoiceId": "in_1URuS16JR7kThJogXoGu0bLh",
+                "status": "paid",
+                "finalized": true,
+                "amountDue": "0",
+                "amountPaid": "0",
+                "total": "0",
+                "currency": "usd",
+                "linesComplete": true,
+                "paymentEvidence": "not_resolved",
+                "meterAmount": {
+                  "status": "available",
+                  "observedAt": 1792331579,
+                  "value": {
+                    "amount": "1000",
+                    "currency": "usd"
+                  }
+                },
+                "lines": [
+                  {
+                    "lineId": "il_1Ud96e6JR7kThJogx6F81xgO",
+                    "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                    "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                    "amount": "1000",
+                    "currency": "usd",
+                    "quantity": "10",
+                    "providerQuantityDecimal": "10",
+                    "unitAmountDecimal": "100",
+                    "creditAppliedAmount": "1000",
+                    "nativePeriod": {
+                      "start": 1792330860,
+                      "end": 1795009260
+                    },
+                    "proration": false
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "revenue": [
+          {
+            "purchaseId": "md76j2t0xt14fcnw8hd4e1k2k18gg23w",
+            "cash": {
+              "status": "ready",
+              "value": {
+                "purchaseId": "md76j2t0xt14fcnw8hd4e1k2k18gg23w",
+                "paymentIntentId": "pi_3URuNa6JR7kThJog1ONRpqAf",
+                "chargeId": "ch_3URuNa6JR7kThJog1Rk91yQD",
+                "creditGrantId": "credgr_test_61VbIL41CSf8BbOao416JR7kThJog1GS",
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "customerAccount": "acct_1URuMN6TR93R6HaB",
+                "livemode": false,
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "stripeProductId": "prod_VSq2hp3Ud1cpPS",
+                "gross": 1000,
+                "processingFee": 59,
+                "currency": "usd",
+                "ownership": "issuer"
+              }
+            },
+            "settlement": {
+              "sourceChargeId": "ch_3URuNa6JR7kThJog1Rk91yQD",
+              "paymentIntentId": "pi_3URuNa6JR7kThJog1ONRpqAf",
+              "creditSource": {
+                "creditGrantId": "credgr_test_61VbIL41CSf8BbOao416JR7kThJog1GS",
+                "customerAccount": "acct_1URuMN6TR93R6HaB",
+                "livemode": false,
+                "purchaseId": "md76j2t0xt14fcnw8hd4e1k2k18gg23w",
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "stripeProductId": "prod_VSq2hp3Ud1cpPS"
+              },
+              "gross": 1000,
+              "currency": "usd",
+              "processingFee": 59,
+              "platformNet": 941,
+              "transfers": [],
+              "status": "settled",
+              "executedTransfers": []
+            }
+          }
+        ],
+        "renewal": {
+          "period": {
+            "start": 1795009260,
+            "end": 1797601260
+          },
+          "allowance": null,
+          "allowanceStatus": "not_active_yet"
+        },
+        "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+      },
+      "retainedSummary": {
+        "status": "available",
+        "observedAt": 1792332281,
+        "value": {
+          "period": {
+            "end": 1795009260,
+            "start": 1792330860
+          },
+          "observedAt": 1792332281,
+          "complete": true,
+          "eventCount": 3,
+          "groups": [
+            {
+              "binding": {
+                "stripeCustomerId": "cus_VSq2T3qaZB2Uxh",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "eventName": "bs_m97fgra5bdg7x3bg672vktv0k58ghc2f_api_calls_v1",
+                "apiVersion": "2026-09-30.endive",
+                "plan": {
+                  "key": "demo_m97fgra5bdg7x3bg672vktv0k58ghc2f_api-calls",
+                  "version": "v1",
+                  "unit": {
+                    "name": "call",
+                    "precision": 0
+                  },
+                  "rate": {
+                    "currency": "usd",
+                    "unitAmountDecimal": "100"
+                  },
+                  "model": "prepaid",
+                  "insufficientBalance": "reject"
+                }
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMQ6JR7kThJogegvCKlzX",
+                "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "acceptedScaledQuantity": "15",
+              "providerAcceptedScaledQuantity": "10",
+              "acceptedQuantity": "15",
+              "canceledQuantity": "5",
+              "effectiveQuantity": "10",
+              "effectiveScaledQuantity": "10",
+              "providerAcceptedQuantity": "10",
+              "eventCount": 3,
+              "validationErrorEventCount": 0,
+              "deliveryQuantities": {
+                "canceled": "5",
+                "queued": "0",
+                "sending": "0",
+                "provider_accepted": "10",
+                "rejected": "0",
+                "unknown": "0",
+                "held": "0"
+              },
+              "included": {
+                "status": "unavailable",
+                "reason": "not_included_model",
+                "retryable": false
+              },
+              "estimate": {
+                "status": "unavailable",
+                "reason": "credit_balance_requires_scoped_reader",
+                "retryable": false
+              },
+              "credits": {
+                "status": "unavailable",
+                "reason": "credit_balance_requires_scoped_reader",
+                "retryable": false
+              }
+            }
+          ]
+        }
+      },
+      "cleanup": {
+        "status": "archived",
+        "retained": "Native payer, clock, paid evidence and all component history",
+        "newRunAllowed": true
+      }
+    }
+  },
+  "sellerModels": {
+    "pay_as_you_go": {
+      "status": "paid",
+      "invoiceId": "in_1URuiT6JR7kThJog9fHscV03",
+      "currency": "usd",
+      "amountDue": 1500,
+      "amountPaid": 1500,
+      "invoice": [
+        {
+          "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+          "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+          "observation": {
+            "status": "available",
+            "observedAt": 1792332522,
+            "value": {
+              "kind": "invoice",
+              "invoiceId": "in_1URuiT6JR7kThJog9fHscV03",
+              "status": "paid",
+              "finalized": true,
+              "amountDue": "1500",
+              "amountPaid": "1500",
+              "total": "1500",
+              "currency": "usd",
+              "linesComplete": true,
+              "paymentEvidence": "not_resolved",
+              "meterAmount": {
+                "status": "available",
+                "observedAt": 1792332522,
+                "value": {
+                  "amount": "1500",
+                  "currency": "usd"
+                }
+              },
+              "lines": [
+                {
+                  "lineId": "il_1Ud9P26JR7kThJogf6h0bqjm",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+                  "amount": "1500",
+                  "currency": "usd",
+                  "quantity": "15",
+                  "providerQuantityDecimal": "15",
+                  "unitAmountDecimal": "100",
+                  "creditAppliedAmount": "0",
+                  "nativePeriod": {
+                    "start": 1792332000,
+                    "end": 1795010400
+                  },
+                  "proration": false
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "revenue": [
+        {
+          "cash": {
+            "status": "ready",
+            "value": {
+              "paymentIntentId": "pi_3URuia6JR7kThJog1psLSiUI",
+              "chargeId": "ch_3URuia6JR7kThJog11dviXk4",
+              "invoiceId": "in_1URuiT6JR7kThJog9fHscV03",
+              "invoicePaymentId": "inpay_1URuib6JR7kThJogbtZbNi7f",
+              "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+              "customerAccountId": "acct_1URuep81DawKgj1f",
+              "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+              "stripeProductId": "prod_VSqLWzwBLVuVp9",
+              "gross": 1500,
+              "processingFee": 74,
+              "currency": "usd",
+              "livemode": false,
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+              "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+              "period": {
+                "start": 1792332000,
+                "end": 1795010400
+              },
+              "model": "pay_as_you_go"
+            }
+          },
+          "settlement": {
+            "sourceChargeId": "ch_3URuia6JR7kThJog11dviXk4",
+            "paymentIntentId": "pi_3URuia6JR7kThJog1psLSiUI",
+            "sourceInvoiceId": "in_1URuiT6JR7kThJog9fHscV03",
+            "usageSource": {
+              "customerAccount": "acct_1URuep81DawKgj1f",
+              "invoicePaymentId": "inpay_1URuib6JR7kThJogbtZbNi7f",
+              "livemode": false,
+              "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+              "model": "pay_as_you_go",
+              "period": {
+                "end": 1795010400,
+                "start": 1792332000
+              },
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+              "stripeProductId": "prod_VSqLWzwBLVuVp9",
+              "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+              "subscriptionItemId": "si_VSqLpEvO1WQD9V"
+            },
+            "gross": 1500,
+            "currency": "usd",
+            "processingFee": 74,
+            "platformNet": 76,
+            "transfers": [
+              {
+                "amount": 1080,
+                "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+                "role": "store"
+              },
+              {
+                "amount": 270,
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate"
+              }
+            ],
+            "status": "settled",
+            "executedTransfers": [
+              {
+                "stripeTransferId": "tr_3URuia6JR7kThJog1tgQmrDg",
+                "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+                "role": "store",
+                "amount": 1080
+              },
+              {
+                "stripeTransferId": "tr_3URuia6JR7kThJog1XxRu2JX",
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate",
+                "amount": 270
+              }
+            ]
+          },
+          "routing": "seller"
+        }
+      ],
+      "renewal": {
+        "period": {
+          "start": 1795010400,
+          "end": 1797602400
+        },
+        "allowance": null,
+        "allowanceStatus": "not_active_yet"
+      },
+      "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+    },
+    "included_overage": {
+      "status": "paid",
+      "invoiceId": "in_1URuhc6JR7kThJogsf3Q3wpf",
+      "currency": "usd",
+      "amountDue": 500,
+      "amountPaid": 500,
+      "invoice": [
+        {
+          "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+          "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+          "observation": {
+            "status": "available",
+            "observedAt": 1792332530,
+            "value": {
+              "kind": "invoice",
+              "invoiceId": "in_1URuhc6JR7kThJogsf3Q3wpf",
+              "status": "paid",
+              "finalized": true,
+              "amountDue": "500",
+              "amountPaid": "500",
+              "total": "500",
+              "currency": "usd",
+              "linesComplete": true,
+              "paymentEvidence": "not_resolved",
+              "meterAmount": {
+                "status": "available",
+                "observedAt": 1792332530,
+                "value": {
+                  "amount": "500",
+                  "currency": "usd"
+                }
+              },
+              "lines": [
+                {
+                  "lineId": "il_1Ud9P26JR7kThJogqKxlsCij",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                  "amount": "0",
+                  "currency": "usd",
+                  "quantity": "10",
+                  "providerQuantityDecimal": "10",
+                  "unitAmountDecimal": "0",
+                  "creditAppliedAmount": "0",
+                  "nativePeriod": {
+                    "start": 1792332000,
+                    "end": 1795010400
+                  },
+                  "proration": false
+                },
+                {
+                  "lineId": "il_1Ud9P36JR7kThJogzdvynb3W",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                  "amount": "500",
+                  "currency": "usd",
+                  "quantity": "5",
+                  "providerQuantityDecimal": "5",
+                  "unitAmountDecimal": "100",
+                  "creditAppliedAmount": "0",
+                  "nativePeriod": {
+                    "start": 1792332000,
+                    "end": 1795010400
+                  },
+                  "proration": false
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "revenue": [
+        {
+          "cash": {
+            "status": "ready",
+            "value": {
+              "paymentIntentId": "pi_3URuhj6JR7kThJog0XIGs5V3",
+              "chargeId": "ch_3URuhj6JR7kThJog03BgXP58",
+              "invoiceId": "in_1URuhc6JR7kThJogsf3Q3wpf",
+              "invoicePaymentId": "inpay_1URuhk6JR7kThJogcUj4vVVe",
+              "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+              "customerAccountId": "acct_1URuew9CbtC6hrqS",
+              "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+              "stripeProductId": "prod_VSqL7k0f4Vlq8i",
+              "gross": 500,
+              "processingFee": 45,
+              "currency": "usd",
+              "livemode": false,
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+              "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+              "period": {
+                "start": 1792332000,
+                "end": 1795010400
+              },
+              "model": "included_overage"
+            }
+          },
+          "settlement": {
+            "sourceChargeId": "ch_3URuhj6JR7kThJog03BgXP58",
+            "paymentIntentId": "pi_3URuhj6JR7kThJog0XIGs5V3",
+            "sourceInvoiceId": "in_1URuhc6JR7kThJogsf3Q3wpf",
+            "usageSource": {
+              "customerAccount": "acct_1URuew9CbtC6hrqS",
+              "invoicePaymentId": "inpay_1URuhk6JR7kThJogcUj4vVVe",
+              "livemode": false,
+              "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+              "model": "included_overage",
+              "period": {
+                "end": 1795010400,
+                "start": 1792332000
+              },
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+              "stripeProductId": "prod_VSqL7k0f4Vlq8i",
+              "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+              "subscriptionItemId": "si_VSqLuAJ8QqXKY3"
+            },
+            "gross": 500,
+            "currency": "usd",
+            "processingFee": 45,
+            "platformNet": 5,
+            "transfers": [
+              {
+                "amount": 360,
+                "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+                "role": "store"
+              },
+              {
+                "amount": 90,
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate"
+              }
+            ],
+            "status": "settled",
+            "executedTransfers": [
+              {
+                "stripeTransferId": "tr_3URuhj6JR7kThJog0bSYGyla",
+                "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+                "role": "store",
+                "amount": 360
+              },
+              {
+                "stripeTransferId": "tr_3URuhj6JR7kThJog0KouQ4Xw",
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate",
+                "amount": 90
+              }
+            ]
+          },
+          "routing": "seller"
+        }
+      ],
+      "renewal": {
+        "period": {
+          "start": 1795010400,
+          "end": 1797602400
+        },
+        "allowance": null,
+        "allowanceStatus": "not_active_yet"
+      },
+      "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+    },
+    "prepaid": {
+      "status": "paid",
+      "invoiceId": "in_1URull6JR7kThJogGksOtSAC",
+      "currency": "usd",
+      "amountDue": 0,
+      "amountPaid": 0,
+      "invoice": [
+        {
+          "meterId": "mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk",
+          "subscriptionItemId": "si_VSqLmh8NvfrqpP",
+          "observation": {
+            "status": "available",
+            "observedAt": 1792332723,
+            "value": {
+              "kind": "invoice",
+              "invoiceId": "in_1URull6JR7kThJogGksOtSAC",
+              "status": "paid",
+              "finalized": true,
+              "amountDue": "0",
+              "amountPaid": "0",
+              "total": "0",
+              "currency": "usd",
+              "linesComplete": true,
+              "paymentEvidence": "not_resolved",
+              "meterAmount": {
+                "status": "available",
+                "observedAt": 1792332723,
+                "value": {
+                  "amount": "1000",
+                  "currency": "usd"
+                }
+              },
+              "lines": [
+                {
+                  "lineId": "il_1Ud9Q06JR7kThJog9pG47wuQ",
+                  "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                  "subscriptionItemId": "si_VSqLmh8NvfrqpP",
+                  "amount": "1000",
+                  "currency": "usd",
+                  "quantity": "10",
+                  "providerQuantityDecimal": "10",
+                  "unitAmountDecimal": "100",
+                  "creditAppliedAmount": "1000",
+                  "nativePeriod": {
+                    "start": 1792332060,
+                    "end": 1795010460
+                  },
+                  "proration": false
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "revenue": [
+        {
+          "purchaseId": "md75s4bv4cmt9q4sebk16cvh5d8ggmcf",
+          "cash": {
+            "status": "ready",
+            "value": {
+              "purchaseId": "md75s4bv4cmt9q4sebk16cvh5d8ggmcf",
+              "paymentIntentId": "pi_3URujk6JR7kThJog0dvsz45b",
+              "chargeId": "ch_3URujk6JR7kThJog0FvLBUqS",
+              "creditGrantId": "credgr_test_61VbIhBuRjpJBwC91416JR7kThJogRcW",
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "customerAccount": "acct_1URuf38h03moxOjq",
+              "livemode": false,
+              "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+              "stripeProductId": "prod_VSqLZ1kT5sf839",
+              "gross": 1000,
+              "processingFee": 59,
+              "currency": "usd",
+              "ownership": "issuer"
+            }
+          },
+          "settlement": {
+            "sourceChargeId": "ch_3URujk6JR7kThJog0FvLBUqS",
+            "paymentIntentId": "pi_3URujk6JR7kThJog0dvsz45b",
+            "creditSource": {
+              "creditGrantId": "credgr_test_61VbIhBuRjpJBwC91416JR7kThJogRcW",
+              "customerAccount": "acct_1URuf38h03moxOjq",
+              "livemode": false,
+              "purchaseId": "md75s4bv4cmt9q4sebk16cvh5d8ggmcf",
+              "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+              "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+              "stripeProductId": "prod_VSqLZ1kT5sf839"
+            },
+            "gross": 1000,
+            "currency": "usd",
+            "processingFee": 59,
+            "platformNet": 761,
+            "transfers": [
+              {
+                "amount": 180,
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate"
+              }
+            ],
+            "status": "settled",
+            "executedTransfers": [
+              {
+                "stripeTransferId": "tr_3URujk6JR7kThJog0DfTHvYt",
+                "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+                "role": "affiliate",
+                "amount": 180
+              }
+            ]
+          }
+        }
+      ],
+      "renewal": {
+        "period": {
+          "start": 1795010460,
+          "end": 1797602460
+        },
+        "allowance": null,
+        "allowanceStatus": "not_active_yet"
+      },
+      "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+    }
+  },
+  "retainedFailures": {
+    "delivery": {
+      "outcome": "unknown",
+      "cause": "Historical native meter event timestamp exceeded frozen test clock by over five minutes",
+      "nativeStatus": 400,
+      "nativeType": "invalid_request_error",
+      "nativeCode": null,
+      "submittedTimestamp": 1792328785,
+      "nativeMaximumTimestamp": 1792328640,
+      "cleanup": "held before native clock advancement; original work and financial history retained"
+    },
+    "sellerSettlement": {
+      "pay_as_you_go": {
+        "status": "paid",
+        "invoiceId": "in_1URubq6JR7kThJogkdW091fH",
+        "currency": "usd",
+        "amountDue": 1500,
+        "amountPaid": 1500,
+        "invoice": [
+          {
+            "meterId": "mtr_test_61VbIVOAVAxVhzUwQ416JR7kThJog4GO",
+            "subscriptionItemId": "si_VSqEoJ2aySukXw",
+            "observation": {
+              "status": "available",
+              "observedAt": 1792332202,
+              "value": {
+                "kind": "invoice",
+                "invoiceId": "in_1URubq6JR7kThJogkdW091fH",
+                "status": "paid",
+                "finalized": true,
+                "amountDue": "1500",
+                "amountPaid": "1500",
+                "total": "1500",
+                "currency": "usd",
+                "linesComplete": true,
+                "paymentEvidence": "not_resolved",
+                "meterAmount": {
+                  "status": "available",
+                  "observedAt": 1792332202,
+                  "value": {
+                    "amount": "1500",
+                    "currency": "usd"
+                  }
+                },
+                "lines": [
+                  {
+                    "lineId": "il_1Ud9IG6JR7kThJogUiCEfoG9",
+                    "stripePriceId": "price_1URuY26JR7kThJogYIjRmiry",
+                    "subscriptionItemId": "si_VSqEoJ2aySukXw",
+                    "amount": "1500",
+                    "currency": "usd",
+                    "quantity": "15",
+                    "providerQuantityDecimal": "15",
+                    "unitAmountDecimal": "100",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792331580,
+                      "end": 1795009980
+                    },
+                    "proration": false
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "revenue": [
+          {
+            "cash": {
+              "status": "ready",
+              "value": {
+                "paymentIntentId": "pi_3URubz6JR7kThJog1ERc0JhU",
+                "chargeId": "ch_3URubz6JR7kThJog1olPlfjE",
+                "invoiceId": "in_1URubq6JR7kThJogkdW091fH",
+                "invoicePaymentId": "inpay_1URuc06JR7kThJogqscMDhSp",
+                "subscriptionId": "sub_1URuY36JR7kThJogXPREFxt8",
+                "customerAccountId": "acct_1URuY04QgfUrEHfE",
+                "stripePriceId": "price_1URuY26JR7kThJogYIjRmiry",
+                "stripeProductId": "prod_VSqECgMVm6JWFw",
+                "gross": 1500,
+                "processingFee": 74,
+                "currency": "usd",
+                "livemode": false,
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "meterId": "mtr_test_61VbIVOAVAxVhzUwQ416JR7kThJog4GO",
+                "subscriptionItemId": "si_VSqEoJ2aySukXw",
+                "period": {
+                  "start": 1792331580,
+                  "end": 1795009980
+                },
+                "model": "pay_as_you_go"
+              }
+            },
+            "settlement": {
+              "status": "unknown",
+              "reason": "provider_outcome_unknown",
+              "retryable": false
+            },
+            "routing": "seller"
+          }
+        ],
+        "renewal": {
+          "period": {
+            "start": 1795009980,
+            "end": 1797601980
+          },
+          "allowance": null,
+          "allowanceStatus": "not_active_yet"
+        },
+        "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+      },
+      "included_overage": {
+        "status": "paid",
+        "invoiceId": "in_1URubt6JR7kThJog7vXIeC9f",
+        "currency": "usd",
+        "amountDue": 500,
+        "amountPaid": 500,
+        "invoice": [
+          {
+            "meterId": "mtr_test_61VbIVUAUI8Rd3zXq416JR7kThJogUTA",
+            "subscriptionItemId": "si_VSqEckibPDTVtZ",
+            "observation": {
+              "status": "available",
+              "observedAt": 1792332211,
+              "value": {
+                "kind": "invoice",
+                "invoiceId": "in_1URubt6JR7kThJog7vXIeC9f",
+                "status": "paid",
+                "finalized": true,
+                "amountDue": "500",
+                "amountPaid": "500",
+                "total": "500",
+                "currency": "usd",
+                "linesComplete": true,
+                "paymentEvidence": "not_resolved",
+                "meterAmount": {
+                  "status": "available",
+                  "observedAt": 1792332211,
+                  "value": {
+                    "amount": "500",
+                    "currency": "usd"
+                  }
+                },
+                "lines": [
+                  {
+                    "lineId": "il_1Ud9IG6JR7kThJoggJ6PtQYG",
+                    "stripePriceId": "price_1URuY96JR7kThJogChyTErQL",
+                    "subscriptionItemId": "si_VSqEckibPDTVtZ",
+                    "amount": "0",
+                    "currency": "usd",
+                    "quantity": "10",
+                    "providerQuantityDecimal": "10",
+                    "unitAmountDecimal": "0",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792331580,
+                      "end": 1795009980
+                    },
+                    "proration": false
+                  },
+                  {
+                    "lineId": "il_1Ud9IH6JR7kThJog4QaKGmfK",
+                    "stripePriceId": "price_1URuY96JR7kThJogChyTErQL",
+                    "subscriptionItemId": "si_VSqEckibPDTVtZ",
+                    "amount": "500",
+                    "currency": "usd",
+                    "quantity": "5",
+                    "providerQuantityDecimal": "5",
+                    "unitAmountDecimal": "100",
+                    "creditAppliedAmount": "0",
+                    "nativePeriod": {
+                      "start": 1792331580,
+                      "end": 1795009980
+                    },
+                    "proration": false
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "revenue": [
+          {
+            "cash": {
+              "status": "ready",
+              "value": {
+                "paymentIntentId": "pi_3URuc26JR7kThJog1otUndNW",
+                "chargeId": "ch_3URuc26JR7kThJog1Xx2Soir",
+                "invoiceId": "in_1URubt6JR7kThJog7vXIeC9f",
+                "invoicePaymentId": "inpay_1URuc36JR7kThJogpa7T8dhN",
+                "subscriptionId": "sub_1URuYA6JR7kThJoghEeFPxYQ",
+                "customerAccountId": "acct_1URuY78nfahmYSX9",
+                "stripePriceId": "price_1URuY96JR7kThJogChyTErQL",
+                "stripeProductId": "prod_VSqEP89d2CAhaB",
+                "gross": 500,
+                "processingFee": 45,
+                "currency": "usd",
+                "livemode": false,
+                "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                "meterId": "mtr_test_61VbIVUAUI8Rd3zXq416JR7kThJogUTA",
+                "subscriptionItemId": "si_VSqEckibPDTVtZ",
+                "period": {
+                  "start": 1792331580,
+                  "end": 1795009980
+                },
+                "model": "included_overage"
+              }
+            },
+            "settlement": {
+              "status": "unknown",
+              "reason": "provider_outcome_unknown",
+              "retryable": false
+            },
+            "routing": "seller"
+          }
+        ],
+        "renewal": {
+          "period": {
+            "start": 1795009980,
+            "end": 1797601980
+          },
+          "allowance": null,
+          "allowanceStatus": "not_active_yet"
+        },
+        "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+      }
+    }
+  },
+  "unonboardedSellerPrepaid": {
+    "status": "paid",
+    "invoiceId": "in_1URupH6JR7kThJogsKWzCtSp",
+    "currency": "usd",
+    "amountDue": 0,
+    "amountPaid": 0,
+    "invoice": [
+      {
+        "meterId": "mtr_test_61VbIVb1Ob1l5gLdA416JR7kThJogAbY",
+        "subscriptionItemId": "si_VSqEI6FZcckSHt",
+        "observation": {
+          "status": "available",
+          "observedAt": 1792332919,
+          "value": {
+            "kind": "invoice",
+            "invoiceId": "in_1URupH6JR7kThJogsKWzCtSp",
+            "status": "paid",
+            "finalized": true,
+            "amountDue": "0",
+            "amountPaid": "0",
+            "total": "0",
+            "currency": "usd",
+            "linesComplete": true,
+            "paymentEvidence": "not_resolved",
+            "meterAmount": {
+              "status": "available",
+              "observedAt": 1792332919,
+              "value": {
+                "amount": "1000",
+                "currency": "usd"
+              }
+            },
+            "lines": [
+              {
+                "lineId": "il_1Ud9JE6JR7kThJogO4DoVj0u",
+                "stripePriceId": "price_1URuYG6JR7kThJogYsnGzJqr",
+                "subscriptionItemId": "si_VSqEI6FZcckSHt",
+                "amount": "1000",
+                "currency": "usd",
+                "quantity": "10",
+                "providerQuantityDecimal": "10",
+                "unitAmountDecimal": "100",
+                "creditAppliedAmount": "1000",
+                "nativePeriod": {
+                  "start": 1792331640,
+                  "end": 1795010040
+                },
+                "proration": false
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "revenue": [
+      {
+        "purchaseId": "md7bayx1rxnq76kbv5wbz66cxn8gg9qh",
+        "cash": {
+          "status": "ready",
+          "value": {
+            "purchaseId": "md7bayx1rxnq76kbv5wbz66cxn8gg9qh",
+            "paymentIntentId": "pi_3URugz6JR7kThJog1FBW2ddn",
+            "chargeId": "ch_3URugz6JR7kThJog1NFV3TYn",
+            "creditGrantId": "credgr_test_61VbIfG16WzEDXlTn416JR7kThJogEme",
+            "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+            "customerAccount": "acct_1URuYD5FGDEP3wXR",
+            "livemode": false,
+            "stripePriceId": "price_1URuYG6JR7kThJogYsnGzJqr",
+            "stripeProductId": "prod_VSqEW6ZzAjWSLO",
+            "gross": 1000,
+            "processingFee": 59,
+            "currency": "usd",
+            "ownership": "issuer"
+          }
+        },
+        "settlement": {
+          "sourceChargeId": "ch_3URugz6JR7kThJog1NFV3TYn",
+          "paymentIntentId": "pi_3URugz6JR7kThJog1FBW2ddn",
+          "creditSource": {
+            "creditGrantId": "credgr_test_61VbIfG16WzEDXlTn416JR7kThJogEme",
+            "customerAccount": "acct_1URuYD5FGDEP3wXR",
+            "livemode": false,
+            "purchaseId": "md7bayx1rxnq76kbv5wbz66cxn8gg9qh",
+            "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+            "stripePriceId": "price_1URuYG6JR7kThJogYsnGzJqr",
+            "stripeProductId": "prod_VSqEW6ZzAjWSLO"
+          },
+          "gross": 1000,
+          "currency": "usd",
+          "processingFee": 59,
+          "platformNet": 761,
+          "transfers": [
+            {
+              "amount": 180,
+              "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+              "role": "affiliate"
+            }
+          ],
+          "status": "settled",
+          "executedTransfers": [
+            {
+              "stripeTransferId": "tr_3URugz6JR7kThJog1V16IsHC",
+              "destinationAccountId": "acct_1UQ7968nH9jL5c4a",
+              "role": "affiliate",
+              "amount": 180
+            }
+          ]
+        }
+      }
+    ],
+    "renewal": {
+      "period": {
+        "start": 1795010040,
+        "end": 1797602040
+      },
+      "allowance": null,
+      "allowanceStatus": "not_active_yet"
+    },
+    "testClock": "Renewal is read-only until its event times enter the real provider acceptance window."
+  },
+  "sellerCleanup": {
+    "pay_as_you_go": {
+      "status": "archived",
+      "retained": "Native payer, clock, paid evidence and all component history",
+      "newRunAllowed": true
+    },
+    "included_overage": {
+      "status": "archived",
+      "retained": "Native payer, clock, paid evidence and all component history",
+      "newRunAllowed": true
+    },
+    "prepaid": {
+      "status": "archived",
+      "retained": "Native payer, clock, paid evidence and all component history",
+      "newRunAllowed": true
+    }
+  },
+  "unonboardedSellerPrepaidCleanup": {
+    "status": "archived",
+    "retained": "Native payer, clock, paid evidence and all component history",
+    "newRunAllowed": true
+  }
+}

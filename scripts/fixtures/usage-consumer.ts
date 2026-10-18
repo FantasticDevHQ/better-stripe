@@ -1,0 +1,355 @@
+import {
+  authorizeUsageRecord,
+  defineUsagePlan,
+  validateUsagePageRequest,
+  type UsageAuthorization,
+  type UsageContractPort,
+  type UsageScope,
+} from "@fantastic.dev/better-stripe/usage";
+
+type HostContext = {
+  userId: string;
+  customerAccount: string;
+  activityId: string;
+  occurredAt: number;
+};
+
+// These values must come from the authenticated actor and persisted activity.
+const policy: UsageAuthorization<HostContext> = {
+  async authorize(ctx, { scope }) {
+    if (!ctx.userId || scope.customerAccount !== ctx.customerAccount)
+      throw new Error("Unauthorized usage scope");
+  },
+  async authorizeActivity(ctx, record) {
+    if (record.sourceEventId !== ctx.activityId || record.quantity !== "1")
+      throw new Error("Activity is not billable under these terms");
+  },
+};
+
+/** Compile this against the packed package, not a source alias. */
+export async function integrateEachModel(
+  ctx: HostContext,
+  port: UsageContractPort,
+  scope: UsageScope,
+  binding: {
+    stripeCustomerId: string;
+    stripePriceId: string;
+    eventName: string;
+  },
+) {
+  const common = {
+    key: "requests",
+    version: "v1",
+    unit: { name: "request", precision: 0 },
+    rate: { currency: "usd", unitAmountDecimal: "2" },
+  };
+  // Real integrations select one immutable binding for an activity. These
+  // alternatives show the same host contract for each supported model.
+  const plans = [
+    { ...common, model: "pay_as_you_go" },
+    {
+      ...common,
+      model: "included_overage",
+      includedQuantity: "100",
+      reset: "billing_period",
+    },
+    { ...common, model: "prepaid", insufficientBalance: "reject" },
+  ].map(defineUsagePlan);
+  const recordWith = (plan: (typeof plans)[number]) =>
+    authorizeUsageRecord(
+      ctx,
+      policy,
+      {
+        scope,
+        binding: { ...binding, plan },
+        sourceEventId: ctx.activityId,
+        quantity: "1",
+        occurredAt: ctx.occurredAt,
+      },
+      (record) => port.record(record),
+    );
+  const page = validateUsagePageRequest({
+    period: { start: ctx.occurredAt, end: ctx.occurredAt + 1 },
+    limit: 20,
+    cursor: null,
+  });
+  const read = async () => {
+    await policy.authorize(ctx, { scope, operation: "read" });
+    return port.read({ scope, page });
+  };
+  const reconcile = async () => {
+    await policy.authorize(ctx, { scope, operation: "reconcile" });
+    return port.reconcile({ scope, period: page.period });
+  };
+  // Return alternatives. Never submit the same activity to all models.
+  return {
+    payAsYouGo: () => recordWith(plans[0]),
+    included: () => recordWith(plans[1]),
+    prepaid: () => recordWith(plans[2]),
+    read,
+    reconcile,
+  };
+}
+
+import { BetterStripe } from "@fantastic.dev/better-stripe";
+import { internalActionGeneric } from "convex/server";
+import {
+  usageDeliveryArgs,
+  usageDeliveryResult,
+  type UsageDeliveryStartOptions,
+} from "@fantastic.dev/better-stripe/usage";
+
+export function registerInternalUsageProvider(
+  stripe: BetterStripe,
+  resolveSecret: () => string | undefined,
+) {
+  return internalActionGeneric({
+    args: usageDeliveryArgs,
+    returns: usageDeliveryResult,
+    handler: (ctx, request) =>
+      stripe.usage.deliver(ctx, request, { stripeSecretKey: resolveSecret() }),
+  });
+}
+export function startNativeUsageDelivery(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["startDelivery"]>[0],
+  options: UsageDeliveryStartOptions,
+) {
+  return stripe.usage.startDelivery(ctx, options);
+}
+
+/** The documented prepared callback must typecheck against the packed facade. */
+export function recordAuthorizedUsage(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["record"]>[0],
+  policy: UsageAuthorization<typeof ctx>,
+  input: unknown,
+  subscription: Parameters<BetterStripe["usage"]["record"]>[1]["subscription"],
+) {
+  return authorizeUsageRecord(ctx, policy, input, (event) =>
+    stripe.usage.record(ctx, { event, subscription }),
+  );
+}
+
+import type { UsageReconciliationOptions } from "@fantastic.dev/better-stripe/usage";
+export function readUsageStatus(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["getSummary"]>[0],
+  request: UsageReconciliationOptions,
+) {
+  return stripe.usage.getReconciliation(ctx, request);
+}
+export function readNativeInvoice(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["readInvoiceUsage"]>[0],
+  request: UsageReconciliationOptions & { invoiceId?: string },
+  resolveSecret: () => string | undefined,
+) {
+  return stripe.usage.readInvoiceUsage(ctx, request, {
+    stripeSecretKey: resolveSecret(),
+  });
+}
+
+import type {
+  UsageSubscriptionOptions,
+  UsageSubscriptionRef,
+} from "@fantastic.dev/better-stripe/usage";
+export async function managedUsageSubscription(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["ensureSubscription"]>[0],
+  request: UsageSubscriptionOptions,
+  ref: UsageSubscriptionRef,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const subscription = await stripe.usage.ensureSubscription(
+    ctx,
+    request,
+    provider,
+  );
+  const history = await stripe.usage.readSubscriptionHistory(ctx, {
+    ...ref,
+    kind: "subscription",
+    limit: 20,
+    cursor: null,
+  });
+  return { subscription, history };
+}
+
+import type {
+  UsageCreditPurchaseOptions,
+  UsageCreditBinding,
+} from "@fantastic.dev/better-stripe/usage";
+export async function prepaidUsage(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["purchaseCredits"]>[0],
+  purchase: UsageCreditPurchaseOptions,
+  original: UsageCreditBinding,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const payment = await stripe.usage.purchaseCredits(ctx, purchase, provider);
+  const balance = await stripe.usage.getCreditBalance(ctx, original);
+  const history = await stripe.usage.readCreditHistory(ctx, {
+    ...original,
+    limit: 10,
+    cursor: null,
+  });
+  return { payment, balance, history };
+}
+
+import type {
+  UsageAllowanceBinding,
+  UsageLimitPolicy,
+} from "@fantastic.dev/better-stripe/usage";
+export async function includedUsagePolicy(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["configureAllowance"]>[0],
+  original: UsageAllowanceBinding,
+  policy: UsageLimitPolicy,
+) {
+  const configuration = await stripe.usage.configureAllowance(ctx, {
+    ...original,
+    policy,
+    expectedRevision: 0,
+  });
+  const status = await stripe.usage.getAllowanceStatus(ctx, original);
+  const reconciliation = await stripe.usage.reconcileAllowance(ctx, original);
+  return { configuration, status, reconciliation };
+}
+
+import type {
+  UsageCorrectionOptions,
+  UsageInvoiceCorrectionOptions,
+} from "@fantastic.dev/better-stripe/usage";
+export async function correctOriginalUsage(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["requestCorrection"]>[0],
+  request: UsageCorrectionOptions,
+  adjustment: UsageInvoiceCorrectionOptions,
+  resolveSecret: () => string | undefined,
+) {
+  const options = { stripeSecretKey: resolveSecret() };
+  const correction = await stripe.usage.requestCorrection(
+    ctx,
+    request,
+    options,
+  );
+  const history = await stripe.usage.readCorrectionHistory(ctx, {
+    scope: request.scope,
+    eventId: request.eventId,
+    limit: 10,
+    cursor: null,
+  });
+  return {
+    correction,
+    history,
+    observeOperatorAdjustment: () =>
+      stripe.usage.observeInvoiceCorrection(ctx, adjustment, options),
+  };
+}
+
+import type {
+  UsageInvoiceSettlementOptions,
+  UsageCreditSettlementOptions,
+} from "@fantastic.dev/better-stripe/usage";
+import type {
+  VerifiedUsageInvoiceSale,
+  UsageCreditRevenue,
+} from "@fantastic.dev/better-stripe";
+export async function nativeUsageSettlement(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["settleInvoice"]>[0],
+  invoice: UsageInvoiceSettlementOptions,
+  credit: UsageCreditSettlementOptions,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const sale = await stripe.usage.getInvoiceSale(ctx, invoice, provider);
+  const original: VerifiedUsageInvoiceSale | null =
+    sale.status === "ready" ? sale.value : null;
+  const { policy: _policy, ...purchase } = credit;
+  const revenue = await stripe.usage.getCreditPurchaseRevenue(
+    ctx,
+    purchase,
+    provider,
+  );
+  const creditSource: UsageCreditRevenue | null =
+    revenue.status === "ready" ? revenue.value : null;
+  return {
+    original,
+    creditSource,
+    settleInvoice: () => stripe.usage.settleInvoice(ctx, invoice, provider),
+    settleOriginalCreditPurchase: () =>
+      stripe.usage.settleCreditPurchase(ctx, credit, provider),
+  };
+}
+
+import {
+  UsageBilling,
+  UsageSummary,
+  UsageAllowance,
+  UsageCredits,
+  UsageHistory,
+  useUsageBilling,
+  useUsageHistory,
+  formatUsageEstimate,
+  type UsageViewScope,
+  type UsageBillingSnapshot,
+  type UsageBillingProps,
+  type UsageHistoryProps,
+} from "@fantastic.dev/better-stripe/react";
+export function nativeUsageViews(
+  scope: UsageViewScope,
+  load: (scope: UsageViewScope) => Promise<UsageBillingSnapshot>,
+  history: UsageHistoryProps<{ id: string }>,
+) {
+  const props: UsageBillingProps = { scope, load };
+  return {
+    props,
+    history,
+    UsageBilling,
+    UsageSummary,
+    UsageAllowance,
+    UsageCredits,
+    UsageHistory,
+    useUsageBilling,
+    useUsageHistory,
+    formattedEstimate: formatUsageEstimate("0.125", "usd"),
+  };
+}
+
+import {
+  UsageConfiguration,
+  useUsageConfiguration,
+  UsagePriceRow,
+  type UsageConfigurationProps,
+  type UsageCatalogPrice,
+} from "@fantastic.dev/better-stripe/react";
+export function nativeUsageConfiguration(
+  props: UsageConfigurationProps,
+  value: UsageCatalogPrice,
+) {
+  return {
+    UsageConfiguration,
+    useUsageConfiguration,
+    UsagePriceRow,
+    props,
+    value,
+  };
+}
+
+import type { UsageConfigurationValue as ServerUsageConfigurationValue } from "@fantastic.dev/better-stripe/usage";
+export function serverUsageConfiguration(value: ServerUsageConfigurationValue) {
+  return value.plan;
+}
+import type {
+  UsageBillingSnapshot as ServerUsageBillingSnapshot,
+  UsageViewScope as ServerUsageViewScope,
+} from "@fantastic.dev/better-stripe/usage";
+export function serverUsageSnapshot(
+  scope: ServerUsageViewScope,
+  value: ServerUsageBillingSnapshot,
+) {
+  return { scope, value };
+}

@@ -9,6 +9,35 @@ import {
   resultsTable as payoutRevisionMigrationResultsTable,
 } from "./payoutRevisionMigration/schema.js";
 import { journalTable as payoutRevisionJournal } from "./payoutRevisionJournal/schema.js";
+import {
+  claimsTable as usageCorrectionClaims,
+  operationsTable as usageCorrections,
+  historyTable as usageCorrectionHistory,
+} from "./usageCorrections/schema.js";
+import {
+  policiesTable as usageAllowancePolicies,
+  historyTable as usageAllowanceHistory,
+} from "./usageAllowance/schema.js";
+import {
+  accountsTable as usageCreditAccounts,
+  purchasesTable as usageCreditPurchases,
+  grantsTable as usageCreditGrants,
+  historyTable as usageCreditHistory,
+} from "./usageCredits/schema.js";
+import {
+  controlsTable as usageSubscriptionControls,
+  intentsTable as usageSubscriptionIntents,
+  locksTable as usageSubscriptionLocks,
+  historyTable as usageSubscriptionHistory,
+} from "./usageSubscriptions/schema.js";
+import {
+  historyTable as usageDeliveryHistory,
+  observationsTable as usageProviderObservations,
+} from "./usageObservations/schema.js";
+import {
+  errorsTable as usageDeliveryErrors,
+  locksTable as usageDeliveryLocks,
+} from "./usageDelivery/fields.js";
 import { claimsTable as refundSyncClaimsTable } from "./refundSync/schema.js";
 import { operationsTable as processingCostReconciliationOperations } from "./processingCostReconciliation/schema.js";
 import {
@@ -79,7 +108,14 @@ import {
   commissionTermsTable,
   commissionDecisionsTable,
 } from "./settlement/schema";
+import { usageCatalogTable } from "./usageCatalog/schema.js";
 import { defineSchema } from "convex/server";
+import {
+  usageEventsTable,
+  usageOutboxTable,
+  usageScopeCountersTable,
+  usageReservationsTable,
+} from "./usage/schema.js";
 
 import {
   checkoutSessionsTable,
@@ -107,6 +143,28 @@ export default defineSchema({
   payoutRevisionJournal,
   payoutRevisionMigrations: payoutRevisionMigrationsTable,
   payoutRevisionMigrationResults: payoutRevisionMigrationResultsTable,
+  usageCorrectionClaims,
+  usageCorrections,
+  usageCorrectionHistory,
+  usageAllowancePolicies,
+  usageAllowanceHistory,
+  usageSubscriptionControls,
+  usageSubscriptionIntents,
+  usageSubscriptionLocks,
+  usageSubscriptionHistory,
+  usageProviderObservations,
+  usageDeliveryHistory,
+  usageDeliveryLocks,
+  usageDeliveryErrors,
+  usageCatalog: usageCatalogTable,
+  usageEvents: usageEventsTable,
+  usageOutbox: usageOutboxTable,
+  usageScopeCounters: usageScopeCountersTable,
+  usageReservations: usageReservationsTable,
+  usageCreditAccounts,
+  usageCreditPurchases,
+  usageCreditGrants,
+  usageCreditHistory,
   refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,

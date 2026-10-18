@@ -7837,6 +7837,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             accountId: string;
             allocation?: {
               adjustmentAmount?: number;
+              creditSource?: {
+                creditGrantId: string;
+                customerAccount: string;
+                livemode: boolean;
+                purchaseId: string;
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+              };
               currency: string;
               gross: number;
               paymentId?: string;
@@ -7850,6 +7859,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 destinationAccountId: string;
                 role: "store" | "affiliate" | "other";
               }>;
+              usageSource?: {
+                customerAccount: string;
+                invoicePaymentId: string;
+                livemode: boolean;
+                meterId: string;
+                model: "pay_as_you_go" | "included_overage";
+                period: { end: number; start: number };
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionId: string;
+                subscriptionItemId: string;
+              };
             };
             completion?: string;
             currency: string;
@@ -7942,6 +7964,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             activePhase?: "execute" | "reconcile";
             allocation?: {
               adjustmentAmount?: number;
+              creditSource?: {
+                creditGrantId: string;
+                customerAccount: string;
+                livemode: boolean;
+                purchaseId: string;
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+              };
               currency: string;
               gross: number;
               paymentId?: string;
@@ -7955,6 +7986,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 destinationAccountId: string;
                 role: "store" | "affiliate" | "other";
               }>;
+              usageSource?: {
+                customerAccount: string;
+                invoicePaymentId: string;
+                livemode: boolean;
+                meterId: string;
+                model: "pay_as_you_go" | "included_overage";
+                period: { end: number; start: number };
+                stripeAccountId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionId: string;
+                subscriptionItemId: string;
+              };
             };
             cancelRequested: boolean;
             completion?: string;
@@ -8555,6 +8599,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           {
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8568,11 +8621,33 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           },
           {
             _creationTime: number;
             _id: string;
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8586,6 +8661,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           },
           Name
         >;
@@ -8611,6 +8699,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             adjustmentAmount?: number;
+            creditSource?: {
+              creditGrantId: string;
+              customerAccount: string;
+              livemode: boolean;
+              purchaseId: string;
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+            };
             currency: string;
             gross: number;
             paymentId?: string;
@@ -8624,6 +8721,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               destinationAccountId: string;
               role: "store" | "affiliate" | "other";
             }>;
+            usageSource?: {
+              customerAccount: string;
+              invoicePaymentId: string;
+              livemode: boolean;
+              meterId: string;
+              model: "pay_as_you_go" | "included_overage";
+              period: { end: number; start: number };
+              stripeAccountId: string;
+              stripePriceId: string;
+              stripeProductId: string;
+              subscriptionId: string;
+              subscriptionItemId: string;
+            };
           } | null,
           Name
         >;
@@ -8689,6 +8799,1680 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
             splitCursor?: string | null;
           },
+          Name
+        >;
+      };
+    };
+    usage: {
+      mutations: {
+        record: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            dispatch?: string;
+            inputJson: string;
+            quota?: number;
+            reservationId?: string;
+            subscriptionJson: string;
+          },
+          {
+            acceptedAt: number;
+            delivery: "queued";
+            eventId: string;
+            identity: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            delivery:
+              | "queued"
+              | "canceled"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            event: {
+              _creationTime: number;
+              _id: string;
+              acceptedAt: number;
+              identity: string;
+              occurredAt: number;
+              recordJson: string;
+              reservationId?: string;
+              scopeKey: string;
+              subscriptionId?: string;
+              subscriptionJson: string;
+            };
+          } | null,
+          Name
+        >;
+        read: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              delivery:
+                | "queued"
+                | "canceled"
+                | "sending"
+                | "provider_accepted"
+                | "rejected"
+                | "unknown"
+                | "held";
+              event: {
+                _creationTime: number;
+                _id: string;
+                acceptedAt: number;
+                identity: string;
+                occurredAt: number;
+                recordJson: string;
+                reservationId?: string;
+                scopeKey: string;
+                subscriptionId?: string;
+                subscriptionJson: string;
+              };
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    usageAllowance: {
+      mutations: {
+        configure: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string; expectedRevision: number; policyJson: string },
+          { revision: number },
+          Name
+        >;
+        release: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            reason: "work_failed" | "abandoned_before_work";
+            reservationId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          null,
+          Name
+        >;
+        reserve: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string; subscriptionJson: string },
+          | {
+              reason: "not_entitled" | "hard_limit";
+              revision: number;
+              state: "denied";
+            }
+          | {
+              reservationId: string;
+              revision: number;
+              state: "reserved" | "committed" | "released";
+            },
+          Name
+        >;
+      };
+      queries: {
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              evidenceJson: string;
+              key: string;
+              kind:
+                "policy" | "reservation" | "commit" | "release" | "correction";
+            }>;
+          },
+          Name
+        >;
+        reconciliation: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            acceptedScaledQuantity: string;
+            consumedScaledQuantity: string;
+            reason: string;
+            repaired: false;
+            reservedScaledQuantity: string;
+            status: "matched" | "held";
+          },
+          Name
+        >;
+        status: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          string | null,
+          Name
+        >;
+      };
+    };
+    usageCatalog: {
+      mutations: {
+        complete: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            kind: "meter" | "price";
+            observationJson: string;
+            providerId: string;
+            scopeKey: string;
+          },
+          null,
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            kind: "meter" | "price";
+            scopeKey: string;
+            termsJson: string;
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          { key: string; kind: "meter" | "price"; scopeKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        getByProvider: FunctionReference<
+          "query",
+          "internal",
+          { kind: "meter" | "price"; providerId: string; scopeKey: string },
+          {
+            _creationTime: number;
+            _id: string;
+            firstAttemptAt: number;
+            key: string;
+            kind: "meter" | "price";
+            observationJson?: string;
+            observedAt?: number;
+            providerId?: string;
+            scopeKey: string;
+            termsJson: string;
+          } | null,
+          Name
+        >;
+      };
+    };
+    usageCorrections: {
+      mutations: {
+        adopt: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+        claim: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          { attempt: number; kind: "ready" | "busy" | "done" },
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { attempt: number; key: string; outcomeJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            correctionId: string;
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          } | null,
+          Name
+        >;
+        periodHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            legacyHistoryMissing: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              eventId: string;
+              evidenceJson: string;
+              key: string;
+              occurredAt?: number;
+              reason: string;
+              recordJson: string;
+              scopeKey: string;
+              sequence: number;
+              state:
+                | "requested"
+                | "provider_accepted"
+                | "confirmed"
+                | "held"
+                | "unsupported"
+                | "invoice_adjustment_required";
+              subscriptionJson: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              eventId: string;
+              evidenceJson: string;
+              key: string;
+              occurredAt?: number;
+              reason: string;
+              recordJson: string;
+              scopeKey: string;
+              sequence: number;
+              state:
+                | "requested"
+                | "provider_accepted"
+                | "confirmed"
+                | "held"
+                | "unsupported"
+                | "invoice_adjustment_required";
+              subscriptionJson: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    usageCredits: {
+      mutations: {
+        beginObservation: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          number,
+          Name
+        >;
+        cancelPurchase: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; paymentIntentId: string },
+          null,
+          Name
+        >;
+        cancelUnstarted: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          null,
+          Name
+        >;
+        closeAccount: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string },
+          null,
+          Name
+        >;
+        freezePurchase: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            paymentIntentId: string;
+            reason:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
+            refundedAmount?: number;
+          },
+          null,
+          Name
+        >;
+        markPaymentAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          null,
+          Name
+        >;
+        pinGrant: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        pinPayment: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; paymentIntentId: string },
+          null,
+          Name
+        >;
+        preparePurchase: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            capacityReserved: boolean;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          },
+          Name
+        >;
+        prepareRefund: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          null,
+          Name
+        >;
+        release: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            reason: "work_failed" | "abandoned_before_work";
+            reservationId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          null,
+          Name
+        >;
+        reserve: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string; subscriptionJson: string },
+          {
+            reservationId: string;
+            state: "reserved" | "committed" | "released";
+          },
+          Name
+        >;
+        resumeAccount: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string },
+          null,
+          Name
+        >;
+        saveObservation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            inputJson: string;
+            proofJson: string;
+            proofStartedAt?: number;
+            startedAt: number;
+          },
+          string,
+          Name
+        >;
+        verifyPayment: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        balance: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            availableQuantity: string;
+            cashCollection: "none";
+            consumedQuantity: string;
+            currency: string;
+            expiredQuantity: string;
+            frozenQuantity: string;
+            precision: number;
+            reservedQuantity: string;
+            status: "available" | "held";
+            unit: string;
+          },
+          Name
+        >;
+        capacity: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          number,
+          Name
+        >;
+        context: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            observationStartedAt?: number;
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          },
+          Name
+        >;
+        deliveryBacking: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            grants: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              available: string;
+              chargeId: string;
+              consumed: string;
+              creditGrantId: string;
+              effectiveAt: number;
+              expiresAt: number | null;
+              frozen: boolean;
+              nativeCreated: number;
+              nativeCustomerKey: string;
+              nativeExpired?: boolean;
+              nativeObservationJson?: string;
+              nativeUnused: boolean;
+              observationConflictAt?: number;
+              observationStartedAt?: number;
+              observedAt?: number;
+              paymentIntentId: string;
+              proofJson: string;
+              proofStartedAt?: number;
+              purchaseKey: string;
+              reserved: string;
+            }>;
+            held: boolean;
+            purchases: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              capacityReserved: boolean;
+              creditGrantId?: string;
+              firstAttemptAt: number;
+              grantFirstAttemptAt?: number;
+              key: string;
+              nativeCustomerKey: string;
+              paymentAttemptedAt?: number;
+              paymentIntentId?: string;
+              paymentKey?: string;
+              paymentProofJson?: string;
+              recoveryReason?:
+                | "payment_refunded"
+                | "payment_disputed"
+                | "native_state_changed";
+              refundedAmount?: number;
+              state: "pending" | "ready" | "frozen" | "canceled";
+              termsJson: string;
+            }>;
+          },
+          Name
+        >;
+        getByKey: FunctionReference<
+          "query",
+          "internal",
+          { key: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            capacityReserved: boolean;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        getPurchase: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string; purchaseId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            capacityReserved: boolean;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            recoveryReason?:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        invoiceUsage: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            end: number;
+            start: number;
+            subscriptionId: string;
+            subscriptionItemId: string;
+          },
+          { complete: boolean; scaledQuantity: string; valid: boolean },
+          Name
+        >;
+        readGrants: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              available: string;
+              chargeId: string;
+              consumed: string;
+              creditGrantId: string;
+              effectiveAt: number;
+              expiresAt: number | null;
+              frozen: boolean;
+              nativeCreated: number;
+              nativeCustomerKey: string;
+              nativeExpired?: boolean;
+              nativeObservationJson?: string;
+              nativeUnused: boolean;
+              observationConflictAt?: number;
+              observationStartedAt?: number;
+              observedAt?: number;
+              paymentIntentId: string;
+              proofJson: string;
+              proofStartedAt?: number;
+              purchaseKey: string;
+              reserved: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              at: number;
+              evidenceJson: string;
+              fingerprint: string;
+              kind:
+                | "purchase"
+                | "payment"
+                | "grant"
+                | "reservation"
+                | "commit"
+                | "release"
+                | "observation"
+                | "recovery"
+                | "closure"
+                | "correction";
+              purchaseKey?: string;
+              sourceKey: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    usageDelivery: {
+      mutations: {
+        hold: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "usage_canceled"
+              | "billing_period_closed"
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "canceled"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        recordErrorReport: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            livemode: boolean;
+            meterId?: string;
+            providerEventId: string;
+            samples: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              identifier: string;
+            }>;
+            stripeAccountId: string;
+            truncated: boolean;
+          },
+          { matched: number; truncated: boolean; unattributed: number },
+          Name
+        >;
+        resume: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "usage_canceled"
+              | "billing_period_closed"
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "canceled"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        start: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            definitionVersion: 1;
+            eventId: string;
+            provider: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "usage_canceled"
+              | "billing_period_closed"
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "canceled"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            attempts: number;
+            eventId: string;
+            held: boolean;
+            providerIdentifier: string;
+            reason?:
+              | "usage_canceled"
+              | "billing_period_closed"
+              | "rate_limited"
+              | "provider_unavailable"
+              | "provider_outcome_unknown"
+              | "provider_rejected"
+              | "retry_exhausted"
+              | "delivery_window_expired"
+              | "scope_busy"
+              | "administrative_hold";
+            receipt?: { created: number; identifier: string };
+            state:
+              | "queued"
+              | "canceled"
+              | "sending"
+              | "provider_accepted"
+              | "rejected"
+              | "unknown"
+              | "held";
+            validationErrors: Array<{
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              observedAt: number;
+              providerEventId: string;
+            }>;
+            validationHistoryComplete: boolean;
+          },
+          Name
+        >;
+        snapshot: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            billingCutoff: number | null;
+            event: {
+              _creationTime: number;
+              _id: string;
+              acceptedAt: number;
+              identity: string;
+              occurredAt: number;
+              recordJson: string;
+              reservationId?: string;
+              scopeKey: string;
+              subscriptionId?: string;
+              subscriptionJson: string;
+            };
+            managedCollection: null | {
+              daysUntilDue: number | null;
+              defaultPaymentMethod: string | null;
+              method: "send_invoice" | "charge_automatically";
+            };
+            outbox: {
+              _creationTime: number;
+              _id: string;
+              attempts: number;
+              correctionKey?: string;
+              definitionVersion?: 1;
+              dispatch?: string;
+              eventId: string;
+              firstSendAt?: number;
+              held?: boolean;
+              historySequence?: number;
+              leaseUntil?: number;
+              nextAttemptAt: number;
+              provider?: string;
+              providerIdentifier: string;
+              reason?:
+                | "usage_canceled"
+                | "billing_period_closed"
+                | "rate_limited"
+                | "provider_unavailable"
+                | "provider_outcome_unknown"
+                | "provider_rejected"
+                | "retry_exhausted"
+                | "delivery_window_expired"
+                | "scope_busy"
+                | "administrative_hold";
+              receipt?: { created: number; identifier: string };
+              scopeKey: string;
+              state:
+                | "queued"
+                | "canceled"
+                | "sending"
+                | "provider_accepted"
+                | "rejected"
+                | "unknown"
+                | "held";
+              workflowId?: string;
+            };
+          },
+          Name
+        >;
+      };
+    };
+    usageObservations: {
+      mutations: {
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { observationJson: string; sourceJson: string; startedAt: number },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        cached: FunctionReference<
+          "query",
+          "internal",
+          { sourceJson: string },
+          string | null,
+          Name
+        >;
+        deliveryHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            legacyHistoryMissing: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              attempt: number;
+              created?: number;
+              eventId: string;
+              identity: string;
+              phase:
+                | "started"
+                | "accepted"
+                | "rate_limited"
+                | "unavailable"
+                | "unknown"
+                | "rejected"
+                | "held"
+                | "resumed"
+                | "window_expired"
+                | "retry_exhausted";
+              recordedAt: number;
+              scopeKey: string;
+              sequence: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        summary: FunctionReference<
+          "query",
+          "internal",
+          {
+            maxRecords: number;
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          string,
+          Name
+        >;
+        validationHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              dedupe: string;
+              eventId: string;
+              observedAt: number;
+              providerEventId: string;
+              scopeKey: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
+    usageSubscriptions: {
+      mutations: {
+        abandon: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        beginObservation: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          number,
+          Name
+        >;
+        completeCancellation: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; nativeJson: string; startedAt: number },
+          string,
+          Name
+        >;
+        linkCheckout: FunctionReference<
+          "mutation",
+          "internal",
+          { checkoutId: string; key: string },
+          null,
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          { method: "direct" | "checkout"; termsJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            observationStartedAt?: number;
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          },
+          Name
+        >;
+        prepareCancellation: FunctionReference<
+          "mutation",
+          "internal",
+          { cancelAtPeriodEnd: boolean; key: string; operationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            cancelAtPeriodEnd: boolean;
+            firstAttemptAt: number;
+            intentKey: string;
+            key: string;
+            operationId: string;
+            resultJson?: string;
+          },
+          Name
+        >;
+        retire: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; nativeJson: string; startedAt: number },
+          null,
+          Name
+        >;
+        saveInvoice: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            invoiceId: string;
+            key: string;
+            observationsJson: string;
+            startedAt: number;
+          },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            requestId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              stripeAccountId: string;
+            };
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            observationStartedAt?: number;
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          } | null,
+          Name
+        >;
+        history: FunctionReference<
+          "query",
+          "internal",
+          {
+            kind: "subscription" | "invoice" | "retirement";
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            requestId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              fingerprint: string;
+              intentKey: string;
+              kind: "subscription" | "invoice" | "retirement";
+              observationJson: string;
+              resourceId: string;
+              startedAt: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        lookup: FunctionReference<
+          "query",
+          "internal",
+          { key: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            observationStartedAt?: number;
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          } | null,
           Name
         >;
       };

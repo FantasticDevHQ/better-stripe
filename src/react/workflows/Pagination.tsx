@@ -11,6 +11,8 @@ export function useCursorPagination(scopeKey: string) {
     cursor: current.cursors[current.index],
     page: current.index + 1,
     canPrevious: current.index > 0,
+    hasCursor: (cursor: string) =>
+      current.cursors.slice(0, current.index + 1).includes(cursor),
     previous: () =>
       setState((previous) => ({
         ...previous,

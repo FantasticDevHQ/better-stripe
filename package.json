@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.50.2",
+  "version": "0.62.0",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",
@@ -46,6 +46,10 @@
     "./_generated/component.js": {
       "types": "./dist/component/_generated/component.d.ts",
       "default": "./dist/component/_generated/component.js"
+    },
+    "./usage": {
+      "types": "./dist/client/usage/index.d.ts",
+      "default": "./dist/client/usage/index.js"
     }
   },
   "main": "./dist/client/index.js",
@@ -86,6 +90,7 @@
     "docs/release-handoff.md",
     "docs/setup-intent-recovery.md",
     "docs/metered-usage.md",
+    "docs/metering-setup.md",
     "docs/README.md",
     "docs/overview.md",
     "docs/client-api.md",
@@ -96,6 +101,20 @@
     "docs/configuration.md",
     "docs/architecture.md",
     "docs/development.md",
+    "docs/usage-ledger.md",
+    "docs/usage-catalog.md",
+    "docs/usage-delivery.md",
+    "docs/usage-observations.md",
+    "docs/usage-subscriptions.md",
+    "docs/usage-credits.md",
+    "docs/usage-limits.md",
+    "docs/usage-corrections.md",
+    "docs/usage-settlement.md",
+    "docs/usage-security.md",
+    "docs/usage-react.md",
+    "docs/evidence/native-metering",
+    "docs/usage-configuration.md",
+    "docs/usage-example.md",
     "docs/payout-revision-migration.md"
   ],
   "scripts": {

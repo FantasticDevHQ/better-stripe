@@ -47,6 +47,8 @@ export interface SyncTriggers {
     onDelete?: (
       ctx: SyncTriggerCtx,
       doc: StripeComponentSubscription,
+      /** Exact pre-upsert identity; null means absent, undefined supports legacy callers. */
+      oldDoc?: StripeComponentSubscription | null,
     ) => Promise<void>;
   };
   checkoutSession?: {

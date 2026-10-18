@@ -5,7 +5,7 @@ billing, and Connect marketplaces. It provides checkout, subscriptions, webhook
 syncing, marketplace fees and splits, payouts, refunds, and disputes, with React
 hooks and headless UI components.
 
-**Version**: `0.50.2` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.62.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Connect platforms use the default GA API version. Non-Connect merchants using
 customer-only Accounts v2 need preview access and an explicit preview version.
@@ -127,3 +127,23 @@ for publishing. Run `pnpm run check:all` before submitting changes.
 ## License
 
 MIT
+
+## Metered usage
+
+Native Stripe integration supports shared configuration and exact quantity helpers at `@fantastic.dev/better-stripe/usage`. See the [setup guide for developers and AI agents](docs/metering-setup.md) and [contracts and sandbox evidence](docs/metered-usage.md).
+
+[Managed usage subscriptions](docs/usage-subscriptions.md) supports all three billing models, mixed fixed/metered items and Checkout, with retained renewal and invoice provenance.
+
+See [payment-backed prepaid usage](docs/usage-credits.md) for purchases, atomic reservations, credit history and recovery.
+
+See [included usage and optional limits](./docs/usage-limits.md) for atomic reservation accounting, monthly resets and overage policy.
+
+See [native usage settlement](./docs/usage-settlement.md) for original paid invoices, issuer-service purchases and affiliate policy.
+
+See [metered billing authorization](docs/usage-security.md) for host ownership checks, idempotent work, bounded native proofs and recovery.
+
+Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allowance, prepaid and paginated history views through authenticated host adapters.
+
+Run [all three models in the native sandbox example](docs/usage-example.md), including paid invoices, renewal, correction and scoped cleanup.
+
+Use the [native usage configuration UI](docs/usage-configuration.md) for all three billing models, immutable meters and exact rates.

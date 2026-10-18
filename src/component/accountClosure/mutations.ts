@@ -1,3 +1,4 @@
+import { unresolvedCorrectionStates } from "../usageCorrections/cancellation.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { closureByStripeId } from "./helpers.js";
@@ -7,6 +8,48 @@ export const prepare = mutation({
   args: { stripeAccountId: v.string() },
   returns: v.object({ closure: closureDoc, isRetry: v.boolean() }),
   handler: async (ctx, { stripeAccountId }) => {
+    for (const state of unresolvedCorrectionStates) {
+      const payerCorrection = await ctx.db
+        .query("usageCorrections")
+        .withIndex("by_payer_state", (q) =>
+          q.eq("customerAccount", stripeAccountId).eq("state", state),
+        )
+        .first();
+      const realmCorrection = await ctx.db
+        .query("usageCorrections")
+        .withIndex("by_realm_state", (q) =>
+          q.eq("stripeAccountId", stripeAccountId).eq("state", state),
+        )
+        .first();
+      if (payerCorrection || realmCorrection)
+        throw new Error("Resolve usage corrections before account closure");
+    }
+    const payerLock = await ctx.db
+      .query("usageSubscriptionLocks")
+      .withIndex("by_payer", (q) => q.eq("customerAccount", stripeAccountId))
+      .first();
+    const realmLock = await ctx.db
+      .query("usageSubscriptionLocks")
+      .withIndex("by_realm", (q) => q.eq("stripeAccountId", stripeAccountId))
+      .first();
+    const payerCredits = await ctx.db
+      .query("usageCreditAccounts")
+      .withIndex("by_payer_closed", (q) =>
+        q.eq("customerAccount", stripeAccountId).eq("closed", false),
+      )
+      .first();
+    const realmCredits = await ctx.db
+      .query("usageCreditAccounts")
+      .withIndex("by_realm_closed", (q) =>
+        q.eq("stripeAccountId", stripeAccountId).eq("closed", false),
+      )
+      .first();
+    if (payerCredits || realmCredits)
+      throw new Error("Close out prepaid credits before account closure");
+    if (payerLock || realmLock)
+      throw new Error(
+        "Close out managed usage enrollment before account closure",
+      );
     const existing = await closureByStripeId(ctx, stripeAccountId);
     if (existing) return { closure: existing, isRetry: true };
     const account = await ctx.db

@@ -144,7 +144,11 @@ interface SyncTriggers {
   subscription?: {
     onCreate?: (ctx, doc) => Promise<void>;
     onUpdate?: (ctx, newDoc, oldDoc) => Promise<void>;
-    onDelete?: (ctx, doc) => Promise<void>;
+    onDelete?: (
+      ctx,
+      doc,
+      oldDoc?: StripeComponentSubscription | null,
+    ) => Promise<void>;
   };
   checkoutSession?: {
     onCompleted?: (ctx, doc) => Promise<void>;
@@ -178,6 +182,16 @@ interface SyncTriggers {
   };
 }
 ```
+
+`subscription.onDelete` receives the resulting canceled mirror as argument two
+and its exact unique pre-upsert document as argument three, in the same
+transaction. Confirmed absence is `null`. The third argument is optional to
+preserve two-argument consumers and legacy callers; `undefined` does not certify
+absence. Duplicate cached identities reject before upsert, and a missing or
+ambiguous resulting row also rejects. Callback failures roll back both mirror
+and host writes. Metadata can locate host scopes to invalidate; it never proves
+original purchase provenance. With no delete callback, mirror-only behavior is
+unchanged.
 
 ### AsyncHooks
 

@@ -1,0 +1,70 @@
+name: Weekly coverage ratchet
+
+on:
+  schedule:
+    # Monday 09:17 Asia/Bangkok, away from the busiest top-of-hour period.
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-ratchet
+  cancel-in-progress: false
+
+jobs:
+  ratchet:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run every gate and propose earned floor increases
+        env:
+          COVERAGE_RATCHET_REPORT: ${{ runner.temp }}/coverage-ratchet.md
+        run: |
+          node scripts/check-coverage.mjs --ratchet
+          cat "$COVERAGE_RATCHET_REPORT" >> "$GITHUB_STEP_SUMMARY"
+      # Create a fresh token after the full run. App-authored PRs trigger CI
+      # normally and auto-merge must satisfy the same main branch protections.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Validate any existing managed PR before refreshing its branch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COVERAGE_RATCHET_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
+        run: node scripts/coverage-automerge.mjs --preflight
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        id: pr
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          base: main
+          branch: codex/coverage-ratchet
+          add-paths: gates/coverage-budgets.json
+          delete-branch: true
+          commit-message: "chore(coverage): ratchet earned coverage floors"
+          title: "chore(coverage): ratchet earned coverage floors"
+          body-path: ${{ runner.temp }}/coverage-ratchet.md
+      - name: Enable protected auto-merge at the measured PR head
+        if: steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COVERAGE_RATCHET_ACTOR: ${{ steps.app-token.outputs.app-slug }}[bot]
+          COVERAGE_RATCHET_PR: ${{ steps.pr.outputs.pull-request-number }}
+          COVERAGE_RATCHET_HEAD: ${{ steps.pr.outputs.pull-request-head-sha }}
+        run: node scripts/coverage-automerge.mjs

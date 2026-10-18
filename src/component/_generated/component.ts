@@ -8307,6 +8307,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             delivery:
               | "queued"
+              | "canceled"
               | "sending"
               | "provider_accepted"
               | "rejected"
@@ -8353,6 +8354,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             page: Array<{
               delivery:
                 | "queued"
+                | "canceled"
                 | "sending"
                 | "provider_accepted"
                 | "rejected"
@@ -8444,7 +8446,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               at: number;
               evidenceJson: string;
               key: string;
-              kind: "policy" | "reservation" | "commit" | "release";
+              kind:
+                "policy" | "reservation" | "commit" | "release" | "correction";
             }>;
           },
           Name
@@ -8546,6 +8549,321 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             scopeKey: string;
             termsJson: string;
           } | null,
+          Name
+        >;
+      };
+    };
+    usageCorrections: {
+      invoice: {
+        adopt: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+      };
+      mutations: {
+        claim: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          { attempt: number; kind: "ready" | "busy" | "done" },
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { attempt: number; key: string; outcomeJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          },
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            correctionId: string;
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            adjustmentJson?: string;
+            attempt: number;
+            attemptedAt?: number;
+            cashConsequence:
+              | "none"
+              | "operator_resolution_required"
+              | "verified_external_adjustment";
+            correctionId: string;
+            creditNoteId?: string;
+            customerAccount?: string;
+            eventId: string;
+            firstAttemptAt: number;
+            historyCount: number;
+            inputJson: string;
+            invoiceId?: string;
+            key: string;
+            leaseUntil?: number;
+            nativeAdjustmentId?: string;
+            nativeCreditNoteStatus?: "issued" | "void";
+            nativeStatus?: "pending" | "complete";
+            observedAt?: number;
+            quantity: string;
+            reason: string;
+            recordJson: string;
+            refundId?: string;
+            resolution?: "event_cancellation" | "invoice_credit";
+            restoredQuantity: string;
+            scaledQuantity: string;
+            scopeKey: string;
+            state:
+              | "requested"
+              | "provider_accepted"
+              | "confirmed"
+              | "held"
+              | "unsupported"
+              | "invoice_adjustment_required";
+            stripeAccountId?: string;
+            subscriptionJson: string;
+          } | null,
+          Name
+        >;
+        periodHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            legacyHistoryMissing: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              eventId: string;
+              evidenceJson: string;
+              key: string;
+              occurredAt?: number;
+              reason: string;
+              recordJson: string;
+              scopeKey: string;
+              sequence: number;
+              state:
+                | "requested"
+                | "provider_accepted"
+                | "confirmed"
+                | "held"
+                | "unsupported"
+                | "invoice_adjustment_required";
+              subscriptionJson: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              at: number;
+              eventId: string;
+              evidenceJson: string;
+              key: string;
+              occurredAt?: number;
+              reason: string;
+              recordJson: string;
+              scopeKey: string;
+              sequence: number;
+              state:
+                | "requested"
+                | "provider_accepted"
+                | "confirmed"
+                | "held"
+                | "unsupported"
+                | "invoice_adjustment_required";
+              subscriptionJson: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
           Name
         >;
       };
@@ -8931,7 +9249,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "release"
                 | "observation"
                 | "recovery"
-                | "closure";
+                | "closure"
+                | "correction";
               purchaseKey?: string;
               sourceKey: string;
             }>;
@@ -8962,6 +9281,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "usage_canceled"
               | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
@@ -8974,6 +9294,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             receipt?: { created: number; identifier: string };
             state:
               | "queued"
+              | "canceled"
               | "sending"
               | "provider_accepted"
               | "rejected"
@@ -9041,6 +9362,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "usage_canceled"
               | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
@@ -9053,6 +9375,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             receipt?: { created: number; identifier: string };
             state:
               | "queued"
+              | "canceled"
               | "sending"
               | "provider_accepted"
               | "rejected"
@@ -9096,6 +9419,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "usage_canceled"
               | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
@@ -9108,6 +9432,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             receipt?: { created: number; identifier: string };
             state:
               | "queued"
+              | "canceled"
               | "sending"
               | "provider_accepted"
               | "rejected"
@@ -9151,6 +9476,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "usage_canceled"
               | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
@@ -9163,6 +9489,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             receipt?: { created: number; identifier: string };
             state:
               | "queued"
+              | "canceled"
               | "sending"
               | "provider_accepted"
               | "rejected"
@@ -9221,6 +9548,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               _creationTime: number;
               _id: string;
               attempts: number;
+              correctionKey?: string;
               definitionVersion?: 1;
               dispatch?: string;
               eventId: string;
@@ -9232,6 +9560,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               provider?: string;
               providerIdentifier: string;
               reason?:
+                | "usage_canceled"
                 | "billing_period_closed"
                 | "rate_limited"
                 | "provider_unavailable"
@@ -9245,6 +9574,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               scopeKey: string;
               state:
                 | "queued"
+                | "canceled"
                 | "sending"
                 | "provider_accepted"
                 | "rejected"

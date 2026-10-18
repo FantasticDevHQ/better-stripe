@@ -63,9 +63,13 @@ export const start = mutation({
         definitionVersion: 1,
       });
     if (
-      !["provider_accepted", "rejected", "unknown", "held"].includes(
-        outbox.state,
-      )
+      ![
+        "canceled",
+        "provider_accepted",
+        "rejected",
+        "unknown",
+        "held",
+      ].includes(outbox.state)
     )
       await launch(ctx, { scope: args.scope, eventId: args.eventId }, outbox);
     return await currentStatus(ctx, (await read(ctx, args)).outbox);
@@ -98,6 +102,7 @@ export const resume = mutation({
   returns: status,
   handler: async (ctx, args) => {
     const { outbox } = await read(ctx, args);
+    if (outbox.correctionKey) return await currentStatus(ctx, outbox);
     if (
       outbox.state === "unknown" ||
       ["provider_accepted", "rejected"].includes(outbox.state) ||

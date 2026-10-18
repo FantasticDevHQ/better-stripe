@@ -18,7 +18,7 @@ export const claim = internalMutation({
       now = Math.floor(Date.now() / 1000);
     if (
       outbox.held ||
-      ["provider_accepted", "rejected", "unknown", "held"].includes(
+      ["canceled", "provider_accepted", "rejected", "unknown", "held"].includes(
         outbox.state,
       )
     )

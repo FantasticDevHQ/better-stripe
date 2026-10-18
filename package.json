@@ -108,6 +108,7 @@
     "docs/usage-subscriptions.md",
     "docs/usage-credits.md",
     "docs/usage-limits.md",
+    "docs/usage-corrections.md",
     "docs/evidence/native-metering"
   ],
   "scripts": {

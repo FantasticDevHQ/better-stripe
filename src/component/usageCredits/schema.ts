@@ -89,6 +89,7 @@ export const historyFields = {
     v.literal("observation"),
     v.literal("recovery"),
     v.literal("closure"),
+    v.literal("correction"),
   ),
   sourceKey: v.string(),
   fingerprint: v.string(),

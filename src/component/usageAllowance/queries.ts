@@ -1,3 +1,4 @@
+import { verifiedCancellation } from "../usageCorrections/cancellation.js";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
@@ -109,7 +110,13 @@ export const reconciliation = query({
         reservation.scaledQuantity !== record.scaledQuantity
       )
         complete = false;
-      accepted += BigInt(record.scaledQuantity);
+      const outbox = await ctx.db
+        .query("usageOutbox")
+        .withIndex("by_event", (q) => q.eq("eventId", event._id))
+        .unique();
+      const canceled = await verifiedCancellation(ctx, event, outbox);
+      if (canceled === "unverified") complete = false;
+      if (canceled !== "confirmed") accepted += BigInt(record.scaledQuantity);
     }
     for (const reservation of reservations)
       reserved += BigInt(reservation.scaledQuantity);

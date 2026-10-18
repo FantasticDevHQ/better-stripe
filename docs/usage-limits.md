@@ -128,7 +128,7 @@ Committed usage cannot be released. Delivery rejection, uncertainty, delayed
 native aggregates or an unpaid invoice do not restore allowance. Corrections
 retain the original event and terms and require an auditable correction outcome;
 never decrement counters based on an invoice preview or an optimistic UI action.
-The correction workflow is documented separately as it becomes available.
+See the [auditable correction workflow](./usage-corrections.md).
 
 ## Edit access policy without resetting consumption
 

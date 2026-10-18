@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 export const reason = v.union(
+  v.literal("usage_canceled"),
   v.literal("billing_period_closed"),
   v.literal("rate_limited"),
   v.literal("provider_unavailable"),

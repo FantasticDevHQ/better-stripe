@@ -5,8 +5,8 @@ expose operational metered billing APIs. Configuration and quantity helpers are
 available at `@fantastic.dev/better-stripe/usage`. All three models are required. Provider
 feasibility must establish a compatible architecture before provider-specific
 catalog, delivery or UI implementation.
-This document records the compatibility questions and repeatable access preflight.
-It does not claim a successful billing sandbox run.
+This document records the native sandbox evidence, repeatable probes and remaining
+compatibility questions. Invoice finalization and settlement remain unverified.
 
 ## Existing integration constraints
 
@@ -29,7 +29,7 @@ proceeds and original payment provenance.
 | Provider guidance | Stripe directs new usage integrations to Metronome, including existing flat-rate subscriptions adding usage                                       | Recommended evaluation path for new usage integrations                                                                       |
 | Credentials       | Existing Stripe key, subject to permissions and API access                                                                                        | Separate Metronome sandbox/account token and explicit Stripe integration enrollment                                          |
 | Payer identity    | Guide maps meter payloads to Stripe Customer IDs; installed Stripe 23.0.0 meter types expose `by_id` only                                         | Documented invoice delivery configuration uses `stripe_customer_id` with a `cus_` ID                                         |
-| Accounts v2       | `acct_` payer ingestion and invoice identity remain unverified                                                                                    | `customer_account` invoice delivery remains unverified; ingest aliases alone do not establish payment identity               |
+| Accounts v2       | Platform sandbox mapping to `cus_`, aggregates and invoice-preview payer identity verified; other modes remain unverified                         | `customer_account` invoice delivery remains unverified; ingest aliases alone do not establish payment identity               |
 | Connect           | Stripe documents connected-account requests and different rate limits; this does not prove a platform-owned Accounts v2 payer works in that realm | Multi-entity connections are documented; equivalence to Connect destination charges or separate transfers remains unverified |
 | Catalog           | Meter attached to recurring metered price                                                                                                         | Billable metric, product, rate card and customer contract                                                                    |
 | Invoices          | Stripe owns subscription invoicing                                                                                                                | Metronome rates usage and pushes separate invoices to Stripe, including when recurring subscriptions coexist                 |
@@ -70,8 +70,9 @@ previews are estimates and cannot enforce a strict real-time limit.
 | Included monthly usage plus overages | Tiered usage price or explicit allowance/rating integration     | Contract allowance/credit configuration plus usage rate | Reset, allowance boundary, overage and no double billing                        |
 | Prepaid credits                      | Billing credit grants applied to eligible metered invoice lines | Payment-gated prepaid commitments                       | Successful purchase, grant, consumption, exhaustion and refund/dispute recovery |
 
-These are candidate mechanisms, not verified capabilities. All three models remain
-required if a provider has gaps. Stripe billing credit grants apply to eligible
+The native sandbox has verified aggregation and invoice previews for all three
+mechanisms. Finalized billing, complete credit accounting and remaining account
+modes still require verification. All three models remain required. Stripe billing credit grants apply to eligible
 metered subscription invoices at finalization; they do not themselves implement
 an atomic real-time access limit. Verify the provider credit rules against the
 existing marketplace settlement contracts before using them for seller flows.

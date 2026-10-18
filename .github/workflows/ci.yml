@@ -47,7 +47,7 @@ jobs:
   #      configured in repo secrets. Runs `pnpm codegen` against the configured
   #      dev deployment and fails if `git diff` shows changes. Catches every
   #      drift case, including validator-shape changes the structural check
-  #      can't see. See README § "Regenerating codegen" to enable.
+  #      can't see. See docs/development.md#regenerating-codegen to enable.
   codegen:
     runs-on: ubuntu-latest
     env:
@@ -69,7 +69,7 @@ jobs:
         if: ${{ env.CONVEX_DEPLOYMENT != '' }}
         run: |
           if ! git diff --exit-code -- src/component/_generated example/convex/_generated; then
-            echo "::error::Stale _generated/ files. Run 'pnpm codegen' against your dev deployment and commit the result. See README § 'Regenerating codegen'."
+            echo "::error::Stale _generated/ files. Run 'pnpm codegen' against your dev deployment and commit the result. See docs/development.md#regenerating-codegen."
             exit 1
           fi
       - name: Notice when regen-and-diff layer is inactive

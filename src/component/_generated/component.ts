@@ -8727,6 +8727,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               eventId: string;
               firstSendAt?: number;
               held?: boolean;
+              historySequence?: number;
               leaseUntil?: number;
               nextAttemptAt: number;
               provider?: string;
@@ -8751,6 +8752,140 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "held";
               workflowId?: string;
             };
+          },
+          Name
+        >;
+      };
+    };
+    usageObservations: {
+      mutations: {
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { observationJson: string; sourceJson: string; startedAt: number },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        cached: FunctionReference<
+          "query",
+          "internal",
+          { sourceJson: string },
+          string | null,
+          Name
+        >;
+        deliveryHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            legacyHistoryMissing: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              attempt: number;
+              created?: number;
+              eventId: string;
+              identity: string;
+              phase:
+                | "started"
+                | "accepted"
+                | "rate_limited"
+                | "unavailable"
+                | "unknown"
+                | "rejected"
+                | "held"
+                | "resumed"
+                | "window_expired"
+                | "retry_exhausted";
+              recordedAt: number;
+              scopeKey: string;
+              sequence: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        summary: FunctionReference<
+          "query",
+          "internal",
+          {
+            maxRecords: number;
+            period: { end: number; start: number };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          string,
+          Name
+        >;
+        validationHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              code:
+                | "meter_event_customer_not_found"
+                | "meter_event_no_customer_defined"
+                | "meter_event_dimension_count_too_high"
+                | "archived_meter"
+                | "timestamp_too_far_in_past"
+                | "timestamp_in_future"
+                | "meter_event_value_not_found"
+                | "meter_event_invalid_value"
+                | "no_meter";
+              dedupe: string;
+              eventId: string;
+              observedAt: number;
+              providerEventId: string;
+              scopeKey: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
           },
           Name
         >;

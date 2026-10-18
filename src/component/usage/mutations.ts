@@ -81,6 +81,8 @@ export const record = mutation({
     const reservation = args.reservationId
       ? await ctx.db.get("usageReservations", args.reservationId)
       : null;
+    if (args.reservationId !== undefined && !reservation)
+      throw new Error("Usage reservation is unavailable");
     if (event.binding.plan.model === "prepaid" && !reservation)
       throw new Error("A matching usage reservation is required");
     if (

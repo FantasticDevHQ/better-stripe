@@ -281,3 +281,30 @@ it("pages an explicit period without exposing guessed or cross-scope events", as
     }),
   ).rejects.toThrow();
 });
+
+it("rejects a supplied missing reservation even for pay-as-you-go", async () => {
+  const t = convexTest(schema, modules);
+  const reservationId = await t.run(async (ctx) => {
+    const id = await ctx.db.insert("usageReservations", {
+      scopeKey: JSON.stringify(scope),
+      sourceEventId: event.sourceEventId,
+      planJson: JSON.stringify(event.binding.plan),
+      scaledQuantity: "120",
+      state: "reserved",
+    });
+    await ctx.db.delete("usageReservations", id);
+    return id;
+  });
+  await expect(
+    t.mutation(record, { ...args(), reservationId }),
+  ).rejects.toThrow("Usage reservation is unavailable");
+  expect(await t.run((ctx) => ctx.db.query("usageEvents").take(10))).toEqual(
+    [],
+  );
+  expect(await t.run((ctx) => ctx.db.query("usageOutbox").take(10))).toEqual(
+    [],
+  );
+  expect(
+    await t.run((ctx) => ctx.db.query("usageScopeCounters").take(10)),
+  ).toEqual([]);
+});

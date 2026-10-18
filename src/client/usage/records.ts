@@ -74,3 +74,29 @@ export function prepareUsageRecord(input: unknown): PreparedUsageRecord {
     ]),
   };
 }
+
+const preparedRecordSchema = recordSchema.extend({
+  schemaVersion: z.literal(1),
+  identity: z.string(),
+  quantity: z.string(),
+  scaledQuantity: z.string(),
+});
+
+/** Internal facade decoder: preparation is validation, never host authorization. */
+export function validateUsageRecordInput(input: unknown): PreparedUsageRecord {
+  const raw = recordSchema.safeParse(input);
+  if (raw.success) return prepareUsageRecord(raw.data);
+  // Validate the complete strict shape before selecting raw fields. Partial or
+  // unknown prepared fields cannot silently become a valid raw event.
+  const { schemaVersion, identity, scaledQuantity, ...record } =
+    preparedRecordSchema.parse(input);
+  const canonical = prepareUsageRecord(record);
+  if (
+    schemaVersion !== canonical.schemaVersion ||
+    identity !== canonical.identity ||
+    scaledQuantity !== canonical.scaledQuantity ||
+    record.quantity !== canonical.quantity
+  )
+    throw new Error("Inconsistent prepared usage record");
+  return canonical;
+}

@@ -8554,7 +8554,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       };
     };
     usageCorrections: {
-      invoice: {
+      mutations: {
         adopt: FunctionReference<
           "mutation",
           "internal",
@@ -8603,8 +8603,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
-      };
-      mutations: {
         claim: FunctionReference<
           "mutation",
           "internal",

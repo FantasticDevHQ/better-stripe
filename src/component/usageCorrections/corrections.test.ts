@@ -274,7 +274,7 @@ it("does not finalize financial adoption while a native cancellation attempt own
   };
   await expect(
     t.mutation(
-      makeFunctionReference<"mutation">("usageCorrections/invoice:adopt"),
+      makeFunctionReference<"mutation">("usageCorrections/mutations:adopt"),
       { key: row.key, proofJson: JSON.stringify(proof) },
     ),
   ).rejects.toThrow(/active.*attempt/i);

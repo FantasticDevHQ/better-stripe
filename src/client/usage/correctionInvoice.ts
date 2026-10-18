@@ -262,7 +262,7 @@ export async function observeInvoiceCorrection(
   }
   const saved = (await runMutationOrThrow(
     ctx,
-    componentRef(component, "usageCorrections/invoice/adopt"),
+    componentRef(component, "usageCorrections/mutations/adopt"),
     { key: row.key, proofJson: JSON.stringify(proof) },
   )) as Doc<"usageCorrections">;
   return correctionView(saved);

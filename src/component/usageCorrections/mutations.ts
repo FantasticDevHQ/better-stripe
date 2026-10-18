@@ -1,3 +1,4 @@
+import { adoptInvoiceCorrection } from "./invoice.js";
 import { closureByStripeId } from "../accountClosure/helpers.js";
 import { correctionOutcome } from "../../client/usage/correctionProofs.js";
 import { v } from "convex/values";
@@ -273,4 +274,10 @@ export const save = mutation({
     });
     return operation(ctx, row.key);
   },
+});
+
+export const adopt = mutation({
+  args: { key: v.string(), proofJson: v.string() },
+  returns: operationDoc,
+  handler: adoptInvoiceCorrection,
 });

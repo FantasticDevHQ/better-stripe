@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.66.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.65.0...v0.66.0) (2026-10-18)
+
+
+### Features
+
+* **react:** expose custom checkout promotion actions and pricing ([0858687](https://github.com/FantasticDevHQ/better-stripe/commit/08586871ddaf0fe9f5341e7169b837a712babbc5))
+
 ## [0.65.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.64.1...v0.65.0) (2026-10-18)
 
 ### Features

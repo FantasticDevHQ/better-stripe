@@ -1,7 +1,7 @@
 # Package usage UI verification
 
 Environment: localhost deterministic fixture at
-`scripts/fixtures/usage-ui.html`, branch `codex/bts-258-usage-react`.
+`scripts/fixtures/usage-ui.html`.
 The PR evidence identifies the exact reviewed commit. These captures do not
 execute Stripe calls, native payments, production changes or business work.
 
@@ -33,4 +33,4 @@ Co-located tests additionally cover delayed old responses after identity, tenant
 meter, period and currency switches, mismatched estimate currencies, out-of-range
 date displays, empty/cyclic cursors, keyboard-accessible retry and shared
 component/API-adapter layouts. Native financial end-to-end acceptance is tracked
-separately in BTS-261.
+separately from these package UI checks.

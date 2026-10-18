@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.55.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.54.0...v0.55.0) (2026-10-18)
+
+### Features
+
+- add scoped usage observations, audit history and reconciliation ([#327](https://github.com/FantasticDevHQ/better-stripe/issues/327)) ([b604728](https://github.com/FantasticDevHQ/better-stripe/commit/b6047284b60523827961182045e2643aa7f8ac32))
+
 ## [0.54.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.53.0...v0.54.0) (2026-10-18)
 
 ### Features

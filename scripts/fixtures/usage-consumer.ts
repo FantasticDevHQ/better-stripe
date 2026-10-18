@@ -117,3 +117,22 @@ export function startNativeUsageDelivery(
 ) {
   return stripe.usage.startDelivery(ctx, options);
 }
+
+import type { UsageReconciliationOptions } from "@fantastic.dev/better-stripe/usage";
+export function readUsageStatus(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["getSummary"]>[0],
+  request: UsageReconciliationOptions,
+) {
+  return stripe.usage.getReconciliation(ctx, request);
+}
+export function readNativeInvoice(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["readInvoiceUsage"]>[0],
+  request: UsageReconciliationOptions & { invoiceId?: string },
+  resolveSecret: () => string | undefined,
+) {
+  return stripe.usage.readInvoiceUsage(ctx, request, {
+    stripeSecretKey: resolveSecret(),
+  });
+}

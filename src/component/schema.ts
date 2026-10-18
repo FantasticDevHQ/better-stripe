@@ -1,4 +1,8 @@
 import {
+  historyTable as usageDeliveryHistory,
+  observationsTable as usageProviderObservations,
+} from "./usageObservations/schema.js";
+import {
   errorsTable as usageDeliveryErrors,
   locksTable as usageDeliveryLocks,
 } from "./usageDelivery/fields.js";
@@ -100,6 +104,8 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageProviderObservations,
+  usageDeliveryHistory,
   usageDeliveryLocks,
   usageDeliveryErrors,
   usageCatalog: usageCatalogTable,

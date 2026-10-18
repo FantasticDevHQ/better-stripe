@@ -45,3 +45,21 @@ export type {
 } from "./deliveryClient.js";
 
 export { usageDeliveryArgs, usageDeliveryResult } from "./deliveryProtocol.js";
+
+export type {
+  UsageObservationOptions,
+  UsageAggregateValue,
+  UsageAggregateObservation,
+} from "./observationTypes.js";
+export type {
+  UsageLocalSummary,
+  UsageLocalGroup,
+  UsageCreditSummary,
+} from "./summary.js";
+export type { UsageComparison } from "./reconciliation.js";
+export type { UsageReconciliationOptions } from "./observationClient.js";
+
+export type {
+  UsageInvoiceObservation,
+  UsageInvoiceLine,
+} from "./invoiceObservation.js";

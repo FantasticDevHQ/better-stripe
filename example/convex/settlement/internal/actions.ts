@@ -63,6 +63,43 @@ export function authorizeStoreSale(
       )
     )
       throw new Error("Settlement authorization changed");
+    if (context.phase === "reserve") {
+      if (
+        context.settlement.transfers.some(
+          (leg) =>
+            leg.amount !==
+            (leg.role === "store" ? current.sellerNet : current.affiliateNet),
+        )
+      )
+        throw new Error("Settlement authorization changed");
+      return;
+    }
+    if (context.transfer.role === "store") {
+      if (context.transfer.amount !== current.sellerNet)
+        throw new Error("Settlement authorization changed");
+      return;
+    }
+    const earning = await ctx.runQuery(
+      components.betterStripe.affiliateRecovery.queries.getEarning,
+      {
+        sourceChargeId: current.chargeId,
+        affiliateAccountId: context.transfer.destinationAccountId,
+      },
+    );
+    if (
+      !earning ||
+      earning.sourceChargeId !== current.chargeId ||
+      earning.affiliateAccountId !== current.affiliateAccountId ||
+      earning.currency !== current.currency ||
+      earning.originalCommission !== current.affiliateNet ||
+      !Number.isSafeInteger(earning.releaseAmount) ||
+      earning.releaseAmount < 0 ||
+      earning.releaseAmount > earning.originalCommission ||
+      earning.withheldAmount !==
+        earning.originalCommission - earning.releaseAmount ||
+      context.transfer.amount !== earning.releaseAmount
+    )
+      throw new Error("Settlement authorization changed");
   };
 }
 

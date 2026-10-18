@@ -182,3 +182,71 @@ it("exposes the scoped reader through stripe.usage with runtime-only credentials
     ),
   ).toBe(true);
 });
+
+it("verifies native graduated invoices with a zero included tier and paid overage line", async () => {
+  const f = fixture();
+  const plan = {
+    ...f.input.binding.plan,
+    model: "included_overage" as const,
+    includedQuantity: "10",
+    reset: "billing_period" as const,
+  };
+  Object.assign(f.price, {
+    billing_scheme: "tiered",
+    tiers_mode: "graduated",
+    unit_amount_decimal: null,
+    tiers: [
+      { up_to: 10, unit_amount_decimal: "0", flat_amount: null },
+      { up_to: null, unit_amount_decimal: "2", flat_amount: null },
+    ],
+  });
+  const included = {
+    ...structuredClone(f.line),
+    period: { ...f.input.period },
+  };
+  Object.assign(included, {
+    id: "il_included",
+    amount: 0,
+    quantity_decimal: "10",
+  });
+  Object.assign(f.invoice, {
+    lines: { data: [included, f.line], has_more: false },
+  });
+  f.extra.set("/v1/invoices/in_source/lines", {
+    object: "list",
+    data: [included, f.line],
+    has_more: false,
+  });
+  const input = { ...f.input, binding: { ...f.input.binding, plan } };
+  expect(await getUsageInvoiceSale(f.sdk, input)).toMatchObject({
+    status: "ready",
+    value: { model: "included_overage", gross: 1000, processingFee: 50 },
+  });
+  for (const mutation of [
+    "foreign_item",
+    "foreign_price",
+    "period",
+    "proration",
+    "extra_paid",
+    "duplicate_id",
+  ]) {
+    const altered = structuredClone(included);
+    if (mutation === "foreign_item")
+      altered.parent.subscription_item_details.subscription_item = "si_foreign";
+    if (mutation === "foreign_price")
+      altered.pricing.price_details.price = "price_foreign";
+    if (mutation === "period") altered.period.start++;
+    if (mutation === "proration")
+      altered.parent.subscription_item_details.proration = true;
+    if (mutation === "extra_paid") altered.amount = 1;
+    if (mutation === "duplicate_id") altered.id = f.line.id;
+    f.extra.set("/v1/invoices/in_source/lines", {
+      object: "list",
+      data: [altered, f.line],
+      has_more: false,
+    });
+    expect((await getUsageInvoiceSale(f.sdk, input)).status, mutation).not.toBe(
+      "ready",
+    );
+  }
+});

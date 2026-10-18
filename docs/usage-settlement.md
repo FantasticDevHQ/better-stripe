@@ -78,13 +78,18 @@ invoice. Refunds and disputes do not reset eligibility.
 An unpaid draft/open invoice returns `not_ready/provider_pending`. Missing fees
 remain `not_ready/fee_pending`. Zero paid invoices and refunded/disputed sources
 are not payable. Incomplete or ambiguous funding, credit-funded/partial/multiple
-payments, multiple priced invoice lines, proration, mismatched original periods,
+payments, unrelated priced invoice lines, proration, mismatched original periods,
 converted settlement currencies and automatic destination/on-behalf-of charges
 are held through explicit non-ready outcomes. The method does not guess a
 multi-product allocation or take over existing destination-charge fee handling.
 Fixed-plus-metered invoices remain readable with the ordinary invoice APIs, but
-this automatic settlement method requires one original priced line. Treat these
-limits as unsupported settlement combinations, not as zero proceeds.
+this automatic settlement method requires one paid original meter line. Native
+included-overage invoices can also contain one zero-priced included-tier line.
+Both lines must retain the same original price, product, subscription item,
+period, currency and mode, with no credit adjustments. The complete independent
+line-item read must match both original IDs. Additional paid lines, duplicate IDs
+and foreign zero-priced siblings remain unsupported. Treat unsupported settlement
+combinations as unavailable evidence rather than zero proceeds.
 
 ## Prepaid issuer-service revenue
 

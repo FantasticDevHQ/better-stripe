@@ -111,3 +111,7 @@ export type { UsageCreditSettlementOptions } from "./creditSettlement.js";
 
 export type { UsageEventView } from "./client.js";
 export type { UsageCreditReconciliation } from "./creditObservation.js";
+
+export type { UsageConfigurationValue } from "./configuration.js";
+
+export type { UsageViewScope, UsageBillingSnapshot } from "./views.js";

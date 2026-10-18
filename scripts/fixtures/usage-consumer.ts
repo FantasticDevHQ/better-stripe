@@ -338,3 +338,18 @@ export function nativeUsageConfiguration(
     value,
   };
 }
+
+import type { UsageConfigurationValue as ServerUsageConfigurationValue } from "@fantastic.dev/better-stripe/usage";
+export function serverUsageConfiguration(value: ServerUsageConfigurationValue) {
+  return value.plan;
+}
+import type {
+  UsageBillingSnapshot as ServerUsageBillingSnapshot,
+  UsageViewScope as ServerUsageViewScope,
+} from "@fantastic.dev/better-stripe/usage";
+export function serverUsageSnapshot(
+  scope: ServerUsageViewScope,
+  value: ServerUsageBillingSnapshot,
+) {
+  return { scope, value };
+}

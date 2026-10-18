@@ -1,3 +1,4 @@
+import { MeteredUsageDemo } from "@/components/metered-usage-demo";
 import { AdminAffiliateRecovery } from "@/pages/admin/affiliate-recovery";
 import { AffiliateRecoveryDemo } from "@/pages/demo/affiliate-recovery";
 import { AllocationPreview } from "@/pages/demo/allocation";
@@ -97,6 +98,7 @@ export default function App() {
             path="/demo/affiliate-recovery"
             element={<AffiliateRecoveryDemo />}
           />
+          <Route path="/demo/metered-usage" element={<MeteredUsageDemo />} />
           <Route path="/demo/allocation" element={<AllocationPreview />} />
 
           {/* Marketplace demos */}

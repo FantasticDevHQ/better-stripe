@@ -1,3 +1,4 @@
+import { zeroTierLinesMatch } from "./zeroTierLines.js";
 import type Stripe from "stripe";
 import type {
   FinancialOutcome,
@@ -53,6 +54,7 @@ export async function resolveVerifiedPaymentSource(
     customerId: string;
     invoiceLine?: {
       id: string;
+      zeroAmountLineIds?: string[];
       subscriptionItemId: string;
       period: { start: number; end: number };
     };
@@ -324,8 +326,18 @@ export async function resolveVerifiedPaymentSource(
       ),
     );
     if (lines.status !== "complete") return lines;
-    requireSource(lines.data.length === 1, reject("unsupported_source"));
-    const line = lines.data[0]!;
+    const zeroIds = eligibility?.invoiceLine?.zeroAmountLineIds ?? [];
+    const line = zeroIds.length
+      ? lines.data.find((row) => row.id === eligibility!.invoiceLine!.id)
+      : lines.data[0];
+    requireSource(
+      line &&
+        (zeroIds.length
+          ? zeroTierLinesMatch(lines.data, line, zeroIds)
+          : lines.data.length === 1),
+      reject("unsupported_source"),
+    );
+    if (!line) return reject("unsupported_source");
     requireSource(
       line.object === "line_item" &&
         line.invoice === invoice.id &&

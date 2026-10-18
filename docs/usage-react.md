@@ -180,3 +180,7 @@ Run `pnpm run check:all` and verify your host's authorization and native setup
 using the [setup guide](metering-setup.md). Package views do not replace the
 [ledger](usage-ledger.md), [allowance](usage-limits.md) or
 [paid-credit](usage-credits.md) work and recovery protocols.
+
+Server adapters can import the `UsageViewScope` and `UsageBillingSnapshot` types
+from `@fantastic.dev/better-stripe/usage` without importing React types. The React
+entry point retains its existing exports.

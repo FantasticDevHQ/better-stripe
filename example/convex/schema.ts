@@ -1,3 +1,4 @@
+import { meteredUsageTables } from "./meteredUsage/schema";
 import { defineSchema } from "convex/server";
 import { affiliateDefaultsTables } from "./affiliateDefaults/schema";
 import { marketplaceTables } from "./marketplace/schema";
@@ -10,6 +11,7 @@ import { storePlansTables } from "./storePlans/schema";
 import { stripeTables } from "./stripe/schema";
 import { usersTables } from "./users/schema";
 export default defineSchema({
+  ...meteredUsageTables,
   ...usersTables,
   ...storeBalanceTables,
   ...affiliateDefaultsTables,

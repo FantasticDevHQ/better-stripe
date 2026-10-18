@@ -15,6 +15,7 @@ export const paymentCreditProof = z.strictObject({
 export const grantCreditProof = paymentCreditProof.extend({
   creditGrantId: id("credgr"),
   stripePriceId: id("price"),
+  createdAt: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   effectiveAt: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   expiresAt: z
     .number()

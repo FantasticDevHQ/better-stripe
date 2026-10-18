@@ -79,7 +79,7 @@ export async function reserve(
       (a.expiresAt ?? Number.MAX_SAFE_INTEGER) -
         (b.expiresAt ?? Number.MAX_SAFE_INTEGER) ||
       a.effectiveAt - b.effectiveAt ||
-      a._creationTime - b._creationTime ||
+      a.nativeCreated - b.nativeCreated ||
       a.creditGrantId.localeCompare(b.creditGrantId),
   );
   let remaining = BigInt(event.scaledQuantity);

@@ -73,6 +73,7 @@ export async function verifyCreditDelivery(
       throw error;
     }
     const native = summary.balances[0]?.ledger_balance.monetary;
+    const available = summary.balances[0]?.available_balance.monetary;
     const last = local.nativeObservationJson
       ? creditNativeObservation.parse(JSON.parse(local.nativeObservationJson))
       : null;
@@ -95,7 +96,9 @@ export async function verifyCreditDelivery(
         summary.customer_account === record.scope.customerAccount &&
         summary.balances.length === 1 &&
         native?.currency === terms.binding.plan.rate.currency &&
-        native.value === expected,
+        native.value === expected &&
+        available?.currency === native.currency &&
+        available.value === native.value,
       "Credit delivery requires current native backing reconciliation",
     );
   }

@@ -126,3 +126,25 @@ it("holds unexpected native consumption, incomplete invoice proof and insufficie
     ).backing,
   ).toBe("held");
 });
+
+it("holds ledger credit that native available balance has already reserved for unrecorded transactions", () => {
+  expect(
+    normalizeCreditState(
+      terms,
+      grant,
+      {
+        ledgerAmount: 20,
+        availableAmount: 0,
+        granted: 20,
+        applied: 0,
+        expired: 0,
+        voided: 0,
+        reinstated: 0,
+      },
+      true,
+    ),
+  ).toMatchObject({
+    backing: "held",
+    reason: "native_credit_pending_application",
+  });
+});

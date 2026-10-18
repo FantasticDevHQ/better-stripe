@@ -18,6 +18,9 @@ export const accountsTable = defineTable(accountFields)
 export const purchaseFields = {
   key: v.string(),
   accountKey: v.string(),
+  nativeCustomerKey: v.string(),
+  capacityReserved: v.boolean(),
+  paymentAttemptedAt: v.optional(v.number()),
   termsJson: v.string(),
   firstAttemptAt: v.number(),
   state: v.union(
@@ -41,11 +44,15 @@ export const purchaseDoc = v.object({
 export const purchasesTable = defineTable(purchaseFields)
   .index("by_key", ["key"])
   .index("by_payment", ["paymentKey"])
+  .index("by_customer_capacity", ["nativeCustomerKey", "capacityReserved"])
   .index("by_account", ["accountKey"]);
 export const grantFields = {
   purchaseKey: v.string(),
   accountKey: v.string(),
   creditGrantId: v.string(),
+  nativeCustomerKey: v.string(),
+  nativeUnused: v.boolean(),
+  nativeCreated: v.number(),
   paymentIntentId: v.string(),
   chargeId: v.string(),
   proofJson: v.string(),
@@ -67,6 +74,7 @@ export const grantDoc = v.object({
 export const grantsTable = defineTable(grantFields)
   .index("by_purchase", ["purchaseKey"])
   .index("by_native", ["creditGrantId"])
+  .index("by_customer_unused", ["nativeCustomerKey", "nativeUnused"])
   .index("by_account", ["accountKey"]);
 export const historyFields = {
   accountKey: v.string(),

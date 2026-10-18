@@ -80,7 +80,7 @@ it("exposes paid credits, exact reservations, immutable consumption and scoped p
       JSON.parse(saved.event.recordJson),
     ),
   );
-  f.state.nativeApplied = 12;
+  f.state.nativeAvailable = 0;
   await expect(
     f.t.action((ctx) =>
       verifyCreditDelivery(

@@ -124,7 +124,7 @@ subscription snapshot cannot change on replay.
 
 Concurrent reservations cannot spend the same units. UsageCreditError exposes
 insufficient_credits when eligible backing cannot satisfy a reservation.
-Allocation uses earliest expiry, effective time, creation time and native grant
+Allocation uses earliest expiry, effective time, native creation time and native grant
 ID. One reservation can partially consume a grant and uses at most ten grants.
 
 If work definitely never completed, release its uncommitted reservation:
@@ -182,7 +182,9 @@ Reconciliation reads grant-filtered native credit balances and transactions.
 Each funded invoice line must match original local quantities, item, period and
 successful delivery. Original price amounts must be covered by native credits.
 Incomplete history, foreign references, proration and unexpected consumption
-hold the projection. After resolving a temporary observation hold, reconcile every\ngrant again and call resumeCreditAccount. Resume requires fresh complete proofs\nand cannot release unresolved refunded, disputed or consumed liabilities.
+hold the projection. After resolving a temporary observation hold, reconcile every
+grant again and call resumeCreditAccount. Resume requires fresh complete proofs
+and cannot release unresolved refunded, disputed or consumed liabilities.
 
 The pendingFinalizationAmount separates committed usage from native credit
 application. cashCollection is always none. Invoice payment evidence remains
@@ -200,7 +202,16 @@ component retains at most 1,000 purchases and 100,000 audit entries per original
 binding. Quota exhaustion blocks new work without deleting financial history.
 Plan an explicit capacity and archival policy before reaching those bounds.
 
-Native allocation can differ from local reservation allocation. Unproven
+The customer-level capacity guard counts native ledger balances, including local
+consumption awaiting finalization, and outstanding purchase intents. Payment
+creation also checks native inventory before returning a PaymentIntent. That
+proof is bounded to 1,000 listed grants and 100 unexpired balance reads in groups
+of five. Incomplete inventory blocks payment creation. Cancel an unstarted
+purchase or reconcile depleted grants to free its reserved capacity. A captured
+payment waiting for its original grant retains its slot and recovery provenance.
+
+Native allocation can differ from local reservation allocation, including native
+creation-time ties. Unproven
 comparisons require reconciliation. External Stripe Dashboard changes can also
 require operator recovery; the local reservation cap does not lock Stripe.
 

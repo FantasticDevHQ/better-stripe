@@ -185,6 +185,7 @@ export const saveObservation = mutation({
     const ledger = await account(ctx, row.accountKey);
     if ((grant.observedAt ?? -1) <= args.startedAt) {
       await ctx.db.patch("usageCreditGrants", grant._id, {
+        nativeUnused: proof.ledgerAmount > 0,
         nativeObservationJson: JSON.stringify(proof),
         observedAt: args.startedAt,
         ...(proof.expired > 0 || proof.voided > 0
@@ -295,7 +296,10 @@ export const cancelPurchase = mutation({
       throw new Error(
         "Only an original unpaid credit purchase can be canceled",
       );
-    await ctx.db.patch("usageCreditPurchases", row._id, { state: "canceled" });
+    await ctx.db.patch("usageCreditPurchases", row._id, {
+      state: "canceled",
+      capacityReserved: false,
+    });
     await history(
       ctx,
       row.accountKey,
@@ -404,6 +408,43 @@ export const resumeAccount = mutation({
       reason: "verified_observation_resume",
       grantCount: evidence.length,
       observationFingerprint: await canonicalFingerprint(evidence),
+    });
+    return null;
+  },
+});
+
+export const markPaymentAttempt = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await purchase(ctx, args.key);
+    if (row.state !== "pending" || !row.capacityReserved)
+      throw new Error("Original purchase no longer permits payment creation");
+    await ctx.db.patch("usageCreditPurchases", row._id, {
+      paymentAttemptedAt:
+        row.paymentAttemptedAt ?? Math.floor(Date.now() / 1000),
+    });
+    return null;
+  },
+});
+export const cancelUnstarted = mutation({
+  args: { key: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await purchase(ctx, args.key);
+    if (
+      row.paymentAttemptedAt !== undefined ||
+      row.paymentIntentId ||
+      row.paymentProofJson ||
+      row.creditGrantId
+    )
+      throw new Error("Unknown native payment requires reconciliation");
+    await ctx.db.patch("usageCreditPurchases", row._id, {
+      state: "canceled",
+      capacityReserved: false,
+    });
+    await history(ctx, row.accountKey, "recovery", row.key, {
+      reason: "canceled_before_native_payment_attempt",
     });
     return null;
   },

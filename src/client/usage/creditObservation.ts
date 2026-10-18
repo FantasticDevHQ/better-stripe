@@ -51,6 +51,8 @@ export function normalizeCreditState(
     native.availableAmount > native.ledgerAmount
   )
     reason = "native_ledger_mismatch";
+  else if (native.availableAmount < native.ledgerAmount)
+    reason = "native_credit_pending_application";
   else if (!invoicesVerified) reason = "invoice_provenance_unavailable";
   else if (native.applied > consumed) reason = "unexpected_native_consumption";
   else if (

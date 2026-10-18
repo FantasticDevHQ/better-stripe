@@ -8465,6 +8465,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           null,
           Name
         >;
+        cancelUnstarted: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          null,
+          Name
+        >;
         closeAccount: FunctionReference<
           "mutation",
           "internal",
@@ -8482,6 +8489,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               "payment_refunded" | "payment_disputed" | "native_state_changed";
             refundedAmount?: number;
           },
+          null,
+          Name
+        >;
+        markPaymentAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
           null,
           Name
         >;
@@ -8507,10 +8521,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountKey: string;
+            capacityReserved: boolean;
             creditGrantId?: string;
             firstAttemptAt: number;
             grantFirstAttemptAt?: number;
             key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
@@ -8594,6 +8611,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        capacity: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          number,
+          Name
+        >;
         context: FunctionReference<
           "query",
           "internal",
@@ -8642,8 +8666,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               effectiveAt: number;
               expiresAt: number | null;
               frozen: boolean;
+              nativeCreated: number;
+              nativeCustomerKey: string;
               nativeExpired?: boolean;
               nativeObservationJson?: string;
+              nativeUnused: boolean;
               observedAt?: number;
               paymentIntentId: string;
               proofJson: string;
@@ -8655,10 +8682,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               _creationTime: number;
               _id: string;
               accountKey: string;
+              capacityReserved: boolean;
               creditGrantId?: string;
               firstAttemptAt: number;
               grantFirstAttemptAt?: number;
               key: string;
+              nativeCustomerKey: string;
+              paymentAttemptedAt?: number;
               paymentIntentId?: string;
               paymentKey?: string;
               paymentProofJson?: string;
@@ -8677,10 +8707,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountKey: string;
+            capacityReserved: boolean;
             creditGrantId?: string;
             firstAttemptAt: number;
             grantFirstAttemptAt?: number;
             key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
@@ -8698,10 +8731,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             accountKey: string;
+            capacityReserved: boolean;
             creditGrantId?: string;
             firstAttemptAt: number;
             grantFirstAttemptAt?: number;
             key: string;
+            nativeCustomerKey: string;
+            paymentAttemptedAt?: number;
             paymentIntentId?: string;
             paymentKey?: string;
             paymentProofJson?: string;
@@ -8752,8 +8788,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               effectiveAt: number;
               expiresAt: number | null;
               frozen: boolean;
+              nativeCreated: number;
+              nativeCustomerKey: string;
               nativeExpired?: boolean;
               nativeObservationJson?: string;
+              nativeUnused: boolean;
               observedAt?: number;
               paymentIntentId: string;
               proofJson: string;

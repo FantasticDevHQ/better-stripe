@@ -1,3 +1,4 @@
+import { verifyNativeCreditCapacity } from "./creditCapacity.js";
 import type Stripe from "stripe";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
@@ -115,6 +116,17 @@ async function originalPayment(
       view.status === "active" && view.collection.method === "send_invoice",
       "Unsupported prepaid collection policy",
     );
+    const pending = (await ctx.runQuery(
+      componentRef(component, "usageCredits/queries/capacity"),
+      {
+        bindingJson: JSON.stringify({
+          scope: terms.scope,
+          binding: terms.binding,
+        }),
+      },
+    )) as number;
+    await verifyNativeCreditCapacity(stripe, terms, pending);
+    await mutation(component, ctx, "markPaymentAttempt", { key: row.key });
     payment = await stripe.paymentIntents.create(
       {
         customer_account: terms.scope.customerAccount,
@@ -197,6 +209,7 @@ function grantProof(
     ...payment,
     creditGrantId: grant.id,
     stripePriceId: terms.binding.stripePriceId,
+    createdAt: grant.created,
     effectiveAt: grant.effective_at,
     expiresAt: grant.expires_at,
   });

@@ -76,6 +76,7 @@ export async function setupCredits() {
       ...proof,
       creditGrantId: "credgr_topup1",
       stripePriceId: "price_calls",
+      createdAt: 700,
       effectiveAt: 700,
       expiresAt: null,
     }),
@@ -199,6 +200,7 @@ it("never accepts unpaid grants, reuses original purchase identities and prevent
         ...proof,
         creditGrantId: "credgr_other",
         stripePriceId: "price_calls",
+        createdAt: 700,
         effectiveAt: 700,
         expiresAt: null,
       }),
@@ -309,4 +311,79 @@ it("retains expired units as provenance and closes only fully reconciled credit 
       inputJson: JSON.stringify({ ...purchase, purchaseId: "afterclose" }),
     }),
   ).rejects.toThrow(/reconciliation|closed/i);
+});
+
+it("counts locally consumed but unfinalized native grants before accepting another purchase", async () => {
+  const { t, purchase } = await setupCredits();
+  await t.run(async (ctx) => {
+    const grant = (await ctx.db.query("usageCreditGrants").first())!;
+    const { _id, _creationTime, ...fields } = grant;
+    await ctx.db.patch("usageCreditGrants", _id, {
+      available: "0",
+      reserved: "0",
+      consumed: "10",
+    });
+    for (let index = 1; index < 100; index++)
+      await ctx.db.insert("usageCreditGrants", {
+        ...fields,
+        purchaseKey: "capacity" + index,
+        creditGrantId: "credgr_capacity" + index,
+        available: "0",
+        reserved: "0",
+        consumed: "10",
+      });
+  });
+  await expect(
+    t.mutation(ref("preparePurchase"), {
+      inputJson: JSON.stringify({ ...purchase, purchaseId: "over-native-cap" }),
+    }),
+  ).rejects.toThrow(/capacity|quota/i);
+});
+
+it("allocates by provider creation time when native grants are mirrored out of order", async () => {
+  const { t, purchase, event, subscription } = await setupCredits();
+  const row = await t.mutation(ref("preparePurchase"), {
+    inputJson: JSON.stringify({ ...purchase, purchaseId: "older-native" }),
+  });
+  const proof = {
+    paymentIntentId: "pi_older",
+    chargeId: "ch_older",
+    amount: 20,
+    currency: "usd",
+    customerAccount: "acct_buyer",
+    livemode: false,
+  };
+  await t.mutation(ref("pinPayment"), {
+    key: row.key,
+    paymentIntentId: proof.paymentIntentId,
+  });
+  await t.mutation(ref("verifyPayment"), {
+    key: row.key,
+    proofJson: JSON.stringify(proof),
+  });
+  await t.mutation(ref("pinGrant"), {
+    key: row.key,
+    proofJson: JSON.stringify({
+      ...proof,
+      creditGrantId: "credgr_older",
+      stripePriceId: "price_calls",
+      createdAt: 690,
+      effectiveAt: 700,
+      expiresAt: null,
+    }),
+  });
+  const reservation = await t.mutation(ref("reserve"), {
+    inputJson: JSON.stringify(event),
+    subscriptionJson: JSON.stringify(subscription),
+  });
+  const grants = await t.run((ctx) =>
+    ctx.db.query("usageCreditGrants").take(10),
+  );
+  expect(grants.find((g) => g.creditGrantId === "credgr_older")?.reserved).toBe(
+    "6",
+  );
+  expect(
+    grants.find((g) => g.creditGrantId === "credgr_topup1")?.reserved,
+  ).toBe("0");
+  expect(reservation.state).toBe("reserved");
 });

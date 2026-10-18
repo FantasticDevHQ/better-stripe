@@ -276,3 +276,25 @@ export const deliveryBacking = query({
     };
   },
 });
+
+export const capacity = query({
+  args: { bindingJson: v.string() },
+  returns: v.number(),
+  handler: async (ctx, args) => {
+    const { binding } = await accountTerms(
+      boundedJson(args.bindingJson) as UsageCreditBinding,
+    );
+    const key = JSON.stringify([
+      binding.scope.stripeAccountId,
+      binding.scope.livemode,
+      binding.binding.stripeCustomerId,
+    ]);
+    const rows = await ctx.db
+      .query("usageCreditPurchases")
+      .withIndex("by_customer_capacity", (q) =>
+        q.eq("nativeCustomerKey", key).eq("capacityReserved", true),
+      )
+      .take(101);
+    return rows.length;
+  },
+});

@@ -4,7 +4,6 @@ import {
   purchaseTerms,
   account,
   activeEnrollment,
-  grants,
   history,
   purchase,
 } from "./helpers.js";
@@ -57,19 +56,32 @@ export async function preparePurchase(ctx: MutationCtx, inputJson: string) {
     throw new Error("Credit account requires reconciliation");
   if (ledger.purchaseCount >= 1000)
     throw new Error("Credit account retained purchase quota exhausted");
-  const rows = await grants(ctx, ledger.key);
-  if (
-    rows.filter(
-      (g) =>
-        !g.frozen &&
-        BigInt(g.available) + BigInt(g.reserved) > 0n &&
-        (g.expiresAt === null || g.expiresAt > Date.now() / 1000),
-    ).length >= 100
-  )
-    throw new Error("Credit account active grant quota exhausted");
+  const nativeCustomerKey = JSON.stringify([
+    terms.scope.stripeAccountId,
+    terms.scope.livemode,
+    terms.binding.stripeCustomerId,
+  ]);
+  const unused = await ctx.db
+    .query("usageCreditGrants")
+    .withIndex("by_customer_unused", (q) =>
+      q.eq("nativeCustomerKey", nativeCustomerKey).eq("nativeUnused", true),
+    )
+    .take(101);
+  const pending = await ctx.db
+    .query("usageCreditPurchases")
+    .withIndex("by_customer_capacity", (q) =>
+      q.eq("nativeCustomerKey", nativeCustomerKey).eq("capacityReserved", true),
+    )
+    .take(101);
+  if (unused.length + pending.length >= 100)
+    throw new Error(
+      "Native credit customer capacity exhausted; reconcile or cancel outstanding purchases",
+    );
   const id = await ctx.db.insert("usageCreditPurchases", {
     key: parsed.key,
     accountKey: ledger.key,
+    nativeCustomerKey,
+    capacityReserved: true,
     termsJson: parsed.termsJson,
     firstAttemptAt: Math.floor(Date.now() / 1000),
     state: "pending",
@@ -185,6 +197,9 @@ export async function pinGrant(
     purchaseKey: key,
     accountKey: row.accountKey,
     creditGrantId: proof.creditGrantId,
+    nativeCustomerKey: row.nativeCustomerKey,
+    nativeUnused: true,
+    nativeCreated: proof.createdAt,
     paymentIntentId: proof.paymentIntentId,
     chargeId: proof.chargeId,
     proofJson: JSON.stringify(convexToJson(proof)),
@@ -197,6 +212,7 @@ export async function pinGrant(
   });
   await ctx.db.patch("usageCreditPurchases", row._id, {
     state: "ready",
+    capacityReserved: false,
     creditGrantId: proof.creditGrantId,
   });
   await history(ctx, row.accountKey, "grant", proof.creditGrantId, proof, key);

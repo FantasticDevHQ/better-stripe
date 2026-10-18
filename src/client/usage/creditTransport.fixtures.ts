@@ -19,6 +19,7 @@ export function creditFixture() {
   const state = {
     paid: false,
     nativeApplied: 0,
+    nativeAvailable: undefined as number | undefined,
     applyAtExpire: false,
     nativeExpired: false,
     incomplete: false,
@@ -83,7 +84,9 @@ export function creditFixture() {
               type: "monetary",
               monetary: {
                 currency: "usd",
-                value: state.nativeExpired ? 0 : 20 - state.nativeApplied,
+                value:
+                  state.nativeAvailable ??
+                  (state.nativeExpired ? 0 : 20 - state.nativeApplied),
               },
             },
           },

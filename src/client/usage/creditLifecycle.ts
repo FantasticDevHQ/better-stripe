@@ -39,11 +39,20 @@ export async function cancelCreditPurchase(
             ...(cursor ? { starting_after: cursor } : {}),
           }),
         );
-    if (!payment)
+    if (!payment) {
+      if (row.paymentAttemptedAt === undefined) {
+        await runMutationOrThrow(
+          ctx,
+          componentRef(component, "usageCredits/mutations/cancelUnstarted"),
+          { key: row.key },
+        );
+        return creditPurchaseView({ ...row, state: "canceled" });
+      }
       throw new UsageCreditError(
         "unknown_create_outcome",
         "Unknown original payment requires reconciliation before abandonment",
       );
+    }
     paymentIdentity(payment, terms, row.key, row.paymentIntentId);
     await runMutationOrThrow(
       ctx,

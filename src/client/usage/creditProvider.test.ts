@@ -185,6 +185,16 @@ it("cancels an unpaid original purchase and never recreates its payment intent",
     ),
   ).toMatchObject({ state: "canceled" });
   expect(
+    await f.t.action((ctx) =>
+      ctx.runQuery(componentRef(f.component, "usageCredits/queries/capacity"), {
+        bindingJson: JSON.stringify({
+          scope: f.purchase.scope,
+          binding: f.purchase.binding,
+        }),
+      }),
+    ),
+  ).toBe(0);
+  expect(
     f.calls.filter(
       (c) => c.path === "/v1/payment_intents" && c.method === "POST",
     ),

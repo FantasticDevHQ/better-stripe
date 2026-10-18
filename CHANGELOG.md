@@ -28,10 +28,9 @@
 
 ## [0.60.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.59.0...v0.60.0) (2026-10-18)
 
-
 ### Features
 
-* **usage:** settle verified native invoice and issuer credit proceeds ([#337](https://github.com/FantasticDevHQ/better-stripe/issues/337)) ([3c2844a](https://github.com/FantasticDevHQ/better-stripe/commit/3c2844a6a6a51d2a4f884e25a333165314bcc141))
+- **usage:** settle verified native invoice and issuer credit proceeds ([#337](https://github.com/FantasticDevHQ/better-stripe/issues/337)) ([3c2844a](https://github.com/FantasticDevHQ/better-stripe/commit/3c2844a6a6a51d2a4f884e25a333165314bcc141))
 
 ## [0.59.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.58.0...v0.59.0) (2026-10-18)
 

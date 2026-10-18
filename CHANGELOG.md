@@ -28,10 +28,9 @@
 
 ## [0.53.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.52.0...v0.53.0) (2026-10-18)
 
-
 ### Features
 
-* add native Stripe usage catalog and lifecycle APIs ([#322](https://github.com/FantasticDevHQ/better-stripe/issues/322)) ([19e052d](https://github.com/FantasticDevHQ/better-stripe/commit/19e052d55bc54ba542aca6c0de4e47eb702518c0))
+- add native Stripe usage catalog and lifecycle APIs ([#322](https://github.com/FantasticDevHQ/better-stripe/issues/322)) ([19e052d](https://github.com/FantasticDevHQ/better-stripe/commit/19e052d55bc54ba542aca6c0de4e47eb702518c0))
 
 ## [0.52.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.51.0...v0.52.0) (2026-10-18)
 

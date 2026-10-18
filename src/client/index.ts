@@ -1,4 +1,13 @@
+export { UsageCatalogError } from "./usage/catalogTypes.js";
+export type {
+  UsageCatalogScope,
+  UsageMeterOptions,
+  UsagePriceOptions,
+} from "./usage/catalogTypes.js";
+export type { UsagePriceBinding } from "./usage/catalogRead.js";
 import * as setupIntentRead from "./billing/setup-intent-read.js";
+import { UsageLedgerClient } from "./usage/client.js";
+export type { RecordUsageOptions } from "./usage/client.js";
 export type {
   SetupIntentReadOptions,
   SetupIntentObservation,
@@ -241,6 +250,9 @@ export type BetterStripeComponent = ComponentApi;
 // BETTER STRIPE CLIENT
 
 export class BetterStripe extends PaymentSourceClient {
+  get usage() {
+    return new UsageLedgerClient(this.component);
+  }
   readonly stripeApiVersion: SupportedStripeApiVersion;
   private _apiKey?: string;
   private _triggers?: SyncTriggers;
@@ -1816,3 +1828,19 @@ export type {
   SubscriptionPaymentMethodOptions,
   SubscriptionPaymentMethodResult,
 } from "./billing/subscription-payment-method.js";
+
+export type {
+  UsageDeliveryRequest,
+  UsageDeliveryOutcome,
+  UsageDeliveryProviderOptions,
+} from "./usage/deliveryProvider.js";
+export type {
+  UsageDeliveryRef,
+  UsageDeliveryStatus,
+  UsageDeliveryStartOptions,
+} from "./usage/deliveryClient.js";
+
+export {
+  usageDeliveryArgs,
+  usageDeliveryResult,
+} from "./usage/deliveryProtocol.js";

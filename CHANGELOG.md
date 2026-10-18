@@ -26,6 +26,51 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.54.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.53.0...v0.54.0) (2026-10-18)
+
+### Features
+
+- deliver native Stripe usage with durable scoped workflows ([#324](https://github.com/FantasticDevHQ/better-stripe/issues/324)) ([ca739b4](https://github.com/FantasticDevHQ/better-stripe/commit/ca739b4fd5ed6ad69319d631aaa02b392f941d60))
+
+## [0.53.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.52.0...v0.53.0) (2026-10-18)
+
+### Features
+
+- add native Stripe usage catalog and lifecycle APIs ([#322](https://github.com/FantasticDevHQ/better-stripe/issues/322)) ([19e052d](https://github.com/FantasticDevHQ/better-stripe/commit/19e052d55bc54ba542aca6c0de4e47eb702518c0))
+
+## [0.52.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.51.0...v0.52.0) (2026-10-18)
+
+### Features
+
+- add atomic scoped usage ledger and durable outbox ([c4a4f39](https://github.com/FantasticDevHQ/better-stripe/commit/c4a4f39749ec6399514176e1deb02a379278349a))
+
+### Bug Fixes
+
+- reject unavailable usage reservation references ([d6b7f16](https://github.com/FantasticDevHQ/better-stripe/commit/d6b7f1666a2acf35aae45e590ffc1f5eb3fca8a5))
+
+### Tests
+
+- retain improved atomic ledger coverage floors ([4b88773](https://github.com/FantasticDevHQ/better-stripe/commit/4b88773e3ff5489c4f473f4e4f5a6ecaf2a7cfbf))
+
+## [0.51.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.3...v0.51.0) (2026-10-18)
+
+### Features
+
+- complete scoped usage API and host authorization contracts ([41d58ac](https://github.com/FantasticDevHQ/better-stripe/commit/41d58ac99ff63c89c17143dde5e59de04ee2c80d))
+
+### Documentation
+
+- align metering status and index with native sandbox evidence ([d1c1bf5](https://github.com/FantasticDevHQ/better-stripe/commit/d1c1bf57893c6045c91a8c9103ea02103c871ed9))
+
+### Continuous Integration
+
+- batch coverage floor increases in weekly PRs ([d648b82](https://github.com/FantasticDevHQ/better-stripe/commit/d648b82f6c910b16c6349096a2022c798777f608))
+- batch coverage floor increases in weekly PRs ([8217f1f](https://github.com/FantasticDevHQ/better-stripe/commit/8217f1fe9e1bdac5c730d98cc1022ea7cd1c385c))
+
+### Tests
+
+- ratchet native usage contract coverage floors ([5c8ff1b](https://github.com/FantasticDevHQ/better-stripe/commit/5c8ff1b31913a08db9493cc5a0219601ad540608))
+
 ## [0.50.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.2...v0.50.3) (2026-10-18)
 
 ### Documentation

@@ -1,3 +1,7 @@
+import {
+  errorsTable as usageDeliveryErrors,
+  locksTable as usageDeliveryLocks,
+} from "./usageDelivery/fields.js";
 import { claimsTable as refundSyncClaimsTable } from "./refundSync/schema.js";
 import { operationsTable as processingCostReconciliationOperations } from "./processingCostReconciliation/schema.js";
 import {
@@ -68,7 +72,14 @@ import {
   commissionTermsTable,
   commissionDecisionsTable,
 } from "./settlement/schema";
+import { usageCatalogTable } from "./usageCatalog/schema.js";
 import { defineSchema } from "convex/server";
+import {
+  usageEventsTable,
+  usageOutboxTable,
+  usageScopeCountersTable,
+  usageReservationsTable,
+} from "./usage/schema.js";
 
 import {
   checkoutSessionsTable,
@@ -89,6 +100,13 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageDeliveryLocks,
+  usageDeliveryErrors,
+  usageCatalog: usageCatalogTable,
+  usageEvents: usageEventsTable,
+  usageOutbox: usageOutboxTable,
+  usageScopeCounters: usageScopeCountersTable,
+  usageReservations: usageReservationsTable,
   refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,

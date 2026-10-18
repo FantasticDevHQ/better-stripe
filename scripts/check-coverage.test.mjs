@@ -59,7 +59,7 @@ async function run(options) {
   const module = await import("./check-coverage.mjs").catch(() => ({}));
   expect(
     module.checkCoverage,
-    "coverage checks must automatically ratchet floors",
+    "coverage enforcement and scheduled ratcheting must be available",
   ).toBeTypeOf("function");
   return module.checkCoverage(options);
 }
@@ -67,7 +67,7 @@ async function run(options) {
 it("persists improvements after a successful full check while preserving policy metadata", async () => {
   const f = fixture();
   expect(
-    await run({ root: f.root, ci: false, runCheck: successfulRun(f.root) }),
+    await run({ root: f.root, ratchet: true, runCheck: successfulRun(f.root) }),
   ).toBe(0);
   expect(JSON.parse(f.read())).toEqual({
     ...f.budgets,
@@ -81,7 +81,7 @@ it("raises metrics independently and never lowers an existing floor", async () =
   expect(
     await run({
       root: f.root,
-      ci: false,
+      ratchet: true,
       runCheck: successfulRun(f.root, 77.6, 76),
     }),
   ).toBe(0);
@@ -107,7 +107,7 @@ it("leaves budgets untouched after a failed check even if a summary was emitted"
   expect(
     await run({
       root: f.root,
-      ci: false,
+      ratchet: true,
       runCheck: () => {
         successfulRun(f.root, 95, 95)();
         return 7;
@@ -116,14 +116,17 @@ it("leaves budgets untouched after a failed check even if a summary was emitted"
   ).toBe(7);
   expect(f.read()).toBe(before);
 });
-it("requires CI improvements to be committed without changing its checkout", async () => {
-  const f = fixture(),
-    before = f.read();
-  expect(
-    await run({ root: f.root, ci: true, runCheck: successfulRun(f.root) }),
-  ).toBe(1);
-  expect(f.read()).toBe(before);
-});
+it.each([false, true])(
+  "enforces coverage without editing floors or rejecting earned gains in CI=%s",
+  async (ci) => {
+    const f = fixture(),
+      before = f.read();
+    expect(
+      await run({ root: f.root, ci, runCheck: successfulRun(f.root) }),
+    ).toBe(0);
+    expect(f.read()).toBe(before);
+  },
+);
 it("passes CI when the floors already reflect the measured baseline", async () => {
   const f = fixture();
   expect(
@@ -142,7 +145,7 @@ it.each([-1, 101, null, "90"])(
     await expect(
       run({
         root: f.root,
-        ci: false,
+        ratchet: true,
         runCheck: successfulRun(f.root, pct, 95),
       }),
     ).rejects.toThrow(/percentage/);
@@ -159,7 +162,87 @@ it("fails closed if the configured summary locations change", async () => {
     }),
   );
   await expect(
-    run({ root: f.root, ci: false, runCheck: successfulRun(f.root) }),
+    run({ root: f.root, ratchet: true, runCheck: successfulRun(f.root) }),
   ).rejects.toThrow(/summary/);
   expect(f.read()).toBe(before);
+});
+
+it.each([0.01, 0.04, 0.049])(
+  "ignores a scheduled improvement smaller than 0.05 points (%s)",
+  async (gain) => {
+    const f = fixture(),
+      before = f.read();
+    expect(
+      await run({
+        root: f.root,
+        ratchet: true,
+        runCheck: successfulRun(f.root, 77.9 + gain, 73.02 + gain),
+      }),
+    ).toBe(0);
+    expect(f.read()).toBe(before);
+  },
+);
+it("captures all earned improvement once the minimum is reached, independently per metric", async () => {
+  const f = fixture();
+  expect(
+    await run({
+      root: f.root,
+      ratchet: true,
+      runCheck: successfulRun(f.root, 77.95, 73.09),
+    }),
+  ).toBe(0);
+  expect(
+    JSON.parse(f.read()).packages["coverage/coverage-summary.json"],
+  ).toEqual({ lines: 77.45, functions: 72.59 });
+});
+it("does not accept an old summary if the fresh check fails to emit one", async () => {
+  const f = fixture(),
+    before = f.read();
+  successfulRun(f.root, 99, 99)();
+  await expect(
+    run({ root: f.root, ratchet: true, runCheck: () => 0 }),
+  ).rejects.toThrow();
+  expect(f.read()).toBe(before);
+});
+it("refuses a regression even if the gate runner incorrectly reports success", async () => {
+  const f = fixture(),
+    before = f.read();
+  await expect(
+    run({
+      root: f.root,
+      ratchet: true,
+      runCheck: successfulRun(f.root, 77.39, 90),
+    }),
+  ).rejects.toThrow(/floor/);
+  expect(f.read()).toBe(before);
+});
+it("writes evidence with measured and proposed floors only after the full gate succeeds", async () => {
+  const f = fixture(),
+    reportPath = join(f.root, "report.md");
+  expect(
+    await run({
+      root: f.root,
+      ratchet: true,
+      runCheck: successfulRun(f.root),
+      reportPath,
+      runUrl: "https://github.com/owner/repo/actions/runs/123",
+    }),
+  ).toBe(0);
+  const report = readFileSync(reportPath, "utf8");
+  expect(report).toContain("https://github.com/owner/repo/actions/runs/123");
+  expect(report).toContain("78.50%");
+  expect(report).toContain("74.50%");
+  expect(report).toContain("0.05");
+});
+
+it("runs the complete repository gate for scheduled changes and the full coverage gate for ordinary checks", async () => {
+  const { coverageCommand } = await import("./check-coverage.mjs");
+  expect(coverageCommand([])).toEqual(["exec", "repo-gates", "check-coverage"]);
+  expect(coverageCommand(["--ratchet"])).toEqual(["run", "check:all"]);
+  for (const args of [
+    ["--skip-run"],
+    ["--ratchet", "--partial"],
+    ["--ratchet", "some.test.ts"],
+  ])
+    expect(() => coverageCommand(args)).toThrow(/arguments/);
 });

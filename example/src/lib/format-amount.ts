@@ -1,6 +1,2 @@
-export function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
-}
+// Keep currency units and validation in the public package.
+export { formatPrice as formatAmount } from "@fantastic.dev/better-stripe/react";

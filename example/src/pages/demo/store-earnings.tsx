@@ -1,3 +1,4 @@
+import { formatPayoutAmount } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useRole } from "@/providers/role-context";
 
@@ -23,13 +24,6 @@ import {
 import { useAction, useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
-
-function formatCurrency(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
-}
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
@@ -181,7 +175,7 @@ export function StoreEarnings() {
                           {payout.stripePayoutId}
                         </TableCell>
                         <TableCell variant="amount">
-                          {formatCurrency(
+                          {formatPayoutAmount(
                             payout.amount ?? 0,
                             payout.currency || "usd",
                           )}

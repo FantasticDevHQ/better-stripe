@@ -1,3 +1,4 @@
+import { isFixedPrice } from "../products/fixedPrice.js";
 import { handleRefundEvent } from "./refundDelivery.js";
 import { handlePayoutEvent } from "./payoutReconciliation.js";
 import { reconcileDisputeMoney } from "./disputeRecovery.js";
@@ -157,6 +158,7 @@ async function handlePriceEvent(
   whCtx: WebhookContext,
   price: Stripe.Price,
 ): Promise<void> {
+  if (!isFixedPrice(price)) return;
   const { ctx, component, stripe } = whCtx;
   const stripeProductId: string =
     typeof price.product === "string"

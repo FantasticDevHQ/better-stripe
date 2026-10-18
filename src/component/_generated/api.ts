@@ -162,6 +162,11 @@ import type * as settlement_clawbackSchema from "../settlement/clawbackSchema.js
 import type * as settlement_clawbacks from "../settlement/clawbacks.js";
 import type * as settlement_mutations from "../settlement/mutations.js";
 import type * as settlement_queries from "../settlement/queries.js";
+import type * as usage_helpers from "../usage/helpers.js";
+import type * as usage_mutations from "../usage/mutations.js";
+import type * as usage_queries from "../usage/queries.js";
+import type * as usageCatalog_mutations from "../usageCatalog/mutations.js";
+import type * as usageCatalog_queries from "../usageCatalog/queries.js";
 import type * as webhooks_mutations from "../webhooks/mutations.js";
 import type * as webhooks_queries from "../webhooks/queries.js";
 import type * as webhooks_validators from "../webhooks/validators.js";
@@ -328,6 +333,11 @@ const fullApi: ApiFromModules<{
   "settlement/clawbacks": typeof settlement_clawbacks;
   "settlement/mutations": typeof settlement_mutations;
   "settlement/queries": typeof settlement_queries;
+  "usage/helpers": typeof usage_helpers;
+  "usage/mutations": typeof usage_mutations;
+  "usage/queries": typeof usage_queries;
+  "usageCatalog/mutations": typeof usageCatalog_mutations;
+  "usageCatalog/queries": typeof usageCatalog_queries;
   "webhooks/mutations": typeof webhooks_mutations;
   "webhooks/queries": typeof webhooks_queries;
   "webhooks/validators": typeof webhooks_validators;

@@ -28,10 +28,9 @@
 
 ## [0.62.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.61.0...v0.62.0) (2026-10-18)
 
-
 ### Features
 
-* **react:** configure all three native usage billing models (BTS-259) ([#343](https://github.com/FantasticDevHQ/better-stripe/issues/343)) ([a6733d6](https://github.com/FantasticDevHQ/better-stripe/commit/a6733d6af8ef12ac6bdd6a736bf9319b1659b2fb))
+- **react:** configure all three native usage billing models ([#343](https://github.com/FantasticDevHQ/better-stripe/issues/343)) ([a6733d6](https://github.com/FantasticDevHQ/better-stripe/commit/a6733d6af8ef12ac6bdd6a736bf9319b1659b2fb))
 
 ## [0.61.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.60.1...v0.61.0) (2026-10-18)
 

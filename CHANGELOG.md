@@ -26,6 +26,19 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.64.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.63.0...v0.64.0) (2026-10-18)
+
+
+### Features
+
+* journal payout revisions and retain reversal claim history ([#316](https://github.com/FantasticDevHQ/better-stripe/issues/316)) ([0cbad43](https://github.com/FantasticDevHQ/better-stripe/commit/0cbad4369627b2f0669ff918dcf68e9b47633cae))
+
+
+### Bug Fixes
+
+* **example:** refresh original financial evidence before usage cleanup ([#347](https://github.com/FantasticDevHQ/better-stripe/issues/347)) ([d70a1c2](https://github.com/FantasticDevHQ/better-stripe/commit/d70a1c2a83c601d75f5f9949cc900835beacbe7c))
+* reuse package currency formatting and document example boundaries ([#310](https://github.com/FantasticDevHQ/better-stripe/issues/310)) ([5469f31](https://github.com/FantasticDevHQ/better-stripe/commit/5469f31d9a9ad03151541a79a2e0677f0fcf93f3))
+
 ## [0.63.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.62.0...v0.63.0) (2026-10-18)
 
 ### Features

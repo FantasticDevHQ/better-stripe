@@ -1,0 +1,2133 @@
+{
+  "capturedAt": "2026-10-18T14:49:20.763Z",
+  "environment": "Existing Stripe sandbox; read-only native usage refresh of original archived fixtures; no new payments or transfers",
+  "models": {
+    "customer:pay_as_you_go": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334963,
+        "value": {
+          "period": {
+            "start": 1792330860,
+            "end": 1795009260
+          },
+          "quantity": "15",
+          "scaledQuantity": "15",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792330860000",
+              "start": 1792330860,
+              "end": 1795009260,
+              "scaledQuantity": "15"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792334966,
+          "value": {
+            "period": {
+              "end": 1795009260,
+              "start": 1792330860
+            },
+            "observedAt": 1792334966,
+            "complete": true,
+            "eventCount": 4,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                  "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "period": {
+                    "start": 1792330860,
+                    "end": 1795009260
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "20",
+                "providerAcceptedScaledQuantity": "15",
+                "acceptedQuantity": "20",
+                "canceledQuantity": "5",
+                "effectiveQuantity": "15",
+                "effectiveScaledQuantity": "15",
+                "providerAcceptedQuantity": "15",
+                "eventCount": 4,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "5",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "15",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "unavailable",
+                  "reason": "not_included_model",
+                  "retryable": false
+                },
+                "estimate": {
+                  "status": "available",
+                  "observedAt": 1792334966,
+                  "value": {
+                    "amountDecimal": "1500",
+                    "currency": "usd"
+                  }
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "not_prepaid_model",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334963,
+          "value": {
+            "period": {
+              "start": 1792330860,
+              "end": 1795009260
+            },
+            "quantity": "15",
+            "scaledQuantity": "15",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792330860000",
+                "start": 1792330860,
+                "end": 1795009260,
+                "scaledQuantity": "15"
+              }
+            ]
+          }
+        },
+        "allowance": {
+          "status": "available",
+          "observedAt": 1792334966,
+          "value": {
+            "revision": 1,
+            "observedAt": 1792334966,
+            "period": {
+              "start": 1792330860,
+              "end": 1795009260
+            },
+            "accepting": false,
+            "policy": {
+              "reset": "billing_period",
+              "rollover": "none",
+              "entitled": true,
+              "overage": "allow",
+              "limit": {
+                "mode": "none"
+              }
+            },
+            "consumedQuantity": "15",
+            "reservedQuantity": "0",
+            "includedQuantity": "0",
+            "remainingIncludedQuantity": "0",
+            "billableOverageQuantity": "15",
+            "softLimitReached": false,
+            "hardLimitRemainingQuantity": null,
+            "committedEstimate": {
+              "amountDecimal": "1500",
+              "currency": "usd"
+            },
+            "projectedEstimate": {
+              "amountDecimal": "1500",
+              "currency": "usd"
+            },
+            "cashCollection": "none"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792334968,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss7cngk9858015351zp7df63bd8ggfzb",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17b2ysxeqhn54g4z038g9eeeh8ghq8d\"]",
+                "acceptedAt": 1792331198,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuM99lsaWWk3Wg",
+                  "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17b2ysxeqhn54g4z038g9eeeh8ghq8d",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17b2ysxeqhn54g4z038g9eeeh8ghq8d\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7cfpyt69mfypfa9wtjh26r4h8ghzf7",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17dwdvqtk5vmn9zzpfcpn7m618gh7m2\"]",
+                "acceptedAt": 1792331020,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuM99lsaWWk3Wg",
+                  "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17dwdvqtk5vmn9zzpfcpn7m618gh7m2",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17dwdvqtk5vmn9zzpfcpn7m618gh7m2\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "canceled"
+            },
+            {
+              "receipt": {
+                "eventId": "ss76rt6me1m0qp6fevp9x5bzes8ggcd3",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17d2h9x14g6g8jnq4fc37emgs8ggcat\"]",
+                "acceptedAt": 1792331017,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuM99lsaWWk3Wg",
+                  "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17d2h9x14g6g8jnq4fc37emgs8ggcat",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17d2h9x14g6g8jnq4fc37emgs8ggcat\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss72ymgvcnfjy94qt9f1a82yws8ggt27",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17etcj77yt4aq5d9ev6xa4bqn8ggkcg\"]",
+                "acceptedAt": 1792331014,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuM99lsaWWk3Wg",
+                  "meterId": "mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2XSoUQTGrAc",
+                  "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                  "eventName": "bs_m974jvmgjwf33y0kbwdzn801y58gh1sf_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m974jvmgjwf33y0kbwdzn801y58gh1sf_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17etcj77yt4aq5d9ev6xa4bqn8ggkcg",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuM99lsaWWk3Wg\",\"mtr_test_61VbIJWXsnzAbqYGB416JR7kThJogGYq\",\"demo_work_m17etcj77yt4aq5d9ev6xa4bqn8ggkcg\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMC6JR7kThJogq79cUbQA",
+                "subscriptionItemId": "si_VSq2HG55s7KiHI",
+                "stripePriceId": "price_1URuMB6JR7kThJogBo5CvAt2",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    },
+    "customer:included_overage": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334970,
+        "value": {
+          "period": {
+            "start": 1792330860,
+            "end": 1795009260
+          },
+          "quantity": "15",
+          "scaledQuantity": "15",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792330860000",
+              "start": 1792330860,
+              "end": 1795009260,
+              "scaledQuantity": "15"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792334973,
+          "value": {
+            "period": {
+              "end": 1795009260,
+              "start": 1792330860
+            },
+            "observedAt": 1792334972,
+            "complete": true,
+            "eventCount": 4,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                  "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "period": {
+                    "start": 1792330860,
+                    "end": 1795009260
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "20",
+                "providerAcceptedScaledQuantity": "15",
+                "acceptedQuantity": "20",
+                "canceledQuantity": "5",
+                "effectiveQuantity": "15",
+                "effectiveScaledQuantity": "15",
+                "providerAcceptedQuantity": "15",
+                "eventCount": 4,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "5",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "15",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "available",
+                  "observedAt": 1792334972,
+                  "value": {
+                    "included": "10",
+                    "consumed": "15",
+                    "remaining": "0",
+                    "overage": "5"
+                  }
+                },
+                "estimate": {
+                  "status": "available",
+                  "observedAt": 1792334972,
+                  "value": {
+                    "amountDecimal": "500",
+                    "currency": "usd"
+                  }
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "not_prepaid_model",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334970,
+          "value": {
+            "period": {
+              "start": 1792330860,
+              "end": 1795009260
+            },
+            "quantity": "15",
+            "scaledQuantity": "15",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792330860000",
+                "start": 1792330860,
+                "end": 1795009260,
+                "scaledQuantity": "15"
+              }
+            ]
+          }
+        },
+        "allowance": {
+          "status": "available",
+          "observedAt": 1792334973,
+          "value": {
+            "revision": 1,
+            "observedAt": 1792334973,
+            "period": {
+              "start": 1792330860,
+              "end": 1795009260
+            },
+            "accepting": false,
+            "policy": {
+              "reset": "billing_period",
+              "rollover": "none",
+              "entitled": true,
+              "overage": "allow",
+              "limit": {
+                "mode": "soft",
+                "quantity": "12"
+              }
+            },
+            "consumedQuantity": "15",
+            "reservedQuantity": "0",
+            "includedQuantity": "10",
+            "remainingIncludedQuantity": "0",
+            "billableOverageQuantity": "5",
+            "softLimitReached": true,
+            "hardLimitRemainingQuantity": null,
+            "committedEstimate": {
+              "amountDecimal": "500",
+              "currency": "usd"
+            },
+            "projectedEstimate": {
+              "amountDecimal": "500",
+              "currency": "usd"
+            },
+            "cashCollection": "none"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792334975,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss756zjmxzkvczrfze6k1jesk58gh9xk",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m175xmeha2dx49xf7tk6rzdpt18ggbb7\"]",
+                "acceptedAt": 1792331200,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMG5IinsqBwHo",
+                  "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m175xmeha2dx49xf7tk6rzdpt18ggbb7",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m175xmeha2dx49xf7tk6rzdpt18ggbb7\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7c2sg8m9d60v8rdz1mf78sxn8gh89d",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m1712e23cqx727vhdgq759yhw18gh5vj\"]",
+                "acceptedAt": 1792331032,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMG5IinsqBwHo",
+                  "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m1712e23cqx727vhdgq759yhw18gh5vj",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m1712e23cqx727vhdgq759yhw18gh5vj\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "canceled"
+            },
+            {
+              "receipt": {
+                "eventId": "ss76mk4pgq3mgj2q95n5yfxc1d8ghz0w",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m17529nv0ej5ge3k80rztajh698ggfk7\"]",
+                "acceptedAt": 1792331029,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMG5IinsqBwHo",
+                  "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m17529nv0ej5ge3k80rztajh698ggfk7",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m17529nv0ej5ge3k80rztajh698ggfk7\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss750gq7k652rn7vbhwrsrqj0d8ghh62",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m171k7cx85rfrpyk9b59p5e09s8gghwp\"]",
+                "acceptedAt": 1792331027,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMG5IinsqBwHo",
+                  "meterId": "mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2MN4GoTguOP",
+                  "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                  "eventName": "bs_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97d62n1a63mpz9v1ahgj71z6h8ghswe_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m171k7cx85rfrpyk9b59p5e09s8gghwp",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMG5IinsqBwHo\",\"mtr_test_61VbIJd7Rh5B56FAR416JR7kThJogU4G\",\"demo_work_m171k7cx85rfrpyk9b59p5e09s8gghwp\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMJ6JR7kThJogyyCd70Jn",
+                "subscriptionItemId": "si_VSq2xxImhnQL6f",
+                "stripePriceId": "price_1URuMI6JR7kThJog0E3IP3yx",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    },
+    "customer:prepaid": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334977,
+        "value": {
+          "period": {
+            "start": 1792330860,
+            "end": 1795009260
+          },
+          "quantity": "10",
+          "scaledQuantity": "10",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792330860000",
+              "start": 1792330860,
+              "end": 1795009260,
+              "scaledQuantity": "10"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792334979,
+          "value": {
+            "period": {
+              "end": 1795009260,
+              "start": 1792330860
+            },
+            "observedAt": 1792334979,
+            "complete": true,
+            "eventCount": 3,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2T3qaZB2Uxh",
+                  "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                  "eventName": "bs_m97fgra5bdg7x3bg672vktv0k58ghc2f_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97fgra5bdg7x3bg672vktv0k58ghc2f_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URuMQ6JR7kThJogegvCKlzX",
+                  "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                  "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                  "period": {
+                    "start": 1792330860,
+                    "end": 1795009260
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "15",
+                "providerAcceptedScaledQuantity": "10",
+                "acceptedQuantity": "15",
+                "canceledQuantity": "5",
+                "effectiveQuantity": "10",
+                "effectiveScaledQuantity": "10",
+                "providerAcceptedQuantity": "10",
+                "eventCount": 3,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "5",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "10",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "unavailable",
+                  "reason": "not_included_model",
+                  "retryable": false
+                },
+                "estimate": {
+                  "status": "unavailable",
+                  "reason": "credit_balance_requires_scoped_reader",
+                  "retryable": false
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "credit_balance_requires_scoped_reader",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334977,
+          "value": {
+            "period": {
+              "start": 1792330860,
+              "end": 1795009260
+            },
+            "quantity": "10",
+            "scaledQuantity": "10",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792330860000",
+                "start": 1792330860,
+                "end": 1795009260,
+                "scaledQuantity": "10"
+              }
+            ]
+          }
+        },
+        "purchase": {
+          "purchaseId": "md76j2t0xt14fcnw8hd4e1k2k18gg23w",
+          "state": "ready",
+          "paymentIntentId": "pi_3URuNa6JR7kThJog1ONRpqAf",
+          "creditGrantId": "credgr_test_61VbIL41CSf8BbOao416JR7kThJog1GS",
+          "quantity": "10",
+          "amount": 1000,
+          "currency": "usd"
+        },
+        "creditApplication": {
+          "status": "available",
+          "observedAt": 1792334979,
+          "value": {
+            "ledgerAmount": 0,
+            "availableAmount": 0,
+            "granted": 1000,
+            "applied": 1000,
+            "expired": 0,
+            "voided": 0,
+            "reinstated": 0,
+            "backing": "sufficient",
+            "reason": null,
+            "pendingFinalizationAmount": 0,
+            "cashCollection": "none",
+            "invoicePaymentEvidence": "not_resolved"
+          }
+        },
+        "credits": {
+          "status": "available",
+          "observedAt": 1792334981,
+          "value": {
+            "availableQuantity": "0",
+            "cashCollection": "none",
+            "consumedQuantity": "10",
+            "currency": "usd",
+            "expiredQuantity": "0",
+            "frozenQuantity": "0",
+            "precision": 0,
+            "reservedQuantity": "0",
+            "status": "held",
+            "unit": "call"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792334983,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss7a0b8kf4b376pm593cxeq3fh8ghq47",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m170vt16ss5vn68jbmvcm6xcgx8gh2rj\"]",
+                "acceptedAt": 1792331203,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMN6TR93R6HaB",
+                  "meterId": "mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2T3qaZB2Uxh",
+                  "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                  "eventName": "bs_m97fgra5bdg7x3bg672vktv0k58ghc2f_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97fgra5bdg7x3bg672vktv0k58ghc2f_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "sourceEventId": "demo_work_m170vt16ss5vn68jbmvcm6xcgx8gh2rj",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m170vt16ss5vn68jbmvcm6xcgx8gh2rj\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMQ6JR7kThJogegvCKlzX",
+                "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7crgbyfgs6vq0kb2znpb47j98ghg96",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m1747e8s5dfwhejxq2v03jjqgn8ghppy\"]",
+                "acceptedAt": 1792331054,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMN6TR93R6HaB",
+                  "meterId": "mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2T3qaZB2Uxh",
+                  "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                  "eventName": "bs_m97fgra5bdg7x3bg672vktv0k58ghc2f_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97fgra5bdg7x3bg672vktv0k58ghc2f_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "sourceEventId": "demo_work_m1747e8s5dfwhejxq2v03jjqgn8ghppy",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m1747e8s5dfwhejxq2v03jjqgn8ghppy\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMQ6JR7kThJogegvCKlzX",
+                "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "canceled"
+            },
+            {
+              "receipt": {
+                "eventId": "ss709pgj9wyv63dysmdpfmww858ggvqq",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m17c4er6jjrehj62hjvbtjzpc18gh84p\"]",
+                "acceptedAt": 1792331052,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuMN6TR93R6HaB",
+                  "meterId": "mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSq2T3qaZB2Uxh",
+                  "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                  "eventName": "bs_m97fgra5bdg7x3bg672vktv0k58ghc2f_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97fgra5bdg7x3bg672vktv0k58ghc2f_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "sourceEventId": "demo_work_m17c4er6jjrehj62hjvbtjzpc18gh84p",
+                "quantity": "5",
+                "occurredAt": 1792330860,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuMN6TR93R6HaB\",\"mtr_test_61VbIJkRzMJkn6gvK416JR7kThJogR1E\",\"demo_work_m17c4er6jjrehj62hjvbtjzpc18gh84p\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuMQ6JR7kThJogegvCKlzX",
+                "subscriptionItemId": "si_VSq2D1ENwksCjR",
+                "stripePriceId": "price_1URuMP6JR7kThJog03yjSH2v",
+                "period": {
+                  "start": 1792330860,
+                  "end": 1795009260
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    },
+    "seller:pay_as_you_go": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334984,
+        "value": {
+          "period": {
+            "start": 1792332000,
+            "end": 1795010400
+          },
+          "quantity": "15",
+          "scaledQuantity": "15",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792332000000",
+              "start": 1792332000,
+              "end": 1795010400,
+              "scaledQuantity": "15"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792334987,
+          "value": {
+            "period": {
+              "end": 1795010400,
+              "start": 1792332000
+            },
+            "observedAt": 1792334987,
+            "complete": true,
+            "eventCount": 3,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLOYhTp4PLzA",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "eventName": "bs_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+                  "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "period": {
+                    "start": 1792332000,
+                    "end": 1795010400
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "15",
+                "providerAcceptedScaledQuantity": "15",
+                "acceptedQuantity": "15",
+                "canceledQuantity": "0",
+                "effectiveQuantity": "15",
+                "effectiveScaledQuantity": "15",
+                "providerAcceptedQuantity": "15",
+                "eventCount": 3,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "0",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "15",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "unavailable",
+                  "reason": "not_included_model",
+                  "retryable": false
+                },
+                "estimate": {
+                  "status": "available",
+                  "observedAt": 1792334987,
+                  "value": {
+                    "amountDecimal": "1500",
+                    "currency": "usd"
+                  }
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "not_prepaid_model",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334984,
+          "value": {
+            "period": {
+              "start": 1792332000,
+              "end": 1795010400
+            },
+            "quantity": "15",
+            "scaledQuantity": "15",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792332000000",
+                "start": 1792332000,
+                "end": 1795010400,
+                "scaledQuantity": "15"
+              }
+            ]
+          }
+        },
+        "allowance": {
+          "status": "available",
+          "observedAt": 1792334987,
+          "value": {
+            "revision": 1,
+            "observedAt": 1792334987,
+            "period": {
+              "start": 1792332000,
+              "end": 1795010400
+            },
+            "accepting": false,
+            "policy": {
+              "reset": "billing_period",
+              "rollover": "none",
+              "entitled": true,
+              "overage": "allow",
+              "limit": {
+                "mode": "none"
+              }
+            },
+            "consumedQuantity": "15",
+            "reservedQuantity": "0",
+            "includedQuantity": "0",
+            "remainingIncludedQuantity": "0",
+            "billableOverageQuantity": "15",
+            "softLimitReached": false,
+            "hardLimitRemainingQuantity": null,
+            "committedEstimate": {
+              "amountDecimal": "1500",
+              "currency": "usd"
+            },
+            "projectedEstimate": {
+              "amountDecimal": "1500",
+              "currency": "usd"
+            },
+            "cashCollection": "none"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792334989,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss7c40bxsg3rpdj0rmy8kp032h8gg0q0",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17fvxntydxmbe83pwpk441w798ghzzj\"]",
+                "acceptedAt": 1792332160,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuep81DawKgj1f",
+                  "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLOYhTp4PLzA",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "eventName": "bs_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17fvxntydxmbe83pwpk441w798ghzzj",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17fvxntydxmbe83pwpk441w798ghzzj\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+                "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+                "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7a7n8e0hjy1g5dq02bc9h6bd8ghjkf",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17bpt9tj5jhrh89nywpyjjvah8ghnb6\"]",
+                "acceptedAt": 1792332157,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuep81DawKgj1f",
+                  "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLOYhTp4PLzA",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "eventName": "bs_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17bpt9tj5jhrh89nywpyjjvah8ghnb6",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17bpt9tj5jhrh89nywpyjjvah8ghnb6\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+                "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+                "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss74yj1z0y2h83kk26s4tps6298gg3y1",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17e85vfgfzadj4c54qewpp13h8gha38\"]",
+                "acceptedAt": 1792332154,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuep81DawKgj1f",
+                  "meterId": "mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLOYhTp4PLzA",
+                  "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                  "eventName": "bs_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m97eyzdpcz413nx5nnymp6kc7d8ggqbm_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "pay_as_you_go"
+                  }
+                },
+                "sourceEventId": "demo_work_m17e85vfgfzadj4c54qewpp13h8gha38",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuep81DawKgj1f\",\"mtr_test_61VbIcDPoFBBvRKwU416JR7kThJog5XE\",\"demo_work_m17e85vfgfzadj4c54qewpp13h8gha38\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URues6JR7kThJogj460AaCB",
+                "subscriptionItemId": "si_VSqLpEvO1WQD9V",
+                "stripePriceId": "price_1URuer6JR7kThJog6MrjmgrG",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    },
+    "seller:included_overage": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334991,
+        "value": {
+          "period": {
+            "start": 1792332000,
+            "end": 1795010400
+          },
+          "quantity": "15",
+          "scaledQuantity": "15",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792332000000",
+              "start": 1792332000,
+              "end": 1795010400,
+              "scaledQuantity": "15"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792334994,
+          "value": {
+            "period": {
+              "end": 1795010400,
+              "start": 1792332000
+            },
+            "observedAt": 1792334994,
+            "complete": true,
+            "eventCount": 3,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLPuYCLAyo5Q",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "eventName": "bs_m9727jptsa2arhp36ag0ew3tf98ggm1v_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9727jptsa2arhp36ag0ew3tf98ggm1v_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+                  "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "period": {
+                    "start": 1792332000,
+                    "end": 1795010400
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "15",
+                "providerAcceptedScaledQuantity": "15",
+                "acceptedQuantity": "15",
+                "canceledQuantity": "0",
+                "effectiveQuantity": "15",
+                "effectiveScaledQuantity": "15",
+                "providerAcceptedQuantity": "15",
+                "eventCount": 3,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "0",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "15",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "available",
+                  "observedAt": 1792334994,
+                  "value": {
+                    "included": "10",
+                    "consumed": "15",
+                    "remaining": "0",
+                    "overage": "5"
+                  }
+                },
+                "estimate": {
+                  "status": "available",
+                  "observedAt": 1792334994,
+                  "value": {
+                    "amountDecimal": "500",
+                    "currency": "usd"
+                  }
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "not_prepaid_model",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334991,
+          "value": {
+            "period": {
+              "start": 1792332000,
+              "end": 1795010400
+            },
+            "quantity": "15",
+            "scaledQuantity": "15",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792332000000",
+                "start": 1792332000,
+                "end": 1795010400,
+                "scaledQuantity": "15"
+              }
+            ]
+          }
+        },
+        "allowance": {
+          "status": "available",
+          "observedAt": 1792334994,
+          "value": {
+            "revision": 1,
+            "observedAt": 1792334994,
+            "period": {
+              "start": 1792332000,
+              "end": 1795010400
+            },
+            "accepting": false,
+            "policy": {
+              "reset": "billing_period",
+              "rollover": "none",
+              "entitled": true,
+              "overage": "allow",
+              "limit": {
+                "mode": "soft",
+                "quantity": "12"
+              }
+            },
+            "consumedQuantity": "15",
+            "reservedQuantity": "0",
+            "includedQuantity": "10",
+            "remainingIncludedQuantity": "0",
+            "billableOverageQuantity": "5",
+            "softLimitReached": true,
+            "hardLimitRemainingQuantity": null,
+            "committedEstimate": {
+              "amountDecimal": "500",
+              "currency": "usd"
+            },
+            "projectedEstimate": {
+              "amountDecimal": "500",
+              "currency": "usd"
+            },
+            "cashCollection": "none"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792334996,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss71v899kjq2vgb19tgq74jpv18gg5ra",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m173s5c2y1b5x41cgfxhad0g358ghtgz\"]",
+                "acceptedAt": 1792332167,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuew9CbtC6hrqS",
+                  "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLPuYCLAyo5Q",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "eventName": "bs_m9727jptsa2arhp36ag0ew3tf98ggm1v_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9727jptsa2arhp36ag0ew3tf98ggm1v_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m173s5c2y1b5x41cgfxhad0g358ghtgz",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m173s5c2y1b5x41cgfxhad0g358ghtgz\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+                "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss72s445r08jyp611qcm9v8gzx8ghxb1",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m17735vg1hkmzvhz4xctsr81k58ggnaw\"]",
+                "acceptedAt": 1792332164,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuew9CbtC6hrqS",
+                  "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLPuYCLAyo5Q",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "eventName": "bs_m9727jptsa2arhp36ag0ew3tf98ggm1v_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9727jptsa2arhp36ag0ew3tf98ggm1v_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m17735vg1hkmzvhz4xctsr81k58ggnaw",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m17735vg1hkmzvhz4xctsr81k58ggnaw\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+                "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7afgmt4rrksp7ysz632h2b3d8ggnxx",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m174h9pqm9y2fb763pcnqtbcx18ggce7\"]",
+                "acceptedAt": 1792332162,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuew9CbtC6hrqS",
+                  "meterId": "mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLPuYCLAyo5Q",
+                  "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                  "eventName": "bs_m9727jptsa2arhp36ag0ew3tf98ggm1v_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9727jptsa2arhp36ag0ew3tf98ggm1v_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "included_overage",
+                    "includedQuantity": "10",
+                    "reset": "billing_period"
+                  }
+                },
+                "sourceEventId": "demo_work_m174h9pqm9y2fb763pcnqtbcx18ggce7",
+                "quantity": "5",
+                "occurredAt": 1792332000,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuew9CbtC6hrqS\",\"mtr_test_61VbIcKviiV1YnxS9416JR7kThJog2s4\",\"demo_work_m174h9pqm9y2fb763pcnqtbcx18ggce7\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuf06JR7kThJogujZgR81s",
+                "subscriptionItemId": "si_VSqLuAJ8QqXKY3",
+                "stripePriceId": "price_1URuez6JR7kThJoggfvxFygq",
+                "period": {
+                  "start": 1792332000,
+                  "end": 1795010400
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    },
+    "seller:prepaid": {
+      "observe": {
+        "status": "available",
+        "observedAt": 1792334998,
+        "value": {
+          "period": {
+            "start": 1792332060,
+            "end": 1795010460
+          },
+          "quantity": "10",
+          "scaledQuantity": "10",
+          "complete": true,
+          "nextCursor": null,
+          "aggregationLagPossible": true,
+          "stale": false,
+          "entries": [
+            {
+              "id": "mtrusg_test_1792332060000",
+              "start": 1792332060,
+              "end": 1795010460,
+              "scaledQuantity": "10"
+            }
+          ]
+        }
+      },
+      "snapshot": {
+        "summary": {
+          "status": "available",
+          "observedAt": 1792335000,
+          "value": {
+            "period": {
+              "end": 1795010460,
+              "start": 1792332060
+            },
+            "observedAt": 1792335000,
+            "complete": true,
+            "eventCount": 2,
+            "groups": [
+              {
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLX035vFwCIQ",
+                  "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                  "eventName": "bs_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "subscription": {
+                  "subscriptionId": "sub_1URuf76JR7kThJog5ih8v9gt",
+                  "subscriptionItemId": "si_VSqLmh8NvfrqpP",
+                  "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                  "period": {
+                    "start": 1792332060,
+                    "end": 1795010460
+                  },
+                  "interval": "month"
+                },
+                "acceptedScaledQuantity": "10",
+                "providerAcceptedScaledQuantity": "10",
+                "acceptedQuantity": "10",
+                "canceledQuantity": "0",
+                "effectiveQuantity": "10",
+                "effectiveScaledQuantity": "10",
+                "providerAcceptedQuantity": "10",
+                "eventCount": 2,
+                "validationErrorEventCount": 0,
+                "deliveryQuantities": {
+                  "canceled": "0",
+                  "queued": "0",
+                  "sending": "0",
+                  "provider_accepted": "10",
+                  "rejected": "0",
+                  "unknown": "0",
+                  "held": "0"
+                },
+                "included": {
+                  "status": "unavailable",
+                  "reason": "not_included_model",
+                  "retryable": false
+                },
+                "estimate": {
+                  "status": "unavailable",
+                  "reason": "credit_balance_requires_scoped_reader",
+                  "retryable": false
+                },
+                "credits": {
+                  "status": "unavailable",
+                  "reason": "credit_balance_requires_scoped_reader",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        },
+        "provider": {
+          "status": "available",
+          "observedAt": 1792334998,
+          "value": {
+            "period": {
+              "start": 1792332060,
+              "end": 1795010460
+            },
+            "quantity": "10",
+            "scaledQuantity": "10",
+            "complete": true,
+            "nextCursor": null,
+            "aggregationLagPossible": true,
+            "stale": false,
+            "entries": [
+              {
+                "id": "mtrusg_test_1792332060000",
+                "start": 1792332060,
+                "end": 1795010460,
+                "scaledQuantity": "10"
+              }
+            ]
+          }
+        },
+        "purchase": {
+          "purchaseId": "md75s4bv4cmt9q4sebk16cvh5d8ggmcf",
+          "state": "ready",
+          "paymentIntentId": "pi_3URujk6JR7kThJog0dvsz45b",
+          "creditGrantId": "credgr_test_61VbIhBuRjpJBwC91416JR7kThJogRcW",
+          "quantity": "10",
+          "amount": 1000,
+          "currency": "usd"
+        },
+        "creditApplication": {
+          "status": "available",
+          "observedAt": 1792335000,
+          "value": {
+            "ledgerAmount": 0,
+            "availableAmount": 0,
+            "granted": 1000,
+            "applied": 1000,
+            "expired": 0,
+            "voided": 0,
+            "reinstated": 0,
+            "backing": "sufficient",
+            "reason": null,
+            "pendingFinalizationAmount": 0,
+            "cashCollection": "none",
+            "invoicePaymentEvidence": "not_resolved"
+          }
+        },
+        "credits": {
+          "status": "available",
+          "observedAt": 1792335001,
+          "value": {
+            "availableQuantity": "0",
+            "cashCollection": "none",
+            "consumedQuantity": "10",
+            "currency": "usd",
+            "expiredQuantity": "0",
+            "frozenQuantity": "0",
+            "precision": 0,
+            "reservedQuantity": "0",
+            "status": "held",
+            "unit": "call"
+          }
+        }
+      },
+      "history": {
+        "status": "available",
+        "observedAt": 1792335003,
+        "value": {
+          "records": [
+            {
+              "receipt": {
+                "eventId": "ss71w1bqvhgm95mz4s3j2ke0a58ghcbk",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuf38h03moxOjq\",\"mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk\",\"demo_work_m177frg3yzfdsxt4wtmb09f83x8ghyfz\"]",
+                "acceptedAt": 1792332428,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuf38h03moxOjq",
+                  "meterId": "mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLX035vFwCIQ",
+                  "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                  "eventName": "bs_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "sourceEventId": "demo_work_m177frg3yzfdsxt4wtmb09f83x8ghyfz",
+                "quantity": "5",
+                "occurredAt": 1792332060,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuf38h03moxOjq\",\"mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk\",\"demo_work_m177frg3yzfdsxt4wtmb09f83x8ghyfz\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuf76JR7kThJog5ih8v9gt",
+                "subscriptionItemId": "si_VSqLmh8NvfrqpP",
+                "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                "period": {
+                  "start": 1792332060,
+                  "end": 1795010460
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            },
+            {
+              "receipt": {
+                "eventId": "ss7d5nyvb80paa5nd5gsjtxjvh8ghwq1",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuf38h03moxOjq\",\"mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk\",\"demo_work_m1733f8c2y8se1cwtndx1d9afs8ggznn\"]",
+                "acceptedAt": 1792332423,
+                "delivery": "queued"
+              },
+              "record": {
+                "scope": {
+                  "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+                  "customerAccount": "acct_1URuf38h03moxOjq",
+                  "meterId": "mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk",
+                  "livemode": false
+                },
+                "binding": {
+                  "stripeCustomerId": "cus_VSqLX035vFwCIQ",
+                  "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                  "eventName": "bs_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api_calls_v1",
+                  "apiVersion": "2026-09-30.endive",
+                  "plan": {
+                    "key": "demo_m9797j89wxhzmwny5pcrqdv3qd8ggj0s_api-calls",
+                    "version": "v1",
+                    "unit": {
+                      "name": "call",
+                      "precision": 0
+                    },
+                    "rate": {
+                      "currency": "usd",
+                      "unitAmountDecimal": "100"
+                    },
+                    "model": "prepaid",
+                    "insufficientBalance": "reject"
+                  }
+                },
+                "sourceEventId": "demo_work_m1733f8c2y8se1cwtndx1d9afs8ggznn",
+                "quantity": "5",
+                "occurredAt": 1792332060,
+                "schemaVersion": 1,
+                "scaledQuantity": "5",
+                "identity": "[false,\"acct_1TEQzE6JR7kThJog\",\"acct_1URuf38h03moxOjq\",\"mtr_test_61VbIcRvNYramhEfx416JR7kThJog9Xk\",\"demo_work_m1733f8c2y8se1cwtndx1d9afs8ggznn\"]"
+              },
+              "subscription": {
+                "subscriptionId": "sub_1URuf76JR7kThJog5ih8v9gt",
+                "subscriptionItemId": "si_VSqLmh8NvfrqpP",
+                "stripePriceId": "price_1URuf66JR7kThJogqrASlkSt",
+                "period": {
+                  "start": 1792332060,
+                  "end": 1795010460
+                },
+                "interval": "month"
+              },
+              "delivery": "provider_accepted"
+            }
+          ],
+          "cursor": null,
+          "isDone": true,
+          "complete": true
+        }
+      }
+    }
+  }
+}

@@ -163,4 +163,6 @@ Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allo
 
 Run [all three models in the native sandbox example](docs/usage-example.md), including paid invoices, renewal, correction and scoped cleanup.
 
+The [verification matrix](docs/usage-verification.md) maps all three models to packed-consumer, native sandbox and failure-injection checks.
+
 Use the [native usage configuration UI](docs/usage-configuration.md) for all three billing models, immutable meters and exact rates.

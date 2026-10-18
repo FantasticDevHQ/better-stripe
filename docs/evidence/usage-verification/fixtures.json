@@ -1,0 +1,41 @@
+{
+  "deployment": "dev:fabulous-egret-37",
+  "fixtures": [
+    {
+      "role": "customer",
+      "model": "pay_as_you_go",
+      "actorId": "jh75m6w78ns8w9hkdygg0bths58g6abn",
+      "runId": "m974jvmgjwf33y0kbwdzn801y58gh1sf"
+    },
+    {
+      "role": "customer",
+      "model": "included_overage",
+      "actorId": "jh75m6w78ns8w9hkdygg0bths58g6abn",
+      "runId": "m97d62n1a63mpz9v1ahgj71z6h8ghswe"
+    },
+    {
+      "role": "customer",
+      "model": "prepaid",
+      "actorId": "jh75m6w78ns8w9hkdygg0bths58g6abn",
+      "runId": "m97fgra5bdg7x3bg672vktv0k58ghc2f"
+    },
+    {
+      "role": "seller",
+      "model": "pay_as_you_go",
+      "actorId": "jh79hce79pzbhs9f3t2cy8nmyd8g6nr7",
+      "runId": "m97eyzdpcz413nx5nnymp6kc7d8ggqbm"
+    },
+    {
+      "role": "seller",
+      "model": "included_overage",
+      "actorId": "jh79hce79pzbhs9f3t2cy8nmyd8g6nr7",
+      "runId": "m9727jptsa2arhp36ag0ew3tf98ggm1v"
+    },
+    {
+      "role": "seller",
+      "model": "prepaid",
+      "actorId": "jh79hce79pzbhs9f3t2cy8nmyd8g6nr7",
+      "runId": "m9797j89wxhzmwny5pcrqdv3qd8ggj0s"
+    }
+  ]
+}

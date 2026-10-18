@@ -83,3 +83,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 - [Native usage configuration UI](usage-configuration.md) covers reusable forms, managed meter selection, price rows and authorized adapters.
 
 - [Native metered billing example](usage-example.md), three runnable models, paid evidence and scoped cleanup.
+
+- [Metered usage verification](usage-verification.md), three-model acceptance, packed consumers, native proof and failure limits.

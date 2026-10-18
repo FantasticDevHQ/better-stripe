@@ -26,6 +26,8 @@ function Location() {
 }
 beforeEach(() => {
   mocks.price.type = "one_time";
+  mocks.price.currency = "usd";
+  mocks.price.amount = 2500;
 });
 it("compares all five checkout types and preserves referral attribution when switching", async () => {
   render(
@@ -74,4 +76,18 @@ it("does not create a bare Payment Intent for a recurring price", () => {
     "Payment Intents alone do not create subscriptions",
   );
   expect(screen.queryByText("Payment Intent form")).not.toBeInTheDocument();
+});
+
+it("shows zero-decimal checkout prices in their original Stripe units", () => {
+  mocks.price.currency = "jpy";
+  mocks.price.amount = 2500;
+  render(
+    <MemoryRouter>
+      <CheckoutTypeExamples
+        priceId="price_jpy"
+        publishableKey="pk_test_example"
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/Test product · ¥2,500/)).toBeVisible();
 });

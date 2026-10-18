@@ -5,11 +5,28 @@ billing, and Connect marketplaces. It provides checkout, subscriptions, webhook
 syncing, marketplace fees and splits, payouts, refunds, and disputes, with React
 hooks and headless UI components.
 
-**Version**: `0.62.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.63.0` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Connect platforms use the default GA API version. Non-Connect merchants using
 customer-only Accounts v2 need preview access and an explicit preview version.
 Read the [Accounts v2 setup guide](docs/accounts-v2-preview.md) before integrating.
+
+## Package and application responsibilities
+
+BetterStripe owns reusable payment protocols, financial records, durable execution,
+and unstyled React workflows. The example app demonstrates those public APIs with
+Convex bindings and styled renderers. Consumers should not need to copy its payment
+or UI controllers to use the package.
+
+Your application authenticates callers, authorizes the original account or payment,
+selects products and business policy, and decides what a paid purchase unlocks.
+One-time purchases use payment checkout; subscriptions use subscription checkout.
+Digital downloads, access grants, license keys, shipping, and fulfillment belong to
+the consuming application. A successful checkout page alone is not proof of payment.
+Use verified payment state and make fulfillment idempotent.
+
+See [the example boundary audit](docs/react-workflows-audit.md#package-and-example-boundary)
+for concrete ownership rules and the remaining application adapters.
 
 ## Installation
 

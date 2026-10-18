@@ -1,5 +1,6 @@
 import { DEFAULT_CONNECT_COUNTRIES as CONNECT_COUNTRIES } from "@fantastic.dev/better-stripe/react";
 import {
+  formatPrice,
   useOnboarding,
   useAccountManager,
   useWorkflowAction,
@@ -444,13 +445,7 @@ export function SellerMarketplaceAccount({
                                 value={price.stripePriceId}
                               >
                                 {price.productName} —{" "}
-                                {(price.unitAmount / 100).toLocaleString(
-                                  undefined,
-                                  {
-                                    style: "currency",
-                                    currency: price.currency,
-                                  },
-                                )}
+                                {formatPrice(price.unitAmount, price.currency)}
                               </SelectItem>
                             ))}
                           </SelectContent>

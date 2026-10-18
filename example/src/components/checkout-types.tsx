@@ -1,4 +1,7 @@
-import { CheckoutChooser } from "@fantastic.dev/better-stripe/react";
+import {
+  CheckoutChooser,
+  formatPrice,
+} from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
@@ -116,11 +119,7 @@ export function CheckoutTypeExamples({
           </Card>
           {price && (
             <p className="font-medium">
-              {price.name} ·{" "}
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: price.currency,
-              }).format(price.amount / 100)}
+              {price.name} · {formatPrice(price.amount, price.currency)}
               {price.type === "recurring" ? " per billing period" : ""}
             </p>
           )}

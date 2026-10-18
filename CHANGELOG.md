@@ -28,26 +28,22 @@
 
 ## [0.51.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.3...v0.51.0) (2026-10-18)
 
-
 ### Features
 
-* complete scoped usage API and host authorization contracts ([41d58ac](https://github.com/FantasticDevHQ/better-stripe/commit/41d58ac99ff63c89c17143dde5e59de04ee2c80d))
-
+- complete scoped usage API and host authorization contracts ([41d58ac](https://github.com/FantasticDevHQ/better-stripe/commit/41d58ac99ff63c89c17143dde5e59de04ee2c80d))
 
 ### Documentation
 
-* align metering status and index with native sandbox evidence ([d1c1bf5](https://github.com/FantasticDevHQ/better-stripe/commit/d1c1bf57893c6045c91a8c9103ea02103c871ed9))
-
+- align metering status and index with native sandbox evidence ([d1c1bf5](https://github.com/FantasticDevHQ/better-stripe/commit/d1c1bf57893c6045c91a8c9103ea02103c871ed9))
 
 ### Continuous Integration
 
-* batch coverage floor increases in weekly PRs ([d648b82](https://github.com/FantasticDevHQ/better-stripe/commit/d648b82f6c910b16c6349096a2022c798777f608))
-* batch coverage floor increases in weekly PRs ([8217f1f](https://github.com/FantasticDevHQ/better-stripe/commit/8217f1fe9e1bdac5c730d98cc1022ea7cd1c385c))
-
+- batch coverage floor increases in weekly PRs ([d648b82](https://github.com/FantasticDevHQ/better-stripe/commit/d648b82f6c910b16c6349096a2022c798777f608))
+- batch coverage floor increases in weekly PRs ([8217f1f](https://github.com/FantasticDevHQ/better-stripe/commit/8217f1fe9e1bdac5c730d98cc1022ea7cd1c385c))
 
 ### Tests
 
-* ratchet native usage contract coverage floors ([5c8ff1b](https://github.com/FantasticDevHQ/better-stripe/commit/5c8ff1b31913a08db9493cc5a0219601ad540608))
+- ratchet native usage contract coverage floors ([5c8ff1b](https://github.com/FantasticDevHQ/better-stripe/commit/5c8ff1b31913a08db9493cc5a0219601ad540608))
 
 ## [0.50.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.2...v0.50.3) (2026-10-18)
 

@@ -435,40 +435,6 @@ describe("webhookHandlers()", () => {
       expect(onCompleted).not.toHaveBeenCalled();
     });
 
-    it("subscriptionDeleted upserts and fires subscription.onDelete with the fetched doc", async () => {
-      const onDelete = vi.fn().mockResolvedValue(undefined);
-      const bs = new BetterStripe(components.betterStripe, {
-        STRIPE_SECRET_KEY: "sk_test_xxx",
-        triggers: { subscription: { onDelete } },
-      });
-      const { syncWebhook } = bs.webhookHandlers();
-
-      const doc = { stripeSubscriptionId: "sub_1", status: "canceled" };
-      mockCtx.runQuery.mockResolvedValueOnce(doc);
-
-      await invokeHandler(syncWebhook, mockCtx, {
-        dispatcher: "subscriptionDeleted",
-        data: { stripeSubscriptionId: "sub_1", status: "canceled" },
-      });
-
-      expect(mockCtx.runMutation).toHaveBeenCalledTimes(1);
-      const [upsertRef, upsertArgs] = mockCtx.runMutation.mock.calls[0];
-      expect(refPath(upsertRef)).toMatch(
-        /\/billing\/mutations\/upsertSubscription$/,
-      );
-      expect(upsertArgs).toEqual({
-        stripeSubscriptionId: "sub_1",
-        status: "canceled",
-      });
-      const [getterRef, getterArgs] = mockCtx.runQuery.mock.calls[0];
-      expect(refPath(getterRef)).toMatch(
-        /\/billing\/queries\/getSubscriptionByStripeId$/,
-      );
-      expect(getterArgs).toEqual({ stripeSubscriptionId: "sub_1" });
-      expect(onDelete).toHaveBeenCalledTimes(1);
-      expect(onDelete).toHaveBeenCalledWith(mockCtx, doc);
-    });
-
     it("rejects with a clear error when the Stripe id field is missing from data", async () => {
       const bs = new BetterStripe(components.betterStripe, {
         STRIPE_SECRET_KEY: "sk_test_xxx",

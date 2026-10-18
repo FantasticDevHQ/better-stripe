@@ -1640,8 +1640,7 @@ export class BetterStripe extends PaymentSourceClient {
           ),
           record,
         ),
-      // Special case: marks the subscription canceled via upsert, then fires
-      // onDelete with the resulting doc. No pre-upsert read is needed.
+      // Keep the exact original identity before the cancellation payload can replace it.
       subscriptionDeleted: async (ctx, record) => {
         const id = record.stripeSubscriptionId;
         if (typeof id !== "string") {
@@ -1649,24 +1648,40 @@ export class BetterStripe extends PaymentSourceClient {
             "[better-stripe] subscriptionDeleted: missing stripeSubscriptionId in data",
           );
         }
+        const lookup = { stripeSubscriptionId: id };
+        const getter = componentRef(
+          component,
+          "billing/queries/getSubscriptionByStripeId",
+        );
+        let oldDoc: StripeComponentSubscription | null = null;
+        if (onSubscriptionDeleted) {
+          oldDoc = (await ctx.runQuery(getter, {
+            ...lookup,
+            requireUnique: true,
+          })) as StripeComponentSubscription | null;
+          // A non-unique existence check distinguishes absence from ambiguity;
+          // its first row is never used as the original identity.
+          if (oldDoc === null && (await ctx.runQuery(getter, lookup)))
+            throw new Error(
+              `[better-stripe] subscriptionDeleted: ambiguous previous identity (stripeSubscriptionId=${id})`,
+            );
+        }
         await ctx.runMutation(
           componentRef(component, DISPATCHER_UPSERT_PATHS.subscriptionDeleted),
           record,
         );
         if (!onSubscriptionDeleted) return;
-        const doc = (await ctx.runQuery(
-          componentRef(component, "billing/queries/getSubscriptionByStripeId"),
-          { stripeSubscriptionId: id },
-        )) as StripeComponentSubscription | null;
+        const doc = (await ctx.runQuery(getter, {
+          ...lookup,
+          requireUnique: true,
+        })) as StripeComponentSubscription | null;
         if (doc === null) {
-          // Mutations read their own writes, so this cannot happen;
-          // fail loudly if it ever does.
           throw new Error(
-            "[better-stripe] subscriptionDeleted: doc not found after " +
+            "[better-stripe] subscriptionDeleted: unique doc not found after " +
               `upsert (stripeSubscriptionId=${id})`,
           );
         }
-        await onSubscriptionDeleted(ctx, doc);
+        await onSubscriptionDeleted(ctx, doc, oldDoc);
       },
       checkoutSessionUpserted: (ctx, record) =>
         runUpsertAndTrigger<StripeComponentCheckoutSession>(

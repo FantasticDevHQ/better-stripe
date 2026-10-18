@@ -92,6 +92,10 @@ window. Automatic sends also stop 23 hours after the first send attempt. Stripe
 retains deduplication for at least 24 hours, not forever. A historical acceptance
 receipt remains valid after these windows expire, but does not authorize replay.
 The adapter never changes the original occurrence time to make an event eligible.
+For a sandbox subscription attached to a test clock, delivery additionally reads
+the native clock and checks its 35-day past/5-minute future window. An advancing
+or unavailable clock holds delivery. A timestamp outside its native window is
+rejected before sending. Production source timestamps remain unchanged.
 
 ## Status and operational controls
 

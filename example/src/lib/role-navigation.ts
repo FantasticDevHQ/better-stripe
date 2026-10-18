@@ -7,12 +7,14 @@ export interface NavItem {
 export const NAV_ITEMS: Record<Role, NavItem[]> = {
   customer: [
     { label: "Stores", to: "/stores" },
+    { label: "Metered billing", to: "/demo/metered-usage" },
     { label: "Subscriptions", to: "/dashboard/billing" },
     { label: "Invoices", to: "/dashboard/invoices" },
     { label: "Payment Methods", to: "/dashboard/payment-methods" },
   ],
   seller: [
     { label: "Earnings", to: "/demo/store-earnings" },
+    { label: "Metered billing", to: "/demo/metered-usage" },
     { label: "Sales", to: "/seller/sales" },
     { label: "Subscriptions", to: "/demo/subscribe" },
     { label: "Products", to: "/seller/products" },
@@ -30,6 +32,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   admin: [
     { label: "Overview", to: "/admin", end: true },
+    { label: "Metered billing", to: "/demo/metered-usage" },
     { label: "Products", to: "/admin/products" },
     { label: "Store plans", to: "/admin/store-plans" },
     { label: "Subscriptions", to: "/admin/subscriptions" },

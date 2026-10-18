@@ -129,7 +129,7 @@ MIT
 
 ## Metered usage
 
-Native Stripe integration supports shared configuration and exact quantity helpers at `@fantastic.dev/better-stripe/usage`. See the [setup guide for developers and AI agents](docs/metering-setup.md) and [contracts and sandbox evidence](docs/metered-usage.md). Operational billing APIs are still under development.
+Native Stripe integration supports shared configuration and exact quantity helpers at `@fantastic.dev/better-stripe/usage`. See the [setup guide for developers and AI agents](docs/metering-setup.md) and [contracts and sandbox evidence](docs/metered-usage.md).
 
 [Managed usage subscriptions](docs/usage-subscriptions.md) supports all three billing models, mixed fixed/metered items and Checkout, with retained renewal and invoice provenance.
 
@@ -142,5 +142,7 @@ See [native usage settlement](./docs/usage-settlement.md) for original paid invo
 See [metered billing authorization](docs/usage-security.md) for host ownership checks, idempotent work, bounded native proofs and recovery.
 
 Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allowance, prepaid and paginated history views through authenticated host adapters.
+
+Run [all three models in the native sandbox example](docs/usage-example.md), including paid invoices, renewal, correction and scoped cleanup.
 
 Use the [native usage configuration UI](docs/usage-configuration.md) for all three billing models, immutable meters and exact rates.

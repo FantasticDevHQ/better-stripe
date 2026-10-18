@@ -93,6 +93,10 @@ key for changed terms. Saving does not migrate, cancel or reprice existing
 subscriptions. Those keep their original price until an explicit authorized host
 operation changes them.
 
+Server adapters can import the `UsageConfigurationValue` type from
+`@fantastic.dev/better-stripe/usage` without loading React types. The React entry
+point continues to re-export it for UI consumers.
+
 `onSave` receives `{ plan, eventName, displayName, meterId?, creditPackage? }`.
 For prepaid, `creditPackage` is `{ quantity, topUp: "manual" }`. It is configuration
 only. Saving does not create a payment, grant credits or authorize consumption.

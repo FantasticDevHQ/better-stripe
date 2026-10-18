@@ -15,6 +15,12 @@ function setup(
   status = 200,
   errorCode = "parameter_invalid_integer",
   nativeOverrides: Record<string, unknown> = {},
+  clock?: {
+    id: string;
+    frozen_time: number;
+    status: string;
+    livemode: boolean;
+  },
 ) {
   const now = Math.floor(Date.now() / 1000);
   const record = prepareUsageRecord({
@@ -74,49 +80,54 @@ function setup(
       body = new URLSearchParams(String(init?.body ?? ""));
     requests.push({ path, body, headers: new Headers(init?.headers) });
     const value =
-      path === "/v1/account"
-        ? { id: "acct_platform" }
-        : path === "/v1/balance"
-          ? { livemode: false }
-          : path === "/v1/billing/meters/mtr_calls"
-            ? {
-                id: "mtr_calls",
-                livemode: false,
-                status: "active",
-                event_name: "calls",
-                default_aggregation: { formula: "sum" },
-                customer_mapping: {
-                  type: "by_id",
-                  event_payload_key: "stripe_customer_id",
-                },
-                value_settings: { event_payload_key: "value" },
-                event_time_window: null,
-              }
-            : path === "/v1/subscriptions/sub_calls"
+      path === "/v1/test_helpers/test_clocks/clock_fixture"
+        ? clock
+        : path === "/v1/account"
+          ? { id: "acct_platform" }
+          : path === "/v1/balance"
+            ? { livemode: false }
+            : path === "/v1/billing/meters/mtr_calls"
               ? {
-                  id: "sub_calls",
+                  id: "mtr_calls",
                   livemode: false,
-                  customer: "cus_buyer",
-                  customer_account: "acct_buyer",
-                  ...nativeOverrides,
+                  status: "active",
+                  event_name: "calls",
+                  default_aggregation: { formula: "sum" },
+                  customer_mapping: {
+                    type: "by_id",
+                    event_payload_key: "stripe_customer_id",
+                  },
+                  value_settings: { event_payload_key: "value" },
+                  event_time_window: null,
                 }
-              : status === 200
+              : path === "/v1/subscriptions/sub_calls"
                 ? {
-                    object: "billing.meter_event",
-                    identifier: body.get("identifier"),
-                    event_name: "calls",
+                    id: "sub_calls",
                     livemode: false,
-                    timestamp: now,
-                    created: now,
-                    payload: { stripe_customer_id: "cus_buyer", value: "120" },
+                    customer: "cus_buyer",
+                    customer_account: "acct_buyer",
+                    ...nativeOverrides,
                   }
-                : {
-                    error: {
-                      type: status === 429 ? "rate_limit_error" : "api_error",
-                      message: "private provider detail",
-                      code: errorCode,
-                    },
-                  };
+                : status === 200
+                  ? {
+                      object: "billing.meter_event",
+                      identifier: body.get("identifier"),
+                      event_name: "calls",
+                      livemode: false,
+                      timestamp: now,
+                      created: now,
+                      payload: {
+                        stripe_customer_id: "cus_buyer",
+                        value: "120",
+                      },
+                    }
+                  : {
+                      error: {
+                        type: status === 429 ? "rate_limit_error" : "api_error",
+                        message: "private provider detail",
+                        code: errorCode,
+                      },
+                    };
     if (path === "/v1/billing/meter_events" && status === 0)
       throw new Error("Lost accepted response");
     return new Response(JSON.stringify(value), {
@@ -274,3 +285,32 @@ it("withholds a managed send when native manual invoicing drifts to automatic ch
     false,
   );
 });
+
+it.each([
+  [-301, "ready", false, "rejected"],
+  [-300, "ready", false, "accepted"],
+  [-60, "advancing", false, "unavailable"],
+  [-60, "ready", true, "unavailable"],
+  [35 * 86400 + 1, "ready", false, "rejected"],
+] as const)(
+  "checks native test-clock eligibility offset=%s state=%s mode=%s before sending",
+  async (offset, status, livemode, expected) => {
+    const now = Math.floor(Date.now() / 1000);
+    const f = setup(
+      200,
+      "parameter_invalid_integer",
+      { test_clock: "clock_fixture" },
+      { id: "clock_fixture", frozen_time: now + offset, status, livemode },
+    );
+    const result = await deliverUsageProvider(
+      componentsGeneric().betterStripe as unknown as Component,
+      f.ctx,
+      f.request,
+      { stripeSecretKey: "sk_test_usage", httpClient: f.httpClient },
+    );
+    expect(result.outcome.status).toBe(expected);
+    expect(
+      f.requests.filter((row) => row.path === "/v1/billing/meter_events"),
+    ).toHaveLength(expected === "accepted" ? 1 : 0);
+  },
+);

@@ -105,6 +105,25 @@ export async function deliverUsageProvider(
       eventName: record.binding.eventName,
       displayName: meter.display_name,
     });
+    // Test-clock customers use their frozen time for native meter validation.
+    const clockId =
+      typeof subscription.test_clock === "string"
+        ? subscription.test_clock
+        : subscription.test_clock?.id;
+    if (!args.scope.livemode && clockId) {
+      const clock = await stripe.testHelpers.testClocks.retrieve(clockId);
+      if (
+        clock.id !== clockId ||
+        clock.livemode !== false ||
+        clock.status !== "ready" ||
+        !Number.isSafeInteger(clock.frozen_time) ||
+        clock.frozen_time < 0
+      )
+        return done({ status: "unavailable" });
+      const offset = BigInt(record.occurredAt) - BigInt(clock.frozen_time);
+      if (offset > 300n || offset < -35n * 86400n)
+        return done({ status: "rejected" });
+    }
     await verifyCreditDelivery(stripe, component, ctx, saved.event, record);
     const current = await read();
     if (

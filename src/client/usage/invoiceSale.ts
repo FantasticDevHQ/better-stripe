@@ -60,11 +60,26 @@ export async function getUsageInvoiceSale(
         reason: "payment_not_payable",
         retryable: false,
       };
-    const line = value.lines[0];
+    const paidLines = value.lines.filter((row) => BigInt(row.amount) > 0n);
+    const line = paidLines[0];
+    const zeroLines = value.lines.filter((row) => row.amount === "0");
     if (
       !value.linesComplete ||
       value.meterAmount.status !== "available" ||
-      value.lines.length !== 1 ||
+      paidLines.length !== 1 ||
+      (value.lines.length !== 1 &&
+        !(
+          opts.binding.plan.model === "included_overage" &&
+          value.lines.length === 2 &&
+          zeroLines.length === 1
+        )) ||
+      value.lines.some(
+        (row) =>
+          row.proration ||
+          row.creditAppliedAmount !== "0" ||
+          row.nativePeriod.start !== opts.subscription.period.start ||
+          row.nativePeriod.end !== opts.subscription.period.end,
+      ) ||
       !line ||
       line.proration ||
       line.creditAppliedAmount !== "0" ||
@@ -115,6 +130,9 @@ export async function getUsageInvoiceSale(
         customerId: opts.binding.stripeCustomerId,
         invoiceLine: {
           id: line.lineId,
+          ...(zeroLines.length
+            ? { zeroAmountLineIds: zeroLines.map((row) => row.lineId) }
+            : {}),
           subscriptionItemId: opts.subscription.subscriptionItemId,
           period: opts.subscription.period,
         },

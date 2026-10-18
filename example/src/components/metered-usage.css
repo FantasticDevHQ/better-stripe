@@ -1,0 +1,42 @@
+[data-usage-demo] [data-better-stripe] {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  background: var(--card);
+}
+[data-usage-demo] [data-better-stripe] h3 {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+[data-usage-demo] [data-better-stripe] p {
+  margin-top: 0.5rem;
+}
+[data-usage-demo] [data-better-stripe] dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin-block: 1rem;
+}
+[data-usage-demo] [data-better-stripe] dt {
+  color: var(--muted-foreground);
+}
+[data-usage-demo] [data-better-stripe] button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+[data-usage-demo] [data-better-stripe] button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+[data-usage-demo] [data-better-stripe] button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+[data-usage-demo] [data-better-stripe] li {
+  border-top: 1px solid var(--border);
+  padding-block: 0.75rem;
+}

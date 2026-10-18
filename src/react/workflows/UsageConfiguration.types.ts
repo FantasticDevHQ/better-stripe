@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import type {
-  UsagePlan,
-  UsageBillingModel,
-} from "../../client/usage/contracts.js";
+import type { UsageConfigurationValue } from "../../client/usage/configuration.js";
+export type { UsageConfigurationValue } from "../../client/usage/configuration.js";
+import type { UsageBillingModel } from "../../client/usage/contracts.js";
 /** Display/cache context from an authenticated host. Never use this as server authorization. */
 export type UsageConfigurationScope = {
   identityKey: string;
@@ -13,13 +12,6 @@ export type UsageConfigurationScope = {
   canConfigure: boolean;
   /** Host has verified the configured issuer realm and supported native catalog. */
   capability: "issuer_native" | "unsupported";
-};
-export type UsageConfigurationValue = {
-  plan: UsagePlan;
-  eventName: string;
-  displayName: string;
-  meterId?: string;
-  creditPackage?: { quantity: string; topUp: "manual" };
 };
 export type UsageMeterChoice = {
   id: string;

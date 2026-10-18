@@ -162,3 +162,25 @@ export async function managedUsageSubscription(
   });
   return { subscription, history };
 }
+
+import type {
+  UsageCreditPurchaseOptions,
+  UsageCreditBinding,
+} from "@fantastic.dev/better-stripe/usage";
+export async function prepaidUsage(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["purchaseCredits"]>[0],
+  purchase: UsageCreditPurchaseOptions,
+  original: UsageCreditBinding,
+  resolveSecret: () => string | undefined,
+) {
+  const provider = { stripeSecretKey: resolveSecret() };
+  const payment = await stripe.usage.purchaseCredits(ctx, purchase, provider);
+  const balance = await stripe.usage.getCreditBalance(ctx, original);
+  const history = await stripe.usage.readCreditHistory(ctx, {
+    ...original,
+    limit: 10,
+    cursor: null,
+  });
+  return { payment, balance, history };
+}

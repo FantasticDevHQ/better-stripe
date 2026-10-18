@@ -15,6 +15,20 @@ export const prepare = mutation({
       .query("usageSubscriptionLocks")
       .withIndex("by_realm", (q) => q.eq("stripeAccountId", stripeAccountId))
       .first();
+    const payerCredits = await ctx.db
+      .query("usageCreditAccounts")
+      .withIndex("by_payer_closed", (q) =>
+        q.eq("customerAccount", stripeAccountId).eq("closed", false),
+      )
+      .first();
+    const realmCredits = await ctx.db
+      .query("usageCreditAccounts")
+      .withIndex("by_realm_closed", (q) =>
+        q.eq("stripeAccountId", stripeAccountId).eq("closed", false),
+      )
+      .first();
+    if (payerCredits || realmCredits)
+      throw new Error("Close out prepaid credits before account closure");
     if (payerLock || realmLock)
       throw new Error(
         "Close out managed usage enrollment before account closure",

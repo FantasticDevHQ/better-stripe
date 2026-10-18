@@ -8456,6 +8456,352 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    usageCredits: {
+      mutations: {
+        cancelPurchase: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; paymentIntentId: string },
+          null,
+          Name
+        >;
+        closeAccount: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string },
+          null,
+          Name
+        >;
+        freezePurchase: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            key: string;
+            paymentIntentId: string;
+            reason:
+              "payment_refunded" | "payment_disputed" | "native_state_changed";
+            refundedAmount?: number;
+          },
+          null,
+          Name
+        >;
+        pinGrant: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        pinPayment: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; paymentIntentId: string },
+          null,
+          Name
+        >;
+        preparePurchase: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          },
+          Name
+        >;
+        prepareRefund: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string },
+          null,
+          Name
+        >;
+        release: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            reason: "work_failed" | "abandoned_before_work";
+            reservationId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          null,
+          Name
+        >;
+        reserve: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string; subscriptionJson: string },
+          {
+            reservationId: string;
+            state: "reserved" | "committed" | "released";
+          },
+          Name
+        >;
+        saveObservation: FunctionReference<
+          "mutation",
+          "internal",
+          { inputJson: string; proofJson: string; startedAt: number },
+          string,
+          Name
+        >;
+        verifyPayment: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        balance: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            availableQuantity: string;
+            cashCollection: "none";
+            consumedQuantity: string;
+            currency: string;
+            expiredQuantity: string;
+            frozenQuantity: string;
+            precision: number;
+            reservedQuantity: string;
+            status: "available" | "held";
+            unit: string;
+          },
+          Name
+        >;
+        context: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          },
+          Name
+        >;
+        deliveryBacking: FunctionReference<
+          "query",
+          "internal",
+          {
+            eventId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              meterId: string;
+              stripeAccountId: string;
+            };
+          },
+          {
+            grants: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              available: string;
+              chargeId: string;
+              consumed: string;
+              creditGrantId: string;
+              effectiveAt: number;
+              expiresAt: number | null;
+              frozen: boolean;
+              nativeExpired?: boolean;
+              nativeObservationJson?: string;
+              observedAt?: number;
+              paymentIntentId: string;
+              proofJson: string;
+              purchaseKey: string;
+              reserved: string;
+            }>;
+            held: boolean;
+            purchases: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              creditGrantId?: string;
+              firstAttemptAt: number;
+              grantFirstAttemptAt?: number;
+              key: string;
+              paymentIntentId?: string;
+              paymentKey?: string;
+              paymentProofJson?: string;
+              refundedAmount?: number;
+              state: "pending" | "ready" | "frozen" | "canceled";
+              termsJson: string;
+            }>;
+          },
+          Name
+        >;
+        getByKey: FunctionReference<
+          "query",
+          "internal",
+          { key: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        getPurchase: FunctionReference<
+          "query",
+          "internal",
+          { bindingJson: string; purchaseId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            accountKey: string;
+            creditGrantId?: string;
+            firstAttemptAt: number;
+            grantFirstAttemptAt?: number;
+            key: string;
+            paymentIntentId?: string;
+            paymentKey?: string;
+            paymentProofJson?: string;
+            refundedAmount?: number;
+            state: "pending" | "ready" | "frozen" | "canceled";
+            termsJson: string;
+          } | null,
+          Name
+        >;
+        invoiceUsage: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            end: number;
+            start: number;
+            subscriptionId: string;
+            subscriptionItemId: string;
+          },
+          { complete: boolean; scaledQuantity: string; valid: boolean },
+          Name
+        >;
+        readGrants: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              available: string;
+              chargeId: string;
+              consumed: string;
+              creditGrantId: string;
+              effectiveAt: number;
+              expiresAt: number | null;
+              frozen: boolean;
+              nativeExpired?: boolean;
+              nativeObservationJson?: string;
+              observedAt?: number;
+              paymentIntentId: string;
+              proofJson: string;
+              purchaseKey: string;
+              reserved: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        readHistory: FunctionReference<
+          "query",
+          "internal",
+          {
+            bindingJson: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              accountKey: string;
+              at: number;
+              evidenceJson: string;
+              fingerprint: string;
+              kind:
+                | "purchase"
+                | "payment"
+                | "grant"
+                | "reservation"
+                | "commit"
+                | "release"
+                | "observation"
+                | "recovery"
+                | "closure";
+              purchaseKey?: string;
+              sourceKey: string;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+      };
+    };
     usageDelivery: {
       mutations: {
         hold: FunctionReference<

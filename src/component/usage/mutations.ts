@@ -1,3 +1,4 @@
+import { commit as commitCreditReservation } from "../usageCredits/reservations.js";
 import { managedBillingCutoff } from "../usageSubscriptions/acceptance.js";
 import { v } from "convex/values";
 import type { FunctionHandle } from "convex/server";
@@ -123,6 +124,14 @@ export const record = mutation({
         count: counter.count + 1,
       });
     else await ctx.db.insert("usageScopeCounters", { scopeKey: key, count: 1 });
+    if (reservation && event.binding.plan.model === "prepaid")
+      await commitCreditReservation(
+        ctx,
+        reservation,
+        event,
+        subscription,
+        eventId,
+      );
     if (reservation)
       await ctx.db.patch("usageReservations", reservation._id, {
         state: "committed",

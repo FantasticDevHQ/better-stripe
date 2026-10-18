@@ -151,7 +151,7 @@ export function summarizeUsageRecords(
       estimate: !options.complete
         ? unavailable("local_history_incomplete")
         : plan.model === "prepaid"
-          ? unavailable("credit_accounting_not_configured")
+          ? unavailable("credit_balance_requires_scoped_reader")
           : !eligible
             ? unavailable("partial_billing_period")
             : {
@@ -164,7 +164,7 @@ export function summarizeUsageRecords(
               },
       credits: unavailable(
         plan.model === "prepaid"
-          ? "credit_accounting_not_configured"
+          ? "credit_balance_requires_scoped_reader"
           : "not_prepaid_model",
       ),
     });

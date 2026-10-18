@@ -66,3 +66,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 [Usage observations and reconciliation](usage-observations.md) covers exact summaries, paginated audit history, native freshness and invoice observations.
 
 [Managed metered subscriptions and invoice lifecycle](usage-subscriptions.md) covers all three models, Checkout, renewal, closeout and native test clocks.
+
+- [Payment-backed prepaid usage](./usage-credits.md)

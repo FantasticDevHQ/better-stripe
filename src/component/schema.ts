@@ -1,4 +1,10 @@
 import {
+  accountsTable as usageCreditAccounts,
+  purchasesTable as usageCreditPurchases,
+  grantsTable as usageCreditGrants,
+  historyTable as usageCreditHistory,
+} from "./usageCredits/schema.js";
+import {
   controlsTable as usageSubscriptionControls,
   intentsTable as usageSubscriptionIntents,
   locksTable as usageSubscriptionLocks,
@@ -123,6 +129,10 @@ export default defineSchema({
   usageOutbox: usageOutboxTable,
   usageScopeCounters: usageScopeCountersTable,
   usageReservations: usageReservationsTable,
+  usageCreditAccounts,
+  usageCreditPurchases,
+  usageCreditGrants,
+  usageCreditHistory,
   refundSyncClaims: refundSyncClaimsTable,
   processingCostReconciliationOperations,
   recoveryWorkflowOperations,

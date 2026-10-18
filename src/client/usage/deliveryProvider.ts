@@ -1,3 +1,4 @@
+import { verifyCreditDelivery } from "./creditDelivery.js";
 import type { UsageSubscriptionView } from "./subscriptionTerms.js";
 import Stripe from "stripe";
 import type { StripeApiVersion } from "../stripe-types.js";
@@ -104,6 +105,7 @@ export async function deliverUsageProvider(
       eventName: record.binding.eventName,
       displayName: meter.display_name,
     });
+    await verifyCreditDelivery(stripe, component, ctx, saved.event, record);
     const current = await read();
     if (
       !eligible(current.outbox) ||

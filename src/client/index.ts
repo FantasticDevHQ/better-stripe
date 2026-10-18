@@ -1869,3 +1869,11 @@ export type {
 } from "./usage/subscriptionTerms.js";
 export type { UsageSubscriptionRef } from "./usage/subscriptionLifecycle.js";
 export type { UsageSubscriptionInvoice } from "./usage/subscriptionInvoiceSchema.js";
+
+export { UsageCreditError } from "./usage/creditTerms.js";
+export type {
+  UsageCreditBinding,
+  UsageCreditPurchaseOptions,
+  UsageCreditPurchase,
+  UsageCreditBalance,
+} from "./usage/creditTerms.js";

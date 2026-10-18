@@ -5,6 +5,8 @@ import {
   symlinkSync,
   rmSync,
   copyFileSync,
+  writeFileSync,
+  readFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -30,21 +32,28 @@ it("composes public authorization and the genuine ledger from the built archive"
     );
     copyFileSync(
       resolve("scripts/fixtures/usage-record-consumer.mjs"),
-      resolve(consumer, "consumer.mjs"),
+      resolve(consumer, "consumer.test.mjs"),
     );
-    const output = execFileSync(process.execPath, ["consumer.mjs"], {
-      cwd: consumer,
-      encoding: "utf8",
-    });
-    expect(JSON.parse(output)).toEqual({
-      composition: true,
-      replay: true,
-      eventCount: 1,
-      tamperRejections: 9,
-      authorizationDenials: 2,
-      providerCalls: 0,
-      archiveExports: true,
-    });
+    writeFileSync(
+      resolve(consumer, "vitest.config.mjs"),
+      "export default {test:{include:['consumer.test.mjs'],maxWorkers:1}};",
+    );
+    execFileSync(
+      resolve("node_modules/.bin/vitest"),
+      [
+        "run",
+        "--config",
+        "vitest.config.mjs",
+        "--reporter=json",
+        "--outputFile=results.json",
+      ],
+      { cwd: consumer, stdio: "pipe" },
+    );
+    const result = JSON.parse(
+      readFileSync(resolve(consumer, "results.json"), "utf8"),
+    );
+    expect(result.numPassedTests).toBe(1);
+    expect(result.numFailedTests).toBe(0);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

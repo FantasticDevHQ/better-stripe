@@ -2,7 +2,10 @@ import { afterEach, expect, it, vi } from "vitest";
 import { components, initConvexTest } from "../setup.test.js";
 import { schema, modules } from "../../test.js";
 import { BetterStripe } from "../index.js";
-import { authorizeUsageRecord } from "./boundaries.js";
+import {
+  authorizeUsageRecord,
+  type UsageSubscriptionBinding,
+} from "./boundaries.js";
 import { prepareUsageRecord } from "./records.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -35,7 +38,7 @@ function fixture() {
     quantity: "1.20",
     occurredAt: now,
   };
-  const subscription = {
+  const subscription: UsageSubscriptionBinding = {
     subscriptionId: "sub_calls",
     subscriptionItemId: "si_calls",
     stripePriceId: "price_calls",

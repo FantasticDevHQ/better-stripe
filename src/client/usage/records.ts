@@ -44,7 +44,13 @@ export type PreparedUsageRecord = Omit<
   };
 };
 export type UsageDeliveryState =
-  "queued" | "sending" | "provider_accepted" | "rejected" | "unknown" | "held";
+  | "canceled"
+  | "queued"
+  | "sending"
+  | "provider_accepted"
+  | "rejected"
+  | "unknown"
+  | "held";
 
 /**
  * Validate and snapshot a record before acceptance. This pure helper does not

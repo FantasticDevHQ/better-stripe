@@ -10,6 +10,7 @@ export const scopeValidator = v.object({
 });
 export const deliveryValidator = v.union(
   v.literal("queued"),
+  v.literal("canceled"),
   v.literal("sending"),
   v.literal("provider_accepted"),
   v.literal("rejected"),
@@ -41,6 +42,7 @@ export const usageEventsTable = defineTable(eventFields)
   ])
   .index("by_scope_time", ["scopeKey", "occurredAt"]);
 export const outboxFields = {
+  correctionKey: v.optional(v.string()),
   ...deliveryFields,
   eventId: v.id("usageEvents"),
   scopeKey: v.string(),

@@ -1,3 +1,4 @@
+import { readCorrectionEvidence } from "./correctionRead.js";
 import type { Doc } from "../../component/_generated/dataModel.js";
 import type { UsageDeliveryRef } from "./deliveryClient.js";
 import { observeUsageInvoice } from "./invoiceObservation.js";
@@ -198,13 +199,19 @@ export class UsageObservationClient extends UsageDeliveryClient {
   }
   async getReconciliation(ctx: RunCtx, input: UsageReconciliationOptions) {
     const opts = observationOptions(input);
-    const [local, aggregate] = await Promise.all([
+    const [local, aggregate, corrections] = await Promise.all([
       this.getSummary(ctx, {
         scope: opts.scope,
         period: opts.period,
         maxRecords: input.maxRecords,
       }),
       this.getProviderUsage(ctx, input),
+      readCorrectionEvidence(this.component, ctx, {
+        scope: opts.scope,
+        period: opts.period,
+        limit: 100,
+        cursor: null,
+      }),
     ]);
     return {
       local,
@@ -215,11 +222,18 @@ export class UsageObservationClient extends UsageDeliveryClient {
         reason: "invoice_not_observed",
         retryable: true,
       },
-      correctionHistory: {
-        status: "unsupported" as const,
-        reason: "corrections_not_configured",
-        retryable: false,
-      },
+      correctionHistory: corrections.records.length
+        ? {
+            status: "available" as const,
+            observedAt: Math.floor(Date.now() / 1000),
+            value: corrections,
+          }
+        : {
+            status: "unsupported" as const,
+            reason: "corrections_not_configured",
+            retryable: false,
+            legacyHistoryMissing: corrections.legacyHistoryMissing,
+          },
     };
   }
   async reconcile(

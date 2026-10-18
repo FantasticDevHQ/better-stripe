@@ -1,4 +1,9 @@
 import {
+  claimsTable as usageCorrectionClaims,
+  operationsTable as usageCorrections,
+  historyTable as usageCorrectionHistory,
+} from "./usageCorrections/schema.js";
+import {
   policiesTable as usageAllowancePolicies,
   historyTable as usageAllowanceHistory,
 } from "./usageAllowance/schema.js";
@@ -120,6 +125,9 @@ import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
 export default defineSchema({
+  usageCorrectionClaims,
+  usageCorrections,
+  usageCorrectionHistory,
   usageAllowancePolicies,
   usageAllowanceHistory,
   usageSubscriptionControls,

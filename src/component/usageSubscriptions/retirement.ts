@@ -1,3 +1,7 @@
+import {
+  unresolvedCorrectionStates,
+  verifiedCancellation,
+} from "../usageCorrections/cancellation.js";
 import { retirementProof } from "../../client/usage/subscriptionInvoiceSchema.js";
 import type { MutationCtx } from "../_generated/server.js";
 import type { Doc } from "../_generated/dataModel.js";
@@ -41,6 +45,16 @@ export async function retireEnrollment(
     throw new Error("Cancellation command is still pending");
   for (const meter of terms.meters) {
     const key = scopeKey(meter.scope);
+    for (const state of unresolvedCorrectionStates) {
+      const pendingCorrection = await ctx.db
+        .query("usageCorrections")
+        .withIndex("by_scope_state", (q) =>
+          q.eq("scopeKey", key).eq("state", state),
+        )
+        .first();
+      if (pendingCorrection)
+        throw new Error("Enrollment has unresolved usage corrections");
+    }
     for (const state of [
       "queued",
       "sending",
@@ -66,8 +80,23 @@ export async function retireEnrollment(
     const errors = await ctx.db
       .query("usageDeliveryErrors")
       .withIndex("by_scope", (q) => q.eq("scopeKey", key))
-      .take(1);
-    if (reservations.length || errors.length)
+      .take(101);
+    let unresolvedErrors = errors.length > 100;
+    for (const error of errors.slice(0, 100)) {
+      const event = await ctx.db.get("usageEvents", error.eventId);
+      const outbox = event
+        ? await ctx.db
+            .query("usageOutbox")
+            .withIndex("by_event", (q) => q.eq("eventId", event._id))
+            .unique()
+        : null;
+      if (
+        !event ||
+        (await verifiedCancellation(ctx, event, outbox)) !== "confirmed"
+      )
+        unresolvedErrors = true;
+    }
+    if (reservations.length || unresolvedErrors)
       throw new Error(
         "Enrollment has pending reservations or validation errors",
       );

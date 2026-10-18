@@ -70,3 +70,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 - [Payment-backed prepaid usage](./usage-credits.md)
 
 - [Included usage and limits](./usage-limits.md) covers atomic caps, reservations, period resets and exact overage estimates.
+
+- [Usage corrections](./usage-corrections.md) covers native cancellation, quantity restoration and verified invoice adjustments.

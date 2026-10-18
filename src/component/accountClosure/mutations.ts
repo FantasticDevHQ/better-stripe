@@ -1,3 +1,4 @@
+import { unresolvedCorrectionStates } from "../usageCorrections/cancellation.js";
 import { v } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import { closureByStripeId } from "./helpers.js";
@@ -7,6 +8,22 @@ export const prepare = mutation({
   args: { stripeAccountId: v.string() },
   returns: v.object({ closure: closureDoc, isRetry: v.boolean() }),
   handler: async (ctx, { stripeAccountId }) => {
+    for (const state of unresolvedCorrectionStates) {
+      const payerCorrection = await ctx.db
+        .query("usageCorrections")
+        .withIndex("by_payer_state", (q) =>
+          q.eq("customerAccount", stripeAccountId).eq("state", state),
+        )
+        .first();
+      const realmCorrection = await ctx.db
+        .query("usageCorrections")
+        .withIndex("by_realm_state", (q) =>
+          q.eq("stripeAccountId", stripeAccountId).eq("state", state),
+        )
+        .first();
+      if (payerCorrection || realmCorrection)
+        throw new Error("Resolve usage corrections before account closure");
+    }
     const payerLock = await ctx.db
       .query("usageSubscriptionLocks")
       .withIndex("by_payer", (q) => q.eq("customerAccount", stripeAccountId))

@@ -54,3 +54,14 @@ export type {
   UsageLimitPolicy,
 } from "./usage/allowanceTerms.js";
 export type { UsageAllowanceReservation } from "./usage/allowanceClient.js";
+
+export type {
+  UsageCorrectionOptions,
+  UsageCorrectionView,
+  UsageInvoiceCorrectionOptions,
+  UsageInvoiceCorrectionEvidence,
+} from "./usage/correctionTerms.js";
+export type {
+  UsageCorrectionHistoryPage,
+  UsageCorrectionHistoryRecord,
+} from "./usage/correctionRead.js";

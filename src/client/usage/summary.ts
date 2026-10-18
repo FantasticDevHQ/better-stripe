@@ -24,6 +24,9 @@ export type UsageLocalGroup = {
   acceptedScaledQuantity: string;
   providerAcceptedScaledQuantity: string;
   acceptedQuantity: string;
+  canceledQuantity: string;
+  effectiveQuantity: string;
+  effectiveScaledQuantity: string;
   providerAcceptedQuantity: string;
   eventCount: number;
   validationErrorEventCount: number;
@@ -65,6 +68,7 @@ const unavailable = (reason: string) => ({
   retryable: false,
 });
 const states: UsageDeliveryState[] = [
+  "canceled",
   "queued",
   "sending",
   "provider_accepted",
@@ -101,7 +105,8 @@ export function summarizeUsageRecords(
       options.period.end === subscription.period.end;
     const eligible =
       options.complete && (plan.model !== "included_overage" || fullPeriod);
-    let chargeable = accepted;
+    const effective = accepted - sums.canceled;
+    let chargeable = effective;
     let included: UsageLocalGroup["included"] = unavailable(
       plan.model === "included_overage"
         ? options.complete
@@ -113,15 +118,15 @@ export function summarizeUsageRecords(
       const allowance = BigInt(
         parseUsageQuantity(plan.includedQuantity, precision).scaledQuantity,
       );
-      chargeable = accepted > allowance ? accepted - allowance : 0n;
+      chargeable = effective > allowance ? effective - allowance : 0n;
       included = {
         status: "available",
         observedAt: options.observedAt,
         value: {
           included: decimalFromScaled(allowance, precision),
-          consumed: decimalFromScaled(accepted, precision),
+          consumed: decimalFromScaled(effective, precision),
           remaining: decimalFromScaled(
-            allowance > accepted ? allowance - accepted : 0n,
+            allowance > effective ? allowance - effective : 0n,
             precision,
           ),
           overage: decimalFromScaled(chargeable, precision),
@@ -134,6 +139,9 @@ export function summarizeUsageRecords(
       acceptedScaledQuantity: accepted.toString(),
       providerAcceptedScaledQuantity: sums.provider_accepted.toString(),
       acceptedQuantity: decimalFromScaled(accepted, precision),
+      canceledQuantity: decimalFromScaled(sums.canceled, precision),
+      effectiveQuantity: decimalFromScaled(effective, precision),
+      effectiveScaledQuantity: effective.toString(),
       providerAcceptedQuantity: decimalFromScaled(
         sums.provider_accepted,
         precision,

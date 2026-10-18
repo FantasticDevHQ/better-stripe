@@ -1,3 +1,4 @@
+import { verifiedCancellation } from "../usageCorrections/cancellation.js";
 import { scopeValidator } from "../usage/schema.js";
 import { scopeKey } from "../usage/helpers.js";
 import { account, purchase } from "./helpers.js";
@@ -210,6 +211,9 @@ export const invoiceUsage = query({
         .query("usageDeliveryErrors")
         .withIndex("by_event", (q) => q.eq("eventId", row._id))
         .first();
+      const canceled = await verifiedCancellation(ctx, row, outbox);
+      if (canceled === "confirmed") continue;
+      if (canceled === "unverified") valid = false;
       if (outbox?.state !== "provider_accepted" || error) valid = false;
       quantity += BigInt(event.scaledQuantity);
     }

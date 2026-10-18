@@ -217,3 +217,34 @@ export async function includedUsagePolicy(
   const reconciliation = await stripe.usage.reconcileAllowance(ctx, original);
   return { configuration, status, reconciliation };
 }
+
+import type {
+  UsageCorrectionOptions,
+  UsageInvoiceCorrectionOptions,
+} from "@fantastic.dev/better-stripe/usage";
+export async function correctOriginalUsage(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["requestCorrection"]>[0],
+  request: UsageCorrectionOptions,
+  adjustment: UsageInvoiceCorrectionOptions,
+  resolveSecret: () => string | undefined,
+) {
+  const options = { stripeSecretKey: resolveSecret() };
+  const correction = await stripe.usage.requestCorrection(
+    ctx,
+    request,
+    options,
+  );
+  const history = await stripe.usage.readCorrectionHistory(ctx, {
+    scope: request.scope,
+    eventId: request.eventId,
+    limit: 10,
+    cursor: null,
+  });
+  return {
+    correction,
+    history,
+    observeOperatorAdjustment: () =>
+      stripe.usage.observeInvoiceCorrection(ctx, adjustment, options),
+  };
+}

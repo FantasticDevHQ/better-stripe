@@ -1,3 +1,4 @@
+import { verifiedCancellation } from "../usageCorrections/cancellation.js";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -54,11 +55,13 @@ export const summary = query({
             .first(),
         ]);
         if (!outbox) throw new Error("Usage outbox invariant violated");
+        const canceled = await verifiedCancellation(ctx, event, outbox);
         return {
           record: JSON.parse(event.recordJson) as PreparedUsageRecord,
           subscription: subscriptionSnapshot(event.subscriptionJson),
-          delivery: outbox.state,
-          hasValidationError: error !== null,
+          delivery:
+            canceled === "unverified" ? ("held" as const) : outbox.state,
+          hasValidationError: canceled !== "confirmed" && error !== null,
         };
       }),
     );

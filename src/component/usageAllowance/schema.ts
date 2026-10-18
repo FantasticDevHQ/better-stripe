@@ -24,6 +24,7 @@ export const historyFields = {
     v.literal("reservation"),
     v.literal("commit"),
     v.literal("release"),
+    v.literal("correction"),
   ),
   evidenceJson: v.string(),
   at: v.number(),

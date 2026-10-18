@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.50.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.1...v0.50.2) (2026-10-18)
+
+
+### Documentation
+
+* start metered billing provider feasibility (BTS-247) ([844fb74](https://github.com/FantasticDevHQ/better-stripe/commit/844fb74c30081baac16a8275a1ae73a98a5b3753))
+
 ## [0.50.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.50.0...v0.50.1) (2026-10-17)
 
 ### Bug Fixes

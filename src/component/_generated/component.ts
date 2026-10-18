@@ -8553,6 +8553,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        resumeAccount: FunctionReference<
+          "mutation",
+          "internal",
+          { bindingJson: string },
+          null,
+          Name
+        >;
         saveObservation: FunctionReference<
           "mutation",
           "internal",

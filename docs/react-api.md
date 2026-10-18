@@ -282,3 +282,7 @@ function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
   );
 }
 ```
+
+## Metered billing
+
+See [reusable metered billing UI](usage-react.md) for `UsageBilling`, `UsageSummary`, `UsageAllowance`, `UsageCredits`, `UsageHistory` and their hooks.

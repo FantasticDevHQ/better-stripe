@@ -108,3 +108,6 @@ export type { UsageInvoiceSettlementOptions } from "./settlement.js";
 export type { UsageCreditRevenue } from "./creditRevenue.js";
 
 export type { UsageCreditSettlementOptions } from "./creditSettlement.js";
+
+export type { UsageEventView } from "./client.js";
+export type { UsageCreditReconciliation } from "./creditObservation.js";

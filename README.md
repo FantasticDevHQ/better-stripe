@@ -140,3 +140,5 @@ See [included usage and optional limits](./docs/usage-limits.md) for atomic rese
 See [native usage settlement](./docs/usage-settlement.md) for original paid invoices, issuer-service purchases and affiliate policy.
 
 See [metered billing authorization](docs/usage-security.md) for host ownership checks, idempotent work, bounded native proofs and recovery.
+
+Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allowance, prepaid and paginated history views through authenticated host adapters.

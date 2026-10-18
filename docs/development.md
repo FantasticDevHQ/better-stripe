@@ -46,14 +46,32 @@ formatting, typechecks, codegen drift check, tests, and repository quality gates
 used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in
 `gates/`. Fix failures without weakening the gates or raising existing budgets.
 
-Successful full coverage checks automatically raise the floors in
-`gates/coverage-budgets.json`. Run `pnpm run check:coverage` or
-`pnpm run check:all`, then commit any budget changes. Each metric retains the
-existing 0.5 percentage point margin below its measured baseline, and floors
-never decrease. Failed checks leave the budgets untouched. CI checks the same
-ratchet and fails if an improvement has not been committed. `pnpm test:coverage`
-only generates the report; filtered or skipped runs cannot update floors through
-the automatic ratchet.
+Coverage checks enforce the committed floors in `gates/coverage-budgets.json`.
+`pnpm run check:coverage` and `pnpm run check:all` never edit that file or fail
+because coverage improved. Ordinary feature PRs should leave the budget file alone.
+
+The [weekly coverage workflow](https://github.com/FantasticDevHQ/better-stripe/actions/workflows/coverage-ratchet.yml)
+runs Mondays at 09:17 Asia/Bangkok, 02:17 UTC. It runs every repository gate on
+`main`, then captures earned floor increases of at least **0.05 percentage points**
+per metric. It keeps the existing 0.5-point margin below measured coverage and
+never lowers a floor. Eligible metrics capture their full earned increase; this
+is a minimum useful change, not a forced weekly increase. Smaller gains accumulate
+until a later run. Failed checks and old reports cannot authorize any update.
+
+The workflow maintains one ready-for-review PR on `codex/coverage-ratchet`, changing
+only the coverage budget file. Its description records measured coverage, old and
+proposed floors, and a link to the full gate run. It reuses the existing release
+GitHub App configuration so the generated PR runs normal CI. Auto-merge matches
+the exact generated head and waits for all required checks under the existing
+branch protections, without bypass actors. The helper checks the app author,
+branch, repository, changed files, policy metadata, and measured proposal before
+enabling auto-merge. Do not add unrelated commits to this managed branch.
+
+Use **Run workflow** on `main` for an additional full measurement between weekly
+runs. Once merged, this workflow becomes available to the scheduler and manual
+dispatch. Locally, `node scripts/check-coverage.mjs --ratchet` runs the same complete
+gates before proposing a budget update. It accepts no test filters, partial mode,
+or skipped execution. `pnpm test:coverage` generates a report only.
 
 Builds and typechecks use TypeScript 7 (`@typescript/native` aliases
 `typescript`). ESLint and Convex code generation still need the TypeScript 6

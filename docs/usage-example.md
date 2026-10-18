@@ -132,6 +132,10 @@ policy, never seller or collaborator redemption.
 
 ## Scoped cleanup and reset
 
+Cleanup re-reads the original paid invoice, payment and settlement before stopping
+resources. Saved success alone cannot authorize a reset after a refund, dispute or
+incomplete settlement recovery. Unavailable fresh evidence keeps the run retained.
+
 Use Archive or resume scoped cleanup after the original invoice and cash evidence
 are verified. It refuses unresolved delivery, corrections, reservations, purchases,
 credit backing or settlement. Unspent paid credits require verified refund or

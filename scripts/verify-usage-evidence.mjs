@@ -18,6 +18,17 @@ export function verifyUsageEvidence(original, fresh) {
       assert.equal(local.groups.length, 1);
       const group = local.groups[0];
       assert.equal(group.binding.plan.model, model);
+      assert.equal(group.binding.plan.unit.precision, 0);
+      assert.equal(
+        current.observe.value.quantity,
+        current.observe.value.scaledQuantity,
+      );
+      assert.equal(
+        current.observe.value.entries
+          .reduce((sum, row) => sum + BigInt(row.scaledQuantity), 0n)
+          .toString(),
+        current.observe.value.scaledQuantity,
+      );
       assert.equal(
         group.effectiveScaledQuantity,
         current.observe.value.scaledQuantity,
@@ -41,6 +52,17 @@ export function verifyUsageEvidence(original, fresh) {
       for (const row of records) {
         assert.equal(row.record.scope.livemode, false);
         assert.deepEqual(row.record.scope, scope);
+        assert.deepEqual(row.record.binding, group.binding);
+        assert.deepEqual(row.subscription, group.subscription);
+        const identity = JSON.stringify([
+          scope.livemode,
+          scope.stripeAccountId,
+          scope.customerAccount,
+          scope.meterId,
+          row.record.sourceEventId,
+        ]);
+        assert.equal(row.record.identity, identity);
+        assert.equal(row.receipt.identity, identity);
         assert.equal(
           row.record.binding.stripePriceId,
           group.binding.stripePriceId,
@@ -58,6 +80,11 @@ export function verifyUsageEvidence(original, fresh) {
       assert.equal(billing.status, "paid");
       assert.equal(billing.currency, "usd");
       assert.equal(billing.invoice.length, 1);
+      assert.equal(billing.invoice[0].meterId, scope.meterId);
+      assert.equal(
+        billing.invoice[0].subscriptionItemId,
+        group.subscription.subscriptionItemId,
+      );
       const invoice = billing.invoice[0].observation;
       assert.equal(invoice.status, "available");
       assert.equal(invoice.value.invoiceId, billing.invoiceId);
@@ -108,6 +135,8 @@ export function verifyUsageEvidence(original, fresh) {
       const { cash, settlement } = billing.revenue[0];
       assert.equal(cash.status, "ready");
       assert.equal(cash.value.livemode, false);
+      assert.equal(cash.value.currency, billing.currency);
+      assert.equal(cash.value.currency, group.binding.plan.rate.currency);
       assert.equal(cash.value.stripeAccountId, scope.stripeAccountId);
       assert.equal(
         cash.value.customerAccount ?? cash.value.customerAccountId,
@@ -122,9 +151,28 @@ export function verifyUsageEvidence(original, fresh) {
         cash.value.processingFee,
         model === "pay_as_you_go" ? 74 : model === "included_overage" ? 45 : 59,
       );
-      if (model !== "prepaid")
+      if (model !== "prepaid") {
         assert.equal(cash.value.invoiceId, billing.invoiceId);
-      else {
+        assert.equal(cash.value.meterId, scope.meterId);
+        assert.equal(cash.value.model, model);
+        assert.deepEqual(cash.value.period, local.period);
+        assert.equal(
+          cash.value.subscriptionId,
+          group.subscription.subscriptionId,
+        );
+        assert.equal(
+          cash.value.subscriptionItemId,
+          group.subscription.subscriptionItemId,
+        );
+      } else {
+        assert.equal(current.snapshot.purchase.state, "ready");
+        assert.equal(
+          current.snapshot.purchase.purchaseId,
+          cash.value.purchaseId,
+        );
+        assert.equal(current.snapshot.purchase.quantity, "10");
+        assert.equal(current.snapshot.purchase.amount, cash.value.gross);
+        assert.equal(current.snapshot.purchase.currency, cash.value.currency);
         assert.equal(
           current.snapshot.purchase.paymentIntentId,
           cash.value.paymentIntentId,
@@ -153,10 +201,67 @@ export function verifyUsageEvidence(original, fresh) {
         assert.equal(current.snapshot.credits.value.availableQuantity, "0");
         assert.equal(current.snapshot.credits.value.cashCollection, "none");
       }
-      if (role === "seller") {
+      if (role === "customer" && model !== "prepaid")
+        assert.equal(settlement, null);
+      else {
         assert.equal(settlement.status, "settled");
         assert.equal(settlement.sourceChargeId, cash.value.chargeId);
         assert.equal(settlement.paymentIntentId, cash.value.paymentIntentId);
+        assert.equal(settlement.gross, cash.value.gross);
+        assert.equal(settlement.currency, cash.value.currency);
+        assert.equal(settlement.processingFee, cash.value.processingFee);
+        const shared = {
+          customerAccount: scope.customerAccount,
+          livemode: scope.livemode,
+          stripeAccountId: scope.stripeAccountId,
+          stripePriceId: group.binding.stripePriceId,
+          stripeProductId: cash.value.stripeProductId,
+        };
+        if (model === "prepaid") {
+          assert.deepEqual(settlement.creditSource, {
+            ...shared,
+            creditGrantId: cash.value.creditGrantId,
+            purchaseId: cash.value.purchaseId,
+          });
+          assert.equal(settlement.sourceInvoiceId, undefined);
+        } else {
+          assert.equal(settlement.sourceInvoiceId, billing.invoiceId);
+          assert.deepEqual(settlement.usageSource, {
+            ...shared,
+            invoicePaymentId: cash.value.invoicePaymentId,
+            meterId: scope.meterId,
+            model,
+            period: local.period,
+            subscriptionId: group.subscription.subscriptionId,
+            subscriptionItemId: group.subscription.subscriptionItemId,
+          });
+        }
+        const executed = settlement.executedTransfers.map(
+          ({ amount, destinationAccountId, role }) => ({
+            amount,
+            destinationAccountId,
+            role,
+          }),
+        );
+        assert.deepEqual(executed, settlement.transfers);
+        const expected =
+          role === "customer"
+            ? []
+            : model === "pay_as_you_go"
+              ? [
+                  ["store", 1080],
+                  ["affiliate", 270],
+                ]
+              : model === "included_overage"
+                ? [
+                    ["store", 360],
+                    ["affiliate", 90],
+                  ]
+                : [["affiliate", 180]];
+        assert.deepEqual(
+          executed.map(({ role, amount }) => [role, amount]),
+          expected,
+        );
         assert.equal(
           new Set(
             settlement.executedTransfers.map((row) => row.stripeTransferId),
@@ -166,17 +271,9 @@ export function verifyUsageEvidence(original, fresh) {
         assert.equal(
           settlement.processingFee +
             settlement.platformNet +
-            settlement.executedTransfers.reduce(
-              (sum, row) => sum + row.amount,
-              0,
-            ),
+            executed.reduce((sum, row) => sum + row.amount, 0),
           cash.value.gross,
         );
-        if (model === "prepaid")
-          assert.deepEqual(
-            settlement.executedTransfers.map((row) => row.role),
-            ["affiliate"],
-          );
       }
       assert.equal(billing.renewal.allowance, null);
       assert.equal(billing.renewal.allowanceStatus, "not_active_yet");

@@ -17,6 +17,7 @@ export const deliveryValidator = v.union(
   v.literal("held"),
 );
 export const eventFields = {
+  subscriptionId: v.optional(v.string()),
   reservationId: v.optional(v.id("usageReservations")),
   scopeKey: v.string(),
   identity: v.string(),
@@ -32,6 +33,7 @@ export const eventDoc = v.object({
 });
 export const usageEventsTable = defineTable(eventFields)
   .index("by_identity", ["identity"])
+  .index("by_scope_subscription", ["scopeKey", "subscriptionId"])
   .index("by_scope_time", ["scopeKey", "occurredAt"]);
 export const outboxFields = {
   ...deliveryFields,
@@ -71,4 +73,6 @@ export const usageReservationsTable = defineTable({
     v.literal("released"),
   ),
   eventId: v.optional(v.id("usageEvents")),
-}).index("by_scope_source", ["scopeKey", "sourceEventId"]);
+})
+  .index("by_scope_source", ["scopeKey", "sourceEventId"])
+  .index("by_scope_state", ["scopeKey", "state"]);

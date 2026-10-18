@@ -8321,6 +8321,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               recordJson: string;
               reservationId?: string;
               scopeKey: string;
+              subscriptionId?: string;
               subscriptionJson: string;
             };
           } | null,
@@ -8366,6 +8367,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 recordJson: string;
                 reservationId?: string;
                 scopeKey: string;
+                subscriptionId?: string;
                 subscriptionJson: string;
               };
             }>;
@@ -8474,6 +8476,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
               | "provider_outcome_unknown"
@@ -8552,6 +8555,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
               | "provider_outcome_unknown"
@@ -8606,6 +8610,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
               | "provider_outcome_unknown"
@@ -8660,6 +8665,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             held: boolean;
             providerIdentifier: string;
             reason?:
+              | "billing_period_closed"
               | "rate_limited"
               | "provider_unavailable"
               | "provider_outcome_unknown"
@@ -8707,6 +8713,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
           },
           {
+            billingCutoff: number | null;
             event: {
               _creationTime: number;
               _id: string;
@@ -8716,7 +8723,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               recordJson: string;
               reservationId?: string;
               scopeKey: string;
+              subscriptionId?: string;
               subscriptionJson: string;
+            };
+            managedCollection: null | {
+              daysUntilDue: number | null;
+              defaultPaymentMethod: string | null;
+              method: "send_invoice" | "charge_automatically";
             };
             outbox: {
               _creationTime: number;
@@ -8733,6 +8746,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               provider?: string;
               providerIdentifier: string;
               reason?:
+                | "billing_period_closed"
                 | "rate_limited"
                 | "provider_unavailable"
                 | "provider_outcome_unknown"
@@ -8887,6 +8901,192 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             pageStatus?: "SplitRecommended" | "SplitRequired" | null;
             splitCursor?: string | null;
           },
+          Name
+        >;
+      };
+    };
+    usageSubscriptions: {
+      mutations: {
+        abandon: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        completeCancellation: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; nativeJson: string; startedAt: number },
+          string,
+          Name
+        >;
+        linkCheckout: FunctionReference<
+          "mutation",
+          "internal",
+          { checkoutId: string; key: string },
+          null,
+          Name
+        >;
+        prepare: FunctionReference<
+          "mutation",
+          "internal",
+          { method: "direct" | "checkout"; termsJson: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          },
+          Name
+        >;
+        prepareCancellation: FunctionReference<
+          "mutation",
+          "internal",
+          { cancelAtPeriodEnd: boolean; key: string; operationId: string },
+          {
+            _creationTime: number;
+            _id: string;
+            cancelAtPeriodEnd: boolean;
+            firstAttemptAt: number;
+            intentKey: string;
+            key: string;
+            operationId: string;
+            resultJson?: string;
+          },
+          Name
+        >;
+        retire: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; proofJson: string },
+          null,
+          Name
+        >;
+        save: FunctionReference<
+          "mutation",
+          "internal",
+          { key: string; nativeJson: string; startedAt: number },
+          null,
+          Name
+        >;
+        saveInvoice: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            invoiceId: string;
+            key: string;
+            observationsJson: string;
+            startedAt: number;
+          },
+          null,
+          Name
+        >;
+      };
+      queries: {
+        get: FunctionReference<
+          "query",
+          "internal",
+          {
+            requestId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              stripeAccountId: string;
+            };
+          },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          } | null,
+          Name
+        >;
+        history: FunctionReference<
+          "query",
+          "internal",
+          {
+            kind: "subscription" | "invoice" | "retirement";
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            requestId: string;
+            scope: {
+              customerAccount: string;
+              livemode: boolean;
+              stripeAccountId: string;
+            };
+          },
+          {
+            continueCursor: string;
+            isDone: boolean;
+            page: Array<{
+              _creationTime: number;
+              _id: string;
+              fingerprint: string;
+              intentKey: string;
+              kind: "subscription" | "invoice" | "retirement";
+              observationJson: string;
+              resourceId: string;
+              startedAt: number;
+            }>;
+            pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+            splitCursor?: string | null;
+          },
+          Name
+        >;
+        lookup: FunctionReference<
+          "query",
+          "internal",
+          { key: string },
+          {
+            _creationTime: number;
+            _id: string;
+            abandonedId?: string;
+            checkoutId?: string;
+            controlKey?: string;
+            firstAttemptAt: number;
+            historyCount?: number;
+            key: string;
+            method: "direct" | "checkout";
+            providerId?: string;
+            retiredAt?: number;
+            retirementInvoiceId?: string;
+            scopeKey: string;
+            startedAt?: number;
+            termsJson: string;
+            viewJson?: string;
+          } | null,
           Name
         >;
       };

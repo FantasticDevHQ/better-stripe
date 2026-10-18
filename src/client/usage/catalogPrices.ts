@@ -249,3 +249,24 @@ export async function ensureUsagePrice(
   });
   return price;
 }
+
+/** Validate an already pinned native price without creating or adopting it. */
+export function verifyPinnedUsagePrice(
+  price: Stripe.Price,
+  scope: UsagePriceOptions["scope"],
+  plan: UsagePriceOptions["plan"],
+  meterId: string,
+) {
+  const productId =
+    typeof price.product === "string" ? price.product : price.product.id;
+  if (!price.lookup_key) return incompatible();
+  const opts = {
+    scope,
+    plan,
+    meterId,
+    stripeProductId: productId,
+    lookupKey: price.lookup_key,
+  };
+  const { rate, included } = termsFor(opts);
+  verifyPrice(price, opts, rate, included);
+}

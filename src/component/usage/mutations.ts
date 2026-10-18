@@ -1,3 +1,4 @@
+import { managedBillingCutoff } from "../usageSubscriptions/acceptance.js";
 import { v } from "convex/values";
 import type { FunctionHandle } from "convex/server";
 import { mutation } from "../_generated/server.js";
@@ -61,6 +62,9 @@ export const record = mutation({
       };
     }
     const now = Math.floor(Date.now() / 1000);
+    const cutoff = await managedBillingCutoff(ctx, event, subscription);
+    if (cutoff !== null && now >= cutoff)
+      throw new Error("Managed usage billing period is closing or closed");
     if (event.occurredAt < now - 35 * 86400 || event.occurredAt > now + 300)
       throw new Error("Usage occurrence is outside the native delivery window");
     if (
@@ -96,6 +100,7 @@ export const record = mutation({
     )
       throw new Error("Usage reservation does not match event");
     const eventId = await ctx.db.insert("usageEvents", {
+      subscriptionId: subscription.subscriptionId,
       reservationId: args.reservationId,
       scopeKey: key,
       identity: event.identity,

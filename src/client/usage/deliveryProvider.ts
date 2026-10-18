@@ -1,3 +1,4 @@
+import type { UsageSubscriptionView } from "./subscriptionTerms.js";
 import Stripe from "stripe";
 import type { StripeApiVersion } from "../stripe-types.js";
 import { z } from "zod";
@@ -50,7 +51,12 @@ export async function deliverUsageProvider(
       ctx.runQuery(componentRef(component, "usageDelivery/queries/snapshot"), {
         scope: args.scope,
         eventId: args.eventId,
-      }) as Promise<{ event: Doc<"usageEvents">; outbox: Doc<"usageOutbox"> }>;
+      }) as Promise<{
+        event: Doc<"usageEvents">;
+        outbox: Doc<"usageOutbox">;
+        billingCutoff: number | null;
+        managedCollection: UsageSubscriptionView["collection"] | null;
+      }>;
     const saved = await read(),
       record = JSON.parse(saved.event.recordJson) as PreparedUsageRecord;
     const eligible = (outbox: Doc<"usageOutbox">) =>
@@ -64,6 +70,8 @@ export async function deliverUsageProvider(
       (outbox.leaseUntil ?? 0) > Date.now() / 1000 + 60;
     if (
       !eligible(saved.outbox) ||
+      (saved.billingCutoff !== null &&
+        Date.now() / 1000 + 15 >= saved.billingCutoff) ||
       record.binding.apiVersion !== apiVersion ||
       JSON.stringify(record.scope) !== JSON.stringify(args.scope)
     )
@@ -96,7 +104,40 @@ export async function deliverUsageProvider(
       eventName: record.binding.eventName,
       displayName: meter.display_name,
     });
-    if (!eligible((await read()).outbox)) return done({ status: "unknown" });
+    const current = await read();
+    if (
+      !eligible(current.outbox) ||
+      (current.billingCutoff !== null &&
+        Date.now() / 1000 + 15 >= current.billingCutoff)
+    )
+      return done({ status: "unknown" });
+    if (current.billingCutoff !== null) {
+      const collection = current.managedCollection;
+      const method =
+        typeof subscription.default_payment_method === "string"
+          ? subscription.default_payment_method
+          : (subscription.default_payment_method?.id ?? null);
+      if (
+        !collection ||
+        collection.method !== subscription.collection_method ||
+        (collection.method === "send_invoice"
+          ? collection.daysUntilDue !== subscription.days_until_due
+          : collection.defaultPaymentMethod !== method)
+      )
+        return done({ status: "unavailable" });
+      const item = subscription.items.data.find(
+        (item) => item.id === binding.subscriptionItemId,
+      );
+      if (
+        subscription.status !== "active" ||
+        subscription.items.has_more ||
+        !item ||
+        item.price.id !== binding.stripePriceId ||
+        item.current_period_start !== binding.period.start ||
+        item.current_period_end !== binding.period.end
+      )
+        return done({ status: "unavailable" });
+    }
     writing = true;
     const response = await stripe.billing.meterEvents.create(
       {

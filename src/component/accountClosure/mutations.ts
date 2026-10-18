@@ -7,6 +7,18 @@ export const prepare = mutation({
   args: { stripeAccountId: v.string() },
   returns: v.object({ closure: closureDoc, isRetry: v.boolean() }),
   handler: async (ctx, { stripeAccountId }) => {
+    const payerLock = await ctx.db
+      .query("usageSubscriptionLocks")
+      .withIndex("by_payer", (q) => q.eq("customerAccount", stripeAccountId))
+      .first();
+    const realmLock = await ctx.db
+      .query("usageSubscriptionLocks")
+      .withIndex("by_realm", (q) => q.eq("stripeAccountId", stripeAccountId))
+      .first();
+    if (payerLock || realmLock)
+      throw new Error(
+        "Close out managed usage enrollment before account closure",
+      );
     const existing = await closureByStripeId(ctx, stripeAccountId);
     if (existing) return { closure: existing, isRetry: true };
     const account = await ctx.db

@@ -373,3 +373,17 @@ than overwriting its original delivery or invoice receipt. A requested or
 provider-accepted correction must not release spendable credits until confirmed.
 
 The [packed consumer fixture](https://github.com/FantasticDevHQ/better-stripe/blob/main/scripts/fixtures/usage-consumer.ts) compiles concrete authorization and activity callbacks plus record/read/reconcile adapters for all three models against the actual package tarball. It returns alternative model paths and never submits one activity to multiple models.
+
+## Native lifecycle verification, 2026-10-18
+
+The [managed subscription guide](usage-subscriptions.md) now covers native
+metered/mixed subscriptions, Checkout, closeout and retained lifecycle history.
+The [test-clock run](evidence/native-metering/clock-finalization-run.json) verified
+Accounts v2 payer mapping, all three 15-unit aggregates and finalized invoice
+totals of 30/10/0 USD cents for pay-as-you-go/included-overage/prepaid. The prepaid
+purchase was a separate verified 100-cent test payment. All 15 cleanup requests
+succeeded, including grant expiry, the test refund request and clock deletion.
+The [prior lag run](evidence/native-metering/clock-lag-run.json) remains visible;
+it stopped before advancement while prepaid aggregation was pending. These
+results supplement the earlier investigation table. They do not prove production
+billing, non-Connect modes, strict credit accounting or seller settlement.

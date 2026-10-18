@@ -104,7 +104,9 @@
     "docs/usage-ledger.md",
     "docs/usage-catalog.md",
     "docs/usage-delivery.md",
-    "docs/usage-observations.md"
+    "docs/usage-observations.md",
+    "docs/usage-subscriptions.md",
+    "docs/evidence/native-metering"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

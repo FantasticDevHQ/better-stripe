@@ -1,4 +1,4 @@
-type Evidence = {
+export type Evidence = {
   status?: string;
   invoiceId?: string;
   revenue?: Array<{

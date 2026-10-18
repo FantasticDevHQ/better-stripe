@@ -3,14 +3,12 @@ import { action, env } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { getStripeClient } from "../stripe/client";
 import { stripe } from "../stripe/helpers";
-import { observeDemoSettlement } from "./settlementObservation";
+import { observeDemoRevenue } from "./revenue";
 import { freezeDemoBilling } from "./billingPreflight";
 import { ensureDemoResource } from "./resources";
 import { attachDemoInvoiceCard, demoSubscriptionRef } from "./billingSources";
 import { selectDemoInvoice } from "./invoiceGuard";
-import { demoCreditPurchase } from "./original";
 import { ensureDemoAllowance, demoRenewalActive } from "./allowance";
-import type { DemoSettlementPolicy } from "./types";
 const ref = { actorId: v.id("users"), runId: v.id("meteredDemoRuns") };
 /** Explicit sandbox-only action. Each invocation resumes the same original invoice. */
 export const closePeriod = action({
@@ -130,88 +128,15 @@ export const closePeriod = action({
       { ...subscriptionRef, invoiceId: invoice.id },
       options,
     );
-    const policy: DemoSettlementPolicy = JSON.parse(
-      run.settlementPolicyJson ??
-        '{"feeBasisPoints":1000,"commissionTerm":"forever"}',
+    const revenueResult = await observeDemoRevenue(
+      ctx,
+      raw,
+      { run, meter, provider, purchases },
+      invoice,
     );
-    const revenue: unknown[] = [];
-    if (run.model === "prepaid") {
-      for (const purchase of purchases) {
-        const original = demoCreditPurchase(meter, purchase);
-        const cash = await stripe.usage.getCreditPurchaseRevenue(
-          ctx,
-          original,
-          options,
-        );
-        const settlement =
-          cash.status === "ready"
-            ? await observeDemoSettlement(() =>
-                stripe.usage.settleCreditPurchase(
-                  ctx,
-                  {
-                    ...original,
-                    policy: {
-                      feeBasisPoints: policy.feeBasisPoints,
-                      affiliate: policy.affiliate,
-                    },
-                  },
-                  options,
-                ),
-              )
-            : null;
-        revenue.push({ purchaseId: purchase._id, cash, settlement });
-      }
-    } else if (invoice.status === "paid" && invoice.amount_paid > 0) {
-      const payments = await raw.invoicePayments.list({
-        invoice: invoice.id,
-        limit: 100,
-      });
-      const paid = payments.data.filter(
-        (row) => row.status === "paid" && row.payment.type === "payment_intent",
-      );
-      if (payments.has_more || paid.length !== 1)
-        return save({
-          status: "held",
-          invoiceId: invoice.id,
-          reason: "payment_history_incomplete_or_ambiguous",
-          invoice: observed,
-        });
-      const payment = paid[0].payment.payment_intent;
-      const paymentIntentId =
-        typeof payment === "string" ? payment : payment?.id;
-      if (!paymentIntentId)
-        throw new Error("Original paid payment identity is unavailable.");
-      const source = {
-        ...meter,
-        period: meter.subscription.period,
-        invoiceId: invoice.id,
-        paymentIntentId,
-        gross: invoice.amount_paid,
-      };
-      const cash = await stripe.usage.getInvoiceSale(ctx, source, options);
-      const creatorAccountId = policy.creatorAccountId;
-      const settlement =
-        cash.status === "ready" && creatorAccountId
-          ? await observeDemoSettlement(() =>
-              stripe.usage.settleInvoice(
-                ctx,
-                {
-                  ...source,
-                  policy: {
-                    ...policy,
-                    creatorAccountId,
-                  },
-                },
-                options,
-              ),
-            )
-          : null;
-      revenue.push({
-        cash,
-        settlement,
-        routing: policy.creatorAccountId ? "seller" : "direct_issuer",
-      });
-    }
+    if ("status" in revenueResult)
+      return save({ ...revenueResult, invoice: observed });
+    const { revenue } = revenueResult;
     const renewal = await stripe.usage.observeSubscription(
       ctx,
       subscriptionRef,

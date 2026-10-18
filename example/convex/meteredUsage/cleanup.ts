@@ -5,7 +5,8 @@ import { stripe } from "../stripe/helpers";
 import { getStripeClient } from "../stripe/client";
 import { originalDemoRun, demoCreditPurchase } from "./original";
 import { freezeDemoBilling } from "./billingPreflight";
-import { assertDemoCleanupReady } from "./cleanupGuard";
+import { refreshDemoCleanupEvidence } from "./cleanupRefresh";
+import { observeDemoRevenue } from "./revenue";
 import { demoSubscriptionRef } from "./billingSources";
 import { selectDemoInvoice } from "./invoiceGuard";
 const ref = { actorId: v.id("users"), runId: v.id("meteredDemoRuns") };
@@ -21,11 +22,61 @@ export const archive = action({
       ctx,
       args,
     );
-    assertDemoCleanupReady(
-      run.billingJson ? JSON.parse(run.billingJson) : null,
-    );
     const options = { stripeSecretKey: env.STRIPE_SECRET_KEY };
     const raw = getStripeClient();
+    const fresh = await refreshDemoCleanupEvidence(
+      run.billingJson ? JSON.parse(run.billingJson) : null,
+      async (invoiceId) => {
+        const invoice = await raw.invoices.retrieve(invoiceId);
+        const original = selectDemoInvoice(
+          { data: [invoice], has_more: false },
+          {
+            customerAccount: meter.scope.customerAccount,
+            customerId: meter.binding.stripeCustomerId,
+            subscriptionId: meter.subscription.subscriptionId,
+            periodEnd: meter.subscription.period.end,
+          },
+        );
+        if (!original) throw new Error("Original paid invoice is unavailable.");
+        const verified = await stripe.usage.readInvoiceUsage(
+          ctx,
+          {
+            ...meter,
+            period: meter.subscription.period,
+            invoiceId,
+          },
+          options,
+        );
+        if (
+          verified.status !== "available" ||
+          !verified.value.linesComplete ||
+          !verified.value.finalized ||
+          verified.value.meterAmount.status !== "available" ||
+          invoice.status !== "paid" ||
+          invoice.amount_remaining !== 0 ||
+          (run.model === "prepaid" && invoice.amount_due !== 0)
+        )
+          throw new Error(
+            "Reconcile the original paid invoice before cleanup.",
+          );
+        const revenue = await observeDemoRevenue(
+          ctx,
+          raw,
+          { run, meter, provider, purchases },
+          invoice,
+        );
+        return {
+          ...JSON.parse(run.billingJson!),
+          ...revenue,
+          status: "status" in revenue ? revenue.status : "paid",
+          invoiceId,
+        };
+      },
+    );
+    await ctx.runMutation(internal.meteredUsage.state.saveBilling, {
+      ...args,
+      billingJson: JSON.stringify(fresh),
+    });
     const subscriptionRef = demoSubscriptionRef({
       scope: meter.scope,
       requestId: provider.requestId,

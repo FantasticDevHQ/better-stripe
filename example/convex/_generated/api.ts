@@ -79,6 +79,7 @@ import type * as meteredUsage_billingPreflight from "../meteredUsage/billingPref
 import type * as meteredUsage_billingSources from "../meteredUsage/billingSources.js";
 import type * as meteredUsage_cleanup from "../meteredUsage/cleanup.js";
 import type * as meteredUsage_cleanupGuard from "../meteredUsage/cleanupGuard.js";
+import type * as meteredUsage_cleanupRefresh from "../meteredUsage/cleanupRefresh.js";
 import type * as meteredUsage_delivery from "../meteredUsage/delivery.js";
 import type * as meteredUsage_diagnostics from "../meteredUsage/diagnostics.js";
 import type * as meteredUsage_funding from "../meteredUsage/funding.js";
@@ -88,6 +89,7 @@ import type * as meteredUsage_policy from "../meteredUsage/policy.js";
 import type * as meteredUsage_purchases from "../meteredUsage/purchases.js";
 import type * as meteredUsage_readers from "../meteredUsage/readers.js";
 import type * as meteredUsage_resources from "../meteredUsage/resources.js";
+import type * as meteredUsage_revenue from "../meteredUsage/revenue.js";
 import type * as meteredUsage_settlementObservation from "../meteredUsage/settlementObservation.js";
 import type * as meteredUsage_setup from "../meteredUsage/setup.js";
 import type * as meteredUsage_state from "../meteredUsage/state.js";
@@ -281,6 +283,7 @@ const fullApi: ApiFromModules<{
   "meteredUsage/billingSources": typeof meteredUsage_billingSources;
   "meteredUsage/cleanup": typeof meteredUsage_cleanup;
   "meteredUsage/cleanupGuard": typeof meteredUsage_cleanupGuard;
+  "meteredUsage/cleanupRefresh": typeof meteredUsage_cleanupRefresh;
   "meteredUsage/delivery": typeof meteredUsage_delivery;
   "meteredUsage/diagnostics": typeof meteredUsage_diagnostics;
   "meteredUsage/funding": typeof meteredUsage_funding;
@@ -290,6 +293,7 @@ const fullApi: ApiFromModules<{
   "meteredUsage/purchases": typeof meteredUsage_purchases;
   "meteredUsage/readers": typeof meteredUsage_readers;
   "meteredUsage/resources": typeof meteredUsage_resources;
+  "meteredUsage/revenue": typeof meteredUsage_revenue;
   "meteredUsage/settlementObservation": typeof meteredUsage_settlementObservation;
   "meteredUsage/setup": typeof meteredUsage_setup;
   "meteredUsage/state": typeof meteredUsage_state;

@@ -126,3 +126,7 @@ for publishing. Run `pnpm run check:all` before submitting changes.
 ## License
 
 MIT
+
+## Metered usage
+
+Native Stripe integration supports shared configuration and exact quantity helpers at `@fantastic.dev/better-stripe/usage`. See the [setup guide for developers and AI agents](docs/metering-setup.md) and [contracts and sandbox evidence](docs/metered-usage.md). Operational billing APIs are still under development.

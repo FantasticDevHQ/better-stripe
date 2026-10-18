@@ -51,3 +51,8 @@ guide for your integration.
 
 The [example app setup guide](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md)
 covers sandbox configuration, checkout comparisons, and test flows.
+
+## Metered usage
+
+Start with the [native Stripe setup guide](metering-setup.md), then read the
+[shared contracts and sandbox evidence](metered-usage.md).

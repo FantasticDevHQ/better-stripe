@@ -76,3 +76,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 - [Native usage settlement](./usage-settlement.md) covers original paid invoices, issuer-service credit purchases and affiliate recovery.
 
 - [Metered billing authorization](./usage-security.md) covers server ownership, work deduplication, native proof limits and retained recovery liabilities.
+
+- [Reusable metered billing UI](usage-react.md) covers all three models, render props, authenticated adapters and bounded history.

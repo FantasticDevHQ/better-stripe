@@ -284,3 +284,37 @@ export async function nativeUsageSettlement(
       stripe.usage.settleCreditPurchase(ctx, credit, provider),
   };
 }
+
+import {
+  UsageBilling,
+  UsageSummary,
+  UsageAllowance,
+  UsageCredits,
+  UsageHistory,
+  useUsageBilling,
+  useUsageHistory,
+  formatUsageEstimate,
+  type UsageViewScope,
+  type UsageBillingSnapshot,
+  type UsageBillingProps,
+  type UsageHistoryProps,
+} from "@fantastic.dev/better-stripe/react";
+export function nativeUsageViews(
+  scope: UsageViewScope,
+  load: (scope: UsageViewScope) => Promise<UsageBillingSnapshot>,
+  history: UsageHistoryProps<{ id: string }>,
+) {
+  const props: UsageBillingProps = { scope, load };
+  return {
+    props,
+    history,
+    UsageBilling,
+    UsageSummary,
+    UsageAllowance,
+    UsageCredits,
+    UsageHistory,
+    useUsageBilling,
+    useUsageHistory,
+    formattedEstimate: formatUsageEstimate("0.125", "usd"),
+  };
+}

@@ -111,6 +111,7 @@
     "docs/usage-corrections.md",
     "docs/usage-settlement.md",
     "docs/usage-security.md",
+    "docs/usage-react.md",
     "docs/evidence/native-metering"
   ],
   "scripts": {

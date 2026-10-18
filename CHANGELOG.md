@@ -26,6 +26,16 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.65.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.64.1...v0.65.0) (2026-10-18)
+
+### Features
+
+- **settlement:** reauthorize new transfer dispatch ([d9588ee](https://github.com/FantasticDevHQ/better-stripe/commit/d9588ee80260371a172305bae1efd5278516d44f))
+
+### Bug Fixes
+
+- **example:** authorize frozen settlement leg amounts ([4bd94c4](https://github.com/FantasticDevHQ/better-stripe/commit/4bd94c4a75f58586868889a67e57e51f96cec538))
+
 ## [0.64.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.64.0...v0.64.1) (2026-10-18)
 
 ### Tests

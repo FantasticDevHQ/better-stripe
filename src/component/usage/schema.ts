@@ -78,12 +78,15 @@ export const usageReservationsTable = defineTable({
     v.literal("released"),
   ),
   eventId: v.optional(v.id("usageEvents")),
-  accountingKind: v.optional(v.literal("prepaid")),
+  accountingKind: v.optional(
+    v.union(v.literal("prepaid"), v.literal("allowance")),
+  ),
   accountKey: v.optional(v.string()),
   inputJson: v.optional(v.string()),
   subscriptionJson: v.optional(v.string()),
   allocationsJson: v.optional(v.string()),
   releaseReason: v.optional(v.string()),
 })
+  .index("by_account_state", ["accountKey", "state"])
   .index("by_scope_source", ["scopeKey", "sourceEventId"])
   .index("by_scope_state", ["scopeKey", "state"]);

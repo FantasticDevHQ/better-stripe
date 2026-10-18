@@ -80,3 +80,11 @@ export type {
   UsageCreditPurchase,
   UsageCreditBalance,
 } from "./creditTerms.js";
+
+export type {
+  UsageAllowanceBinding,
+  UsageAllowanceStatus,
+  UsageAllowanceReconciliation,
+  UsageLimitPolicy,
+} from "./allowanceTerms.js";
+export type { UsageAllowanceReservation } from "./allowanceClient.js";

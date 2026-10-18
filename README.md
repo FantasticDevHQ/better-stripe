@@ -134,3 +134,5 @@ Native Stripe integration supports shared configuration and exact quantity helpe
 [Managed usage subscriptions](docs/usage-subscriptions.md) supports all three billing models, mixed fixed/metered items and Checkout, with retained renewal and invoice provenance.
 
 See [payment-backed prepaid usage](docs/usage-credits.md) for purchases, atomic reservations, credit history and recovery.
+
+See [included usage and optional limits](./docs/usage-limits.md) for atomic reservation accounting, monthly resets and overage policy.

@@ -184,3 +184,23 @@ export async function prepaidUsage(
   });
   return { payment, balance, history };
 }
+
+import type {
+  UsageAllowanceBinding,
+  UsageLimitPolicy,
+} from "@fantastic.dev/better-stripe/usage";
+export async function includedUsagePolicy(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["configureAllowance"]>[0],
+  original: UsageAllowanceBinding,
+  policy: UsageLimitPolicy,
+) {
+  const configuration = await stripe.usage.configureAllowance(ctx, {
+    ...original,
+    policy,
+    expectedRevision: 0,
+  });
+  const status = await stripe.usage.getAllowanceStatus(ctx, original);
+  const reconciliation = await stripe.usage.reconcileAllowance(ctx, original);
+  return { configuration, status, reconciliation };
+}

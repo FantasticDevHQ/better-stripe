@@ -1,3 +1,7 @@
+import {
+  commit as commitAllowanceReservation,
+  requireReservation,
+} from "../usageAllowance/reservations.js";
 import { commit as commitCreditReservation } from "../usageCredits/reservations.js";
 import { managedBillingCutoff } from "../usageSubscriptions/acceptance.js";
 import { v } from "convex/values";
@@ -100,6 +104,7 @@ export const record = mutation({
         reservation.state !== "reserved")
     )
       throw new Error("Usage reservation does not match event");
+    await requireReservation(ctx, event, subscription, reservation);
     const eventId = await ctx.db.insert("usageEvents", {
       subscriptionId: subscription.subscriptionId,
       reservationId: args.reservationId,
@@ -126,6 +131,14 @@ export const record = mutation({
     else await ctx.db.insert("usageScopeCounters", { scopeKey: key, count: 1 });
     if (reservation && event.binding.plan.model === "prepaid")
       await commitCreditReservation(
+        ctx,
+        reservation,
+        event,
+        subscription,
+        eventId,
+      );
+    if (reservation?.accountingKind === "allowance")
+      await commitAllowanceReservation(
         ctx,
         reservation,
         event,

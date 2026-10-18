@@ -127,8 +127,6 @@ export function validateConfiguration(
   let creditPackage: UsageConfigurationValue["creditPackage"];
   if (plan.model === "prepaid") {
     try {
-      if (chargeAmountToDecimal(creditCost(plan, "1"), currency) === null)
-        throw new Error();
       const quantity = parseUsageQuantity(fields.packageQuantity, precision);
       if (
         chargeAmountToDecimal(
@@ -140,7 +138,7 @@ export function validateConfiguration(
       creditPackage = { quantity: quantity.quantity, topUp: "manual" };
     } catch {
       return invalid(
-        "Paid credits require positive quantities and whole minor currency units for every smallest unit and package, within the native payment bound.",
+        "Paid credits require a positive package quantity with whole minor currency backing and supported charge increments, within the native payment bound.",
       );
     }
   }

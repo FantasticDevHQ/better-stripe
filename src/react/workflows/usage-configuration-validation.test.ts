@@ -71,13 +71,14 @@ it("roundtrips fractional zero-decimal currency rates as exact major units", () 
   expect(fields.price).toBe("0.125");
   expect(validateConfiguration(fields)).toEqual(value);
 });
-it("rejects prepaid units which violate special currency charge increments", () => {
+it("rejects prepaid packages which violate special currency charge increments", () => {
   expect(() =>
     validateConfiguration({
       ...configurationFields(original),
       currency: "isk",
       price: "0.02",
       model: "prepaid",
+      packageQuantity: "1",
     }),
   ).toThrow(/Paid credits/);
 });
@@ -94,3 +95,13 @@ it.each(["jpy", "usd", "isk"])(
     expect(validateConfiguration(configurationFields(value))).toEqual(value);
   },
 );
+it("allows exact paid packages for fractional rates when consumption uses whole-backed batches", () => {
+  const result = validateConfiguration({
+    ...configurationFields(original),
+    model: "prepaid",
+    price: "0.001",
+    packageQuantity: "1000",
+  });
+  expect(result.plan.rate.unitAmountDecimal).toBe("0.1");
+  expect(result.creditPackage).toEqual({ quantity: "1000", topUp: "manual" });
+});

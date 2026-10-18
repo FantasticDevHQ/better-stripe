@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { defineUsagePlan } from "../../client/usage/contracts.js";
 import { useWorkflowAction } from "./useWorkflowAction.js";
 import {
   configurationFields,
@@ -26,7 +27,7 @@ export function useUsageConfiguration(
   const immutable = state.meterId !== "";
   const action = useWorkflowAction(async () => {
     if (disabled) throw new Error("Configuration is read-only for this scope.");
-    const value = validateConfiguration(state.fields, state.meterId);
+    let value = validateConfiguration(state.fields, state.meterId);
     if (immutable) {
       const meter = props.meters.find((item) => item.id === state.meterId);
       if (
@@ -41,6 +42,21 @@ export function useUsageConfiguration(
         throw new Error(
           "Select an active managed meter with unchanged original terms.",
         );
+      // Native intent fingerprints retain the original lexical decimal snapshot.
+      value = {
+        ...value,
+        plan: defineUsagePlan(meter.configuration.plan),
+        ...(value.creditPackage
+          ? {
+              creditPackage: {
+                ...value.creditPackage,
+                quantity:
+                  meter.configuration.creditPackage?.quantity ??
+                  value.creditPackage.quantity,
+              },
+            }
+          : {}),
+      };
     }
     try {
       await props.onSave(value);

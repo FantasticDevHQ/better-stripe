@@ -57,9 +57,10 @@ The billing model selects the relevant fields:
   Native pricing uses a graduated free first tier followed by an infinite paid
   tier. This does not add a monthly subscription fee or authorize work.
 - **Prepaid paid credits:** a paid credit package quantity, manual top-up and
-  reject-on-insufficient-credit policy. Every smallest consumption unit and the
-  package must have positive whole minor currency backing within the native
-  payment bound. Special currency charge increments also apply. Original terms
+  reject-on-insufficient-credit policy. The package must have positive whole minor currency backing within the native
+  payment bound and supported charge increments. Each later reservation must
+  also have exact whole-minor backing. Fractional rates are supported when work
+  uses suitable batches; fractional-minor consumption is rejected without rounding. Original terms
   remain attached to credits. Automatic top-up and a monetary wallet are not
   supported. Credit purchases fund only the issuer's own services.
 

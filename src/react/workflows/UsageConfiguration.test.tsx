@@ -108,7 +108,7 @@ it("configures paid credit packages, rejecting fractional backing and retaining 
     />,
   );
   field("Billing model", "prepaid");
-  field("Credit package quantity", "10");
+  field("Credit package quantity", "3");
   field("Price per whole unit (USD)", "0.001");
   save();
   await waitFor(() =>
@@ -120,7 +120,7 @@ it("configures paid credit packages, rejecting fractional backing and retaining 
   await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
   expect(onSave.mock.calls[0][0]).toMatchObject({
     plan: { model: "prepaid", insufficientBalance: "reject" },
-    creditPackage: { quantity: "10", topUp: "manual" },
+    creditPackage: { quantity: "3", topUp: "manual" },
   });
   expect(
     screen.getByText(/Reject work when credits are insufficient/),
@@ -346,3 +346,48 @@ it("exposes styling and render props without adding a second configuration engin
   await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
   expect(onSave.mock.calls[0][0].plan.version).toBe("v3");
 });
+it.each(["pay_as_you_go", "included_overage", "prepaid"] as const)(
+  "preserves the exact original %s snapshot including lexical decimals",
+  async (model) => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const common = {
+      ...initial.plan,
+      version: "original",
+      unit: { name: "call", precision: 2 },
+      rate: { currency: "usd", unitAmountDecimal: "2.00" },
+    };
+    const plan: ui.UsageConfigurationValue["plan"] =
+      model === "included_overage"
+        ? {
+            ...common,
+            model,
+            includedQuantity: "100.00",
+            reset: "billing_period",
+          }
+        : model === "prepaid"
+          ? { ...common, model, insufficientBalance: "reject" }
+          : { ...common, model };
+    const original: ui.UsageConfigurationValue = {
+      ...initial,
+      plan,
+      ...(model === "prepaid"
+        ? { creditPackage: { quantity: "100.00", topUp: "manual" } }
+        : {}),
+    };
+    render(
+      <ui.UsageConfiguration
+        scope={scope}
+        initial={initial}
+        meters={[{ id: "mtr_original", active: true, configuration: original }]}
+        onSave={onSave}
+      />,
+    );
+    field("Meter", "mtr_original");
+    save();
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    expect(onSave.mock.calls[0][0]).toEqual({
+      ...original,
+      meterId: "mtr_original",
+    });
+  },
+);

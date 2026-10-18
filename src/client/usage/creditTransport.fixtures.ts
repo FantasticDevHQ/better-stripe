@@ -19,6 +19,7 @@ export function creditFixture() {
   const state = {
     paid: false,
     nativeApplied: 0,
+    applyAtExpire: false,
     nativeExpired: false,
     incomplete: false,
     canceled: false,
@@ -51,6 +52,18 @@ export function creditFixture() {
           usage_type: "metered",
           meter: "mtr_calls",
         },
+      });
+    if (path === "/v1/invoices/in_usage")
+      return response({
+        id: "in_usage",
+        livemode: false,
+        customer_account: "acct_foreign",
+        customer: "cus_buyer",
+        currency: "usd",
+        status: "paid",
+        status_transitions: { finalized_at: 1300 },
+        parent: { subscription_details: { subscription: "sub_calls" } },
+        lines: { has_more: false, data: [] },
       });
     if (path === "/v1/billing/credit_balance_summary")
       return response({
@@ -143,6 +156,7 @@ export function creditFixture() {
         has_more: state.incomplete,
       });
     if (path.endsWith("/expire") && method === "POST") {
+      if (state.applyAtExpire) state.nativeApplied = 20;
       state.nativeExpired = true;
       state.grant!.expires_at = 700;
       return response(state.grant);

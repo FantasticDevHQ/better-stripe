@@ -194,3 +194,28 @@ it("holds incomplete native history instead of treating it as a zero balance", a
     ),
   ).toMatchObject({ status: "available", availableQuantity: "10" });
 });
+
+it("does not authorize a full cash refund when native credits are consumed during expiration", async () => {
+  const f = creditFixture(),
+    client = new BetterStripe(f.component),
+    options = { stripeSecretKey: "sk_test_credit", httpClient: f.httpClient };
+  await f.ready();
+  await f.t.action((ctx) =>
+    client.usage.purchaseCredits(ctx as RunCtx, f.purchase, options),
+  );
+  f.state.paid = true;
+  await f.t.action((ctx) =>
+    client.usage.observeCreditPurchase(ctx as RunCtx, f.purchase, options),
+  );
+  f.state.applyAtExpire = true;
+  await expect(
+    f.t.action((ctx) =>
+      client.usage.prepareCreditRefund(ctx as RunCtx, f.purchase, options),
+    ),
+  ).rejects.toThrow(/expiration|reconciliation/i);
+  expect(
+    await f.t.query((ctx) =>
+      client.usage.getCreditBalance(ctx as RunCtx, f.purchase),
+    ),
+  ).toMatchObject({ status: "held", availableQuantity: "0" });
+});

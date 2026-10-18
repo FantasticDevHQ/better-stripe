@@ -146,7 +146,12 @@ export async function prepareCreditRefund(
       );
     const result = await reconcileCreditPurchase(stripe, component, ctx, input);
     creditRequire(
-      result.status === "available" && result.value.ledgerAmount === 0,
+      result.status === "available" &&
+        result.value.backing === "sufficient" &&
+        result.value.ledgerAmount === 0 &&
+        result.value.applied === 0 &&
+        result.value.reinstated === 0 &&
+        result.value.expired + result.value.voided === terms.amount,
       "Native credit expiration not yet confirmed",
     );
     return {

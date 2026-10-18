@@ -199,7 +199,7 @@ it("rolls back event, counter and reservation commit if scheduling fails", async
     await t.run((ctx) => ctx.db.get("usageReservations", reservationId)),
   ).toMatchObject({ state: "reserved" });
 });
-it("requires and atomically commits the exact prepaid reservation", async () => {
+it("rejects unbacked prepaid reservations even when unit claims match", async () => {
   const t = convexTest(schema, modules);
   const input = {
     ...event,
@@ -224,22 +224,15 @@ it("requires and atomically commits the exact prepaid reservation", async () => 
       state: "reserved",
     }),
   );
-  await t.mutation(record, { ...args(input), reservationId });
+  await expect(
+    t.mutation(record, { ...args(input), reservationId }),
+  ).rejects.toThrow("Prepaid reservation provenance mismatch");
   expect(
     await t.run((ctx) => ctx.db.get("usageReservations", reservationId)),
-  ).toMatchObject({ state: "committed" });
-  const secondReservation = await t.run((ctx) =>
-    ctx.db.insert("usageReservations", {
-      scopeKey: JSON.stringify(scope),
-      sourceEventId: input.sourceEventId,
-      planJson: JSON.stringify(input.binding.plan),
-      scaledQuantity: "120",
-      state: "reserved",
-    }),
-  );
-  await expect(
-    t.mutation(record, { ...args(input), reservationId: secondReservation }),
-  ).rejects.toThrow("Conflicting usage reservation replay");
+  ).toMatchObject({ state: "reserved" });
+  expect(
+    await t.run((ctx) => ctx.db.query("usageEvents").collect()),
+  ).toHaveLength(0);
 });
 
 it("pages an explicit period without exposing guessed or cross-scope events", async () => {

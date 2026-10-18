@@ -7,6 +7,10 @@ import { nativeSubscription } from "./subscription.fixtures.js";
 export function fixture(
   external = false,
   failCreate = false,
+  intercept?: (
+    input: string,
+    init?: RequestInit,
+  ) => Promise<Response | undefined>,
 ): {
   t: ReturnType<typeof initConvexTest>;
   component: Component;
@@ -49,6 +53,8 @@ export function fixture(
     checkoutCreates = 0;
   const httpClient: Stripe.HttpClient = Stripe.createFetchHttpClient(
     async (input, init) => {
+      const intercepted = await intercept?.(String(input), init);
+      if (intercepted) return intercepted;
       const path = new URL(String(input)).pathname,
         method = init?.method ?? "GET",
         body = new URLSearchParams(String(init?.body ?? ""));

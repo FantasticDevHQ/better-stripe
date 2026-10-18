@@ -132,7 +132,7 @@ it("does not fabricate prepaid balances or complete estimates from incomplete hi
       {
         credits: {
           status: "unavailable",
-          reason: "credit_accounting_not_configured",
+          reason: "credit_balance_requires_scoped_reader",
         },
         estimate: { status: "unavailable" },
       },

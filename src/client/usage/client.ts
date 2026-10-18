@@ -1,4 +1,4 @@
-import { UsageSubscriptionClient } from "./subscriptionClient.js";
+import { UsageCreditClient } from "./creditClient.js";
 import type { Component, RunCtx } from "../helpers.js";
 import { runMutationOrThrow } from "../helpers.js";
 import { componentRef } from "../webhooks/helpers.js";
@@ -46,7 +46,7 @@ function decode({ event, delivery }: StoredView): UsageEventView {
   };
 }
 /** Trusted host facade. Authenticate and authorize each exact scope first. */
-export class UsageLedgerClient extends UsageSubscriptionClient {
+export class UsageLedgerClient extends UsageCreditClient {
   constructor(component: Component) {
     super(component);
   }

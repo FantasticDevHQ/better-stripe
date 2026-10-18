@@ -34,6 +34,11 @@ export const eventDoc = v.object({
 export const usageEventsTable = defineTable(eventFields)
   .index("by_identity", ["identity"])
   .index("by_scope_subscription", ["scopeKey", "subscriptionId"])
+  .index("by_scope_subscription_time", [
+    "scopeKey",
+    "subscriptionId",
+    "occurredAt",
+  ])
   .index("by_scope_time", ["scopeKey", "occurredAt"]);
 export const outboxFields = {
   ...deliveryFields,
@@ -73,6 +78,12 @@ export const usageReservationsTable = defineTable({
     v.literal("released"),
   ),
   eventId: v.optional(v.id("usageEvents")),
+  accountingKind: v.optional(v.literal("prepaid")),
+  accountKey: v.optional(v.string()),
+  inputJson: v.optional(v.string()),
+  subscriptionJson: v.optional(v.string()),
+  allocationsJson: v.optional(v.string()),
+  releaseReason: v.optional(v.string()),
 })
   .index("by_scope_source", ["scopeKey", "sourceEventId"])
   .index("by_scope_state", ["scopeKey", "state"]);

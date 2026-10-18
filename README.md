@@ -1835,3 +1835,7 @@ Automatic combined payouts use a complete paginated ledger collection above 100 
 Resolve recovery-backed payout liabilities with `stripe.costRecovery.payoutQuote(ctx, authorizedScope)` and pass its amount/version together to preview or automatic release. The example does this for seller refund/dispute costs; stale or missing required versions fail safely. See [versioned liability guidance](docs/settlement.md#versioned-recovery-liabilities).
 
 Historical payout adoption and funded-account activation also use complete paginated collections beyond the small direct snapshot path. They revalidate complete financial membership atomically, preserve paid principal and holding age, and reject stale funding or recovery changes. See [historical import guidance](docs/settlement.md#historical-import-and-funded-activation).
+
+## Metered usage
+
+Metered billing is under investigation. See the [provider comparison and sandbox acceptance matrix](docs/metered-usage.md) for current status and integration requirements. Public usage APIs are not available yet.

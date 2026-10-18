@@ -142,3 +142,5 @@ See [native usage settlement](./docs/usage-settlement.md) for original paid invo
 See [metered billing authorization](docs/usage-security.md) for host ownership checks, idempotent work, bounded native proofs and recovery.
 
 Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allowance, prepaid and paginated history views through authenticated host adapters.
+
+Use the [native usage configuration UI](docs/usage-configuration.md) for all three billing models, immutable meters and exact rates.

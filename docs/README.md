@@ -78,3 +78,5 @@ Start with the [native Stripe setup guide](metering-setup.md), then read the
 - [Metered billing authorization](./usage-security.md) covers server ownership, work deduplication, native proof limits and retained recovery liabilities.
 
 - [Reusable metered billing UI](usage-react.md) covers all three models, render props, authenticated adapters and bounded history.
+
+- [Native usage configuration UI](usage-configuration.md) covers reusable forms, managed meter selection, price rows and authorized adapters.

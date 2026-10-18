@@ -112,7 +112,8 @@
     "docs/usage-settlement.md",
     "docs/usage-security.md",
     "docs/usage-react.md",
-    "docs/evidence/native-metering"
+    "docs/evidence/native-metering",
+    "docs/usage-configuration.md"
   ],
   "scripts": {
     "build": "tsc --project ./tsconfig.build.json && node scripts/check-public-exports.mjs",

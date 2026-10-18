@@ -1,0 +1,44 @@
+[
+  {
+    "file": "01-payg-exact.png",
+    "assertion": "Exact 0.00125 USD input submits 0.125 minor units",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:24:47.340Z"
+  },
+  {
+    "file": "02-included-invalid.png",
+    "assertion": "Zero included units stop submission with accessible validation",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:24:52.745Z"
+  },
+  {
+    "file": "03-included-saved.png",
+    "assertion": "Included model saves 100 units with billing-period reset",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:24:58.415Z"
+  },
+  {
+    "file": "04-prepaid-saved.png",
+    "assertion": "Prepaid package retains paid manual top-up and insufficient-credit rejection",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:25:06.219Z"
+  },
+  {
+    "file": "05-provider-error.png",
+    "assertion": "Provider failure is sanitized and preserves same-terms retry",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:25:11.004Z"
+  },
+  {
+    "file": "06-immutable-meter.png",
+    "assertion": "Selecting original v1 meter locks its original plan and price terms",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:25:18.484Z"
+  },
+  {
+    "file": "07-seller-reset.png",
+    "assertion": "Seller account switch resets prior edits, selection, errors and saved contract",
+    "result": "passed",
+    "timestamp": "2026-10-18T12:25:23.308Z"
+  }
+]

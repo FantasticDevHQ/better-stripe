@@ -10,3 +10,25 @@ export type {
   PreparedUsageRecord,
   UsageDeliveryState,
 } from "./records.js";
+export {
+  assertUsageReplay,
+  validateUsagePageRequest,
+  authorizeUsageRecord,
+} from "./boundaries.js";
+export type {
+  UsagePeriod,
+  UsagePageRequest,
+  UsageAvailability,
+  UsageAuthorization,
+  UsageObservations,
+  UsageCorrectionRequest,
+  UsageRetentionPolicy,
+  UsageTransitionRequest,
+  UsageSubscriptionBinding,
+  UsageCreditProvenance,
+  UsageCorrectionOutcome,
+  UsageReceipt,
+  UsageHistoryPage,
+  UsageProviderCapabilities,
+  UsageContractPort,
+} from "./boundaries.js";

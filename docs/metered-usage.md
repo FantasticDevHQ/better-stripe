@@ -264,3 +264,112 @@ cleanup calls succeeded. Its prepaid aggregate was 15 and preview total was zero
 its included-usage aggregation did not catch up before the polling bound. This
 later run is not a second complete three-model aggregation proof. Neither run
 finalized a metered invoice or verified seller settlement.
+
+## Host authorization and observation contracts
+
+`authorizeUsageRecord` prepares a server-resolved event, invokes the host's
+`authorize` callback for its exact scope, then `authorizeActivity` for the source
+activity, and only then calls the supplied acceptance function. A denial throws
+before acceptance. Resolve bindings and activity identity on the server; copying
+browser-supplied payer, price or quantity into the helper is not authorization.
+The component APIs are trusted host boundaries. Never export their mutations as
+unauthenticated application endpoints.
+
+```ts
+import {
+  authorizeUsageRecord,
+  type UsageAuthorization,
+  type PreparedUsageRecord,
+} from "@fantastic.dev/better-stripe/usage";
+
+type Context = { userId: string; customerAccount: string; activityId: string };
+const policy: UsageAuthorization<Context> = {
+  async authorize(ctx, { scope }) {
+    if (!ctx.userId || ctx.customerAccount !== scope.customerAccount)
+      throw new Error("Unauthorized usage scope");
+  },
+  async authorizeActivity(ctx, record) {
+    if (record.sourceEventId !== ctx.activityId || record.quantity !== "1")
+      throw new Error("Activity is not billable under these terms");
+  },
+};
+declare const ctx: Context;
+// Resolve this from authenticated activity and verified native billing bindings.
+declare const serverRecord: unknown;
+// Supply the component's atomic acceptance adapter when implementing the ledger.
+declare const accept: (record: PreparedUsageRecord) => Promise<string>;
+const eventId = await authorizeUsageRecord(ctx, policy, serverRecord, accept);
+```
+
+The same adapter handles each of the three configurations above. Hosts own actor,
+tenant, entitlement and billable-activity policy. The component owns deduplication,
+financial history, delivery and credit accounting. Credentials remain in host
+internal actions. They must never enter records, workflow arguments or receipts.
+
+`UsagePageRequest` uses a half-open `[start, end)` period in Unix seconds, an opaque
+cursor and a limit of 1–100. `validateUsagePageRequest` rejects invalid intervals,
+unsafe timestamps and oversized cursors. Every page must reauthorize the original
+scope and period. Readers must distinguish an incomplete scan from a complete
+zero total; never sum different currencies or pricing versions implicitly.
+
+`UsageObservations` keeps local acceptance, provider acceptance, aggregation,
+estimates and invoice observations separate. `UsageAvailability` explicitly
+represents unsupported and unavailable provider/account modes, reason and retry
+policy. Missing observations are not zero. `observedAt` is Unix seconds;
+acceptance timestamps are assigned by the component, independently of original
+occurrence time. Native v1 delivery uses sum aggregation and integer scaled units;
+price conversion must preserve the configured whole-unit rate exactly or reject
+unsupported precision. A provider acceptance receipt is not aggregation or payment.
+
+## Corrections, retention and transitions
+
+`UsageCorrectionRequest` identifies the original scope/source event, an immutable
+correction ID and reason. Cancellation retains the original quantity, timestamp,
+provider event identifier and every receipt. A replacement uses a new source event
+only after cancellation is confirmed; finalized invoice changes require explicit
+billing adjustments rather than silently rewriting usage. Native cancellation
+windows and uncertain responses can produce unsupported or held results. No
+financial outcome follows merely from requesting a correction.
+
+`UsageRetentionPolicy` retains financial evidence. Retention of temporary execution
+payloads may be configured separately, but cleanup must preserve event identities,
+pricing snapshots, unresolved receipts, payments, reservations and correction
+links. There is no automatic financial-history deletion contract. Bounded pages
+and per-scope quotas apply before acceptance; an exhausted quota rejects new work
+without deleting old evidence. Large-volume exports retain original identities
+and must be reconciled before any future explicit archival feature.
+
+`UsageTransitionRequest` drains pending usage and resolves reservations before an
+explicit effective boundary. Versions are immutable. A model/rate/unit/currency
+change creates a new version and native price; existing credit grants retain their
+original terms. No implicit currency conversion, credit conversion, subscription
+migration or historical re-rating is permitted. `assertUsageReplay` compares
+normalized immutable terms and rejects changed replay on the original identity,
+including time, currency, mapped customer and version. A transition must never
+turn a prepaid consumption into a new pay-as-you-go charge.
+
+These are shared contracts and host-boundary helpers. Runtime catalog, acceptance,
+delivery, correction and transition adapters are implemented in subsequent tickets.
+
+`UsageContractPort` defines shared `record`, paginated `read`, `reconcile` and
+`capabilities` requests/results for host adapters. `record` is an atomic local
+acceptance receipt; `read` returns bounded history, not provider completeness;
+`reconcile` returns independent observations and never resends events to repair a
+mismatch. Check capabilities and availability for the selected scope. These
+interfaces specify the adapters being implemented, not an available engine.
+
+`UsageSubscriptionBinding` ties the verified native subscription/item and monthly
+period to its price. Store it as immutable routing provenance when accepting
+usage. Invoice IDs are later observations because the invoice may not exist at
+acceptance. `UsageCreditProvenance` ties a reservation/allocation to its original
+grant, verified purchase PaymentIntent, currency, amount, unit quantity and plan
+version. A grant may cover multiple events; an event may allocate several grants.
+Never fabricate one purchase/grant from a local balance total.
+
+`UsageCorrectionOutcome` distinguishes request, provider acceptance, confirmed
+cancellation, held/unsupported cases and required invoice adjustment. Confirmed
+cancellation is an adjustment observation linked to the original event, rather
+than overwriting its original delivery or invoice receipt. A requested or
+provider-accepted correction must not release spendable credits until confirmed.
+
+The [packed consumer fixture](https://github.com/FantasticDevHQ/better-stripe/blob/main/scripts/fixtures/usage-consumer.ts) compiles concrete authorization and activity callbacks plus record/read/reconcile adapters for all three models against the actual package tarball. It returns alternative model paths and never submits one activity to multiple models.

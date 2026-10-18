@@ -5,6 +5,7 @@ import {
   mkdirSync,
   symlinkSync,
   rmSync,
+  copyFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -31,6 +32,26 @@ it("loads all three configuration contracts from the actual packed consumer expo
         "dir",
       );
     }
+    copyFileSync(
+      resolve("scripts/fixtures/usage-consumer.ts"),
+      resolve(consumer, "consumer.ts"),
+    );
+    execFileSync(
+      resolve("node_modules/.bin/tsc"),
+      [
+        "--noEmit",
+        "--strict",
+        "--skipLibCheck",
+        "--target",
+        "ES2022",
+        "--module",
+        "NodeNext",
+        "--moduleResolution",
+        "NodeNext",
+        "consumer.ts",
+      ],
+      { cwd: consumer, stdio: "pipe" },
+    );
     const output = execFileSync(
       process.execPath,
       [

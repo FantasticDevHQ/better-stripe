@@ -12,6 +12,7 @@ export const reason = v.union(
 );
 export { usageDeliveryOutcomeValidator as outcome } from "../../client/usage/deliveryProtocol.js";
 export const deliveryFields = {
+  historySequence: v.optional(v.number()),
   provider: v.optional(v.string()),
   workflowId: v.optional(v.string()),
   definitionVersion: v.optional(v.literal(1)),

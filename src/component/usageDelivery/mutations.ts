@@ -1,3 +1,4 @@
+import { appendDeliveryHistory } from "../usageObservations/history.js";
 import { errorCode } from "./fields.js";
 import type { PreparedUsageRecord } from "../../client/usage/records.js";
 import { mutation } from "../_generated/server.js";
@@ -81,6 +82,14 @@ export const hold = mutation({
         ? { state: "held" as const, reason: "administrative_hold" as const }
         : {}),
     });
+    if (!outbox.held)
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "held",
+        outbox.attempts,
+        `control:${(outbox.historySequence ?? 0) + 1}:held`,
+      );
     return await currentStatus(ctx, (await read(ctx, args)).outbox);
   },
 });
@@ -94,8 +103,16 @@ export const resume = mutation({
       ["provider_accepted", "rejected"].includes(outbox.state) ||
       outbox.reason === "delivery_window_expired"
     ) {
-      if (outbox.held)
+      if (outbox.held) {
         await ctx.db.patch("usageOutbox", outbox._id, { held: false });
+        await appendDeliveryHistory(
+          ctx,
+          args.eventId,
+          "resumed",
+          outbox.attempts,
+          `control:${(outbox.historySequence ?? 0) + 1}:resumed`,
+        );
+      }
       return await currentStatus(ctx, (await read(ctx, args)).outbox);
     }
     if (!outbox.provider)
@@ -105,6 +122,14 @@ export const resume = mutation({
       state: outbox.state === "sending" ? "sending" : "queued",
       reason: undefined,
     });
+    if (outbox.held || outbox.state === "held")
+      await appendDeliveryHistory(
+        ctx,
+        args.eventId,
+        "resumed",
+        outbox.attempts,
+        `control:${(outbox.historySequence ?? 0) + 1}:resumed`,
+      );
     await launch(ctx, args, outbox);
     return await currentStatus(ctx, (await read(ctx, args)).outbox);
   },

@@ -1,3 +1,4 @@
+import { MeteredStorefrontProducts } from "@/components/metered-storefront-products";
 import { Storefront } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useQuery } from "convex/react";
@@ -44,6 +45,21 @@ export function Landing() {
           Choose Customer or Visitor above to make a purchase.
         </p>
       )}
+      <MeteredStorefrontProducts
+        products={(stores ?? []).flatMap((store) =>
+          store.products.flatMap((product) =>
+            product.metered
+              ? [
+                  {
+                    name: product.name,
+                    storeName: store.name,
+                    metered: product.metered,
+                  },
+                ]
+              : [],
+          ),
+        )}
+      />
       <Storefront
         stores={stores}
         storeId={params.get("store") ?? undefined}

@@ -21,7 +21,7 @@ is included.
 | `included_overage` | Gets included units each verified monthly period, then pays for overage | Atomic included/overage reservations, hard or soft limits, separate period counters                       |
 | `prepaid`          | Buys units before consumption                                           | Verified original payment and price-scoped grant, atomic reservation/consumption, exhaustion and recovery |
 
-Developers choose the unit, precision, price and policy. This example uses whole
+Developers choose the unit, precision, price and policy. The recipe below uses whole
 requests at USD 1 per request. Rates are decimal strings of **minor currency
 units per whole billable unit**, so USD `"100"` means USD 1, not USD 100.
 

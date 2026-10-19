@@ -88,32 +88,42 @@ The persona switcher is test-only, not production authentication. In an applicat
 authenticate callers and resolve/authorize original payer, product, price, activity
 and recipient policy on the server. See [usage security](usage-security.md).
 
-## Verify each model
+## Verify the product flows
 
-Choose one model, then Set up sandbox. Setup retains its original resource IDs
-across retries. Defaults below are this example's USD 1 per whole-call fixture;
-applications choose their own units, precision and policies.
+Set the server-owned checkout return origin to your Vite URL. This value is not a
+secret. For a default Vite server:
 
-| Model                  | Exercise                                                        | Expected result                                                                                                |
-| ---------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Pay as you go          | Three five-call jobs, replay one, observe, close/resume period  | Effective/native 15, original usage invoice USD 15; replay adds no work or usage                               |
-| Included monthly usage | Ten included calls, then another five                           | 15 consumed, 10 included, 5 overage; original usage invoice USD 5                                              |
-| Paid prepaid           | Try work unpaid, buy/confirm ten units, consume twice, try more | Unpaid work held, verified grant 10, consumed 10, excess denied; original purchase USD 10, usage invoice USD 0 |
+```sh
+pnpm exec convex env set FRONTEND_URL http://localhost:5173
+```
 
-Follow [the complete walkthrough](usage-example.md) for correction, delivery,
-original payment/fee/transfer proof and cleanup. Aggregation may lag; refresh an
-original request rather than inventing another event ID. Close/resume waits for
-complete local/native equality, zero reservations and resolved correction/purchase
-intents before advancing only that fixture's test clock. Future renewal allowance
-is `not_active_yet` until its period is active on the real server. Do not forge
-future timestamps or show a fake zero balance.
+Use `http://localhost:4319` instead when Vite is running on port 4319. Set this
+before creating an enrollment. The example retains the original return origin
+with that enrollment, so changing the environment does not rewrite an existing
+Checkout intent.
 
-Archive/resume cleanup only after original paid invoice, cash and settlement
-verification. Cleanup rechecks fresh original financial evidence; unresolved
-payments, refunds, disputes, reservations, unknown sends and credit liabilities
-remain retained. Only owned test resources are stopped. Payers, clocks and all
-financial history remain. Unspent paid credits require original-source recovery;
-reset does not delete them. After successful archive, configure a new isolated run.
+Choose Seller → Maya's Fitness Studio → Metered billing. Attach Included monthly
+usage to the coaching membership product. The default terms are USD 20 monthly,
+60 included coaching minutes and USD 1 per extra minute. Compare the via API and
+BetterStripe components tabs before and after attachment.
+
+Choose Customer, review the membership, complete its original test Checkout,
+refresh enrollment, and record coaching minutes. Admin → Metered billing controls
+store enablement separately. Sasha's Ceramics starts disabled. For pay as you go,
+create another coaching product with a zero monthly base price. For prepaid,
+configure the admin's own Store analytics reports product and verify that work is
+held before a paid grant and denied after credit exhaustion.
+
+Follow [the product walkthrough](usage-example.md) for exact steps, authorization,
+payment verification, retained history and the mixed-invoice seller-settlement
+limitation. Product subscriptions use actual native billing periods and the
+customer's original account; this flow does not advance shared test clocks.
+
+For isolated clock-driven renewal, correction and cleanup checks, use Admin →
+Developer protocol diagnostics and follow the separate
+[protocol diagnostics guide](usage-protocol-diagnostics.md). Those runs retain
+their dedicated original resources and financial evidence. Never use diagnostic
+cleanup to archive a seller's shared product or a real customer's account.
 
 ## Install in your own Convex application
 

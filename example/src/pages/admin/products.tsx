@@ -1,3 +1,4 @@
+import { ProductBillingLink } from "@/components/product-billing-link";
 import { formatAmount } from "@/lib/format-amount";
 import { Fragment } from "react";
 import { useProductManager } from "@fantastic.dev/better-stripe/react";
@@ -298,9 +299,10 @@ export function AdminProducts() {
                       )}
                       <div>
                         <p className="font-medium">{product.name}</p>
-                        <p className="text-muted-foreground text-sm">
-                          {product.description ?? ""}
-                        </p>
+                        <ProductBillingLink
+                          productId={product.stripeProductId}
+                          description={product.description}
+                        />
                       </div>
                     </div>
                   </TableCell>

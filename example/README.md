@@ -1559,7 +1559,7 @@ A missing acknowledged setup ID remains unknown without another creation.
 
 ## Native metered billing
 
-Open `/demo/metered-usage` as a customer, seller or admin demo persona. Follow the [three-model sandbox walkthrough](../docs/usage-example.md) for native setup, real test payments, corrections, monthly resets and scoped cleanup. Demo personas are not production authentication. No Metronome account is needed.
+Open `/demo/metered-usage` as a customer, seller or admin demo persona. Follow the [product metering walkthrough](../docs/usage-example.md) to attach a USD 20 monthly coaching membership with 60 included minutes and overages, manage store enablement, compare via API and BetterStripe components, and purchase platform report credits. Isolated correction, test-clock and cleanup exercises remain under the admin's Developer protocol diagnostics. Demo personas are not production authentication. No Metronome account is needed.
 
 ## Native metered billing setup
 

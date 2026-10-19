@@ -179,8 +179,11 @@ export function UsageSummary(props: UsageSummaryProps) {
       )}
       {!provider || provider.status !== "available" ? (
         <p role="status">
-          Native aggregation {provider?.status ?? "unavailable"}. Refresh after
-          provider ingestion.
+          Native aggregation {provider?.status ?? "unavailable"}.{" "}
+          {provider?.status === "unsupported" &&
+          provider.reason === "minute_alignment_required"
+            ? "Exact summaries do not support partial-minute billing boundaries. Reconcile with the native invoice instead."
+            : "Refresh after provider ingestion."}
         </p>
       ) : (
         <>

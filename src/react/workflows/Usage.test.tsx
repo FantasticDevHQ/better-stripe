@@ -371,3 +371,18 @@ it("labels a complete empty local period without inferring zero from partial his
   rerender(<ui.UsageSummary scope={usageScope} {...data} />);
   expect(screen.getByText("No usage in this period.")).toBeTruthy();
 });
+it("explains partial-minute native summaries as unsupported instead of promising refresh will resolve them", () => {
+  render(
+    <ui.UsageSummary
+      scope={usageScope}
+      summary={usageSnapshot().summary}
+      provider={{
+        status: "unsupported",
+        reason: "minute_alignment_required",
+        retryable: false,
+      }}
+    />,
+  );
+  expect(screen.getByText(/partial-minute billing boundaries/)).toBeTruthy();
+  expect(screen.queryByText(/Refresh after provider ingestion/)).toBeNull();
+});

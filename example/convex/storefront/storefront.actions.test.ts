@@ -269,3 +269,29 @@ it("snapshots the inherited commission term into subscription checkout metadata"
     }),
   );
 });
+it("does not sell a metered product's base price without its original usage subscription", async () => {
+  const { t, ids } = await setup();
+  await t.run((ctx) =>
+    ctx.db.insert("meteredProductOffers", {
+      ownerId: ids.seller,
+      productId: "prod_store",
+      productName: "Coaching",
+      configurationJson: "{}",
+      baseAmount: 12900,
+      createdAt: Date.now(),
+      providerJson: JSON.stringify({
+        basePriceId: "price_store",
+        price: { stripePriceId: "price_usage" },
+      }),
+    }),
+  );
+  await expect(
+    t.action(api.billing.public.actions.createCheckoutSession, {
+      userId: ids.customer,
+      stripePriceId: "price_store",
+      requestId: "metered-bypass-123",
+      returnUrl: "http://localhost:4319/checkout/status",
+    }),
+  ).rejects.toThrow(/metered product enrollment/);
+  expect(mock.createCheckoutSession).not.toHaveBeenCalled();
+});

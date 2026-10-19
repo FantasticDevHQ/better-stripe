@@ -12,8 +12,8 @@ export type PriceInput = {
 };
 export type ProductActions = {
   scopeKey: string;
-  createProduct: (args: ProductInput) => Promise<unknown>;
-  createPrice: (args: PriceInput) => Promise<unknown>;
+  createProduct?: (args: ProductInput) => Promise<unknown>;
+  createPrice?: (args: PriceInput) => Promise<unknown>;
   updateProduct?: (
     args: ProductInput & { stripeProductId: string },
   ) => Promise<unknown>;
@@ -46,6 +46,8 @@ export function useProductManager(props: ProductActions) {
     setCommand(command);
     switch (command.type) {
       case "create": {
+        if (!props.createProduct)
+          throw new Error("Product creation is not configured.");
         if (!fields.newProduct.name.trim())
           throw new Error("Enter a product name.");
         await props.createProduct({
@@ -55,6 +57,8 @@ export function useProductManager(props: ProductActions) {
         break;
       }
       case "price": {
+        if (!props.createPrice)
+          throw new Error("Price creation is not configured.");
         const unitAmount = Number(fields.newPrice.amount);
         if (
           !/^\d+$/.test(fields.newPrice.amount) ||
@@ -186,39 +190,41 @@ function ProductsBody(props: ProductsProps) {
     <section data-better-stripe="products" aria-busy={state.isPending}>
       <h2>Products</h2>
       {state.error && <p role="alert">{state.error}</p>}
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void state.handleCreateProduct();
-        }}
-      >
-        <label htmlFor={`${id}-name`}>Product name</label>
-        <input
-          id={`${id}-name`}
-          required
-          value={state.newProduct.name}
-          onChange={(event) =>
-            state.setNewProduct({
-              ...state.newProduct,
-              name: event.target.value,
-            })
-          }
-        />
-        <label htmlFor={`${id}-description`}>Description</label>
-        <input
-          id={`${id}-description`}
-          value={state.newProduct.description}
-          onChange={(event) =>
-            state.setNewProduct({
-              ...state.newProduct,
-              description: event.target.value,
-            })
-          }
-        />
-        <button type="submit" disabled={state.isPending}>
-          {state.isCreatingProduct ? "Creating…" : "Create product"}
-        </button>
-      </form>
+      {props.createProduct && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void state.handleCreateProduct();
+          }}
+        >
+          <label htmlFor={`${id}-name`}>Product name</label>
+          <input
+            id={`${id}-name`}
+            required
+            value={state.newProduct.name}
+            onChange={(event) =>
+              state.setNewProduct({
+                ...state.newProduct,
+                name: event.target.value,
+              })
+            }
+          />
+          <label htmlFor={`${id}-description`}>Description</label>
+          <input
+            id={`${id}-description`}
+            value={state.newProduct.description}
+            onChange={(event) =>
+              state.setNewProduct({
+                ...state.newProduct,
+                description: event.target.value,
+              })
+            }
+          />
+          <button type="submit" disabled={state.isPending}>
+            {state.isCreatingProduct ? "Creating…" : "Create product"}
+          </button>
+        </form>
+      )}
       {result.isLoading ? (
         <p role="status">Loading products…</p>
       ) : !result.products.length ? (
@@ -246,13 +252,17 @@ function ProductsBody(props: ProductsProps) {
                 )}
               </div>
             ))}
-            <button
-              type="button"
-              disabled={state.isPending}
-              onClick={() => state.setShowAddPriceFor(product.stripeProductId)}
-            >
-              Add price
-            </button>
+            {props.createPrice && (
+              <button
+                type="button"
+                disabled={state.isPending}
+                onClick={() =>
+                  state.setShowAddPriceFor(product.stripeProductId)
+                }
+              >
+                Add price
+              </button>
+            )}
             {props.updateProduct && (
               <button
                 type="button"
@@ -281,7 +291,7 @@ function ProductsBody(props: ProductsProps) {
           </article>
         ))
       )}
-      {state.showAddPriceFor && (
+      {props.createPrice && state.showAddPriceFor && (
         <form
           onSubmit={(event) => {
             event.preventDefault();

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BetterStripe product capabilities verification</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f7f7f1;
+        color: #192c2b;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 900px;
+        margin: 32px auto;
+        padding: 0 24px 32px;
+      }
+      header {
+        border-bottom: 3px solid #224d49;
+        padding-bottom: 16px;
+      }
+      h1 {
+        font-size: clamp(26px, 5vw, 38px);
+        line-height: 1.15;
+        margin: 10px 0;
+      }
+      h2 {
+        margin-top: 0;
+        font-size: 22px;
+      }
+      small {
+        letter-spacing: 0.06em;
+      }
+      section {
+        margin-top: 20px;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ccd5cc;
+        border-radius: 8px;
+      }
+      article {
+        border-top: 1px solid #ccd5cc;
+        margin-top: 12px;
+        padding-top: 4px;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+        border: 1px solid #93aaa5;
+        border-radius: 4px;
+        min-height: 44px;
+      }
+      button {
+        padding: 8px 14px;
+        margin: 4px 8px 4px 0;
+        background: #eef4ef;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid #237d68;
+        outline-offset: 2px;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+      }
+      input {
+        display: block;
+        width: 100%;
+        max-width: 480px;
+        padding: 8px;
+        margin-bottom: 10px;
+        background: white;
+      }
+      output {
+        display: block;
+        overflow-wrap: anywhere;
+      }
+      .disclosure {
+        padding: 12px;
+        background: #e4ece2;
+        border-left: 4px solid #224d49;
+      }
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+      }
+      @media (max-width: 480px) {
+        main {
+          margin: 20px auto;
+          padding: 0 16px 24px;
+        }
+        section {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="root"></main>
+    <script
+      type="module"
+      src="/scripts/fixtures/products-capabilities-ui.tsx"
+    ></script>
+  </body>
+</html>

@@ -52,6 +52,14 @@ formatting, typechecks, codegen drift check, tests, and repository quality gates
 used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in
 `gates/`. Fix failures without weakening the gates or raising existing budgets.
 
+Use `pnpm run check:package` to clean/rebuild the package and run the artifact
+checks in one command. It verifies public documentation imports and local links,
+recursively linked guides in the actual tarball, and extracted usage consumers
+for public types, runtime accounting and React rendering. It uses deterministic
+fixtures without provider credentials or deployment changes. Native component
+analysis remains a separate authorized development probe in
+[the usage handoff evidence](https://github.com/FantasticDevHQ/better-stripe/tree/main/docs/evidence/usage-handoff).
+
 Coverage checks enforce the committed floors in `gates/coverage-budgets.json`.
 `pnpm run check:coverage` and `pnpm run check:all` never edit that file or fail
 because coverage improved. Ordinary feature PRs should leave the budget file alone.

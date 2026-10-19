@@ -1,11 +1,17 @@
 {
   "name": "@fantastic.dev/better-stripe",
   "version": "0.68.0",
-  "description": "A Convex component for Stripe V2 Accounts API integration.",
+  "description": "Convex component for Stripe Accounts v2, subscriptions, metered billing and Connect marketplaces, with React workflows.",
   "keywords": [
     "stripe",
     "convex",
-    "component"
+    "component",
+    "billing",
+    "subscriptions",
+    "metered-billing",
+    "usage-based-billing",
+    "stripe-connect",
+    "react"
   ],
   "homepage": "https://github.com/FantasticDevHQ/better-stripe#readme",
   "bugs": {
@@ -101,7 +107,8 @@
     "check:ci-parity": "repo-gates check-ci-parity",
     "check:coverage": "node scripts/check-coverage.mjs",
     "format:check": "pnpm run format",
-    "check:agents": "repo-gates check-agents"
+    "check:agents": "repo-gates check-agents",
+    "check:package": "pnpm run build:clean && vitest run scripts/documentation-contracts.test.mjs scripts/packed-docs.test.mjs scripts/public-docs.test.mjs scripts/usage-contracts-packed.test.mjs scripts/usage-composition-packed.test.mjs scripts/usage-models-packed.test.mjs"
   },
   "dependencies": {
     "@convex-dev/workflow": "0.4.10",

@@ -191,6 +191,7 @@ export const paginateProducts = query({
 export const paginatePrices = query({
   args: {
     productId: v.optional(v.string()),
+    stripeProductId: v.optional(v.string()),
     active: v.optional(v.boolean()),
     paginationOpts: paginationOptsValidator,
   },
@@ -202,18 +203,31 @@ export const paginatePrices = query({
       args.paginationOpts.numItems > 100
     )
       throw new Error("Page size must be an integer from 1 to 100");
-    const { productId, active } = args;
+    const { productId, stripeProductId, active } = args;
+    if (
+      stripeProductId !== undefined &&
+      (productId !== undefined || active !== undefined)
+    )
+      throw new Error(
+        "stripeProductId cannot be combined with productId or active",
+      );
     const rows = paginator(ctx.db, schema).query("prices");
     const scoped =
-      productId !== undefined
-        ? active !== undefined
-          ? rows.withIndex("by_product_active", (q) =>
-              q.eq("productId", productId).eq("active", active),
-            )
-          : rows.withIndex("by_product_id", (q) => q.eq("productId", productId))
-        : active !== undefined
-          ? rows.withIndex("by_active", (q) => q.eq("active", active))
-          : rows;
+      stripeProductId !== undefined
+        ? rows.withIndex("by_stripe_product_id", (q) =>
+            q.eq("stripeProductId", stripeProductId),
+          )
+        : productId !== undefined
+          ? active !== undefined
+            ? rows.withIndex("by_product_active", (q) =>
+                q.eq("productId", productId).eq("active", active),
+              )
+            : rows.withIndex("by_product_id", (q) =>
+                q.eq("productId", productId),
+              )
+          : active !== undefined
+            ? rows.withIndex("by_active", (q) => q.eq("active", active))
+            : rows;
     return scoped.order("desc").paginate({
       ...args.paginationOpts,
       maximumRowsRead: 200,

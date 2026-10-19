@@ -60,3 +60,24 @@ it("forwards exact currency summary reads through the public client", async () =
     { accountId: "acct_a" },
   );
 });
+
+it("forwards unfiltered provider-product pages and native continuation hints", async () => {
+  const bs = new BetterStripe(components.betterStripe);
+  const page = {
+    page: [],
+    isDone: false,
+    continueCursor: "next",
+    pageStatus: "SplitRequired",
+    splitCursor: "split",
+  };
+  const ctx = { runQuery: vi.fn().mockResolvedValue(page) };
+  const options = {
+    stripeProductId: "prod_selected",
+    paginationOpts: { numItems: 25, cursor: "prior", endCursor: "pinned" },
+  };
+  expect(await bs.paginatePrices(ctx, options)).toBe(page);
+  expect(ctx.runQuery).toHaveBeenCalledExactlyOnceWith(
+    components.betterStripe.products.queries.paginatePrices,
+    options,
+  );
+});

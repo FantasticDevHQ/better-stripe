@@ -9,14 +9,21 @@ methods remain available. Neither an array preview nor one cursor page is an
 exact financial total.
 
 Products support `accountId` and `active`. Prices support the component's
-`productId` and `active`; this ID differs from `stripeProductId`. Authorize the
+`productId` and `active`; this ID differs from `stripeProductId`. Alternatively,
+pass `stripeProductId` alone for an **unfiltered** page from the existing provider-product
+index. Combining that selector with `productId` or either `active: true` or
+`active: false` throws before any read. Provider pages retain inactive rows and
+contradictory component-product links so hosts can validate them rather than hide
+them with an active filter. They use the same page bounds, descending order,
+opaque continuations, pinned end cursors and native split hints. These cached rows
+do not prove provider completeness, ownership or financial eligibility. Authorize the
 parent product before exposing price reads. Payout history requires `accountId`
 and optionally accepts `status`. No filter means no restriction on that field.
 An omitted product account filter includes all accounts, including platform
 products. Host applications must derive allowed account and product scope from
 the authenticated user. A client-supplied account ID is not authorization.
 
-The Vite reference provides bindings in `example/convex/readContracts.ts` and
+The Vite reference provides bindings in `example/convex/readContracts/queries.ts` and
 `example/src/lib/stripe-hooks.ts`. Its selectable personas are demo identities.
 Production hosts must replace them with session authorization.
 

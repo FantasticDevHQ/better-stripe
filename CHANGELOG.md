@@ -28,10 +28,9 @@
 
 ## [0.70.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.69.0...v0.70.0) (2026-10-19)
 
-
 ### Features
 
-* **react:** allow product editing without creation callbacks (BTS-285) ([#366](https://github.com/FantasticDevHQ/better-stripe/issues/366)) ([28a4c54](https://github.com/FantasticDevHQ/better-stripe/commit/28a4c54e907b6c41f8d0b34b7921b97319118f19))
+- **react:** allow product editing without creation callbacks ([#366](https://github.com/FantasticDevHQ/better-stripe/issues/366)) ([28a4c54](https://github.com/FantasticDevHQ/better-stripe/commit/28a4c54e907b6c41f8d0b34b7921b97319118f19))
 
 ## [0.69.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.68.1...v0.69.0) (2026-10-19)
 

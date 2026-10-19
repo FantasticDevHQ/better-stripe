@@ -28,10 +28,9 @@
 
 ## [0.69.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.68.1...v0.69.0) (2026-10-19)
 
-
 ### Features
 
-* **example:** product metered billing with headless and component views ([#364](https://github.com/FantasticDevHQ/better-stripe/issues/364)) ([cd978c2](https://github.com/FantasticDevHQ/better-stripe/commit/cd978c22e7a87f36e5bb0c066011b3cd82f2d0cb))
+- **example:** product metered billing with headless and component views ([#364](https://github.com/FantasticDevHQ/better-stripe/issues/364)) ([cd978c2](https://github.com/FantasticDevHQ/better-stripe/commit/cd978c22e7a87f36e5bb0c066011b3cd82f2d0cb))
 
 ## [0.68.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.68.0...v0.68.1) (2026-10-19)
 

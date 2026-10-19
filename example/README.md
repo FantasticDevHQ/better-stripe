@@ -1551,3 +1551,7 @@ A missing acknowledged setup ID remains unknown without another creation.
 ## Native metered billing
 
 Open `/demo/metered-usage` as a customer, seller or admin demo persona. Follow the [three-model sandbox walkthrough](../docs/usage-example.md) for native setup, real test payments, corrections, monthly resets and scoped cleanup. Demo personas are not production authentication. No Metronome account is needed.
+
+## Native metered billing setup
+
+Run the [native setup guide](../docs/metering-setup.md) and [three model walkthrough](../docs/usage-example.md) with the existing Stripe sandbox. The setup guide uses server-only secret injection and explicit development deployment commands. Read [opt-in rollout](../docs/usage-rollout.md) before adapting the demo to an existing app; persona switching is test-only, not authentication.

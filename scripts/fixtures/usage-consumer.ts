@@ -353,3 +353,106 @@ export function serverUsageSnapshot(
 ) {
   return { scope, value };
 }
+
+import type {
+  UsagePlan,
+  UsageSubscriptionBinding,
+  UsageReceipt,
+} from "@fantastic.dev/better-stripe/usage";
+/** The current three-model guide's catalog/enrollment recipe, public exports only. */
+export async function provisionUsageQuickstart(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["ensureSubscription"]>[0],
+  original: {
+    issuerId: string;
+    payerId: string;
+    mappedCustomerId: string;
+    authorizedProductId: string;
+    originalSignupId: string;
+    selectedPlan: UsagePlan;
+  },
+  stripeSecretKey: string,
+) {
+  const {
+    issuerId,
+    payerId,
+    mappedCustomerId,
+    authorizedProductId,
+    originalSignupId,
+    selectedPlan,
+  } = original;
+  const meter = await stripe.ensureUsageMeter(ctx, {
+    scope: { stripeAccountId: issuerId, livemode: false },
+    plan: selectedPlan,
+    eventName: "requests_v1",
+    displayName: "Requests v1",
+  });
+  const price = await stripe.ensureUsagePrice(ctx, {
+    scope: { stripeAccountId: issuerId, livemode: false },
+    plan: selectedPlan,
+    meterId: meter.id,
+    stripeProductId: authorizedProductId,
+    lookupKey: "requests_v1_usd",
+  });
+  return stripe.usage.ensureSubscription(
+    ctx,
+    {
+      requestId: originalSignupId,
+      meters: [
+        {
+          scope: {
+            stripeAccountId: issuerId,
+            customerAccount: payerId,
+            meterId: meter.id,
+            livemode: false,
+          },
+          binding: {
+            stripeCustomerId: mappedCustomerId,
+            stripePriceId: price.stripePriceId,
+            eventName: meter.event_name,
+            plan: selectedPlan,
+          },
+        },
+      ],
+      fixedPriceIds: [],
+      collection: { method: "send_invoice", daysUntilDue: 30 },
+    },
+    { stripeSecretKey },
+  );
+}
+/** Called from one authenticated host mutation; its business callback must be idempotent. */
+export function recordUsageQuickstart(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["record"]>[0],
+  policy: UsageAuthorization<typeof ctx>,
+  serverEvent: unknown,
+  subscription: UsageSubscriptionBinding,
+  applyDatabaseWorkOnce: (receipt: UsageReceipt) => Promise<void>,
+) {
+  return authorizeUsageRecord(ctx, policy, serverEvent, async (event) => {
+    const reservation =
+      event.binding.plan.model === "prepaid"
+        ? await stripe.usage.reserveCredits(ctx, { event, subscription })
+        : await stripe.usage.reserveAllowance(ctx, { event, subscription });
+    if (reservation.state === "denied" || reservation.state === "released")
+      throw new Error("Usage is not admitted");
+    const receipt = await stripe.usage.record(ctx, {
+      event,
+      subscription,
+      reservationId: reservation.reservationId,
+    });
+    await applyDatabaseWorkOnce(receipt);
+    return receipt;
+  });
+}
+export async function observeOriginalPrepaidQuickstart(
+  stripe: BetterStripe,
+  ctx: Parameters<BetterStripe["usage"]["observeCreditPurchase"]>[0],
+  purchase: UsageCreditPurchaseOptions,
+  stripeSecretKey: string,
+) {
+  const view = await stripe.usage.observeCreditPurchase(ctx, purchase, {
+    stripeSecretKey,
+  });
+  return { ready: view.state === "ready", view };
+}

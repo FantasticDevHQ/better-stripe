@@ -24,7 +24,8 @@ guide for your integration.
 - [SetupIntent recovery](setup-intent-recovery.md).
 - [Balance funding state](balance-funding-state.md) and [workflow](balance-funding-workflow.md).
 - [Example balance funding cutover](example-balance-funding-cutover.md).
-- [Metered usage investigation](metered-usage.md), provider comparison and acceptance requirements. Shared contracts, catalog provisioning and local usage acceptance are available; credit accounting is in progress.
+- [Native metered billing](metered-usage.md), all three models, public recipes and accounting contracts.
+- [Opt-in usage rollout](usage-rollout.md), adoption, drain, backfill limits, model transitions, rollback and release handoff.
 
 ## Marketplace, settlement, and recovery
 

@@ -147,22 +147,19 @@ MIT
 
 ## Metered usage
 
-Native Stripe integration supports shared configuration and exact quantity helpers at `@fantastic.dev/better-stripe/usage`. See the [setup guide for developers and AI agents](docs/metering-setup.md) and [contracts and sandbox evidence](docs/metered-usage.md).
+Use native Stripe billing for pay as you go, included monthly units with overages,
+and paid prepaid credits. Developers choose units, precision, rates and policy;
+BetterStripe owns durable usage/delivery, allowance and credit accounting,
+corrections, original-payment settlement and reusable React workflows. Your app
+owns authentication, billable activity and authorization.
 
-[Managed usage subscriptions](docs/usage-subscriptions.md) supports all three billing models, mixed fixed/metered items and Checkout, with retained renewal and invoice provenance.
+Start with [setup for developers and AI agents](docs/metering-setup.md), then the
+[copyable three-model recipes](docs/metered-usage.md) and
+[runnable example](docs/usage-example.md). Use your existing Stripe sandbox and
+Convex credentials. Metronome is optional, never a prerequisite.
 
-See [payment-backed prepaid usage](docs/usage-credits.md) for purchases, atomic reservations, credit history and recovery.
-
-See [included usage and optional limits](./docs/usage-limits.md) for atomic reservation accounting, monthly resets and overage policy.
-
-See [native usage settlement](./docs/usage-settlement.md) for original paid invoices, issuer-service purchases and affiliate policy.
-
-See [metered billing authorization](docs/usage-security.md) for host ownership checks, idempotent work, bounded native proofs and recovery.
-
-Use the [reusable metered billing UI](docs/usage-react.md) for exact usage, allowance, prepaid and paginated history views through authenticated host adapters.
-
-Run [all three models in the native sandbox example](docs/usage-example.md), including paid invoices, renewal, correction and scoped cleanup.
-
-The [verification matrix](docs/usage-verification.md) maps all three models to packed-consumer, native sandbox and failure-injection checks.
-
-Use the [native usage configuration UI](docs/usage-configuration.md) for all three billing models, immutable meters and exact rates.
+See [React views](docs/usage-react.md) and [configuration UI](docs/usage-configuration.md)
+for forms, exact usage, allowances, prepaid balances and paginated history.
+[The verification matrix](docs/usage-verification.md) records native paid-source
+proof, packed consumers and account/clock limits. Existing apps should follow
+[opt-in adoption, model transitions and rollback](docs/usage-rollout.md).

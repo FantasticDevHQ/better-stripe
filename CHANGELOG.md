@@ -26,6 +26,25 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.67.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.66.0...v0.67.0) (2026-10-19)
+
+
+### Features
+
+* **settlement:** retain immutable host policy context (BTS-282) ([9c31855](https://github.com/FantasticDevHQ/better-stripe/commit/9c31855a8b50f94f64b5d2911e6a124bebc335f0))
+* **settlement:** retain immutable host policy context (BTS-282) ([54380ad](https://github.com/FantasticDevHQ/better-stripe/commit/54380addd2af4c7648ca7745d58241593332a35c))
+
+
+### Bug Fixes
+
+* enable strict component project typechecking ([ed02ac7](https://github.com/FantasticDevHQ/better-stripe/commit/ed02ac79ceb1e9cffe62d4e9b021153b77109281))
+
+
+### Tests
+
+* **settlement:** replay saved policy context in affiliate offset fixture ([81906d7](https://github.com/FantasticDevHQ/better-stripe/commit/81906d71b72fa99da421d8a8f77b0023a180d3e1))
+* **settlement:** split recovery fixture and retain native policy context bindings ([a245889](https://github.com/FantasticDevHQ/better-stripe/commit/a2458891098f8c8f95faa77e18b61b117e1ee392))
+
 ## [0.66.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.65.0...v0.66.0) (2026-10-18)
 
 ### Features

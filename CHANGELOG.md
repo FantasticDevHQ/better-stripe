@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.68.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.67.1...v0.68.0) (2026-10-19)
+
+### Features
+
+- **catalog:** add bounded product and price identity readers ([47ed528](https://github.com/FantasticDevHQ/better-stripe/commit/47ed528c8d1116b1e56f2e5d1dad7830c2a0f0f4))
+- **catalog:** add bounded product and price identity readers ([01ed5f9](https://github.com/FantasticDevHQ/better-stripe/commit/01ed5f9ba1d1c7c72fe597805bb9094f546e19a9))
+
 ## [0.67.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.67.0...v0.67.1) (2026-10-19)
 
 ### Documentation

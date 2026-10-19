@@ -9,6 +9,7 @@ import type { StripeComponentProduct, StripeComponentPrice } from "../types.js";
 import * as productsImpl from "./products.js";
 import * as pricesImpl from "./prices.js";
 import * as catalog from "./catalog.js";
+import * as identity from "./identity.js";
 
 /** Catalog APIs inherited by BetterStripe. Host authorization remains required. */
 export abstract class CatalogClient extends BillingPortalClient {
@@ -137,6 +138,13 @@ export abstract class CatalogClient extends BillingPortalClient {
     return productsImpl.getProduct(this.component, ctx, opts);
   }
 
+  async getProductIdentity(
+    ctx: RunCtx,
+    opts: { stripeProductId: string },
+  ): Promise<identity.ProductIdentityResult> {
+    return identity.getProductIdentity(this.component, ctx, opts);
+  }
+
   async getProductByStripeId(
     ctx: RunCtx,
     opts: { stripeProductId: string },
@@ -206,6 +214,13 @@ export abstract class CatalogClient extends BillingPortalClient {
     opts: { priceId: string },
   ): Promise<StripeComponentPrice | null> {
     return pricesImpl.getPrice(this.component, ctx, opts);
+  }
+
+  async getPriceIdentity(
+    ctx: RunCtx,
+    opts: { stripePriceId: string },
+  ): Promise<identity.PriceIdentityResult> {
+    return identity.getPriceIdentity(this.component, ctx, opts);
   }
 
   async getPriceByStripeId(

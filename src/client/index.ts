@@ -1,3 +1,7 @@
+export type {
+  ProductIdentityResult,
+  PriceIdentityResult,
+} from "./products/identity.js";
 export type { SettlementPolicyContext } from "../shared/settlementPolicyContext.js";
 export { UsageSubscriptionError } from "./usage/subscriptionErrors.js";
 export { UsageCatalogError } from "./usage/catalogTypes.js";

@@ -26,6 +26,14 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.71.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.70.0...v0.71.0) (2026-10-19)
+
+
+### Features
+
+* **catalog:** paginate prices by provider product (BTS-286) ([033620b](https://github.com/FantasticDevHQ/better-stripe/commit/033620ba33516ca3c99e8d5a8c9de95615434ca9))
+* **catalog:** paginate prices by provider product (BTS-286) ([5622b05](https://github.com/FantasticDevHQ/better-stripe/commit/5622b0583b9d8e378b708a01913306561aba23e0))
+
 ## [0.70.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.69.0...v0.70.0) (2026-10-19)
 
 ### Features

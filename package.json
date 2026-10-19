@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.67.0",
+  "version": "0.67.1",
   "description": "A Convex component for Stripe V2 Accounts API integration.",
   "keywords": [
     "stripe",

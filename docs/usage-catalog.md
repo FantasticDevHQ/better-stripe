@@ -38,7 +38,7 @@ a graduated free first tier and an infinite paid tier. Use `model: "prepaid"` an
 `insufficientBalance: "reject"` for the prepaid catalog. Its recurring price charges
 the configured rate, and payment-backed Billing Credit Grants offset eligible
 charges. Provisioning this price does not fund credits or enforce a balance.
-See the [implementation status](metered-usage.md) before enabling consumption.
+Use the [model recipes](metered-usage.md) and [opt-in rollout](usage-rollout.md) before enabling consumption.
 
 Rates are decimal minor currency units per whole billable unit. With precision 2,
 a rate of `"2"` becomes `"0.02"` per scaled provider unit. The adapter rejects more

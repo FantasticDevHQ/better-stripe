@@ -1,0 +1,22 @@
+{
+  "package": "@fantastic.dev/better-stripe",
+  "version": "0.66.0",
+  "archiveSha256": "6483a3054963233a7ff98dd1b0001e5b5a8db13343decee113cc821d409c6192",
+  "deployment": "dev:fabulous-egret-37",
+  "entryPoint": "@fantastic.dev/better-stripe/convex.config",
+  "extractedPackage": true,
+  "dependencies": "repository pinned graph through symlinks",
+  "command": "convex codegen --typecheck disable",
+  "nativeComponentAnalysis": "passed",
+  "generatedReferences": ["betterStripe"],
+  "publicUsageMethodsTypechecked": [
+    "getSummary",
+    "reserveCredits",
+    "reserveAllowance",
+    "startDelivery"
+  ],
+  "nestedRuntime": "packed component config and native component analysis",
+  "runningDeploymentModified": false,
+  "financialOperationsRequested": false,
+  "output": "Finding component definitions...\nGenerating server code...\nBundling component definitions...\nBundling component schemas and implementations...\nDownloading current deployment state...\nUploading functions to Convex...\nGenerating TypeScript bindings...\nRunning TypeScript...\n"
+}

@@ -49,13 +49,13 @@ Replays do not consume quota. Export and reconcile bounded pages before planning
 future archival; this implementation has no financial-history deletion API.
 Do not clear the tables to reset a quota or repair unresolved usage.
 
-Prepaid recording requires a matching component-owned reservation and atomically
-commits it with the event. The scope, source ID, exact quantity and immutable plan
-must match. No arbitrary reservation-creation API exists. Payment-backed grant and
-reservation provisioning is implemented in the credit-accounting ticket; until
-then the facade rejects prepaid events without such a reservation. Included-usage
-snapshots use the same ledger; strict allowance reservations can use the same
-atomic commit seam when allowance accounting is enabled.
+Prepaid recording requires a matching component-owned payment-backed reservation
+and atomically commits it with the event. The scope, source ID, exact quantity and
+immutable plan must match. Use `usage.purchaseCredits` / `observeCreditPurchase`
+for verified funding and `reserveCredits` before work. See [paid credits](usage-credits.md).
+For configured pay-as-you-go or included scopes, use `reserveAllowance`; recording
+atomically commits that same reservation. See [limits](usage-limits.md). Unknown
+provider outcomes never release committed capacity automatically.
 
 `get(ctx, {scope, eventId})` returns null for a foreign scope or absent event.
 `read(ctx, {scope, page: {period: {start, end}, limit, cursor}})` returns `events`,
@@ -64,6 +64,7 @@ The acceptance receipt always records initial queued intent; the view's separate
 `delivery` field reports current outbox state. Reauthorize every page. A complete
 local page history does not establish complete provider aggregation or invoices.
 
-This layer implements acceptance/history, not provider delivery or credit funding.
+Recording itself performs no provider delivery or credit funding; the package supplies
+those separate workflows.
 See [native setup](metering-setup.md), [shared contracts](metered-usage.md) and
 [Stripe's native event windows](https://docs.stripe.com/api/billing/meter-event/create).

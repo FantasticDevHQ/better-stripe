@@ -1,192 +1,199 @@
-# Set up native Stripe metering
+# Set up native Stripe metered billing
 
-BetterStripe's default metering path uses your existing Stripe sandbox. You do not
-need a Metronome account or token. Stripe recommends Metronome for new usage-based
-integrations, but Billing Meters APIs remain available. This project is building
-native Stripe integration into the existing BetterStripe Convex component.
+Use your existing Stripe sandbox and a Convex development deployment. BetterStripe
+supports all three billing models through native Stripe APIs; no Metronome account,
+token or signup is required. Start with the [model recipes](metered-usage.md) and
+[example walkthrough](usage-example.md). Existing applications should also read
+[opt-in adoption and rollback](usage-rollout.md).
 
-Current status: shared configuration/quantity helpers and repository sandbox probes
-are implemented. Atomic recording and bounded local history are available through the
-[usage ledger](usage-ledger.md). [Durable provider delivery](usage-delivery.md),
-[scoped observations](usage-observations.md) and [managed metered subscriptions](usage-subscriptions.md)
-are available. Allowance/credit
-accounting and the three example UI flows are still under development. The probes
-below verify provider behavior directly; they are not public BetterStripe billing
-workflows. See [metered usage contracts and evidence](metered-usage.md).
+## Prerequisites and account selection
 
-## Prerequisites
+The package supports Node 20 or newer. Use Node 24 for the repository and example
+toolchain, as CI does, and the pinned `pnpm@10.32.1`. Use the actual reviewed
+package candidate; source acceptance does not by itself prove npm publication.
 
-Use Node 20 or later and the repository's pinned pnpm version. Start with an
-existing Stripe sandbox and a secret key for that sandbox, plus a Convex development
-deployment for the example. Keep the sandbox separate from production resources.
-Use the existing [Accounts v2 setup](accounts-v2-preview.md) for your account mode;
-Connect GA and customer-only public preview have different enrollment/version
-requirements. The probes pin `2026-09-30.endive`, as the package does by default.
-They do not prove a non-Connect preview configuration.
+The default pinned Stripe API is `2026-09-30.endive`. The configured key must own
+the original issuer realm and test/live mode. Accounts v2 payer subscriptions use
+the provider-owned mapped Customer for meter payloads. The example verified the
+platform issuer, issuer-only customer billing and eligible connected recipients.
+Billing under connected-account headers is unsupported. A separate non-Connect
+customer-only preview account requires its own enrollment/version verification;
+see [Accounts v2 setup](accounts-v2-preview.md). Do not work around a mismatch by
+creating a second payer or switching realms.
+
+## Run the repository example
 
 From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm run build
+cd example
+pnpm exec convex dev --once
 ```
 
-If the example is not linked to a development deployment, follow the repository's
-example setup first. Run Convex deployment commands from `example/`, and check its
-`.env.local` deployment selection before setting credentials. Do not use `--prod`
-for these steps. A Stripe sandbox key and a Convex deployment credential are
-different credentials; one cannot replace the other.
+If the project is not configured, select the intended existing development
+project. Confirm its deployment selection in `example/.env.local`; inspect only
+`CONVEX_DEPLOYMENT` and the public `VITE_CONVEX_URL`, not an entire secret file.
+Keep every Convex command below in `example/`. These commands do not use `--prod`.
+Before invoking them, remove ambient `CONVEX_DEPLOY_KEY`,
+`CONVEX_DEPLOYMENT_TOKEN`, `CONVEX_SELF_HOSTED_URL` and
+`CONVEX_SELF_HOSTED_ADMIN_KEY` overrides from this terminal. Confirm that
+`example/.env.local` and `example/.env` do not define those overrides and that
+any ambient `CONVEX_DEPLOYMENT` matches the selected `dev:` deployment.
+Deployment keys can override the selection even when you omit `--prod`.
+If initial deployment stops for a missing required environment value, configure
+that value on the selected development deployment, then repeat the deploy.
 
-## Supply the existing Stripe sandbox key
-
-The required variable is `STRIPE_SECRET_KEY`. Use a server-only value, never a
-`VITE_`/browser variable. A `sk_test_` key is accepted by the probes; live keys are
-rejected before requests. An access failure with a restricted key does not prove
-that a billing model is unsupported.
-
-To configure the example deployment, use the Convex dashboard's environment-variable
-editor or pipe a secret from your secret manager into the CLI. For example, from
-`example/`, replacing the reference with your own 1Password item:
+The required server variable is `STRIPE_SECRET_KEY`. If the existing deployment
+already has the correct sandbox key, reuse it. Otherwise use its Convex dashboard
+environment editor, or pipe from a secret manager. For 1Password, replace this
+reference with your own item. Create an ignored, untracked `../.env.stripe-sandbox`
+containing only `STRIPE_SECRET_KEY=op://YourVault/YourStripeSandbox/secret-key`.
+It stores a reference, never a copied secret. Run in one authorized interactive terminal:
 
 ```sh
-op read 'op://YourVault/YourStripeSandbox/secret-key' |
-  pnpm exec convex env set STRIPE_SECRET_KEY
+op run --env-file=../.env.stripe-sandbox -- node --input-type=module -e '
+import { spawnSync } from "node:child_process";
+const key = process.env.STRIPE_SECRET_KEY;
+if (!/^sk_test_[A-Za-z0-9]+$/.test(key ?? "")) {
+  console.error("A nonempty Stripe sandbox secret is required"); process.exit(1);
+}
+const result = spawnSync("pnpm", ["exec", "convex", "env", "set", "STRIPE_SECRET_KEY"], {
+  input: key, stdio: ["pipe", "ignore", "ignore"],
+});
+if (result.status !== 0) {
+  console.error("Sandbox environment update failed"); process.exit(1);
+}
+'
+pnpm exec convex dev --once
+pnpm dev
 ```
 
-The value travels through stdin instead of shell history or a command argument.
-Do not run `convex env get` or `op read` by itself in a recorded session. If the
-variable is already configured correctly, leave it in place.
+The omitted CLI value reads stdin, keeping the secret out of command arguments
+and shell history. Do not run `convex env get`, print all environment values, or
+paste secrets into screenshots, source or browser storage. Never prefix the
+secret with `VITE_`. Other example payment screens can use a public publishable
+key; that key cannot replace the server key. 1Password CLI authorization on macOS
+is per terminal/account and expires after ten idle minutes or app lock. Reuse
+one terminal; do not use keepalives or plaintext caches. Other secret managers
+can supply the same stdin/process environment without 1Password.
 
-For repository-local probes, create an ignored `.env.metering` file containing a
-secret reference, not a copied secret value:
+Use the local URL printed by Vite, then `/demo/metered-usage`. If this is a new,
+empty development example, use `/admin/setup` to seed the required demo personas.
+Existing seeded deployments need no reset or re-seed. Do not run destructive setup
+or mutate another application's database to make this flow work.
 
-```dotenv
-STRIPE_SECRET_KEY=op://YourVault/YourStripeSandbox/secret-key
-```
+The persona switcher is test-only, not production authentication. In an application,
+authenticate callers and resolve/authorize original payer, product, price, activity
+and recipient policy on the server. See [usage security](usage-security.md).
 
-Use one authorized interactive terminal for subsequent `op` commands. On macOS,
-1Password CLI authorization is per terminal/account and expires after ten minutes
-of inactivity or when the app locks. Do not use keepalives or plaintext caches.
-Developers using another secret manager can inject the same process environment
-without 1Password.
+## Verify each model
 
-## Run the read-only access check
+Choose one model, then Set up sandbox. Setup retains its original resource IDs
+across retries. Defaults below are this example's USD 1 per whole-call fixture;
+applications choose their own units, precision and policies.
 
-From the repository root:
+| Model                  | Exercise                                                        | Expected result                                                                                                |
+| ---------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Pay as you go          | Three five-call jobs, replay one, observe, close/resume period  | Effective/native 15, original usage invoice USD 15; replay adds no work or usage                               |
+| Included monthly usage | Ten included calls, then another five                           | 15 consumed, 10 included, 5 overage; original usage invoice USD 5                                              |
+| Paid prepaid           | Try work unpaid, buy/confirm ten units, consume twice, try more | Unpaid work held, verified grant 10, consumed 10, excess denied; original purchase USD 10, usage invoice USD 0 |
+
+Follow [the complete walkthrough](usage-example.md) for correction, delivery,
+original payment/fee/transfer proof and cleanup. Aggregation may lag; refresh an
+original request rather than inventing another event ID. Close/resume waits for
+complete local/native equality, zero reservations and resolved correction/purchase
+intents before advancing only that fixture's test clock. Future renewal allowance
+is `not_active_yet` until its period is active on the real server. Do not forge
+future timestamps or show a fake zero balance.
+
+Archive/resume cleanup only after original paid invoice, cash and settlement
+verification. Cleanup rechecks fresh original financial evidence; unresolved
+payments, refunds, disputes, reservations, unknown sends and credit liabilities
+remain retained. Only owned test resources are stopped. Payers, clocks and all
+financial history remain. Unspent paid credits require original-source recovery;
+reset does not delete them. After successful archive, configure a new isolated run.
+
+## Install in your own Convex application
+
+Install the reviewed published package, or your actual reviewed tarball, plus
+`convex`. For a published release:
 
 ```sh
-op run --env-file=.env.metering -- node scripts/metering-feasibility.mjs
+pnpm add @fantastic.dev/better-stripe convex
 ```
 
-Expected result: `status: 200` and `accessible: true`. Other verification flags
-remain `unverified`, because this command only reads the meter endpoint. It does
-not create customers, catalogs, events, invoices or charges. On 401/403, check the
-sandbox, key permissions and deployment selection before changing code.
+Candidate reviewers should install the produced `.tgz` instead of assuming a
+source commit has been published. Keep the original component instance name
+when upgrading:
 
-## Run all three native-provider scenarios
-
-```sh
-op run --env-file=.env.metering -- node scripts/metering-sandbox.mjs
+```ts
+// convex/convex.config.ts
+import { defineApp } from "convex/server";
+import { v } from "convex/values";
+import betterStripe from "@fantastic.dev/better-stripe/convex.config";
+const app = defineApp({ env: { STRIPE_SECRET_KEY: v.string() } });
+app.use(betterStripe, {
+  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+});
+export default app;
 ```
 
-This creates synthetic test resources. The same provider-owned Accounts v2 payer
-mapping is used for subscriptions and meter events; it does not create an
-independent v1 payer to work around identity mismatches. Each model has its own
-meter and subscription. The default prepaid fixture is promotional credit, which
-is not proof of a paid purchase.
+Generate bindings through the supported Convex CLI in your chosen development
+application. Configure the SDK key as well as the component environment:
 
-| Scenario                     | Fixture                                           | Expected aggregate | Expected preview total |
-| ---------------------------- | ------------------------------------------------- | ------------------ | ---------------------- |
-| Pay-as-you-go                | 15 units at 2 US cents/unit                       | 15                 | 30 cents               |
-| Included usage plus overages | First 10 units free, then 2 cents/unit            | 15                 | 10 cents               |
-| Prepaid                      | 100-cent credit applied to the same 15-unit usage | 15                 | 0 cents                |
+```ts
+// convex/stripe.ts
+import { BetterStripe } from "@fantastic.dev/better-stripe";
+import { components } from "./_generated/api";
 
-The runner retries the identical event with the same idempotency identity. Bounded
-polling allows aggregation to catch up. An accepted event alone is insufficient;
-look for `aggregationVerified` and `invoiceIdentityVerified` for every model and
-compare preview totals with the table. A zero aggregate or preview while delivery
-is delayed is not a successful free-usage result. Do not rerun with new source IDs
-to repair delayed aggregation, because that can double bill.
-
-The optional purchase check is explicit:
-
-```sh
-op run --env-file=.env.metering -- node scripts/metering-sandbox.mjs --verify-test-payment
+export const stripe = new BetterStripe(components.betterStripe, {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+});
 ```
 
-It creates a sandbox PaymentIntent with Stripe's test card, verifies succeeded
-status, payer, currency and received amount, then grants paid credits. Pending or
-mismatched payments must not grant credits. It requests a refund during cleanup.
-No live payments are authorized by this guide. This is a provider feasibility
-probe, not the component's future production credit purchase API.
+The catalog's meter/price provisioning uses this server SDK key. Keep it in the
+same original sandbox realm as the component's key. Do not hand edit generated APIs. The component installs its nested
+Workflow/Workpool runtime; do not add a second sibling worker. Start with one
+original managed binding and the [per-model recipes](metered-usage.md), then wire
+[internal delivery/callbacks](usage-delivery.md), [scoped observations](usage-observations.md)
+and [React views](usage-react.md). Configuration-only validation does not authorize
+usage or enable a paid credit grant.
 
-On this API version PaymentIntent filtering uses `allowed_payment_method_types`.
-The older `payment_method_types` parameter is rejected. The runner uses the current
-parameter. See the source for the exact pinned request contract.
+## Troubleshooting and AI-agent runbook
 
-## Cleanup and evidence
+| Symptom                            | Next action                                                                                                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 401/403 or `provider_unavailable`  | Verify the selected development project, sandbox/key permissions and pinned API access. Do not print the key or assume the model is unsupported.                               |
+| Realm or mapped-customer mismatch  | Resolve original native issuer/payer/Customer provenance. Keep original IDs; do not provision an alternative payer.                                                            |
+| Accepted event, stale/zero summary | Keep transport acceptance separate from aggregation. Refresh complete original period evidence; missing or lagging data is not free usage.                                     |
+| Unknown provider outcome           | Retain the original source/operation IDs and inspect scoped delivery/history. Resume only a supported verified recovery path; never blind resend or move work to a new scope.  |
+| Prepaid balance held               | Reconcile original payment, grant, native transactions and invoice applications; resolve refunds/disputes or pending finalization. Never grant locally because a UI says paid. |
+| Paid invoice but no transfer       | Inspect original cash, actual processing fee and recipient eligibility. A paid invoice does not establish settlement.                                                          |
+| Cleanup refuses reset              | Resolve retained usage, reservations, purchase/correction intents and original financial liabilities. Do not delete rows, clocks or payer evidence.                            |
 
-The runner expires its grant, requests a refund for a verified test purchase,
-cancels its subscriptions without invoicing/proration, archives its prices and
-products, and deactivates its meters. Payer records and provider history remain.
-Check every cleanup result. API acceptance does not mean an asynchronous refund
-has settled. A failed run can require manual cleanup; do not delete unresolved
-financial evidence or touch another application's resources.
+AI agents should read repository `AGENTS.md`, this guide, the model recipes and
+verification limits first. Confirm only non-secret development selection and the
+secret source. Use existing sandbox credentials, stable business IDs and normal
+codegen. Reuse the server's authorization boundary and package controllers rather
+than building another ledger in the example. Report the exact failed stage and
+sanitized classification. Preserve unknown outcomes and original timestamps.
 
-Save sanitized result JSON and current test/CI links in PR evidence. Exclude API
-keys, client secrets, personal emails and raw provider payloads. Record which model,
-account mode, API version and stage actually ran. These tests do not by themselves
-prove finalized invoices, seller settlement, affiliate economics, corrections,
-shared-meter subscription boundaries or strict real-time prepaid access limits.
+From the repository root, run the checks and evidence auditor listed in
+[verification](usage-verification.md), including `pnpm run check:all`. Retain
+sanitized proof and current CI links directly in the PR. The release handoff does
+not authorize publication, production migration or live billing.
 
-Run repository verification before handing off changes:
+Repository-only feasibility probes remain available as
+`scripts/metering-feasibility.mjs` and `scripts/metering-sandbox.mjs`. Inject a test
+key with a secret manager, for example `op run --env-file=.env.metering -- node
+scripts/metering-feasibility.mjs`, where the ignored file contains an `op://`
+reference rather than a copied secret. The default sandbox probe's promotional
+credit is not paid-prepaid proof; its explicit `--verify-test-payment` probe has
+separate refund/cleanup results. Prefer the actual package example and retained
+paid-source evidence for integration acceptance.
 
-```sh
-pnpm exec vitest run scripts/metering-feasibility.test.mjs scripts/metering-sandbox.test.mjs
-pnpm exec vitest run src/client/usage/contracts.test.ts scripts/usage-contracts-packed.test.mjs
-pnpm run check:all
-```
-
-## Instructions for AI agents
-
-Read this guide, the linked usage contracts and repository `AGENTS.md` first.
-Confirm the selected development deployment and the secret source without printing
-values. Use the existing sandbox and credentials. Do not create a Metronome account
-as a prerequisite or provision an alternative customer identity to hide a mismatch.
-
-Keep source-event IDs stable and distinguish transport acceptance, aggregation,
-invoice previews and paid invoices. Configuration validation does not authorize a
-payer or enable billing. Hosts authorize tenants and billable activity. Component
-mutations and durable workers must own accounting and delivery once implemented.
-
-When a check fails, record its stage and sanitized classification. Fix request or
-fixture errors before retrying, keep financial operation identities stable, and
-report unverified behavior explicitly. Check the source and current primary docs
-when provider parameter names change. Do not weaken repository gates or replace
-provider proof with mocked output.
-
-## Optional Metronome evaluation
-
-Metronome is a separate service with its own signup, token and Stripe connection.
-Its signup asks for work email, name, company, country and employee range. Those
-are Metronome onboarding fields, not native Stripe metering requirements.
-
-If a host independently chooses Metronome, use its sandbox token and connect the
-intended Stripe test environment. Verify identity and invoice provenance against
-BetterStripe before claiming support. This repository currently has no Metronome
-adapter or verified Metronome sandbox setup. Native Stripe users can ignore this
-optional path.
-
-Primary references:
-
-- [Stripe usage recording](https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage)
-- [Accounts v2 customer interoperability](https://docs.stripe.com/accounts-v2/use-accounts-as-customers)
-- [Stripe meter event API](https://docs.stripe.com/api/billing/meter-event/create)
-- [Stripe billing credits](https://docs.stripe.com/billing/subscriptions/usage-based/billing-credits)
-- [Metronome quickstart](https://docs.metronome.com/guides/get-started/api-quickstart)
-
-Use the [native catalog guide](usage-catalog.md) to provision versioned meters and prices through BetterStripe.
-
-Use the [usage observation guide](usage-observations.md) for bounded local reads, native aggregate refreshes and honest invoice/credit availability.
-
-For managed package enrollment, mixed fixed/metered items, Checkout, period-end cancellation and test-clock invoice verification, follow [usage subscriptions](usage-subscriptions.md).
+Primary provider contracts: [meter event identity/windows](https://docs.stripe.com/api/billing/meter-event/create),
+[Accounts v2 customer mapping](https://docs.stripe.com/accounts-v2/use-accounts-as-customers),
+and [native billing credits](https://docs.stripe.com/billing/subscriptions/usage-based/billing-credits).

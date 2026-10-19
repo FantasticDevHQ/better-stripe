@@ -7752,6 +7752,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               numItems: number;
             };
             productId?: string;
+            stripeProductId?: string;
           },
           {
             continueCursor: string;

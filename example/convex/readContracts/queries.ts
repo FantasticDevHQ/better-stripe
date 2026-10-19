@@ -20,6 +20,7 @@ export const paginateProducts = query({
 export const paginatePrices = query({
   args: {
     productId: v.optional(v.string()),
+    stripeProductId: v.optional(v.string()),
     active: v.optional(v.boolean()),
     paginationOpts: paginationOptsValidator,
   },

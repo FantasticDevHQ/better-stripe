@@ -73,6 +73,7 @@ export class ReadContractClient {
     ctx: RunCtx,
     opts: {
       productId?: string;
+      stripeProductId?: string;
       active?: boolean;
       paginationOpts: PaginationOptions;
     },

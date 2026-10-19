@@ -28,10 +28,9 @@
 
 ## [0.67.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.67.0...v0.67.1) (2026-10-19)
 
-
 ### Documentation
 
-* **usage:** finalize native billing setup and release handoff (BTS-262) ([#356](https://github.com/FantasticDevHQ/better-stripe/issues/356)) ([de9bfb1](https://github.com/FantasticDevHQ/better-stripe/commit/de9bfb1b2bb6d17f2b415204dd0601528241b244))
+- **usage:** finalize native billing setup and release handoff ([#356](https://github.com/FantasticDevHQ/better-stripe/issues/356)) ([de9bfb1](https://github.com/FantasticDevHQ/better-stripe/commit/de9bfb1b2bb6d17f2b415204dd0601528241b244))
 
 ## [0.67.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.66.0...v0.67.0) (2026-10-19)
 

@@ -26,6 +26,16 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.68.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.68.0...v0.68.1) (2026-10-19)
+
+### Documentation
+
+- align public guides and simplify package maintenance ([#361](https://github.com/FantasticDevHQ/better-stripe/issues/361)) ([f0a07f9](https://github.com/FantasticDevHQ/better-stripe/commit/f0a07f92e1de8b044c1780a9a7551b531b9ff9e3))
+
+### Maintenance
+
+- **coverage:** ratchet earned coverage floors ([#362](https://github.com/FantasticDevHQ/better-stripe/issues/362)) ([df7db01](https://github.com/FantasticDevHQ/better-stripe/commit/df7db0112a551702540733b65f9541fcfc280ee9))
+
 ## [0.68.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.67.1...v0.68.0) (2026-10-19)
 
 ### Features

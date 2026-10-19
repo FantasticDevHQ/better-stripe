@@ -1,3 +1,5 @@
+import { useSearchParams } from "react-router-dom";
+import { MeteredProducts } from "./metered-products";
 import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import {
@@ -50,7 +52,7 @@ const models = [
     detail: "Verified paid credits fund work. Exhaustion stops consumption.",
   },
 ] as const;
-export function MeteredUsageDemo() {
+export function MeteredProtocolDemo() {
   const { currentUser, currentRole } = useRole();
   if (!currentUser.id || !["customer", "seller", "admin"].includes(currentRole))
     return (
@@ -405,5 +407,15 @@ function ModelWorkflow({
         </>
       )}
     </div>
+  );
+}
+
+export function MeteredUsageDemo() {
+  const { currentRole } = useRole();
+  const [params] = useSearchParams();
+  return currentRole === "admin" && params.get("diagnostics") === "protocol" ? (
+    <MeteredProtocolDemo />
+  ) : (
+    <MeteredProducts />
   );
 }

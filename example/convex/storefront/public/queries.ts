@@ -9,6 +9,7 @@ import { canReceiveStorePayments } from "../recipient";
 import { hasPaidStorePlan } from "../../storePlans/helpers";
 
 import { stripe } from "../../stripe/helpers";
+import { storeEnabled } from "../../meteredProducts/catalog";
 import { priceValidator } from "../helpers";
 
 export const listStores = query({
@@ -24,6 +25,13 @@ export const listStores = query({
           description: v.optional(v.string()),
           stripeProductId: v.string(),
           prices: v.array(priceValidator),
+          metered: v.optional(
+            v.object({
+              offerId: v.id("meteredProductOffers"),
+              baseAmount: v.number(),
+              configurationJson: v.string(),
+            }),
+          ),
         }),
       ),
     }),
@@ -51,24 +59,49 @@ export const listStores = query({
             products: await Promise.all(
               products
                 .filter((p) => p.active)
-                .map(async (product) => ({
-                  name: product.name,
-                  description: product.description,
-                  stripeProductId: product.stripeProductId,
-                  prices: (
-                    await stripe.listPricesByProduct(ctx, {
-                      stripeProductId: product.stripeProductId,
-                    })
-                  )
-                    .filter((p) => p.active && p.unitAmount !== undefined)
-                    .map((p) => ({
-                      stripePriceId: p.stripePriceId,
-                      unitAmount: p.unitAmount!,
-                      currency: p.currency,
-                      type: p.type,
-                      interval: p.interval,
-                    })),
-                })),
+                .map(async (product) => {
+                  const offer = await ctx.db
+                    .query("meteredProductOffers")
+                    .withIndex("by_product", (q) =>
+                      q.eq("productId", product.stripeProductId),
+                    )
+                    .unique();
+                  const provider = offer?.providerJson
+                    ? (JSON.parse(offer.providerJson) as {
+                        basePriceId: string | null;
+                        price: { stripePriceId: string };
+                      })
+                    : null;
+                  const metered =
+                    offer && provider && (await storeEnabled(ctx, seller))
+                      ? {
+                          offerId: offer._id,
+                          baseAmount: offer.baseAmount,
+                          configurationJson: offer.configurationJson,
+                        }
+                      : undefined;
+                  const prices = await stripe.listPricesByProduct(ctx, {
+                    stripeProductId: product.stripeProductId,
+                  });
+                  return {
+                    name: product.name,
+                    description: product.description,
+                    stripeProductId: product.stripeProductId,
+                    metered,
+                    prices: prices
+                      .filter(
+                        (p) =>
+                          !provider && p.active && p.unitAmount !== undefined,
+                      )
+                      .map((p) => ({
+                        stripePriceId: p.stripePriceId,
+                        unitAmount: p.unitAmount!,
+                        currency: p.currency,
+                        type: p.type,
+                        interval: p.interval,
+                      })),
+                  };
+                }),
             ),
           };
         }),

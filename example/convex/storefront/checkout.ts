@@ -44,6 +44,10 @@ export async function createStoreCheckout(
   });
   if (!product?.active)
     throw new Error("This product is not available for purchase.");
+  await ctx.runQuery(internal.meteredProducts.catalog.assertRegularPrice, {
+    productId: price.stripeProductId,
+    priceId: args.stripePriceId,
+  });
   const sellerAccountId = product.accountId;
   const identity = await ctx.runQuery(
     internal.storefront.internal.queries.checkoutParticipants,

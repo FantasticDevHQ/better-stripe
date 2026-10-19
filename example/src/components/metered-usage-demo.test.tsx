@@ -25,7 +25,7 @@ afterEach(() => {
   state.execute.mockClear();
 });
 it("offers three named native flows and model-specific reusable configuration controls", async () => {
-  const Demo = page.MeteredUsageDemo ?? (() => null);
+  const Demo = page.MeteredProtocolDemo ?? (() => null);
   render(<Demo />);
   expect(screen.getByRole("button", { name: "Pay as you go" })).toBeTruthy();
   await userEvent.click(
@@ -44,7 +44,7 @@ it("offers three named native flows and model-specific reusable configuration co
 it("does not offer an operator workflow to an unauthenticated demo visitor", () => {
   state.role = "visitor";
   state.actor = "";
-  const Demo = page.MeteredUsageDemo ?? (() => null);
+  const Demo = page.MeteredProtocolDemo ?? (() => null);
   render(<Demo />);
   expect(
     screen.getByText(/Choose a customer, seller or admin persona/),
@@ -53,7 +53,7 @@ it("does not offer an operator workflow to an unauthenticated demo visitor", () 
 });
 it("keeps configuration read-only for customer personas while offering the server-owned defaults", () => {
   state.role = "customer";
-  const Demo = page.MeteredUsageDemo ?? (() => null);
+  const Demo = page.MeteredProtocolDemo ?? (() => null);
   render(<Demo />);
   expect(screen.getByRole("button", { name: "Set up sandbox" })).toBeTruthy();
   expect(screen.getByLabelText("Billable unit").matches(":disabled")).toBe(

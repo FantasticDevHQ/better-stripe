@@ -72,6 +72,37 @@ network-failure recordings.
 | Prepaid refunds, disputes, won reinstatement, consumed backing, affiliate recovery and no second sale on redemption        | `src/client/usage/creditSettlementRecovery.test.ts`, `src/component/usageCredits/accounting.test.ts`, `src/client/usage/creditRevenue.test.ts`                                                                      |
 | Saved success cannot bypass later cash uncertainty or unresolved settlement during cleanup                                 | `example/convex/meteredUsage/revenue.test.ts`, `example/convex/meteredUsage/cleanupRefresh.test.ts`                                                                                                                 |
 
+## Product integration acceptance
+
+The [October 19 product-flow evidence](evidence/native-metering/product-flows-2026-10-19.json)
+comes from the product example, separately from the isolated protocol fixtures above:
+
+- Maya's original USD 20 membership: 75 delivered minutes, 60 included and 15
+  overage; native draft total USD 35, including the base fee.
+- Additional coaching minutes: five delivered pay-as-you-go minutes and a native
+  draft total of USD 5.
+- Platform report credits: original USD 10 payment and paid grant verified,
+  ten reports consumed, zero credits remaining. Replaying the same request
+  returns the same receipt; an eleventh report is denied without work. The native
+  draft rates USD 10 of usage, covered by credits, with total and paid both zero.
+
+These are test-mode observations, not finalized renewal or seller-settlement
+proof. Exact native meter summaries reject partial-minute subscription boundaries.
+The draft invoices remain estimates. Mixed fixed-fee and usage settlement stays
+held. The earlier unsupported automatic-collection prepaid test enrollment was
+retained and its renewal canceled; corrected enrollments use `send_invoice`.
+
+The product regression suite covers store enablement, ownership, immutable
+product/enrollment identities, bounded catalog pages, initial/current base-payment
+proof, atomic allowance and work, strict credit purchase arguments, retry identity,
+cancellation freshness and both React integration views:
+
+```sh
+pnpm exec vitest run example/convex/meteredProducts example/src/components/metered-products.test.tsx example/convex/storefront/storefront.actions.test.ts
+```
+
+Follow [the product walkthrough](usage-example.md) to reproduce through the UI.
+
 ## Comparison and hold rules
 
 Compare explicit original scope, meter, price/version, subscription item and

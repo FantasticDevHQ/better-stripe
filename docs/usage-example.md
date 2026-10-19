@@ -1,250 +1,165 @@
-# Run all three native billing models
+# Attach metered billing to products
 
-The example at `/demo/metered-usage` uses the public BetterStripe package against a
-Stripe sandbox. It provisions a dedicated Accounts v2 customer, test clock,
-product, meter, price and managed subscription per persona and model. Usage,
-delivery, allowance reservations, credits, corrections and settlement live in the
-component. The example stores fixture provenance and synthetic application work.
+The example at `/demo/metered-usage` connects native Stripe metering to the same
+catalog products that sellers and admins manage elsewhere in the app. It uses the
+public BetterStripe APIs and React workflows. No Metronome account is required.
 
-Start with [sandbox setup](metering-setup.md). Use your existing Stripe sandbox;
-no Metronome account or token is needed. Run the example backend and frontend
-from the `example` directory with `pnpm dev`. Keep test keys in the backend
-Convex environment. Do not copy secret values into commands, screenshots, source
-files or browser storage.
+## Try Maya's coaching membership
 
-## Demo security model
+1. Start the example with the [setup guide](metering-setup.md). Choose Seller and
+   Maya's Fitness Studio, then Metered billing. Maya has metered billing enabled
+   by default. Sasha's Ceramics starts disabled and continues selling its regular
+   products without usage charges.
+2. Select an existing product, or create **Fitness Coaching Membership** under
+   Products. Each product row links to its metered billing settings.
+3. Choose Included monthly usage. The example defaults to a **USD 20 monthly
+   base fee, 60 coaching minutes included per billing period, then USD 1 per
+   extra minute**. Adjust the terms before attaching them.
+4. Compare **via API** and **BetterStripe components**, then Attach billing to
+   product. Both create the same server-authorized product offering. The server
+   pins the original product, configuration, meter and prices. Once attached,
+   terms are read-only in both views. Create another product for different terms;
+   this example does not migrate existing subscribers to a new price.
+5. Choose Customer. The store lists the membership with its base fee, included
+   minutes and overage rate. Review membership opens Your metered services.
+   Subscribe to this product creates or resumes the original Stripe Checkout.
+   Seed the example's customer accounts in Admin → Setup first if they are missing.
+6. Open Stripe Checkout and pay with test card `4242 4242 4242 4242`, a future
+   expiry and any test CVC. Return to Metered billing and Refresh enrollment.
+   Checkout redirects and an `active` subscription alone do not authorize work.
+7. Complete a coaching session with its actual number of minutes. For example,
+   75 minutes consumes the 60 included minutes and records 15 overage minutes.
+   The package reserves allowance, records usage and commits the example's
+   completed-session marker in one Convex mutation. Delivery runs afterward.
+8. Compare the headless usage/history UI with `UsageBilling` and `UsageHistory`.
+   Accepted usage is an estimate; native aggregation can lag. Overage appears on
+   Stripe's monthly invoice, separately from the monthly base fee. Preview next
+   invoice reads Stripe's current draft estimate, including the fixed fee. Cancel
+   renewal stops the next renewal while retaining the original current period,
+   usage history and any unused credit liabilities.
 
-This repository's persona switcher is a test-only convenience, not authentication.
-Choose Customer, Seller or Admin, then Metered billing. Each operation rechecks
-the server's persona binding and test key. If an authenticated identity is present,
-it must match the persona's stored token identifier. Visitor and affiliate
-personas cannot operate the workflow. Do not expose these demo endpoints as a
-production billing service.
+The new product flow reuses the customer's existing, server-linked Accounts v2
+account from the example's account setup and its original
+subscription periods. It does not create a new payer or test clock for every
+visit, advance shared customers into the future, or archive shared products.
+The original checkout intent is reused across integration views and retries.
+A failed coaching request keeps its original identity and quantity in the tab's
+session storage so a reload can retry it without accepting new units. This is a
+demo convenience, not authorization. External coaching or report services still
+need their own durable idempotent work protocol.
 
-In your app, replace the persona lookup with real authentication and server-owned
-customer, product, entitlement and recipient authorization. Never trust a browser
-account ID, product ID, price, rate or settlement policy. See
-[authorization and recovery](usage-security.md).
+## Admin and store access
 
-Admin and seller personas can configure the unit, precision, currency, exact price,
-version and model-specific terms before setup. Customers run the server-owned
-defaults. Setup retries retain the original native identities and configuration.
-A saved meter and subscription keep their original terms. Archive a resolved run
-before configuring its replacement.
+Admin → Metered billing contains independent **Store access** controls and
+**Platform service products**. Enable Sasha only when that store needs metered
+products. Server-side checks enforce store enablement and original product
+ownership; the browser cannot grant itself access.
+
+Disabling a store stops new configuration and new enrollment intents. Pending
+unpaid checkout creation/resumption is blocked while disabled. An already paid,
+original Checkout can still be reconciled. Existing purchased subscriptions keep
+serving their original terms and retain their usage/history. Disabling is not
+cancellation or a refund, and does not retire shared Stripe resources.
+
+An admin configures the platform's own products. A seller configures only its own
+products. Admins enable stores separately; enabling a store does not change its
+prices or subscribe anyone.
 
 ## Pay as you go
 
-1. Select Pay as you go, then Set up sandbox.
-2. Run five units three times. The default price is USD 1 per call.
-3. Replay last work. Its source identity, quantity and occurrence time stay fixed;
-   the synthetic application work and usage acceptance happen once.
-4. Observe native usage. If delivery is queued, use Resume queued deliveries.
-   Stripe aggregation is asynchronous. Refresh until the aggregate is 15.
-5. Close or resume original billing period. This fences new work, checks complete
-   local/native equality, drains reservations and checks every correction and
-   purchase intent. It advances only this run's test clock.
-6. Resume after the clock is ready. The server finds the unique original cycle
-   invoice, verifies its meter lines, finalizes it and pays with Stripe's sandbox
-   card. The default invoice is USD 15.
-
-The outcome separately shows invoice payment, original cash verification, actual
-processing fees and any verified recipient transfers. A paid invoice alone does
-not imply that settlement is ready.
-
-## Included monthly usage and overages
-
-Select Included monthly usage. The defaults include ten calls per original
-monthly period, then USD 1 per additional call. Run three five-unit jobs. The
-package allowance view shows 15 consumed, ten included, five billable overage
-units and the soft-limit warning at 12. The native invoice is USD 5.
-
-Closing the period observes the next native subscription period. When that period
-is active on the Convex server, its separate allowance starts at zero consumed
-and ten remaining included units. The old period and history stay unchanged. A
-test clock can move ahead of real time; future renewal allowance is explicitly
-unavailable. Its view stays read-only until the period is active on the server and
-new event times are inside the provider's real acceptance window. This demo does not forge
-future work timestamps to simulate another month's consumption.
+Create a separate Maya product such as **Additional coaching minutes** and choose
+Pay as you go. Set the monthly base fee to zero and the unit price to USD 1 per
+minute. Customers enroll through Checkout, then record completed coaching
+minutes. Stripe bills the units at the end of the native monthly period.
+A positive base fee is also supported and shares the metered subscription.
 
 ## Paid prepaid credits
 
-1. Select Prepaid credits and set up its dedicated sandbox resources.
-2. Run five units before funding. Work is held and does not execute.
-3. Create credit purchase. The default original purchase is ten units for USD 10.
-   Pending payment grants no usable credit.
-4. Confirm sandbox card. The backend uses Stripe's test card and the package
-   verifies the original captured PaymentIntent, customer and paid credit grant.
-5. Run two five-unit jobs. Replay a successful job before creating another one to
-   demonstrate idempotency. Another five-unit job is denied after exhaustion.
-6. Observe native usage, then close and resume the period. The native credit grant
-   covers the consumption invoice. The demo refuses to pay any positive prepaid
-   invoice remainder with a second cash payment.
+For the platform, create a product such as **Store analytics reports**. Choose
+Admin → Metered billing → that platform product → Prepaid credits. The example
+uses report units, USD 1 per report and a manual package of ten credits.
 
-The USD 10 purchase is the only cash source. Credit consumption collects no new
-cash. The package reconciles native credit transactions against complete invoice
-history. Unavailable observations are shown explicitly, never as a zero balance.
+Choose Customer and Enroll in report service first. Prepaid enrollment uses
+`usage.ensureSubscription` with `send_invoice` collection and a 30-day due
+window. It does not use automatic-collection Checkout. Work remains gated by
+verified credit backing, and enrollment alone collects no cash. Try generating a
+report before funding, then Buy report credits with test card. That explicit
+button confirms Stripe's synthetic Visa on the server. The package verifies the
+original captured payment and paid credit grant before credits become ready.
+Ten reports exhaust a ten-credit package. Another report is denied without work
+or another charge. Retry original credit purchase resumes the retained intent;
+a pending purchase blocks creation of another package until reconciled.
 
-For production, send the package purchase result's `clientSecret` only to the
-properly authenticated purchaser's Stripe payment UI. Do not store or log it.
-Confirming a payment in the UI is not proof of usable credits; call
-`observeCreditPurchase` and wait for the verified ready grant. See
-[paid credit accounting](usage-credits.md).
+Prepaid is supported only for the issuer's own services. Maya and Sasha do not
+receive a third-party wallet or redeem credits into seller proceeds. The package
+owns the balances, reservations, payment evidence and credit accounting.
+For production, send the original purchase result's `clientSecret` only to the
+authenticated purchaser's Stripe payment UI. Replace the synthetic test-card
+confirmation with that UI, then observe the original purchase until it is ready.
 
-Prepaid is limited to the issuer's own services. A seller persona cannot redeem
-credits into reseller proceeds. An authorized affiliate can be paid once from the
-original purchase; usage does not produce another affiliate sale.
+The product example deliberately supports USD, whole units, whole minor-unit
+rates and bounded native payment amounts. The package supports broader exact
+quantity and rate contracts; see [configuration](usage-configuration.md).
 
-## Corrections and retained failures
+## Payment, allowance and settlement boundaries
 
-Before closing, Correct last accepted event cancels its original native event
-through the package. Repeated correction requests keep the same correction ID.
-Wait for confirmation and native reaggregation. A new application job can then
-use the released capacity. For example, record 15 units, cancel the last five,
-then record a different five-unit job. Effective usage is 15, and history retains
-20 originally accepted units plus the five canceled units.
+The example rechecks the original native subscription before new work. For paid
+monthly products it also verifies the original initial invoice and current
+period invoice, exact product/base price/quantity, payer mapping, complete native
+line and funding pages, captured PaymentIntent, and refund/dispute state.
+Unknown, partial, unpaid or changed evidence blocks work. The atomic work mutation
+must match the exact binding that passed the fresh check; a racing refresh cannot
+move it into another unverified billing period.
 
-Unknown delivery outcomes stay held. Resume queued deliveries schedules only
-records that the package still classifies as queued; it never resends unknown
-attempts. Do not replace the source event ID, change the occurrence time, create
-a new run to relabel the same work or invent a provider event identifier. Resolve
-the original attempt with verified native evidence using the operational runbook.
-A billing or cleanup guard failure preserves all work, purchase and correction
-intents for reconciliation.
+Included allowance is scoped to the original subscription item and native period.
+A renewal starts a new allowance only when that observed period is active on the
+server. Old period usage remains unchanged. Stripe's meter summary endpoint requires
+minute-aligned boundaries. For ordinary Checkout periods with partial-minute
+boundaries, an exact aggregate read is explicitly unsupported. Delivered usage
+is retained and the native invoice preview remains available; the example does
+not round a billing period and claim an exact reconciliation. Credit grants also keep their original
+price and ownership terms.
 
-The fixture timestamps _new synthetic jobs_ at its retained test clock's original
-period start. This keeps native meter events and paid grants on the same logical
-clock. Retrying a job never changes that timestamp. Real applications must use
-the actual occurrence time of their business event. Delivery checks both real
-provider limits and an attached sandbox clock before a native event write.
+**Automatic seller settlement for mixed fixed-fee and usage invoices is not
+supported by the current verifier.** Customer billing can work while seller
+transfers remain held. The example does not bypass the verifier, report a paid
+invoice as settled earnings, or allocate mixed cash using a browser estimate.
+Existing single-source settlement protocols remain in the separate diagnostics.
 
-## Ownership and routing
+## Package APIs and UI implementations
 
-Customer and admin runs use direct issuer billing. Seller runs pin their original
-server-owned seller account and, when available, an existing demo affiliate at
-setup. The demo policy is a 10% inclusive platform fee and a 20% affiliate share
-of the eligible remainder, with recurring commission eligibility. The package
-uses actual processing fees and verifies native payment provenance, recipient
-capabilities and transfer identity. Unsupported Connect configurations remain
-held. Accounts v2 payer configuration is separate from merchant or recipient
-configuration; a customer account is not automatically eligible to receive money.
-Prepaid settlement retains issuer revenue and accepts only eligible affiliate
-policy, never seller or collaborator redemption.
+The host adapter is in `example/convex/meteredProducts`. Its tables store product
+terms, enrollment provenance, purchase identities and completed application work.
+They are not another usage ledger or credit wallet.
 
-## Scoped cleanup and reset
+The catalog path calls `ensureUsageMeter`, `ensureUsagePrice` and `ensurePrice`.
+For coaching, the enrollment path calls `usage.ensureCheckout` with the metered price and
+`fixedPriceIds: [originalMonthlyBasePriceId]`. Never infer these IDs from the
+browser or purchase a base price alone through regular checkout. The example
+storefront routes metered products to their enrollment workflow. Prepaid report
+services use `usage.ensureSubscription` with `send_invoice`, the collection policy
+required by the package credit-purchase protocol.
 
-Cleanup re-reads the original paid invoice, payment and settlement before stopping
-resources. Saved success alone cannot authorize a reset after a refund, dispute or
-incomplete settlement recovery. Unavailable fresh evidence keeps the run retained.
+`product-usage-configuration.tsx` uses `useUsageConfiguration` for the headless
+form and `UsageConfiguration` for the component form. Both receive identical
+host callbacks. `metered-product-usage.tsx` uses `useUsageBilling` and
+`useUsageHistory` for custom rendering, and `UsageBilling` and `UsageHistory`
+for the component view. Switching views does not create another subscription,
+usage event or credit purchase.
 
-Use Archive or resume scoped cleanup after the original invoice and cash evidence
-are verified. It refuses unresolved delivery, corrections, reservations, purchases,
-credit backing or settlement. Unspent paid credits require verified refund or
-expiry; cleanup cannot wipe them.
+Demo personas are not production authentication. Each server operation checks
+its test key and persona/resource binding; an authenticated identity, when
+present, must match the persona. Replace this with real authentication and
+server-owned authorization before adapting the example. See
+[security](usage-security.md), [subscriptions](usage-subscriptions.md),
+[ledger](usage-ledger.md), [delivery](usage-delivery.md) and
+[credits](usage-credits.md).
 
-Cleanup requests period-end cancellation, advances only the owned test clock to
-the cancellation boundary, checks the final native cycle invoice and retires the
-managed enrollment. It deactivates only the owned price, meter and product. It
-retains the native payer, clock, invoice/payment evidence and every component
-history record. It does not clear any Convex table or another developer's data.
-After successful archival, Start new sandbox run creates new isolated resources.
-Admin or seller can save a new version before starting that replacement.
+## Developer protocol diagnostics
 
-Empty or unresolved runs can require operator reconciliation rather than automatic
-archive. In particular, unknown provider outcomes must remain visible and retained.
-Never delete a clock or payer to make financial evidence disappear.
-
-## Model configuration snippets
-
-Use the same versioned unit and exact minor-currency rate in each model:
-
-```ts
-import { defineUsagePlan } from "@fantastic.dev/better-stripe/usage";
-const terms = {
-  key: "api-calls",
-  version: "v1",
-  unit: { name: "call", precision: 0 },
-  rate: { currency: "usd", unitAmountDecimal: "100" },
-} as const;
-```
-
-Pay as you go bills every effective unit:
-
-```ts
-const payAsYouGo = defineUsagePlan({ ...terms, model: "pay_as_you_go" });
-```
-
-Included monthly usage grants ten units before overages in each original period:
-
-```ts
-const included = defineUsagePlan({
-  ...terms,
-  model: "included_overage",
-  includedQuantity: "10",
-  reset: "billing_period",
-});
-```
-
-Prepaid consumption requires verified paid grants and rejects insufficient credit:
-
-```ts
-const prepaid = defineUsagePlan({
-  ...terms,
-  model: "prepaid",
-  insufficientBalance: "reject",
-});
-// After server authorization and native binding setup:
-const purchase = await stripe.usage.purchaseCredits(
-  ctx,
-  {
-    ...originalCreditBinding,
-    purchaseId: originalBusinessPurchaseId,
-    quantity: "10",
-    ownership: "issuer",
-    rollover: "retain_original_terms",
-  },
-  { stripeSecretKey },
-);
-// Return clientSecret only to the authorized purchaser's payment UI.
-// Observe the original purchase after payment; wait for its ready grant.
-```
-
-Use `ensureUsageMeter`, `ensureUsagePrice` and `usage.ensureSubscription` to bind
-the chosen plan to the server-authorized native payer. The exact implementations
-are in the example's `meteredUsage/setup.ts` and `meteredUsage/funding.ts`.
-
-## Package calls behind the example
-
-Server code imports neutral types from `@fantastic.dev/better-stripe/usage`; UI
-code uses `@fantastic.dev/better-stripe/react`. The example backend lives under
-`example/convex/meteredUsage`. Its atomic synthetic-work mutation follows this
-pattern, using server-authorized original terms:
-
-```ts
-const reservation =
-  model === "prepaid"
-    ? await stripe.usage.reserveCredits(ctx, { event, subscription })
-    : await stripe.usage.reserveAllowance(ctx, { event, subscription });
-// Handle denied/released reservations before doing any application work.
-const receipt = await stripe.usage.record(ctx, {
-  event,
-  subscription,
-  reservationId: reservation.reservationId,
-});
-// Persist synthetic DB work and receipt in this same mutation transaction.
-```
-
-Schedule delivery from an action after the transaction commits:
-
-```ts
-await stripe.usage.startDelivery(ctx, {
-  scope: original.scope,
-  eventId: receipt.eventId,
-  provider: internal.meteredUsage.delivery.deliver,
-});
-```
-
-For external application work, use a durable idempotent work protocol with the
-original business identity. A database transaction cannot make an external side
-effect atomic. See [ledger](usage-ledger.md), [delivery](usage-delivery.md),
-[limits](usage-limits.md), [corrections](usage-corrections.md) and
-[settlement](usage-settlement.md) for the complete contracts.
+Admin → Metered billing → Developer protocol diagnostics retains the original
+isolated, three-model exercises for corrections, delivery recovery, test-clock
+renewals, original cash/fee/transfer evidence and scoped cleanup. Follow the
+[protocol diagnostics guide](usage-protocol-diagnostics.md). These diagnostic
+runs retain their original resource IDs and historical evidence; they do not
+change the product membership's customer or shared catalog resources.

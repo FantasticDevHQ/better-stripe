@@ -28,6 +28,8 @@ export function managedCheckoutParams(
     );
   return {
     mode: "subscription",
+    // Rates, paid credits and invoice verification retain this currency.
+    adaptive_pricing: { enabled: false },
     customer_account: terms.meters[0].scope.customerAccount,
     success_url: terms.collection.successUrl,
     cancel_url: terms.collection.cancelUrl,

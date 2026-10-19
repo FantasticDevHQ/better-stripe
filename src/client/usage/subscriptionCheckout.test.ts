@@ -29,3 +29,16 @@ it("creates redirect Checkout with flexible mixed items and no metered quantitie
     managedCheckoutParams(subscriptionTerms(request), "intent"),
   ).toThrow();
 });
+it("keeps the native metered checkout in its immutable configured currency", () => {
+  const terms = subscriptionTerms({
+    ...request,
+    collection: {
+      method: "checkout",
+      successUrl: "https://example.test/success",
+      cancelUrl: "https://example.test/cancel",
+    },
+  });
+  expect(managedCheckoutParams(terms, "intent").adaptive_pricing).toEqual({
+    enabled: false,
+  });
+});

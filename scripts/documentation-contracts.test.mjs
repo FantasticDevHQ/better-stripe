@@ -32,33 +32,39 @@ const documents = files.map((file) => ({
   text: readFileSync(file, "utf8"),
 }));
 
+// Build the immutable declaration fixture once. Only explicit public imports
+// need resolution; unrelated ambient @types packages are not part of this audit.
+const paths = {
+  root: "dist/client/index.d.ts",
+  react: "dist/react/index.d.ts",
+  usage: "dist/client/usage/index.d.ts",
+  testing: "dist/testing/index.d.ts",
+};
+const program = ts.createProgram(Object.values(paths), {
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  module: ts.ModuleKind.ESNext,
+  target: ts.ScriptTarget.ES2022,
+  skipLibCheck: true,
+  types: [],
+});
+const checker = program.getTypeChecker();
+const modules = Object.fromEntries(
+  Object.entries(paths).map(([name, path]) => {
+    const source = program.getSourceFile(path);
+    if (!source)
+      throw new Error("Build the package before checking documented exports");
+    return [
+      name,
+      checker.getExportsOfModule(checker.getSymbolAtLocation(source)),
+    ];
+  }),
+);
+const client = checker.getDeclaredTypeOfSymbol(
+  modules.root.find((symbol) => symbol.name === "BetterStripe"),
+);
+const methods = new Set(client.getProperties().map((symbol) => symbol.name));
+
 it("resolves documented package imports and server reference methods against built public declarations", () => {
-  const paths = {
-    root: "dist/client/index.d.ts",
-    react: "dist/react/index.d.ts",
-    usage: "dist/client/usage/index.d.ts",
-    testing: "dist/testing/index.d.ts",
-  };
-  const program = ts.createProgram(Object.values(paths), {
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-    module: ts.ModuleKind.ESNext,
-    target: ts.ScriptTarget.ES2022,
-    skipLibCheck: true,
-  });
-  const checker = program.getTypeChecker();
-  const modules = Object.fromEntries(
-    Object.entries(paths).map(([name, path]) => {
-      const source = program.getSourceFile(path);
-      expect(
-        source,
-        "Build the package before checking documented exports",
-      ).toBeTruthy();
-      return [
-        name,
-        checker.getExportsOfModule(checker.getSymbolAtLocation(source)),
-      ];
-    }),
-  );
   const failures = [];
   for (const { file, text } of documents) {
     for (const match of text.matchAll(
@@ -77,10 +83,6 @@ it("resolves documented package imports and server reference methods against bui
       }
     }
   }
-  const client = checker.getDeclaredTypeOfSymbol(
-    modules.root.find((symbol) => symbol.name === "BetterStripe"),
-  );
-  const methods = new Set(client.getProperties().map((symbol) => symbol.name));
   const reference = documents.find(
     ({ file }) => file === "docs/client-api.md",
   ).text;

@@ -2,12 +2,12 @@
 
 ### Environment Variables
 
-| Variable                   | Required    | Read by   | Description                                                                                                                                                                                                                                               |
-| -------------------------- | ----------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`        | Yes         | Component | Declared in the component's `convex.config.ts` (required) and read by the component (e.g. `getStripeMode`). Also passed explicitly via the `BetterStripe` constructor and `registerRoutes`. The installing app must wire it to the component — see below. |
-| `STRIPE_WEBHOOK_SECRET`    | Yes         | App       | Signing secret for the V1 snapshot event destination. Read by `registerRoutes` in the app, not the component.                                                                                                                                             |
-| `STRIPE_WEBHOOK_SECRET_V2` | No\*        | App       | Signing secret for the V2 thin event destination (Connect account events). \*Required whenever your V2 destination has its own secret (the usual case); falls back to `STRIPE_WEBHOOK_SECRET` if unset.                                                   |
-| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Frontend  | A public, frontend-only key. Supply it from the frontend's own env (`VITE_STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) and pass it as the `publishableKey` prop to the React components. It is **not** a component env var.            |
+| Variable                   | Required    | Read by   | Description                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`        | Yes         | Component | Declared in the component's `convex.config.ts` (required) and read by the component (e.g. `getStripeMode`). Also passed explicitly via the `BetterStripe` constructor and `registerRoutes`. The installing app must wire it to the component — see below.                                                                                                   |
+| `STRIPE_WEBHOOK_SECRET`    | Yes         | App       | Signing secret for the V1 snapshot event destination. Read by `registerRoutes` in the app, not the component.                                                                                                                                                                                                                                               |
+| `STRIPE_WEBHOOK_SECRET_V2` | No\*        | App       | Signing secret for the V2 thin event destination (Connect account events). \*Required whenever your V2 destination has its own secret (the usual case); falls back to `STRIPE_WEBHOOK_SECRET` if unset.                                                                                                                                                     |
+| `STRIPE_PUBLISHABLE_KEY`   | Yes (React) | Frontend  | A public, frontend-only key. Supply it from the frontend's own env (`VITE_STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) and pass it as the `publishableKey` prop to the React components. The component also accepts it optionally through `app.use` for `stripe.getPublishableKey`; frontend props still need the public key explicitly. |
 
 ### Wiring component env vars
 
@@ -40,11 +40,39 @@ the deployment env — no `app.use` wiring required.
 
 ### Stripe API Version
 
-The component pins the Stripe API version internally (`2026-09-30.endive`) using the installed stripe-node 23 SDK's exact API-version type. Upgrading the pinned version requires a package release and changelog entry. Apps do not need to set `STRIPE_API_VERSION`. See [the migration notes](../MIGRATION.md) for removing Dojo's fulfillment-retry patch and upgrading webhook payload versions separately.
+The default API version is `2026-09-30.endive`. The supported customer-only
+Accounts v2 opt-in is `STRIPE_CUSTOMER_PREVIEW_API_VERSION`, currently
+`2026-09-30.preview`. Other values are rejected. This is a constructor option,
+not a `STRIPE_API_VERSION` environment variable. Account eligibility and request
+version are separate requirements; read [Accounts v2 setup](accounts-v2-preview.md).
+
+```ts
+import {
+  BetterStripe,
+  STRIPE_CUSTOMER_PREVIEW_API_VERSION,
+} from "@fantastic.dev/better-stripe";
+import { components } from "./_generated/api";
+
+export const stripe = new BetterStripe(components.betterStripe, {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  // Omit for the default Connect/GA integration.
+  stripeApiVersion: STRIPE_CUSTOMER_PREVIEW_API_VERSION,
+});
+```
+
+Use `stripe.registerRoutes(http, config)` to inherit this client's key/version,
+or pass the same `stripeApiVersion` explicitly to standalone `registerRoutes`.
+Pin snapshot event destinations to the matching version. Changing package
+defaults follows the release process; upgrading a client does not migrate existing
+provider destinations. See [migration notes](../MIGRATION.md).
 
 ### SDK Management
 
-The component owns the Stripe SDK instance internally via a keyed client cache (keyed by API key). Apps pass `STRIPE_SECRET_KEY`; the component handles versioning and client lifecycle. Apps should not create their own Stripe SDK instances for operations that go through the component.
+The package manages Stripe clients for its public operations. The shared client
+cache is keyed by API key and supported API version. Durable provider adapters
+can create isolated clients with their own retry policy. Pass credentials through
+the documented constructor or internal provider-action boundary; do not journal
+secrets or duplicate the package's Stripe operations in host code.
 
 ## TypeScript setup
 

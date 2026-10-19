@@ -135,17 +135,7 @@ The [example app](https://github.com/FantasticDevHQ/better-stripe/blob/main/exam
 demonstrates customer, seller, affiliate, and admin flows, including several checkout
 integration styles.
 
-## Contributing
-
-See the [development guide](docs/development.md) for local setup and code generation,
-[testing utilities](docs/testing.md) for fixtures, and the [release guide](docs/releasing.md)
-for publishing. Run `pnpm run check:all` before submitting changes.
-
-## License
-
-MIT
-
-## Metered usage
+### Metered usage
 
 Use native Stripe billing for pay as you go, included monthly units with overages,
 and paid prepaid credits. Developers choose units, precision, rates and policy;
@@ -163,3 +153,13 @@ for forms, exact usage, allowances, prepaid balances and paginated history.
 [The verification matrix](docs/usage-verification.md) records native paid-source
 proof, packed consumers and account/clock limits. Existing apps should follow
 [opt-in adoption, model transitions and rollback](docs/usage-rollout.md).
+
+## Contributing
+
+See the [development guide](docs/development.md) for local setup and code generation,
+[testing utilities](docs/testing.md) for fixtures, and the [release guide](docs/releasing.md)
+for publishing. Run `pnpm run check:all` before submitting changes.
+
+## License
+
+MIT

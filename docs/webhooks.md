@@ -7,9 +7,9 @@
 Register the webhook endpoint on your Convex HTTP router:
 
 ```typescript
-import { registerRoutes } from "@fantastic.dev/better-stripe";
+import { stripe } from "./stripe"; // Your configured BetterStripe instance.
 
-registerRoutes(http, components.betterStripe, {
+stripe.registerRoutes(http, {
   webhookPath: "/stripe/webhook", // Default path
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
@@ -47,7 +47,15 @@ const v2 = await stripe.setupEventDestination(ctx, {
 });
 ```
 
-The method is idempotent — it finds an existing destination matching the URL and payload type, updates its events, or creates a new one.
+The method finds an existing destination matching URL and payload type and
+updates its events, or creates a new one. It rejects incompatible existing
+snapshot versions and customer-preview event scopes instead of silently
+migrating them. Preserve the original destination and signing secret until its
+explicit replacement is configured. See [preview webhook migration](accounts-v2-preview.md).
+
+The instance method `stripe.registerRoutes` inherits the configured SDK key and
+API version. Standalone `registerRoutes(http, components.betterStripe, config)`
+remains available; supply the same `stripeApiVersion` explicitly for a preview client.
 
 #### Admin UI setup
 
@@ -57,11 +65,18 @@ The example app includes an `/admin/setup` page that handles webhook creation, e
 
 ```typescript
 import {
-  BETTER_STRIPE_WEBHOOK_EVENTS, // V1 snapshot events (20 events)
-  BETTER_STRIPE_V2_WEBHOOK_EVENTS, // V2 thin events (12 events)
-  ALL_BETTER_STRIPE_EVENTS, // Combined (32 events)
+  BETTER_STRIPE_WEBHOOK_EVENTS, // Default V1 snapshot event names
+  BETTER_STRIPE_V2_WEBHOOK_EVENTS, // Default Connect V2 thin event names
+  ALL_BETTER_STRIPE_EVENTS, // Combined defaults, not every optional event handler
 } from "@fantastic.dev/better-stripe";
 ```
+
+Customer-only preview clients select `BETTER_STRIPE_CUSTOMER_ACCOUNT_EVENTS`
+for their default thin destination instead of the Connect list. Metered billing
+also handles `v1.billing.meter.error_report_triggered` and
+`v1.billing.meter.no_meter_found` as signed thin events. Those names are not in
+`ALL_BETTER_STRIPE_EVENTS`; configure them explicitly as described in
+[asynchronous metering errors](usage-delivery.md#receive-asynchronous-native-validation-errors).
 
 ### Event Processing
 
@@ -70,10 +85,33 @@ Records synced from Stripe objects without `userId` metadata are stored unattrib
 The webhook handler processes events through these steps:
 
 1. Verify Stripe signature
-2. Record the event in the `webhookEvents` ledger by `stripeEventId`. If the event was already seen and is `processing`, `processed`, or `ignored`, return 200 immediately. If the previous delivery `failed` (its writes rolled back), the ledger row is reset and the event is reprocessed on Stripe's retry.
+2. Record the event in the `webhookEvents` ledger by `stripeEventId`. If the event was already seen and is `processed`, `ignored`, or still within its processing lease, return 200 immediately. A stale processing lease can be retried. If the previous delivery `failed` (its writes rolled back), the ledger row is reset and the event is reprocessed on Stripe's retry.
 3. Upsert the component-owned domain table. When `webhooks` is configured, the upsert runs through `syncWebhook` — an internal mutation that performs the upsert **and** the sync trigger in the same transaction.
 4. On failure, mark the ledger row `failed` and return 500 so Stripe retries; otherwise mark it `processed`
 5. Schedule the matching `after*` async hook via `ctx.scheduler` (separate action)
+
+### Required V1 hook delivery
+
+By default, `onEvent` and `events[type]` callbacks are best-effort.
+For selected verified V1 events, `retryOnHookError(event)` can require them to
+succeed before acknowledgment:
+
+```ts
+retryOnHookError: (event) => event.type === "checkout.session.completed",
+```
+
+For that selection, component processing commits first; the callbacks run before
+the event is marked processed. Callback failures return 500 and permit redelivery.
+A concurrent in-flight delivery returns 503, and a failed reservation/completion
+also returns 500. An abandoned processing lease becomes retryable after ten
+minutes. Sync triggers and callbacks must remain idempotent by `event.id` or a
+durable business key because they can run again after partial success.
+
+Unselected callbacks, V2 hooks and scheduled `asyncWebhook` hooks keep best-effort
+acknowledgment behavior. Required fulfillment belongs in the selected V1
+`onEvent`/`events` path, not a scheduled hook. Refund synchronization independently
+requires ledger success even without an application retry selector. See
+[the migration contract](../MIGRATION.md#remove-dojos-consumer-patch).
 
 ### Ledger-Based Deduplication
 

@@ -2,7 +2,10 @@
 
 ## React Hooks
 
-Import from `@fantastic.dev/better-stripe/react`. All hooks use Convex's `useQuery` and `useMutation` internally.
+Import from `@fantastic.dev/better-stripe/react`. Read factories accept the host's Convex query binding. Command workflows use
+host callbacks, Convex mutations/actions or Stripe.js according to the flow.
+Authenticate and authorize those host endpoints; a React component is not an
+authorization boundary.
 
 Read hooks are exported as factory functions that take the app's `useQuery` binding and a query function reference, allowing them to work with any component registration name. Hooks that take a single ID argument accept `undefined` and skip the query (via Convex's `"skip"` sentinel) until the ID is available.
 
@@ -226,7 +229,7 @@ currency support. See the [React workflow guide](react-workflows.md).
 
 | Component         | Description                                                                                                                                                                                                                                               |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PayoutSchedule`  | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. Payouts are automatic/rolling — no manual-withdrawal action is offered.                                                                                      |
+| `PayoutSchedule`  | Recipient balance + next-payout display, fed by a `balance` snapshot and `listPayouts` rows. This display component offers no manual-withdrawal action; the package's separate payout policy and command APIs remain available.                           |
 | `EarningsSummary` | Gross / reversals & adjustments / net + latest payout, fed by `useEarnings(accountId)`. Reversals cover both deferred fee collection and refund/dispute clawbacks — not a pure fees figure, hence the "Reversals & adjustments" label rather than "Fees". |
 | `SplitBreakdown`  | Per-sale store / affiliate / other / platform split lines, fed by `useSplitBreakdown`. The platform line reads "unknown" (not $0) when the hook wasn't given the sale amount.                                                                             |
 
@@ -243,6 +246,10 @@ The app-owned alternative to [Embedded Disputes](#embedded-disputes-stripe-conne
 
 ### Embedded Disputes (Stripe Connect)
 
+`createDisputeSession` is a trusted server API. Authenticate the caller and
+resolve/authorize their original seller account before creating an AccountSession.
+Never expose a public action that forwards an arbitrary browser account ID.
+
 The Stripe-hosted alternative to the headless dispute components: each seller
 views and responds to their own disputes via Stripe's embedded `disputes_list`
 / `payment_disputes` components, driven by the Account Session that
@@ -256,10 +263,14 @@ views and responds to their own disputes via Stripe's embedded `disputes_list`
 **Dependencies:** the wrapper uses [`@stripe/react-connect-js`](https://www.npmjs.com/package/@stripe/react-connect-js) and [`@stripe/connect-js`](https://www.npmjs.com/package/@stripe/connect-js), which ship as regular dependencies of this package (same convention as `@stripe/react-stripe-js` / `@stripe/stripe-js`) -- no extra install step. ConnectJS components are client-only iframes; render them in client components.
 
 ```tsx
-// convex/stripe.ts — expose the account session (server side)
+// convex/stripe.ts, server side.
+// Implement this helper using ctx.auth and the original seller-account mapping.
 export const createDisputeSession = action({
-  args: { stripeAccountId: v.string() },
-  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+  args: {},
+  handler: async (ctx) => {
+    const stripeAccountId = await requireAuthorizedSellerAccount(ctx);
+    return stripe.createDisputeSession(ctx, { stripeAccountId });
+  },
 });
 
 // Seller disputes page (client side)
@@ -268,14 +279,12 @@ import {
   EmbeddedDisputes,
 } from "@fantastic.dev/better-stripe/react";
 
-function SellerDisputes({ stripeAccountId }: { stripeAccountId: string }) {
+function SellerDisputes() {
   const createSession = useAction(api.stripe.createDisputeSession);
   return (
     <ConnectProvider
       publishableKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
-      fetchClientSecret={async () =>
-        (await createSession({ stripeAccountId })).clientSecret
-      }
+      fetchClientSecret={async () => (await createSession({})).clientSecret}
     >
       <EmbeddedDisputes />
     </ConnectProvider>

@@ -169,7 +169,7 @@ changes. Further consumer guidance: [Stripe API changelog](https://docs.stripe.c
 The docs.stripe.com changelog page returned HTTP 403 in this execution
 environment.
 
-## Upcoming settlement API extraction
+## Settlement API extraction
 
 Deploy the regenerated component bindings with the package upgrade. Existing
 transfers remain in the same ledger; new immutable allocation and commission

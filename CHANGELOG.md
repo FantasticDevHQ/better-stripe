@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.67.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.67.0...v0.67.1) (2026-10-19)
+
+
+### Documentation
+
+* **usage:** finalize native billing setup and release handoff (BTS-262) ([#356](https://github.com/FantasticDevHQ/better-stripe/issues/356)) ([de9bfb1](https://github.com/FantasticDevHQ/better-stripe/commit/de9bfb1b2bb6d17f2b415204dd0601528241b244))
+
 ## [0.67.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.66.0...v0.67.0) (2026-10-19)
 
 ### Features

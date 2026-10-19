@@ -33,6 +33,7 @@ for (const name of [
 const root = process.cwd();
 const temp = mkdtempSync(resolve(tmpdir(), "better-stripe-native-wiring-"));
 try {
+  execFileSync("pnpm", ["run", "build:clean"], { stdio: "pipe" });
   execFileSync("pnpm", ["pack", "--pack-destination", temp], { stdio: "pipe" });
   const archive = readdirSync(temp).find((name) => name.endsWith(".tgz"));
   assert.ok(archive);

@@ -1,6 +1,6 @@
 # Packed usage release handoff
 
-The candidate was built and packed, then extracted into an isolated temporary
+The candidate was built from a clean dist directory and packed, then extracted into an isolated temporary
 consumer. The native check imports the extracted `/convex.config` entry point,
 installs its component under the original `betterStripe` name, and runs real
 Convex code generation against the existing development deployment. The supported
@@ -24,14 +24,15 @@ Reproduce from the repository root, using your own authorized development
 selection and output path:
 
 ```sh
-pnpm run build
+pnpm run build:clean
 node scripts/verify-packed-usage-wiring.mjs dev:YOUR-DEVELOPMENT-DEPLOYMENT output.json
 pnpm exec vitest run scripts/usage-contracts-packed.test.mjs scripts/usage-composition-packed.test.mjs scripts/usage-models-packed.test.mjs scripts/packed-docs.test.mjs scripts/public-docs.test.mjs
 pnpm run check:all
 ```
 
 The runner accepts only a `dev:` selection, reads no Stripe secret values, and
-removes its temporary consumer. It rejects ambient deployment-key/token and
+removes its temporary consumer. It cleans and rebuilds the local generated dist
+directory before packing so removed source modules cannot remain in the candidate. It rejects ambient deployment-key/token and
 self-hosted overrides before running commands, sets the requested development
 selection explicitly, and uses a fresh host with no inherited dotenv files. Existing authenticated Convex CLI access and the
 server's configured required environment references are needed. Do not use an

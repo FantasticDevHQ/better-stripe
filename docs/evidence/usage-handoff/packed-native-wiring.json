@@ -1,7 +1,7 @@
 {
   "package": "@fantastic.dev/better-stripe",
   "version": "0.66.0",
-  "archiveSha256": "2d5b7d895c8d89fc824d4f0d1b773ee780311eb104755e9b9ce1cf2a38b8a388",
+  "archiveSha256": "6483a3054963233a7ff98dd1b0001e5b5a8db13343decee113cc821d409c6192",
   "deployment": "dev:fabulous-egret-37",
   "entryPoint": "@fantastic.dev/better-stripe/convex.config",
   "extractedPackage": true,

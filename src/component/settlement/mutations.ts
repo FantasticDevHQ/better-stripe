@@ -1,3 +1,7 @@
+import {
+  policyContextBinding,
+  assertPolicyContextMatches,
+} from "../../shared/settlementPolicyContext.js";
 import { canonicalFingerprint } from "../operationEvidence/canonical.js";
 import { observeSettlementAllocation } from "../financialObservations/settlement.js";
 import { paginator } from "convex-helpers/server/pagination";
@@ -17,6 +21,7 @@ export const reserveSettlementAllocation = mutation({
   args: allocationFields,
   returns: doc,
   handler: async (ctx, args) => {
+    policyContextBinding(args.policyContext);
     if (args.usageSource && args.creditSource)
       throw new Error(
         "Settlement cannot combine invoice and credit purchase sources",
@@ -28,6 +33,7 @@ export const reserveSettlementAllocation = mutation({
       )
       .first();
     if (existing) {
+      assertPolicyContextMatches(existing.policyContext, args.policyContext);
       if (
         existing.currency !== args.currency ||
         existing.paymentIntentId !== args.paymentIntentId ||

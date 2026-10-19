@@ -1,3 +1,7 @@
+import {
+  policyContextBinding,
+  type SettlementPolicyContext,
+} from "../../shared/settlementPolicyContext.js";
 import { reconcileAffiliateCharge } from "../affiliateRecovery/engine.js";
 import {
   sourceTransfers,
@@ -14,6 +18,7 @@ import {
   type SettlementAuthorization,
 } from "./authorization.js";
 export type ResolvedSettlement = {
+  policyContext?: SettlementPolicyContext;
   sourceChargeId: string;
   paymentIntentId?: string;
   sourceInvoiceId?: string;
@@ -71,12 +76,14 @@ export async function executeResolvedTransfers(
   opts: ResolvedSettlement,
   authorize?: SettlementAuthorization,
 ): Promise<SettlementResult> {
+  policyContextBinding(opts.policyContext);
   const saved = (await runMutationOrThrow(
     ctx,
     componentRef(component, "settlement/mutations/reserveSettlementAllocation"),
     opts,
   )) as ResolvedSettlement;
   const claim: ResolvedSettlement = {
+    policyContext: saved.policyContext,
     sourceChargeId: saved.sourceChargeId,
     paymentIntentId: saved.paymentIntentId,
     sourceInvoiceId: saved.sourceInvoiceId,

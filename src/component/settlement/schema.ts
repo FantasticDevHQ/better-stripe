@@ -6,6 +6,13 @@ export const termValidator = v.union(
   v.literal("one_time"),
 );
 export const allocationFields = {
+  policyContext: v.optional(
+    v.object({
+      namespace: v.string(),
+      version: v.literal(1),
+      fields: v.record(v.string(), v.string()),
+    }),
+  ),
   sourceChargeId: v.string(),
   paymentIntentId: v.optional(v.string()),
   sourceInvoiceId: v.optional(v.string()),

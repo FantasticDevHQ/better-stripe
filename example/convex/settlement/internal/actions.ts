@@ -1,4 +1,8 @@
 import {
+  storeSalePolicyContext,
+  matchesStoreSalePolicyContext,
+} from "../workflow/helpers";
+import {
   financialRetryDecision,
   readFinancialOutcomeError,
   throwFinancialOutcome,
@@ -34,6 +38,8 @@ export function authorizeStoreSale(
       { sellerId: sale.sellerId },
     );
     const source = context.settlement;
+    if (!matchesStoreSalePolicyContext(sale, source.policyContext))
+      throw new Error("Settlement authorization changed");
     if (
       !current ||
       current._id !== sale._id ||
@@ -260,6 +266,7 @@ export const settle = internalAction({
         ...args,
         authorize: authorizeStoreSale(ctx, sale),
         allocation: {
+          policyContext: storeSalePolicyContext(sale),
           gross: sale.gross,
           currency: sale.currency,
           processingFee: sale.processingFee,

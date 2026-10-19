@@ -75,6 +75,41 @@ For checkout, change `orderKey` when the customer, price, or attribution changes
 Do not put secret keys in these props. Browser code needs only a publishable key
 and short-lived client secrets returned by your server.
 
+## Product capabilities
+
+`Products` and `useProductManager` accept product and price creation callbacks
+independently. Supply only the operations your authenticated server supports.
+For example, an existing catalog can offer editing and archiving while keeping
+its compound plan-creation workflow separate:
+
+```tsx
+import { Products } from "@fantastic.dev/better-stripe/react";
+
+<Products
+  scopeKey={scopeKey}
+  products={products}
+  updateProduct={updateProduct}
+  deactivateProduct={deactivateProduct}
+/>;
+```
+
+These callbacks bind your authorized server operations. Omitting `createProduct`
+hides the default product-creation form. Omitting `createPrice` hides the default
+Add price controls and price form. Editing and archiving remain available when
+their callbacks are supplied. Custom renderers and companion-hook consumers
+choose their own controls; invoking an unavailable creation handler reports a
+configuration error through the existing workflow state without calling another
+operation. Adding both callbacks retains the full creation workflow.
+
+The Vite pages at `example/src/pages/seller/products.tsx` and
+`example/src/pages/admin/products.tsx` demonstrate full callback wiring and
+styled companion-hook rendering. Replace their demo identity adapters with your
+authenticated server bindings and select the capabilities your application
+needs. Do not add placeholder callbacks or expose
+standalone creation merely to use editing. Capability props control presentation;
+they do not replace server authorization. Change `scopeKey` when the actor or
+authorized catalog context changes, as with the other workflows.
+
 ## Choose a checkout
 
 `Checkout` supports all five checkout integrations. It creates the session or

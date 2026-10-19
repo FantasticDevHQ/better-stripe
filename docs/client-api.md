@@ -590,3 +590,13 @@ and [uploaded screenshots and provider records](https://github.com/FantasticDevH
 `stripe.reversalObservations` reads original claimed-slice history and maintains a bounded diagnostic index. Its physical operation references survive release/deletion and distinguish reuse of a business operation ID. Exact bucket/owner pages, original/latest payloads and generation-aware continuation remain unknown coverage. These methods do not execute reversals, certify current ownership or authorize closure. See [financial observations](financial-observations.md#claimed-reversal-history).
 
 `stripe.payoutRevisionMigration` exposes trusted-host `activateAccount`, `begin`, `resume`, `get` and `results`. Existing destinations keep legacy revision authority until explicitly activated. Activation and inventory are bounded storage maintenance, with held outcomes for ambiguous or unrepresentable legacy authority. Installing the package does not run a migration. See the [migration guide](payout-revision-migration.md) before relying on the tested large-operation path or changing component versions.
+
+### Strict catalog identity
+
+`getProductIdentity(ctx, { stripeProductId })` and
+`getPriceIdentity(ctx, { stripePriceId })` return the public discriminated types
+`ProductIdentityResult` and `PriceIdentityResult`. They distinguish `missing`,
+`unique` with the actual cached row, and `ambiguous`, using at most two indexed
+row reads and no Stripe request. The [read contract](read-contracts.md#bounded-product-and-price-identity)
+explains duplicate handling and the host authorization boundary. Existing
+provider-ID getters keep their first-row semantics.

@@ -221,3 +221,45 @@ export const paginatePrices = query({
     });
   },
 });
+
+/** Resolve a provider ID without selecting an arbitrary duplicate. */
+export const getProductIdentity = query({
+  args: { stripeProductId: v.string() },
+  returns: v.union(
+    v.object({ status: v.literal("missing") }),
+    v.object({ status: v.literal("unique"), product: productDocValidator }),
+    v.object({ status: v.literal("ambiguous") }),
+  ),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("products")
+      .withIndex("by_stripe_product_id", (q) =>
+        q.eq("stripeProductId", args.stripeProductId),
+      )
+      .take(2);
+    if (rows.length === 0) return { status: "missing" as const };
+    if (rows.length > 1) return { status: "ambiguous" as const };
+    return { status: "unique" as const, product: rows[0]! };
+  },
+});
+
+/** Resolve a provider ID without selecting an arbitrary duplicate. */
+export const getPriceIdentity = query({
+  args: { stripePriceId: v.string() },
+  returns: v.union(
+    v.object({ status: v.literal("missing") }),
+    v.object({ status: v.literal("unique"), price: priceDocValidator }),
+    v.object({ status: v.literal("ambiguous") }),
+  ),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("prices")
+      .withIndex("by_stripe_price_id", (q) =>
+        q.eq("stripePriceId", args.stripePriceId),
+      )
+      .take(2);
+    if (rows.length === 0) return { status: "missing" as const };
+    if (rows.length > 1) return { status: "ambiguous" as const };
+    return { status: "unique" as const, price: rows[0]! };
+  },
+});

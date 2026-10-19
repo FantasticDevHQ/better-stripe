@@ -400,3 +400,37 @@ Omitting the flag or passing `false` retains the legacy first-row behavior and
 are unchanged. The query performs no provider calls, writes or financial work.
 Native-generated component references carry the optional boolean; hosts must
 adopt a normally published, independently verified artifact before using it.
+
+## Bounded product and price identity
+
+Use `stripe.getProductIdentity(ctx, { stripeProductId })` and
+`stripe.getPriceIdentity(ctx, { stripePriceId })` when the host needs to reject
+an ambiguous provider-ID mapping. Each reads the existing exact provider-ID
+index with `take(2)` and returns one of:
+
+- `{ status: "missing" }` when no cached row matches.
+- `{ status: "unique", product }` or `{ status: "unique", price }` with the
+  complete cached row and its actual component `_id`.
+- `{ status: "ambiguous" }` when at least two rows match.
+
+These readers never filter active status, account, parent product or metadata
+before counting matches. An inactive or foreign-associated duplicate remains
+ambiguous. They make no provider request and do not repair the cache. An unrelated
+provider ID does not affect the queried identity. Existing
+`getProductByStripeId` and `getPriceByStripeId` retain their first-row behavior
+and return types.
+
+The public `ProductIdentityResult` and `PriceIdentityResult` types narrow on
+`status`. A host that requires an exact identity must reject both missing and
+ambiguous results. Unique cache data does not grant permission. Authenticate the
+current actor and validate original source, account ownership, recipient and
+product/price relationships before exposing a reader or authorizing money writes.
+For example, compare the unique price's `productId` with the unique product's
+component `_id`, in addition to the expected provider IDs and currency.
+
+The Vite reference's authorized server adapters can use these methods when they
+need strict identity proof. This addition does not migrate its existing catalog
+CRUD or replace its authorization. Dojo's plan-policy consumer must still prove
+the original creator, current paid coverage and registered catalog version,
+using the creator's platform-plan currency. This API does not implement Dojo
+settlement or recurring affiliate terms.

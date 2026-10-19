@@ -7601,6 +7601,32 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           } | null,
           Name
         >;
+        getPriceIdentity: FunctionReference<
+          "query",
+          "internal",
+          { stripePriceId: string },
+          | { status: "missing" }
+          | {
+              price: {
+                _creationTime: number;
+                _id: string;
+                active: boolean;
+                currency: string;
+                interval?: "day" | "week" | "month" | "year";
+                intervalCount?: number;
+                metadata?: any;
+                nickname?: string;
+                productId: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                type: "one_time" | "recurring";
+                unitAmount: number;
+              };
+              status: "unique";
+            }
+          | { status: "ambiguous" },
+          Name
+        >;
         getProduct: FunctionReference<
           "query",
           "internal",
@@ -7631,6 +7657,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             name: string;
             stripeProductId: string;
           } | null,
+          Name
+        >;
+        getProductIdentity: FunctionReference<
+          "query",
+          "internal",
+          { stripeProductId: string },
+          | { status: "missing" }
+          | {
+              product: {
+                _creationTime: number;
+                _id: string;
+                accountId?: string;
+                active: boolean;
+                description?: string;
+                metadata?: any;
+                name: string;
+                stripeProductId: string;
+              };
+              status: "unique";
+            }
+          | { status: "ambiguous" },
           Name
         >;
         listPrices: FunctionReference<

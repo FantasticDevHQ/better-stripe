@@ -194,12 +194,11 @@ function OwnerProducts({
     selectedProductId: selected || undefined,
   });
   const products = productPage?.products;
-  const product =
-    products?.find((item) => item.id === selected) ??
-    products?.find((item) =>
-      (role === "admin" ? /report/i : /coach/i).test(item.name),
-    ) ??
-    products?.[0];
+  const product = selected
+    ? products?.find((item) => item.id === selected)
+    : (products?.find((item) =>
+        (role === "admin" ? /report/i : /coach/i).test(item.name),
+      ) ?? products?.[0]);
   const [model, setModel] = useState<UsageBillingModel>("included_overage");
   if (enabled === undefined || products === undefined)
     return <Skeleton className="h-64 w-full" />;
@@ -327,8 +326,9 @@ function OwnerProducts({
               </>
             ) : (
               <EmptyState>
-                Create a catalog product first, then attach its metered billing
-                terms here.
+                {selected
+                  ? "The selected product is unavailable, inactive or belongs to another store. Choose one of your own active products."
+                  : "Create a catalog product first, then attach its metered billing terms here."}
               </EmptyState>
             )}
           </div>

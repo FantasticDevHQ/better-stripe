@@ -50,9 +50,9 @@ vi.mock("@/providers/role-context", () => ({
   }),
 }));
 import { MeteredProducts } from "./metered-products";
-function show() {
+function show(entry = "/") {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[entry]}>
       <MeteredProducts />
     </MemoryRouter>,
   );
@@ -130,4 +130,12 @@ it("shows customers purchase terms instead of a configuration editor", () => {
   show();
   expect(screen.getByText(/Choose a metered product/)).toBeTruthy();
   expect(screen.queryByLabelText("Billable unit")).toBeNull();
+});
+
+it("does not silently attach billing to a different product when an original product link is unavailable", () => {
+  show("/demo/metered-usage?product=prod_foreign");
+  expect(
+    screen.queryByRole("button", { name: "Attach billing to product" }),
+  ).toBeNull();
+  expect(screen.getByText(/selected product is unavailable/)).toBeTruthy();
 });

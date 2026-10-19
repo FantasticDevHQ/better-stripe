@@ -1,7 +1,8 @@
 # BetterStripe example
 
 A Vite + React SPA demonstrating the `better-stripe` backend and reusable React workflows.
-All data comes from Stripe via better-stripe -- no mock data.
+Fictional demo personas and application records exercise real Stripe sandbox
+resources through BetterStripe. Unit tests use deterministic fixtures separately.
 
 ## Quick Start
 
@@ -12,25 +13,33 @@ cd example
 pnpm exec convex dev --once
 ```
 
-**Set the Stripe secret key:**
+Select the intended existing Convex development project. If the first deploy
+stops because `STRIPE_SECRET_KEY` is missing, configure its sandbox key in that
+deployment's environment editor, then repeat `pnpm exec convex dev --once`.
+Reuse a correctly configured existing deployment. Follow the
+[safe setup and deployment-selection guide](../docs/metering-setup.md#run-the-repository-example)
+for secret-manager injection and key handling. Keep secret keys out of `VITE_`
+variables and command arguments.
 
-```bash
-pnpm run setup
-```
-
-This reads `STRIPE_SECRET_KEY` from `.env.local` and sets it as a Convex environment variable. That's all the CLI setup does.
-
-**Start the app:**
+**Start the app**, from `example/`:
 
 ```bash
 pnpm run dev
 ```
 
-Open **http://localhost:5173** and go to **/admin/setup** to finish setup:
+Use the URL Vite prints, normally **http://localhost:5173**. This starts the
+backend watcher and frontend. To run only the frontend against an already
+deployed development backend, use `pnpm run dev:frontend`.
 
-1. Set up webhook event destinations (V1 snapshot + V2 thin)
-2. Seed demo data (users + Stripe products/prices)
-3. Sync existing Stripe data (products, subscriptions, accounts)
+On a new, empty development deployment, go to **/admin/setup** to configure:
+
+1. Webhook event destinations, V1 snapshot and V2 thin.
+2. Demo users and Stripe products/prices.
+3. Synchronization of existing Stripe products, subscriptions and accounts.
+
+Existing seeded deployments need no reset or re-seed. The persona switcher is
+a sandbox demonstration, not production authentication. See
+[the metered walkthrough](../docs/usage-example.md) for all three billing models.
 
 ### Automatic payout settings
 
@@ -64,7 +73,7 @@ bindings and schedule restoration records so these operations can still finish.
 
 ```bash
 pnpm exec convex run admin/reset/actions:run   # Clear all data (app DB + better-stripe component DB)
-pnpm run setup               # Re-set the Stripe key
+# Keep the existing sandbox key; configure it through the setup guide only if missing.
 ```
 
 Then visit `/admin/setup` again to re-seed and re-sync.

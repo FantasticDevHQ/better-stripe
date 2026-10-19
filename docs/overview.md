@@ -3,8 +3,8 @@
 ## Features
 
 - **V2 Accounts API** -- Account creation, onboarding, Connect/marketplace, merchant and recipient configurations
-- **Products and Prices** -- Full CRUD with trial day management as a first-class feature
-- **Checkout** -- Both embedded (custom UI mode) and redirect checkout session creation
+- **Products and Prices** -- Creation, reads, updates and deactivation, with product trial-day defaults
+- **Checkout** -- Checkout Sessions with redirect, embedded, custom Elements and preview form modes; React also supports the separate PaymentIntent flow
 - **Subscriptions** -- Lifecycle management including cancel, reactivate, quantity updates, and trial tracking
 - **Marketplace fees** -- Platform fee config (percent, fixed, tiered), resolved per-call or as a global default, applied via `application_fee_percent`/`application_fee_amount` or computed per invoice/charge
 - **Split engine** -- Single-recipient destination charges or multi-recipient separate-charges-and-transfers (store + affiliate(s)), computed and executed by the webhook engine
@@ -128,7 +128,18 @@ Historical payout adoption and funded-account activation also use complete pagin
 
 ## Metered usage
 
-Metered billing is under investigation. See the [provider comparison and sandbox acceptance matrix](metered-usage.md) for current status and integration requirements. Public usage APIs are not available yet.
+Native Stripe metered billing supports pay as you go, included monthly units with
+overages, and payment-backed prepaid credits through `stripe.usage`. The package
+owns scoped atomic recording, reservations, durable delivery, reconciliation,
+allowance/credit accounting, corrections and original-payment settlement.
+Hosts authorize billable work and choose units, prices and policies.
+
+Start with [sandbox setup](metering-setup.md) and [public model recipes](metered-usage.md).
+The [example walkthrough](usage-example.md) demonstrates all three models using
+the package's [reusable React workflows](usage-react.md) and
+[configuration UI](usage-configuration.md). See [verification and limits](usage-verification.md)
+for actual native evidence and [opt-in rollout](usage-rollout.md) for adoption,
+drain, model transitions and rollback. Metronome is not required.
 
 ## Resources
 

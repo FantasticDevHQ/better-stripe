@@ -2,9 +2,14 @@
 
 ### Development toolchain
 
-Install with `pnpm install` from the repository root, then run `pnpm build`
-and `pnpm dev` to start the example at http://localhost:5173. The example needs
-Node.js 22.12+ and a configured Convex development deployment; see
+Use Node.js 24, as CI does, and the pinned pnpm version in `package.json`.
+The package supports Node.js 20+, but the Vite example requires Node.js 22.12+.
+From the repository root, run `pnpm install --frozen-lockfile` and
+`pnpm run build:clean`. After configuring the example's existing Convex development
+deployment, `pnpm dev` starts its backend watcher and Vite frontend. Use the
+localhost URL Vite prints, normally http://localhost:5173. For a frontend-only
+server against an already deployed backend, run `pnpm run dev:frontend` from
+`example/`. See
 [the example setup guide](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md).
 
 The BetterStripe example separates visitor, customer, affiliate, seller, and
@@ -37,7 +42,8 @@ See [affiliate configuration and testing](https://github.com/FantasticDevHQ/bett
 
 The public React exports include `AffiliatePayoutEditor`, `PlanPricingEditor`,
 `Pagination`, and `useCursorPagination`. The example supplies styling through
-render props; its backend owns authorization, rule inheritance, and transfers.
+render props; its backend owns authorization and rule inheritance. The package owns durable
+transfer execution, retained financial records and provider reconciliation.
 See [the workflow reference](react-workflows.md#percentage-or-fixed-affiliate-payouts)
 and [the UI reuse audit](react-workflows-audit.md).
 
@@ -45,6 +51,14 @@ Run `pnpm run check:all` before submitting changes. It runs the build, lint,
 formatting, typechecks, codegen drift check, tests, and repository quality gates
 used by CI. Policy lives in `repo-gates.config.json`; measured baselines live in
 `gates/`. Fix failures without weakening the gates or raising existing budgets.
+
+Use `pnpm run check:package` to clean/rebuild the package and run the artifact
+checks in one command. It verifies public documentation imports and local links,
+recursively linked guides in the actual tarball, and extracted usage consumers
+for public types, runtime accounting and React rendering. It uses deterministic
+fixtures without provider credentials or deployment changes. Native component
+analysis remains a separate authorized development probe in
+[the usage handoff evidence](https://github.com/FantasticDevHQ/better-stripe/tree/main/docs/evidence/usage-handoff).
 
 Coverage checks enforce the committed floors in `gates/coverage-budgets.json`.
 `pnpm run check:coverage` and `pnpm run check:all` never edit that file or fail
@@ -104,7 +118,13 @@ pnpm codegen:lib        # regen src/component/_generated only
 pnpm codegen:example    # regen example/convex/_generated only
 ```
 
-All three require a configured dev deployment (`CONVEX_DEPLOYMENT` env var, normally set by a prior `npx convex dev`). They write only the local `_generated/` files — they don't push code or data to the deployment.
+All three require a configured dev deployment, normally selected by a prior
+`pnpm exec convex dev` from `example/`. They generate local bindings and, for
+components, upload and analyze definitions against the selected development
+deployment. Codegen does not replace its serving application or run a data
+migration; deploying updated handlers still requires `convex dev` or
+`convex dev --once` from `example/`. Keep secrets and deployment-key overrides
+out of the wrong terminal. See [safe development selection](metering-setup.md#run-the-repository-example).
 
 **CI gate.** Two layers verify the committed files are not stale:
 

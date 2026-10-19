@@ -96,7 +96,7 @@ Scope the idempotency key to one catalog operation and reuse it only with identi
 | `getActiveSubscription(ctx, { userId, orgId? })`                                                                                                                                                                         | Get the active subscription for a user or org                                                                                                 |
 | `getTrialStatus(ctx, { subscriptionId })`                                                                                                                                                                                | Get trial state for a subscription                                                                                                            |
 | `cancelSubscription(ctx, { stripeSubscriptionId, cancelAtPeriodEnd? })`                                                                                                                                                  | Cancel subscription immediately or at period end                                                                                              |
-| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Reactivate a canceled subscription                                                                                                            |
+| `reactivateSubscription(ctx, { stripeSubscriptionId })`                                                                                                                                                                  | Clear scheduled end-of-period cancellation before the subscription terminates                                                                 |
 | `updateSubscriptionQuantity(ctx, { stripeSubscriptionId, quantity })`                                                                                                                                                    | Update subscription seat quantity                                                                                                             |
 
 ### Durable recovery claims
@@ -446,7 +446,7 @@ recovery costs and credits remain host-owned policy. See Stripe's
 | `uploadDisputeEvidence(ctx, { stripeDisputeId, actor, field, file, stripeAccountId? })`                                                                  | Since 0.14.0: validate and upload file bytes, then attach the returned file ID to an authorized dispute draft; never submits                                       |
 | `updateDispute(ctx, { stripeDisputeId, evidence?, metadata?, submit?, stripeAccountId? })`                                                               | Submit/stage dispute evidence (`submit: true` finalizes the response)                                                                                              |
 | `closeDispute(ctx, { stripeDisputeId, stripeAccountId? })`                                                                                               | Accept a dispute (concede the chargeback) — irreversible                                                                                                           |
-| `reverseTransfers(ctx, { sourceChargeId, percent?, amount? })`                                                                                           | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually)                                         |
+| `reverseTransfers(ctx, { sourceChargeId, percent?, amount?, operationId? })`                                                                             | Reverse split/destination transfers for a charge (the primitive behind automatic dispute clawback; also callable manually)                                         |
 
 `uploadDisputeEvidence` shipped in [0.14.0](https://github.com/FantasticDevHQ/better-stripe/releases/tag/v0.14.0).
 Call it from an authenticated server adapter with a session-derived actor. A seller
@@ -587,7 +587,7 @@ and [uploaded screenshots and provider records](https://github.com/FantasticDevH
 
 ## Reversal history and revision maintenance
 
-`stripe.reversalObservations` reads original claimed-slice history and maintains a bounded diagnostic index. Its physical operation references survive release/deletion and distinguish reuse of a business operation ID. Exact bucket/owner pages, original/latest payloads and generation-aware continuation remain unknown coverage. These methods do not execute reversals, certify current ownership or authorize closure. See [financial observations](financial-observations.md#claimed-reversal-history).
+`stripe.reversalObservations` reads original claimed-slice history and maintains a bounded diagnostic index. Its physical operation references survive release/deletion and distinguish reuse of a business operation ID. Exact bucket/owner pages, original/latest payloads and generation-aware continuation remain unknown coverage. These methods do not execute reversals, certify current ownership or authorize closure. See [financial observations](financial-observations.md#claimed-reversal-slice-history).
 
 `stripe.payoutRevisionMigration` exposes trusted-host `activateAccount`, `begin`, `resume`, `get` and `results`. Existing destinations keep legacy revision authority until explicitly activated. Activation and inventory are bounded storage maintenance, with held outcomes for ambiguous or unrepresentable legacy authority. Installing the package does not run a migration. See the [migration guide](payout-revision-migration.md) before relying on the tested large-operation path or changing component versions.
 
@@ -600,3 +600,15 @@ and [uploaded screenshots and provider records](https://github.com/FantasticDevH
 row reads and no Stripe request. The [read contract](read-contracts.md#bounded-product-and-price-identity)
 explains duplicate handling and the host authorization boundary. Existing
 provider-ID getters keep their first-row semantics.
+
+## Native metered billing
+
+`stripe.usage` groups the shared ledger/delivery APIs and all three model
+controllers. Start with [typed model recipes](metered-usage.md) and
+[setup](metering-setup.md). Follow the domain contracts for [catalog](usage-catalog.md),
+[subscriptions](usage-subscriptions.md), [ledger](usage-ledger.md),
+[delivery](usage-delivery.md), [observations](usage-observations.md),
+[allowances/limits](usage-limits.md), [paid credits](usage-credits.md),
+[corrections](usage-corrections.md) and [settlement](usage-settlement.md).
+These are trusted host APIs. Browser-selected payer, realm, meter or provider
+references do not establish authorization.

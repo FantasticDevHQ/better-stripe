@@ -1,6 +1,6 @@
 # Marketplace economics
 
-The platform is always the merchant of record (Skool-style marketplace model): sellers are Connect recipients, not merchants. This section covers the fee, split, payout, dispute, and refund/descriptor primitives that implement that model. All amounts are minor units (cents).
+The platform is always the merchant of record (Skool-style marketplace model): sellers are Connect recipients, not merchants. This section covers the fee, split, payout, dispute, and refund/descriptor primitives that implement that model. Amounts use the currency's minor units, cents for USD. Do not assume two decimal places for every currency.
 
 ### Fee Model
 
@@ -30,9 +30,19 @@ const { feeAmount, percentApplied, fixedApplied, tier } = computeFee(2999, {
 
 **How the fee is charged** depends on shape and charge type:
 
-- **Percent-only** fees (`isPercentOnlyFee(config)` — no `fixed`, no `tiers`) map directly to Stripe's `application_fee_percent` on the subscription/PaymentIntent — no per-invoice computation needed.
-- **Fixed or tiered** fees can't be expressed as a flat Stripe percentage, so they're computed and applied per invoice (`applyPerInvoiceFee`, at `invoice.created`) or per one-time charge (`applyPerChargeFee`) in the webhook processor, via `application_fee_amount`.
-- For synchronously finalized first invoices, `invoice.paid` collects the missed fixed/tiered fee through a partial destination-transfer reversal. See [first-invoice fee handling](overview.md#roadmap--known-gaps).
+- Percent-only subscription fees use `application_fee_percent`.
+- A one-time destination charge with a known amount computes
+  `application_fee_amount` before confirmation, including percent-only rates.
+- Fixed/tiered subscription fees are computed on draft `invoice.created` and set
+  as `application_fee_amount`. A synchronously finalized first invoice misses
+  that draft window; `invoice.paid` collects its fee through a retained partial
+  destination-transfer reversal.
+- A deferred one-time fee cannot be attached to a succeeded PaymentIntent as
+  `application_fee_amount`. The webhook processor collects it through a partial
+  reversal of the original destination transfer with retained recovery evidence.
+
+See [first-invoice fee handling](overview.md#roadmap--known-gaps) for replay
+and duplicate-collection guards.
 
 Fees only apply to **destination charges** (`destinationAccountId` set, or a single-recipient `split`). The **separate-charges-and-transfers** path (multi-recipient `split`) never uses `application_fee` — the platform's cut is realized by transferring less than was charged (see Split Engine below).
 
@@ -86,7 +96,13 @@ const result = computeSplit(10000, { percent: 10 }, [
 
 ### Payouts
 
-Payouts are **automatic and rolling** (Stripe-managed schedule, via hosted Express onboarding) — there is no manual-withdrawal API. `listPayouts`/`createPayout` track/trigger payouts for a Connect account; `PayoutSchedule` (React) and `useEarnings` (React) surface the recipient's balance and next expected payout, with a link out to the hosted Express dashboard for details. See [React Hooks](react-api.md#react-hooks) and [React Components](react-api.md#react-components).
+Stripe-managed automatic payouts are the default. `listPayouts` reads history
+and `createPayout` submits an authorized payout. The package also supports
+explicit recipient-held custom policies, verified manual schedule changes and
+automatic workers. Those require consent, source/recovery verification and
+the [payout policy controls](settlement.md#recipient-held-payout-policy-controls).
+The presentational `PayoutSchedule` component shows a supplied balance and next
+payout; that component offers no withdrawal command. See [React workflows](react-workflows.md#payout-settings).
 
 ### Disputes
 
@@ -94,21 +110,29 @@ The platform is merchant of record, so a chargeback lands on the platform's Stri
 
 1. **Clawback** — a monetary `charge.dispute.created` event uses the disputed charge's original gross amount to calculate affiliate commission exposure. Inquiry/warning, prevented, and already-won payloads do not trigger recovery. Affiliate legs share the original-principal exposure axis with refunds; seller and other legs retain the existing reversal allocation. The dispute ID identifies the operation, and a missing authoritative charge amount causes recovery to retry.
 2. **Reinstatement** — if the dispute is won (`.closed` with `status: "won"`, or `.funds_reinstated`), the existing `reinstateTransfers` path creates new transfers from the platform balance. Affiliate restoration uses exact reversal/offset receipts, preserves independent successful refunds, and cancels unpaid dispute debt. Failed or uncertain restoration remains visible until reconciled. See [recovery limitations](affiliate-clawbacks.md#verification-evidence).
-3. **Auto-cancel** — on dispute open, the disputed subscription (resolved PaymentIntent → invoice → subscription) is canceled by default (`registerRoutes`'s `autoCancelOnDispute`, default `true`; pairs with `cancelDisputeAtPeriodEnd`, default `false` → cancel-at-period-end, matching the Skool model of "cancel now, remove access at cycle end").
+3. **Auto-cancel** — on dispute open, the disputed subscription (resolved PaymentIntent → invoice → subscription) is canceled by default (`registerRoutes`'s `autoCancelOnDispute`, default `true`; pairs with `cancelDisputedSubscriptionImmediately`, default `false` → cancel-at-period-end, matching the Skool model of "cancel now, remove access at cycle end").
 
 Sellers respond to their own disputes without platform staff involvement, via an embedded Stripe Connect session:
 
 ```typescript
-// server: expose the account session
+// Host helper authenticates ctx.auth and authorizes the original seller account.
 export const createDisputeSession = action({
-  args: { stripeAccountId: v.string() },
-  handler: async (ctx, args) => stripe.createDisputeSession(ctx, args),
+  args: {},
+  handler: async (ctx) => {
+    const stripeAccountId = await requireAuthorizedSellerAccount(ctx);
+    return stripe.createDisputeSession(ctx, { stripeAccountId });
+  },
 });
 ```
 
 `stripe.createDisputeSession(ctx, { stripeAccountId })` creates an Account Session scoped to `disputes_list`/`payment_disputes` — mount it with the `ConnectProvider`/`EmbeddedDisputes` React components (see [Embedded Disputes](react-api.md#embedded-disputes-stripe-connect)), or build a custom UI on `updateDispute`/`closeDispute` plus the headless `DisputesList`/`DisputeDetail`/`EvidenceForm` components and `buildDisputeEvidence`/`disputeEvidenceCountdown` helpers (see [React Components](react-api.md#react-components)).
 
-`stripe.reverseTransfers(ctx, { sourceChargeId, percent?, amount? })` is also exposed directly, for manual clawback outside the automatic dispute flow (e.g. a support-initiated partial reversal). The internal engine additionally accepts an `operationId` for a stable Stripe idempotency key (used by the automatic dispute flow); the public method doesn't expose it yet, so a manual call relies on Stripe's default request idempotency.
+`stripe.reverseTransfers(ctx, { sourceChargeId, percent?, amount?, operationId? })`
+exposes the existing reversal primitive. Supply a stable, server-derived
+`operationId` to retain original slices and idempotency keys across retries.
+Without it the call is a one-shot reversal with no idempotency protection; an
+uncertain outcome must not be blindly retried. Authorize the original charge,
+amount and recovery policy before invoking it.
 
 For commissions tracked by the recovery ledger, generic manual reversal is
 rejected. Use `createRefund` for a real refund or `stripe.affiliateRecovery.retry`

@@ -39,8 +39,11 @@ unavailable estimates. A plan or price change on the same item does not reset
 the local allowance. Estimates exclude taxes, discounts, fixed
 fees, rounding and other invoice lines. They are not finalized amounts or limits
 that authorize work. Strict allowance reservations are implemented separately.
-Prepaid balance/estimate fields remain explicitly unavailable until the prepaid
-accounting APIs are configured. They never infer available credits from usage.
+The generic usage summary always leaves prepaid estimate/credit fields
+unavailable with `credit_balance_requires_scoped_reader`. Read the original
+binding's `stripe.usage.getCreditBalance` and purchase reconciliation separately;
+see [payment-backed credits](usage-credits.md). A usage summary never infers
+available credits from consumed units, even after a credit account is configured.
 
 `read(ctx, {scope, page: {period, limit, cursor}})` returns immutable event history
 with current delivery state. For an event's delivery audit:

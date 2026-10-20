@@ -28,10 +28,9 @@
 
 ## [0.72.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.71.0...v0.72.0) (2026-10-20)
 
-
 ### Features
 
-* settle mixed monthly-fee and metered invoices ([#370](https://github.com/FantasticDevHQ/better-stripe/issues/370)) ([bf99016](https://github.com/FantasticDevHQ/better-stripe/commit/bf99016aa75df9f27c553d2524aca9161a5f8184))
+- settle mixed monthly-fee and metered invoices ([#370](https://github.com/FantasticDevHQ/better-stripe/issues/370)) ([bf99016](https://github.com/FantasticDevHQ/better-stripe/commit/bf99016aa75df9f27c553d2524aca9161a5f8184))
 
 ## [0.71.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.70.0...v0.71.0) (2026-10-19)
 

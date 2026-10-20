@@ -1,3 +1,4 @@
+import type { UsageInvoiceLineProof } from "../../shared/usageInvoiceLines.js";
 import {
   policyContextBinding,
   type SettlementPolicyContext,
@@ -23,6 +24,7 @@ export type ResolvedSettlement = {
   paymentIntentId?: string;
   sourceInvoiceId?: string;
   usageSource?: {
+    invoiceLines?: UsageInvoiceLineProof[];
     stripeAccountId: string;
     customerAccount: string;
     livemode: boolean;

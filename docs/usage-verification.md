@@ -88,8 +88,8 @@ comes from the product example, separately from the isolated protocol fixtures a
 
 These are test-mode observations, not finalized renewal or seller-settlement
 proof. Exact native meter summaries reject partial-minute subscription boundaries.
-The draft invoices remain estimates. Mixed fixed-fee and usage settlement stays
-held. The earlier unsupported automatic-collection prepaid test enrollment was
+The draft invoices remain estimates. That run preceded mixed-invoice settlement
+support; the later mixed-invoice proof below verifies original paid cash and transfers. The earlier unsupported automatic-collection prepaid test enrollment was
 retained and its renewal canceled; corrected enrollments use `send_invoice`.
 
 The product regression suite covers store enablement, ownership, immutable
@@ -146,3 +146,23 @@ worker/DB failures, retained quota limits and API-version refusals use determini
 SDK/component tests. No load or sustained throughput certification is claimed.
 These checks authorize neither live billing nor automatic production migration,
 publication or replay of unknown historical provider writes.
+
+## Mixed monthly fee and usage settlement
+
+The isolated 2026-10-20 native Stripe test uses a separate Accounts v2 payer and
+minute-aligned test clock. It leaves the product example customer's clock intact.
+[Retained native evidence](evidence/native-metering/mixed-settlement-2026-10-20.json)
+records the original complete line periods, funding, actual fees and transfer IDs.
+
+| Original invoice                                            |      Paid | Actual processing | Platform net | Seller transfer |
+| ----------------------------------------------------------- | --------: | ----------------: | -----------: | --------------: |
+| Initial monthly fee                                         | USD 20.00 |          USD 0.88 |     USD 0.92 |       USD 18.20 |
+| Renewal: next monthly fee + 15 prior-period overage minutes | USD 35.00 |          USD 1.32 |     USD 1.83 |       USD 31.85 |
+
+The renewal contains three native lines: 60 included minutes at zero, 15 extra
+minutes at USD 1, and the next USD 20 monthly fee. Replaying settlement returned
+the same transfer ID. A native USD 7 partial refund reversed USD 6.37 of
+the USD 31.85 seller transfer. The actual product example's initial USD 20 invoice
+also settled through the billing hook and durable recovery workflow. SDK regressions also cover complete pagination, foreign
+lines, taxes/credits/prorations, reauthorization, lost transfer receipts, sealed
+funding identity and refund/dispute cost observations.

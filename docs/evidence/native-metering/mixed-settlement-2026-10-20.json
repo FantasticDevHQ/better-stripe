@@ -1,0 +1,284 @@
+{
+  "kind": "native-mixed-invoice-settlement",
+  "date": "2026-10-20",
+  "ticket": "BTS-287",
+  "livemode": false,
+  "apiVersion": "2026-09-30.endive",
+  "method": "Compiled BetterStripe SDK against native Stripe test APIs; isolated Accounts v2 payer/test clock for initial and renewal cash; original product example invoice replay through billing hook and durable settlement workflow. No shared customer clock advancement.",
+  "fixture": {
+    "runId": "bts287-native-v1",
+    "clockId": "clock_1USSD76JR7kThJogiWhQYpXY",
+    "sellerAccountId": "acct_1UQ78o7xOsB2U2nM",
+    "productId": "prod_VTP1DX2R2js6f5",
+    "invoiceId": "in_1USSDC6JR7kThJog3yQnJQdG",
+    "input": {
+      "scope": {
+        "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+        "customerAccount": "acct_1USSD78k9tFVeKFN",
+        "meterId": "mtr_test_61VbqAVIxs9O0sFgt416JR7kThJogO5w",
+        "livemode": false
+      },
+      "binding": {
+        "stripeCustomerId": "cus_VTP1D5rkZMxZHc",
+        "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+        "eventName": "bts287_native_v1",
+        "apiVersion": "2026-09-30.endive",
+        "plan": {
+          "key": "bts287-native-v1",
+          "version": "v1",
+          "unit": {
+            "name": "minute",
+            "precision": 0
+          },
+          "rate": {
+            "currency": "usd",
+            "unitAmountDecimal": "100"
+          },
+          "model": "included_overage",
+          "includedQuantity": "60",
+          "reset": "billing_period"
+        }
+      },
+      "subscription": {
+        "subscriptionId": "sub_1USSDC6JR7kThJogK1m7V9Q2",
+        "subscriptionItemId": "si_VTP1jHuM4LSQWN",
+        "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+        "period": {
+          "start": 1792461060,
+          "end": 1795139460
+        },
+        "interval": "month"
+      },
+      "period": {
+        "start": 1792461060,
+        "end": 1795139460
+      },
+      "fixedPrice": {
+        "stripePriceId": "price_1USSDA6JR7kThJoguUhyBEXl",
+        "subscriptionItemId": "si_VTP18QFXyYFnDo",
+        "unitAmount": 2000
+      }
+    }
+  },
+  "initial": {
+    "sourceChargeId": "ch_3USSDf6JR7kThJog0F5su3xa",
+    "paymentIntentId": "pi_3USSDf6JR7kThJog0Zj92PRp",
+    "sourceInvoiceId": "in_1USSDC6JR7kThJog3yQnJQdG",
+    "usageSource": {
+      "customerAccount": "acct_1USSD78k9tFVeKFN",
+      "invoiceLines": [
+        {
+          "amount": 2000,
+          "kind": "fixed",
+          "lineId": "il_1USSCe6JR7kThJogfcJks0En",
+          "period": {
+            "end": 1795139460,
+            "start": 1792461060
+          },
+          "quantity": "1",
+          "stripePriceId": "price_1USSDA6JR7kThJoguUhyBEXl",
+          "stripeProductId": "prod_VTP1DX2R2js6f5",
+          "subscriptionItemId": "si_VTP18QFXyYFnDo"
+        }
+      ],
+      "invoicePaymentId": "inpay_1USSDf6JR7kThJogCongDU4L",
+      "livemode": false,
+      "meterId": "mtr_test_61VbqAVIxs9O0sFgt416JR7kThJogO5w",
+      "model": "included_overage",
+      "period": {
+        "end": 1795139460,
+        "start": 1792461060
+      },
+      "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+      "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+      "stripeProductId": "prod_VTP1DX2R2js6f5",
+      "subscriptionId": "sub_1USSDC6JR7kThJogK1m7V9Q2",
+      "subscriptionItemId": "si_VTP1jHuM4LSQWN"
+    },
+    "gross": 2000,
+    "currency": "usd",
+    "processingFee": 88,
+    "platformNet": 92,
+    "transfers": [
+      {
+        "amount": 1820,
+        "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+        "role": "store"
+      }
+    ],
+    "status": "settled",
+    "executedTransfers": [
+      {
+        "stripeTransferId": "tr_3USSDf6JR7kThJog0X6GYuWa",
+        "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+        "role": "store",
+        "amount": 1820
+      }
+    ]
+  },
+  "renewalInvoice": {
+    "id": "in_1USSEa6JR7kThJogK6C02ulM",
+    "status": "open",
+    "total": 3500,
+    "paid": 0,
+    "reason": "subscription_cycle",
+    "lines": [
+      {
+        "id": "il_1Udgye6JR7kThJogo8mem1ju",
+        "amount": 0,
+        "quantity": "60",
+        "period": {
+          "end": 1795139460,
+          "start": 1792461060
+        },
+        "price": "price_1USSDA6JR7kThJogT3xsgBd6"
+      },
+      {
+        "id": "il_1Udgyf6JR7kThJogGYOwmntt",
+        "amount": 1500,
+        "quantity": "15",
+        "period": {
+          "end": 1795139460,
+          "start": 1792461060
+        },
+        "price": "price_1USSDA6JR7kThJogT3xsgBd6"
+      },
+      {
+        "id": "il_1Udgyg6JR7kThJog3UoOkXqt",
+        "amount": 2000,
+        "quantity": "1",
+        "period": {
+          "end": 1797731460,
+          "start": 1795139460
+        },
+        "price": "price_1USSDA6JR7kThJoguUhyBEXl"
+      }
+    ]
+  },
+  "renewal": {
+    "sourceChargeId": "ch_3USSEg6JR7kThJog1TT4PblE",
+    "paymentIntentId": "pi_3USSEg6JR7kThJog1beR1tZF",
+    "sourceInvoiceId": "in_1USSEa6JR7kThJogK6C02ulM",
+    "usageSource": {
+      "customerAccount": "acct_1USSD78k9tFVeKFN",
+      "invoiceLines": [
+        {
+          "amount": 0,
+          "kind": "metered",
+          "lineId": "il_1Udgye6JR7kThJogo8mem1ju",
+          "period": {
+            "end": 1795139460,
+            "start": 1792461060
+          },
+          "quantity": "60",
+          "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+          "stripeProductId": "prod_VTP1DX2R2js6f5",
+          "subscriptionItemId": "si_VTP1jHuM4LSQWN"
+        },
+        {
+          "amount": 1500,
+          "kind": "metered",
+          "lineId": "il_1Udgyf6JR7kThJogGYOwmntt",
+          "period": {
+            "end": 1795139460,
+            "start": 1792461060
+          },
+          "quantity": "15",
+          "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+          "stripeProductId": "prod_VTP1DX2R2js6f5",
+          "subscriptionItemId": "si_VTP1jHuM4LSQWN"
+        },
+        {
+          "amount": 2000,
+          "kind": "fixed",
+          "lineId": "il_1Udgyg6JR7kThJog3UoOkXqt",
+          "period": {
+            "end": 1797731460,
+            "start": 1795139460
+          },
+          "quantity": "1",
+          "stripePriceId": "price_1USSDA6JR7kThJoguUhyBEXl",
+          "stripeProductId": "prod_VTP1DX2R2js6f5",
+          "subscriptionItemId": "si_VTP18QFXyYFnDo"
+        }
+      ],
+      "invoicePaymentId": "inpay_1USSEh6JR7kThJogqGqDt0l7",
+      "livemode": false,
+      "meterId": "mtr_test_61VbqAVIxs9O0sFgt416JR7kThJogO5w",
+      "model": "included_overage",
+      "period": {
+        "end": 1795139460,
+        "start": 1792461060
+      },
+      "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+      "stripePriceId": "price_1USSDA6JR7kThJogT3xsgBd6",
+      "stripeProductId": "prod_VTP1DX2R2js6f5",
+      "subscriptionId": "sub_1USSDC6JR7kThJogK1m7V9Q2",
+      "subscriptionItemId": "si_VTP1jHuM4LSQWN"
+    },
+    "gross": 3500,
+    "currency": "usd",
+    "processingFee": 132,
+    "platformNet": 183,
+    "transfers": [
+      {
+        "amount": 3185,
+        "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+        "role": "store"
+      }
+    ],
+    "status": "settled",
+    "executedTransfers": [
+      {
+        "stripeTransferId": "tr_3USSEg6JR7kThJog11S3kprM",
+        "destinationAccountId": "acct_1UQ78o7xOsB2U2nM",
+        "role": "store",
+        "amount": 3185
+      }
+    ]
+  },
+  "replay": "Second native settle returned the same original tr_3USSEg6JR7kThJog11S3kprM, amount3185, with no additional transfer.",
+  "automaticProductExample": {
+    "sourceInvoiceId": "in_1USC3M6JR7kThJog1yJkx0lS",
+    "stripeSubscriptionId": "sub_1USC3O6JR7kThJogep66wAiF",
+    "chargeId": "ch_3USC3N6JR7kThJog1kfdYxoa",
+    "paymentIntentId": "pi_3USC3N6JR7kThJog1dIMNxz8",
+    "gross": 2000,
+    "processingFee": 88,
+    "sellingFee": 180,
+    "platformNet": 92,
+    "sellerNet": 1820,
+    "costRecoveryAmount": 0,
+    "status": "settled",
+    "sellerTransferId": "tr_3USC3N6JR7kThJog1DrgShEg",
+    "stripeProductId": "prod_VQz7JDdU8Tr7GZ"
+  },
+  "partialRefund": {
+    "id": "re_3USSEg6JR7kThJog14TYHCy7",
+    "amount": 700,
+    "status": "succeeded"
+  },
+  "refundAudit": {
+    "invoiceId": "in_1USSEa6JR7kThJogK6C02ulM",
+    "paymentIntentId": "pi_3USSEg6JR7kThJog1beR1tZF",
+    "chargeId": "ch_3USSEg6JR7kThJog1TT4PblE",
+    "refunded": 700,
+    "transfersComplete": true,
+    "transfers": [
+      {
+        "id": "tr_3USSEg6JR7kThJog11S3kprM",
+        "amount": 3185,
+        "reversed": 637,
+        "sourceChargeId": "ch_3USSEg6JR7kThJog1TT4PblE"
+      }
+    ],
+    "cost": {
+      "status": "ready",
+      "gross": 3500,
+      "fee": 132,
+      "refundAdjustment": 0,
+      "principalReturned": 700
+    }
+  },
+  "cleanup": "The isolated subscription is cancel_at_period_end=true; original financial evidence and test resources retained."
+}

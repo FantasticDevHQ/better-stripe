@@ -1,3 +1,5 @@
+import { hasPaidStorePlan } from "../storePlans/helpers";
+import { canReceiveStorePayments } from "../storefront/recipient";
 import { v } from "convex/values";
 import {
   query,
@@ -215,14 +217,21 @@ export const list = query({
     const groups = await Promise.all(
       [...sellers, ...admins]
         .filter((owner) => !owner.testFixture)
-        .map(async (owner) =>
-          (await storeEnabled(ctx, owner))
-            ? ctx.db
-                .query("meteredProductOffers")
-                .withIndex("by_owner", (q) => q.eq("ownerId", owner._id))
-                .take(100)
-            : [],
-        ),
+        .map(async (owner) => {
+          if (!(await storeEnabled(ctx, owner))) return [];
+          if (owner.role === "seller") {
+            if (!owner.stripeAccountId || !hasPaidStorePlan(owner.storePlan))
+              return [];
+            const account = await stripe.getAccountByStripeId(ctx, {
+              stripeAccountId: owner.stripeAccountId,
+            });
+            if (!canReceiveStorePayments(account)) return [];
+          }
+          return ctx.db
+            .query("meteredProductOffers")
+            .withIndex("by_owner", (q) => q.eq("ownerId", owner._id))
+            .take(100);
+        }),
     );
     const purchases = await ctx.db
       .query("meteredProductEnrollments")

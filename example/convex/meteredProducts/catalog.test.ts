@@ -293,3 +293,57 @@ it("pages newest catalog products and preserves only an owned original product l
     ).products,
   ).toEqual([]);
 });
+
+it("hides unready sellers from new buyers while retaining original customer enrollments", async () => {
+  const { t, maya, buyer } = await fixture();
+  const originalAccount = {
+    _id: "account",
+    _creationTime: 1,
+    stripeAccountId: "acct_maya",
+    userId: maya,
+    capabilities: { transfers: "active" },
+  };
+  const account = vi
+    .spyOn(stripe, "getAccountByStripeId")
+    .mockResolvedValue(originalAccount);
+  const offerId = await t.run(async (ctx) => {
+    await ctx.db.patch("users", maya, {
+      storePlan: {
+        planId: "starter",
+        status: "active",
+        paidThrough: Date.now() + 86400000,
+        stripeSubscriptionId: "sub_store",
+        cancelAtPeriodEnd: false,
+      },
+    });
+    return ctx.db.insert("meteredProductOffers", {
+      ownerId: maya,
+      productId: "prod_maya",
+      productName: "Coaching",
+      baseAmount: 2000,
+      configurationJson: "{}",
+      providerJson: "{}",
+      createdAt: Date.now(),
+    });
+  });
+  expect(
+    await t.query(api.meteredProducts.catalog.list, { actorId: buyer }),
+  ).toHaveLength(1);
+  account.mockResolvedValue({
+    ...originalAccount,
+    capabilities: { transfers: "pending" },
+  });
+  expect(
+    await t.query(api.meteredProducts.catalog.list, { actorId: buyer }),
+  ).toHaveLength(0);
+  await t.run((ctx) =>
+    ctx.db.insert("meteredProductEnrollments", {
+      buyerId: buyer,
+      offerId,
+      createdAt: Date.now(),
+    }),
+  );
+  expect(
+    await t.query(api.meteredProducts.catalog.list, { actorId: buyer }),
+  ).toHaveLength(1);
+});

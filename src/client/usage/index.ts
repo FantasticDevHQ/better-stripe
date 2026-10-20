@@ -115,3 +115,5 @@ export type { UsageCreditReconciliation } from "./creditObservation.js";
 export type { UsageConfigurationValue } from "./configuration.js";
 
 export type { UsageViewScope, UsageBillingSnapshot } from "./views.js";
+
+export type { UsageInvoiceLineProof } from "../../shared/usageInvoiceLines.js";

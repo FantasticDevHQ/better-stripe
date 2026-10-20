@@ -155,7 +155,42 @@ export const checkout = action({
       args,
     );
     const provider = JSON.parse(offer.providerJson!) as ProductProvider;
+    const owner = await ctx.runQuery(internal.meteredProducts.catalog.actor, {
+      actorId: offer.ownerId,
+    });
     const raw = getStripeClient();
+    if (owner.role === "seller") {
+      const saved = enrollment.checkoutJson
+        ? (JSON.parse(enrollment.checkoutJson) as { id: string })
+        : null;
+      const completed =
+        saved &&
+        (await raw.checkout.sessions.retrieve(saved.id)).status === "complete";
+      if (!completed) {
+        const policy = await ctx.runQuery(
+          internal.storefront.internal.queries.checkoutParticipants,
+          { sellerAccountId: owner.stripeAccountId },
+        );
+        if (policy.sellerId !== offer.ownerId)
+          throw new Error("Original seller account ownership changed.");
+        if (!enrollment.settlementPlanId)
+          await ctx.runMutation(internal.meteredProducts.enrollments.pin, {
+            ...ref,
+            settlementPlanId: policy.planId,
+          });
+      } else if (!enrollment.settlementPlanId) {
+        // Reconcile cash already collected under original terms even if the store later lapses.
+        const seller = await ctx.runQuery(
+          internal.storePlans.billing.internal.queries.getSeller,
+          { sellerId: offer.ownerId },
+        );
+        if (seller.storePlan)
+          await ctx.runMutation(internal.meteredProducts.enrollments.pin, {
+            ...ref,
+            settlementPlanId: seller.storePlan.planId,
+          });
+      }
+    }
     const enabled = await ctx.runQuery(
       internal.meteredProducts.enrollments.canCheckout,
       ref,

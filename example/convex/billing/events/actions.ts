@@ -5,6 +5,41 @@ import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 
 import { getStripeClient } from "../../stripe/client";
+import type Stripe from "stripe";
+import type { ActionCtx } from "../../_generated/server";
+
+/** Route late fee observations through their original invoice, including metered subscriptions. */
+async function settlePayment(
+  ctx: ActionCtx,
+  raw: Stripe,
+  paymentIntentId: string,
+) {
+  const linked = await raw.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: paymentIntentId },
+    limit: 100,
+  });
+  if (linked.has_more)
+    throw new Error("Original payment invoice history is incomplete.");
+  const paid = linked.data.filter((row) => row.status === "paid");
+  if (paid.length > 1)
+    throw new Error("Original payment has ambiguous invoice funding.");
+  const pointer = paid[0]?.invoice;
+  const invoice = pointer
+    ? await raw.invoices.retrieve(
+        typeof pointer === "string" ? pointer : pointer.id,
+      )
+    : null;
+  const sub = invoice?.parent?.subscription_details?.subscription;
+  await ctx.runAction(internal.settlement.internal.actions.settleWhenReady, {
+    paymentIntentId,
+    ...(invoice && sub
+      ? {
+          invoiceId: invoice.id,
+          subscriptionId: typeof sub === "string" ? sub : sub.id,
+        }
+      : {}),
+  });
+}
 
 export const process = internalAction({
   args: { type: v.string(), objectId: v.string() },
@@ -54,7 +89,8 @@ export const process = internalAction({
           );
         }
       } else if (
-        sub.metadata.storeBilling === "sale_v1" &&
+        (sub.metadata.storeBilling === "sale_v1" ||
+          sub.metadata.bsUsageIntent) &&
         invoice.status === "paid"
       ) {
         const payments = await raw.invoicePayments.list({
@@ -93,22 +129,12 @@ export const process = internalAction({
           paymentIntentId: typeof payment === "string" ? payment : payment.id,
         });
     } else if (args.type === "payment_intent.succeeded") {
-      await ctx.runAction(
-        internal.settlement.internal.actions.settleWhenReady,
-        {
-          paymentIntentId: args.objectId,
-        },
-      );
+      await settlePayment(ctx, raw, args.objectId);
     } else if (args.type === "charge.updated") {
       const charge = await raw.charges.retrieve(args.objectId);
       const pi = charge.payment_intent;
       if (pi)
-        await ctx.runAction(
-          internal.settlement.internal.actions.settleWhenReady,
-          {
-            paymentIntentId: typeof pi === "string" ? pi : pi.id,
-          },
-        );
+        await settlePayment(ctx, raw, typeof pi === "string" ? pi : pi.id);
     }
     return null;
   },

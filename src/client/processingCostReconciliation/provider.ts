@@ -1,3 +1,4 @@
+import { retainedInvoiceSource } from "../usage/retainedInvoiceSource.js";
 import { readCollectedInvoiceFunding } from "./invoiceFunding.js";
 import Stripe from "stripe";
 import type { Component, RunCtx } from "../helpers.js";
@@ -88,7 +89,7 @@ export async function observeProcessingCostProvider(
         : unknown;
     }
     const input = op.source;
-    const source = await resolveVerifiedPaymentSource(stripe, {
+    const sourceOptions = {
       paymentIntentId: input.paymentIntentId,
       gross: input.gross,
       currency: op.currency,
@@ -100,7 +101,24 @@ export async function observeProcessingCostProvider(
         : {}),
       maxHistoryPages: 5,
       maxHistoryItems: 500,
-    });
+    };
+    let source = await resolveVerifiedPaymentSource(stripe, sourceOptions);
+    if (
+      source.status === "rejected" &&
+      source.reason === "unsupported_source"
+    ) {
+      try {
+        source =
+          (await retainedInvoiceSource(
+            stripe,
+            component,
+            ctx,
+            sourceOptions,
+          )) ?? source;
+      } catch {
+        /* Keep the original held outcome when no sealed mixed proof is available. */
+      }
+    }
     if (source.status !== "ready") return { ...echo, outcome: source };
     if (
       (input.stripePriceId !== undefined &&

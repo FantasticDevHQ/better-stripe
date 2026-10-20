@@ -31,6 +31,13 @@ export function matchesStoreSalePolicyContext(
 }
 export const saleAllocation = (sale: Doc<"storeSales">) => ({
   policyContext: storeSalePolicyContext(sale),
+  ...(sale.usageSourceJson
+    ? {
+        usageSource: JSON.parse(sale.usageSourceJson) as NonNullable<
+          import("@fantastic.dev/better-stripe").SettlementResult["usageSource"]
+        >,
+      }
+    : {}),
   sourceChargeId: sale.chargeId,
   paymentIntentId: sale.paymentIntentId,
   ...(sale.sourceInvoiceId ? { sourceInvoiceId: sale.sourceInvoiceId } : {}),

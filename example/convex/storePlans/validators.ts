@@ -15,6 +15,7 @@ export const storePlanRecordValidator = v.object({
   lastInvoiceId: v.optional(v.string()),
 });
 export const storeSaleFields = {
+  usageSourceJson: v.optional(v.string()),
   chargeId: v.string(),
   paymentIntentId: v.string(),
   sellerId: v.id("users"),

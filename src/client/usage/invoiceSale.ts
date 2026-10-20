@@ -1,3 +1,5 @@
+import { getMixedInvoiceSale } from "./mixedInvoiceSale.js";
+import type { UsageInvoiceLineProof } from "../../shared/usageInvoiceLines.js";
 import type Stripe from "stripe";
 import { z } from "zod";
 import type {
@@ -16,8 +18,15 @@ export type UsageInvoiceSaleOptions = UsageObservationOptions & {
   invoiceId: string;
   paymentIntentId: string;
   gross: number;
+  /** Original licensed monthly item for this same product; server-derived enrollment terms. */
+  fixedPrice?: {
+    stripePriceId: string;
+    subscriptionItemId: string;
+    unitAmount: number;
+  };
 };
 export type VerifiedUsageInvoiceSale = VerifiedPaymentSource & {
+  invoiceLines?: UsageInvoiceLineProof[];
   stripeAccountId: string;
   meterId: string;
   subscriptionItemId: string;
@@ -36,6 +45,7 @@ export async function getUsageInvoiceSale(
 ): Promise<FinancialOutcome<VerifiedUsageInvoiceSale>> {
   try {
     const opts = observationOptions(input);
+    if (input.fixedPrice) return await getMixedInvoiceSale(stripe, input);
     z.string()
       .regex(/^pi_[a-zA-Z0-9]+$/)
       .max(100)

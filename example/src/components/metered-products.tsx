@@ -335,9 +335,10 @@ function OwnerProducts({
         </CardContent>
       </Card>
       <p className="text-sm text-muted-foreground">
-        Customers enroll from Your metered services. Mixed monthly-fee and usage
-        invoices can be paid, but automatic seller transfers remain held because
-        the current settlement verifier does not support mixed invoices.
+        Customers enroll from Your metered services. Paid monthly-fee and usage
+        invoices transfer seller proceeds automatically after Stripe payment and
+        actual processing fees are verified. Choose a store plan before
+        accepting new customer payments.
       </p>
     </div>
   );

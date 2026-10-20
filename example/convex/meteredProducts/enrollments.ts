@@ -1,3 +1,4 @@
+import { storePlanIdValidator } from "../storePlans/validators";
 import { v } from "convex/values";
 import {
   internalMutation,
@@ -68,6 +69,7 @@ export const current = query({
 export const pin = internalMutation({
   args: {
     ...enrollmentRef,
+    settlementPlanId: v.optional(storePlanIdValidator),
     payerJson: v.optional(v.string()),
     checkoutJson: v.optional(v.string()),
     providerJson: v.optional(v.string()),
@@ -83,7 +85,11 @@ export const pin = internalMutation({
     );
     if (!row || row.buyerId !== args.actorId)
       throw new Error("Original enrollment is unavailable.");
-    for (const key of ["payerJson", "initialInvoiceId"] as const)
+    for (const key of [
+      "payerJson",
+      "initialInvoiceId",
+      "settlementPlanId",
+    ] as const)
       if (row[key] && args[key] && row[key] !== args[key])
         throw new Error("Original enrollment identity cannot change.");
     if (
@@ -104,9 +110,15 @@ export const pin = internalMutation({
     )
       throw new Error("Original checkout identity cannot change.");
     await ctx.db.patch("meteredProductEnrollments", row._id, {
+      ...(args.settlementPlanId !== undefined
+        ? { settlementPlanId: args.settlementPlanId }
+        : {}),
       ...(args.payerJson !== undefined ? { payerJson: args.payerJson } : {}),
       ...(args.checkoutJson !== undefined
-        ? { checkoutJson: args.checkoutJson }
+        ? {
+            checkoutJson: args.checkoutJson,
+            checkoutId: JSON.parse(args.checkoutJson).id,
+          }
         : {}),
       ...(args.providerJson !== undefined
         ? { providerJson: args.providerJson, observedAt: args.observedAt }
@@ -116,6 +128,31 @@ export const pin = internalMutation({
         : {}),
     });
     return null;
+  },
+});
+
+/** Original native Checkout indexes webhook ownership. Bounded fallback retains older enrollments. */
+export const forCheckout = internalQuery({
+  args: { checkoutId: v.string() },
+  returns: v.union(enrollmentDoc, v.null()),
+  handler: async (ctx, args) => {
+    const indexed = await ctx.db
+      .query("meteredProductEnrollments")
+      .withIndex("by_checkout", (q) => q.eq("checkoutId", args.checkoutId))
+      .unique();
+    if (indexed) return indexed;
+    const legacy = await ctx.db.query("meteredProductEnrollments").take(101);
+    if (legacy.length > 100)
+      throw new Error(
+        "Backfill original metered enrollment Checkout indexes before settlement.",
+      );
+    const matches = legacy.filter(
+      (row) =>
+        row.checkoutJson && JSON.parse(row.checkoutJson).id === args.checkoutId,
+    );
+    if (matches.length > 1)
+      throw new Error("Original Checkout enrollment is ambiguous.");
+    return matches[0] ?? null;
   },
 });
 /** A disabled store cannot create another checkout. Previously paid sessions can still be reconciled. */

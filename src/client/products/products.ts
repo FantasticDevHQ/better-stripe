@@ -22,18 +22,24 @@ import { componentRef } from "../webhooks/helpers.js";
  * charge-type default, so a product-level descriptor covers every cycle
  * including the first, while the invoice-level path still wins when it applies.
  *
- * Per-store only: resolution mirrors the account-level suffix logic (BTS-32) —
+ * An explicit product value supports platform-owned products independently of
+ * payout accounts. Without an explicit value, resolution mirrors the account-level suffix logic (BTS-32) —
  * the store's stored suffix, else the platform default. Products with no store
- * (`accountId`) are left untouched (no descriptor). Validation is reused and
- * defensive: an invalid resolved value is skipped (logged), never blocking the
- * product write, since the descriptor is cosmetic.
+ * (`accountId`) receive no inherited descriptor. Explicit invalid values fail
+ * before provider HTTP; invalid inherited values retain the legacy logged-skip
+ * behavior. Null suppresses inheritance without querying the account.
  */
 async function resolveProductStatementDescriptor(
   component: Component,
   ctx: RunCtx,
   accountId: string | undefined,
   defaultSuffix: string | undefined,
+  explicit?: string | null,
 ): Promise<string | undefined> {
+  if (explicit !== undefined)
+    return explicit === null
+      ? undefined
+      : validateStatementDescriptorSuffix(explicit);
   if (!accountId) return undefined;
   const account = (await ctx.runQuery(
     componentRef(component, "core/queries/getAccountByStripeId"),
@@ -62,6 +68,8 @@ export type CreateProductOptions = {
   accountId?: string;
   metadata?: Record<string, string>;
   idempotencyKey?: string;
+  /** Explicit string overrides store defaults; null suppresses inheritance on create. */
+  statementDescriptor?: string | null;
 };
 
 export async function createProduct(
@@ -75,6 +83,7 @@ export async function createProduct(
     ctx,
     opts.accountId,
     opts.defaultStatementDescriptorSuffix,
+    opts.statementDescriptor,
   );
 
   const params: Stripe.ProductCreateParams = {
@@ -128,6 +137,8 @@ export async function updateProduct(
     metadata?: Record<string, string>;
     /** Platform default statement-descriptor suffix (BetterStripe option). */
     defaultStatementDescriptorSuffix?: string;
+    /** String overrides store defaults; null clears without restoring a fallback. */
+    statementDescriptor?: string | null;
     /** Caller-owned stable key for identical retries of this provider SET. */
     idempotencyKey?: string;
   },
@@ -155,10 +166,11 @@ export async function updateProduct(
     ctx,
     stored?.accountId,
     opts.defaultStatementDescriptorSuffix,
+    opts.statementDescriptor,
   );
-  if (statementDescriptor) {
+  if (opts.statementDescriptor === null) updateParams.statement_descriptor = "";
+  else if (statementDescriptor)
     updateParams.statement_descriptor = statementDescriptor;
-  }
 
   if (opts.idempotencyKey !== undefined)
     await stripe.products.update(opts.stripeProductId, updateParams, {

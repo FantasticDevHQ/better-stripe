@@ -67,7 +67,7 @@ Scope the idempotency key to one catalog operation and reuse it only with identi
 
 | Method                                                                                                                | Description                                 |
 | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB   |
+| `createProduct(ctx, { name, description?, active?, accountId?, metadata?, statementDescriptor?, idempotencyKey? })`   | Create product in Stripe and component DB   |
 | `getProduct(ctx, { productId })`                                                                                      | Get product by component document ID        |
 | `getProductByStripeId(ctx, { stripeProductId })`                                                                      | Get product by Stripe product ID            |
 | `listProducts(ctx, { accountId?, active?, limit? })`                                                                  | List products with optional filters         |
@@ -79,6 +79,56 @@ Scope the idempotency key to one catalog operation and reuse it only with identi
 | `listPrices(ctx, { productId?, active?, limit? })`                                                                    | List prices with optional filters           |
 | `updatePrice(ctx, { stripePriceId, ...updates })`                                                                     | Update price fields                         |
 | `deactivatePrice(ctx, { stripePriceId })`                                                                             | Deactivate price in Stripe and component DB |
+
+### Product statement descriptors
+
+`createProduct` and `updateProduct` accept `statementDescriptor?: string | null`,
+including for platform-owned products without an `accountId`.
+
+| Input                  | Create                                                                           | Update                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Explicit string        | Trim, validate and send `statement_descriptor`                                   | Trim, validate and send `statement_descriptor`                                          |
+| Omitted or `undefined` | Keep legacy store/default resolution; a storeless product receives no descriptor | Keep legacy store/default refresh behavior                                              |
+| `null`                 | Suppress inheritance and omit the provider field                                 | Send an empty provider field to clear it, without account/default fallback in this call |
+
+Invalid explicit values reject before provider HTTP. An invalid inherited
+store/default value retains the legacy logged-skip behavior. Null is an input
+for this operation, not a persisted override: a later omitted-option update of
+an account-associated product can restore its legacy account/default descriptor.
+Use the same explicit input and stable `idempotencyKey` for an identical retry.
+The SDK forwards provider errors and does not invent a new key or retry command.
+
+```ts
+await stripe.createProduct(ctx, {
+  name: "Community membership",
+  statementDescriptor: "COMMUNITY ONE",
+  idempotencyKey: "catalog:create:original",
+});
+await stripe.updateProduct(ctx, {
+  stripeProductId: originalProductId,
+  statementDescriptor: null,
+  idempotencyKey: "catalog:descriptor-clear:original",
+});
+```
+
+The matching Vite `example/convex/products/actions.ts` forwards the same optional
+inputs. Its demo actions do not supply host authorization. A host must authorize
+the operator, bind its community to the exact original product and reject shared
+products that would need different descriptors. This API does not change payout
+accounts, merchant routing or the host's saved community policy. Product updates
+do not synchronously refresh the component mirror; retain the existing signed
+mirror/read reconciliation contract.
+
+[Stripe's subscription precedence](https://docs.stripe.com/connect/statement-descriptors#subscriptions-and-invoices)
+is invoice, product, then the charge-type default. Product configuration can
+cover the first automatic subscription invoice before an invoice webhook runs.
+It does not configure a one-time card PaymentIntent suffix. The existing invoice
+processor's timing and logged-failure limits remain unchanged. Respect the
+[descriptor format and combined-length rules](https://docs.stripe.com/get-started/account/statement-descriptors)
+and actual platform prefix. Issuers can render descriptors differently; synthetic
+transport tests are not live first-invoice, renewal or bank-statement evidence.
+Public release, artifact verification and accepted host adoption precede use of
+this new option by a downstream app.
 
 ### Checkout and Subscription
 

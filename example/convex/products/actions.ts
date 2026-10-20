@@ -10,7 +10,12 @@ import {
 } from "../users/authorization";
 
 export const createProduct = action({
-  args: { name: v.string(), description: v.optional(v.string()) },
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    statementDescriptor: v.optional(v.union(v.string(), v.null())),
+    idempotencyKey: v.optional(v.string()),
+  },
   handler: async (ctx, args) => stripe.createProduct(ctx, args),
 });
 
@@ -37,6 +42,7 @@ export const updateProduct = action({
     stripeProductId: v.string(),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
+    statementDescriptor: v.optional(v.union(v.string(), v.null())),
     idempotencyKey: v.optional(v.string()),
   },
   returns: v.object({ success: v.boolean() }),

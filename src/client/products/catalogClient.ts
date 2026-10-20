@@ -119,6 +119,8 @@ export abstract class CatalogClient extends BillingPortalClient {
       active?: boolean;
       defaultPrice?: string | null;
       metadata?: Record<string, string>;
+      /** Explicit string overrides store defaults; null clears the descriptor. */
+      statementDescriptor?: string | null;
       /** Reuse only for identical retries of the same provider SET. */
       idempotencyKey?: string;
     },

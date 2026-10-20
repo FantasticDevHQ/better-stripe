@@ -45,6 +45,19 @@ it("ships the inherited public reader/types and preserves asynchronous raw refer
   expect(f.ctx.runMutation).not.toHaveBeenCalled();
 });
 
+it("preserves a legacy customer projection alongside the exact V2 buyer", async () => {
+  const f = fixture();
+  const row = { ...f.row, customer: "cus_projection" };
+  f.list.mockResolvedValue({ data: [row], has_more: false } as never);
+  const result = await f.client.getCheckoutSessionPageFromStripe(f.ctx, {
+    customerAccount: "acct_buyer",
+  });
+  expect(result).toEqual({ page: [row], hasMore: false, continueCursor: null });
+  expect(result.page[0]).toBe(row);
+  expect(f.ctx.runQuery).not.toHaveBeenCalled();
+  expect(f.ctx.runMutation).not.toHaveBeenCalled();
+});
+
 it("continues actual compiled pages and refuses a foreign-account cursor before I/O", async () => {
   const f = fixture();
   f.list.mockResolvedValueOnce({ data: [f.row], has_more: true } as never);
@@ -84,7 +97,8 @@ it("continues actual compiled pages and refuses a foreign-account cursor before 
 
 it.each([
   { customer_account: "acct_foreign" },
-  { customer: "cus_legacy" },
+  { customer_account: undefined, customer: "cus_legacy" },
+  { customer_account: "acct_foreign", customer: "cus_legacy" },
   { object: "invoice" },
 ])(
   "rejects foreign or invalid provider identity through the compiled export %#",

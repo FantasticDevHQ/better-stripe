@@ -49,6 +49,24 @@ it("reads a bounded public V2 buyer Checkout page without syncing or claiming co
   expect(f.ctx.runMutation).not.toHaveBeenCalled();
 });
 
+it("accepts the V2 buyer identity alongside its legacy customer projection", async () => {
+  const f = fixture();
+  const row = {
+    ...f.session("cs_test_dual_identity"),
+    customer: "cus_projection",
+  };
+  f.list.mockResolvedValue({ data: [row], has_more: false } as never);
+  const result = await f.client.getCheckoutSessionPageFromStripe(f.ctx, f.opts);
+  expect(result).toEqual({ page: [row], hasMore: false, continueCursor: null });
+  expect(result.page[0]).toBe(row);
+  expect(f.list).toHaveBeenCalledExactlyOnceWith({
+    customer_account: "acct_buyer",
+    limit: 25,
+  });
+  expect(f.ctx.runQuery).not.toHaveBeenCalled();
+  expect(f.ctx.runMutation).not.toHaveBeenCalled();
+});
+
 it("resumes with canonical filters while allowing a different bounded page size", async () => {
   const f = fixture();
   f.list
@@ -144,7 +162,8 @@ it.each([
 it.each([
   { customer_account: "acct_foreign" },
   { customer_account: undefined },
-  { customer: "cus_legacy" },
+  { customer_account: undefined, customer: "cus_legacy" },
+  { customer_account: "acct_foreign", customer: "cus_legacy" },
   { id: "in_wrong_resource" },
   { object: "invoice" },
   { created: -1 },

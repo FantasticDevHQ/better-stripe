@@ -74,3 +74,19 @@ it("holds foreign, duplicate, discounted, taxed, credited or prorated lines with
     expect(f.requests.every((r) => r.method === "GET")).toBe(true);
   }
 });
+
+for (const field of [
+  "pre_payment_credit_notes_amount",
+  "post_payment_credit_notes_amount",
+]) {
+  it(`holds ${field} even when captured cash has no refund`, async () => {
+    const f = mixed();
+    Object.assign(f.invoice, { [field]: 700 });
+    expect(f.payment.latest_charge.amount_refunded ?? 0).toBe(0);
+    expect(await getUsageInvoiceSale(f.sdk, f.input)).toMatchObject({
+      status: "rejected",
+      reason: "unsupported_source",
+    });
+    expect(f.requests.every((r) => r.method === "GET")).toBe(true);
+  });
+}

@@ -101,6 +101,8 @@ export async function getMixedInvoiceSale(
           !Number.isSafeInteger(invoice.status_transitions?.finalized_at) ||
           (invoice.starting_balance ?? 0) !== 0 ||
           (invoice.ending_balance ?? 0) !== 0 ||
+          (invoice.pre_payment_credit_notes_amount ?? 0) !== 0 ||
+          (invoice.post_payment_credit_notes_amount ?? 0) !== 0 ||
           (invoice.total_discount_amounts ?? []).length ||
           (invoice.total_taxes ?? []).length ||
           lines.length < 1 ||

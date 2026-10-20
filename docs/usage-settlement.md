@@ -123,6 +123,11 @@ selection for that resolved allocation. Retain the complete `usageSource` when
 passing it to a durable recovery workflow; do not reconstruct it from metadata.
 Mixed-invoice processing-cost reconciliation checks the sealed original lines and
 InvoicePayment again, so refunds/disputes cannot substitute a new funding receipt.
+Mixed invoices with pre-payment or post-payment credit notes are held for both
+new transfers and retained-source cost reconciliation, including credit notes
+that issue customer-balance or out-of-band credit without refunding the charge.
+Credit-note-backed refunds require separate native credit-note-to-refund proof;
+this flow supports ordinary cash refunds and disputes without credit notes.
 
 ## Prepaid issuer-service revenue
 

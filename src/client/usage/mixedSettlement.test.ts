@@ -158,3 +158,30 @@ it("rejects a substituted original funding receipt during recovery", async () =>
   });
   expect(f.native).toHaveLength(1);
 });
+
+for (const field of [
+  "pre_payment_credit_notes_amount",
+  "post_payment_credit_notes_amount",
+]) {
+  it(`holds sealed recovery with ${field} and no charge refund`, async () => {
+    const f = setup();
+    await f.t.action((ctx) =>
+      settleUsageInvoice(f.sdk, f.component, ctx as RunCtx, f.input),
+    );
+    Object.assign(f.invoice, { [field]: 700 });
+    expect(f.payment.latest_charge.amount_refunded ?? 0).toBe(0);
+    const result = await f.t.action((ctx) =>
+      retainedInvoiceSource(f.sdk, f.component, ctx as RunCtx, {
+        paymentIntentId: "pi_source",
+        customerAccountId: "acct_customer",
+        gross: 3000,
+        currency: "usd",
+      }),
+    );
+    expect(result).toMatchObject({
+      status: "rejected",
+      reason: "unsupported_source",
+    });
+    expect(f.native).toHaveLength(1);
+  });
+}

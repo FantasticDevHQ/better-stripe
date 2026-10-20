@@ -28,10 +28,9 @@
 
 ## [0.72.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.2...v0.72.3) (2026-10-20)
 
-
 ### Bug Fixes
 
-* preserve caller keys for product SETs (BTS-291) ([#376](https://github.com/FantasticDevHQ/better-stripe/issues/376)) ([9101beb](https://github.com/FantasticDevHQ/better-stripe/commit/9101beb09c4f2c1f43f536cd83c881784da61b29))
+- preserve caller keys for product SETs ([#376](https://github.com/FantasticDevHQ/better-stripe/issues/376)) ([9101beb](https://github.com/FantasticDevHQ/better-stripe/commit/9101beb09c4f2c1f43f536cd83c881784da61b29))
 
 ## [0.72.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.1...v0.72.2) (2026-10-20)
 

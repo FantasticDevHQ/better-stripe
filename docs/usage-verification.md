@@ -166,3 +166,11 @@ the USD 31.85 seller transfer. The actual product example's initial USD 20 invoi
 also settled through the billing hook and durable recovery workflow. SDK regressions also cover complete pagination, foreign
 lines, taxes/credits/prorations, reauthorization, lost transfer receipts, sealed
 funding identity and refund/dispute cost observations.
+
+## Maya's original product membership
+
+The [Maya membership walkthrough](maya-membership-verification.md) repeats the
+check against Maya's existing product, through ordinary Checkout, coaching work,
+package delivery and automatic invoice webhooks. It verifies the exact 60-minute
+boundary before adding 15 minutes, then proves the USD 35 renewal and original
+seller transfer. Both UI integration views also submit and display coaching work.

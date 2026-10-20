@@ -273,6 +273,11 @@ export const run = internalAction({
         transfers: transfers.data.map((t) => ({
           id: t.id,
           amount: t.amount,
+          destination:
+            typeof t.destination === "string"
+              ? t.destination
+              : (t.destination?.id ?? null),
+          livemode: t.livemode,
           reversed: t.amount_reversed,
           sourceChargeId: t.source_transaction,
         })),

@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.72.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.0...v0.72.1) (2026-10-20)
+
+### Bug Fixes
+
+- accept legacy customer projections in V2 Checkout pages ([40d5f7e](https://github.com/FantasticDevHQ/better-stripe/commit/40d5f7ea57edaebb19aa89d396c6a802873609b2))
+
 ## [0.72.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.71.0...v0.72.0) (2026-10-20)
 
 ### Features

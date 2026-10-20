@@ -28,10 +28,9 @@
 
 ## [0.73.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.3...v0.73.0) (2026-10-20)
 
-
 ### Features
 
-* **products:** support explicit platform product descriptors (BTS-292) ([#378](https://github.com/FantasticDevHQ/better-stripe/issues/378)) ([8cda57a](https://github.com/FantasticDevHQ/better-stripe/commit/8cda57a2bbcc16a898d2dd69601a6d4641fc1c18))
+- **products:** support explicit platform product descriptors ([#378](https://github.com/FantasticDevHQ/better-stripe/issues/378)) ([8cda57a](https://github.com/FantasticDevHQ/better-stripe/commit/8cda57a2bbcc16a898d2dd69601a6d4641fc1c18))
 
 ## [0.72.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.2...v0.72.3) (2026-10-20)
 

@@ -127,7 +127,10 @@ lines, a single full captured payment and actual processing costs. The seller's 
 have no referral attribution; SDK hosts can authorize affiliates explicitly. Metadata
 locates the managed intent; it never chooses the seller or payout amount.
 
-A seller must have a store plan before a new Checkout can collect payment. The
+New seller Checkout sessions use the same active paid-plan and Stripe recipient
+readiness checks as the ordinary storefront. Unready stores are hidden from new
+buyers; original enrollments remain readable. Completed Checkout reconciliation
+and existing renewals preserve original purchased terms after a store lapses. The
 enrollment pins that plan as a fallback for already-purchased terms; renewals use
 the current seller tier or retained purchased tier, as ordinary store sales do.
 The existing settlement workflow reserves owned recovery obligations, persists

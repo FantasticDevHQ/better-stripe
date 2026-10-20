@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     products: { retrieve: vi.fn() },
     prices: { retrieve: vi.fn() },
     customers: { retrieve: vi.fn() },
+    checkout: { sessions: { retrieve: vi.fn() } },
   },
 }));
 vi.mock("../stripe/helpers", () => ({ stripe: mocks.stripe }));
@@ -63,6 +64,10 @@ beforeEach(() => {
     customer_account: "acct_buyer",
     livemode: false,
   });
+  mocks.raw.checkout.sessions.retrieve.mockResolvedValue({
+    id: "cs_original",
+    status: "open",
+  });
   mocks.stripe.usage.ensureCheckout.mockResolvedValue({
     checkoutId: "cs_original",
     status: "open",
@@ -96,7 +101,11 @@ async function fixture() {
       stripeAccountId: "acct_buyer",
     }),
   }));
-  mocks.stripe.getAccountByStripeId.mockResolvedValue({ userId: ids.buyerId });
+  mocks.stripe.getAccountByStripeId.mockImplementation(async (_ctx, args) =>
+    args.stripeAccountId === "acct_maya"
+      ? { userId: ids.actorId, capabilities: { transfers: "active" } }
+      : { userId: ids.buyerId },
+  );
   return {
     t,
     ...ids,
@@ -197,4 +206,79 @@ it("holds checkout before customer payment when the seller has no fee plan", asy
     }),
   ).rejects.toThrow(/store plan/);
   expect(mocks.stripe.usage.ensureCheckout).not.toHaveBeenCalled();
+});
+
+it.each(["canceled", "past_due", "expired"])(
+  "refuses a new metered Checkout with a %s store plan",
+  async (state) => {
+    const { t, buyerId, ...args } = await fixture();
+    const offerId = await t.action(api.meteredProducts.native.configure, args);
+    await t.run(async (ctx) => {
+      const seller = (await ctx.db.get("users", args.actorId))!;
+      await ctx.db.patch("users", args.actorId, {
+        storePlan: {
+          ...seller.storePlan!,
+          status: state === "expired" ? "active" : state,
+          paidThrough:
+            state === "expired"
+              ? Date.now() - 1
+              : seller.storePlan!.paidThrough,
+        },
+      });
+    });
+    await expect(
+      t.action(api.meteredProducts.native.checkout, {
+        actorId: buyerId,
+        offerId,
+      }),
+    ).rejects.toThrow(/paid store plan/);
+    expect(mocks.stripe.usage.ensureCheckout).not.toHaveBeenCalled();
+  },
+);
+it("refuses a new metered Checkout when seller recipient transfers are pending", async () => {
+  const { t, buyerId, ...args } = await fixture();
+  const offerId = await t.action(api.meteredProducts.native.configure, args);
+  mocks.stripe.getAccountByStripeId.mockResolvedValue({
+    userId: args.actorId,
+    capabilities: { transfers: "pending" },
+  });
+  await expect(
+    t.action(api.meteredProducts.native.checkout, {
+      actorId: buyerId,
+      offerId,
+    }),
+  ).rejects.toThrow(/onboarding/);
+  expect(mocks.stripe.usage.ensureCheckout).not.toHaveBeenCalled();
+});
+
+it("reconciles an original completed Checkout after the seller plan lapses", async () => {
+  const { t, buyerId, ...args } = await fixture();
+  const offerId = await t.action(api.meteredProducts.native.configure, args);
+  await t.action(api.meteredProducts.native.checkout, {
+    actorId: buyerId,
+    offerId,
+  });
+  await t.run(async (ctx) => {
+    const seller = (await ctx.db.get("users", args.actorId))!;
+    await ctx.db.patch("users", args.actorId, {
+      storePlan: { ...seller.storePlan!, status: "canceled", paidThrough: 1 },
+    });
+  });
+  mocks.raw.checkout.sessions.retrieve.mockResolvedValue({
+    id: "cs_original",
+    status: "complete",
+  });
+  mocks.stripe.usage.ensureCheckout.mockResolvedValue({
+    checkoutId: "cs_original",
+    status: "complete",
+    url: null,
+  });
+  const result = JSON.parse(
+    await t.action(api.meteredProducts.native.checkout, {
+      actorId: buyerId,
+      offerId,
+    }),
+  );
+  expect(result.status).toBe("complete");
+  expect(mocks.stripe.usage.ensureCheckout).toHaveBeenCalledTimes(2);
 });

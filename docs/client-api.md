@@ -65,20 +65,20 @@ shows where the host's authenticated-actor check belongs.
 
 Scope the idempotency key to one catalog operation and reuse it only with identical creation parameters. Authorize product access in your host action. `getStripePriceByLookupKey(ctx, { lookupKey })` reads Stripe without changing mirrors. `adoptProduct(ctx, { stripeProductId, accountId? })` imports an existing provider product, preserving existing ownership and rejecting reassignment. Adoption does not update provider metadata or statement descriptors. `createPrice` also accepts `lookupKey` for callers handling adoption themselves. Tier names, lookup-key version policy, and entitlement mapping remain in the host app.
 
-| Method                                                                                                                | Description                                   |
-| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB     |
-| `getProduct(ctx, { productId })`                                                                                      | Get product by component document ID          |
-| `getProductByStripeId(ctx, { stripeProductId })`                                                                      | Get product by Stripe product ID              |
-| `listProducts(ctx, { accountId?, active?, limit? })`                                                                  | List products with optional filters           |
-| `updateProduct(ctx, { stripeProductId, ...updates })`                                                                 | Update product fields                         |
-| `deactivateProduct(ctx, { stripeProductId })`                                                                         | Deactivate product in Stripe and component DB |
-| `createPrice(ctx, { stripeProductId, unitAmount, type, currency?, interval?, intervalCount?, nickname?, metadata? })` | Create price in Stripe and component DB       |
-| `getPrice(ctx, { priceId })`                                                                                          | Get price by component document ID            |
-| `getPriceByStripeId(ctx, { stripePriceId })`                                                                          | Get price by Stripe price ID                  |
-| `listPrices(ctx, { productId?, active?, limit? })`                                                                    | List prices with optional filters             |
-| `updatePrice(ctx, { stripePriceId, ...updates })`                                                                     | Update price fields                           |
-| `deactivatePrice(ctx, { stripePriceId })`                                                                             | Deactivate price in Stripe and component DB   |
+| Method                                                                                                                | Description                                 |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `createProduct(ctx, { name, description?, active?, accountId?, metadata? })`                                          | Create product in Stripe and component DB   |
+| `getProduct(ctx, { productId })`                                                                                      | Get product by component document ID        |
+| `getProductByStripeId(ctx, { stripeProductId })`                                                                      | Get product by Stripe product ID            |
+| `listProducts(ctx, { accountId?, active?, limit? })`                                                                  | List products with optional filters         |
+| `updateProduct(ctx, { stripeProductId, idempotencyKey?, ...updates })`                                                | Update product fields                       |
+| `deactivateProduct(ctx, { stripeProductId, idempotencyKey? })`                                                        | Deactivate product at Stripe                |
+| `createPrice(ctx, { stripeProductId, unitAmount, type, currency?, interval?, intervalCount?, nickname?, metadata? })` | Create price in Stripe and component DB     |
+| `getPrice(ctx, { priceId })`                                                                                          | Get price by component document ID          |
+| `getPriceByStripeId(ctx, { stripePriceId })`                                                                          | Get price by Stripe price ID                |
+| `listPrices(ctx, { productId?, active?, limit? })`                                                                    | List prices with optional filters           |
+| `updatePrice(ctx, { stripePriceId, ...updates })`                                                                     | Update price fields                         |
+| `deactivatePrice(ctx, { stripePriceId })`                                                                             | Deactivate price in Stripe and component DB |
 
 ### Checkout and Subscription
 
@@ -518,6 +518,21 @@ component persistence failure. Use a new key when the price amount or other
 creation parameters change. Creating a new Price does not migrate existing
 subscriptions; they retain their prior price until the host explicitly changes
 them. Never reuse a version key for different parameters.
+
+`updateProduct` and `deactivateProduct` also accept an optional `idempotencyKey`,
+including through the example's product actions. It is a Stripe request option,
+not product metadata. Persist one key for an intentional SET and reuse it only
+for identical provider parameters; a later intentional change needs a new key.
+Omitting it preserves Stripe SDK behavior, including automatic retry keys.
+
+For these v1 product POSTs, Stripe retains the first executed response, including
+`500` failures. A concurrent execution conflict does not establish completion;
+the SDK preserves that error. Keys may be removed after at least 24 hours, and a
+subsequent reuse can execute again. The host must bound retries before that
+window, retain unresolved operations beyond its cutoff, and serialize conflicting
+business operations itself. This option does not provide a host command ledger
+or an unlimited exactly-once guarantee. Provider errors never trigger a new-key
+retry in these methods. See [Stripe's idempotency contract](https://docs.stripe.com/api/idempotent_requests).
 
 React `Checkout` preserves its request ID through retries; your server must
 forward that identity as the SDK request option. Persist it in the host order

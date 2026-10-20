@@ -119,6 +119,8 @@ export abstract class CatalogClient extends BillingPortalClient {
       active?: boolean;
       defaultPrice?: string | null;
       metadata?: Record<string, string>;
+      /** Reuse only for identical retries of the same provider SET. */
+      idempotencyKey?: string;
     },
   ) {
     return productsImpl.updateProduct(this.stripe(), this.component, ctx, {
@@ -127,7 +129,10 @@ export abstract class CatalogClient extends BillingPortalClient {
     });
   }
 
-  async deactivateProduct(ctx: RunCtx, opts: { stripeProductId: string }) {
+  async deactivateProduct(
+    ctx: RunCtx,
+    opts: { stripeProductId: string; idempotencyKey?: string },
+  ) {
     return productsImpl.deactivateProduct(this.stripe(), ctx, opts);
   }
 

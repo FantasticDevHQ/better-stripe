@@ -296,11 +296,16 @@ it("pages newest catalog products and preserves only an owned original product l
 
 it("hides unready sellers from new buyers while retaining original customer enrollments", async () => {
   const { t, maya, buyer } = await fixture();
+  const originalAccount = {
+    _id: "account",
+    _creationTime: 1,
+    stripeAccountId: "acct_maya",
+    userId: maya,
+    capabilities: { transfers: "active" },
+  };
   const account = vi
     .spyOn(stripe, "getAccountByStripeId")
-    .mockResolvedValue({ capabilities: { transfers: "active" } } as Awaited<
-      ReturnType<typeof stripe.getAccountByStripeId>
-    >);
+    .mockResolvedValue(originalAccount);
   const offerId = await t.run(async (ctx) => {
     await ctx.db.patch("users", maya, {
       storePlan: {
@@ -325,8 +330,9 @@ it("hides unready sellers from new buyers while retaining original customer enro
     await t.query(api.meteredProducts.catalog.list, { actorId: buyer }),
   ).toHaveLength(1);
   account.mockResolvedValue({
+    ...originalAccount,
     capabilities: { transfers: "pending" },
-  } as Awaited<ReturnType<typeof stripe.getAccountByStripeId>>);
+  });
   expect(
     await t.query(api.meteredProducts.catalog.list, { actorId: buyer }),
   ).toHaveLength(0);

@@ -163,6 +163,20 @@ export async function meteredSaleSource(
     throwFinancialOutcome(proof);
   }
   const source = proof.value;
+  if (
+    source.stripeProductId !== original.offer.productId ||
+    source.stripePriceId !== original.provider.price.stripePriceId ||
+    source.meterId !== original.provider.price.meterId ||
+    source.subscriptionItemId !== meter.subscription.subscriptionItemId ||
+    source.subscriptionId !== subscriptionId ||
+    source.invoiceId !== invoiceId ||
+    source.customerAccountId !== original.payer.accountId ||
+    source.stripeAccountId !== original.provider.issuer ||
+    source.livemode
+  )
+    throw new Error(
+      "Original product and verified invoice provenance disagree.",
+    );
   const usageSource: UsageSource = {
     stripeAccountId: source.stripeAccountId,
     customerAccount: source.customerAccountId,

@@ -31,6 +31,7 @@ beforeEach(() => {
   state.owner = "acct_seller";
 });
 function setup() {
+  state.owner = "acct_seller";
   const f = mixed();
   state.raw = f.sdk;
   Object.assign(f.subscription.metadata, { bsUsageIntent: "a".repeat(64) });
@@ -65,6 +66,7 @@ function setup() {
     baseAmount: 2000,
     providerJson: JSON.stringify({
       issuer: "acct_platform",
+      price: { stripePriceId: "price_original", meterId: "mtr_calls" },
       configuration: { plan: f.input.binding.plan },
       basePriceId: "price_base",
     }),
@@ -114,8 +116,16 @@ it("holds changed original Checkout, native funding, managed intent and seller o
     "owner",
     "payer",
     "foreign_item",
+    "offer_product",
+    "offer_price",
   ]) {
     const f = setup();
+    if (change === "offer_product") f.offer.productId = "prod_other_owned";
+    if (change === "offer_price") {
+      const provider = JSON.parse(f.offer.providerJson);
+      provider.price.stripePriceId = "price_other";
+      f.offer.providerJson = JSON.stringify(provider);
+    }
     if (change === "checkout") f.checkout.subscription = "sub_foreign";
     if (change === "intent") f.intent.providerId = "sub_foreign";
     if (change === "owner") state.owner = "acct_foreign";

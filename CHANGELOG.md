@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.72.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.1...v0.72.2) (2026-10-20)
+
+
+### Tests
+
+* verify Maya membership across both integration views ([#374](https://github.com/FantasticDevHQ/better-stripe/issues/374)) ([4faf5c7](https://github.com/FantasticDevHQ/better-stripe/commit/4faf5c76e6b274ac118004d42bbf0febe14dcbff))
+
 ## [0.72.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.0...v0.72.1) (2026-10-20)
 
 ### Bug Fixes

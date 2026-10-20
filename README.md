@@ -5,7 +5,7 @@ billing, and Connect marketplaces. It provides checkout, subscriptions, webhook
 syncing, marketplace fees and splits, payouts, refunds, and disputes, with React
 hooks and headless UI components.
 
-**Version**: `0.72.1` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
+**Version**: `0.72.2` <!-- x-release-please-version --> (pre-1.0). API may change between minor versions until 1.0.
 
 Connect platforms use the default GA API version. Non-Connect merchants using
 customer-only Accounts v2 need preview access and an explicit preview version.

@@ -82,14 +82,47 @@ payments, unrelated priced invoice lines, proration, mismatched original periods
 converted settlement currencies and automatic destination/on-behalf-of charges
 are held through explicit non-ready outcomes. The method does not guess a
 multi-product allocation or take over existing destination-charge fee handling.
-Fixed-plus-metered invoices remain readable with the ordinary invoice APIs, but
-this automatic settlement method requires one paid original meter line. Native
-included-overage invoices can also contain one zero-priced included-tier line.
-Both lines must retain the same original price, product, subscription item,
-period, currency and mode, with no credit adjustments. The complete independent
-line-item read must match both original IDs. Additional paid lines, duplicate IDs
-and foreign zero-priced siblings remain unsupported. Treat unsupported settlement
-combinations as unavailable evidence rather than zero proceeds.
+For a mixed invoice, provide the original monthly item explicitly:
+
+```ts
+const mixedOriginal = {
+  ...original,
+  fixedPrice: {
+    stripePriceId: originalMonthlyPriceId,
+    subscriptionItemId: originalMonthlyItemId,
+    unitAmount: 2000, // USD 20; quantity must be one
+  },
+};
+const source = await stripe.usage.getInvoiceSale(ctx, mixedOriginal, provider);
+// Pass mixedOriginal to settleInvoice with the same server-authorized policy.
+```
+
+This supports one original product with one licensed monthly item and one metered
+item. The initial invoice may contain only the monthly fee. Renewals may contain
+that fee plus a metered line, or a zero included tier and a paid overage tier.
+Every native line must match the pinned product, price and subscription item;
+complete bounded pagination is mandatory. A USD 20 base plus USD 15 overage is
+one USD 35 cash sale with one actual processing fee and one conserved allocation.
+Fixed fees are billed in advance and usage in arrears, so each original native
+line period is retained separately. No minute rounding or current-price lookup
+is used to reconstruct historical periods. `invoiceLines` retains every line's
+identity, amount, exact quantity and period in the immutable charge allocation.
+
+Additional products/items, discounts, taxes, credits, negative adjustments,
+prorations, partial or multiple funding, and automatic destination charges remain
+held. Single-meter settlement without `fixedPrice` keeps its existing stricter
+period and line rules. A ready read proves proceeds; it does not authorize a
+recipient by itself.
+
+Use `authorize` on `settleInvoice` to recheck original ownership and sealed
+allocation after reads and immediately before each new transfer. Throw to hold a
+changed seller or liability policy. For host-owned recovery workflows, the
+optional `allocation` accepts the same conserved allocation as `settleSale`,
+including `policyContext` and `adjustmentAmount`. The host owns commission
+selection for that resolved allocation. Retain the complete `usageSource` when
+passing it to a durable recovery workflow; do not reconstruct it from metadata.
+Mixed-invoice processing-cost reconciliation checks the sealed original lines and
+InvoicePayment again, so refunds/disputes cannot substitute a new funding receipt.
 
 ## Prepaid issuer-service revenue
 
@@ -165,3 +198,31 @@ provenance, fractional quantity, included tiers, zero-first-invoice commission,
 transfer-success/persistence-failure, replay, prepaid purchase consumption and
 refund guards. These tests are not a new native financial sandbox execution;
 project-wide native acceptance is recorded separately.
+
+## Verify mixed billing in development
+
+Use the example's existing Stripe test key and a test seller with active transfer
+capability. Run commands from `example/` against the intended development
+Convex deployment. The internal `meteredProducts/mixedProof` fixture rejects live
+keys and creates its own clock and Accounts v2 payer. Do not advance the shared
+example customer's clock.
+
+1. Call `meteredProducts/mixedProof:prepare` with a unique `runId` starting with
+   `mixed-proof-`, a minute-aligned UNIX `start` timestamp, and the test
+   `sellerAccountId`. Retain its returned JSON as `fixtureJson` for later calls.
+2. Call `meteredProducts/mixedProof:run` with `fixtureJson` and `phase: "usage"`
+   to record 75 minutes, then `phase: "pay"` to pay the initial USD 20 invoice
+   with the fixture's synthetic test payment method. `phase: "settle"` verifies
+   actual processing costs and creates the original seller transfer.
+3. Call `phase: "advance"` once. Inspect with `phase: "inspect"` until the
+   clock is ready and the renewal contains USD 20 base plus USD 15 overage.
+   Pass that original renewal `invoiceId` to `pay`, then `settle` twice.
+   Both settlement results must retain the same transfer ID.
+4. `phase: "refund"` issues a USD 7 test refund on the selected invoice.
+   `phase: "audit"` reads complete native transfers and processing costs.
+   Verify proportional reversal against the original allocation, then call
+   `phase: "cancel"` to stop future renewals. Retain financial evidence.
+
+These internal fixtures are developer verification tools. The product UI uses
+original Checkout enrollments, with seller/customer authorization in the host.
+The fixture does not substitute for testing the application's authentication.

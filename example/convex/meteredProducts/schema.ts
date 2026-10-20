@@ -1,3 +1,4 @@
+import { storePlanIdValidator } from "../storePlans/validators";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 export const offerFields = {
@@ -10,6 +11,8 @@ export const offerFields = {
   providerJson: v.optional(v.string()),
 };
 export const enrollmentFields = {
+  checkoutId: v.optional(v.string()),
+  settlementPlanId: v.optional(storePlanIdValidator),
   returnOrigin: v.optional(v.string()),
   buyerId: v.id("users"),
   offerId: v.id("meteredProductOffers"),
@@ -28,10 +31,9 @@ export const meteredProductTables = {
   meteredProductOffers: defineTable(offerFields)
     .index("by_product", ["productId"])
     .index("by_owner", ["ownerId"]),
-  meteredProductEnrollments: defineTable(enrollmentFields).index(
-    "by_buyer_offer",
-    ["buyerId", "offerId"],
-  ),
+  meteredProductEnrollments: defineTable(enrollmentFields)
+    .index("by_checkout", ["checkoutId"])
+    .index("by_buyer_offer", ["buyerId", "offerId"]),
   coachingSessions: defineTable({
     enrollmentId: v.id("meteredProductEnrollments"),
     requestId: v.string(),

@@ -50,8 +50,13 @@ export async function resolveVerifiedPaymentSource(
   stripe: Stripe,
   input: VerifiedPaymentSourceOptions,
   eligibility?: {
-    requirePayable: true;
+    requirePayable: boolean;
     customerId: string;
+    /** Internal native-line verifier; never exposed as browser input. */
+    verifyInvoiceLines?: (
+      invoice: Stripe.Invoice,
+      lines: Stripe.InvoiceLineItem[],
+    ) => { stripePriceId: string; stripeProductId: string } | null;
     invoiceLine?: {
       id: string;
       zeroAmountLineIds?: string[];
@@ -132,12 +137,13 @@ export async function resolveVerifiedPaymentSource(
       );
     const customerAccountId = payment.customer_account!;
     if (eligibility) {
-      requireSource(
-        charge.amount_refunded === 0 &&
-          charge.disputed === false &&
-          charge.refunded === false,
-        reject("payment_not_payable"),
-      );
+      if (eligibility.requirePayable)
+        requireSource(
+          charge.amount_refunded === 0 &&
+            charge.disputed === false &&
+            charge.refunded === false,
+          reject("payment_not_payable"),
+        );
       requireSource(
         objectId(payment.customer) === eligibility.customerId &&
           objectId(charge.customer) === eligibility.customerId,
@@ -326,63 +332,78 @@ export async function resolveVerifiedPaymentSource(
       ),
     );
     if (lines.status !== "complete") return lines;
-    const zeroIds = eligibility?.invoiceLine?.zeroAmountLineIds ?? [];
-    const line = zeroIds.length
-      ? lines.data.find((row) => row.id === eligibility!.invoiceLine!.id)
-      : lines.data[0];
-    requireSource(
-      line &&
-        (zeroIds.length
-          ? zeroTierLinesMatch(lines.data, line, zeroIds)
-          : lines.data.length === 1),
-      reject("unsupported_source"),
+    const verifiedLines = eligibility?.verifyInvoiceLines?.(
+      invoice,
+      lines.data,
     );
-    if (!line) return reject("unsupported_source");
-    requireSource(
-      line.object === "line_item" &&
-        line.invoice === invoice.id &&
-        line.livemode === payment.livemode,
-      identity(),
-    );
-    requireSource(line.currency === opts.currency, reject("currency_mismatch"));
-    requireSource(
-      integer(line.amount) &&
-        line.amount > 0 &&
-        (line.quantity_decimal != null
-          ? /^\d{1,30}(\.\d{1,12})?$/.test(line.quantity_decimal.toString()) &&
-            /[1-9]/.test(line.quantity_decimal.toString())
-          : Number.isSafeInteger(line.quantity) && line.quantity! > 0),
-      reject("unsupported_source"),
-    );
-    const parent = line.parent;
-    if (eligibility?.invoiceLine) {
-      const expected = eligibility.invoiceLine;
+    if (eligibility?.verifyInvoiceLines)
+      requireSource(verifiedLines, reject("unsupported_source"));
+    let priceId = verifiedLines?.stripePriceId;
+    let productId = verifiedLines?.stripeProductId;
+    if (!verifiedLines) {
+      const zeroIds = eligibility?.invoiceLine?.zeroAmountLineIds ?? [];
+      const line = zeroIds.length
+        ? lines.data.find((row) => row.id === eligibility!.invoiceLine!.id)
+        : lines.data[0];
       requireSource(
-        line.id === expected.id &&
-          line.parent?.subscription_item_details?.subscription_item ===
-            expected.subscriptionItemId &&
-          line.period.start === expected.period.start &&
-          line.period.end === expected.period.end,
+        line &&
+          (zeroIds.length
+            ? zeroTierLinesMatch(lines.data, line, zeroIds)
+            : lines.data.length === 1),
+        reject("unsupported_source"),
+      );
+      if (!line) return reject("unsupported_source");
+      requireSource(
+        line.object === "line_item" &&
+          line.invoice === invoice.id &&
+          line.livemode === payment.livemode,
         identity(),
       );
+      requireSource(
+        line.currency === opts.currency,
+        reject("currency_mismatch"),
+      );
+      requireSource(
+        integer(line.amount) &&
+          line.amount > 0 &&
+          (line.quantity_decimal != null
+            ? /^\d{1,30}(\.\d{1,12})?$/.test(
+                line.quantity_decimal.toString(),
+              ) && /[1-9]/.test(line.quantity_decimal.toString())
+            : Number.isSafeInteger(line.quantity) && line.quantity! > 0),
+        reject("unsupported_source"),
+      );
+      const parent = line.parent;
+      if (eligibility?.invoiceLine) {
+        const expected = eligibility.invoiceLine;
+        requireSource(
+          line.id === expected.id &&
+            line.parent?.subscription_item_details?.subscription_item ===
+              expected.subscriptionItemId &&
+            line.period.start === expected.period.start &&
+            line.period.end === expected.period.end,
+          identity(),
+        );
+      }
+      const lineSubscription =
+        parent?.subscription_item_details?.subscription ??
+        parent?.invoice_item_details?.subscription ??
+        undefined;
+      requireSource(lineSubscription === subscriptionId, identity());
+      requireSource(
+        !parent?.subscription_item_details?.proration &&
+          !parent?.invoice_item_details?.proration,
+        reject("unsupported_source"),
+      );
+      const price = line.pricing?.price_details;
+      priceId = objectId(price?.price);
+      productId = objectId(price?.product);
+      requireSource(
+        line.pricing?.type === "price_details" && priceId && productId,
+        reject("unsupported_source"),
+      );
     }
-    const lineSubscription =
-      parent?.subscription_item_details?.subscription ??
-      parent?.invoice_item_details?.subscription ??
-      undefined;
-    requireSource(lineSubscription === subscriptionId, identity());
-    requireSource(
-      !parent?.subscription_item_details?.proration &&
-        !parent?.invoice_item_details?.proration,
-      reject("unsupported_source"),
-    );
-    const price = line.pricing?.price_details;
-    const priceId = objectId(price?.price);
-    const productId = objectId(price?.product);
-    requireSource(
-      line.pricing?.type === "price_details" && priceId && productId,
-      reject("unsupported_source"),
-    );
+    requireSource(priceId && productId, reject("unsupported_source"));
     return {
       status: "ready",
       value: {

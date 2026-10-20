@@ -7914,6 +7914,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               usageSource?: {
                 customerAccount: string;
+                invoiceLines?: Array<{
+                  amount: number;
+                  kind: "fixed" | "metered";
+                  lineId: string;
+                  period: { end: number; start: number };
+                  quantity: string;
+                  stripePriceId: string;
+                  stripeProductId: string;
+                  subscriptionItemId: string;
+                }>;
                 invoicePaymentId: string;
                 livemode: boolean;
                 meterId: string;
@@ -8046,6 +8056,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               }>;
               usageSource?: {
                 customerAccount: string;
+                invoiceLines?: Array<{
+                  amount: number;
+                  kind: "fixed" | "metered";
+                  lineId: string;
+                  period: { end: number; start: number };
+                  quantity: string;
+                  stripePriceId: string;
+                  stripeProductId: string;
+                  subscriptionItemId: string;
+                }>;
                 invoicePaymentId: string;
                 livemode: boolean;
                 meterId: string;
@@ -8686,6 +8706,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             usageSource?: {
               customerAccount: string;
+              invoiceLines?: Array<{
+                amount: number;
+                kind: "fixed" | "metered";
+                lineId: string;
+                period: { end: number; start: number };
+                quantity: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionItemId: string;
+              }>;
               invoicePaymentId: string;
               livemode: boolean;
               meterId: string;
@@ -8731,6 +8761,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             usageSource?: {
               customerAccount: string;
+              invoiceLines?: Array<{
+                amount: number;
+                kind: "fixed" | "metered";
+                lineId: string;
+                period: { end: number; start: number };
+                quantity: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionItemId: string;
+              }>;
               invoicePaymentId: string;
               livemode: boolean;
               meterId: string;
@@ -8796,6 +8836,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             usageSource?: {
               customerAccount: string;
+              invoiceLines?: Array<{
+                amount: number;
+                kind: "fixed" | "metered";
+                lineId: string;
+                period: { end: number; start: number };
+                quantity: string;
+                stripePriceId: string;
+                stripeProductId: string;
+                subscriptionItemId: string;
+              }>;
               invoicePaymentId: string;
               livemode: boolean;
               meterId: string;

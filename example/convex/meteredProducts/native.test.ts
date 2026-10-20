@@ -81,6 +81,13 @@ async function fixture() {
       email: "maya@example.com",
       role: "seller",
       stripeAccountId: "acct_maya",
+      storePlan: {
+        planId: "starter",
+        status: "active",
+        paidThrough: Date.now() + 86400000,
+        stripeSubscriptionId: "sub_store",
+        cancelAtPeriodEnd: false,
+      },
     }),
     buyerId: await ctx.db.insert("users", {
       name: "Buyer",
@@ -175,4 +182,19 @@ it("retains an uncompleted configuration intent when native base terms disagree"
   );
   expect(rows).toHaveLength(1);
   expect(rows[0].providerJson).toBeUndefined();
+});
+
+it("holds checkout before customer payment when the seller has no fee plan", async () => {
+  const { t, buyerId, ...args } = await fixture();
+  const offerId = await t.action(api.meteredProducts.native.configure, args);
+  await t.run((ctx) =>
+    ctx.db.patch("users", args.actorId, { storePlan: undefined }),
+  );
+  await expect(
+    t.action(api.meteredProducts.native.checkout, {
+      actorId: buyerId,
+      offerId,
+    }),
+  ).rejects.toThrow(/store plan/);
+  expect(mocks.stripe.usage.ensureCheckout).not.toHaveBeenCalled();
 });

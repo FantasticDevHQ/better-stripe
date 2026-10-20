@@ -1,3 +1,6 @@
+import { canonicalUsageSource } from "../../meteredProducts/settlementProof";
+import { meteredSaleSource } from "../../meteredProducts/settlementSource";
+import { env } from "../../_generated/server";
 import {
   storeSalePolicyContext,
   matchesStoreSalePolicyContext,
@@ -29,6 +32,27 @@ export function authorizeStoreSale(
   sale: Doc<"storeSales">,
 ): SettlementAuthorization {
   return async (context) => {
+    if (sale.usageSourceJson) {
+      const proof = await meteredSaleSource(ctx, {
+        paymentIntentId: sale.paymentIntentId,
+        invoiceId: sale.sourceInvoiceId,
+        subscriptionId: sale.stripeSubscriptionId,
+      });
+      if (
+        !proof ||
+        proof.verified.chargeId !== sale.chargeId ||
+        proof.verified.paymentIntentId !== sale.paymentIntentId ||
+        proof.verified.invoiceId !== sale.sourceInvoiceId ||
+        proof.verified.gross !== sale.gross ||
+        proof.verified.processingFee !== sale.processingFee ||
+        proof.verified.currency !== sale.currency ||
+        canonicalUsageSource(proof.usageSource) !==
+          canonicalUsageSource(JSON.parse(sale.usageSourceJson)) ||
+        canonicalUsageSource(context.settlement.usageSource) !==
+          canonicalUsageSource(JSON.parse(sale.usageSourceJson))
+      )
+        throw new Error("Original metered settlement ownership changed.");
+    }
     const current = await ctx.runQuery(
       internal.settlement.internal.queries.getByCharge,
       { chargeId: sale.chargeId },
@@ -118,7 +142,20 @@ export const settle = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, args): Promise<null> => {
-    const verified = await stripe.getVerifiedSale(ctx, args);
+    const metered =
+      args.invoiceId && args.subscriptionId
+        ? await meteredSaleSource(ctx, args)
+        : undefined;
+    if (metered === null) return null;
+    const sourceArgs = metered
+      ? {
+          paymentIntentId: metered.verified.paymentIntentId,
+          invoiceId: metered.verified.invoiceId,
+          subscriptionId: metered.verified.subscriptionId,
+        }
+      : args;
+    const verified =
+      metered?.verified ?? (await stripe.getVerifiedSale(ctx, args));
     if (verified.status === "not_payable") return null;
     if (verified.status !== "ready") {
       throwFinancialOutcome(verifiedSaleOutcome(verified));
@@ -132,10 +169,10 @@ export const settle = internalAction({
     if (prior?.status === "settled" || prior?.status === "refunded")
       return null;
     const commission =
-      args.subscriptionId && args.invoiceId
+      sourceArgs.subscriptionId && sourceArgs.invoiceId
         ? await stripe.selectCommissionInvoice(ctx, {
-            subscriptionId: args.subscriptionId,
-            invoiceId: args.invoiceId,
+            subscriptionId: sourceArgs.subscriptionId,
+            invoiceId: sourceArgs.invoiceId,
             affiliateAccountId: metadata.affiliateAccountId || undefined,
             term:
               metadata.affiliateCommissionTerm === "one_time"
@@ -160,7 +197,8 @@ export const settle = internalAction({
       {},
     );
     const configuredPlan = plans.find((plan) => plan.id === planId);
-    const stripePriceId = verified.stripePriceId;
+    // A mixed invoice has one product policy across its monthly and usage prices.
+    const stripePriceId = metered ? undefined : verified.stripePriceId;
     const affiliateRate = await ctx.runQuery(
       internal.sellerAffiliateRates.internal.queries.resolve,
       {
@@ -191,7 +229,10 @@ export const settle = internalAction({
       internal.settlement.internal.mutations.reserve,
       {
         ...economics,
-        stripeSubscriptionId: args.subscriptionId,
+        ...(metered
+          ? { usageSourceJson: JSON.stringify(metered.usageSource) }
+          : {}),
+        stripeSubscriptionId: sourceArgs.subscriptionId,
         affiliateCommissionTerm:
           commission?.status === "ready" ? commission.term : "forever",
         affiliateBasisPoints:
@@ -209,7 +250,7 @@ export const settle = internalAction({
         sellerAccountId: seller.stripeAccountId,
         currency: verified.currency,
         affiliateAccountId: metadata.affiliateAccountId || undefined,
-        sourceInvoiceId: args.invoiceId,
+        sourceInvoiceId: sourceArgs.invoiceId,
       },
     );
     const legs = [
@@ -262,27 +303,66 @@ export const settle = internalAction({
           saleId: sale._id,
         },
       );
-      const settlement = await stripe.settleSale(ctx, {
-        ...args,
-        authorize: authorizeStoreSale(ctx, sale),
-        allocation: {
-          policyContext: storeSalePolicyContext(sale),
-          gross: sale.gross,
-          currency: sale.currency,
-          processingFee: sale.processingFee,
-          platformNet: sale.platformNet,
-          adjustmentAmount: sale.costRecoveryAmount ?? 0,
-          transfers: legs
-            .filter((leg) => leg.destination)
-            .map((leg) => ({
-              destinationAccountId: leg.destination!,
-              role: leg.role,
-              amount: leg.amount,
-            })),
-        },
-      });
+      const allocation = {
+        policyContext: storeSalePolicyContext(sale),
+        gross: sale.gross,
+        currency: sale.currency,
+        processingFee: sale.processingFee,
+        platformNet: sale.platformNet,
+        adjustmentAmount: sale.costRecoveryAmount ?? 0,
+        transfers: legs
+          .filter((leg) => leg.destination)
+          .map((leg) => ({
+            destinationAccountId: leg.destination!,
+            role: leg.role,
+            amount: leg.amount,
+          })),
+      };
+      const settlement = metered
+        ? await stripe.usage.settleInvoice(
+            ctx,
+            {
+              ...metered.input,
+              allocation,
+              policy: { creatorAccountId: sale.sellerAccountId },
+              authorize: authorizeStoreSale(ctx, sale),
+            },
+            { stripeSecretKey: env.STRIPE_SECRET_KEY },
+          )
+        : await stripe.settleSale(ctx, {
+            ...sourceArgs,
+            authorize: authorizeStoreSale(ctx, sale),
+            allocation: {
+              policyContext: storeSalePolicyContext(sale),
+              gross: sale.gross,
+              currency: sale.currency,
+              processingFee: sale.processingFee,
+              platformNet: sale.platformNet,
+              adjustmentAmount: sale.costRecoveryAmount ?? 0,
+              transfers: legs
+                .filter((leg) => leg.destination)
+                .map((leg) => ({
+                  destinationAccountId: leg.destination!,
+                  role: leg.role,
+                  amount: leg.amount,
+                })),
+            },
+          });
       if (!("executedTransfers" in settlement)) {
-        throwFinancialOutcome(verifiedSaleOutcome(settlement));
+        if (
+          settlement.status === "not_ready" ||
+          settlement.status === "conflict" ||
+          settlement.status === "rejected" ||
+          settlement.status === "unknown"
+        )
+          throwFinancialOutcome(settlement);
+        throwFinancialOutcome(
+          verifiedSaleOutcome({
+            status: settlement.status,
+            reason: settlement.reason,
+            retryable: "retryable" in settlement ? settlement.retryable : false,
+          }),
+        );
       }
       for (const transfer of settlement.executedTransfers) {
         await ctx.runMutation(

@@ -155,6 +155,23 @@ export const checkout = action({
       args,
     );
     const provider = JSON.parse(offer.providerJson!) as ProductProvider;
+    const owner = await ctx.runQuery(internal.meteredProducts.catalog.actor, {
+      actorId: offer.ownerId,
+    });
+    if (owner.role === "seller" && !enrollment.settlementPlanId) {
+      const seller = await ctx.runQuery(
+        internal.storePlans.billing.internal.queries.getSeller,
+        { sellerId: offer.ownerId },
+      );
+      if (!seller.storePlan)
+        throw new Error(
+          "Choose a store plan before accepting metered product payments.",
+        );
+      await ctx.runMutation(internal.meteredProducts.enrollments.pin, {
+        ...ref,
+        settlementPlanId: seller.storePlan.planId,
+      });
+    }
     const raw = getStripeClient();
     const enabled = await ctx.runQuery(
       internal.meteredProducts.enrollments.canCheckout,

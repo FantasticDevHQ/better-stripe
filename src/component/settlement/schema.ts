@@ -1,3 +1,4 @@
+import { usageInvoiceLineProof } from "../../shared/usageInvoiceLines.js";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { splitRecipientRoleValidator } from "../lib/fees.js";
@@ -18,6 +19,7 @@ export const allocationFields = {
   sourceInvoiceId: v.optional(v.string()),
   usageSource: v.optional(
     v.object({
+      invoiceLines: v.optional(v.array(usageInvoiceLineProof)),
       stripeAccountId: v.string(),
       customerAccount: v.string(),
       livemode: v.boolean(),

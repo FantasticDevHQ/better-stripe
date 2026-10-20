@@ -120,11 +120,27 @@ is retained and the native invoice preview remains available; the example does
 not round a billing period and claim an exact reconciliation. Credit grants also keep their original
 price and ownership terms.
 
-**Automatic seller settlement for mixed fixed-fee and usage invoices is not
-supported by the current verifier.** Customer billing can work while seller
-transfers remain held. The example does not bypass the verifier, report a paid
-invoice as settled earnings, or allocate mixed cash using a browser estimate.
-Existing single-source settlement protocols remain in the separate diagnostics.
+Paid product invoices route automatically through the original managed Checkout,
+enrollment and seller-owned product. The example settles the initial monthly fee
+and later monthly-plus-overage invoices only after verifying complete native
+lines, a single full captured payment and actual processing costs. The seller's product fee policy applies to the whole mixed invoice. Product enrollments
+have no referral attribution; SDK hosts can authorize affiliates explicitly. Metadata
+locates the managed intent; it never chooses the seller or payout amount.
+
+A seller must have a store plan before a new Checkout can collect payment. The
+enrollment pins that plan as a fallback for already-purchased terms; renewals use
+the current seller tier or retained purchased tier, as ordinary store sales do.
+The existing settlement workflow reserves owned recovery obligations, persists
+complete original line provenance, and reauthorizes the seller and cash proof
+before each new transfer. `invoice.paid`, `payment_intent.succeeded` and
+`charge.updated` all route through original invoice funding. Pending fees retry;
+replayed events retain the same allocation and transfer IDs. Issuer-owned services
+retain their proceeds without creating a seller transfer.
+
+Foreign products/items, incomplete funding, discounts/taxes/credits, prorations,
+refunded/disputed new sales and unsupported recipient configurations remain held.
+See [native usage settlement](usage-settlement.md) for the SDK contract and
+[verification evidence](usage-verification.md) for actual test-mode economics.
 
 ## Package APIs and UI implementations
 

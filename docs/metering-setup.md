@@ -115,8 +115,8 @@ configure the admin's own Store analytics reports product and verify that work i
 held before a paid grant and denied after credit exhaustion.
 
 Follow [the product walkthrough](usage-example.md) for exact steps, authorization,
-payment verification, retained history and the mixed-invoice seller-settlement
-limitation. Product subscriptions use actual native billing periods and the
+payment verification, retained history and automatic mixed-invoice seller
+settlement. Choose the seller's store plan before accepting new customer payments. Product subscriptions use actual native billing periods and the
 customer's original account; this flow does not advance shared test clocks.
 
 For isolated clock-driven renewal, correction and cleanup checks, use Admin →

@@ -1,0 +1,331 @@
+{
+  "date": "2026-10-20",
+  "mode": "Stripe test mode only",
+  "applicationBaseCommit": "7bd8ce8c9e5d244549ecf4044ddcf4c33bf792ff",
+  "apiVersion": "2026-09-30.endive",
+  "resources": {
+    "runId": "mixed-proof-maya-flow-20261020",
+    "actorId": "jh7fs3waa4rb9k63v2npgk5bwh8gnq4c",
+    "enrollmentId": "mn782k3g8r0qmhcfn6b6tgpmr18gn8kk",
+    "clockId": "clock_1USU1X6JR7kThJogboSkmZ2o",
+    "productId": "prod_VQz7JDdU8Tr7GZ"
+  },
+  "subscriptionId": "sub_1USU2G6JR7kThJogbypHm3mp",
+  "scope": {
+    "stripeAccountId": "acct_1TEQzE6JR7kThJog",
+    "customerAccount": "acct_1USU1X5QGFCnyfry",
+    "meterId": "mtr_test_61VbZsGvUoYJdVdWP416JR7kThJogJ8i",
+    "livemode": false
+  },
+  "terms": {
+    "baseMonthly": 2000,
+    "currency": "usd",
+    "includedMinutes": "60",
+    "overagePerMinute": 100
+  },
+  "includedBoundary": {
+    "revision": 1,
+    "observedAt": 1792468158,
+    "period": {
+      "start": 1792468020,
+      "end": 1795146420
+    },
+    "accepting": true,
+    "policy": {
+      "reset": "billing_period",
+      "rollover": "none",
+      "entitled": true,
+      "overage": "allow",
+      "limit": {
+        "mode": "none"
+      }
+    },
+    "consumedQuantity": "60",
+    "reservedQuantity": "0",
+    "includedQuantity": "60",
+    "remainingIncludedQuantity": "0",
+    "billableOverageQuantity": "0",
+    "softLimitReached": false,
+    "hardLimitRemainingQuantity": null,
+    "committedEstimate": {
+      "amountDecimal": "0",
+      "currency": "usd"
+    },
+    "projectedEstimate": {
+      "amountDecimal": "0",
+      "currency": "usd"
+    },
+    "cashCollection": "none"
+  },
+  "overageBoundary": {
+    "revision": 1,
+    "observedAt": 1792468206,
+    "period": {
+      "start": 1792468020,
+      "end": 1795146420
+    },
+    "accepting": true,
+    "policy": {
+      "reset": "billing_period",
+      "rollover": "none",
+      "entitled": true,
+      "overage": "allow",
+      "limit": {
+        "mode": "none"
+      }
+    },
+    "consumedQuantity": "75",
+    "reservedQuantity": "0",
+    "includedQuantity": "60",
+    "remainingIncludedQuantity": "0",
+    "billableOverageQuantity": "15",
+    "softLimitReached": false,
+    "hardLimitRemainingQuantity": null,
+    "committedEstimate": {
+      "amountDecimal": "1500",
+      "currency": "usd"
+    },
+    "projectedEstimate": {
+      "amountDecimal": "1500",
+      "currency": "usd"
+    },
+    "cashCollection": "none"
+  },
+  "workReceipts": {
+    "included": {
+      "status": "accepted",
+      "work": "completed_once",
+      "receiptId": "ss761tyfh1dw6mmeggsg994pyn8gm09m"
+    },
+    "overage": {
+      "status": "accepted",
+      "work": "completed_once",
+      "receiptId": "ss7chs78fdr3aptjbg5mps42bh8gnk0q"
+    },
+    "overageReplay": {
+      "status": "accepted",
+      "work": "already_completed",
+      "receiptId": "ss7chs78fdr3aptjbg5mps42bh8gnk0q"
+    }
+  },
+  "nativePreviewAt75": {
+    "status": "available",
+    "observedAt": 1792468289,
+    "value": {
+      "kind": "preview",
+      "invoiceId": "upcoming_in_1USU5F6JR7kThJogT3yFTUsH",
+      "status": "draft",
+      "finalized": false,
+      "amountDue": "3500",
+      "amountPaid": "0",
+      "total": "3500",
+      "currency": "usd",
+      "linesComplete": true,
+      "lines": [
+        {
+          "lineId": "il_tmp_1Udimu6JR7kThJogTd7sXnnm",
+          "stripePriceId": "price_1USBuv6JR7kThJogV6whMAi1",
+          "subscriptionItemId": "si_VTQuuxBhuesMV6",
+          "amount": "0",
+          "currency": "usd",
+          "quantity": "60",
+          "providerQuantityDecimal": "60",
+          "unitAmountDecimal": "0",
+          "creditAppliedAmount": "0",
+          "nativePeriod": {
+            "start": 1792468020,
+            "end": 1795146420
+          },
+          "proration": false
+        },
+        {
+          "lineId": "il_tmp_1Udimv6JR7kThJog58V4UVOe",
+          "stripePriceId": "price_1USBuv6JR7kThJogV6whMAi1",
+          "subscriptionItemId": "si_VTQuuxBhuesMV6",
+          "amount": "1500",
+          "currency": "usd",
+          "quantity": "15",
+          "providerQuantityDecimal": "15",
+          "unitAmountDecimal": "100",
+          "creditAppliedAmount": "0",
+          "nativePeriod": {
+            "start": 1792468020,
+            "end": 1795146420
+          },
+          "proration": false
+        }
+      ],
+      "meterAmount": {
+        "status": "available",
+        "observedAt": 1792468289,
+        "value": {
+          "amount": "1500",
+          "currency": "usd"
+        }
+      },
+      "paymentEvidence": "not_resolved"
+    }
+  },
+  "renewalInvoices": {
+    "clock": "ready",
+    "invoices": [
+      {
+        "id": "in_1USU5e6JR7kThJogVOaODkrh",
+        "status": "paid",
+        "total": 3500,
+        "paid": 3500,
+        "reason": "subscription_cycle",
+        "lines": [
+          {
+            "id": "il_1Udimu6JR7kThJogADf0225h",
+            "amount": 0,
+            "quantity": "60",
+            "period": {
+              "end": 1795146420,
+              "start": 1792468020
+            },
+            "price": "price_1USBuv6JR7kThJogV6whMAi1"
+          },
+          {
+            "id": "il_1Udimv6JR7kThJogG91IEkec",
+            "amount": 1500,
+            "quantity": "15",
+            "period": {
+              "end": 1795146420,
+              "start": 1792468020
+            },
+            "price": "price_1USBuv6JR7kThJogV6whMAi1"
+          },
+          {
+            "id": "il_1Udimw6JR7kThJogbYb4RWqA",
+            "amount": 2000,
+            "quantity": "1",
+            "period": {
+              "end": 1797738420,
+              "start": 1795146420
+            },
+            "price": "price_1USBuv6JR7kThJogI6gSporz"
+          }
+        ]
+      },
+      {
+        "id": "in_1USU2E6JR7kThJoggMhgHzt4",
+        "status": "paid",
+        "total": 2000,
+        "paid": 2000,
+        "reason": "subscription_create",
+        "lines": [
+          {
+            "id": "il_1USU2E6JR7kThJogqATE5w4a",
+            "amount": 2000,
+            "quantity": "1",
+            "period": {
+              "end": 1795146420,
+              "start": 1792468020
+            },
+            "price": "price_1USBuv6JR7kThJogI6gSporz"
+          }
+        ]
+      }
+    ]
+  },
+  "initialAutomaticSettlement": {
+    "invoiceId": "in_1USU2E6JR7kThJoggMhgHzt4",
+    "paymentIntentId": "pi_3USU2F6JR7kThJog0VBncoSi",
+    "chargeId": "ch_3USU2F6JR7kThJog0pXlIAYP",
+    "refunded": 0,
+    "transfersComplete": true,
+    "transfers": [
+      {
+        "id": "tr_3USU2F6JR7kThJog0IFiOSKC",
+        "amount": 1820,
+        "destination": "acct_1UQ78o7xOsB2U2nM",
+        "livemode": false,
+        "reversed": 0,
+        "sourceChargeId": "ch_3USU2F6JR7kThJog0pXlIAYP"
+      }
+    ],
+    "cost": {
+      "status": "ready",
+      "gross": 2000,
+      "fee": 88,
+      "refundAdjustment": 0,
+      "principalReturned": 0
+    }
+  },
+  "renewalAutomaticSettlement": {
+    "invoiceId": "in_1USU5e6JR7kThJogVOaODkrh",
+    "paymentIntentId": "pi_3USU5m6JR7kThJog0PPhEj85",
+    "chargeId": "ch_3USU5m6JR7kThJog0ZAxUqIh",
+    "refunded": 0,
+    "transfersComplete": true,
+    "transfers": [
+      {
+        "id": "tr_3USU5m6JR7kThJog0X2fqpD0",
+        "amount": 3185,
+        "reversed": 0,
+        "sourceChargeId": "ch_3USU5m6JR7kThJog0ZAxUqIh"
+      }
+    ],
+    "cost": {
+      "status": "ready",
+      "gross": 3500,
+      "fee": 132,
+      "refundAdjustment": 0,
+      "principalReturned": 0
+    }
+  },
+  "renewalAfterWebhookReplay": {
+    "invoiceId": "in_1USU5e6JR7kThJogVOaODkrh",
+    "paymentIntentId": "pi_3USU5m6JR7kThJog0PPhEj85",
+    "chargeId": "ch_3USU5m6JR7kThJog0ZAxUqIh",
+    "refunded": 0,
+    "transfersComplete": true,
+    "transfers": [
+      {
+        "id": "tr_3USU5m6JR7kThJog0X2fqpD0",
+        "amount": 3185,
+        "destination": "acct_1UQ78o7xOsB2U2nM",
+        "livemode": false,
+        "reversed": 0,
+        "sourceChargeId": "ch_3USU5m6JR7kThJog0ZAxUqIh"
+      }
+    ],
+    "cost": {
+      "status": "ready",
+      "gross": 3500,
+      "fee": 132,
+      "refundAdjustment": 0,
+      "principalReturned": 0
+    }
+  },
+  "automaticProof": "Both transfers were present on native audits before manually replaying any settlement webhook. The manual settle fixture phase was never called.",
+  "ui": {
+    "persona": "Alex Customer",
+    "enrollmentId": "mn79p3nw2m8a9vhhynm8rb1wq98gk9f1",
+    "initialMinutes": 75,
+    "initialOverage": 15,
+    "initialPreviewTotal": 3500,
+    "viaApiAddedMinutes": 1,
+    "componentsAddedMinutes": 1,
+    "finalMinutes": 77,
+    "finalOverage": 17,
+    "finalSessionCount": 3,
+    "recording": "Sequenced screenshots; continuous recording unavailable through browser control.",
+    "finalNativePreviewTotal": 3700,
+    "finalNativeUsageAmount": 1700
+  },
+  "limits": [
+    "Draft previews and aggregation lag are estimates.",
+    "No future-period work was sent before the real server acceptance window.",
+    "No shared product archived or shared customer clock advanced.",
+    "No live billing, production migration or package publication."
+  ],
+  "sellerAccountId": "acct_1UQ78o7xOsB2U2nM",
+  "cleanup": "fixture_renewal_cancelled_history_retained",
+  "futurePeriodGuard": {
+    "status": "held",
+    "message": "The original billing period is not active.",
+    "operation": "Final fixture inspect after clock renewal; fresh native observation refuses the future period on the real server."
+  }
+}

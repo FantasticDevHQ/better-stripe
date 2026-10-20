@@ -73,6 +73,7 @@ import type * as marketplace_queries from "../marketplace/queries.js";
 import type * as meteredProducts_catalog from "../meteredProducts/catalog.js";
 import type * as meteredProducts_enrollments from "../meteredProducts/enrollments.js";
 import type * as meteredProducts_funding from "../meteredProducts/funding.js";
+import type * as meteredProducts_membershipProof from "../meteredProducts/membershipProof.js";
 import type * as meteredProducts_mixedProof from "../meteredProducts/mixedProof.js";
 import type * as meteredProducts_native from "../meteredProducts/native.js";
 import type * as meteredProducts_payment from "../meteredProducts/payment.js";
@@ -288,6 +289,7 @@ const fullApi: ApiFromModules<{
   "meteredProducts/catalog": typeof meteredProducts_catalog;
   "meteredProducts/enrollments": typeof meteredProducts_enrollments;
   "meteredProducts/funding": typeof meteredProducts_funding;
+  "meteredProducts/membershipProof": typeof meteredProducts_membershipProof;
   "meteredProducts/mixedProof": typeof meteredProducts_mixedProof;
   "meteredProducts/native": typeof meteredProducts_native;
   "meteredProducts/payment": typeof meteredProducts_payment;

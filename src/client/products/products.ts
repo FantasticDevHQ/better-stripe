@@ -128,6 +128,8 @@ export async function updateProduct(
     metadata?: Record<string, string>;
     /** Platform default statement-descriptor suffix (BetterStripe option). */
     defaultStatementDescriptorSuffix?: string;
+    /** Caller-owned stable key for identical retries of this provider SET. */
+    idempotencyKey?: string;
   },
 ) {
   const updateParams: Stripe.ProductUpdateParams = {};
@@ -158,16 +160,26 @@ export async function updateProduct(
     updateParams.statement_descriptor = statementDescriptor;
   }
 
-  await stripe.products.update(opts.stripeProductId, updateParams);
+  if (opts.idempotencyKey !== undefined)
+    await stripe.products.update(opts.stripeProductId, updateParams, {
+      idempotencyKey: opts.idempotencyKey,
+    });
+  else await stripe.products.update(opts.stripeProductId, updateParams);
   return { success: true };
 }
 
 export async function deactivateProduct(
   stripe: Stripe,
   _ctx: RunCtx,
-  opts: { stripeProductId: string },
+  opts: { stripeProductId: string; idempotencyKey?: string },
 ) {
-  await stripe.products.update(opts.stripeProductId, { active: false });
+  if (opts.idempotencyKey !== undefined)
+    await stripe.products.update(
+      opts.stripeProductId,
+      { active: false },
+      { idempotencyKey: opts.idempotencyKey },
+    );
+  else await stripe.products.update(opts.stripeProductId, { active: false });
   return { success: true };
 }
 

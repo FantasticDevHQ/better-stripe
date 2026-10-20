@@ -37,13 +37,17 @@ export const updateProduct = action({
     stripeProductId: v.string(),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
+    idempotencyKey: v.optional(v.string()),
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => stripe.updateProduct(ctx, args),
 });
 
 export const deactivateProduct = action({
-  args: { stripeProductId: v.string() },
+  args: {
+    stripeProductId: v.string(),
+    idempotencyKey: v.optional(v.string()),
+  },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => stripe.deactivateProduct(ctx, args),
 });

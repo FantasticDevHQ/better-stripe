@@ -69,3 +69,8 @@ actual supported session, subscription and invoice reads with immutable trusted
 paid facts. Guard provider-read/database races and same-second ordering; do not
 replace historical payment time with event arrival or deployment dates. This
 reader does not fill referral locks or change already settled awards.
+
+Buyer ownership is determined by the required, exact `customer_account` value.
+Stripe may also return a legacy `customer` projection on the same session;
+that field is preserved without being used for ownership. A legacy customer
+alone, a missing V2 account, or a different V2 account is rejected.

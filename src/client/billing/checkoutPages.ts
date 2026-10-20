@@ -37,7 +37,6 @@ const identitySchema = z
     id: sessionId,
     object: z.literal("checkout.session"),
     customer_account: z.string(),
-    customer: z.null().optional(),
     created: time,
   })
   .passthrough();

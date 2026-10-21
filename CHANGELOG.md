@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.74.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.73.0...v0.74.0) (2026-10-21)
+
+
+### Features
+
+* **products:** allow updates to disable descriptor inheritance ([#380](https://github.com/FantasticDevHQ/better-stripe/issues/380)) ([d98c880](https://github.com/FantasticDevHQ/better-stripe/commit/d98c880160eeb7c772fe0a4a12b976bee57aaabc))
+
 ## [0.73.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.72.3...v0.73.0) (2026-10-20)
 
 ### Features

@@ -43,6 +43,7 @@ export const updateProduct = action({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     statementDescriptor: v.optional(v.union(v.string(), v.null())),
+    inheritStatementDescriptor: v.optional(v.boolean()),
     idempotencyKey: v.optional(v.string()),
   },
   returns: v.object({ success: v.boolean() }),

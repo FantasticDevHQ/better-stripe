@@ -139,6 +139,8 @@ export async function updateProduct(
     defaultStatementDescriptorSuffix?: string;
     /** String overrides store defaults; null clears without restoring a fallback. */
     statementDescriptor?: string | null;
+    /** False disables inherited defaults; explicit string/null still apply. */
+    inheritStatementDescriptor?: boolean;
     /** Caller-owned stable key for identical retries of this provider SET. */
     idempotencyKey?: string;
   },
@@ -157,10 +159,13 @@ export async function updateProduct(
   // from the stored product record so a store that set/changed its descriptor
   // propagates to its products' first-invoice charges. Re-set only when a value
   // resolves (never clears an existing descriptor).
-  const stored = (await ctx.runQuery(
-    componentRef(component, "products/queries/getProductByStripeId"),
-    { stripeProductId: opts.stripeProductId },
-  )) as { accountId?: string } | null;
+  const stored =
+    opts.inheritStatementDescriptor === false
+      ? null
+      : ((await ctx.runQuery(
+          componentRef(component, "products/queries/getProductByStripeId"),
+          { stripeProductId: opts.stripeProductId },
+        )) as { accountId?: string } | null);
   const statementDescriptor = await resolveProductStatementDescriptor(
     component,
     ctx,

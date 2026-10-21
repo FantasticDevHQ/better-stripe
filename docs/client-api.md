@@ -111,6 +111,39 @@ await stripe.updateProduct(ctx, {
 });
 ```
 
+#### Omit inherited update descriptors
+
+This additive option is not part of published 0.73.0. The update-only
+`inheritStatementDescriptor?: boolean` defaults to the existing behavior.
+With `false` and no explicit descriptor, the update omits
+`statement_descriptor` without reading mutable Product or account defaults.
+An explicit string still overrides with its validated value; explicit `null`
+still clears the provider field. Null is not an omission workaround.
+
+| Inheritance option | Explicit descriptor | Update behavior                                     |
+| ------------------ | ------------------- | --------------------------------------------------- |
+| Omitted or `true`  | Omitted             | Existing store/platform fallback                    |
+| `false`            | Omitted             | No descriptor field or ambient Product/account read |
+| `false`            | Valid string        | Existing validated explicit value                   |
+| `false`            | `null`              | Intentional empty-field clear                       |
+
+```ts
+await stripe.updateProduct(ctx, {
+  stripeProductId: originalProductId,
+  name: originalNormalizedName,
+  inheritStatementDescriptor: false,
+  idempotencyKey: originalOperationKey,
+});
+```
+
+The matching Vite update action validates and forwards the optional boolean;
+create/deactivate operations and UI flows are unchanged. The host must retain
+its authorized immutable command and stable key for an identical retry. This
+option suppresses ambient inheritance; it adds no authorization, command
+ledger, automatic retry, provider-cache or unknown-ACK guarantee. Tests use
+controlled HTTP, not live provider verification. Public release, exact artifact
+verification and accepted consumer adoption precede application consumption.
+
 The matching Vite `example/convex/products/actions.ts` forwards the same optional
 inputs. Its demo actions do not supply host authorization. A host must authorize
 the operator, bind its community to the exact original product and reject shared

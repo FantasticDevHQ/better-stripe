@@ -111,7 +111,7 @@ await stripe.updateProduct(ctx, {
 });
 ```
 
-#### Pending BTS-294 candidate: omit inherited update descriptors
+#### Omit inherited update descriptors
 
 This additive option is not part of published 0.73.0. The update-only
 `inheritStatementDescriptor?: boolean` defaults to the existing behavior.

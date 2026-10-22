@@ -35,6 +35,13 @@ export type {
 export type { RefundSyncScope } from "./connect/refundSyncValidation.js";
 import * as personalAccountMappingImpl from "./core/personalAccountMapping.js";
 export type * from "./publicTypes.js";
+export { closeAccountOptionsSchema } from "./core/accountCloseOptions.js";
+export { accountClosurePreviewOptionsSchema } from "./core/accountClosurePreview.js";
+import type { CloseAccountOptions } from "./core/accountCloseOptions.js";
+import {
+  previewAccountClosure,
+  type AccountClosurePreviewOptions,
+} from "./core/accountClosurePreview.js";
 export * from "./financialOutcomes/index.js";
 export * from "./processingCostDeficit/index.js";
 import * as accountClosuresImpl from "./core/accountClosures.js";
@@ -506,16 +513,21 @@ export class BetterStripe extends PaymentSourceClient {
     return accountsImpl.listStripeAccounts(this.stripe(), ctx, opts);
   }
 
+  /** Known point-in-time blockers only. Host authentication and independent clearance remain required. */
+  async previewAccountClosure(ctx: RunCtx, opts: AccountClosurePreviewOptions) {
+    return previewAccountClosure(this.stripe(), this.component, ctx, opts);
+  }
+
   async closeAccount(
     ctx: RunCtx,
-    opts: { stripeAccountId: string },
+    opts: CloseAccountOptions,
   ): Promise<{ closed: boolean }> {
     return accountsImpl.closeAccount(this.stripe(), this.component, ctx, opts);
   }
 
   async restartAccountOnboarding(
     ctx: RunCtx,
-    opts: { stripeAccountId: string },
+    opts: CloseAccountOptions,
   ): Promise<{ closed: boolean }> {
     return accountsImpl.restartAccountOnboarding(
       this.stripe(),

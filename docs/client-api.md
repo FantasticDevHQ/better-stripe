@@ -37,6 +37,47 @@ retain original financial references. The Vite reference's
 [closed-account authorization example](https://github.com/FantasticDevHQ/better-stripe/blob/main/example/README.md#closed-account-history)
 shows where the host's authenticated-actor check belongs.
 
+#### Closure observations and confirmed scope
+
+`previewAccountClosure(ctx, { stripeAccountId, sessionLimit? })` is a bounded,
+read-only action for an exact host-authorized account. It freshly reads provider
+account configurations and closed state, the existing account balance reader,
+one `status: "open"` Checkout page (default 25, maximum 100), and the indexed
+component usage blockers shared with closure. It creates no closure intent and
+makes no provider write. Do not pass an arbitrary browser account ID as authority.
+
+Each observation is `{ status: "observed", value }` or `{ status: "unknown" }`.
+Balances retain every returned currency's separate available and pending amounts.
+Any nonzero amount, including negative amounts, produces `nonzero_balance`;
+currencies and available/pending amounts are not netted. Open sessions produce
+`open_checkout_sessions`. Usage corrections, open prepaid credits and managed
+usage enrollment retain their component blocker names. A truncated session page
+adds `open_sessions_truncated`; unavailable or malformed sources remain unknown.
+The result always has `financialCoverage: "unknown"` and
+`financial_coverage_unknown`. Zero balances and an empty complete page establish
+only those observations, never settlement of all liabilities. There is no
+`eligible` flag or host-provided completeness override.
+
+After independent host authorization, financial clearance and explicit whole-account
+confirmation, pass `expectedAppliedConfigurations` to `closeAccount` (or its alias).
+The guarded path requires exact original stored scope/ownership and a fresh exact-ID
+provider observation before an active-account close POST. Changed, missing,
+duplicate or unsupported scope fails without a POST. It never rewrites the saved
+original role set on retry. A legacy original with unknown scope stays held.
+An observed same-account terminal `closed: true` can reconcile retained original
+ownership/history without another POST, including after a lost response or a
+pre-dispatch crash. This proves observed account state, not that our request caused
+closure. A close acknowledgement must match the original ID and closed state.
+
+This is a point-in-time scope guard. Provider changes between read and close are
+not atomically fenced; financial writers and outstanding obligations require
+separate host/component contracts. Omitting the option preserves the existing
+unguarded behavior, including first-call cached configurations. Integrations
+adopting this guard must pass it explicitly. The public
+`closeAccountOptionsSchema` and `accountClosurePreviewOptionsSchema` validate
+these SDK inputs; `CloseAccountOptions` and `AccountClosurePreview` expose the
+matching types. Restarting onboarding remains closure, never reopening an account.
+
 | Method                                                                            | Description                                                                  |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `createAccount(ctx, { userId, email?, name?, country?, orgId?, metadata? })`      | Create a V2 account in Stripe and the component database                     |

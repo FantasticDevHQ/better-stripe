@@ -1410,6 +1410,29 @@ subscription cancellation or a change to the original reversal recipients.
 
 ## Closed-account history
 
+### Preview and confirm the whole account
+
+The seller onboarding page composes public React `AccountCloseCard`; its demo
+personas are not production authorization. A production host should expose
+`previewAccountClosure(ctx, { stripeAccountId })` only after resolving the exact
+authenticated owner's original account. Display current configurations, all
+returned balance currencies, known usage/session blockers and unknown coverage.
+The bounded preview never establishes complete liabilities or permission to close.
+
+After separate server-side financial clearance and explicit confirmation of all
+displayed configurations, call `closeAccount` with
+`expectedAppliedConfigurations`. Recheck the actor and original account in that
+host action; a browser-supplied role list is confirmation input, not authority.
+The SDK rechecks provider scope against the immutable original close scope before
+an active close POST. Unknown or changed scope stays held, without inventing a
+recipient-only target. The existing unguarded demo action is not a production
+closure policy; adopting hosts must use the guarded SDK option explicitly.
+
+Keep account/request identity on retries. Observing the same original provider
+account closed may reconcile original history without a new POST, but does not
+prove our request caused it. There is no provider-side atomic read/close fence,
+and `restartAccountOnboarding` neither reopens nor automatically replaces an account.
+
 `getClosedAccountByStripeId` and `listClosedAccountsByUserId` preserve the
 original account-owner proof after closure. This Vite app uses claimed demo
 personas, not authenticated production identities. A production adapter must

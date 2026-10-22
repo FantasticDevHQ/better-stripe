@@ -8,6 +8,37 @@ Components render semantic HTML without package CSS. Use their render props or
 companion hooks to supply your own design system. Stripe iframe contents use
 Stripe's `appearance` options and retain Stripe's own styling.
 
+## Whole-account closure confirmation
+
+`AccountCloseCard` supplies a headless confirmation surface. Use its render prop
+with your own styles and translated text, as in the Vite seller onboarding page.
+Obtain `previewAccountClosure` through an authenticated host action for the exact
+original account. Display the observed customer/merchant/recipient configurations,
+known blockers and unknown sources. Re-read on account or session changes; do not
+reuse another account's preview or infer eligibility from an exhausted page.
+
+Keep the destructive control disabled until your server independently authorizes
+the actor, original account and financial clearance, and the person explicitly
+confirms the displayed whole-account scope. A preview's financial coverage remains
+unknown even when all its known blockers are absent. The host close action must
+recheck that authority and pass the confirmed original configuration set:
+
+```ts
+await stripe.closeAccount(ctx, {
+  stripeAccountId: originalAccountId,
+  expectedAppliedConfigurations: confirmedConfigurations,
+});
+```
+
+Supply `titleLabel`, `descriptionLabel` and `closeLabel` to describe irreversible
+whole-account closure rather than a recipient-only stop-withdrawals action.
+The existing `restartAccountOnboarding` alias also closes; it cannot reopen the
+account or authorize creating a replacement. A scope drift or unknown response
+must retain the same account and original request for recovery. Freshly observing
+that original account closed can reconcile history without another POST; it
+does not attribute closure to our request. See the
+[server contract](./client-api.md#closure-observations-and-confirmed-scope).
+
 ## Charge and Price currency units
 
 `getChargeCurrencyMetadata`, `chargeAmountToDecimal`, `parseChargeAmount` and `formatChargeAmount` are

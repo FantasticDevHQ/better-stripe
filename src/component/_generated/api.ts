@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as accountClosure_blockers from "../accountClosure/blockers.js";
 import type * as accountClosure_helpers from "../accountClosure/helpers.js";
 import type * as accountClosure_mutations from "../accountClosure/mutations.js";
 import type * as accountClosure_queries from "../accountClosure/queries.js";
@@ -226,6 +227,7 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "accountClosure/blockers": typeof accountClosure_blockers;
   "accountClosure/helpers": typeof accountClosure_helpers;
   "accountClosure/mutations": typeof accountClosure_mutations;
   "accountClosure/queries": typeof accountClosure_queries;

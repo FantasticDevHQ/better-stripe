@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.75.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.74.0...v0.75.0) (2026-10-23)
+
+
+### Features
+
+* preview account closure blockers and guard confirmed scope ([#382](https://github.com/FantasticDevHQ/better-stripe/issues/382)) ([4289300](https://github.com/FantasticDevHQ/better-stripe/commit/428930012022a51734570e8849eff0bb53aa8d6a))
+
 ## [0.74.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.73.0...v0.74.0) (2026-10-21)
 
 ### Features

@@ -55,6 +55,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       queries: {
+        currentOwner: FunctionReference<
+          "query",
+          "internal",
+          { stripeAccountId: string },
+          | { status: "missing" }
+          | { status: "ambiguous" }
+          | { orgId?: string; status: "unique"; userId: string },
+          Name
+        >;
         getClosedAccountByStripeId: FunctionReference<
           "query",
           "internal",
@@ -71,6 +80,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             stripeAccountId: string;
             userId?: string;
           } | null,
+          Name
+        >;
+        knownBlockers: FunctionReference<
+          "query",
+          "internal",
+          { stripeAccountId: string },
+          Array<"usageCorrections" | "prepaidCredits" | "usageEnrollment">,
           Name
         >;
         listClosedAccountsByUserId: FunctionReference<

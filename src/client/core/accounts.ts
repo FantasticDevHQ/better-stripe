@@ -1,6 +1,15 @@
 import type { AccountByStripeIdOptions } from "../originalIdReadOptions.js";
 import { addCustomerConfiguration } from "./accountConfigurations.js";
 import { idempotencyOptions } from "./idempotency.js";
+import {
+  closeAccountOptionsSchema,
+  type CloseAccountOptions,
+} from "./accountCloseOptions.js";
+import {
+  confirmedClosureScope,
+  guardedAccountIsClosed,
+  assertGuardedCloseAcknowledgement,
+} from "./accountCloseScope.js";
 export type CreateAccountOptions = {
   userId: string;
   email?: string;
@@ -432,25 +441,39 @@ export async function closeAccount(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: { stripeAccountId: string },
+  opts: CloseAccountOptions,
 ): Promise<{ closed: boolean }> {
+  const isGuarded = opts.expectedAppliedConfigurations !== undefined;
+  if (isGuarded) closeAccountOptionsSchema.parse(opts);
+  const originalOptions = isGuarded
+    ? { stripeAccountId: opts.stripeAccountId }
+    : opts;
   const { closure, isRetry } = await runMutationOrThrow(
     ctx,
     componentRef(component, "accountClosure/mutations/prepare"),
-    opts,
+    originalOptions,
   );
+  if (isGuarded) confirmedClosureScope(opts, closure);
   if (closure.state === "closed") return { closed: true };
   let appliedConfigs = closure.appliedConfigurations;
   let isProviderClosed = false;
-  if (isRetry || appliedConfigs === undefined) {
+  if (isGuarded) {
+    isProviderClosed = await guardedAccountIsClosed(
+      stripe,
+      component,
+      ctx,
+      opts,
+      closure,
+    );
+  } else if (isRetry || appliedConfigs === undefined) {
     const account = await stripe.v2.core.accounts.retrieve(
       opts.stripeAccountId,
     );
     appliedConfigs ??= account.applied_configurations ?? [];
     isProviderClosed = account.closed === true;
   }
-  if (!isProviderClosed)
-    await stripe.v2.core.accounts.close(
+  if (!isProviderClosed) {
+    const response = await stripe.v2.core.accounts.close(
       opts.stripeAccountId,
       {
         applied_configurations: (appliedConfigs ??
@@ -458,10 +481,13 @@ export async function closeAccount(
       },
       { idempotencyKey: `betterstripe-close:${opts.stripeAccountId}` },
     );
+    if (isGuarded)
+      assertGuardedCloseAcknowledgement(response, opts.stripeAccountId);
+  }
   await runMutationOrThrow(
     ctx,
     componentRef(component, "accountClosure/mutations/complete"),
-    opts,
+    originalOptions,
   );
 
   return { closed: true };
@@ -471,7 +497,7 @@ export async function restartAccountOnboarding(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: { stripeAccountId: string },
+  opts: CloseAccountOptions,
 ): Promise<{ closed: boolean }> {
   return closeAccount(stripe, component, ctx, opts);
 }

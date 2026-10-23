@@ -1,4 +1,10 @@
 export type { StripeAccountClosure } from "./core/accountClosures.js";
+export type { CloseAccountOptions } from "./core/accountCloseOptions.js";
+export type {
+  AccountClosurePreview,
+  AccountClosurePreviewOptions,
+  ClosureObservation,
+} from "./core/accountClosurePreview.js";
 export type {
   BetterStripeOptions,
   FeeOverride,

@@ -7,6 +7,7 @@ const react = await import("@fantastic.dev/better-stripe/react");
 const testing = await import("@fantastic.dev/better-stripe/testing");
 
 assert.equal(typeof sdk.BetterStripe, "function");
+assert.equal(typeof sdk.qualifyCapturedCheckoutPayment, "function");
 assert.equal(typeof react.Checkout, "function");
 assert.equal(typeof react.PlanPricingEditor, "function");
 assert.equal(typeof testing.createTestAccount, "function");

@@ -30,6 +30,12 @@ missing, foreign or organization mappings, and overrides any browser-supplied
 account selector. Existing React `Checkout` workflows remain responsible for
 checkout presentation; hosts such as Dojo retain their own styles and routing.
 
+For an individual payment-mode Session, the separate
+[authorized captured-receipt reference](captured-checkout-payment.md#authorized-vite-receipt-read)
+rechecks the authenticated original Session/account before an expanded provider
+read. Its context and receipt workflow do not authorize access from a demo
+persona or treat a cached `complete` Session as payment confirmation.
+
 ## Selectors and results
 
 - `customerAccount` must be a V2 `acct_…` identifier. Legacy customer selectors

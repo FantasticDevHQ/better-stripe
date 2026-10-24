@@ -70,12 +70,58 @@ the purchase. A signed webhook adapter may reuse this same qualifier after its
 real signature verification and original correlation. Calling the qualifier does
 not create a signed event or replace that adapter's transaction and replay rules.
 
+## Authorized Vite receipt read
+
+The Vite reference exposes two functions under
+`example/convex/billing/capturedReceipt/`:
+
+- `queries.context({ stripeSessionId })` authenticates through the existing
+  `historyActor` mapping and returns only `{ actorId, accountId, sessionId }`.
+  The original cached Session must be payment-mode, belong to that actor and
+  reference a unique personal account owned by the same actor. Missing, foreign
+  or organization-scoped Sessions, and missing, foreign, ambiguous or
+  organization-scoped account mappings receive the same generic authorization
+  rejection. The cached Session reader does not establish Session uniqueness.
+- `actions.read({ stripeSessionId })` calls that same query on the server for
+  each read. It does not accept an actor or account supplied by the browser.
+  After the example's test-mode key guard, it retrieves the original Session
+  with `payment_intent.latest_charge` expanded and calls the public
+  `qualifyCapturedCheckoutPayment` helper.
+
+The action returns `status: "ready"` with the original Session, PaymentIntent,
+charge and account IDs, livemode, integer minor-unit amount and currency. It
+omits both metadata records, client secrets, URLs and raw provider errors. For an
+authorized actor, incomplete or unavailable provider evidence returns
+`{ status: "unavailable" }`. Authorization failures remain rejections; they do
+not become successful empty reads or evidence that a payment is pending.
+
+The default demo is anonymous. Choosing a demonstration buyer or account does
+not authenticate it, and this integration does not install an authentication
+provider. A host must supply verified Convex authentication and the existing
+unique token-to-user mapping before an authorized receipt read is available.
+
+For the mounted receipt workflow, use the authoritative context triple as the
+public `useWorkflowAction` scope and keyed child identity. Loading, absent or
+rejected context must remove the previous receipt. Actor or account changes
+must invalidate it even if the Session ID and authenticated boolean stay the
+same. A late response or retry belongs only to its original scope. Show a fixed,
+sanitized unavailable view for query/action failures, never the raw error.
+
+Only a `ready` result maps to the public `PaymentReceipt` presentation
+`{ status: "succeeded", amount, currency }`. Do not pass `ready` directly as a
+payment status, invent a zero amount or default currency, or infer capture from
+a cached Session's `complete` status. Host components retain their styles and
+routing; the SDK workflow and receipt remain the shared presentation primitives.
+
+This reader performs no fulfillment or access write. It is separate from the
+signed-adapter sketch below and does not turn a provider read into signed-original
+purchase evidence.
+
 ## Reuse from a real signed adapter
 
-The current Vite example does **not** implement an authenticated captured-receipt
-adapter or a durable signed-original Checkout fulfillment consumer. The following
-is a host integration sketch, not an implemented example handler or an additional
-package API:
+The Vite receipt reader does **not** implement a durable signed-original Checkout
+fulfillment consumer. The following is a host integration sketch, not an
+implemented example handler or an additional package API:
 
 ```ts
 import {

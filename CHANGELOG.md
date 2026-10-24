@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.77.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.76.0...v0.77.0) (2026-10-24)
+
+
+### Features
+
+* **example:** authorize captured Checkout receipts ([#386](https://github.com/FantasticDevHQ/better-stripe/issues/386)) ([2589dcc](https://github.com/FantasticDevHQ/better-stripe/commit/2589dcceff5408bd8dd426fd4395a5bb9ab9fd3a))
+
 ## [0.76.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.75.0...v0.76.0) (2026-10-24)
 
 ### Features

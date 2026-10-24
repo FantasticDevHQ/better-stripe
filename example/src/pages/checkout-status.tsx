@@ -1,3 +1,4 @@
+import { CapturedCheckoutReceipt } from "@/components/captured-checkout-receipt";
 import { PaymentIntentReceipt } from "@/components/payment-intent-receipt";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,16 @@ export function CheckoutStatusPage() {
     );
   }
 
+  // A cached Session status is not captured-payment evidence. Subscription
+  // status keeps its existing view; payment receipts require current authority.
+  if (session && session.mode !== "subscription") {
+    return (
+      <div className="mx-auto max-w-2xl space-y-8 py-8">
+        <CapturedCheckoutReceipt stripeSessionId={sessionId} />
+      </div>
+    );
+  }
+
   const status = session?.status as "open" | "complete" | "expired" | undefined;
 
   return (
@@ -70,9 +81,8 @@ export function CheckoutStatusPage() {
                 <CheckCircle className="mx-auto h-12 w-12 text-success" />
                 <h1 className="text-2xl font-bold">Payment successful!</h1>
                 <p className="text-muted-foreground">
-                  {session?.mode === "payment"
-                    ? "Your purchase is complete. Thanks for your order!"
-                    : "Your subscription is now active. You can start learning right away."}
+                  Your subscription is now active. You can start learning right
+                  away.
                 </p>
                 {typeof session?.metadata?.productName === "string" && (
                   <p className="font-medium">{session.metadata.productName}</p>

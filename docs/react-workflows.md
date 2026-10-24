@@ -201,9 +201,12 @@ keep it editable if a payment attempt fails.
 The lower-level `CheckoutElementsForm`, `PaymentIntentForm`, and `CheckoutForm`
 are also exported for an existing client secret.
 
-Only a server-confirmed payment or checkout session should grant access to the
-product. Use `PaymentReceipt` or `CheckoutStatus` with webhook-backed query data;
-a browser return URL alone does not prove payment.
+Use `PaymentReceipt` or `CheckoutStatus` with authoritative server-backed data.
+A completed Checkout Session or a
+[captured payment observation](captured-checkout-payment.md) does not itself
+grant access. The host still authenticates the buyer, correlates the original
+purchase and applies its fulfillment and entitlement policy. A browser return
+URL or successful confirmation submission alone does not prove payment.
 
 ## Via API, BetterStripe components, or Stripe embedded
 

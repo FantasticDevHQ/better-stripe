@@ -1,3 +1,8 @@
+export { qualifyCapturedCheckoutPayment } from "./billing/capturedCheckoutPayment.js";
+export type {
+  CapturedCheckoutPaymentExpected,
+  CapturedCheckoutPaymentObservation,
+} from "./billing/capturedCheckoutPayment.js";
 export type {
   ProductIdentityResult,
   PriceIdentityResult,

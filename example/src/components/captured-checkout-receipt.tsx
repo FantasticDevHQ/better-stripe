@@ -35,8 +35,8 @@ function ScopedReceipt({ context }: { context: CapturedReceiptContext }) {
             <Alert>
               <AlertTitle>Payment receipt unavailable</AlertTitle>
               <AlertDescription>
-                We could not confirm a captured payment for this checkout. You can
-                try again safely.
+                We could not confirm a captured payment for this checkout. You
+                can try again safely.
               </AlertDescription>
             </Alert>
           ) : (
@@ -86,9 +86,7 @@ export function CapturedCheckoutReceipt({
       <Alert>
         <AlertTitle>Payment receipt unavailable</AlertTitle>
         <AlertDescription>
-          <EmptyState>
-            No authorized checkout context is available.
-          </EmptyState>
+          <EmptyState>No authorized checkout context is available.</EmptyState>
         </AlertDescription>
       </Alert>
     );

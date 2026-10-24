@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { getFunctionName } from "convex/server";
 import { ErrorBoundary } from "react-error-boundary";
 import { MemoryRouter, useNavigate } from "react-router-dom";
@@ -34,8 +40,7 @@ const hooks = vi.hoisted(() => ({
   context: undefined as ReceiptContext | null | undefined,
   contextError: null as Error | null,
   payment: undefined as
-    | { status: string; amount: number; currency: string }
-    | undefined,
+    { status: string; amount: number; currency: string } | undefined,
   query: vi.fn(),
   actionReference: vi.fn(),
   read: vi.fn<(args: { stripeSessionId: string }) => Promise<ReceiptResult>>(),
@@ -156,7 +161,9 @@ it("reads only the authoritative Session and renders the real public PaymentRece
   });
   await act(async () => pending.resolve(ready()));
   expect(screen.getByText("Payment successful!")).toBeInTheDocument();
-  expect(screen.getByText("Your purchase is confirmed by Stripe.")).toBeVisible();
+  expect(
+    screen.getByText("Your purchase is confirmed by Stripe."),
+  ).toBeVisible();
   expect(screen.getByText("$35.00")).toBeVisible();
 });
 
@@ -268,7 +275,9 @@ it("drops an existing receipt on query auth failure without exposing raw errors"
   expect(await screen.findByText("$35.00")).toBeVisible();
   const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   try {
-    hooks.contextError = new Error("Authentication required private_token_secret");
+    hooks.contextError = new Error(
+      "Authentication required private_token_secret",
+    );
     view.refresh();
     expect(screen.getByText("Something went wrong")).toBeVisible();
     expectNoCapture();
@@ -324,9 +333,12 @@ it("preserves the existing PaymentIntent route's reactive public receipt", async
   const view = mount("?payment_intent=pi_legacy");
   expect(screen.getByText("Stripe payment status: processing")).toBeVisible();
   expect(screen.queryByText("Payment successful!")).not.toBeInTheDocument();
-  expect(hooks.query).toHaveBeenCalledWith("connect/queries:getPaymentByStripeId", {
-    stripePaymentIntentId: "pi_legacy",
-  });
+  expect(hooks.query).toHaveBeenCalledWith(
+    "connect/queries:getPaymentByStripeId",
+    {
+      stripePaymentIntentId: "pi_legacy",
+    },
+  );
   hooks.payment = { ...hooks.payment, status: "succeeded" };
   view.refresh();
   await waitFor(() => expect(screen.getByText("$29.00")).toBeVisible());

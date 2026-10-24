@@ -78,7 +78,12 @@ it.each(["missing", "duplicate", "visitor"] as const)(
   },
 );
 
-it.each(["foreign-session", "foreign-account", "org-session", "org-account"] as const)(
+it.each([
+  "foreign-session",
+  "foreign-account",
+  "org-session",
+  "org-account",
+] as const)(
   "rejects %s original ownership before provider access",
   async (scope) => {
     requireCapturedReceiptAction();
@@ -161,7 +166,12 @@ it("rejects an ambiguous original account instead of adopting its first row", as
   expect(await f.snapshot()).toEqual(before);
 });
 
-it.each(["missing-session", "missing-account", "subscription", "blank-account"] as const)(
+it.each([
+  "missing-session",
+  "missing-account",
+  "subscription",
+  "blank-account",
+] as const)(
   "rejects %s original context before provider access",
   async (kind) => {
     requireCapturedReceiptAction();
@@ -185,7 +195,8 @@ it.each(["missing-session", "missing-account", "subscription", "blank-account"] 
     const before = await f.snapshot();
     await expect(
       f.caller.action(capturedRead, {
-        stripeSessionId: kind === "missing-session" ? "cs_missing" : f.sessionId,
+        stripeSessionId:
+          kind === "missing-session" ? "cs_missing" : f.sessionId,
       }),
     ).rejects.toThrow("Authentication required");
     expect(f.transport).not.toHaveBeenCalled();
@@ -220,7 +231,12 @@ it("preserves historical capture after a later refund without asserting access o
   expect(f.write).not.toHaveBeenCalled();
 });
 
-it.each(["pending", "unexpanded", "partial", "foreign-provider-account"] as const)(
+it.each([
+  "pending",
+  "unexpanded",
+  "partial",
+  "foreign-provider-account",
+] as const)(
   "returns an unavailable observation for %s evidence without writing state",
   async (kind) => {
     requireCapturedReceiptAction();
@@ -234,7 +250,9 @@ it.each(["pending", "unexpanded", "partial", "foreign-provider-account"] as cons
     else if (kind === "foreign-provider-account")
       input.payment_intent.customer_account = "acct_foreign";
     f.state.response =
-      kind === "unexpanded" ? { ...input, payment_intent: "pi_captured_original" } : input;
+      kind === "unexpanded"
+        ? { ...input, payment_intent: "pi_captured_original" }
+        : input;
     const before = await f.snapshot();
     const result = await f.caller.action(capturedRead, {
       stripeSessionId: f.sessionId,

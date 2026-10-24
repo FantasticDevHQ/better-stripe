@@ -28,10 +28,9 @@
 
 ## [0.76.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.75.0...v0.76.0) (2026-10-24)
 
-
 ### Features
 
-* **checkout:** expose fee-independent captured payment observations ([#384](https://github.com/FantasticDevHQ/better-stripe/issues/384)) ([bae2e74](https://github.com/FantasticDevHQ/better-stripe/commit/bae2e7412f3ec8f2a70ba0ceb1cb26b952bae7e1))
+- **checkout:** expose fee-independent captured payment observations ([#384](https://github.com/FantasticDevHQ/better-stripe/issues/384)) ([bae2e74](https://github.com/FantasticDevHQ/better-stripe/commit/bae2e7412f3ec8f2a70ba0ceb1cb26b952bae7e1))
 
 ## [0.75.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.74.0...v0.75.0) (2026-10-23)
 

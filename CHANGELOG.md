@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.79.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.78.0...v0.79.0) (2026-10-25)
+
+
+### Features
+
+* **portal:** add caller-owned retry-safe request identity ([#390](https://github.com/FantasticDevHQ/better-stripe/issues/390)) ([25803be](https://github.com/FantasticDevHQ/better-stripe/commit/25803be1ebc15d8ba6af41610d97fca4f340eeba))
+
 ## [0.78.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.77.0...v0.78.0) (2026-10-25)
 
 ### Features

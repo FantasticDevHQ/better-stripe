@@ -4,6 +4,7 @@ import { StoreInvoiceEstimate } from "@/components/store-invoice-estimate";
 import { useAction, useQuery } from "convex/react";
 import { useSearchParams } from "react-router-dom";
 import {
+  BillingPortal,
   EmbeddedCheckout,
   formatPrice,
   usePlanBilling,
@@ -121,6 +122,34 @@ export function SellerPlan() {
                       : `${plan.effectiveBasisPoints / 100}% after the sale fee`}
                     .
                   </p>
+                  {state?.hasAccess &&
+                    state.storePlan &&
+                    state.storePlan.planId !== plan.id && (
+                      <BillingPortal
+                        scopeKey={`${sellerId}:${state.storePlan.stripeSubscriptionId}:${plan.id}`}
+                        createSession={() =>
+                          manage({
+                            sellerId,
+                            targetPlanId: plan.id,
+                            returnUrl: `${window.location.origin}/seller/plan`,
+                          })
+                        }
+                      >
+                        {({ open, isPending, error: portalError }) => (
+                          <div>
+                            <Button
+                              disabled={isPending}
+                              onClick={() => void open()}
+                            >
+                              {isPending
+                                ? "Opening confirmation…"
+                                : `Review change to ${plan.name}`}
+                            </Button>
+                            {portalError && <p role="alert">{portalError}</p>}
+                          </div>
+                        )}
+                      </BillingPortal>
+                    )}
                   <Button
                     disabled={
                       busy ||

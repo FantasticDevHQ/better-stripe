@@ -73,6 +73,7 @@ export type {
   RetrieveBillingPortalConfigurationOptions,
   UpdateBillingPortalConfigurationOptions,
   CreateBillingPortalSessionOptions,
+  BillingPortalSubscriptionUpdateFlow,
 } from "./core/accountLinks.js";
 export type {
   AdoptProductOptions,

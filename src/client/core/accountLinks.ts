@@ -1,4 +1,10 @@
 import type Stripe from "stripe";
+import {
+  assertTargetedPortalSubscription,
+  targetedPortalOptions,
+  type BillingPortalSubscriptionUpdateFlow,
+} from "./billingPortalFlow.js";
+export type { BillingPortalSubscriptionUpdateFlow } from "./billingPortalFlow.js";
 
 import { throwStripeError } from "../errors.js";
 import type { RunCtx } from "../helpers.js";
@@ -207,6 +213,8 @@ export type CreateBillingPortalSessionOptions = BillingPortalScope & {
   returnUrl: string;
   /** Omit to use Stripe's default portal configuration. */
   configurationId?: string;
+  /** Host-authorized exact original subscription and one allowed target price. */
+  flowData?: BillingPortalSubscriptionUpdateFlow;
 };
 
 export async function createBillingPortalConfiguration(
@@ -286,20 +294,41 @@ export async function createBillingPortalSession(
   stripe: Stripe,
   _ctx: RunCtx,
   opts: CreateBillingPortalSessionOptions,
-) {
+): Promise<{ url: string }> {
+  const snapshot =
+    opts.flowData === undefined
+      ? { ...opts }
+      : targetedPortalOptions.parse(opts);
   const params: Stripe.BillingPortal.SessionCreateParams = {
-    customer_account: opts.stripeAccountId,
-    return_url: opts.returnUrl,
-    ...(opts.configurationId !== undefined
-      ? { configuration: opts.configurationId }
+    customer_account: snapshot.stripeAccountId,
+    return_url: snapshot.returnUrl,
+    ...(snapshot.configurationId !== undefined
+      ? { configuration: snapshot.configurationId }
+      : {}),
+    ...(snapshot.flowData !== undefined
+      ? { flow_data: snapshot.flowData }
       : {}),
   };
+  const request =
+    snapshot.connectedAccountId !== undefined
+      ? { stripeAccount: snapshot.connectedAccountId }
+      : undefined;
   try {
+    if (snapshot.flowData !== undefined) {
+      const original =
+        snapshot.flowData.subscription_update_confirm.subscription;
+      const subscription =
+        request !== undefined
+          ? await stripe.subscriptions.retrieve(original, {}, request)
+          : await stripe.subscriptions.retrieve(original);
+      assertTargetedPortalSubscription(subscription, {
+        ...snapshot,
+        flowData: snapshot.flowData,
+      });
+    }
     const session =
-      opts.connectedAccountId !== undefined
-        ? await stripe.billingPortal.sessions.create(params, {
-            stripeAccount: opts.connectedAccountId,
-          })
+      request !== undefined
+        ? await stripe.billingPortal.sessions.create(params, request)
         : await stripe.billingPortal.sessions.create(params);
     return { url: session.url };
   } catch (error) {

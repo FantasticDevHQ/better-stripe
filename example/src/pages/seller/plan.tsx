@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useInsertionEffect, useRef, useState } from "react";
 import { openRetainedPortal } from "@/lib/portal-request";
 import { EmptyState } from "@/components/empty-state";
 import { StorePaymentSource } from "@/components/store-payment-source";
@@ -18,6 +18,10 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { type StorePlanId } from "../../../convex/storePlans/helpers";
 
+// Ref-only ownership changes must commit before descendant layout callbacks.
+const useCommitEffect =
+  typeof window === "undefined" ? useEffect : useInsertionEffect;
+
 export function SellerPlan() {
   const { currentUser } = useRole();
   const sellerId = currentUser.id as Id<"users">;
@@ -34,7 +38,7 @@ export function SellerPlan() {
   const prepareManage = useAction(api.storePlans.public.actions.prepareManage);
   const portalScope = `${sellerId}:${state?.stripeAccountId}:${state?.storePlan?.stripeSubscriptionId}`;
   const lifetime = useRef<{ key: string; active: boolean } | null>(null);
-  useEffect(() => {
+  useCommitEffect(() => {
     const owner = { key: portalScope, active: true };
     lifetime.current = owner;
     return () => {

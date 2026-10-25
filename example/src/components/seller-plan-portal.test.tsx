@@ -5,12 +5,14 @@ import {
   waitFor,
   cleanup,
 } from "@testing-library/react";
+import { StrictMode, useLayoutEffect } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { getFunctionName } from "convex/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SellerPlan } from "../pages/seller/plan";
 const calls = vi.hoisted(() => ({
   seller: "seller",
+  startDuringLayout: false,
   prepare: vi.fn(),
   manage: vi.fn(),
 }));
@@ -18,7 +20,15 @@ vi.mock("@/providers/role-context", () => ({
   useRole: () => ({ currentUser: { id: calls.seller } }),
 }));
 vi.mock("@/components/store-payment-source", () => ({
-  StorePaymentSource: () => null,
+  StorePaymentSource: function StorePaymentSource() {
+    useLayoutEffect(() => {
+      if (calls.startDuringLayout)
+        Array.from(document.querySelectorAll("button"))
+          .find((button) => button.textContent === "Review change to Growth")
+          ?.click();
+    }, []);
+    return null;
+  },
 }));
 vi.mock("@/components/store-invoice-estimate", () => ({
   StoreInvoiceEstimate: () => null,
@@ -60,6 +70,7 @@ vi.mock("convex/react", () => ({
 }));
 beforeEach(() => {
   calls.seller = "seller";
+  calls.startDuringLayout = false;
   sessionStorage.clear();
   vi.resetAllMocks();
   calls.prepare.mockImplementation(async ({ key }) => ({
@@ -69,12 +80,13 @@ beforeEach(() => {
   calls.manage.mockRejectedValue(new Error("Unknown provider outcome"));
 });
 afterEach(cleanup);
-function mount() {
-  return render(
+function mount(strict = false) {
+  const page = (
     <MemoryRouter>
       <SellerPlan />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+  return render(strict ? <StrictMode>{page}</StrictMode> : page);
 }
 it("reuses the saved identity after an unknown outcome and remount until an explicit new request", async () => {
   const first = mount();
@@ -168,3 +180,22 @@ it("does not POST for an old actor when preparation finishes after a scope chang
     expect.objectContaining({ sellerId: "other-seller" }),
   );
 });
+
+it.each([false, true])(
+  "dispatches the current billing request when a descendant starts it during commit (StrictMode %s)",
+  async (strict) => {
+    calls.startDuringLayout = true;
+    mount(strict);
+    await screen.findByText("Unknown provider outcome");
+    expect(calls.prepare).toHaveBeenCalledOnce();
+    expect(calls.manage).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        sellerId: "seller",
+        requestIdentity: {
+          key: expect.stringMatching(/^portal:/),
+          binding: "server normalized request",
+        },
+      }),
+    );
+  },
+);

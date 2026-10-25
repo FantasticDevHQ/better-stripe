@@ -866,7 +866,9 @@ proves a subscription change, payment or entitlement.
 The React `BillingPortal` callback stays application-owned. Retain the identity
 outside the component so retries and remounts reuse it. Persist it before calling
 the server action, and include actor, original subscription and target in the
-workflow scope. The seller-plan example demonstrates this with read-only
+workflow scope. Recheck that scope after any awaited preparation and before
+dispatch. The workflow suppresses stale navigation; it cannot undo a server request
+already sent. The seller-plan example demonstrates this with read-only
 `prepareManage`, a preconfigured server policy and per-tab `sessionStorage`.
 Its explicit **Start a new billing request** button begins another operation.
 Browser storage, persona selection and its conservative 23-hour retry cutoff are

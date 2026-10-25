@@ -1630,7 +1630,8 @@ this policy; it never creates a fresh configuration during request preparation o
 retry. `FRONTEND_URL` defines the seller billing return URL.
 
 The seller callback first saves a random key, calls read-only `prepareManage`, and
-saves the returned request binding before invoking `manage`. Retries after errors
+saves the returned request binding before invoking `manage`. Scope changes and
+unmounts invalidate pending preparation before session creation. Retries after errors
 or remounts reuse that pair. Changing the selected customer, subscription, target
 or return route requires an explicit **Start a new billing request** decision.
 Unknown outcomes and expired URLs do not rotate keys automatically. Check billing

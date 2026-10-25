@@ -240,10 +240,10 @@ describe("createBillingPortalSession", () => {
     });
 
     expect(result).toEqual({ url: "https://portal" });
-    expect(stripe.billingPortal.sessions.create).toHaveBeenCalledWith({
-      customer_account: "acct_7",
-      return_url: "https://return",
-    });
+    expect(stripe.billingPortal.sessions.create).toHaveBeenCalledWith(
+      { customer_account: "acct_7", return_url: "https://return" },
+      { maxNetworkRetries: 0 },
+    );
   });
 });
 

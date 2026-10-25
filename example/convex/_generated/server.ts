@@ -40,6 +40,7 @@ type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
   readonly FRONTEND_URL: string | undefined;
+  readonly STORE_PLAN_PORTAL_CONFIGURATION_ID: string | undefined;
   readonly STRIPE_PUBLISHABLE_KEY: string | undefined;
   readonly STRIPE_SECRET_KEY: string;
   readonly STRIPE_WEBHOOK_SECRET: string | undefined;

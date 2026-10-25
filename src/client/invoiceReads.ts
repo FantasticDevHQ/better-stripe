@@ -10,7 +10,7 @@ import * as checkoutPages from "./billing/checkoutPages.js";
 
 /** Provider billing history readers inherited by BetterStripe; hosts authorize their caller. */
 export abstract class InvoiceReadClient extends ReadContractClient {
-  protected abstract stripe(): Stripe;
+  protected abstract stripe(policy?: { singleAttempt?: boolean }): Stripe;
 
   /** Required-actor observation only; the host authorizes community scope and revalidates creation. */
   async getRefundContext(ctx: RunCtx, opts: RefundContextOptions) {

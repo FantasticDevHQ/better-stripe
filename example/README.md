@@ -1595,7 +1595,7 @@ buttons. Its callback calls the existing `storePlans.manage` action with a plan 
 not browser-supplied Stripe customer, subscription, item, price or configuration IDs.
 The server resolves the selected demo seller's saved subscription/customer, checks
 the original complete single-item subscription, selects a price from the saved
-server catalog, and creates the portal configuration before opening Stripe's
+server catalog, and reads a preconfigured portal policy before opening Stripe's
 subscription-update confirmation. The targeted return is the configured
 `FRONTEND_URL` seller billing page (local demo default `http://localhost:5173`).
 Unavailable catalog targets and unsupported subscriptions fail without a generic
@@ -1612,3 +1612,34 @@ portal is navigation, not a verified change or payment; existing signed lifecycl
 and store-plan projection rules remain authoritative. Multi-item subscriptions are
 not supported by this targeted flow. The public React workflow owns pending/error
 and stale-scope navigation handling; the example styles its existing components.
+
+### Retrying a seller portal request
+
+Before using seller billing, provision a platform Billing Portal configuration and
+set its ID in the **Convex deployment**, not a Vite environment variable:
+
+```sh
+pnpm exec convex env set STORE_PLAN_PORTAL_CONFIGURATION_ID bpc_your_configuration
+```
+
+Enable the billing features you intend to offer. Targeted plan changes require
+subscription updates with `price` allowed, `always_invoice` proration, no deferred
+schedule conditions, and the current server catalog product/price allowlist.
+Maintain the policy as catalog prices change. The example retrieves and validates
+this policy; it never creates a fresh configuration during request preparation or
+retry. `FRONTEND_URL` defines the seller billing return URL.
+
+The seller callback first saves a random key, calls read-only `prepareManage`, and
+saves the returned request binding before invoking `manage`. Scope changes and
+unmounts invalidate pending preparation before session creation. Retries after errors
+or remounts reuse that pair. Changing the selected customer, subscription, target
+or return route requires an explicit **Start a new billing request** decision.
+Unknown outcomes and expired URLs do not rotate keys automatically. Check billing
+before deliberately starting another operation. This example refuses retry after
+23 hours as a conservative caller policy; it does not promise provider retention.
+
+This is per-tab `sessionStorage`, not durable authenticated operation storage.
+Closing the tab or clearing browser data loses the demo identity. Production hosts
+must retain and authorize the original operation on the server and define their
+own concurrency, retry-age and reconciliation policies. See the
+[public request identity contract](../docs/client-api.md#retain-a-caller-owned-portal-request).

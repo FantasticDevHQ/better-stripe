@@ -1,9 +1,13 @@
 import type Stripe from "stripe";
+import { z } from "zod";
 import {
   assertTargetedPortalSubscription,
+  billingPortalSessionOptions,
   targetedPortalOptions,
   type BillingPortalSubscriptionUpdateFlow,
 } from "./billingPortalFlow.js";
+import { idempotencyOptions } from "./idempotency.js";
+import { singleAttemptPortalError } from "../singleAttemptHttpClient.js";
 export type { BillingPortalSubscriptionUpdateFlow } from "./billingPortalFlow.js";
 
 import { throwStripeError } from "../errors.js";
@@ -215,7 +219,69 @@ export type CreateBillingPortalSessionOptions = BillingPortalScope & {
   configurationId?: string;
   /** Host-authorized exact original subscription and one allowed target price. */
   flowData?: BillingPortalSubscriptionUpdateFlow;
+  /** Retain this exact key and request binding before the first creation attempt. */
+  requestIdentity?: BillingPortalSessionRequestIdentity;
 };
+
+/** Caller-owned immutable request identity; the SDK stores no key history. */
+export type BillingPortalSessionRequestIdentity = {
+  key: string;
+  binding: string;
+};
+
+const portalRequestIdentity = z
+  .object({ key: z.string(), binding: z.string() })
+  .strict();
+
+function portalSessionParams(
+  snapshot: Omit<CreateBillingPortalSessionOptions, "requestIdentity">,
+): Stripe.BillingPortal.SessionCreateParams {
+  return {
+    customer_account: snapshot.stripeAccountId,
+    return_url: snapshot.returnUrl,
+    ...(snapshot.configurationId !== undefined
+      ? { configuration: snapshot.configurationId }
+      : {}),
+    ...(snapshot.flowData !== undefined
+      ? { flow_data: snapshot.flowData }
+      : {}),
+  };
+}
+
+function portalRequestBinding(
+  params: Stripe.BillingPortal.SessionCreateParams,
+  connectedAccountId: string | undefined,
+): string {
+  return `better-stripe:billing-portal:v1:${JSON.stringify({
+    stripeAccount: connectedAccountId ?? null,
+    params,
+  })}`;
+}
+
+/**
+ * Prepare a serializable identity without provider I/O. Persist it with the
+ * immutable authorized options before creation. Treat binding as opaque data,
+ * not authentication or an SDK-maintained record of earlier uses of this key.
+ */
+export function prepareBillingPortalSessionRequestIdentity(
+  opts: Omit<CreateBillingPortalSessionOptions, "requestIdentity">,
+  key: string,
+): BillingPortalSessionRequestIdentity {
+  const identity = idempotencyOptions(key);
+  if (identity === undefined)
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "A caller-owned key is required.",
+    );
+  const snapshot = billingPortalSessionOptions.parse(opts);
+  return {
+    key: identity.idempotencyKey,
+    binding: portalRequestBinding(
+      portalSessionParams(snapshot),
+      snapshot.connectedAccountId,
+    ),
+  };
+}
 
 export async function createBillingPortalConfiguration(
   stripe: Stripe,
@@ -295,47 +361,59 @@ export async function createBillingPortalSession(
   _ctx: RunCtx,
   opts: CreateBillingPortalSessionOptions,
 ): Promise<{ url: string }> {
+  const { requestIdentity: suppliedIdentity, ...options } = opts;
+  const identity =
+    suppliedIdentity === undefined
+      ? undefined
+      : portalRequestIdentity.parse(suppliedIdentity);
   const snapshot =
-    opts.flowData === undefined
-      ? { ...opts }
-      : targetedPortalOptions.parse(opts);
-  const params: Stripe.BillingPortal.SessionCreateParams = {
-    customer_account: snapshot.stripeAccountId,
-    return_url: snapshot.returnUrl,
-    ...(snapshot.configurationId !== undefined
-      ? { configuration: snapshot.configurationId }
-      : {}),
-    ...(snapshot.flowData !== undefined
-      ? { flow_data: snapshot.flowData }
-      : {}),
-  };
-  const request =
-    snapshot.connectedAccountId !== undefined
+    options.flowData !== undefined
+      ? targetedPortalOptions.parse(options)
+      : identity !== undefined
+        ? billingPortalSessionOptions.parse(options)
+        : { ...options };
+  const params = portalSessionParams(snapshot);
+  const keyed =
+    identity === undefined ? undefined : idempotencyOptions(identity.key);
+  if (
+    identity !== undefined &&
+    identity.binding !==
+      portalRequestBinding(params, snapshot.connectedAccountId)
+  )
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "The retained Billing Portal identity does not match this request. Reuse its immutable authorized options.",
+    );
+  const request = {
+    ...(snapshot.connectedAccountId !== undefined
       ? { stripeAccount: snapshot.connectedAccountId }
-      : undefined;
+      : {}),
+    maxNetworkRetries: 0,
+  };
   try {
     if (snapshot.flowData !== undefined) {
       const original =
         snapshot.flowData.subscription_update_confirm.subscription;
-      const subscription =
-        request !== undefined
-          ? await stripe.subscriptions.retrieve(original, {}, request)
-          : await stripe.subscriptions.retrieve(original);
+      const subscription = await stripe.subscriptions.retrieve(
+        original,
+        {},
+        request,
+      );
       assertTargetedPortalSubscription(subscription, {
         ...snapshot,
         flowData: snapshot.flowData,
       });
     }
-    const session =
-      request !== undefined
-        ? await stripe.billingPortal.sessions.create(params, request)
-        : await stripe.billingPortal.sessions.create(params);
+    const session = await stripe.billingPortal.sessions.create(params, {
+      ...request,
+      ...keyed,
+    });
     return { url: session.url };
   } catch (error) {
     throwStripeError(
       "STRIPE_API_ERROR",
       "Failed to create Billing Portal session",
-      error,
+      singleAttemptPortalError(error),
     );
   }
 }

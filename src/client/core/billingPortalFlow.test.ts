@@ -64,9 +64,16 @@ describe("targeted Billing Portal subscription confirmation", () => {
         },
       );
       expect(f.retrieve.mock.calls).toEqual([
-        connectedAccountId
-          ? ["sub_original", {}, { stripeAccount: connectedAccountId }]
-          : ["sub_original"],
+        [
+          "sub_original",
+          {},
+          {
+            ...(connectedAccountId
+              ? { stripeAccount: connectedAccountId }
+              : {}),
+            maxNetworkRetries: 0,
+          },
+        ],
       ]);
       const params = {
         customer_account: "acct_customer",
@@ -75,9 +82,15 @@ describe("targeted Billing Portal subscription confirmation", () => {
         flow_data: flowData,
       };
       expect(f.create.mock.calls).toEqual([
-        connectedAccountId
-          ? [params, { stripeAccount: connectedAccountId }]
-          : [params],
+        [
+          params,
+          {
+            ...(connectedAccountId
+              ? { stripeAccount: connectedAccountId }
+              : {}),
+            maxNetworkRetries: 0,
+          },
+        ],
       ]);
     },
   );
@@ -118,7 +131,11 @@ describe("targeted Billing Portal subscription confirmation", () => {
     await expect(
       f.client.createBillingPortalSession(ctx, f.options),
     ).rejects.toThrow();
-    expect(f.retrieve).toHaveBeenCalledExactlyOnceWith("sub_original");
+    expect(f.retrieve).toHaveBeenCalledExactlyOnceWith(
+      "sub_original",
+      {},
+      { maxNetworkRetries: 0 },
+    );
     expect(f.create).not.toHaveBeenCalled();
   });
 
@@ -296,7 +313,7 @@ describe("targeted Billing Portal subscription confirmation", () => {
           return_url: "https://host.example/billing",
           flow_data: flowData,
         },
-        { stripeAccount: "acct_connected" },
+        { stripeAccount: "acct_connected", maxNetworkRetries: 0 },
       ],
     ]);
   });
@@ -313,6 +330,7 @@ describe("targeted Billing Portal subscription confirmation", () => {
           return_url: ordinary.returnUrl,
           configuration: ordinary.configurationId,
         },
+        { maxNetworkRetries: 0 },
       ],
     ]);
   });

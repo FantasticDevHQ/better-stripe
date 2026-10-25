@@ -74,7 +74,9 @@ export type {
   UpdateBillingPortalConfigurationOptions,
   CreateBillingPortalSessionOptions,
   BillingPortalSubscriptionUpdateFlow,
+  BillingPortalSessionRequestIdentity,
 } from "./core/accountLinks.js";
+export { prepareBillingPortalSessionRequestIdentity } from "./core/accountLinks.js";
 export type {
   AdoptProductOptions,
   EnsurePriceOptions,
@@ -342,8 +344,8 @@ export class BetterStripe extends PaymentSourceClient {
     return registerClientRoutes(this, http, config);
   }
 
-  protected stripe(): Stripe {
-    return getStripeClient(this.apiKey, this.stripeApiVersion);
+  protected stripe(policy?: { singleAttempt?: boolean }): Stripe {
+    return getStripeClient(this.apiKey, this.stripeApiVersion, policy);
   }
 
   // Static defaults (preserved for backwards compatibility)

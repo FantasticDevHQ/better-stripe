@@ -30,6 +30,10 @@ export abstract class BillingPortalClient extends FinancialOwnershipHost {
     ctx: RunCtx,
     opts: portal.CreateBillingPortalSessionOptions,
   ) {
-    return portal.createBillingPortalSession(this.stripe(), ctx, opts);
+    return portal.createBillingPortalSession(
+      this.stripe({ singleAttempt: true }),
+      ctx,
+      opts,
+    );
   }
 }

@@ -1,3 +1,5 @@
+import { useEffect, useInsertionEffect, useRef, useState } from "react";
+import { openRetainedPortal } from "@/lib/portal-request";
 import { EmptyState } from "@/components/empty-state";
 import { StorePaymentSource } from "@/components/store-payment-source";
 import { StoreInvoiceEstimate } from "@/components/store-invoice-estimate";
@@ -16,6 +18,10 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { type StorePlanId } from "../../../convex/storePlans/helpers";
 
+// Ref-only ownership changes must commit before descendant layout callbacks.
+const useCommitEffect =
+  typeof window === "undefined" ? useEffect : useInsertionEffect;
+
 export function SellerPlan() {
   const { currentUser } = useRole();
   const sellerId = currentUser.id as Id<"users">;
@@ -29,6 +35,67 @@ export function SellerPlan() {
     api.storePlans.public.actions.createCheckout,
   );
   const manage = useAction(api.storePlans.public.actions.manage);
+  const prepareManage = useAction(api.storePlans.public.actions.prepareManage);
+  const portalScope = `${sellerId}:${state?.stripeAccountId}:${state?.storePlan?.stripeSubscriptionId}`;
+  const lifetime = useRef<{ key: string; active: boolean } | null>(null);
+  useCommitEffect(() => {
+    const owner = { key: portalScope, active: true };
+    lifetime.current = owner;
+    return () => {
+      owner.active = false;
+    };
+  }, [portalScope]);
+  const portalLock = useRef(false);
+  const [portalPending, setPortalPending] = useState(false);
+  const [requestError, setRequestError] = useState<string>();
+  const namespace = `better-stripe:example:portal:${sellerId}`;
+  async function retainedPortal(targetPlanId?: StorePlanId) {
+    if (portalLock.current)
+      throw new Error("A billing request is already pending.");
+    if (!state?.stripeAccountId || !state.storePlan)
+      throw new Error("Choose a store plan first.");
+    const owner = lifetime.current;
+    portalLock.current = true;
+    setPortalPending(true);
+    try {
+      const returnUrl = `${window.location.origin}/seller/plan`;
+      const args = {
+        sellerId,
+        returnUrl,
+        ...(targetPlanId ? { targetPlanId } : {}),
+      };
+      return await openRetainedPortal({
+        storage: window.sessionStorage,
+        namespace,
+        selection: JSON.stringify({
+          sellerId,
+          account: state.stripeAccountId,
+          subscription: state.storePlan.stripeSubscriptionId,
+          targetPlanId: targetPlanId ?? null,
+          returnUrl,
+        }),
+        prepare: (key) => prepareManage({ ...args, key }),
+        create: (requestIdentity) => manage({ ...args, requestIdentity }),
+        isCurrent: () =>
+          owner !== null &&
+          owner.active &&
+          lifetime.current === owner &&
+          owner.key === portalScope,
+      });
+    } finally {
+      portalLock.current = false;
+      setPortalPending(false);
+    }
+  }
+  function newPortalRequest() {
+    if (portalLock.current) return;
+    try {
+      window.sessionStorage.removeItem(namespace);
+      setRequestError(undefined);
+    } catch {
+      setRequestError("Billing request storage is unavailable.");
+    }
+  }
   const confirm = useAction(api.storePlans.public.actions.confirmCheckout);
   const [params] = useSearchParams();
   const sessionId = params.get("session_id");
@@ -39,7 +106,7 @@ export function SellerPlan() {
     choose,
     openPortal,
   } = usePlanBilling({
-    scopeKey: sellerId,
+    scopeKey: portalScope,
     sessionId,
     confirm: (sessionId) => confirm({ sellerId, sessionId }),
     createCheckout: (planId: StorePlanId) =>
@@ -48,8 +115,7 @@ export function SellerPlan() {
         planId,
         returnUrl: `${window.location.origin}/seller/plan?session_id={CHECKOUT_SESSION_ID}`,
       }),
-    createPortal: () =>
-      manage({ sellerId, returnUrl: `${window.location.origin}/seller/plan` }),
+    createPortal: () => retainedPortal(),
   });
   return (
     <div className="space-y-6 max-w-5xl">
@@ -76,7 +142,10 @@ export function SellerPlan() {
                     {new Date(state.storePlan.paidThrough).toLocaleDateString()}
                     .
                   </p>
-                  <Button disabled={busy} onClick={() => void openPortal()}>
+                  <Button
+                    disabled={busy || portalPending}
+                    onClick={() => void openPortal()}
+                  >
                     Manage plan, billing & cancellation
                   </Button>
                 </>
@@ -84,6 +153,23 @@ export function SellerPlan() {
             </div>
           </CardContent>
         </Card>
+      )}
+      {state?.storePlan && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Retries retain the same billing request in this tab. If the outcome
+            is unknown, check billing before deliberately starting another
+            request.
+          </p>
+          <Button
+            variant="outline"
+            disabled={portalPending || busy}
+            onClick={newPortalRequest}
+          >
+            Start a new billing request
+          </Button>
+          {requestError && <p role="alert">{requestError}</p>}
+        </div>
       )}
       {state && !state.storePlan && (
         <EmptyState>
@@ -126,19 +212,13 @@ export function SellerPlan() {
                     state.storePlan &&
                     state.storePlan.planId !== plan.id && (
                       <BillingPortal
-                        scopeKey={`${sellerId}:${state.storePlan.stripeSubscriptionId}:${plan.id}`}
-                        createSession={() =>
-                          manage({
-                            sellerId,
-                            targetPlanId: plan.id,
-                            returnUrl: `${window.location.origin}/seller/plan`,
-                          })
-                        }
+                        scopeKey={`${portalScope}:${plan.id}`}
+                        createSession={() => retainedPortal(plan.id)}
                       >
                         {({ open, isPending, error: portalError }) => (
                           <div>
                             <Button
-                              disabled={isPending}
+                              disabled={isPending || portalPending || busy}
                               onClick={() => void open()}
                             >
                               {isPending

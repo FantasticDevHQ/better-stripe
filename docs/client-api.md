@@ -751,3 +751,54 @@ controllers. Start with [typed model recipes](metered-usage.md) and
 [corrections](usage-corrections.md) and [settlement](usage-settlement.md).
 These are trusted host APIs. Browser-selected payer, realm, meter or provider
 references do not establish authorization.
+
+### Confirm a specific subscription update
+
+`createBillingPortalSession` accepts an optional `flowData` typed as
+`BillingPortalSubscriptionUpdateFlow` from the package's main export:
+
+```ts
+const portal = await stripe.createBillingPortalSession(ctx, {
+  stripeAccountId: authorizedCustomerAccountId,
+  connectedAccountId: authorizedConnectedAccountId, // omit for platform scope
+  configurationId: serverSelectedConfigurationId,
+  returnUrl: authorizedBillingUrl,
+  flowData: {
+    type: "subscription_update_confirm",
+    subscription_update_confirm: {
+      subscription: authorizedOriginalSubscriptionId,
+      items: [
+        { id: authorizedExistingItemId, price: serverAllowedTargetPriceId },
+      ],
+    },
+    after_completion: {
+      type: "redirect",
+      redirect: { return_url: authorizedCompletionUrl },
+    },
+  },
+});
+```
+
+The SDK validates the supported shape, copies its scalar values before awaiting
+Stripe, and retrieves the exact original subscription in the same connected-account
+scope as session creation. It requires the original customer account and a complete
+single-item subscription containing the requested item. It rejects multi-item
+subscriptions, partial item pages and mismatches before creating a session. A failed
+read never falls back to an account-wide portal. Omitting `flowData` preserves the
+ordinary portal without an additional subscription read.
+
+These resource checks do not authenticate a caller or authorize a target price,
+quantity, portal configuration or redirect. The host must establish each policy
+before calling. Account customer and connected-account scope are distinct. Stripe's
+account/version and portal feature restrictions still apply; one transport response
+is not a guarantee of provider support. Stripe presents the actual confirmation,
+amount, proration and effective timing under the chosen configuration. The SDK does
+not quote or apply a separate price change.
+
+The existing `BillingPortal` React workflow accepts the host's `createSession`
+callback. Include actor, original subscription and target in its `scopeKey`; current
+success navigates through `onNavigate`, while completion after scope change/unmount
+does not navigate. `open()` still resolves to `true` or `undefined`. Errors remain in
+workflow state. A returned session URL or completion redirect does not prove a paid
+invoice, update access, award a commission or replace verified lifecycle processing.
+Durable retry identity and safe reissue policy are separate from this API.

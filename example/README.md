@@ -1587,3 +1587,28 @@ Open `/demo/metered-usage` as a customer, seller or admin demo persona. Follow t
 ## Native metered billing setup
 
 Run the [native setup guide](../docs/metering-setup.md) and [three model walkthrough](../docs/usage-example.md) with the existing Stripe sandbox. The setup guide uses server-only secret injection and explicit development deployment commands. Read [opt-in rollout](../docs/usage-rollout.md) before adapting the demo to an existing app; persona switching is test-only, not authentication.
+
+### Review an existing seller plan change
+
+The seller plan page uses the public `BillingPortal` workflow for **Review change**
+buttons. Its callback calls the existing `storePlans.manage` action with a plan ID,
+not browser-supplied Stripe customer, subscription, item, price or configuration IDs.
+The server resolves the selected demo seller's saved subscription/customer, checks
+the original complete single-item subscription, selects a price from the saved
+server catalog, and creates the portal configuration before opening Stripe's
+subscription-update confirmation. The targeted return is the configured
+`FRONTEND_URL` seller billing page (local demo default `http://localhost:5173`).
+Unavailable catalog targets and unsupported subscriptions fail without a generic
+portal fallback. The existing ordinary **Manage plan, billing & cancellation** flow
+continues to work separately.
+
+This example's persona selection is a resource-binding demonstration, not real
+authentication. Production hosts must authenticate and authorize the caller before
+resolving the corresponding customer, original subscription and allowed target.
+The raw `billing/public/actions:createBillingPortalSession` demo forwarder remains
+ordinary-only; it does not expose targeted browser options without that policy.
+Stripe shows the actual amount, proration and effective timing. Returning from the
+portal is navigation, not a verified change or payment; existing signed lifecycle
+and store-plan projection rules remain authoritative. Multi-item subscriptions are
+not supported by this targeted flow. The public React workflow owns pending/error
+and stale-scope navigation handling; the example styles its existing components.

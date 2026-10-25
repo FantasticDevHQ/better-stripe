@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { action } from "../../_generated/server";
+import { action, env } from "../../_generated/server";
 
 import { internal } from "../../_generated/api";
 
@@ -115,7 +115,11 @@ export const confirmCheckout = action({
 });
 
 export const manage = action({
-  args: { sellerId: v.id("users"), returnUrl: v.string() },
+  args: {
+    sellerId: v.id("users"),
+    returnUrl: v.string(),
+    targetPlanId: v.optional(storePlanIdValidator),
+  },
   returns: v.string(),
   handler: async (ctx, args): Promise<string> => {
     const seller = await ctx.runQuery(
@@ -126,10 +130,40 @@ export const manage = action({
     );
     if (!seller.stripeAccountId || !seller.storePlan)
       throw new Error("Choose a store plan first.");
-    const catalog = await ctx.runAction(
-      internal.storePlans.internal.actions.ensureCatalog,
-      {},
-    );
+    // Demo persona binding, not authentication: targets come only from the server catalog.
+    const targetRequested = args.targetPlanId !== undefined;
+    const returnUrl = targetRequested
+      ? new URL("/seller/plan", env.FRONTEND_URL ?? "http://localhost:5173")
+          .href
+      : args.returnUrl;
+    if (
+      targetRequested &&
+      (!hasPaidStorePlan(seller.storePlan) || args.returnUrl !== returnUrl)
+    )
+      throw new Error(
+        "Review an active plan from the configured seller billing page.",
+      );
+    const catalog = targetRequested
+      ? await ctx.runQuery(
+          internal.storePlans.billing.internal.queries.readCatalog,
+          {},
+        )
+      : await ctx.runAction(
+          internal.storePlans.internal.actions.ensureCatalog,
+          {},
+        );
+    const target = targetRequested
+      ? catalog.find((entry) => entry.planId === args.targetPlanId)
+      : undefined;
+    if (
+      targetRequested &&
+      (!target ||
+        catalog.filter((entry) => entry.planId === args.targetPlanId).length !==
+          1)
+    )
+      throw new Error(
+        "The requested plan is not available in the server catalog.",
+      );
     const raw = getStripeClient();
     const products = [...new Set(catalog.map((p) => p.stripeProductId))].map(
       (product) => ({
@@ -144,6 +178,18 @@ export const manage = action({
     const subscription = await raw.subscriptions.retrieve(
       seller.storePlan.stripeSubscriptionId,
     );
+    // Verify the saved original resource before creating a provider configuration.
+    if (
+      targetRequested &&
+      (subscription.id !== seller.storePlan.stripeSubscriptionId ||
+        subscription.customer_account !== seller.stripeAccountId ||
+        subscription.items.has_more !== false ||
+        subscription.items.data.length !== 1 ||
+        !subscription.items.data[0]?.id)
+    )
+      throw new Error(
+        "This original subscription cannot use a targeted portal confirmation.",
+      );
     const currentPrice = subscription.items.data[0]?.price;
     const currentProduct =
       currentPrice &&
@@ -179,7 +225,27 @@ export const manage = action({
     });
     const portal = await stripe.createBillingPortalSession(ctx, {
       stripeAccountId: seller.stripeAccountId,
-      returnUrl: args.returnUrl,
+      returnUrl,
+      ...(target
+        ? {
+            flowData: {
+              type: "subscription_update_confirm" as const,
+              subscription_update_confirm: {
+                subscription: seller.storePlan.stripeSubscriptionId,
+                items: [
+                  {
+                    id: subscription.items.data[0]!.id,
+                    price: target.stripePriceId,
+                  },
+                ] as [{ id: string; price: string }],
+              },
+              after_completion: {
+                type: "redirect" as const,
+                redirect: { return_url: returnUrl },
+              },
+            },
+          }
+        : {}),
       configurationId: configuration.id,
     });
     return portal.url;

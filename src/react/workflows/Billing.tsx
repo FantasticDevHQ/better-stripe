@@ -183,15 +183,22 @@ export type BillingPortalProps = {
   }) => ReactNode;
 };
 export function BillingPortal(props: BillingPortalProps) {
-  const action = useWorkflowAction(async () => {
-    const result = await props.createSession();
-    const url = typeof result === "string" ? result : result.url;
-    if (!url) throw new Error("Stripe did not return a portal URL.");
-    (props.onNavigate ?? ((url) => window.location.assign(url)))(url);
-    return true as const;
-  }, props.scopeKey);
+  const action = useWorkflowAction(
+    async () => {
+      const result = await props.createSession();
+      const url = typeof result === "string" ? result : result.url;
+      if (!url) throw new Error("Stripe did not return a portal URL.");
+      return url;
+    },
+    props.scopeKey,
+    (url) => {
+      (props.onNavigate ?? ((nextUrl) => window.location.assign(nextUrl)))(url);
+    },
+  );
+  const open = async (): Promise<true | undefined> =>
+    (await action.run()) === undefined ? undefined : true;
   const state = {
-    open: action.run,
+    open,
     isPending: action.isPending,
     error: action.error,
   };

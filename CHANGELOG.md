@@ -28,10 +28,9 @@
 
 ## [0.78.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.77.0...v0.78.0) (2026-10-25)
 
-
 ### Features
 
-* **portal:** add targeted subscription confirmation (BTS-298) ([#388](https://github.com/FantasticDevHQ/better-stripe/issues/388)) ([7421370](https://github.com/FantasticDevHQ/better-stripe/commit/74213702b177dfa73604e167ca213ce2627e3a85))
+- **portal:** add targeted subscription confirmation ([#388](https://github.com/FantasticDevHQ/better-stripe/issues/388)) ([7421370](https://github.com/FantasticDevHQ/better-stripe/commit/74213702b177dfa73604e167ca213ce2627e3a85))
 
 ## [0.77.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.76.0...v0.77.0) (2026-10-24)
 

@@ -4,6 +4,7 @@ import type {
   OptionalRestArgs,
 } from "convex/server";
 import Stripe from "stripe";
+import { SingleAttemptHttpClient } from "./singleAttemptHttpClient.js";
 
 import type { ComponentApi } from "../component/_generated/component.js";
 import { STRIPE_API_VERSION } from "./constants.js";
@@ -42,13 +43,26 @@ const _clients = new Map<string, Stripe>();
 export function getStripeClient(
   secretKey: string,
   apiVersion?: string,
+  policy?: { singleAttempt?: boolean },
 ): Stripe {
   const version = (apiVersion as StripeApiVersion) || STRIPE_API_VERSION;
-  const cacheKey = `${secretKey}:${version}`;
+  const cacheKey = JSON.stringify([
+    secretKey,
+    version,
+    policy?.singleAttempt === true,
+  ]);
   let client = _clients.get(cacheKey);
   if (!client) {
     client = new Stripe(secretKey, {
       apiVersion: version,
+      ...(policy?.singleAttempt
+        ? {
+            maxNetworkRetries: 0,
+            httpClient: new SingleAttemptHttpClient(
+              Stripe.createFetchHttpClient(),
+            ),
+          }
+        : {}),
     });
     _clients.set(cacheKey, client);
   }

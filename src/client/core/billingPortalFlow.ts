@@ -52,15 +52,18 @@ const flow = z
 export type BillingPortalSubscriptionUpdateFlow = z.infer<typeof flow>;
 
 // Parsing makes a bounded scalar copy before the first provider await.
-export const targetedPortalOptions = z
+export const billingPortalSessionOptions = z
   .object({
     stripeAccountId: id("acct"),
     connectedAccountId: id("acct").optional(),
     configurationId: id("bpc").optional(),
     returnUrl: redirectUrl,
-    flowData: flow,
+    flowData: flow.optional(),
   })
   .strict();
+export const targetedPortalOptions = billingPortalSessionOptions.extend({
+  flowData: flow,
+});
 
 export function assertTargetedPortalSubscription(
   value: unknown,

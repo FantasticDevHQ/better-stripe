@@ -7,6 +7,7 @@ import { api, internal } from "../../_generated/api";
 const calls = vi.hoisted(() => ({
   retrieve: vi.fn(),
   configuration: vi.fn(),
+  readConfiguration: vi.fn(),
   session: vi.fn(),
 }));
 vi.mock("../../stripe/client", () => ({
@@ -15,13 +16,29 @@ vi.mock("../../stripe/client", () => ({
 vi.mock("../../stripe/helpers", () => ({
   stripe: {
     createBillingPortalConfiguration: calls.configuration,
+    retrieveBillingPortalConfiguration: calls.readConfiguration,
     createBillingPortalSession: calls.session,
   },
 }));
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv("FRONTEND_URL", "http://localhost:5173");
-  calls.configuration.mockResolvedValue({ id: "bpc_server_policy" });
+  vi.stubEnv("STORE_PLAN_PORTAL_CONFIGURATION_ID", "bpc_server_policy");
+  calls.readConfiguration.mockResolvedValue({
+    id: "bpc_server_policy",
+    active: true,
+    features: {
+      subscription_update: {
+        enabled: true,
+        default_allowed_updates: ["price"],
+        proration_behavior: "always_invoice",
+        products: [
+          { product: "prod_catalog", prices: ["price_catalog", "price_old"] },
+        ],
+        schedule_at_period_end: { conditions: [] },
+      },
+    },
+  });
   calls.session.mockResolvedValue({
     url: "https://billing.stripe.test/confirmation",
   });
@@ -75,8 +92,13 @@ it("derives exact original/customer/item/target/configuration from the server de
   expect(await t.action(api.storePlans.public.actions.manage, input)).toBe(
     "https://billing.stripe.test/confirmation",
   );
-  expect(calls.retrieve).toHaveBeenCalledExactlyOnceWith("sub_saved");
-  expect(calls.configuration).toHaveBeenCalledOnce();
+  expect(calls.retrieve).toHaveBeenCalledExactlyOnceWith(
+    "sub_saved",
+    {},
+    { maxNetworkRetries: 0 },
+  );
+  expect(calls.configuration).not.toHaveBeenCalled();
+  expect(calls.readConfiguration).toHaveBeenCalledOnce();
   expect(calls.session).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
     stripeAccountId: "acct_seller",
     configurationId: "bpc_server_policy",
@@ -117,7 +139,11 @@ it.each(["customer", "subscription", "multi-item", "partial"])(
     await expect(
       t.action(api.storePlans.public.actions.manage, input),
     ).rejects.toThrow();
-    expect(calls.retrieve).toHaveBeenCalledExactlyOnceWith("sub_saved");
+    expect(calls.retrieve).toHaveBeenCalledExactlyOnceWith(
+      "sub_saved",
+      {},
+      { maxNetworkRetries: 0 },
+    );
     expect(calls.configuration).not.toHaveBeenCalled();
     expect(calls.session).not.toHaveBeenCalled();
   },
@@ -135,6 +161,60 @@ it.each(["target", "redirect"])(
       }),
     ).rejects.toThrow();
     expect(calls.retrieve).not.toHaveBeenCalled();
+    expect(calls.configuration).not.toHaveBeenCalled();
+    expect(calls.session).not.toHaveBeenCalled();
+  },
+);
+
+it("prepares a retained identity using reads and a fixed server policy before any portal POST", async () => {
+  const { t, input } = await setup();
+  const identity = await t.action(api.storePlans.public.actions.prepareManage, {
+    ...input,
+    key: "portal:retained",
+  });
+  expect(identity).toMatchObject({
+    key: "portal:retained",
+    binding: expect.stringContaining("bpc_server_policy"),
+  });
+  expect(calls.readConfiguration).toHaveBeenCalledExactlyOnceWith(
+    expect.anything(),
+    { configurationId: "bpc_server_policy" },
+  );
+  expect(calls.configuration).not.toHaveBeenCalled();
+  expect(calls.session).not.toHaveBeenCalled();
+  await t.action(api.storePlans.public.actions.manage, {
+    ...input,
+    requestIdentity: identity,
+  });
+  expect(calls.session).toHaveBeenCalledExactlyOnceWith(
+    expect.anything(),
+    expect.objectContaining({
+      configurationId: "bpc_server_policy",
+      requestIdentity: identity,
+    }),
+  );
+});
+it.each(["inactive", "configuration", "target", "proration", "deferred"])(
+  "rejects a configured policy with an invalid %s before portal creation",
+  async (failure) => {
+    const { t, input } = await setup();
+    const policy = await calls.readConfiguration();
+    calls.readConfiguration.mockClear();
+    if (failure === "inactive") policy.active = false;
+    if (failure === "configuration") policy.id = "bpc_other";
+    if (failure === "target") policy.features.subscription_update.products = [];
+    if (failure === "proration")
+      policy.features.subscription_update.proration_behavior = "none";
+    if (failure === "deferred")
+      policy.features.subscription_update.schedule_at_period_end.conditions = [
+        { type: "increasing_item_amount" },
+      ];
+    await expect(
+      t.action(api.storePlans.public.actions.prepareManage, {
+        ...input,
+        key: "portal:retained",
+      }),
+    ).rejects.toThrow("configured portal policy");
     expect(calls.configuration).not.toHaveBeenCalled();
     expect(calls.session).not.toHaveBeenCalled();
   },

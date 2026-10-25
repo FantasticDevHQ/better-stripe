@@ -2,7 +2,7 @@ import { modules } from "../../test";
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
 import { stripe } from "../stripe/helpers";
@@ -21,10 +21,12 @@ vi.mock("../stripe/helpers", () => ({
     addCustomerConfiguration: vi.fn(),
     createCheckoutSession: vi.fn(),
     createBillingPortalConfiguration: vi.fn(),
+    retrieveBillingPortalConfiguration: vi.fn(),
     createBillingPortalSession: vi.fn(),
   },
 }));
 beforeEach(() => vi.resetAllMocks());
+afterEach(() => vi.unstubAllEnvs());
 async function setup() {
   const t = convexTest(schema, modules);
   const sellerId = await t.run((ctx) =>
@@ -45,12 +47,15 @@ async function setup() {
   );
   const sub = {
     id: "sub_store",
+    customer_account: "acct_store",
     status: "active",
     metadata: { storeBilling: "plan_v1", sellerId },
     latest_invoice: { id: "in_store", status: "paid" },
     items: {
+      has_more: false,
       data: [
         {
+          id: "si_store",
           price: { id: "price_growth" },
           quantity: 1,
           current_period_end: Math.floor(Date.now() / 1000) + 86400,
@@ -248,32 +253,17 @@ it("recognizes an existing subscription price after the admin publishes a newer 
   });
 });
 
-it("keeps the app price allowlist and legacy current price in a configured component portal", async () => {
+it("uses a stable configured component portal without creating a policy per request", async () => {
   const { t, sellerId, sub } = await setup();
+  vi.stubEnv("FRONTEND_URL", "https://example.test");
+  vi.stubEnv("STORE_PLAN_PORTAL_CONFIGURATION_ID", "bpc_store");
   await t.action(internal.storePlans.internal.actions.refreshSubscription, {
     subscriptionId: sub.id,
   });
-  for (const planId of ["starter", "growth", "pro"] as const)
-    await t.mutation(
-      internal.storePlans.billing.internal.mutations.saveCatalogPrice,
-      {
-        planId,
-        stripeProductId: `prod_${planId}`,
-        stripePriceId: `price_${planId}`,
-      },
-    );
-  Object.assign(sub.items.data[0].price, {
-    id: "price_legacy",
-    product: "prod_legacy",
-  });
-  raw.billingPortal.configurations.create.mockResolvedValue({
+  vi.mocked(stripe.retrieveBillingPortalConfiguration).mockResolvedValue({
     id: "bpc_store",
-  });
-  raw.billingPortal.sessions.create.mockResolvedValue({
-    url: "https://billing.stripe.test/store",
-  });
-  vi.mocked(stripe.createBillingPortalConfiguration).mockResolvedValue({
-    id: "bpc_store",
+    active: true,
+    features: { subscription_update: { enabled: true } },
   } as never);
   vi.mocked(stripe.createBillingPortalSession).mockResolvedValue({
     url: "https://billing.stripe.test/store",
@@ -281,43 +271,20 @@ it("keeps the app price allowlist and legacy current price in a configured compo
   expect(
     await t.action(api.storePlans.public.actions.manage, {
       sellerId,
-      returnUrl: "https://example.test/plan",
+      returnUrl: "https://example.test/seller/plan",
     }),
   ).toBe("https://billing.stripe.test/store");
-  expect(stripe.createBillingPortalConfiguration).toHaveBeenCalledWith(
-    expect.anything(),
-    {
-      params: {
-        business_profile: { headline: "Manage your BetterStripe store plan" },
-        features: {
-          payment_method_update: { enabled: true },
-          invoice_history: { enabled: true },
-          subscription_cancel: { enabled: true, mode: "at_period_end" },
-          subscription_update: {
-            enabled: true,
-            default_allowed_updates: ["price"],
-            products: expect.arrayContaining([
-              { product: "prod_starter", prices: ["price_starter"] },
-              { product: "prod_growth", prices: ["price_growth"] },
-              { product: "prod_pro", prices: ["price_pro"] },
-              { product: "prod_legacy", prices: ["price_legacy"] },
-            ]),
-            proration_behavior: "always_invoice",
-            schedule_at_period_end: { conditions: [] },
-          },
-        },
-      },
-    },
-  );
   expect(
-    vi.mocked(stripe.createBillingPortalConfiguration).mock.calls[0][1].params
-      .features?.subscription_update?.products,
-  ).toHaveLength(4);
-  expect(stripe.createBillingPortalSession).toHaveBeenCalledWith(
+    stripe.retrieveBillingPortalConfiguration,
+  ).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+    configurationId: "bpc_store",
+  });
+  expect(stripe.createBillingPortalConfiguration).not.toHaveBeenCalled();
+  expect(stripe.createBillingPortalSession).toHaveBeenCalledExactlyOnceWith(
     expect.anything(),
     {
       stripeAccountId: "acct_store",
-      returnUrl: "https://example.test/plan",
+      returnUrl: "https://example.test/seller/plan",
       configurationId: "bpc_store",
     },
   );

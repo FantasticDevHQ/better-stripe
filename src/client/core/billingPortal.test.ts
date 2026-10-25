@@ -158,11 +158,13 @@ describe("configured Billing Portal sessions", () => {
         return_url: "https://return",
         configuration: "bpc_host",
       };
-      expect(stripe.billingPortal.sessions.create.mock.calls[0]).toEqual(
-        connectedAccountId
-          ? [params, { stripeAccount: connectedAccountId }]
-          : [params],
-      );
+      expect(stripe.billingPortal.sessions.create.mock.calls[0]).toEqual([
+        params,
+        {
+          ...(connectedAccountId ? { stripeAccount: connectedAccountId } : {}),
+          maxNetworkRetries: 0,
+        },
+      ]);
     },
   );
 
@@ -241,7 +243,7 @@ describe("BetterStripe portal API", () => {
         customer_account: "acct_customer",
         return_url: "https://return",
       },
-      { stripeAccount: "acct_owner" },
+      { stripeAccount: "acct_owner", maxNetworkRetries: 0 },
     );
   });
 });

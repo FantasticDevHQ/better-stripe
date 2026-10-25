@@ -802,3 +802,73 @@ does not navigate. `open()` still resolves to `true` or `undefined`. Errors rema
 workflow state. A returned session URL or completion redirect does not prove a paid
 invoice, update access, award a commission or replace verified lifecycle processing.
 Durable retry identity and safe reissue policy are separate from this API.
+
+### Retain a caller-owned portal request
+
+Use `prepareBillingPortalSessionRequestIdentity` from the main export to bind a
+caller-generated key to the complete normalized portal request. Persist the
+returned `{ key, binding }` and immutable authorized options **before** the first
+session creation. Reuse that pair after a timeout, duplicate invocation or lost
+response:
+
+```ts
+import { prepareBillingPortalSessionRequestIdentity } from "@fantastic.dev/better-stripe";
+
+// The host authorizes and stores these options with the authenticated operation.
+const options = {
+  stripeAccountId: authorizedCustomerAccountId,
+  connectedAccountId: authorizedConnectedAccountId,
+  configurationId: serverSelectedConfigurationId,
+  returnUrl: authorizedBillingUrl,
+  // Include the same supported flowData here for a targeted confirmation.
+};
+const requestIdentity = prepareBillingPortalSessionRequestIdentity(
+  options,
+  callerOwnedOperationKey,
+);
+// Persist options + requestIdentity in the host's durable operation store here.
+const portal = await stripe.createBillingPortalSession(ctx, {
+  ...options,
+  requestIdentity,
+});
+```
+
+The binding includes the customer account, effective connected-account scope,
+configuration, return URL and complete targeted flow, including quantity and
+completion behavior when supplied. It is opaque, versioned and JSON-serializable.
+The SDK rejects a changed binding before a provider request. Keys must be nonblank,
+at most 255 characters and contain no carriage return or newline. Keep personal
+information out of keys. The helper does not reserve a key, authenticate ownership
+or remember earlier calls. A host can deliberately create another binding with the
+same key; Stripe's conflict remains visible. A fixed configuration ID binds that
+reference, not mutable provider configuration contents or default policy.
+
+Each provider request in session creation makes one SDK transport attempt,
+including the original subscription read for a targeted flow. Automatic provider retries are
+disabled, including Stripe's special closed-connection retry. A transport failure
+can still mean Stripe processed the request. Provider errors retain their safe
+type/code; no error silently rotates the key, reissues a session or returns a
+locally cached URL. Omitting `requestIdentity` leaves caller-owned retry protection
+opt-in. The underlying Stripe client can generate a fresh per-invocation POST key;
+that does not provide identity across separate SDK calls.
+
+[Stripe's API v1 idempotency rules](https://docs.stripe.com/api/idempotent_requests)
+apply. Once execution starts, Stripe retains the first response, including errors.
+Validation and concurrent-request conflicts may not be saved. Keys may be pruned
+after at least 24 hours; reuse after pruning can create a new resource. This is no
+permanent replay guarantee. [Portal URLs are short-lived](https://docs.stripe.com/api/customer_portal/sessions).
+The public portal reference exposes creation without a retrieve/list endpoint;
+the SDK supplies no automatic lost-response reconciliation. Do not rotate an
+identity automatically because a URL expired or a result is unknown. The host owns authenticated operation storage, concurrency, retry age,
+reconciliation and deliberate new-request decisions. A new portal session never
+proves a subscription change, payment or entitlement.
+
+The React `BillingPortal` callback stays application-owned. Retain the identity
+outside the component so retries and remounts reuse it. Persist it before calling
+the server action, and include actor, original subscription and target in the
+workflow scope. The seller-plan example demonstrates this with read-only
+`prepareManage`, a preconfigured server policy and per-tab `sessionStorage`.
+Its explicit **Start a new billing request** button begins another operation.
+Browser storage, persona selection and its conservative 23-hour retry cutoff are
+demo choices; production hosts need durable authenticated storage and an explicit
+policy for unknown outcomes.

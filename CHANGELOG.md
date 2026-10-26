@@ -28,10 +28,9 @@
 
 ## [0.79.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.79.0...v0.79.1) (2026-10-26)
 
-
 ### Maintenance
 
-* **coverage:** ratchet earned coverage floors ([#392](https://github.com/FantasticDevHQ/better-stripe/issues/392)) ([3b61191](https://github.com/FantasticDevHQ/better-stripe/commit/3b611911e1e1dbcb7e78d03509121731b2c57f92))
+- **coverage:** ratchet earned coverage floors ([#392](https://github.com/FantasticDevHQ/better-stripe/issues/392)) ([3b61191](https://github.com/FantasticDevHQ/better-stripe/commit/3b611911e1e1dbcb7e78d03509121731b2c57f92))
 
 ## [0.79.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.78.0...v0.79.0) (2026-10-25)
 

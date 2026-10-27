@@ -46,6 +46,8 @@ Product IDs may be provider-valid custom nonblank IDs, as well as generated
 `prod_` IDs. Original and target product selectors must still match exactly.
 The internal [preservation mappings](renewal-preservation-mappings.md) document
 field projection boundaries separately from complete schedule eligibility.
+The internal [phase assembly contract](renewal-phase-assembly.md) describes
+preflight, acknowledged baselines and non-dispatchable configuration candidates.
 
 The subscription's actual `currency` must match both prices' default `currency`.
 This helper does not select `currency_options` or infer an alternative amount.

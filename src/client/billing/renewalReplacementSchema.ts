@@ -6,10 +6,16 @@ const id = (prefix: string) =>
     .max(255)
     .regex(new RegExp(`^${prefix}_[A-Za-z0-9_]+$`));
 const integer = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+// Stripe allows caller-supplied product IDs, including IDs without prod_.
+const productId = z.string().min(1).max(255).regex(/\S/);
 const product = z.union([
-  id("prod"),
+  productId,
   z
-    .object({ id: id("prod"), deleted: z.literal(false).optional() })
+    .object({
+      id: productId,
+      object: z.literal("product"),
+      deleted: z.literal(false).optional(),
+    })
     .passthrough(),
 ]);
 export const renewalPrice = z
@@ -38,9 +44,9 @@ export const renewalExpected = z
     subscriptionId: id("sub"),
     itemId: id("si"),
     currentPriceId: id("price"),
-    currentProductId: id("prod"),
+    currentProductId: productId,
     targetPriceId: id("price"),
-    targetProductId: id("prod"),
+    targetProductId: productId,
     periodStart: integer,
     periodEnd: integer,
     livemode: z.boolean(),

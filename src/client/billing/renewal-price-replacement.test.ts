@@ -13,6 +13,22 @@ const expected = {
   periodEnd: 1702592000,
   livemode: false,
 };
+
+it.each(["current", "target"] as const)(
+  "accepts provider-valid custom %s product IDs",
+  (which) => {
+    const args = structuredClone(input());
+    if (which === "current") {
+      args.expected.currentProductId = "custom-original-catalog-item";
+      args.subscription.items.data[0].price.product =
+        args.expected.currentProductId;
+    } else {
+      args.expected.targetProductId = "custom-target-catalog-item";
+      args.targetPrice.product = args.expected.targetProductId;
+    }
+    expect(sdk.prepareRenewalPriceReplacement(args).status).toBe("prepared");
+  },
+);
 function price(id = "price_original", product = "prod_original") {
   return {
     id,
@@ -69,6 +85,36 @@ function input() {
     targetPrice: price("price_target", "prod_other"),
   };
 }
+
+it("accepts an undeleted expanded custom product reference", () => {
+  const args = structuredClone(input());
+  args.expected.targetProductId = "custom-target";
+  expect(
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      targetPrice: {
+        ...args.targetPrice,
+        product: { id: "custom-target", object: "product" },
+      },
+    }).status,
+  ).toBe("prepared");
+});
+
+it.each(["coupon", "customer"])(
+  "rejects a wrong expanded product object %s",
+  (object) => {
+    const args = input();
+    expect(() =>
+      sdk.prepareRenewalPriceReplacement({
+        ...args,
+        targetPrice: {
+          ...args.targetPrice,
+          product: { id: args.expected.targetProductId, object },
+        },
+      }),
+    ).toThrow();
+  },
+);
 
 it("exports read-only renewal preparation without exposing a schedule writer", () => {
   expect(sdk).toHaveProperty(

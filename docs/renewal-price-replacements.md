@@ -42,6 +42,11 @@ currency. Different products and recurring cadences are represented without
 inventing tier ordering or financial arithmetic. Representation does not certify
 that a future writer supports every cadence, billing mode or setting.
 
+Product IDs may be provider-valid custom nonblank IDs, as well as generated
+`prod_` IDs. Original and target product selectors must still match exactly.
+The internal [preservation mappings](renewal-preservation-mappings.md) document
+field projection boundaries separately from complete schedule eligibility.
+
 The subscription's actual `currency` must match both prices' default `currency`.
 This helper does not select `currency_options` or infer an alternative amount.
 Alternative-currency contexts need a separate explicit mapping and are rejected

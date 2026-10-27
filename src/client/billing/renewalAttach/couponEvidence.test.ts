@@ -28,7 +28,7 @@ function controlled(value: unknown) {
             "stripe-version": apiVersion,
           }),
           toJSON: async () => structuredClone(value),
-          getRawResponse: () => ({}),
+          getRawResponse: () => ({ statusCode: 200 }),
           toStream: () => null,
         } as unknown as Stripe.HttpClientResponse;
       },
@@ -42,7 +42,6 @@ function controlled(value: unknown) {
         source as Record<string, unknown>,
         item as Record<string, unknown>,
         false,
-        { apiVersion, maxNetworkRetries: 0 },
       ),
   };
 }

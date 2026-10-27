@@ -4,7 +4,7 @@ import type {
   OptionalRestArgs,
 } from "convex/server";
 import Stripe from "stripe";
-import { SingleAttemptHttpClient } from "./singleAttemptHttpClient.js";
+import { createSingleAttemptHttpClient } from "./strictStripeTransport.js";
 
 import type { ComponentApi } from "../component/_generated/component.js";
 import { STRIPE_API_VERSION } from "./constants.js";
@@ -58,9 +58,7 @@ export function getStripeClient(
       ...(policy?.singleAttempt
         ? {
             maxNetworkRetries: 0,
-            httpClient: new SingleAttemptHttpClient(
-              Stripe.createFetchHttpClient(),
-            ),
+            httpClient: createSingleAttemptHttpClient(),
           }
         : {}),
     });

@@ -12,7 +12,7 @@ class SingleAttemptConnectionClosed extends Error {
   }
 }
 
-/** Portal-only adapter for Stripe's closed-connection retry exception. */
+/** Guard for Stripe's closed-connection retry exception. */
 export class SingleAttemptHttpClient implements Stripe.HttpClient {
   constructor(private readonly delegate: Stripe.HttpClient) {}
 

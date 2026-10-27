@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type Stripe from "stripe";
 import { equal, object, unsupported } from "../renewalAggregate/shared.js";
-import { renewalSnapshot } from "../renewalReplacementSnapshot.js";
+import { readRenewalWireJSON } from "./wireJson.js";
 
 const id = z.string().min(1).max(255).regex(/\S/);
 const discount = z
@@ -32,7 +32,6 @@ export async function joinRenewalCoupons(
   subscription: Record<string, unknown>,
   item: Record<string, unknown>,
   livemode: boolean,
-  options: Stripe.RequestOptions,
 ) {
   const lists = [subscription.discounts, item.discounts].map((value) => {
     const parsed = z.array(discount).max(20).safeParse(value);
@@ -59,9 +58,7 @@ export async function joinRenewalCoupons(
           : redemption.source.coupon.id;
       let coupon = coupons.get(couponId);
       if (!coupon) {
-        coupon = object(
-          renewalSnapshot(await stripe.coupons.retrieve(couponId, {}, options)),
-        );
+        coupon = object(await readRenewalWireJSON(stripe, "coupon", couponId));
         if (
           coupon.id !== couponId ||
           coupon.object !== "coupon" ||

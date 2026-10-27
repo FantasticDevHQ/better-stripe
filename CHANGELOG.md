@@ -28,10 +28,9 @@
 
 ## [0.82.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.81.0...v0.82.0) (2026-10-27)
 
-
 ### Features
 
-* **billing:** assemble bound renewal configuration candidates (BTS-309) ([46919da](https://github.com/FantasticDevHQ/better-stripe/commit/46919da1abccec07b28b972165a1e2e166d3aa5c))
+- **billing:** assemble bound renewal configuration candidates ([46919da](https://github.com/FantasticDevHQ/better-stripe/commit/46919da1abccec07b28b972165a1e2e166d3aa5c))
 
 ## [0.81.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.80.0...v0.81.0) (2026-10-27)
 

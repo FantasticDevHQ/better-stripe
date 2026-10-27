@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.80.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.79.1...v0.80.0) (2026-10-27)
+
+### Features
+
+- **billing:** prepare bound renewal replacement snapshots ([#394](https://github.com/FantasticDevHQ/better-stripe/issues/394)) ([42514b7](https://github.com/FantasticDevHQ/better-stripe/commit/42514b7c045bc845e4e96549eb5d0af75a762b0b))
+
 ## [0.79.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.79.0...v0.79.1) (2026-10-26)
 
 ### Maintenance

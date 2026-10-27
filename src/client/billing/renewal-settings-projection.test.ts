@@ -84,6 +84,29 @@ it("omits a null transfer percentage rather than fabricating full-transfer value
 });
 
 it.each([
+  [0, "projected"],
+  [0.01, "projected"],
+  [0.29, "projected"],
+  [99.99, "projected"],
+  [100, "projected"],
+  [0.001, "unsupported"],
+  [1.234, "unsupported"],
+] as const)(
+  "qualifies exact transfer percentage precision %s",
+  (amount_percent, status) => {
+    expect(
+      project({
+        ...settings(),
+        transfer_data: {
+          destination: "acct_destination",
+          amount_percent,
+        },
+      }).status,
+    ).toBe(status);
+  },
+);
+
+it.each([
   { application_fee_percent: 0 },
   { billing_thresholds: { amount_gte: 100 } },
   { collection_method: "future_mode" },

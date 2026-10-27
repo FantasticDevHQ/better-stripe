@@ -105,7 +105,12 @@ export const settingsInput = z
         transfer_data: z
           .object({
             destination: account,
-            amount_percent: z.number().min(0).max(100).nullable(),
+            amount_percent: z
+              .number()
+              .min(0)
+              .max(100)
+              .multipleOf(0.01)
+              .nullable(),
           })
           .strict()
           .nullable(),

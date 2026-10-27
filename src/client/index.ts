@@ -1,3 +1,9 @@
+export { prepareRenewalPriceReplacement } from "./billing/renewalPriceReplacement.js";
+export type {
+  PrepareRenewalPriceReplacementOptions,
+  PreparedRenewalPriceReplacement,
+} from "./billing/renewalPriceReplacement.js";
+export type { RenewalPriceReplacementExpected } from "./billing/renewalReplacementSchema.js";
 export { qualifyCapturedCheckoutPayment } from "./billing/capturedCheckoutPayment.js";
 export type {
   CapturedCheckoutPaymentExpected,

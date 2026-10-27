@@ -2,6 +2,11 @@
 
 ## Client API reference
 
+The pure `prepareRenewalPriceReplacement` export qualifies trusted provider-read
+snapshots for an exact cross-product renewal request. It performs no provider I/O
+and supplies no schedule writer. See the [renewal replacement contract](./renewal-price-replacements.md)
+for its selectors, private binding, required staged protocol and preservation gate.
+
 All methods are available on the `BetterStripe` class instance. Methods that call the Stripe API are actions; methods that only read Convex data are queries.
 
 Methods named `get<Entity>` take the component document ID (exception: `getInvoice`, which takes the Stripe invoice ID); methods named `get<Entity>ByStripeId` take the Stripe ID (`acct_...`, `prod_...`, `price_...`, `cs_...`, `sub_...`).

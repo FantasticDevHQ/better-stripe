@@ -212,13 +212,17 @@ observation; it must not be reprojected into another initial request.
 
 A provider GET is not a POST acknowledgement. Sufficient exact provider evidence
 may eventually recover pending or effective state without an acknowledgement;
-otherwise the outcome remains unknown. Pending requires the exact future phase,
-original boundary, current paid terms/defaults and linked buyer/subscription.
+otherwise the outcome remains unknown. If a configure acknowledgement exists,
+retain its complete canonical baseline and correlate subsequent observations
+with it. Pending requires the exact future phase, original boundary, current
+paid terms/defaults and linked buyer/subscription.
 Effective state while the target phase is current requires a unique authorized
 target item, matching quantity, currency, applicable period/settings and owned
 phase/subscription relation. Do not require the old item ID to survive a price
-transition. The fixed normalization and provider-computed phase-duration evidence
-for that observer are not implemented by context reading.
+transition. Before implementing this observer, define and independently review
+fixed normalization covering the full retained desired request and
+provider-computed phase-end/duration evidence. Context reading does not provide
+that observer normalization.
 
 Canceled, released or completed facts alone do not prove effectiveness. Manual
 release, missing historical correlation, matching price or wall time leave

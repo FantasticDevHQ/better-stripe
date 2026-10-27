@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.83.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.83.0...v0.83.1) (2026-10-27)
+
+### Bug Fixes
+
+- preserve renewal wire JSON and prevent redirect replay ([#402](https://github.com/FantasticDevHQ/better-stripe/issues/402)) ([481a902](https://github.com/FantasticDevHQ/better-stripe/commit/481a902a9182edd92f8dc0b01bf9e5c5892cf8f9))
+
 ## [0.83.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.82.0...v0.83.0) (2026-10-27)
 
 ### Features

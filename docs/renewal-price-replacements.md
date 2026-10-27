@@ -42,6 +42,11 @@ currency. Different products and recurring cadences are represented without
 inventing tier ordering or financial arithmetic. Representation does not certify
 that a future writer supports every cadence, billing mode or setting.
 
+The subscription's actual `currency` must match both prices' default `currency`.
+This helper does not select `currency_options` or infer an alternative amount.
+Alternative-currency contexts need a separate explicit mapping and are rejected
+here rather than accepted because the two default price currencies happen to match.
+
 An optional `billingCustomer` input adds an authoritative ancestor billing read.
 Stripe documents that `customer_account` responses also identify a v1 `customer`,
 and that customer-configured accounts can be retrieved through the v1 Customers

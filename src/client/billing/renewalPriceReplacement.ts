@@ -86,10 +86,11 @@ export function prepareRenewalPriceReplacement(
   if (
     !targetPrice.active ||
     current.id === targetPrice.id ||
+    subscription.currency !== current.currency ||
     current.currency !== targetPrice.currency
   )
     throw new Error(
-      "The target must be a different active recurring price in the original currency.",
+      "The target must be a different active recurring price in the original subscription currency; alternative currency_options require separate validation.",
     );
   for (const field of [
     "pending_invoice_item_interval",

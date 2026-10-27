@@ -35,6 +35,7 @@ function input() {
       object: "subscription",
       customer_account: "acct_buyer",
       status: "active",
+      currency: "usd",
       livemode: false,
       schedule: null,
       cancel_at: null,
@@ -443,4 +444,14 @@ it("rejects a cyclic provider snapshot", () => {
       subscription: { ...args.subscription, metadata: cyclic },
     }),
   ).toThrow(/JSON/);
+});
+
+it("rejects an alternative subscription currency even when both default price currencies match", () => {
+  const args = input();
+  expect(() =>
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: { ...args.subscription, currency: "eur" },
+    }),
+  ).toThrow(/currency/);
 });

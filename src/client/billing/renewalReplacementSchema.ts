@@ -54,6 +54,7 @@ export const renewalSubscription = z
     object: z.literal("subscription"),
     customer_account: id("acct"),
     status: z.literal("active"),
+    currency: z.string().regex(/^[a-z]{3}$/),
     livemode: z.boolean(),
     schedule: z.null(),
     cancel_at: z.null(),

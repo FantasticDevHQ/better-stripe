@@ -1,9 +1,4 @@
-export { prepareRenewalPriceReplacement } from "./billing/renewalPriceReplacement.js";
-export type {
-  PrepareRenewalPriceReplacementOptions,
-  PreparedRenewalPriceReplacement,
-} from "./billing/renewalPriceReplacement.js";
-export type { RenewalPriceReplacementExpected } from "./billing/renewalReplacementSchema.js";
+export * from "./renewal.js";
 export { qualifyCapturedCheckoutPayment } from "./billing/capturedCheckoutPayment.js";
 export type {
   CapturedCheckoutPaymentExpected,
@@ -73,7 +68,7 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { PaymentSourceClient } from "./paymentSource/client.js";
+import { RenewalContextClient } from "./renewalContextClient.js";
 export type {
   CreateBillingPortalConfigurationOptions,
   RetrieveBillingPortalConfigurationOptions,
@@ -281,7 +276,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends PaymentSourceClient {
+export class BetterStripe extends RenewalContextClient {
   get usage() {
     return new UsageLedgerClient(this.component);
   }

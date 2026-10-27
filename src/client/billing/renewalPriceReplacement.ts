@@ -1,6 +1,7 @@
 import { idempotencyOptions } from "../core/idempotency.js";
 import {
   renewalExpected,
+  renewalBillingCustomer,
   renewalPreparationInput,
   renewalPrice,
   renewalSubscription,
@@ -11,6 +12,7 @@ import { renewalSnapshot } from "./renewalReplacementSnapshot.js";
 export type PrepareRenewalPriceReplacementOptions = {
   subscription: unknown;
   targetPrice: unknown;
+  billingCustomer?: unknown;
   expected: RenewalPriceReplacementExpected;
   key: string;
 };
@@ -33,6 +35,32 @@ export function prepareRenewalPriceReplacement(
   });
   const subscription = renewalSubscription.parse(source.subscription);
   const targetPrice = renewalPrice.parse(source.targetPrice);
+  const billingCustomer =
+    args.billingCustomer === undefined
+      ? undefined
+      : renewalBillingCustomer.parse(args.billingCustomer);
+  if (billingCustomer !== undefined) {
+    const reference = subscription.customer;
+    const referenceId =
+      typeof reference === "string"
+        ? reference
+        : typeof reference === "object" &&
+            reference !== null &&
+            "id" in reference &&
+            "object" in reference &&
+            reference.object === "customer" &&
+            !("deleted" in reference && reference.deleted === true)
+          ? reference.id
+          : undefined;
+    if (
+      referenceId !== billingCustomer.id ||
+      billingCustomer.customer_account !== expected.customerAccountId ||
+      billingCustomer.livemode !== expected.livemode
+    )
+      throw new Error(
+        "Billing customer evidence does not match the original subscription account.",
+      );
+  }
   const item = subscription.items.data[0];
   const current = item.price;
   const productId = (p: typeof current.product) =>
@@ -70,7 +98,11 @@ export function prepareRenewalPriceReplacement(
   ])
     if (subscription[field] != null)
       throw new Error(`Renewal replacement does not support ${field}.`);
-  const providerSnapshot = renewalSnapshot({ subscription, targetPrice });
+  const providerSnapshot = renewalSnapshot({
+    subscription,
+    targetPrice,
+    ...(billingCustomer === undefined ? {} : { billingCustomer }),
+  });
   const bound = {
     version: 1 as const,
     scope: "platform" as const,

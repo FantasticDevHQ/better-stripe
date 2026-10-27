@@ -307,3 +307,140 @@ it("bounds array traversal before inspecting its elements", () => {
   ).toThrow(/too large|budget/);
   expect(inspected).toBe(0);
 });
+
+const billingCustomer = {
+  id: "cus_buyer",
+  object: "customer",
+  customer_account: "acct_buyer",
+  livemode: false,
+  discount: null,
+  invoice_settings: { default_payment_method: null },
+};
+
+it("binds the correlated billing-customer bridge without claiming discount hierarchy proof", () => {
+  const args = input();
+  const result = sdk.prepareRenewalPriceReplacement({
+    ...args,
+    subscription: { ...args.subscription, customer: "cus_buyer" },
+    billingCustomer,
+  });
+  expect(result.providerSnapshot).toMatchObject({ billingCustomer });
+  expect(result.preservation).toBe("requires_schedule_validation");
+  const changed = sdk.prepareRenewalPriceReplacement({
+    ...args,
+    subscription: { ...args.subscription, customer: "cus_buyer" },
+    billingCustomer: {
+      ...billingCustomer,
+      invoice_settings: { default_payment_method: "pm_changed" },
+    },
+  });
+  expect(changed.requestIdentity.binding).not.toBe(
+    result.requestIdentity.binding,
+  );
+});
+
+it.each([
+  ["id", "cus_foreign"],
+  ["customer_account", "acct_foreign"],
+  ["livemode", true],
+  ["deleted", true],
+] as const)(
+  "rejects foreign/deleted billing-customer evidence %s",
+  (field, value) => {
+    const args = input();
+    expect(() =>
+      sdk.prepareRenewalPriceReplacement({
+        ...args,
+        subscription: { ...args.subscription, customer: "cus_buyer" },
+        billingCustomer: { ...billingCustomer, [field]: value },
+      }),
+    ).toThrow();
+  },
+);
+
+it("requires an explicit discount read in supplied ancestor evidence", () => {
+  const args = input();
+  expect(() =>
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: { ...args.subscription, customer: "cus_buyer" },
+      billingCustomer: {
+        id: "cus_buyer",
+        object: "customer",
+        customer_account: "acct_buyer",
+        livemode: false,
+      },
+    }),
+  ).toThrow();
+});
+
+it("accepts an expanded original customer and retains an expanded existing redemption as evidence only", () => {
+  const args = input();
+  const customer = {
+    ...billingCustomer,
+    discount: {
+      id: "di_existing",
+      object: "discount",
+      start: 1690000000,
+      end: null,
+      source: {
+        type: "coupon",
+        coupon: { id: "coupon_existing", duration: "once" },
+      },
+    },
+  };
+  expect(
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: { ...args.subscription, customer: billingCustomer },
+      billingCustomer: customer,
+    }),
+  ).toMatchObject({
+    preservation: "requires_schedule_validation",
+    providerSnapshot: { billingCustomer: customer },
+  });
+});
+
+it("rejects a deleted expanded original customer even when the separate billing read matches its ID", () => {
+  const args = input();
+  expect(() =>
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: {
+        ...args.subscription,
+        customer: { ...billingCustomer, deleted: true },
+      },
+      billingCustomer,
+    }),
+  ).toThrow(/does not match/);
+});
+
+it.each([
+  ["nonfinite", Number.POSITIVE_INFINITY],
+  ["undefined", undefined],
+  ["function", () => 1],
+  ["bigint", 1n],
+  ["symbol", Symbol("value")],
+  ["class instance", new Date(0)],
+  ["oversized string", "x".repeat(500_001)],
+])("rejects %s in private provider JSON", (_label, value) => {
+  const args = input();
+  expect(() =>
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: { ...args.subscription, metadata: { value } },
+    }),
+  ).toThrow(/JSON/);
+});
+
+it("rejects a cyclic provider snapshot", () => {
+  const args = input();
+  const cyclic: Record<string, unknown> = {};
+  cyclic.self = cyclic;
+  expect(() =>
+    sdk.prepareRenewalPriceReplacement({
+      ...args,
+      subscription: { ...args.subscription, metadata: cyclic },
+    }),
+  ).toThrow(/JSON/);
+});

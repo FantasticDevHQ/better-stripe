@@ -42,6 +42,22 @@ currency. Different products and recurring cadences are represented without
 inventing tier ordering or financial arithmetic. Representation does not certify
 that a future writer supports every cadence, billing mode or setting.
 
+An optional `billingCustomer` input adds an authoritative ancestor billing read.
+Stripe documents that `customer_account` responses also identify a v1 `customer`,
+and that customer-configured accounts can be retrieved through the v1 Customers
+endpoint. See [the customer-account bridge](https://docs.stripe.com/accounts-v2/use-accounts-as-customers#reference-accounts-in-customers-v1-integrations).
+Supply the full undeleted Customer with an explicitly read, expanded `discount`
+field. The helper checks its `cus_` ID against the subscription's `customer`, its
+`customer_account` against the authorized `acct_` selector, and its `livemode`.
+Its complete JSON joins the private canonical snapshot. Missing discount evidence
+is rejected when a billing customer is supplied; omitted ancestor evidence leaves
+preparation incomplete for any writer that needs it.
+
+An explicit ancestor `discount: null` proves only the observed absence of that
+discount. It does not distinguish historical phase discount suppression from
+inheritance, and does not authorize freezing or suppressing future customer
+discounts. That unresolved distinction remains a schedule-validation boundary.
+
 The helper requires an active, renewing, single-item original. Unrelated attached
 schedules, cancellation intent, paused collection, pending updates, explicit legacy
 payment sources, custom payment settings and nonnull application fees are rejected
@@ -89,6 +105,30 @@ of methods implemented by this preparation helper:
 | Attach    | One explicit creation POST with the retained attach-stage key and exact normalized payload. Return and durably retain the acknowledged original schedule receipt. Attachment alone is incomplete.                   |
 | Configure | Use that acknowledged receipt, fresh validated reads and a separately retained configure-stage key bound to the complete update. One explicit update POST. No implicit attachment.                                  |
 | Observe   | Read the known owned schedule and original subscription. Confirm the exact target/boundary/settings before reporting pending. Require provider current subscription/item/price identity before reporting effective. |
+
+Every future stage record must include its version, logical preparation binding,
+actual configured Stripe API version, explicit platform scope and complete
+normalized payload. The attach payload is exactly
+`{ from_subscription: expected.subscriptionId }`, with no inline phase or metadata
+options. Attach and configure use distinct explicitly supplied provider keys;
+neither key is silently generated from the logical key. Each stage binding covers
+the stage, logical binding, API version, scope and payload. Configure additionally
+binds the acknowledged schedule ID, complete acknowledged baseline and unchanged
+schedule-default fingerprint, not just the attach request's identity.
+
+The trusted host durably retains the original first-dispatch time with each
+immutable stage request. Replay must retain it, not start another retention clock.
+An acknowledged receipt retains that exact request, original subscription/account,
+schedule ID, livemode and full acknowledged provider response. These are unsigned
+server-owned records, not browser-supplied provenance or a second business ledger.
+
+The original item ID authorizes the prewrite request. Stripe's phase update shape
+accepts price and quantity without an item-ID selector, so a transition is not
+assumed to retain the same `si_` ID. A future observer must correlate any successor
+item through the retained owned schedule's exact target phase and original
+subscription/account. Matching target price alone is insufficient. Manual release
+or ambiguous completion must stay unknown until authoritative completion
+correlation is available; no wall-clock fallback is allowed.
 
 Each invocation permits at most one **mutating POST**, with automatic transport
 retries disabled for its reads and write. It must not chain attachment and

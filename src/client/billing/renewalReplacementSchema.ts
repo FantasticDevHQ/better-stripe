@@ -97,10 +97,31 @@ export const renewalSubscription = z
 /** Trusted host selectors from the original authorized operation, not browser claims. */
 export type RenewalPriceReplacementExpected = z.infer<typeof renewalExpected>;
 
+export const renewalBillingCustomer = z
+  .object({
+    id: id("cus"),
+    object: z.literal("customer"),
+    customer_account: id("acct"),
+    livemode: z.boolean(),
+    deleted: z.literal(false).optional(),
+    discount: z.union([
+      z.null(),
+      z
+        .object({
+          id: id("di"),
+          object: z.literal("discount"),
+          deleted: z.literal(false).optional(),
+        })
+        .passthrough(),
+    ]),
+  })
+  .passthrough();
+
 export const renewalPreparationInput = z
   .object({
     subscription: z.unknown(),
     targetPrice: z.unknown(),
+    billingCustomer: z.unknown().optional(),
     expected: renewalExpected,
     key: z.string(),
   })

@@ -16,6 +16,7 @@ import {
   timestamp,
 } from "../renewalAggregate/shared.js";
 import { joinRenewalCoupons } from "./couponJoins.js";
+import { readRenewalWireJSON } from "./wireJson.js";
 
 const input = z.object({ expected: renewalExpected }).strict();
 export type ReadRenewalPriceReplacementContextOptions = z.infer<typeof input>;
@@ -42,16 +43,12 @@ export async function readRenewalPriceReplacementContext(
   const args = input.parse(renewalSnapshot(options));
   supportedVersion(apiVersion);
   const expected = args.expected;
-  const requestOptions = {
-    apiVersion: "2026-09-30.endive" as const,
-    maxNetworkRetries: 0,
-  };
   const subscription = readSubscription.parse(
     renewalSnapshot(
-      await stripe.subscriptions.retrieve(
+      await readRenewalWireJSON(
+        stripe,
+        "subscription",
         expected.subscriptionId,
-        { expand: ["discounts", "items.data.discounts", "items.data.price"] },
-        requestOptions,
       ),
     ),
   );
@@ -75,7 +72,7 @@ export async function readRenewalPriceReplacementContext(
     unsupported("original_read_identity_mismatch");
   const targetPrice = renewalPrice.parse(
     renewalSnapshot(
-      await stripe.prices.retrieve(expected.targetPriceId, {}, requestOptions),
+      await readRenewalWireJSON(stripe, "price", expected.targetPriceId),
     ),
   );
   if (
@@ -91,9 +88,7 @@ export async function readRenewalPriceReplacementContext(
     context,
   );
   const billingCustomer = renewalBillingCustomer.parse(
-    renewalSnapshot(
-      await stripe.customers.retrieve(customerId, {}, requestOptions),
-    ),
+    renewalSnapshot(await readRenewalWireJSON(stripe, "customer", customerId)),
   );
   if (
     billingCustomer.id !== customerId ||
@@ -106,7 +101,6 @@ export async function readRenewalPriceReplacementContext(
     subscription,
     item,
     expected.livemode,
-    requestOptions,
   );
   const normalizedSubscription = {
     ...subscription,

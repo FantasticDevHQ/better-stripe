@@ -71,7 +71,7 @@ function harness(
           "stripe-version": API_VERSION,
         }),
         toJSON: async () => structuredClone(data),
-        getRawResponse: () => ({}),
+        getRawResponse: () => ({ statusCode: 200 }),
         toStream: () => {
           throw Error("not used");
         },

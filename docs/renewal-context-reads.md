@@ -111,3 +111,36 @@ See the [replacement contract](renewal-price-replacements.md) and
 [phase assembly](renewal-phase-assembly.md) for baseline, replay and observation
 boundaries. Read comparison is best effort and cannot exclude concurrent
 Dashboard or other provider writers.
+
+## Wire JSON and transport status
+
+Renewal reads use Stripe's public `rawRequest` for a fixed set of subscription,
+Price, Customer and coupon GET endpoints. Each resource ID is encoded as one path
+segment. Dot-only coupon IDs `.` and `..` are rejected before dispatch because
+URL parsing would normalize them into different resource paths. The subscription's
+fixed ordered expansion query is in the GET path,
+with no GET body. Callers cannot supply endpoints, headers or expansion options.
+The API version, platform scope and zero automatic network retries remain fixed.
+
+Typed Stripe resource methods can convert decimal strings into SDK `Decimal`
+objects. The raw request boundary preserves the parsed wire JSON instead,
+including decimal string spelling, required native Plan fields and unknown
+provider fields. The strict bounded JSON snapshot validator is unchanged. No
+`Decimal.toString()` conversion, financial calculation or selective field
+replacement makes unsupported evidence acceptable. This preserves JSON values,
+not the original response whitespace or numeric token spelling.
+
+A fulfilled SDK promise alone does not establish HTTP success. Each renewal
+response must have actual successful transport status metadata. Fetch exposes
+`lastResponse.status`; Node exposes `lastResponse.statusCode`. Missing, malformed,
+contradictory or non-2xx metadata rejects the read. This nonenumerable transport
+metadata stays outside the canonical provider body. Provider errors stay visible,
+and these read checks do not acknowledge a schedule mutation.
+
+The shared single-attempt client rejects fetch redirects as well as Stripe's
+closed-connection retry exception. A 307 or 308 cannot silently replay a POST.
+The ordinary client route keeps its existing transport behavior. Rejected
+redirects and broken connections can leave a remote outcome unknown; callers
+must retain the original request identity rather than rotate or resend
+automatically. These transport safeguards do not qualify a renewal provider
+profile or authorize attachment, configuration or entitlement changes.

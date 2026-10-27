@@ -1,9 +1,11 @@
 import { z } from "zod";
+import type Stripe from "stripe";
 import { idempotencyOptions } from "../../core/idempotency.js";
 import { renewalSnapshot } from "../renewalReplacementSnapshot.js";
 import { retainedPreparation, validateReads } from "./preflight.js";
 import { validateAttachReceipt } from "./receipt.js";
 import { assemblePhases } from "./phases.js";
+import type { RenewalProfile } from "./profile.js";
 import {
   binding,
   object,
@@ -13,9 +15,40 @@ import {
   unsupported,
   failure,
   referenceId,
+  type Failure,
 } from "./shared.js";
 
-export function projectRenewalConfiguration(input: unknown) {
+export type ProjectedRenewalConfiguration = {
+  version: 1;
+  stage: "configure";
+  scope: "platform";
+  apiVersion: string;
+  logicalBinding: string;
+  scheduleId: string;
+  method: "POST";
+  path: string;
+  key: string;
+  payload: {
+    end_behavior: "release";
+    proration_behavior: "none";
+    phases: [
+      Stripe.SubscriptionScheduleUpdateParams.Phase,
+      Stripe.SubscriptionScheduleUpdateParams.Phase,
+    ];
+  };
+  firstDispatchedAt: number;
+  attachReceiptBinding: string;
+  baselineBinding: string;
+  defaultSettingsBinding: string;
+  status: "projected_configure_request";
+  providerQualification: "required";
+  profile: RenewalProfile;
+  requestIdentity: { key: string; binding: string };
+};
+
+export function projectRenewalConfiguration(
+  input: unknown,
+): ProjectedRenewalConfiguration | Failure {
   let ownedScheduleId: string | undefined;
   try {
     const args = configureInput.parse(renewalSnapshot(input));

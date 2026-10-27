@@ -87,7 +87,10 @@ function metadataMatches(
 export function assemblePhases(
   reads: ReturnType<typeof validateReads>,
   schedule: Record<string, unknown>,
-) {
+): [
+  Stripe.SubscriptionScheduleUpdateParams.Phase,
+  Stripe.SubscriptionScheduleUpdateParams.Phase,
+] {
   const defaultsResult = defaultsSchema.safeParse(schedule.default_settings);
   if (!defaultsResult.success) unsupported("unsupported_schedule_defaults");
   if (!Array.isArray(schedule.phases) || schedule.phases.length !== 1)

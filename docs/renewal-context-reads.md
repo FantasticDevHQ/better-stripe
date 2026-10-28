@@ -144,3 +144,71 @@ redirects and broken connections can leave a remote outcome unknown; callers
 must retain the original request identity rather than rotate or resend
 automatically. These transport safeguards do not qualify a renewal provider
 profile or authorize attachment, configuration or entitlement changes.
+
+## Additive async V2 preparation
+
+Use the explicitly named V2 functions when compact SHA-256 consistency bindings
+are needed. Existing V1 functions and retained V1 records keep their current
+format and synchronous behavior.
+
+```ts
+import {
+  prepareRenewalPriceReplacementV2,
+  prepareRenewalScheduleAttachmentV2,
+} from "@fantastic.dev/better-stripe";
+
+const preparedV2 = await prepareRenewalPriceReplacementV2({
+  subscription: context.subscription,
+  targetPrice: context.targetPrice,
+  billingCustomer: context.billingCustomer,
+  expected,
+  key: logicalKey,
+});
+const attachRequestV2 = await prepareRenewalScheduleAttachmentV2({
+  prepared: preparedV2,
+  apiVersion: context.apiVersion,
+  attachKey,
+  firstDispatchedAt,
+});
+```
+
+Both functions are pure. They perform no provider request, generate no key,
+persist no record and establish no provider qualification. The V2 attachment
+builder accepts only a complete V2 preparation. It reconstructs that preparation
+from its full provider snapshot, expected selectors and retained logical key,
+and compares the entire result before constructing the request. A matching
+digest alone is insufficient. V1 preparations are rejected by this builder;
+there is no automatic migration or fallback. Existing V1 projection, receipt
+and configure consumers do not accept V2 records. This release adds preparation
+and request construction only, without a V2 writer or receipt constructor.
+
+V2 retains the same raw preparation semantic checks and bounded JSON policy as
+V1. It adds a limit of 500,000 UTF-8 bytes on each exact encoded hash preimage,
+including its domain tuple. A record can therefore fit V1's character limit
+and exceed V2's byte limit. Inputs are captured before awaiting hashing; changes
+to the original caller object during the await cannot change the result. Web
+Crypto SHA-256 must be available. Missing or rejected digest operations fail
+without an alternate algorithm or synchronous fallback.
+
+For a fixed family, the hash input is the UTF-8 encoding of the current bounded
+`renewalSnapshot` canonical copy followed by `JSON.stringify`, applied to
+`["betterstripe-renewal-binding", 2, family, completePreimage]`. Object keys use
+the existing ordering, including JavaScript's numeric-index enumeration;
+arrays retain their order and negative zero serializes as zero. The output is
+`family:v2:sha256:` followed by the full 64 lowercase hexadecimal digest.
+Families are selected internally: `renewal` for preparation and
+`renewal-attach` for the attachment request.
+
+The preparation preimage contains version, platform scope, expected selectors,
+quantity and complete provider snapshot. Its logical key is separately retained
+and validated, as in V1; changing only that valid key does not change the
+preparation digest. Hosts must protect original key lineage through immutable
+authorization and storage. The attachment preimage binds its entire unsigned
+request, including stage, scope, actual API version, logical binding, POST path,
+complete payload, explicit attachment key and original first-dispatch time.
+Neither digest authenticates a caller, proves provenance, acknowledges a POST
+or guarantees provider replay. Hosts retain the complete original records.
+
+These helpers retain ordinary provider and caller metadata within their JSON
+limits. They do not redact, encrypt or certify that input or output is safe to
+log. Do not place secrets in metadata, and protect retained full records.

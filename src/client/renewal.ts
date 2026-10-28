@@ -11,3 +11,13 @@ export type {
   PreparedRenewalScheduleAttachment,
 } from "./billing/renewalAttach/request.js";
 export type { ReadRenewalPriceReplacementContextOptions } from "./billing/renewalAttach/reader.js";
+export {
+  prepareRenewalPriceReplacementV2,
+  prepareRenewalScheduleAttachmentV2,
+} from "./billing/renewalV2/index.js";
+export type {
+  PrepareRenewalPriceReplacementV2Options,
+  PreparedRenewalPriceReplacementV2,
+  PrepareRenewalScheduleAttachmentV2Options,
+  PreparedRenewalScheduleAttachmentV2,
+} from "./billing/renewalV2/index.js";

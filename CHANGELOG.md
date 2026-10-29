@@ -28,10 +28,9 @@
 
 ## [0.89.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.88.1...v0.89.0) (2026-10-29)
 
-
 ### Features
 
-* **billing:** add internal renewal owner and stock delegate ([#416](https://github.com/FantasticDevHQ/better-stripe/issues/416)) ([2ea0ec7](https://github.com/FantasticDevHQ/better-stripe/commit/2ea0ec770ae80111e8ce5dba3d1d6f8dceaae3d2))
+- **billing:** add internal renewal owner and stock delegate ([#416](https://github.com/FantasticDevHQ/better-stripe/issues/416)) ([2ea0ec7](https://github.com/FantasticDevHQ/better-stripe/commit/2ea0ec770ae80111e8ce5dba3d1d6f8dceaae3d2))
 
 ## [0.88.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.88.0...v0.88.1) (2026-10-29)
 

@@ -10,13 +10,23 @@ import {
   timestamp,
   resourceId,
   equal,
+  conflict,
+  failure,
+  type Failure,
 } from "../renewalAggregate/shared.js";
+import { validateReadMaterial } from "../renewalAggregate/readMaterial.js";
+import {
+  configureMaterial,
+  validateConfigureStart,
+} from "../renewalAggregate/configureMaterial.js";
+import type { ProjectedRenewalConfiguration } from "../renewalAggregate/configure.js";
 import { idempotencyOptions } from "../../core/idempotency.js";
 import { renewalBindingV2 } from "./binding.js";
 import {
   captureAttachmentReceipt,
   assertAttachmentIdentity,
 } from "./receipt.js";
+import { captureConfiguration } from "./configureInput.js";
 
 export type PrepareRenewalPriceReplacementV2Options =
   PrepareRenewalPriceReplacementOptions;
@@ -211,4 +221,118 @@ export async function constructRenewalScheduleAttachmentReceiptV2(
     ...receipt,
     binding: await renewalBindingV2("renewal-attach-receipt", receipt),
   };
+}
+
+export type ProjectRenewalConfigurationV2Options = {
+  preparation: PrepareRenewalPriceReplacementV2Options;
+  /** Raw attachment inputs, not a stored receipt or caller verification handle. */
+  attachReceipt: ConstructRenewalScheduleAttachmentReceiptV2Options;
+  freshSubscription: unknown;
+  targetPrice: unknown;
+  billingCustomer?: unknown;
+  schedule: unknown;
+  apiVersion: string;
+  observedAt: number;
+  firstDispatchedAt: number;
+  configureKey: string;
+};
+export type ProjectedRenewalConfigurationV2 = Omit<
+  ProjectedRenewalConfiguration,
+  "version"
+> & { version: 2 };
+export type RenewalConfigurationProjectionFailure = Failure;
+
+/** Pure raw-only configuration candidate; provider qualification remains required. */
+export async function projectRenewalConfigurationV2(
+  options: ProjectRenewalConfigurationV2Options,
+): Promise<
+  ProjectedRenewalConfigurationV2 | RenewalConfigurationProjectionFailure
+> {
+  const args = captureConfiguration(options);
+  let ownedScheduleId: string | undefined;
+  try {
+    if (!equal(args.preparation, args.attachReceipt.attachRequest.preparation))
+      conflict("invalid_prepared_binding");
+    let prepared: PreparedRenewalPriceReplacementV2;
+    try {
+      prepared = await prepareRenewalPriceReplacementV2({
+        ...args.preparation,
+        expected: args.preparation
+          .expected as PrepareRenewalPriceReplacementOptions["expected"],
+      });
+    } catch {
+      conflict("invalid_prepared_binding");
+    }
+    let receipt: RenewalScheduleAttachmentReceiptV2;
+    try {
+      receipt = await constructRenewalScheduleAttachmentReceiptV2(
+        args.attachReceipt as ConstructRenewalScheduleAttachmentReceiptV2Options,
+      );
+    } catch {
+      conflict("invalid_attach_receipt_binding");
+    }
+    if (
+      receipt.logicalBinding !== prepared.requestIdentity.binding ||
+      receipt.request.logicalBinding !== prepared.requestIdentity.binding ||
+      receipt.request.apiVersion !== args.apiVersion ||
+      receipt.request.payload.from_subscription !==
+        prepared.expected.subscriptionId ||
+      receipt.subscriptionId !== prepared.expected.subscriptionId ||
+      receipt.customerAccountId !== prepared.expected.customerAccountId ||
+      receipt.livemode !== prepared.expected.livemode ||
+      receipt.request.firstDispatchedAt > args.observedAt
+    )
+      conflict("invalid_attach_receipt_binding");
+    ownedScheduleId = receipt.scheduleId;
+    const key = validateConfigureStart(args, receipt);
+    const reads = validateReadMaterial(args, prepared, receipt.scheduleId);
+    const { schedule, payload } = configureMaterial(
+      // Unlike V1's record parser, retain every own key of the captured body.
+      z
+        .custom<Record<string, unknown>>(
+          (value) =>
+            value !== null &&
+            typeof value === "object" &&
+            !Array.isArray(value),
+        )
+        .parse(args.schedule),
+      prepared,
+      receipt,
+      reads,
+    );
+    const request = {
+      version: 2 as const,
+      stage: "configure" as const,
+      scope: "platform" as const,
+      apiVersion: args.apiVersion,
+      logicalBinding: prepared.requestIdentity.binding,
+      scheduleId: receipt.scheduleId,
+      method: "POST" as const,
+      path: `/v1/subscription_schedules/${receipt.scheduleId}`,
+      key,
+      payload,
+      firstDispatchedAt: args.firstDispatchedAt,
+      attachReceiptBinding: receipt.binding,
+      baselineBinding: await renewalBindingV2(
+        "renewal-baseline",
+        receipt.providerSnapshot,
+      ),
+      defaultSettingsBinding: await renewalBindingV2(
+        "renewal-defaults",
+        schedule.default_settings,
+      ),
+    };
+    return renewalSnapshot({
+      ...request,
+      status: "projected_configure_request" as const,
+      providerQualification: "required" as const,
+      profile: reads.profile,
+      requestIdentity: {
+        key,
+        binding: await renewalBindingV2("renewal-configure", request),
+      },
+    });
+  } catch (error) {
+    return failure(error, ownedScheduleId);
+  }
 }

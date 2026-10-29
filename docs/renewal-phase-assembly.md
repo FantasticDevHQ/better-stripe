@@ -11,6 +11,79 @@ This aggregate consumes V1 records. The public
 produces separate unsigned consistency data; it does not migrate records or
 enable this projector to accept V2 receipts.
 
+## Raw V2 configuration projection
+
+`projectRenewalConfigurationV2` is a public async constructor. It shares the
+complete material checks and phase assembly below with the V1 aggregate, while
+constructing compact V2 bindings directly:
+
+```ts
+import { projectRenewalConfigurationV2 } from "@fantastic.dev/better-stripe";
+
+const candidate = await projectRenewalConfigurationV2({
+  preparation: originalPreparationInputs,
+  attachReceipt: {
+    attachRequest: {
+      preparation: originalPreparationInputs,
+      apiVersion,
+      attachKey,
+      firstDispatchedAt: attachFirstDispatchedAt,
+    },
+    actualDispatch: retainedAttachDispatch,
+    providerSnapshot: retainedAttachScheduleBody,
+  },
+  freshSubscription,
+  targetPrice,
+  billingCustomer,
+  schedule: freshSchedule,
+  apiVersion,
+  observedAt,
+  firstDispatchedAt: configureFirstDispatchedAt,
+  configureKey,
+});
+```
+
+`preparation` contains the original raw Subscription, target Price, billing
+Customer, expected selectors and logical key. `attachReceipt` contains the raw
+inputs to the [C3 constructor](renewal-context-reads.md#v2-attachment-receipt-consistency),
+including all seven actual attachment dispatch fields. It is not a previously
+computed receipt. Both complete preparation inputs must agree. The function
+rebuilds C1 and C3 internally instead of accepting a derived handle, verification
+flag or converted V1 record.
+
+All inputs are captured before the first await. Closed constructor inputs
+require own data properties, reject unexpected names and are checked again on
+the detached copy. Provider records retain the existing bounded JSON policy;
+optional fields are not replaced with null or invented defaults. The same
+original-source, profile, Discount, payment, tax, settings, identity, period,
+full-baseline and default-preservation checks apply. Actual subscription
+association is required; the constructor does not replace it with null to pass
+the original preparation checks.
+
+Success is `projected_configure_request`, with version `2`, the complete
+normalized two-phase payload and `providerQualification: "required"`. C4
+(`renewal-baseline`) binds the entire original Schedule body. C5
+(`renewal-defaults`) binds the exact validated default settings. C6
+(`renewal-configure`) binds the complete unsigned request, including the rebuilt
+C1/C3 identities, key, API version, POST path, payload and original configure
+first-dispatch time. Each uses the same fixed V2 domain encoding and 500,000-byte
+UTF-8 preimage limit. No nested V1 claim is constructed or rewritten to obtain
+these bindings.
+
+Semantic failures retain the existing `unsupported`, `conflict` and
+`attached_unconfigured` data shapes and reasons. Once the rebuilt attachment's
+identity and time joins are accepted, an unsupported projection includes its
+Schedule ID. This is a consistency classification, not authenticated ownership.
+Malformed constructor inputs or JSON capture errors reject the promise; handle
+those separately from returned projection failures.
+
+The function performs no provider call or storage operation. It does not produce
+a configured-response receipt, execute the configure request, establish provider
+qualification, prove acknowledgement provenance or certify renewal
+effectiveness. Protect original records and enforce host authorization and all
+provider qualification gates before dispatch. Existing V1 APIs and record
+formats are unchanged.
+
 A candidate always has `providerQualification: "required"`. This describes a
 remaining requirement, not authorization to dispatch. Host-supplied flags cannot
 prove provider behavior, ownership, original configuration or historical intent.

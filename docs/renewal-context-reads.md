@@ -180,8 +180,9 @@ and compares the entire result before constructing the request. A matching
 digest alone is insufficient. V1 preparations are rejected by this builder;
 there is no automatic migration or fallback. Existing V1 projection, receipt
 and configure consumers do not accept V2 records. V2 adds pure preparation,
-request and attachment-receipt construction, without a V2 writer or configure
-consumer.
+request and attachment-receipt construction, plus
+[raw configuration projection](renewal-phase-assembly.md#raw-v2-configuration-projection).
+It does not add a provider writer or configured-response receipt constructor.
 
 V2 retains the same raw preparation semantic checks and bounded JSON policy as
 V1. It adds a limit of 500,000 UTF-8 bytes on each exact encoded hash preimage,
@@ -200,6 +201,9 @@ arrays retain their order and negative zero serializes as zero. The output is
 Families are selected internally: `renewal` for preparation and
 `renewal-attach` for the attachment request and `renewal-attach-receipt` for the
 complete attachment receipt.
+Configuration projection also selects `renewal-baseline`, `renewal-defaults`
+and `renewal-configure` internally for its complete baseline, defaults and
+unsigned request. No caller-supplied family selector is exposed.
 
 The preparation preimage contains version, platform scope, expected selectors,
 quantity and complete provider snapshot. Its logical key is separately retained

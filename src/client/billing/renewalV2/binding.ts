@@ -2,7 +2,7 @@ import { renewalSnapshot } from "../renewalReplacementSnapshot.js";
 
 /** Internal fixed-family encoding. This is consistency, not authorization. */
 export async function renewalBindingV2(
-  family: "renewal" | "renewal-attach",
+  family: "renewal" | "renewal-attach" | "renewal-attach-receipt",
   preimage: unknown,
 ): Promise<string> {
   // Finish all input capture and canonical bytes before the first await.

@@ -179,8 +179,9 @@ from its full provider snapshot, expected selectors and retained logical key,
 and compares the entire result before constructing the request. A matching
 digest alone is insufficient. V1 preparations are rejected by this builder;
 there is no automatic migration or fallback. Existing V1 projection, receipt
-and configure consumers do not accept V2 records. This release adds preparation
-and request construction only, without a V2 writer or receipt constructor.
+and configure consumers do not accept V2 records. V2 adds pure preparation,
+request and attachment-receipt construction, without a V2 writer or configure
+consumer.
 
 V2 retains the same raw preparation semantic checks and bounded JSON policy as
 V1. It adds a limit of 500,000 UTF-8 bytes on each exact encoded hash preimage,
@@ -197,7 +198,8 @@ the existing ordering, including JavaScript's numeric-index enumeration;
 arrays retain their order and negative zero serializes as zero. The output is
 `family:v2:sha256:` followed by the full 64 lowercase hexadecimal digest.
 Families are selected internally: `renewal` for preparation and
-`renewal-attach` for the attachment request.
+`renewal-attach` for the attachment request and `renewal-attach-receipt` for the
+complete attachment receipt.
 
 The preparation preimage contains version, platform scope, expected selectors,
 quantity and complete provider snapshot. Its logical key is separately retained
@@ -208,6 +210,70 @@ request, including stage, scope, actual API version, logical binding, POST path,
 complete payload, explicit attachment key and original first-dispatch time.
 Neither digest authenticates a caller, proves provenance, acknowledges a POST
 or guarantees provider replay. Hosts retain the complete original records.
+
+### V2 attachment receipt consistency
+
+`constructRenewalScheduleAttachmentReceiptV2` constructs unsigned receipt data
+from raw preparation inputs, the complete actual dispatch and the retained
+Schedule body:
+
+```ts
+import { constructRenewalScheduleAttachmentReceiptV2 } from "@fantastic.dev/better-stripe";
+
+const receiptV2 = await constructRenewalScheduleAttachmentReceiptV2({
+  attachRequest: {
+    preparation: {
+      subscription: context.subscription,
+      targetPrice: context.targetPrice,
+      billingCustomer: context.billingCustomer,
+      expected,
+      key: logicalKey,
+    },
+    apiVersion: context.apiVersion,
+    attachKey,
+    firstDispatchedAt,
+  },
+  actualDispatch: {
+    scope: "platform",
+    apiVersion: context.apiVersion,
+    method: "POST",
+    path: "/v1/subscription_schedules",
+    payload: { from_subscription: expected.subscriptionId },
+    key: attachKey,
+    firstDispatchedAt,
+  },
+  providerSnapshot: retainedScheduleBody,
+});
+```
+
+Supply the original raw preparation and dispatch facts from protected host
+storage. The constructor rebuilds C1 and C2 itself. It accepts neither a prepared
+record in place of raw preparation nor caller-supplied verification flags. All
+seven dispatch fields must equal the rebuilt request, including its complete
+payload, explicit key and original first-dispatch time. A retained billing
+Customer is required.
+
+The Schedule must match the expected subscription, Customer, customer account
+and mode. Available expanded identity relations must agree, including their
+declared Customer, subscription and Schedule references. Deleted identities
+reject. The complete Schedule body, including unknown JSON fields, remains in
+the receipt and its `renewal-attach-receipt` binding. The receipt also binds its
+entire rebuilt attachment request and logical binding. Its version is `2` and
+stage is `attached_unconfigured`.
+
+The constructor captures all raw inputs before its first await. Closed input
+objects require own data properties and reject unexpected names; the captured
+copy is checked again before hashing. Raw provider records retain the existing
+bounded JSON policy. Each digest preimage, including its domain tuple and all
+nested records, remains limited to 500,000 UTF-8 bytes.
+
+This pure function performs no HTTP request or storage operation. Matching data
+does not authenticate a response, prove that a POST succeeded, establish
+ownership, qualify a provider profile or authorize configuration. A coherent
+unsigned forgery can pass. No transport status or observation time is invented.
+Hosts must separately establish acknowledgement provenance and preserve the
+original records. Existing V1 configure and receipt consumers still reject V2;
+there is no migration, writer or V2 configure executor.
 
 These helpers retain ordinary provider and caller metadata within their JSON
 limits. They do not redact, encrypt or certify that input or output is safe to

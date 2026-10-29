@@ -41,6 +41,21 @@ Older snapshots that already omitted a field cannot recover it or establish
 retroactive full-record provenance. Reconstructing a changed full record does
 not migrate its old binding or authorize a retry.
 
+## Internal ownership and transport groundwork
+
+The internal `renewalAttach/internal` modules keep one original owner identity
+and adapt the stock Stripe client's inherited `rawRequest` method without
+changing its receiver, arguments, result or thrown value. The owner checks the
+same original wall and monotonic time bounds and closes permanently on expiry,
+regression or retirement. These modules do not read a clock at import time.
+
+The compiled entry registry remains empty, and the original Source and stock
+client bindings remain unbound. There is no package export or operational
+attachment actor in this increment. It does not authorize reads, dispatch a
+request, enable recovery or establish provider custody or native qualification.
+The internal Node-only mechanics are not a caller-supplied clock, client or
+qualification API. The public preparation and receipt constructors are unchanged.
+
 ## Fixed acquisition profile
 
 The initial profile supports platform requests using the configured

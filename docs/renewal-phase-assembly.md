@@ -60,6 +60,13 @@ full-baseline and default-preservation checks apply. Actual subscription
 association is required; the constructor does not replace it with null to pass
 the original preparation checks.
 
+Fresh Subscription, target Price and billing Customer comparisons use their
+complete captured JSON bodies, including eligible unknown fields. Only the
+Subscription's root Schedule association is handled separately by the existing
+ownership checks. Parsed semantic views do not permit unknown-field drift or
+replace the retained raw baseline. Unsupported strict-schema fields still
+reject, and snapshot equality remains an unsigned data comparison.
+
 Success is `projected_configure_request`, with version `2`, the complete
 normalized two-phase payload and `providerQualification: "required"`. C4
 (`renewal-baseline`) binds the entire original Schedule body. C5

@@ -68,14 +68,16 @@ export function validateReadMaterial(
   }
   const { schedule: originalSchedule, ...original } =
     prepared.providerSnapshot.subscription;
-  const { schedule: freshSchedule, ...fresh } = source;
+  // Compare complete captured bodies, not parser outputs that may omit own keys.
+  const { schedule: freshSchedule, ...fresh } =
+    args.freshSubscription as typeof source;
   if (scheduleId ? originalSchedule !== null : freshSchedule !== null)
     conflict("schedule_association_mismatch");
   if (!equal(original, fresh)) conflict("original_source_drift");
   const target = renewalPrice.safeParse(args.targetPrice);
   if (!target.success || !target.data.active)
     unsupported("unsupported_target_price");
-  if (!equal(target.data, prepared.providerSnapshot.targetPrice))
+  if (!equal(args.targetPrice, prepared.providerSnapshot.targetPrice))
     conflict("target_price_drift");
   if (
     prepared.providerSnapshot.billingCustomer === undefined ||
@@ -84,7 +86,7 @@ export function validateReadMaterial(
     unsupported("missing_retained_billing_customer");
   const customer = renewalBillingCustomer.safeParse(args.billingCustomer);
   if (!customer.success) unsupported("unsupported_billing_customer");
-  if (!equal(customer.data, prepared.providerSnapshot.billingCustomer))
+  if (!equal(args.billingCustomer, prepared.providerSnapshot.billingCustomer))
     conflict("billing_customer_drift");
   const referenceContext = {
     customerAccountId: prepared.expected.customerAccountId,

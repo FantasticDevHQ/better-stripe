@@ -100,9 +100,13 @@ export function prepareRenewalPriceReplacement(
     if (subscription[field] != null)
       throw new Error(`Renewal replacement does not support ${field}.`);
   const providerSnapshot = renewalSnapshot({
-    subscription,
-    targetPrice,
-    ...(billingCustomer === undefined ? {} : { billingCustomer }),
+    // Validation supplies semantic types; retain the complete detached bodies.
+    // Passthrough parsers can omit safe own JSON keys such as __proto__.
+    subscription: source.subscription as typeof subscription,
+    targetPrice: source.targetPrice as typeof targetPrice,
+    ...(billingCustomer === undefined
+      ? {}
+      : { billingCustomer: args.billingCustomer as typeof billingCustomer }),
   });
   const bound = {
     version: 1 as const,

@@ -31,6 +31,16 @@ and complete records under immutable authorization. An explicitly chosen attach
 key may equal the logical key; no key is silently reused, derived or generated.
 A future configure key must differ from the attachment key.
 
+Preparation validates the original Subscription, target Price and optional
+billing Customer, then retains their complete captured JSON bodies. Eligible
+unknown fields, including own JSON keys such as `__proto__`, remain in the
+snapshot and binding; validation does not replace the retained body with a
+selected-field view. Unsupported fields in strict schemas still reject.
+
+Older snapshots that already omitted a field cannot recover it or establish
+retroactive full-record provenance. Reconstructing a changed full record does
+not migrate its old binding or authorize a retry.
+
 ## Fixed acquisition profile
 
 The initial profile supports platform requests using the configured

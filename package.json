@@ -1,6 +1,6 @@
 {
   "name": "@fantastic.dev/better-stripe",
-  "version": "0.88.1",
+  "version": "0.89.0",
   "description": "Convex component for Stripe Accounts v2, subscriptions, metered billing and Connect marketplaces, with React workflows.",
   "keywords": [
     "stripe",

@@ -7,6 +7,32 @@ snapshots for an exact cross-product renewal request. It performs no provider I/
 and supplies no schedule writer. See the [renewal replacement contract](./renewal-price-replacements.md)
 for its selectors, private binding, required staged protocol and preservation gate.
 
+### Pure renewal material observation
+
+```ts
+inspectRenewalScheduleMaterialV2(
+  options: InspectRenewalScheduleMaterialV2Options,
+): Promise<RenewalScheduleMaterialObservationV2>
+```
+
+This standalone package export accepts complete raw `configuration`, five current
+`reads` categories and optional raw `configureReceipt`. It rebuilds V2 bindings
+and compares full material without provider I/O or trusted-store verification.
+Its relations are `attached_unconfigured_match`, `pending_material_match`,
+`current_target_material_match`, `terminal_facts_only`, `unknown` and `conflict`.
+Acknowledgement and authentication remain unestablished. It is not a method on
+`BetterStripe` or a schedule writer.
+
+Both original and current `latest_invoice` fields are required. An `I0` to `I1`
+change remains `conflict` with `effective_full_material_drift`; the five-read API
+has no owned invoice-history proof. Pending without a raw configure response is
+limited to the classic, changed-cadence, explicit-phase-start, one-week consistency
+rule. Other unproved future durations remain unknown. See the
+[material observation guide](renewal-material-observation.md) for complete input
+fields, result limits, capture errors and the 500000-byte/10000-node/depth-40 bounds.
+
+### Component-backed methods
+
 All methods are available on the `BetterStripe` class instance. Methods that call the Stripe API are actions; methods that only read Convex data are queries.
 
 Methods named `get<Entity>` take the component document ID (exception: `getInvoice`, which takes the Stripe invoice ID); methods named `get<Entity>ByStripeId` take the Stripe ID (`acct_...`, `prod_...`, `price_...`, `cs_...`, `sub_...`).

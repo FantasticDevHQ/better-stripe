@@ -244,11 +244,9 @@ export type ProjectedRenewalConfigurationV2 = Omit<
 export type RenewalConfigurationProjectionFailure = Failure;
 
 /** Pure raw-only configuration candidate; provider qualification remains required. */
-export async function projectRenewalConfigurationV2(
+export async function reconstructConfigurationV2(
   options: ProjectRenewalConfigurationV2Options,
-): Promise<
-  ProjectedRenewalConfigurationV2 | RenewalConfigurationProjectionFailure
-> {
+) {
   const args = captureConfiguration(options);
   let ownedScheduleId: string | undefined;
   try {
@@ -323,7 +321,7 @@ export async function projectRenewalConfigurationV2(
         schedule.default_settings,
       ),
     };
-    return renewalSnapshot({
+    const result: ProjectedRenewalConfigurationV2 = renewalSnapshot({
       ...request,
       status: "projected_configure_request" as const,
       providerQualification: "required" as const,
@@ -333,9 +331,19 @@ export async function projectRenewalConfigurationV2(
         binding: await renewalBindingV2("renewal-configure", request),
       },
     });
+    return { result, material: { args, prepared, receipt, reads } };
   } catch (error) {
-    return failure(error, ownedScheduleId);
+    return { result: failure(error, ownedScheduleId), material: undefined };
   }
+}
+
+/** Pure V2 projection; the reconstruction context stays internal to fixed callers. */
+export async function projectRenewalConfigurationV2(
+  options: ProjectRenewalConfigurationV2Options,
+): Promise<
+  ProjectedRenewalConfigurationV2 | RenewalConfigurationProjectionFailure
+> {
+  return (await reconstructConfigurationV2(options)).result;
 }
 
 export type ConstructRenewalConfigurationReceiptV2Options = {

@@ -31,3 +31,10 @@ export type {
   ConstructRenewalConfigurationReceiptV2Options,
   RenewalConfigurationReceiptV2,
 } from "./billing/renewalV2/index.js";
+
+export { inspectRenewalScheduleMaterialV2 } from "./billing/renewalV2/observation.js";
+export type {
+  InspectRenewalScheduleMaterialV2Options,
+  RenewalScheduleMaterialReads,
+  RenewalScheduleMaterialObservationV2,
+} from "./billing/renewalV2/observation.js";

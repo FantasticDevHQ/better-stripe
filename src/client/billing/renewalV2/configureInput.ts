@@ -26,7 +26,7 @@ function ownData(raw: unknown, required: string[], optional: string[] = []) {
   }
   return fields;
 }
-function closed(raw: unknown) {
+export function validateConfigurationFields(raw: unknown) {
   const root = ownData(
     raw,
     [
@@ -73,9 +73,9 @@ const input = z
   })
   .strict();
 export function captureConfiguration(raw: unknown) {
-  closed(raw);
+  validateConfigurationFields(raw);
   const captured = renewalSnapshot(raw);
-  closed(captured);
+  validateConfigurationFields(captured);
   const args = input.parse(captured);
   return {
     ...args,

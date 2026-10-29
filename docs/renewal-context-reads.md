@@ -182,7 +182,8 @@ there is no automatic migration or fallback. Existing V1 projection, receipt
 and configure consumers do not accept V2 records. V2 adds pure preparation,
 request and attachment-receipt construction, plus
 [raw configuration projection](renewal-phase-assembly.md#raw-v2-configuration-projection).
-It does not add a provider writer or configured-response receipt constructor.
+It also adds [configured-response receipt consistency](renewal-phase-assembly.md#raw-v2-configuration-receipts).
+These constructors do not add a provider writer.
 
 V2 retains the same raw preparation semantic checks and bounded JSON policy as
 V1. It adds a limit of 500,000 UTF-8 bytes on each exact encoded hash preimage,
@@ -204,6 +205,9 @@ complete attachment receipt.
 Configuration projection also selects `renewal-baseline`, `renewal-defaults`
 and `renewal-configure` internally for its complete baseline, defaults and
 unsigned request. No caller-supplied family selector is exposed.
+Configured-response receipts select `renewal-configured-baseline` for the full
+response body, `renewal-configured-defaults` when that body owns default settings,
+and `renewal-configure-receipt` for the complete unsigned receipt.
 
 The preparation preimage contains version, platform scope, expected selectors,
 quantity and complete provider snapshot. Its logical key is separately retained

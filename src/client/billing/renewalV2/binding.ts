@@ -8,7 +8,10 @@ export async function renewalBindingV2(
     | "renewal-attach-receipt"
     | "renewal-baseline"
     | "renewal-defaults"
-    | "renewal-configure",
+    | "renewal-configure"
+    | "renewal-configured-baseline"
+    | "renewal-configured-defaults"
+    | "renewal-configure-receipt",
   preimage: unknown,
 ): Promise<string> {
   // Finish all input capture and canonical bytes before the first await.

@@ -451,15 +451,13 @@ it("rejects hidden response metadata introduced by reflection during capture", a
   await expect(construct(raw)).rejects.toThrow();
   expect(digest).not.toHaveBeenCalled();
 });
-it("clones selected own-data fields without rereading a reflective raw root", async () => {
-  const raw: any = await input();
-  raw.providerSnapshot.selected_body = "first";
-  const selected = structuredClone(raw.providerSnapshot),
-    replacement = structuredClone(raw.providerSnapshot);
-  replacement.selected_body = "replacement";
+it("validates the raw prototype before selecting a body swapped by reflection", async () => {
+  const raw: any = await input(),
+    replacement = structuredClone(raw.providerSnapshot),
+    metadataRead = vi.fn();
   Object.defineProperty(replacement, "lastResponse", {
     enumerable: false,
-    value: { statusCode: 200 },
+    get: metadataRead,
   });
   let swaps = 0;
   const wrapped = new Proxy(raw, {
@@ -469,18 +467,59 @@ it("clones selected own-data fields without rereading a reflective raw root", as
       return Object.prototype;
     },
   });
-  const result = await construct(wrapped);
-  expect(swaps).toBe(0);
-  expect(result.providerSnapshot).toEqual(selected);
-  expect(result.providerSnapshotBinding).toBe(
-    digest("renewal-configured-baseline", selected),
+  const digest = vi.fn(
+    (algorithm: string, bytes: Parameters<typeof webcrypto.subtle.digest>[1]) =>
+      webcrypto.subtle.digest(algorithm, bytes),
   );
-  expect(
-    Object.prototype.hasOwnProperty.call(
-      result.providerSnapshot,
-      "lastResponse",
-    ),
-  ).toBe(false);
+  vi.stubGlobal("crypto", { subtle: { digest } });
+  await expect(construct(wrapped)).rejects.toThrow(
+    "Invalid renewal configuration receipt input.",
+  );
+  expect(swaps).toBe(1);
+  expect(digest).not.toHaveBeenCalled();
+  expect(metadataRead).not.toHaveBeenCalled();
+});
+it.each(["class", "custom"])(
+  "rejects a %s raw-root prototype before hashing",
+  async (kind) => {
+    const raw = await input();
+    class Wrapper {}
+    const wrapped = Object.assign(
+      kind === "class" ? new Wrapper() : Object.create({ inherited: true }),
+      raw,
+    );
+    const digest = vi.fn(
+      (
+        algorithm: string,
+        bytes: Parameters<typeof webcrypto.subtle.digest>[1],
+      ) => webcrypto.subtle.digest(algorithm, bytes),
+    );
+    vi.stubGlobal("crypto", { subtle: { digest } });
+    await expect(construct(wrapped)).rejects.toThrow(
+      "Invalid renewal configuration receipt input.",
+    );
+    expect(digest).not.toHaveBeenCalled();
+  },
+);
+it("retains null-prototype raw own-data roots", async () => {
+  const raw = await input(),
+    wrapped = Object.assign(Object.create(null), raw),
+    result = await construct(wrapped);
+  expect(result.providerSnapshot).toEqual(raw.providerSnapshot);
+  expect(result.stage).toBe("configure_acknowledged");
+});
+it("accepts a benign Proxy while querying its plain prototype only once", async () => {
+  const raw = await input();
+  let checks = 0;
+  const wrapped = new Proxy(raw, {
+    getPrototypeOf() {
+      checks++;
+      return Object.prototype;
+    },
+  });
+  const result = await construct(wrapped);
+  expect(checks).toBe(1);
+  expect(result.providerSnapshot).toEqual(raw.providerSnapshot);
 });
 it.each(["symbol", "nonEnumerable", "accessor", "cycle", "sparse"])(
   "rejects invalid raw %s before hashing",

@@ -84,6 +84,9 @@ const input = z
   })
   .strict();
 export function captureConfigurationReceipt(raw: unknown) {
+  if (raw === null || typeof raw !== "object") stop();
+  const prototype = Object.getPrototypeOf(raw);
+  if (prototype !== Object.prototype && prototype !== null) stop();
   const original = closed(raw);
   const captured = renewalSnapshot(original);
   closed(captured);

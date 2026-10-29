@@ -48,6 +48,9 @@ The internal [preservation mappings](renewal-preservation-mappings.md) document
 field projection boundaries separately from complete schedule eligibility.
 The internal [phase assembly contract](renewal-phase-assembly.md) describes
 preflight, acknowledged baselines and non-dispatchable configuration candidates.
+The public [material observer](renewal-material-observation.md) compares supplied
+V2 material without provider calls. Its invoice-pointer and no-response duration
+limits leave the complete renewal workflow outside that pure helper.
 
 The subscription's actual `currency` must match both prices' default `currency`.
 This helper does not select `currency_options` or infer an alternative amount.

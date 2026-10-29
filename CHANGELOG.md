@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.85.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.84.0...v0.85.0) (2026-10-29)
+
+### Features
+
+- add V2 renewal attachment receipts ([#406](https://github.com/FantasticDevHQ/better-stripe/issues/406)) ([573aee1](https://github.com/FantasticDevHQ/better-stripe/commit/573aee18d5e4502a1a28a1e1fb0f33b105638773))
+
 ## [0.84.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.83.1...v0.84.0) (2026-10-28)
 
 ### Features

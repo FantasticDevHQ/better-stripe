@@ -28,10 +28,9 @@
 
 ## [0.88.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.87.0...v0.88.0) (2026-10-29)
 
-
 ### Features
 
-* inspect V2 renewal schedule material ([#412](https://github.com/FantasticDevHQ/better-stripe/issues/412)) ([f009139](https://github.com/FantasticDevHQ/better-stripe/commit/f009139d2036b281a7a06f515cfd622e7c187c5f))
+- inspect V2 renewal schedule material ([#412](https://github.com/FantasticDevHQ/better-stripe/issues/412)) ([f009139](https://github.com/FantasticDevHQ/better-stripe/commit/f009139d2036b281a7a06f515cfd622e7c187c5f))
 
 ## [0.87.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.86.0...v0.87.0) (2026-10-29)
 

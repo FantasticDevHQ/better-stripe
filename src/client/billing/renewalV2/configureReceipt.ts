@@ -85,7 +85,7 @@ const input = z
   .strict();
 export function captureConfigurationReceipt(raw: unknown) {
   const original = closed(raw);
-  const captured = renewalSnapshot(raw);
+  const captured = renewalSnapshot(original);
   closed(captured);
   // Catch metadata introduced by reflection during capture, including hidden data.
   bareBody(original.providerSnapshot);

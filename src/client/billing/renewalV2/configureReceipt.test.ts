@@ -451,6 +451,37 @@ it("rejects hidden response metadata introduced by reflection during capture", a
   await expect(construct(raw)).rejects.toThrow();
   expect(digest).not.toHaveBeenCalled();
 });
+it("clones selected own-data fields without rereading a reflective raw root", async () => {
+  const raw: any = await input();
+  raw.providerSnapshot.selected_body = "first";
+  const selected = structuredClone(raw.providerSnapshot),
+    replacement = structuredClone(raw.providerSnapshot);
+  replacement.selected_body = "replacement";
+  Object.defineProperty(replacement, "lastResponse", {
+    enumerable: false,
+    value: { statusCode: 200 },
+  });
+  let swaps = 0;
+  const wrapped = new Proxy(raw, {
+    getPrototypeOf(target) {
+      swaps++;
+      target.providerSnapshot = replacement;
+      return Object.prototype;
+    },
+  });
+  const result = await construct(wrapped);
+  expect(swaps).toBe(0);
+  expect(result.providerSnapshot).toEqual(selected);
+  expect(result.providerSnapshotBinding).toBe(
+    digest("renewal-configured-baseline", selected),
+  );
+  expect(
+    Object.prototype.hasOwnProperty.call(
+      result.providerSnapshot,
+      "lastResponse",
+    ),
+  ).toBe(false);
+});
 it.each(["symbol", "nonEnumerable", "accessor", "cycle", "sparse"])(
   "rejects invalid raw %s before hashing",
   async (kind) => {

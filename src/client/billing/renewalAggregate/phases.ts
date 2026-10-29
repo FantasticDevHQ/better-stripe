@@ -13,7 +13,7 @@ import {
   equal,
   unsupported,
 } from "./shared.js";
-import type { validateReads } from "./preflight.js";
+import type { RenewalReadMaterial } from "./readMaterial.js";
 import type { OriginalRedemptions } from "./sourceDiscounts.js";
 import { preserveTaxLevels } from "./taxRetention.js";
 
@@ -85,7 +85,7 @@ function metadataMatches(
 }
 
 export function assemblePhases(
-  reads: ReturnType<typeof validateReads>,
+  reads: RenewalReadMaterial,
   schedule: Record<string, unknown>,
 ): [
   Stripe.SubscriptionScheduleUpdateParams.Phase,

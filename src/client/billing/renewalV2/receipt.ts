@@ -66,7 +66,7 @@ function ownData(raw: unknown, required: string[], optional: string[] = []) {
   }
   return result;
 }
-function closed(raw: unknown) {
+export function validateAttachmentReceiptFields(raw: unknown) {
   const root = ownData(raw, [
     "attachRequest",
     "actualDispatch",
@@ -95,10 +95,10 @@ function closed(raw: unknown) {
   ownData(wire.payload, ["from_subscription"]);
 }
 export function captureAttachmentReceipt(raw: unknown) {
-  closed(raw);
+  validateAttachmentReceiptFields(raw);
   const captured = renewalSnapshot(raw);
   // Recheck the detached object: hostile reflection can mutate the live source.
-  closed(captured);
+  validateAttachmentReceiptFields(captured);
   return input.parse(captured);
 }
 

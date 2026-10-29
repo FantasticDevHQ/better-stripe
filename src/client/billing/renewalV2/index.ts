@@ -27,6 +27,7 @@ import {
   assertAttachmentIdentity,
 } from "./receipt.js";
 import { captureConfiguration } from "./configureInput.js";
+import { captureConfigurationReceipt } from "./configureReceipt.js";
 
 export type PrepareRenewalPriceReplacementV2Options =
   PrepareRenewalPriceReplacementOptions;
@@ -334,5 +335,121 @@ export async function projectRenewalConfigurationV2(
     });
   } catch (error) {
     return failure(error, ownedScheduleId);
+  }
+}
+
+export type ConstructRenewalConfigurationReceiptV2Options = {
+  configuration: ProjectRenewalConfigurationV2Options;
+  actualDispatch: Pick<
+    ProjectedRenewalConfigurationV2,
+    | "scope"
+    | "apiVersion"
+    | "method"
+    | "path"
+    | "payload"
+    | "key"
+    | "firstDispatchedAt"
+  >;
+  providerSnapshot: Record<string, unknown>;
+  transport: { status: number; requestId?: string };
+};
+export type RenewalConfigurationReceiptV2 = {
+  version: 2;
+  stage: "configure_acknowledged";
+  scope: "platform";
+  verification: "owned_response_only";
+  apiVersion: string;
+  logicalBinding: string;
+  request: ProjectedRenewalConfigurationV2;
+  attachReceiptBinding: string;
+  scheduleId: string;
+  subscriptionId: string;
+  customerAccountId: string;
+  billingCustomerId: string;
+  livemode: boolean;
+  providerSnapshot: Record<string, unknown>;
+  transport: { status: number; requestId?: string };
+  providerSnapshotBinding: string;
+  defaultSettingsBinding?: string;
+  binding: string;
+};
+
+/** Unsigned operation consistency only. Does not authenticate an acknowledgement. */
+export async function constructRenewalConfigurationReceiptV2(
+  options: ConstructRenewalConfigurationReceiptV2Options,
+): Promise<RenewalConfigurationReceiptV2> {
+  try {
+    const args = captureConfigurationReceipt(options);
+    const configuration =
+      args.configuration as ProjectRenewalConfigurationV2Options;
+    const request = await projectRenewalConfigurationV2(configuration);
+    if (request.status !== "projected_configure_request") throw Error();
+    const { scope, apiVersion, method, path, payload, key, firstDispatchedAt } =
+      request;
+    if (
+      !equal(args.actualDispatch, {
+        scope,
+        apiVersion,
+        method,
+        path,
+        payload,
+        key,
+        firstDispatchedAt,
+      })
+    )
+      throw Error();
+    // These raw selectors have just been revalidated through complete C1-C6.
+    const expected = configuration.preparation.expected;
+    const billingCustomerId = resourceId("cus").parse(
+      (configuration.billingCustomer as Record<string, unknown>).id,
+    );
+    assertAttachmentIdentity(args.providerSnapshot, {
+      scheduleId: request.scheduleId,
+      subscriptionId: expected.subscriptionId,
+      customerAccountId: expected.customerAccountId,
+      billingCustomerId,
+      livemode: expected.livemode,
+    });
+    const providerSnapshotBinding = await renewalBindingV2(
+      "renewal-configured-baseline",
+      args.providerSnapshot,
+    );
+    const defaultsPresent = Object.prototype.hasOwnProperty.call(
+      args.providerSnapshot,
+      "default_settings",
+    );
+    const defaults = defaultsPresent
+      ? {
+          defaultSettingsBinding: await renewalBindingV2(
+            "renewal-configured-defaults",
+            args.providerSnapshot.default_settings,
+          ),
+        }
+      : {};
+    const receipt = {
+      version: 2 as const,
+      stage: "configure_acknowledged" as const,
+      scope: "platform" as const,
+      verification: "owned_response_only" as const,
+      apiVersion: request.apiVersion,
+      logicalBinding: request.logicalBinding,
+      request,
+      attachReceiptBinding: request.attachReceiptBinding,
+      scheduleId: request.scheduleId,
+      subscriptionId: expected.subscriptionId,
+      customerAccountId: expected.customerAccountId,
+      billingCustomerId,
+      livemode: expected.livemode,
+      providerSnapshot: args.providerSnapshot,
+      transport: args.transport,
+      providerSnapshotBinding,
+      ...defaults,
+    };
+    return renewalSnapshot({
+      ...receipt,
+      binding: await renewalBindingV2("renewal-configure-receipt", receipt),
+    });
+  } catch {
+    throw Error("Invalid renewal configuration receipt input.");
   }
 }

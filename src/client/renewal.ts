@@ -16,6 +16,7 @@ export {
   prepareRenewalScheduleAttachmentV2,
   constructRenewalScheduleAttachmentReceiptV2,
   projectRenewalConfigurationV2,
+  constructRenewalConfigurationReceiptV2,
 } from "./billing/renewalV2/index.js";
 export type {
   PrepareRenewalPriceReplacementV2Options,
@@ -27,4 +28,6 @@ export type {
   ProjectRenewalConfigurationV2Options,
   ProjectedRenewalConfigurationV2,
   RenewalConfigurationProjectionFailure,
+  ConstructRenewalConfigurationReceiptV2Options,
+  RenewalConfigurationReceiptV2,
 } from "./billing/renewalV2/index.js";

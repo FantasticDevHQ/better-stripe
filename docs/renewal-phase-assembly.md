@@ -84,6 +84,74 @@ effectiveness. Protect original records and enforce host authorization and all
 provider qualification gates before dispatch. Existing V1 APIs and record
 formats are unchanged.
 
+## Raw V2 configuration receipts
+
+`constructRenewalConfigurationReceiptV2` records unsigned operation consistency
+from raw configuration inputs and a retained response:
+
+```ts
+import { constructRenewalConfigurationReceiptV2 } from "@fantastic.dev/better-stripe";
+
+const receipt = await constructRenewalConfigurationReceiptV2({
+  configuration: originalRawConfigurationInputs,
+  actualDispatch: {
+    scope: "platform",
+    apiVersion,
+    method: "POST",
+    path: projectedRequest.path,
+    payload: projectedRequest.payload,
+    key: projectedRequest.key,
+    firstDispatchedAt: projectedRequest.firstDispatchedAt,
+  },
+  providerSnapshot: retainedConfiguredScheduleBody,
+  transport: {
+    status: retainedStatus,
+    ...(retainedRequestId === undefined
+      ? {}
+      : { requestId: retainedRequestId }),
+  },
+});
+```
+
+`configuration` is the complete raw input to `projectRenewalConfigurationV2`,
+including its repeated original preparation and raw attachment receipt inputs.
+Do not supply a projected request, stored receipt or verification handle in its
+place. The constructor captures the entire input before its first await and
+rebuilds C6 internally. Any returned C6 Failure rejects C9 with a fixed error;
+C6's own Failure union remains unchanged. All seven actual dispatch fields,
+including the complete payload, key and first-dispatch time, must equal C6.
+
+Transport is closed `{ status, requestId? }`. Status must be an integer from
+200 through 299. A present request ID must contain 1–255 characters; omit it
+when absent. Null, empty or explicitly undefined IDs reject. Supply the complete
+plain JSON Schedule body rather than an SDK wrapper: any own `lastResponse`
+property, including hidden metadata, rejects. The public bounded JSON limits and
+own-data constructor checks remain; captured required fields are checked again
+before hashing.
+
+Available response identity relations must agree with C6's Schedule,
+Subscription, Customer, account and mode. The complete response body, including
+unknown safe JSON keys, remains in C7 (`renewal-configured-baseline`). C8
+(`renewal-configured-defaults`) is present only when the response owns
+`default_settings`: absent stays absent, own null is hashed as null, and a present
+object is hashed in full. C9 (`renewal-configure-receipt`) binds the complete
+unsigned receipt, including the full C6 request, response, exact transport and
+C7/optional C8. Each exact UTF-8 preimage retains the 500,000-byte limit; the
+whole input and result retain the existing JSON traversal and size limits.
+
+The result uses version `2`, stage `configure_acknowledged` and verification
+`owned_response_only`. These are unsigned data-format literals. They do not
+authenticate acknowledgement or ownership. A caller can manufacture coherent
+data that passes. This operation-only constructor does not require response
+phases or defaults to match the requested configuration and cannot certify that
+they were applied. Full phase/material comparison, response acquisition and
+same-call provenance, authorization, custody, provider qualification and renewal
+effectiveness remain separate requirements.
+
+No provider call, retry, key rotation, storage write, V1 conversion or native
+qualification occurs. Keep the original operation records protected, and do not
+treat the receipt or a matching digest as permission to write or grant service.
+
 A candidate always has `providerQualification: "required"`. This describes a
 remaining requirement, not authorization to dispatch. Host-supplied flags cannot
 prove provider behavior, ownership, original configuration or historical intent.

@@ -14,10 +14,13 @@ export type { ReadRenewalPriceReplacementContextOptions } from "./billing/renewa
 export {
   prepareRenewalPriceReplacementV2,
   prepareRenewalScheduleAttachmentV2,
+  constructRenewalScheduleAttachmentReceiptV2,
 } from "./billing/renewalV2/index.js";
 export type {
   PrepareRenewalPriceReplacementV2Options,
   PreparedRenewalPriceReplacementV2,
   PrepareRenewalScheduleAttachmentV2Options,
   PreparedRenewalScheduleAttachmentV2,
+  ConstructRenewalScheduleAttachmentReceiptV2Options,
+  RenewalScheduleAttachmentReceiptV2,
 } from "./billing/renewalV2/index.js";

@@ -6,6 +6,11 @@ not a public package entrypoint. It complements the public
 [preparation contract](renewal-price-replacements.md) and internal
 [preservation mappings](renewal-preservation-mappings.md).
 
+This aggregate consumes V1 records. The public
+[V2 attachment receipt constructor](renewal-context-reads.md#v2-attachment-receipt-consistency)
+produces separate unsigned consistency data; it does not migrate records or
+enable this projector to accept V2 receipts.
+
 A candidate always has `providerQualification: "required"`. This describes a
 remaining requirement, not authorization to dispatch. Host-supplied flags cannot
 prove provider behavior, ownership, original configuration or historical intent.

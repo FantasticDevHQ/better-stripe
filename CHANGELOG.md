@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.92.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.91.0...v0.92.0) (2026-10-30)
+
+### Features
+
+- **billing:** retain configure acknowledgements for owned observation ([#422](https://github.com/FantasticDevHQ/better-stripe/issues/422)) ([78215f3](https://github.com/FantasticDevHQ/better-stripe/commit/78215f3b63bc103ed7e32df5ba5386c88c7bcc2a))
+
 ## [0.91.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.90.0...v0.91.0) (2026-10-30)
 
 ### Features

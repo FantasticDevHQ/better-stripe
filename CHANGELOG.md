@@ -28,10 +28,9 @@
 
 ## [0.90.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.89.0...v0.90.0) (2026-10-30)
 
-
 ### Features
 
-* **billing:** add internal raw renewal acquisition and lifecycle guards ([#418](https://github.com/FantasticDevHQ/better-stripe/issues/418)) ([40115d0](https://github.com/FantasticDevHQ/better-stripe/commit/40115d00a9a21c24c221434a98caf8d3617d115c))
+- **billing:** add internal raw renewal acquisition and lifecycle guards ([#418](https://github.com/FantasticDevHQ/better-stripe/issues/418)) ([40115d0](https://github.com/FantasticDevHQ/better-stripe/commit/40115d00a9a21c24c221434a98caf8d3617d115c))
 
 ## [0.89.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.88.1...v0.89.0) (2026-10-29)
 

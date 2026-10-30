@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { it } from "vitest";
 import { configuredHistoryCases } from "../test-fixtures/observationConfiguredHistoryDeclarations.js";
 import { configuredHistoryFixture } from "../test-fixtures/observationConfiguredHistoryOperation.js";

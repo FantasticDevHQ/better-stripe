@@ -5,6 +5,11 @@ import type { Node } from "../material/nodeKernel.js";
 import type { inspectRenewalScheduleMaterialV2 } from "../../../renewalV2/observation.js";
 
 export type Data = Record<string, unknown>;
+/** Detached immutable DATA after checked actor-local writer custody; never a capability. */
+export interface RetainedConfigureAcknowledgement {
+  readonly rawReceipt: import("../../../renewalV2/index.js").ConstructRenewalConfigurationReceiptV2Options;
+  readonly receipt: unknown;
+}
 /** Captured DATA shape only; actual C6/C3/raw proof and Source pointers remain mandatory. */
 export type ObservationRecord = PreflightRecord;
 export interface CapturedObservationRecord {

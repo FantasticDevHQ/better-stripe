@@ -207,7 +207,11 @@ export function assertConfigureACK(h: ConfigureWriteFixture, output: unknown) {
   const slots = ackSlots(h);
   assert.equal(
     slots.length,
-    h.write.name === "defaults-null" || h.write.name === "defaults-object"
+    h.write.name === "defaults-null" ||
+      h.write.name === "defaults-object" ||
+      h.write.name === "configured-history" ||
+      h.write.name === "configured-history-onephase" ||
+      h.write.name === "configured-history-drift"
       ? 19
       : 18,
   );

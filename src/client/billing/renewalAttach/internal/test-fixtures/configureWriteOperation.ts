@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { vi } from "vitest";
 import { declaredEntries } from "./attachEntries.js";
+import { captureWriteTestDelegate } from "./configureWriteDelegate.js";
 import {
   declarePreflightCase,
   deepFreeze,
@@ -502,29 +503,13 @@ export async function configureWriteFixture(mode: WriteCase = "ack") {
       writeGates,
     );
     installWriteDigestAccounting(writeGates);
-    const writeDelegate = Object.freeze({
-      rawRequest(...args: unknown[]) {
-        const state = family?.currentObservations() ?? writeState;
-        state.trace.push("delegate:" + String(args[0]));
-        state.delegateArgs.push(args);
-        const options = data(args[3]);
-        assert.equal(options.apiVersion, write.baseline.apiVersion);
-        assert.equal(options.maxNetworkRetries, 0);
-        assert.equal(
-          Object.prototype.hasOwnProperty.call(options, "stripeAccount"),
-          false,
-        );
-        const promise = Reflect.apply(method, client, args) as Promise<unknown>;
-        state.originalPromises.push(promise);
-        writeGates.pending.push(
-          promise.then(
-            () => {},
-            () => {},
-          ),
-        );
-        return promise;
-      },
-    });
+    const writeDelegate = captureWriteTestDelegate(
+      client,
+      method,
+      () => family?.currentObservations() ?? writeState,
+      writeGates,
+      write.baseline.apiVersion,
+    );
     family = await configureWriteTestFamily({
       declared: write,
       declarations,
@@ -582,6 +567,8 @@ export async function configureWriteFixture(mode: WriteCase = "ack") {
       expectedACK,
       replayDeclaration: declareExpectedReplay(projected),
       captureWriter: family.captureA,
+      fixedAOperation: family.fixedAOperation,
+      readFixedA: family.readFixedA,
       captureReplayB: family.captureB,
       captureReplayC: family.captureC,
       replayStates: Object.freeze({ B: family.states.B, C: family.states.C }),

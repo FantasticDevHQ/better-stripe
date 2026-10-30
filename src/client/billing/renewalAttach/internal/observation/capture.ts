@@ -126,7 +126,7 @@ export function captureObservationReply(reply: unknown) {
   return ordinary(Object.fromEntries(entries));
 }
 export function captureObservationInput<T>(value: T): T {
-  const root = closed(value, ["configuration", "reads"]);
+  const root = closed(value, ["configuration", "reads"], ["configureReceipt"]);
   const reads = closed(root.reads, [
     "schedule",
     "subscription",
@@ -149,7 +149,8 @@ export function admitObservationOutput<T>(value: T): T {
   need(
     root.status === "owned_observation_data" &&
       root.operationalAuthority === false &&
-      root.retainedConfigureAcknowledgement === "absent",
+      (root.retainedConfigureAcknowledgement === "absent" ||
+        root.retainedConfigureAcknowledgement === "present"),
   );
   need(
     typeof root.observedAt === "number" &&

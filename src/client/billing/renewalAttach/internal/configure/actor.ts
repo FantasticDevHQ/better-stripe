@@ -1,4 +1,7 @@
 import { types } from "node:util";
+import { owned } from "./ownedContinuation.js";
+import { renewalSnapshot } from "../../../renewalReplacementSnapshot.js";
+import { freeze } from "../material/nodeKernel.js";
 import { OWNER } from "../originalOwner.js";
 import {
   COMPILED_CONFIGURE_WRITE_ENTRIES as ENTRIES,
@@ -59,7 +62,9 @@ type History = {
     | "receipt_prepared"
     | "receipt_recorded";
   pair: Pair | null;
-  receipt?: unknown;
+  receipt?: Parameters<typeof admitConfigureACK>[2];
+  rawReceipt?: Parameters<typeof admitConfigureACK>[1];
+  returned: boolean;
   output?: unknown;
 };
 // Local actual Source identities only. JSON and public preflight output never enter this map.
@@ -79,59 +84,62 @@ function isCurrentBundle(
     wireSubscription: record.configuration.freshSubscription,
   });
 }
-/** Same original Owner subscription, with FIRST continuation guards on both outcomes. */
-function owned<T>(work: () => T | PromiseLike<T>): Promise<T> {
+/** Checked process-local custody only; neither a caller context nor write authority. */
+export function readOwnedConfigureAcknowledgement(
+  operation: unknown,
+  acknowledgement: unknown,
+  record: PreflightRecord,
+  actualAttachAcknowledgement: unknown,
+  origin: unknown,
+  originalEntry: unknown,
+) {
   OWNER.check();
-  return new Promise((resolve, reject) => {
-    let done = false,
-      remove: (() => void) | null = null;
-    const finish = (ok: boolean, value: unknown) => {
-      if (done) return;
-      done = true;
-      remove?.();
-      if (ok) resolve(value as T);
-      else reject(value);
-    };
-    const retire = () => finish(false, Error("CONFIGURE_WRITE_STOP"));
-    remove = OWNER.subscribe(retire);
-    if (done) {
-      remove();
-      return;
-    }
-    let pending: T | PromiseLike<T>;
-    try {
-      OWNER.check();
-      pending = work();
-    } catch (error) {
-      try {
-        OWNER.check();
-        finish(false, error);
-      } catch {
-        retire();
-      }
-      return;
-    }
-    void Promise.resolve(pending).then(
-      (value) => {
-        if (done) return;
-        try {
-          OWNER.check();
-          finish(true, value);
-        } catch {
-          retire();
-        }
-      },
-      (error) => {
-        if (done) return;
-        try {
-          OWNER.check();
-          finish(false, error);
-        } catch {
-          retire();
-        }
-      },
-    );
+  need(arguments.length === 6);
+  const row = historyFor(operation);
+  need(row && row.owner === OWNER && row.basis === OWNER.basis);
+  need(
+    row.origin === ORIGINAL_ORIGIN_ASSOCIATION &&
+      row.origin === origin &&
+      row.entry === originalEntry &&
+      !types.isProxy(COMPILED_INITIAL_ENTRIES) &&
+      Array.isArray(COMPILED_INITIAL_ENTRIES) &&
+      COMPILED_INITIAL_ENTRIES.includes(row.entry) &&
+      !types.isProxy(ENTRIES) &&
+      Array.isArray(ENTRIES) &&
+      ENTRIES.includes(row.configureEntry),
+  );
+  const entry = closed(row.configureEntry, [
+    "originalEntry",
+    "coversConfigure",
+  ]);
+  need(entry.originalEntry === row.entry);
+  need(
+    row.actualAttachAcknowledgement === actualAttachAcknowledgement &&
+      equal(row.record, record) &&
+      row.lineage.receiptKnown &&
+      row.state === "receipt_recorded" &&
+      row.returned === true &&
+      row.output === acknowledgement &&
+      row.rawReceipt &&
+      row.receipt,
+  );
+  // Re-admit the whole18/19 wrapper, then return detached immutable DATA only.
+  const admitted = closed(
+    admitConfigureACK(row.record, row.rawReceipt, row.receipt),
+    [
+      "status",
+      "originalRecord",
+      "rawReceipt",
+      "receipt",
+      "operationalAuthority",
+    ],
+  );
+  const result = Object.freeze({
+    rawReceipt: freeze(renewalSnapshot(row.rawReceipt)),
+    receipt: admitted.receipt,
   });
+  OWNER.check();
+  return result;
 }
 function capture(replay: boolean) {
   let consumed = false;
@@ -327,6 +335,7 @@ function capture(replay: boolean) {
           actualAttachAcknowledgement,
           lineage,
           state: "not_started",
+          returned: false,
           pair,
         };
         attempts.set(live, row);
@@ -504,6 +513,7 @@ function capture(replay: boolean) {
         OWNER.check();
         // Actual C9 success is retained before output admission or receipt-event publication.
         // This closes the whole lineage even if either later admission/publication fails.
+        row.rawReceipt = rawReceipt;
         row.receipt = receipt;
         row.state = "receipt_prepared";
         lineage.receiptKnown = true;
@@ -523,6 +533,7 @@ function capture(replay: boolean) {
         lineage.busy = false;
         OWNER.check();
         activePair.capability.discardFulfilledQuarantine();
+        row.returned = true;
         return output;
       } catch (error) {
         let live = false;

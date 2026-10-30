@@ -9,6 +9,7 @@ import {
 import {
   projectRenewalConfigurationV2,
   constructRenewalScheduleAttachmentReceiptV2,
+  constructRenewalConfigurationReceiptV2,
 } from "../../../renewalV2/index.js";
 import { inspectRenewalScheduleMaterialV2 } from "../../../renewalV2/observation.js";
 import { captureObservationRecord, verifyObservationRecord } from "./record.js";
@@ -26,6 +27,7 @@ import {
   validateCoupon,
 } from "./profile.js";
 import { checkOwnerResult } from "./types.js";
+import { admitRetainedConfigureAcknowledgement } from "./configureAcknowledgement.js";
 import type {
   Data,
   SourceMethod,
@@ -148,7 +150,7 @@ export function captureOwnedRenewalObservationV2() {
           "actualAttachAcknowledgement",
           "readTransport",
         ],
-        ["configureAcknowledgement"],
+        ["configureAcknowledgement", "configureOperation"],
       );
       need(op.owner === OWNER && OWNER === ORIGINAL_OWNER);
       need(op.originAssociation === ORIGINAL_ORIGIN_ASSOCIATION);
@@ -158,8 +160,13 @@ export function captureOwnedRenewalObservationV2() {
           COMPILED_OBSERVATION_ENTRIES.includes(op.observationEntry),
       );
       need(field(op.observationEntry, "originalEntry") === op.originalEntry);
+      const hasConfigureAcknowledgement = Object.prototype.hasOwnProperty.call(
+        op,
+        "configureAcknowledgement",
+      );
       need(
-        !Object.prototype.hasOwnProperty.call(op, "configureAcknowledgement"),
+        hasConfigureAcknowledgement ===
+          Object.prototype.hasOwnProperty.call(op, "configureOperation"),
       );
       const coversRetained = method(op.originalEntry, "coversRetained");
       const coversObservation = method(
@@ -365,6 +372,39 @@ export function captureOwnedRenewalObservationV2() {
         ]);
         ownerCheck();
         need(covered === true);
+        let configureReceipt:
+          | import("../../../renewalV2/index.js").ConstructRenewalConfigurationReceiptV2Options
+          | undefined;
+        if (hasConfigureAcknowledgement) {
+          const writer = await owned(() => import("../configure/actor.js"));
+          ownerCheck();
+          const readOwnedConfigureAcknowledgement =
+            writer.readOwnedConfigureAcknowledgement;
+          ownerCheck();
+          need(
+            typeof readOwnedConfigureAcknowledgement === "function" &&
+              !types.isProxy(readOwnedConfigureAcknowledgement),
+          );
+          const retainedACK = readOwnedConfigureAcknowledgement(
+            op.configureOperation,
+            op.configureAcknowledgement,
+            record,
+            op.actualAttachAcknowledgement,
+            op.originAssociation,
+            op.originalEntry,
+          );
+          ownerCheck();
+          const configured = await owned(() =>
+            constructRenewalConfigurationReceiptV2(retainedACK.rawReceipt),
+          );
+          ownerCheck();
+          configureReceipt = admitRetainedConfigureAcknowledgement(
+            record,
+            retainedACK,
+            configured,
+          );
+          ownerCheck();
+        }
         // New child/channel identity is allocated only after all original proof work.
         invocation = Object.freeze({});
         generation = Object.freeze({});
@@ -405,6 +445,7 @@ export function captureOwnedRenewalObservationV2() {
         const input = captureObservationInput({
           configuration: record.configuration,
           reads,
+          ...(configureReceipt === undefined ? {} : { configureReceipt }),
         });
         phase = "observer";
         const observation = await owned(() =>
@@ -423,7 +464,9 @@ export function captureOwnedRenewalObservationV2() {
           observation,
           reads: input.reads,
           observedAt,
-          retainedConfigureAcknowledgement: "absent",
+          retainedConfigureAcknowledgement: hasConfigureAcknowledgement
+            ? "present"
+            : "absent",
           operationalAuthority: false,
         });
         ownerCheck();

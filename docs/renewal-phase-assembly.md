@@ -332,6 +332,74 @@ provider compare-and-swap; host serialization cannot exclude Dashboard or other
 provider writers. Required consumer contexts outside this finite profile remain
 open instead of being replaced by a provenance flag or hidden fallback.
 
+## Internal owned configure preflight
+
+The internal `captureOwnedConfigurePreflightV2` captures one fixed Source
+operation and permits one invocation. Its normal registry is empty and its
+Source bindings remain unbound. It has no package export or caller-supplied
+owner, client or qualification context.
+
+The Source association must retain the actual initial attachment's acknowledged
+receipt identity. Reconstructing an equal receipt with the public constructor
+does not establish that association. After bounded record capture, the original
+public configuration projection runs first. A supported projection Failure
+returns unchanged before the actor's explicit receipt reconstruction, reads or
+coverage checks.
+
+On success, a separate read-only transport admits at most 44 GETs. The Schedule
+is read before the same acquisition lifetime finishes. Complete current raw
+Subscription, Price, Customer, Coupon and Schedule material must match the
+retained preconfigure baseline, including unknown fields and counters. A fresh
+projection must equal the entire retained request. The result retains the final
+Schedule read's timestamp even when later owner checks sample a newer time.
+
+`configure_preflight_consistent` contains `originalRecord`, `currentEvidence`,
+`request` and `operationalAuthority: false`. The complete result is detached,
+bounded and frozen before its final owner check. It grants no write authority
+and makes no POST. These sequential snapshots provide no atomic exclusion of
+concurrent provider changes.
+
+## Internal configure dispatch and explicit replay
+
+The internal configure writer uses distinct fixed Source operations for an
+initial invocation and an explicit replay. Each captured handle is single-use.
+Its normal registry remains empty and its loaders unbound; these internal
+operations have no package export or caller-supplied qualification context.
+
+Each invocation performs its own preflight within a new transport that permits
+at most 44 GETs followed by one configure POST. The detached read-only preflight
+result cannot authorize that POST. The writer requires the original attachment
+receipt association, complete retained request and current raw baseline, plus a
+separate configure coverage relation. A supported original projection Failure
+returns unchanged before receipt proof, reads or reservation.
+
+Before mutation, the dispatch event must both finish sending and receive its
+matching acknowledgement. A safe provider response is likewise sent and
+acknowledged before the public receipt constructor runs. Complete acknowledged
+output must fit the JSON limits before the receipt event is sent and
+acknowledged. A later refusal preserves earlier retained events. An acknowledged
+configure receipt establishes neither pending nor effective state.
+
+Explicit replay requires an actual earlier terminal unknown POST from the same
+internal operation lineage. An unknown return value alone grants no replay;
+an ambiguous delegate start without a settled POST fact remains non-replayable.
+Replay retains the original request, payload, key, first-dispatch time, Owner
+and preconfigure baseline. It also requires a live original Owner
+and a nonnegative elapsed interval strictly below 24 hours. Owner expiry can
+prevent replay much earlier. An already-applied two-phase schedule or any other
+baseline drift prevents another POST and requires observation. Once the writer
+constructs a valid receipt from its actual acknowledged response, the older
+unknown attempts in that lineage close. A later output-limit or
+receipt-publication failure cannot reopen them; the known receipt remains
+retained. Calling the pure receipt constructor alone establishes no response
+provenance or custody.
+
+There is no automatic replay, key rotation, unkeyed fallback or rollback. The
+internal history is process-local. It does not provide durable storage,
+authority rehydration after a restart or permanent provider replay. A qualified
+host integration must separately retain original request and receipt custody.
+Native/provider and genuine Source qualification remain acceptance requirements.
+
 ## Internal event continuations
 
 The internal C10 compilers reconstruct each attach or configure event from its

@@ -49,12 +49,27 @@ changing its receiver, arguments, result or thrown value. The owner checks the
 same original wall and monotonic time bounds and closes permanently on expiry,
 regression or retirement. These modules do not read a clock at import time.
 
-The compiled entry registry remains empty, and the original Source and stock
-client bindings remain unbound. There is no package export or operational
-attachment actor in this increment. It does not authorize reads, dispatch a
-request, enable recovery or establish provider custody or native qualification.
-The internal Node-only mechanics are not a caller-supplied clock, client or
-qualification API. The public preparation and receipt constructors are unchanged.
+The internal initial-attachment and explicit-recovery actors compose these
+guards with the raw reader and event continuations. Each captured invocation is
+single-use. Before acquisition, an actor checks the exact Source operation,
+read-plan and delegate identities and the complete locally rebuilt attachment
+request. Retained and fresh coverage require literal `true` from their selected
+entry predicates.
+
+An admitted invocation has a distinct transport pair with at most 43 GETs and
+one creation POST. Dispatch, safe response and receipt events each require
+send completion and a matching acknowledgement. Explicit unknown recovery
+retains the original request, key, first-dispatch time and owner, while using a
+new transport pair. An observed Schedule remains unowned evidence; matching its
+shape never substitutes for the acknowledged creation response. Complete
+acknowledged results pass bounded JSON admission before the final owner check.
+
+The compiled registries remain empty, and the original Source and stock client
+bindings remain unbound. Normal actor invocation refuses before Source access;
+there is no package-root export or qualified operational entry. These internal
+Node-only mechanics establish no provider custody or native qualification and
+expose no caller-supplied clock, client or qualification API. The public
+preparation and receipt constructors are unchanged.
 
 ## Internal initial material consistency
 
@@ -333,8 +348,11 @@ does not authenticate a response, prove that a POST succeeded, establish
 ownership, qualify a provider profile or authorize configuration. A coherent
 unsigned forgery can pass. No transport status or observation time is invented.
 Hosts must separately establish acknowledgement provenance and preserve the
-original records. Existing V1 configure and receipt consumers still reject V2;
-there is no migration, writer or V2 configure executor.
+original records. Existing V1 configure and receipt consumers still reject V2.
+There is no public migration or V2 configure executor. The internal configure
+writer has empty Source bindings and requires separate operation, transport and
+custody qualification before it can be enabled; see
+[renewal phase assembly](renewal-phase-assembly.md#internal-configure-dispatch-and-explicit-replay).
 
 These helpers retain ordinary provider and caller metadata within their JSON
 limits. They do not redact, encrypt or certify that input or output is safe to

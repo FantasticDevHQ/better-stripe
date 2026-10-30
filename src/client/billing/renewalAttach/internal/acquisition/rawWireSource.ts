@@ -1,6 +1,17 @@
 import type { createReadLifetime } from "./readLifetime.js";
-import type { createSourceStockRawDelegate } from "../stockRawDelegate.js";
-export type Resource = "subscription" | "price" | "customer" | "coupon";
+export type RawReadTransport = Readonly<{
+  rawRequest(
+    method: "GET",
+    path: string,
+    body: undefined,
+    options: Readonly<{
+      apiVersion: "2026-09-30.endive";
+      maxNetworkRetries: 0;
+    }>,
+  ): Promise<unknown>;
+}>;
+export type Resource =
+  "subscription" | "price" | "customer" | "coupon" | "schedule";
 export type Read = ReturnType<typeof bindWireSource>;
 import { types } from "node:util";
 import { requiredJSONSnapshot } from "../material/requiredJson.js";
@@ -16,6 +27,7 @@ const specs = Object.freeze({
   price: ["prices", resourceId("price")],
   customer: ["customers", resourceId("cus")],
   coupon: ["coupons", null],
+  schedule: ["subscription_schedules", resourceId("sub_sched")],
 } as const);
 const expansions = ["discounts", "items.data.discounts", "items.data.price"];
 // Fixed pinned Node intrinsics, captured before any reply; not a provenance assertion.
@@ -118,7 +130,7 @@ function captureReply(reply: unknown): Record<string, unknown> {
 }
 // Fixed Source transport only. Never await the old helper, which reflects before caller resumes.
 export function bindWireSource(
-  sourceTransport: ReturnType<typeof createSourceStockRawDelegate>,
+  sourceTransport: RawReadTransport,
   lifetime: ReturnType<typeof createReadLifetime>,
 ) {
   return async function read(resource: Resource, id: string) {

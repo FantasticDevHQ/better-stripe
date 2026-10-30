@@ -122,3 +122,40 @@ about whole-process memory or other SDK methods. Invalid raw capture rejects wit
 a fixed error; safe but insufficient material returns `unknown` or `conflict`
 with a fixed reason. No raw provider error is logged or returned. The host remains
 responsible for retaining its immutable request and response data when reads fail.
+
+## Internal owned observation without a configure acknowledgement
+
+`captureOwnedRenewalObservationV2` is internal; each captured handle permits one
+invocation. Its fixed Source must bind the original Owner and origin, original
+attachment entry and actual acknowledged attachment receipt identity to a distinct
+observation entry. Reconstructing equal receipt data cannot establish that
+association. The normal registry is empty and its loader unbound. There is no
+public execution export or caller-supplied Owner, client or Source context.
+
+After bounded record capture, the original configuration projection runs first.
+A supported Failure returns the same object before the actor's explicit receipt
+proof, classification or reads. Success requires the complete retained record and
+attachment proof, original entry coverage and a live original Owner.
+
+The read order is Schedule, expanded Subscription, target Price, billing Customer,
+then unique Coupon IDs across the original and current subscription and item
+discounts. Two distinct Coupon IDs give six GETs; the union permits at most 40
+Coupons and 44 GETs. Complete bare response bodies and ordinary unknown fields are
+retained. This invocation makes no POST, calls no configure-receipt constructor
+and appends no C10 events.
+
+`owned_observation_data` contains `observation`, `reads`, the final read's
+`observedAt`, `retainedConfigureAcknowledgement: "absent"` and
+`operationalAuthority: false`. The complete pure-helper result is preserved.
+Record, observer input and result each remain within 500000 serialized characters
+and UTF-8 bytes, 10000 nodes counting repeated occurrences, and depth 40. The
+result is detached and frozen before its final Owner check. Owner checks guard
+settled continuations; they do not promise immediate cancellation of pending HTTP.
+
+This branch requires `configureAcknowledgement` to be absent. The public pure
+helper's optional `configureReceipt` remains a separate input. The internal branch
+does not widen the helper's absent-response pending/effective classes or
+invoice-pointer limitation. Historical configure-response custody, successor
+invoice evidence, genuine Source binding and provider qualification remain
+separate requirements. These sequential reads do not atomically exclude other
+provider writers or establish payment, authentication or entitlement.

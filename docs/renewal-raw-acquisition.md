@@ -8,7 +8,9 @@ change `readRenewalPriceReplacementContext` or any public package export.
 same original-operation Owner and the fixed stock Stripe delegate. The compiled
 registry is empty and Source loaders remain unbound, so normal package use cannot
 start this reader or make a request through it. There is no caller-supplied
-client, clock, qualification flag or replacement deadline.
+client, clock, qualification flag or replacement deadline. Internal operation
+composition can bind the same reader to an already selected transport pair.
+That binding returns unsigned read data and grants no operation authority.
 
 ## Read sequence and data
 
@@ -26,7 +28,17 @@ The joins retain each discount's source index, original Coupon reference and
 read index. They do not replace the discounts in the raw Subscription. Unknown
 JSON fields, counters, decimal strings and own `__proto__` data survive the
 bounded copy. A non-null Schedule association remains an observation; the reader
-does not create an attachment receipt or fetch a Schedule.
+does not create an attachment receipt or fetch a Schedule in the attach profile.
+
+The separate internal configure-read profile captures an expected subscription
+and Schedule ID once. It follows the same Subscription, Price, Customer and
+Coupon sequence, then reads that exact Schedule before the same child lifetime
+finishes. The Subscription's Schedule reference must match the captured ID.
+This profile allows at most 44 GETs and has no POST. Its result adds the complete
+raw `schedule` alongside `bundle`; it preserves unknown Schedule fields rather
+than reconstructing a Schedule from selected properties. The complete wrapper
+must fit the same JSON limits. These reads do not establish receipt custody or
+permission to configure the Schedule.
 
 Every original identity, account, mode and paid-period predicate still applies.
 Each body and the complete result must fit 500,000 JSON characters and UTF-8
@@ -57,8 +69,10 @@ unbound.
 
 Failure returns the fixed content-free `RAW_ACQUISITION_STOP` result; partial
 bodies and raw errors are not exposed. `observedAt` comes from the accepted
-original Owner sample. Success labels explicitly leave source fulfillment,
-clock provenance and operator readiness false. The 43-call bound counts helper
-invocations, not a network trace. These internal mechanics do not establish
+original Owner sample after the final read. A later liveness check does not
+replace that timestamp. Success labels explicitly leave source fulfillment,
+clock provenance and operator readiness false. The 43-call attach bound and
+44-call configure-read bound count helper invocations, not a network trace.
+These internal mechanics do not establish
 provider execution, custody, an authenticated clock, attachment dispatch or a
 qualified operational profile.

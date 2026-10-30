@@ -14,6 +14,7 @@
     "src/test.ts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/client/billing/renewalAttach/internal/test-fixtures/**",
     "src/component/balanceFunding/workflow.fixtures.ts",
     "src/testing/crossDomain/**"
   ]

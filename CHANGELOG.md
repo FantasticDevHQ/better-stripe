@@ -28,10 +28,9 @@
 
 ## [0.91.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.90.0...v0.91.0) (2026-10-30)
 
-
 ### Features
 
-* **billing:** add internal owned renewal operations ([#420](https://github.com/FantasticDevHQ/better-stripe/issues/420)) ([bb0363d](https://github.com/FantasticDevHQ/better-stripe/commit/bb0363d8d8d6425fc4dcacd48d1fa9933bdde822))
+- **billing:** add internal owned renewal operations ([#420](https://github.com/FantasticDevHQ/better-stripe/issues/420)) ([bb0363d](https://github.com/FantasticDevHQ/better-stripe/commit/bb0363d8d8d6425fc4dcacd48d1fa9933bdde822))
 
 ## [0.90.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.89.0...v0.90.0) (2026-10-30)
 

@@ -1,0 +1,452 @@
+{
+  "PaidInvoice": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^in_[A-Za-z0-9]{1,100}$",
+        "maxLength": 103
+      },
+      "object": { "const": "invoice" },
+      "livemode": { "const": false },
+      "customer": {
+        "type": "string",
+        "pattern": "^cus_[A-Za-z0-9]{1,100}$",
+        "maxLength": 104
+      },
+      "customer_account": {
+        "type": "string",
+        "pattern": "^acct_[A-Za-z0-9]{1,100}$",
+        "maxLength": 105
+      },
+      "test_clock": {
+        "type": "string",
+        "pattern": "^clock_[A-Za-z0-9]{1,100}$",
+        "maxLength": 106
+      },
+      "parent": { "$ref": "#/$defs/InvoiceParent" },
+      "account_tax_ids": {
+        "anyOf": [{ "type": "array", "maxItems": 0 }, { "type": "null" }]
+      },
+      "amount_due": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "amount_overpaid": { "const": 0 },
+      "amount_paid": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "amount_remaining": { "const": 0 },
+      "amount_shipping": { "const": 0 },
+      "application": { "type": "null" },
+      "attempt_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "attempted": { "type": "boolean" },
+      "automatic_tax": { "$ref": "#/$defs/AutomaticTax" },
+      "automatically_finalizes_at": {
+        "anyOf": [
+          { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          { "type": "null" }
+        ]
+      },
+      "billing_reason": {
+        "enum": ["subscription_create", "subscription_cycle"]
+      },
+      "collection_method": { "const": "charge_automatically" },
+      "currency": { "type": "string", "pattern": "^[a-z]{3}$", "maxLength": 3 },
+      "customer_tax_exempt": { "const": "none" },
+      "default_payment_method": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^pm_[A-Za-z0-9]{1,100}$",
+            "maxLength": 103
+          },
+          { "type": "null" }
+        ]
+      },
+      "default_source": { "type": "null" },
+      "default_tax_rates": { "type": "array", "maxItems": 0 },
+      "discounts": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^di_[A-Za-z0-9]{1,100}$",
+          "maxLength": 103
+        },
+        "maxItems": 100
+      },
+      "due_date": { "type": "null" },
+      "effective_at": {
+        "anyOf": [
+          { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          { "type": "null" }
+        ]
+      },
+      "ending_balance": { "const": 0 },
+      "from_invoice": { "type": "null" },
+      "issuer": {
+        "type": "object",
+        "properties": { "type": { "const": "self" } },
+        "required": ["type"],
+        "additionalProperties": false
+      },
+      "latest_revision": { "type": "null" },
+      "next_payment_attempt": { "type": "null" },
+      "on_behalf_of": { "type": "null" },
+      "payment_settings": { "$ref": "#/$defs/PaymentSettings" },
+      "period_start": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "period_end": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "post_payment_credit_notes_amount": { "const": 0 },
+      "pre_payment_credit_notes_amount": { "const": 0 },
+      "shipping_cost": { "type": "null" },
+      "starting_balance": { "const": 0 },
+      "status": { "const": "paid" },
+      "status_transitions": { "$ref": "#/$defs/PaidTransitions" },
+      "subtotal": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "subtotal_excluding_tax": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          { "type": "null" }
+        ]
+      },
+      "total": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "total_discount_amounts": { "$ref": "#/$defs/DiscountAmounts" },
+      "total_excluding_tax": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          { "type": "null" }
+        ]
+      },
+      "total_pretax_credit_amounts": { "$ref": "#/$defs/PretaxAmounts" },
+      "total_taxes": {
+        "anyOf": [{ "type": "array", "maxItems": 0 }, { "type": "null" }]
+      },
+      "metadata": {
+        "anyOf": [{ "$ref": "#/$defs/NamespaceProjection" }, { "type": "null" }]
+      },
+      "lines": { "$ref": "#/$defs/LinePage" },
+      "last_finalization_error": { "type": "null" },
+      "shipping_details": { "type": "null" },
+      "amount_paid_off_stripe": { "const": 0 },
+      "auto_advance": { "type": "boolean" },
+      "customer_tax_ids": {
+        "anyOf": [{ "type": "array", "maxItems": 0 }, { "type": "null" }]
+      },
+      "deleted": { "const": false },
+      "status_details": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "id",
+      "object",
+      "livemode",
+      "customer",
+      "customer_account",
+      "test_clock",
+      "parent",
+      "account_tax_ids",
+      "amount_due",
+      "amount_overpaid",
+      "amount_paid",
+      "amount_remaining",
+      "amount_shipping",
+      "application",
+      "attempt_count",
+      "attempted",
+      "automatic_tax",
+      "automatically_finalizes_at",
+      "billing_reason",
+      "collection_method",
+      "currency",
+      "customer_tax_exempt",
+      "default_payment_method",
+      "default_source",
+      "default_tax_rates",
+      "discounts",
+      "due_date",
+      "effective_at",
+      "ending_balance",
+      "from_invoice",
+      "issuer",
+      "latest_revision",
+      "next_payment_attempt",
+      "on_behalf_of",
+      "payment_settings",
+      "period_start",
+      "period_end",
+      "post_payment_credit_notes_amount",
+      "pre_payment_credit_notes_amount",
+      "shipping_cost",
+      "starting_balance",
+      "status",
+      "status_transitions",
+      "subtotal",
+      "subtotal_excluding_tax",
+      "total",
+      "total_discount_amounts",
+      "total_excluding_tax",
+      "total_pretax_credit_amounts",
+      "total_taxes",
+      "metadata",
+      "lines",
+      "last_finalization_error",
+      "shipping_details"
+    ],
+    "additionalProperties": false
+  },
+  "InvoiceParent": {
+    "type": "object",
+    "properties": {
+      "type": { "const": "subscription_details" },
+      "quote_details": { "type": "null" },
+      "subscription_details": {
+        "type": "object",
+        "properties": {
+          "subscription": {
+            "type": "string",
+            "pattern": "^sub_[A-Za-z0-9]{1,100}$",
+            "maxLength": 104
+          },
+          "metadata": {
+            "anyOf": [
+              { "$ref": "#/$defs/NamespaceProjection" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": ["subscription", "metadata"]
+      }
+    },
+    "required": ["type", "quote_details", "subscription_details"],
+    "additionalProperties": false
+  },
+  "AutomaticTax": {
+    "type": "object",
+    "properties": {
+      "enabled": { "const": false },
+      "disabled_reason": { "type": "null" },
+      "liability": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": { "type": { "const": "self" } },
+            "required": ["type"],
+            "additionalProperties": false
+          },
+          { "type": "null" }
+        ]
+      },
+      "provider": { "anyOf": [{ "enum": ["stripe"] }, { "type": "null" }] },
+      "status": { "type": "null" }
+    },
+    "required": [
+      "enabled",
+      "disabled_reason",
+      "liability",
+      "provider",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "PaymentSettings": {
+    "type": "object",
+    "properties": {
+      "default_mandate": { "type": "null" },
+      "payment_method_types": {
+        "anyOf": [
+          {
+            "type": "array",
+            "prefixItems": [{ "const": "card" }],
+            "minItems": 1,
+            "maxItems": 1
+          },
+          { "type": "null" }
+        ]
+      },
+      "payment_method_options": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "acss_debit": { "type": "null" },
+              "bancontact": { "type": "null" },
+              "billie": { "type": "null" },
+              "blik": { "type": "null" },
+              "card": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "request_three_d_secure": {
+                        "anyOf": [
+                          { "enum": ["automatic", "any", "challenge"] },
+                          { "type": "null" }
+                        ]
+                      }
+                    },
+                    "required": ["request_three_d_secure"],
+                    "additionalProperties": false
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "customer_balance": { "type": "null" },
+              "konbini": { "type": "null" },
+              "payto": { "type": "null" },
+              "pix": { "type": "null" },
+              "sepa_debit": { "type": "null" },
+              "upi": { "type": "null" },
+              "us_bank_account": { "type": "null" }
+            },
+            "required": [
+              "acss_debit",
+              "bancontact",
+              "card",
+              "customer_balance",
+              "konbini",
+              "payto",
+              "pix",
+              "sepa_debit",
+              "upi",
+              "us_bank_account"
+            ],
+            "additionalProperties": false
+          },
+          { "type": "null" }
+        ]
+      }
+    },
+    "required": [
+      "default_mandate",
+      "payment_method_types",
+      "payment_method_options"
+    ],
+    "additionalProperties": false
+  },
+  "PaidTransitions": {
+    "type": "object",
+    "properties": {
+      "finalized_at": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "paid_at": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "marked_uncollectible_at": { "type": "null" },
+      "voided_at": { "type": "null" }
+    },
+    "required": [
+      "finalized_at",
+      "paid_at",
+      "marked_uncollectible_at",
+      "voided_at"
+    ],
+    "additionalProperties": false
+  },
+  "DiscountAmounts": {
+    "anyOf": [
+      {
+        "type": "array",
+        "items": { "$ref": "#/$defs/DiscountAmount" },
+        "maxItems": 100
+      },
+      { "type": "null" }
+    ]
+  },
+  "DiscountAmount": {
+    "type": "object",
+    "properties": {
+      "discount": {
+        "type": "string",
+        "pattern": "^di_[A-Za-z0-9]{1,100}$",
+        "maxLength": 103
+      },
+      "amount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+    },
+    "required": ["discount", "amount"],
+    "additionalProperties": false
+  },
+  "PretaxAmounts": {
+    "anyOf": [
+      {
+        "type": "array",
+        "items": { "$ref": "#/$defs/PretaxDiscount" },
+        "maxItems": 100
+      },
+      { "type": "null" }
+    ]
+  },
+  "PretaxDiscount": {
+    "type": "object",
+    "properties": {
+      "type": { "const": "discount" },
+      "discount": {
+        "type": "string",
+        "pattern": "^di_[A-Za-z0-9]{1,100}$",
+        "maxLength": 103
+      },
+      "amount": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "credit_balance_transaction": { "type": "null" }
+    },
+    "required": ["type", "discount", "amount"],
+    "additionalProperties": false
+  },
+  "NamespaceProjection": {
+    "type": "object",
+    "properties": {
+      "sdkQualificationRun": { "$ref": "#/$defs/Owner" },
+      "role": { "enum": ["scheduled", "control"] }
+    },
+    "required": [],
+    "additionalProperties": false
+  },
+  "Owner": {
+    "type": "string",
+    "pattern": "^[A-Za-z0-9_-]{1,80}$",
+    "maxLength": 80
+  }
+}

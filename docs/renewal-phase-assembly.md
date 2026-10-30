@@ -331,3 +331,26 @@ recovery and observation remain separate gates. Snapshot equality is not atomic
 provider compare-and-swap; host serialization cannot exclude Dashboard or other
 provider writers. Required consumer contexts outside this finite profile remain
 open instead of being replaced by a provenance flag or hidden fallback.
+
+## Internal event continuations
+
+The internal C10 compilers reconstruct each attach or configure event from its
+complete captured raw inputs and the public V2 constructors. Each stage has its
+own dispatch, response and receipt channel, numbered 1–3. A safe response is
+retained before receipt identity validation, so a later identity refusal does
+not erase the response event. This is separate from a combined producer journal.
+
+Every asynchronous continuation uses the same original-operation owner. Owner
+retirement closes the stage and any pending append permanently; completing a
+hash or send later cannot resume it. Sending requires a live check immediately
+before the actual send callback. Append completion requires both the matching
+acknowledgement and successful send settlement. The append timeout is at most
+five seconds and is also capped by the remaining original work and end bounds;
+it never resets those bounds. A second pending append is refused, while a
+duplicate or late acknowledgement closes the channel.
+
+These modules have no package or client export and no active Source binding.
+The default owner remains unbound. The internal port does not dispatch provider
+requests, authenticate acknowledgements, establish custody or enable recovery.
+The historical classifier fixture used by its tests is a frozen test dependency,
+not an operational configure classifier or a new material-adapter integration.

@@ -56,6 +56,34 @@ request, enable recovery or establish provider custody or native qualification.
 The internal Node-only mechanics are not a caller-supplied clock, client or
 qualification API. The public preparation and receipt constructors are unchanged.
 
+## Internal initial material consistency
+
+The internal `renewalAttach/internal/material` classifiers compare complete
+retained raw Subscription, target Price, billing Customer and Coupon evidence.
+The retained classifier requires historical Coupon bodies. The fresh classifier
+also requires the complete current bundle. Current reads cannot replace missing
+historical evidence, and counter, unknown-field, array-order or reference-form
+drift refuses classification.
+
+Coupon joins are separate semantic values. The classifiers reconstruct each
+Coupon association and supply only the two derived Discount arrays to the
+existing eligibility predicates. They preserve the original raw bodies and
+reference forms for comparison; an enriched Subscription is not relabeled as a
+wire response. Hosts must retain those raw bundles separately. The existing
+21-field material result does not add a durable raw-evidence storage guarantee.
+
+Both classifiers use the same internal original owner before capture, around
+constructor awaits and immediately before publishing the bounded result. The
+three generated binding positions are checked against locally reconstructed
+C1/C2 values. Other material remains subject to the private bounded-JSON policy;
+this does not change the public preparation constructors' metadata policy.
+
+These internal functions establish unsigned initial-material consistency only.
+They have no package-root export, caller-supplied owner or proof input, registry
+admission, provider call, recovery path or operational attachment entry. The
+Source bindings remain unbound and the registry remains empty. A material result
+is not an acknowledgement, custody record or provider/native qualification.
+
 ## Fixed acquisition profile
 
 The initial profile supports platform requests using the configured

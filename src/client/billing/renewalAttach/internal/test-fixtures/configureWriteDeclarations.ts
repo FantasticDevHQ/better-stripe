@@ -1,3 +1,4 @@
+import { configuredHistoryResponse } from "./observationConfiguredHistoryNative.js";
 import {
   declarePreflightCase,
   deepFreeze,
@@ -101,7 +102,11 @@ export const writeCases = {
     "retention-unsafe",
   ],
 } as const;
-export type WriteCase = (typeof writeCases)[keyof typeof writeCases][number];
+export type WriteCase =
+  | (typeof writeCases)[keyof typeof writeCases][number]
+  | "configured-history"
+  | "configured-history-onephase"
+  | "configured-history-drift";
 
 export function declareConfigureWriteCase(name: WriteCase) {
   const baseline = declarePreflightCase("positive");
@@ -133,6 +138,12 @@ export function declareConfigureWriteCase(name: WriteCase) {
     response.default_settings = structuredClone(
       baseline.schedule.default_settings,
     );
+  if (
+    name === "configured-history" ||
+    name === "configured-history-onephase" ||
+    name === "configured-history-drift"
+  )
+    Object.assign(response, configuredHistoryResponse(baseline, name));
   const oracleResponse = structuredClone(response);
   if (name === "wrong-c9") response.id = "sub_sched_foreign";
   if (name === "unsafe-body") response.opaque = "sk_live_SYNTHETIC_UNSAFE";

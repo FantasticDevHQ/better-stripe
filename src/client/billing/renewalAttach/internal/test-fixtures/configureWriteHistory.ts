@@ -413,6 +413,14 @@ export async function configureWriteTestFamily(args: {
     captureA,
     captureB,
     captureC,
+    fixedAOperation() {
+      return A.operation;
+    },
+    readFixedA(...values: unknown[]) {
+      return scope.run(bindings.A, () =>
+        Reflect.apply(delegates.A.rawRequest, delegates.A, values),
+      ) as Promise<unknown>;
+    },
     states,
     currentObservations: () => scope.getStore()?.state ?? states.A,
     covers(

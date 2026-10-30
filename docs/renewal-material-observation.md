@@ -123,7 +123,7 @@ a fixed error; safe but insufficient material returns `unknown` or `conflict`
 with a fixed reason. No raw provider error is logged or returned. The host remains
 responsible for retaining its immutable request and response data when reads fail.
 
-## Internal owned observation without a configure acknowledgement
+## Internal owned observation and retained configure acknowledgements
 
 `captureOwnedRenewalObservationV2` is internal; each captured handle permits one
 invocation. Its fixed Source must bind the original Owner and origin, original
@@ -141,21 +141,42 @@ The read order is Schedule, expanded Subscription, target Price, billing Custome
 then unique Coupon IDs across the original and current subscription and item
 discounts. Two distinct Coupon IDs give six GETs; the union permits at most 40
 Coupons and 44 GETs. Complete bare response bodies and ordinary unknown fields are
-retained. This invocation makes no POST, calls no configure-receipt constructor
-and appends no C10 events.
+retained. This invocation makes no POST and appends no C10 events. When both
+configure fields are absent, it calls no configure-receipt constructor. The
+optional branch reconstructs the retained receipt before current reads.
 
 `owned_observation_data` contains `observation`, `reads`, the final read's
-`observedAt`, `retainedConfigureAcknowledgement: "absent"` and
+`observedAt`, `retainedConfigureAcknowledgement: "absent" | "present"` and
 `operationalAuthority: false`. The complete pure-helper result is preserved.
 Record, observer input and result each remain within 500000 serialized characters
 and UTF-8 bytes, 10000 nodes counting repeated occurrences, and depth 40. The
 result is detached and frozen before its final Owner check. Owner checks guard
 settled continuations; they do not promise immediate cancellation of pending HTTP.
 
-This branch requires `configureAcknowledgement` to be absent. The public pure
-helper's optional `configureReceipt` remains a separate input. The internal branch
-does not widen the helper's absent-response pending/effective classes or
-invoice-pointer limitation. Historical configure-response custody, successor
-invoice evidence, genuine Source binding and provider qualification remain
-separate requirements. These sequential reads do not atomically exclude other
-provider writers or establish payment, authentication or entitlement.
+The fixed Source can omit both `configureAcknowledgement` and
+`configureOperation`, or supply both. Supplying only one rejects before the
+original projection. With both present, a supported original projection Failure
+still returns unchanged before configure custody checks or reads.
+
+The optional branch requires the actual configure operation and the exact
+acknowledgement wrapper returned by its writer under the same original Owner, origin, attachment
+entry and complete retained record. An equal reconstructed object does not
+establish custody. A valid receipt that was constructed but never returned does
+not satisfy this relation. The lookup exposes detached frozen data, including
+the complete original receipt-constructor input, without exposing private history
+or transport capabilities. The observer constructs a fresh receipt from that
+input and checks the entire acknowledgement, including default-setting presence,
+before acquiring current reads. It supplies the full retained input to the
+unchanged public pure helper as `configureReceipt`.
+
+The `present` marker describes this process-local returned-receipt association.
+It does not establish durable custody after restart, provider qualification,
+pending or effective state. A retained one-phase response can still produce an
+honest `unknown` result. With complete configured historical material, the branch
+preserves the pure helper's `pending_material_match` or
+`current_target_material_match` comparisons. Those results remain unsigned
+material predicates. The absent branch keeps the helper's existing
+pending/effective classes and invoice-pointer limitation. Historical and terminal
+provider qualification, successor invoice evidence and genuine Source binding
+remain separate requirements. These sequential reads do not atomically exclude other provider
+writers or establish payment, authentication or entitlement.

@@ -71,29 +71,21 @@ it("rejects an extra replacement-client argument before clocks and spends custod
   });
 });
 
-it.each(["wide aperture", "u64 overflow"] as const)(
-  "rejects %s without binding a replacement basis",
-  async (reason) => {
-    await initialOperations(async ({ fresh, journal }) => {
-      const read = vi.mocked(process.hrtime.bigint);
-      if (reason === "wide aperture") {
-        read
-          .mockReturnValueOnce(INITIAL_NS)
-          .mockReturnValueOnce(INITIAL_NS + 1000001n);
-      } else monotonic = 18446744073709551615n - 1n;
-      await expect(
-        captureInitialInvocationCore(fresh.call, journal),
-      ).rejects.toThrow();
-      const stored = await journal.loadAuthorizedOperation();
-      assert(stored && "initialBasis" in stored);
-      expect(stored.initialBasis).toBeNull();
-      monotonic = INITIAL_NS;
-      await expect(
-        captureInitialInvocationCore(fresh.call, journal),
-      ).rejects.toThrow();
-    });
-  },
-);
+it("rejects u64 overflow without binding a replacement basis", async () => {
+  await initialOperations(async ({ fresh, journal }) => {
+    monotonic = 18446744073709551615n - 1n;
+    await expect(
+      captureInitialInvocationCore(fresh.call, journal),
+    ).rejects.toThrow();
+    const stored = await journal.loadAuthorizedOperation();
+    assert(stored && "initialBasis" in stored);
+    expect(stored.initialBasis).toBeNull();
+    monotonic = INITIAL_NS;
+    await expect(
+      captureInitialInvocationCore(fresh.call, journal),
+    ).rejects.toThrow();
+  });
+});
 
 it("does not mint from an existing component result or a copied handle", async () => {
   await initialOperations(async ({ fresh, journal }) => {

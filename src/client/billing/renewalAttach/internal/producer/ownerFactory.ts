@@ -107,14 +107,26 @@ export function ownerForInitialLineage(token: object): InitialOwner {
     },
   });
   owners.set(token, owner);
-  try {
-    check();
-    // Absolute original cutoff, never a new budget when a continuation resumes.
+  function schedule() {
+    const sample = check();
+    const monotonicMs = Number(
+      (basis.workEndNs - sample.ns + 999999n) / 1000000n,
+    );
+    // Bound each timer chunk, retaining both original absolute cutoffs.
     timer = setTimeout(
-      retire,
-      Math.max(0, basis.workEndWallMs - lineage.wall()),
+      () => {
+        try {
+          schedule();
+        } catch {
+          retire();
+        }
+      },
+      Math.min(2147483647, basis.workEndWallMs - sample.wallMs, monotonicMs),
     );
     timer.unref?.();
+  }
+  try {
+    schedule();
     check();
     return owner;
   } catch (error) {

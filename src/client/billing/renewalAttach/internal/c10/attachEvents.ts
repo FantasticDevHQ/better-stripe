@@ -9,14 +9,51 @@ import {
   captureAttachReceipt,
 } from "./eventCapture.js";
 import { materialize } from "./eventCodec.js";
-import { createStageChannel } from "./appendAck.js";
+import { createStageChannel, createInitialStageChannel } from "./appendAck.js";
+import { readInitialLineage } from "../producer/lineageAuthority.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { ownedAwaitForInitialLineage } from "../producer/ownedAwaitFactory.js";
 import {
   prepareRenewalPriceReplacementV2,
   prepareRenewalScheduleAttachmentV2,
   constructRenewalScheduleAttachmentReceiptV2,
 } from "./publicApi.js";
 export function createAttachEventCompiler(raw: unknown, options: unknown) {
-  const channel = createStageChannel(options);
+  return attachEventCompiler(raw, createStageChannel(options));
+}
+const initialChannels = new WeakSet<object>();
+/** Exact original call, source and journal; no replacement sink or Owner input. */
+export function createInitialAttachEventCompiler(token: object) {
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  if (initialChannels.has(token)) throw Error("INITIAL_CHANNEL_CONSUMED");
+  initialChannels.add(token);
+  if (arguments.length !== 1) throw Error("INITIAL_CHANNEL_UNBOUND");
+  const { reservation, journal } = readInitialLineage(token);
+  const source = JSON.parse(reservation.recordJSON);
+  const send = journal.createC10Send(reservation);
+  const owned = ownedAwaitForInitialLineage(token);
+  owner.check();
+  const channel = createInitialStageChannel(token, {
+    timeoutMs: 5000,
+    send: (
+      record: Parameters<typeof send>[0],
+      ack: Parameters<typeof send>[1],
+    ) =>
+      owned(() =>
+        send(record, (value) => {
+          owner.check();
+          ack(value);
+          owner.check();
+        }),
+      ),
+  });
+  return attachEventCompiler(source.attachRequest, channel);
+}
+function attachEventCompiler(
+  raw: unknown,
+  channel: ReturnType<typeof createStageChannel>,
+) {
   let source: ReturnType<typeof captureAttachSource>;
   try {
     channel.gate();

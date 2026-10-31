@@ -34,6 +34,7 @@ export async function initialOperations(
     workEndWallMs?: number;
     endWallMs?: number;
     afterBind?: () => Promise<void>;
+    afterAppend?: () => Promise<void>;
   } = {},
 ) {
   const h = await codecFixture();
@@ -84,7 +85,7 @@ export async function initialOperations(
       args: {},
       handler: async (ctx): Promise<null> => {
         const runMutation = ctx.runMutation;
-        if (options.afterBind)
+        if (options.afterBind || options.afterAppend)
           ctx.runMutation = async (ref, ...args) => {
             const result = await runMutation(ref, ...args);
             if (
@@ -94,6 +95,13 @@ export async function initialOperations(
               options.afterBind
             )
               await options.afterBind();
+            if (
+              getFunctionAddress(ref).reference?.endsWith(
+                "/appendStageEvent",
+              ) &&
+              options.afterAppend
+            )
+              await options.afterAppend();
             return result;
           };
         await Promise.all(

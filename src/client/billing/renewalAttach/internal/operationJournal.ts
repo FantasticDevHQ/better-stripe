@@ -43,7 +43,7 @@ type ClassJournal = Awaited<ReturnType<typeof createActionOperationJournal>> &
 type ReserveReply = FunctionReturnType<Journal["mutations"]["reserveAttempt"]>;
 type WinningCallState = {
   spent: boolean;
-  readonly journal: object;
+  readonly journal: ClassJournal;
   readonly binding: object;
   readonly rpc: ReturnType<typeof readCheckedJournalActionRPC>;
   readonly source: Awaited<ReturnType<typeof createActionOperationJournal>>;
@@ -569,5 +569,9 @@ export function consumeInitialClassReservation(
   if (typeof call !== "object" || call === null) callUnbound();
   const state = winningCalls.get(call);
   if (!state) callUnbound();
-  return Object.freeze({ ...consumed, binding: state.binding });
+  return Object.freeze({
+    ...consumed,
+    binding: state.binding,
+    journal: state.journal,
+  });
 }

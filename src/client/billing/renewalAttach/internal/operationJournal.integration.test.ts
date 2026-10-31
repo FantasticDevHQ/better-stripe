@@ -1,3 +1,5 @@
+import { components as generatedComponents } from "../../../../../example/convex/_generated/api.js";
+import { createActionOperationJournal } from "./operationJournal.js";
 import { convexTest } from "convex-test";
 import {
   actionGeneric,
@@ -5,8 +7,14 @@ import {
   componentsGeneric,
   defineSchema,
   makeFunctionReference,
+  type FunctionReturnType,
 } from "convex/server";
-import { getConvexSize, getDocumentSize, type ObjectType } from "convex/values";
+import {
+  getConvexSize,
+  getDocumentSize,
+  v,
+  type ObjectType,
+} from "convex/values";
 import { afterEach, expect, it, vi } from "vitest";
 import { modules, schema } from "../../../../test.js";
 import { query as componentQuery } from "../../../../component/_generated/server.js";
@@ -378,3 +386,175 @@ it.each(cases)(
     }
   },
 );
+
+type GeneratedLoad = FunctionReturnType<
+  typeof generatedComponents.betterStripe.renewalOperations.queries.loadAuthorizedOperation
+>;
+const adapterRead = makeFunctionReference<
+  "action",
+  { operationId: string },
+  { direct: GeneratedLoad; adapter: GeneratedLoad }
+>("adapterHost:readExisting");
+
+it("ADAPTER01 loads the actual existing operation through the private Action adapter", async () => {
+  const h = await codecFixture();
+  const progress = { entries: 0, directLoads: 0, captures: 0, adapterCalls: 0 };
+  const inspection = {
+    physical: componentQuery({
+      args: {},
+      handler: async (ctx): Promise<Physical> => ({
+        operations: await ctx.db.query("renewalOperations").take(3),
+        attempts: await ctx.db.query("renewalOperationAttempts").take(3),
+        events: await ctx.db.query("renewalOperationEvents").take(4),
+        payloads: await ctx.db.query("renewalOperationPayloads").take(6),
+      }),
+    }),
+  };
+  const host = {
+    readExisting: actionGeneric({
+      args: { operationId: v.string() },
+      handler: async (ctx, args) => {
+        progress.entries++;
+        expect(await ctx.meta.getFunctionMetadata()).toEqual({
+          name: "adapterHost:readExisting",
+          componentPath: "",
+          type: "action",
+          visibility: "public",
+        });
+        const direct = await ctx.runQuery(
+          generatedComponents.betterStripe.renewalOperations.queries
+            .loadAuthorizedOperation,
+          args,
+        );
+        expect(direct).toEqual({
+          recordVersion: 2,
+          operationId: args.operationId,
+          recordJSON: h.recordJSON,
+          revision: 0,
+          activeAttempt: null,
+          initialBasis: null,
+        });
+        expect(getConvexSize(direct)).toBeLessThanOrEqual(VALUE_LIMIT);
+        progress.directLoads++;
+        // Actual read-only component query, not a caller-provided physical DTO.
+        expect(
+          await ctx.runQuery(
+            nested.betterStripe.adapterInspection.physical,
+            {},
+          ),
+        ).toEqual(before);
+        const journal = await createActionOperationJournal(
+          ctx,
+          generatedComponents.betterStripe,
+          args.operationId,
+        );
+        progress.captures++;
+        const adapter = await journal.loadAuthorizedOperation();
+        progress.adapterCalls++;
+        return { direct, adapter };
+      },
+    }),
+  };
+  const t = convexTest(defineSchema({}), {
+    "./_generated/api.ts": async () => ({}),
+    "./adapterHost.ts": async () => host,
+  });
+  expect(
+    Object.prototype.hasOwnProperty.call(
+      modules,
+      "./component/adapterInspection.ts",
+    ),
+  ).toBe(false);
+  t.registerComponent("betterStripe", schema, {
+    ...modules,
+    "./component/adapterInspection.ts": async () => inspection,
+  });
+  const physical = async (): Promise<Physical> =>
+    t.query(nested.betterStripe.adapterInspection.physical, {});
+  expect(await physical()).toEqual({
+    operations: [],
+    attempts: [],
+    events: [],
+    payloads: [],
+  });
+  const createArgs = {
+    authorizationScope: h.record.authorization.scope,
+    logicalOperationId: h.record.logicalOperationId,
+    authorizationRevision: h.record.authorization.revision,
+    recordJSON: h.recordJSON,
+  };
+  expect(getConvexSize(createArgs)).toBeLessThanOrEqual(VALUE_LIMIT);
+  const created = await t.mutation(
+    generatedComponents.betterStripe.renewalOperations.mutations
+      .createAuthorizedOperation,
+    createArgs,
+  );
+  if (created.status !== "created")
+    throw Error("ADAPTER_CREATE_PREREQUISITE_STOP");
+  const before = await physical();
+  expect({
+    operations: before.operations.length,
+    attempts: before.attempts.length,
+    events: before.events.length,
+    payloads: before.payloads.length,
+  }).toEqual({ operations: 1, attempts: 0, events: 0, payloads: 1 });
+  const operation = before.operations[0];
+  const payload = before.payloads[0];
+  expect(operation).toMatchObject({
+    _id: created.operationId,
+    recordVersion: 2,
+    payloadId: payload._id,
+    revision: 0,
+    state: "PREPARED",
+  });
+  expect(payload).toMatchObject({
+    codecVersion: 1,
+    json: h.recordJSON,
+    owner: { kind: "operation", operationId: created.operationId },
+  });
+  for (const rows of Object.values(before))
+    for (const row of rows)
+      expect(getDocumentSize(row)).toBeLessThanOrEqual(VALUE_LIMIT);
+  const args = { operationId: created.operationId };
+  expect(getConvexSize(args)).toBeLessThanOrEqual(VALUE_LIMIT);
+  let targetFailed = false;
+  try {
+    const result = await t.action(adapterRead, args);
+    expect(progress).toEqual({
+      entries: 1,
+      directLoads: 1,
+      captures: 1,
+      adapterCalls: 1,
+    });
+    expect(result.direct).toEqual({
+      recordVersion: 2,
+      ...args,
+      recordJSON: h.recordJSON,
+      revision: 0,
+      activeAttempt: null,
+      initialBasis: null,
+    });
+    expect(getConvexSize(result)).toBeLessThanOrEqual(VALUE_LIMIT);
+    // Intended adapter-specific null-vs-complete-operation RED, after all prerequisites.
+    expect(result.adapter).toEqual(result.direct);
+  } catch (error) {
+    targetFailed = true;
+    throw error;
+  } finally {
+    try {
+      expect(await physical()).toEqual(before);
+      expect(h.fetchCalls()).toBe(0);
+      console.info(
+        "ADAPTER01_SETTLEMENT",
+        JSON.stringify({
+          ...progress,
+          physicalEqual: true,
+          fetchCalls: h.fetchCalls(),
+        }),
+      );
+    } catch (inspectionError) {
+      if (!targetFailed) throw inspectionError;
+      console.info("ADAPTER01_INSPECTION_FAILED");
+    }
+  }
+});

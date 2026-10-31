@@ -16,14 +16,16 @@ async function prepare(h: Harness, preflight = true) {
   const child = await h.child();
   const token = await h.core.admitConfigure(child.fresh.call, child.journal);
   const current = h.configureReads(child);
-  admissionControls.preflight.push({
-    originalEntry: admissionControls.entries[0],
-    coversPreflight: () => true,
-  });
-  admissionControls.write.push({
-    originalEntry: admissionControls.entries[0],
-    coversConfigure: () => true,
-  });
+  if (admissionControls.preflight.length === 0)
+    admissionControls.preflight.push({
+      originalEntry: admissionControls.entries[0],
+      coversPreflight: () => true,
+    });
+  if (admissionControls.write.length === 0)
+    admissionControls.write.push({
+      originalEntry: admissionControls.entries[0],
+      coversConfigure: () => true,
+    });
   if (preflight) await captureAdmittedConfigurePreflight(token).invoke();
   return { child, token, current };
 }
@@ -378,3 +380,56 @@ it.each(["event-payload-alias", "changed-id", "extra-field"])(
     );
   },
 );
+
+it("concurrent children retain separate POST keys, journals and returned outputs", async () => {
+  await configureAdmissionFixture(async (h) => {
+    const first = await prepare(h);
+    const child = await h.child();
+    const token = await h.core.admitConfigure(child.fresh.call, child.journal);
+    h.configureReads(child);
+    await captureAdmittedConfigurePreflight(token).invoke();
+    const actors = [
+      captureAdmittedConfigureWrite(first.token),
+      captureAdmittedConfigureWrite(token),
+    ];
+    const outputs = await Promise.all(actors.map((actor) => actor.invoke()));
+    expect(outputs.map((output) => object(output).status)).toEqual([
+      "configure_acknowledged",
+      "configure_acknowledged",
+    ]);
+    expect(outputs[0] === outputs[1]).toBe(false);
+    expect(
+      readAdmittedConfigureAcknowledgement(first.token).output === outputs[0],
+    ).toBe(true);
+    expect(
+      readAdmittedConfigureAcknowledgement(token).output === outputs[1],
+    ).toBe(true);
+    expect(new Set(posts(h).map((call) => call.idempotencyKey)).size).toBe(2);
+    const retained = await Promise.all([
+      first.child.journal.readProviderAcknowledgement(),
+      child.journal.readProviderAcknowledgement(),
+    ]);
+    expect(retained.every((value) => value !== null)).toBe(true);
+    expect(retained[0]!.receiptJSON === retained[1]!.receiptJSON).toBe(false);
+  });
+});
+it("retiring one SDK root cannot close a later independent root", async () => {
+  let prior!: object;
+  await configureAdmissionFixture(async (h) => {
+    const { token } = await prepare(h);
+    prior = token;
+    expect(
+      object(await captureAdmittedConfigureWrite(token).invoke()).status,
+    ).toBe("configure_acknowledged");
+  });
+  await configureAdmissionFixture(async (h) => {
+    const { token } = await prepare(h);
+    expect(() => readAdmittedConfigureAcknowledgement(prior)).toThrow();
+    const output = await captureAdmittedConfigureWrite(token).invoke();
+    expect(object(output).status).toBe("configure_acknowledged");
+    expect(readAdmittedConfigureAcknowledgement(token).output === output).toBe(
+      true,
+    );
+    expect(() => readAdmittedConfigureAcknowledgement(prior)).toThrow();
+  });
+});

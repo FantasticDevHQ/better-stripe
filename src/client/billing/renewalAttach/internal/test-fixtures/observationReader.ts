@@ -46,8 +46,9 @@ export const authorizeObservation = queryGeneric({
 });
 export async function prepareObservationReader(
   h: Parameters<typeof historySnapshot>[0],
+  options: NonNullable<Parameters<typeof historySnapshot>[1]> = {},
 ) {
-  const full = await historySnapshot(h);
+  const full = await historySnapshot(h, options);
   const operationId = full.configure.operation.operationId;
   const parentOperationId = full.parent.operation.operationId;
   const binding = await captureMaintainedJournalBinding(h.sdk, {

@@ -123,7 +123,7 @@ function soleItem(subscription: unknown) {
   resourceID(own(item, "id"), "si");
   return item;
 }
-export function validateBaseRouting(
+export function validateObservationIdentityRouting(
   record: ObservationRecord,
   reads: ObservationReads,
 ) {
@@ -171,6 +171,14 @@ export function validateBaseRouting(
       reference(sub.schedule, "sub_sched", "subscription_schedule", p) ===
         p.schedule,
     );
+}
+export function validateBaseRouting(
+  record: ObservationRecord,
+  reads: ObservationReads,
+) {
+  validateObservationIdentityRouting(record, reads);
+  const p = ids(record),
+    sub = object(reads.subscription);
   const item = soleItem(sub);
   need(own(item, "subscription") === p.subscription);
   // Do not constrain status, current price, old item ID/period, phases or material

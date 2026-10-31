@@ -4,9 +4,13 @@ import { captureAdmittedConfigureWrite } from "../producer/configureWrite.js";
 
 export async function historySnapshot(
   h: Parameters<typeof prepareAdmittedConfigure>[0],
+  options: { write?: boolean; beforeWrite?: () => void } = {},
 ) {
   const { child, token } = await prepareAdmittedConfigure(h);
-  await captureAdmittedConfigureWrite(token).invoke();
+  if (options.write !== false) {
+    options.beforeWrite?.();
+    await captureAdmittedConfigureWrite(token).invoke();
+  }
   async function read(journal: typeof child.journal) {
     const operation = await journal.loadAuthorizedOperation();
     assert(operation?.activeAttempt);

@@ -31,6 +31,8 @@ const controls = vi.hoisted(() => ({
   legacy: 0,
   selectors: 0,
   history: [] as unknown[],
+  observation: [] as unknown[],
+  onSelect: null as null | ((client: object) => void),
 }));
 vi.mock("../operations/sourceOperations.js", () => {
   const poison = () => {
@@ -43,6 +45,7 @@ vi.mock("../operations/sourceOperations.js", () => {
     COMPILED_PREFLIGHT_ENTRIES: controls.preflight,
     COMPILED_CONFIGURE_WRITE_ENTRIES: controls.write,
     COMPILED_OBSERVATION_HISTORY_ENTRIES: controls.history,
+    COMPILED_FRESH_OBSERVATION_ENTRIES: controls.observation,
     loadConfigureWriteTransportSource: poison,
     loadConfigureReplayTransportSource: poison,
     loadFixedConfigureWriteOperation: poison,
@@ -80,18 +83,36 @@ vi.mock("../../../../helpers.js", async (original) => {
     ...actual,
     getStripeClient(...args: Parameters<typeof actual.getStripeClient>) {
       controls.selectors++;
-      return actual.getStripeClient(...args);
+      const client = actual.getStripeClient(...args);
+      controls.onSelect?.(client);
+      return client;
     },
   };
 });
 export const admissionControls = controls;
 const canonical = (value: unknown) => JSON.stringify(renewalSnapshot(value));
+function admissionBaseline(targetInterval?: "week") {
+  const baseline = makeConfigureReadNativeBaseline();
+  if (targetInterval) {
+    const target = baseline.original.attachRequest.preparation.targetPrice;
+    Object.assign(target.recurring, { interval: targetInterval });
+    baseline.original.originalBundle.wireTargetPrice = structuredClone(target);
+    const subscription =
+      baseline.original.attachRequest.preparation.subscription;
+    Object.assign(subscription, { trial_start: null, trial_end: null });
+    baseline.original.originalBundle.wireSubscription =
+      structuredClone(subscription);
+  }
+  return baseline;
+}
 beforeEach(() => {
   controls.legacy = 0;
   controls.preflight.splice(0);
   controls.write.splice(0);
   controls.selectors = 0;
   controls.history.splice(0);
+  controls.observation.splice(0);
+  controls.onSelect = null;
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
     coversFresh: () => true,
@@ -115,12 +136,15 @@ afterEach(() => {
 async function setup(
   input: Parameters<Parameters<typeof initialOperations>[0]>[0],
   completion: { mode: string; posts: number },
-  hooks: { beforeFetch?: (path: string, method: string) => Promise<void> },
+  hooks: {
+    beforeFetch?: (path: string, method: string) => Promise<void>;
+    targetInterval?: "week";
+  },
 ) {
   const { journal, fresh, sdk, ctx, index } = input;
   assert(fresh.result.disposition === "acquired" && fresh.call);
   const parentReservation = fresh.result.reservation;
-  const baseline = makeConfigureReadNativeBaseline();
+  const baseline = admissionBaseline(hooks.targetInterval);
   const source = captureRetainedInput(baseline.original);
   const calls: {
     method: string;
@@ -367,11 +391,15 @@ async function setup(
     complete,
     eventsFor,
     configureReads,
+    setControlledRead(path: string, body: unknown) {
+      routes.set(path, body);
+    },
   };
 }
 export async function configureAdmissionFixture(
   work: (h: Awaited<ReturnType<typeof setup>>) => Promise<void>,
   options: {
+    targetInterval?: "week";
     identity?: NonNullable<Parameters<typeof initialOperations>[2]>["identity"];
     hostQuery?: NonNullable<
       Parameters<typeof initialOperations>[2]
@@ -390,7 +418,7 @@ export async function configureAdmissionFixture(
     beforeFetch?: (path: string, method: string) => Promise<void>;
   } = {},
 ) {
-  const baseline = makeConfigureReadNativeBaseline();
+  const baseline = admissionBaseline(options.targetInterval);
   const completion = { mode: "initial", posts: 0, appends: 0 };
   await initialOperations(
     async (input) => {

@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.106.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.105.0...v0.106.0) (2026-10-31)
+
+### Features
+
+- recover configure attempts from original runtime custody ([#453](https://github.com/FantasticDevHQ/better-stripe/issues/453)) ([1bcf23a](https://github.com/FantasticDevHQ/better-stripe/commit/1bcf23a408cfe4ffba8c57ed6ff4acb8a7f78df6))
+
 ## [0.105.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.104.0...v0.105.0) (2026-10-31)
 
 ### Features

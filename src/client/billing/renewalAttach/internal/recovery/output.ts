@@ -1,4 +1,5 @@
 import { types } from "node:util";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import { requiredJSONSnapshot } from "../material/requiredJson.js";
 import {
   objectNode,
@@ -26,15 +27,40 @@ export function admitRecoveryOutput(
   prepared: Prepared,
   request: AttachRequest,
 ) {
+  return admitOutput(receipt, observed, prepared, request, false);
+}
+export function admitRecoveryOutputForLineage(
+  token: object,
+  receipt: Receipt,
+  observed: unknown,
+  prepared: Prepared,
+  request: AttachRequest,
+) {
+  need(arguments.length === 5);
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const result = admitOutput(receipt, observed, prepared, request, true);
+  owner.check();
+  return result;
+}
+function admitOutput(
+  receipt: Receipt,
+  observed: unknown,
+  prepared: Prepared,
+  request: AttachRequest,
+  allowNull: boolean,
+) {
   need(!types.isProxy(observed));
   const observedID =
-    typeof observed === "string"
-      ? observed
-      : (() => {
-          need(observed !== null && typeof observed === "object");
-          return Object.getOwnPropertyDescriptor(observed, "id")
-            ?.value as unknown;
-        })();
+    allowNull && observed === null
+      ? null
+      : typeof observed === "string"
+        ? observed
+        : (() => {
+            need(observed !== null && typeof observed === "object");
+            return Object.getOwnPropertyDescriptor(observed, "id")
+              ?.value as unknown;
+          })();
   const output = {
     kind: "EXPLICIT_ATTACH_RECOVERY_V2_DATA_ONLY",
     status: "attach_acknowledged",
@@ -42,7 +68,7 @@ export function admitRecoveryOutput(
     receipt,
     observation: {
       schedule: observed,
-      conflict: observedID !== receipt.scheduleId,
+      conflict: observedID !== null && observedID !== receipt.scheduleId,
       authority: "unowned_prepost_observation_only",
     },
   };

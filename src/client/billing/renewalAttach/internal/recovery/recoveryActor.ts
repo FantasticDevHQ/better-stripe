@@ -1,6 +1,16 @@
 import { sevenWire } from "../c10/ownData.js";
 import { types } from "node:util";
-import { OWNER } from "../originalOwner.js";
+import { OWNER as LEGACY_OWNER } from "../originalOwner.js";
+import { readInitialLineage } from "../producer/lineageAuthority.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { ownedForInitialLineage } from "../operations/ownedAwait.js";
+import { createInitialMaterialClassifiers } from "../material/classifiers.js";
+import {
+  recoveryOperationForLineage,
+  assertReplayFrontierForLineage,
+} from "../producer/recoveryFactory.js";
+import { createRecoveryAttachEventCompiler } from "../c10/attachEvents.js";
+import { retainInitialReceiptForLineage } from "../producer/operationFactory.js";
 import {
   prepareRenewalPriceReplacementV2 as c1,
   prepareRenewalScheduleAttachmentV2 as c2,
@@ -14,13 +24,12 @@ import {
 import { validateOwnedReadMaterial } from "../material/readMaterial.js";
 import {
   closed,
-  type AttachRequest,
   type SourceMethod,
   type FailureControl,
 } from "../operations/types.js";
 import { equal } from "../../../renewalAggregate/shared.js";
-import { owned } from "../operations/ownedAwait.js";
-import type { Diagnostics } from "../operations/providerFailure.js";
+import { owned as legacyOwned } from "../operations/ownedAwait.js";
+import { captureActorFailureControl } from "../operations/actorFailureControl.js";
 import { bindRawAcquisitionFromSource } from "../acquisition/ownedAcquisition.js";
 import { createAttachEventCompiler } from "../c10/attachEvents.js";
 import {
@@ -29,9 +38,19 @@ import {
   ORIGINAL_ORIGIN_ASSOCIATION,
 } from "../operations/sourceOperations.js";
 import { createRecoveryOwnedTransportWithAttemptCapability as createPair } from "../operations/fixedTransport.js";
-import { captureRecoveryRecord, verifyRecoveryRecord } from "./record.js";
-import { replayCouponEligibility } from "./relation.js";
-import { admitRecoveryOutput } from "./output.js";
+import {
+  captureRecoveryRecord,
+  captureRecoveryRecordForLineage,
+  verifyRecoveryRecord,
+} from "./record.js";
+import {
+  replayCouponEligibility,
+  replayCouponEligibilityForLineage,
+} from "./relation.js";
+import {
+  admitRecoveryOutput,
+  admitRecoveryOutputForLineage,
+} from "./output.js";
 import { admitReplayMaterial, assertReplayMaterial } from "./material.js";
 
 type Pair = ReturnType<typeof createPair>;
@@ -66,6 +85,14 @@ const refuse = (reason: string) =>
 /** Explicit recovery retains one record and class relation; it never replaces the initial pair. */
 export function captureOwnedExplicitAttachRecoveryV2() {
   need(arguments.length === 0);
+  return recoveryKernel(null);
+}
+export function captureExplicitAttachRecoveryForLineage(token: object) {
+  need(arguments.length === 1);
+  readInitialLineage(token);
+  return recoveryKernel(token);
+}
+function recoveryKernel(token: object | null) {
   let consumed = false;
   return Object.freeze({
     async invoke() {
@@ -74,6 +101,15 @@ export function captureOwnedExplicitAttachRecoveryV2() {
       consumed = true;
       need(!types.isProxy(ENTRIES) && Array.isArray(ENTRIES));
       if (ENTRIES.length === 0) return refuse("no_qualified_recovery_class");
+      const OWNER =
+        token === null ? LEGACY_OWNER : ownerForInitialLineage(token);
+      const owned =
+        token === null ? legacyOwned : ownedForInitialLineage(token);
+      const classifyRetained =
+        token === null
+          ? classifyOwnedRetainedInitialAttachment
+          : (_raw: unknown) =>
+              createInitialMaterialClassifiers(token).retained();
       let pair: Pair | null = null,
         failureControl: FailureControl | null = null,
         postEligible = false;
@@ -92,7 +128,14 @@ export function captureOwnedExplicitAttachRecoveryV2() {
       };
       try {
         OWNER.check();
-        const live = loadFixedExplicitRecoveryOperation();
+        const frame =
+          token === null
+            ? null
+            : await owned(() => recoveryOperationForLineage(token));
+        const live =
+          token === null
+            ? loadFixedExplicitRecoveryOperation()
+            : frame?.operation;
         OWNER.check();
         if (live === null) return refuse("recovery_source_unbound");
         const op = closed(live, [
@@ -110,7 +153,10 @@ export function captureOwnedExplicitAttachRecoveryV2() {
             op.originAssociation !== null &&
             typeof op.originAssociation === "object" &&
             !types.isProxy(op.originAssociation) &&
-            op.originAssociation === ORIGINAL_ORIGIN_ASSOCIATION,
+            op.originAssociation ===
+              (token === null
+                ? ORIGINAL_ORIGIN_ASSOCIATION
+                : readInitialLineage(token).originAssociation),
         );
         const reserve = sourceMethod(live, "reserve"),
           retainedPredicate = sourceMethod(op.originalEntry, "coversRetained");
@@ -140,7 +186,10 @@ export function captureOwnedExplicitAttachRecoveryV2() {
             !types.isProxy(reservation),
         );
         // The cached record, reconstructed values and replay classifier remain invocation-local.
-        const capturedRecord = captureRecoveryRecord(op.originalRecord);
+        const capturedRecord =
+          token === null
+            ? captureRecoveryRecord(op.originalRecord)
+            : captureRecoveryRecordForLineage(token, op.originalRecord);
         OWNER.check();
         const original = captureRetainedInput(capturedRecord.originalRaw),
           raw = original.attachRequest;
@@ -156,9 +205,7 @@ export function captureOwnedExplicitAttachRecoveryV2() {
           }),
         );
         OWNER.check();
-        const retained = await owned(() =>
-          classifyOwnedRetainedInitialAttachment(original),
-        );
+        const retained = await owned(() => classifyRetained(original));
         OWNER.check();
         if (retained.status !== "classified")
           return refuse("replay_material_unsupported");
@@ -178,7 +225,8 @@ export function captureOwnedExplicitAttachRecoveryV2() {
         OWNER.check();
         if (coveredRetained !== true) return refuse("replay_coverage_missing");
         OWNER.check();
-        pair = createPair();
+        pair = token === null ? createPair() : (frame?.pair ?? null);
+        need(pair);
         OWNER.check();
         need(
           pair.capability.assertSourceOperationBinding(
@@ -192,169 +240,21 @@ export function captureOwnedExplicitAttachRecoveryV2() {
         const activePair = pair;
 
         // Only this invocation's pair and actual locally rebuilt C2 enter this capsule.
-        const control = (() => {
-          const capability = activePair.capability,
-            takeQuarantine = capability.takeFulfilledQuarantine;
-          Object.freeze(request.payload);
-          Object.freeze(request.requestIdentity);
-          Object.freeze(request);
-          OWNER.check();
-          type Token = {
-            invocation: object;
-            phase: "read" | "post";
-            ordinal: number;
-            request: AttachRequest;
-            diagnostics: Diagnostics;
-          };
-          const tokens = new WeakMap<object, Token>(),
-            invocation = Object.freeze({});
-          let phase = "unused";
-          const tokenValue = (error: unknown) =>
-            error !== null &&
-            (typeof error === "object" || typeof error === "function")
-              ? tokens.get(error)
-              : undefined;
-          function consume(error: unknown, kind: "read" | "post") {
-            OWNER.check();
-            const value = tokenValue(error);
-            if (
-              error !== null &&
-              (typeof error === "object" || typeof error === "function")
-            )
-              tokens.delete(error);
-            if (
-              !value ||
-              value.invocation !== invocation ||
-              value.phase !== kind ||
-              phase !== (kind === "read" ? "failed" : "failed_post")
-            )
-              return null;
-            phase = kind === "read" ? "consumed" : "consumed_post";
-            const failure = Object.freeze({
-              category: "provider_rejected",
-              phase: kind,
-              ordinal: value.ordinal,
-              request: value.request,
-              diagnostics: value.diagnostics,
-              outcome: "unknown",
-              operationalAuthority: false,
-            });
-            const out = Error("INITIAL_PROVIDER_REJECTED");
-            Object.defineProperty(out, "failure", {
-              value: failure,
-              enumerable: false,
-              writable: false,
-              configurable: false,
-            });
-            return out;
-          }
-          return Object.freeze({
-            takePostQuarantine(...args: unknown[]) {
-              if (args.length !== 0) return null;
-              return Reflect.apply(takeQuarantine, capability, []) as
-                object | null;
-            },
-            begin() {
-              OWNER.check();
-              if (phase !== "unused") stop();
-              if (capability.assertVirginAcquisition() !== true) {
-                phase = "closed";
-                stop();
-              }
-              OWNER.check();
-              phase = "acquiring";
-            },
-            complete() {
-              OWNER.check();
-              if (phase !== "acquiring") stop();
-              phase = "complete";
-            },
-            takeReadFailure() {
-              OWNER.check();
-              if (phase !== "acquiring") stop();
-              const record = capability.consumeReadCatch();
-              OWNER.check();
-              if (record === null) {
-                phase = "unsupported";
-                return null;
-              }
-              need(
-                record.phase === "read" &&
-                  Number.isSafeInteger(record.ordinal) &&
-                  record.ordinal >= 1 &&
-                  record.ordinal <= 43,
-              );
-              const token = Object.freeze(Object.create(null)) as object;
-              tokens.set(
-                token,
-                Object.freeze({
-                  invocation,
-                  phase: "read",
-                  ordinal: record.ordinal,
-                  request,
-                  diagnostics: record.diagnostics,
-                }),
-              );
-              phase = "failed";
-              return token;
-            },
-            beginPost() {
-              OWNER.check();
-              if (phase !== "complete") stop();
-              phase = "posting";
-            },
-            takePostFailure(actualReply: unknown) {
-              OWNER.check();
-              if (phase !== "posting") stop();
-              const record = capability.consumePostCatch(actualReply);
-              OWNER.check();
-              if (record === null) {
-                phase = "post_without_token";
-                return null;
-              }
-              need(
-                record.phase === "post" &&
-                  Number.isSafeInteger(record.ordinal) &&
-                  record.ordinal >= 1 &&
-                  record.ordinal <= 44,
-              );
-              const token = Object.freeze(Object.create(null)) as object;
-              tokens.set(
-                token,
-                Object.freeze({
-                  invocation,
-                  phase: "post",
-                  ordinal: record.ordinal,
-                  request,
-                  diagnostics: record.diagnostics,
-                }),
-              );
-              phase = "failed_post";
-              return token;
-            },
-            forward(error: unknown) {
-              OWNER.check();
-              const value = tokenValue(error);
-              return value &&
-                value.invocation === invocation &&
-                (phase === "failed" || phase === "failed_post")
-                ? (error as object)
-                : null;
-            },
-            consume(error: unknown) {
-              return consume(error, "read");
-            },
-            consumePost(error: unknown) {
-              return consume(error, "post");
-            },
-          });
-        })();
+        const control = captureActorFailureControl(OWNER, activePair, request);
         OWNER.check();
         failureControl = control;
-        const reader = bindRawAcquisitionFromSource(
-          OWNER,
-          activePair.transport.readTransport,
-        );
+        const reader =
+          token === null
+            ? bindRawAcquisitionFromSource(
+                OWNER,
+                activePair.transport.readTransport,
+              )
+            : {
+                async acquire(_expected: unknown) {
+                  need(frame?.reader);
+                  return frame.reader.acquire();
+                },
+              };
         OWNER.check();
         let acquiredOnce = false;
         const acquire = async () => {
@@ -402,8 +302,7 @@ export function captureOwnedExplicitAttachRecoveryV2() {
             firstDispatchedAt: raw.firstDispatchedAt,
           });
           OWNER.check();
-          const replayRetained =
-            await classifyOwnedRetainedInitialAttachment(original);
+          const replayRetained = await classifyRetained(original);
           OWNER.check();
           need(replayRetained.status === "classified");
           verifyRecoveryRecord(
@@ -414,7 +313,10 @@ export function captureOwnedExplicitAttachRecoveryV2() {
             original,
           );
           OWNER.check();
-          const discounts = replayCouponEligibility(value),
+          const discounts =
+              token === null
+                ? replayCouponEligibility(value)
+                : replayCouponEligibilityForLineage(token, value),
             current = value.currentBundle,
             observedAt = value.observedAt;
           // Historical original eligibility; never fabricate a current-null subscription.
@@ -501,14 +403,20 @@ export function captureOwnedExplicitAttachRecoveryV2() {
           OWNER.check();
           return Reflect.apply(send, op.sink, [record, ack]);
         };
-        const compiler = createAttachEventCompiler(raw, {
-          send: sourceSend,
-          timeoutMs: 5000,
-        });
+        const compiler =
+          token === null
+            ? createAttachEventCompiler(raw, {
+                send: sourceSend,
+                timeoutMs: 5000,
+              })
+            : createRecoveryAttachEventCompiler(token);
         OWNER.check();
         await owned(() =>
           compiler.dispatch({ event: "dispatch", stage: "attach", request }),
         );
+        OWNER.check();
+        if (token !== null)
+          await owned(() => assertReplayFrontierForLineage(token));
         OWNER.check();
         postEligible = true;
         let postedOnce = false;
@@ -549,6 +457,8 @@ export function captureOwnedExplicitAttachRecoveryV2() {
           }),
         );
         OWNER.check();
+        if (token !== null)
+          await owned(() => retainInitialReceiptForLineage(token, receipt));
         await owned(() =>
           compiler.receipt({
             event: "receipt",
@@ -558,12 +468,21 @@ export function captureOwnedExplicitAttachRecoveryV2() {
           }),
         );
         OWNER.check();
-        const result = admitRecoveryOutput(
-          receipt,
-          acquired.bundle.wireSubscription.schedule,
-          prepared,
-          request,
-        );
+        const result =
+          token === null
+            ? admitRecoveryOutput(
+                receipt,
+                acquired.bundle.wireSubscription.schedule,
+                prepared,
+                request,
+              )
+            : admitRecoveryOutputForLineage(
+                token,
+                receipt,
+                acquired.bundle.wireSubscription.schedule,
+                prepared,
+                request,
+              );
         OWNER.check();
         control.takePostQuarantine();
         return result;

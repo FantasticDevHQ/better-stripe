@@ -1,3 +1,4 @@
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import { need, closed, freeze } from "../material/nodeKernel.js";
 import { equal, referenceId } from "../../../renewalAggregate/shared.js";
 import type { Bundle, FreshInput } from "../material/capture.js";
@@ -79,6 +80,20 @@ function rebuild(b: Bundle) {
 
 /** One explicit root schedule association transition, with all residual material equal. */
 export function replayCouponEligibility(value: FreshInput) {
+  return replayEligibility(value, false);
+}
+export function replayCouponEligibilityForLineage(
+  token: object,
+  value: FreshInput,
+) {
+  need(arguments.length === 2);
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const result = replayEligibility(value, true);
+  owner.check();
+  return result;
+}
+function replayEligibility(value: FreshInput, allowUnchanged: boolean) {
   const p = value.attachRequest.preparation,
     original = value.originalBundle,
     current = value.currentBundle;
@@ -92,7 +107,7 @@ export function replayCouponEligibility(value: FreshInput) {
         current.wireSubscription,
         "schedule",
       ) &&
-      current.wireSubscription.schedule !== null,
+      (allowUnchanged || current.wireSubscription.schedule !== null),
   );
   const { schedule: oldAssociation, ...oldResidual } =
       original.wireSubscription,
@@ -111,6 +126,7 @@ export function replayCouponEligibility(value: FreshInput) {
   rebuild(original);
   const joined = rebuild(current);
   need(equal(original.couponReads, current.couponReads));
+  if (allowUnchanged && currentAssociation === null) return freeze(joined);
   const expected = p.expected,
     context = {
       customerAccountId: expected.customerAccountId,

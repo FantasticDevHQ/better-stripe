@@ -11,6 +11,7 @@ import {
 import { materialize } from "./eventCodec.js";
 import { createStageChannel, createInitialStageChannel } from "./appendAck.js";
 import { readInitialLineage } from "../producer/lineageAuthority.js";
+import { journalWorkForInitialLineage } from "../producer/journalWorkFactory.js";
 import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import { ownedAwaitForInitialLineage } from "../producer/ownedAwaitFactory.js";
 import {
@@ -22,16 +23,27 @@ export function createAttachEventCompiler(raw: unknown, options: unknown) {
   return attachEventCompiler(raw, createStageChannel(options));
 }
 const initialChannels = new WeakSet<object>();
+const recoveryChannels = new WeakSet<object>();
+export function createRecoveryAttachEventCompiler(token: object) {
+  return lineageAttachEventCompiler(token, recoveryChannels, arguments.length);
+}
 /** Exact original call, source and journal; no replacement sink or Owner input. */
 export function createInitialAttachEventCompiler(token: object) {
+  return lineageAttachEventCompiler(token, initialChannels, arguments.length);
+}
+function lineageAttachEventCompiler(
+  token: object,
+  channels: WeakSet<object>,
+  arity: number,
+) {
   const owner = ownerForInitialLineage(token);
   owner.check();
-  if (initialChannels.has(token)) throw Error("INITIAL_CHANNEL_CONSUMED");
-  initialChannels.add(token);
-  if (arguments.length !== 1) throw Error("INITIAL_CHANNEL_UNBOUND");
-  const { reservation, journal } = readInitialLineage(token);
+  if (channels.has(token)) throw Error("INITIAL_CHANNEL_CONSUMED");
+  channels.add(token);
+  if (arity !== 1) throw Error("INITIAL_CHANNEL_UNBOUND");
+  const { reservation } = readInitialLineage(token);
   const source = JSON.parse(reservation.recordJSON);
-  const send = journal.createC10Send(reservation);
+  const send = journalWorkForInitialLineage(token).captureSend();
   const owned = ownedAwaitForInitialLineage(token);
   owner.check();
   const channel = createInitialStageChannel(token, {

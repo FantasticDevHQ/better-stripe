@@ -4,6 +4,7 @@ import {
   actionGeneric,
   defineSchema,
   makeFunctionReference,
+  getFunctionAddress,
 } from "convex/server";
 import { BetterStripe } from "../../../../index.js";
 import { components } from "../../../../../../example/convex/_generated/api.js";
@@ -13,6 +14,10 @@ import {
   codecFixture,
 } from "../../../../../component/renewalOperations/timingPolicy.fixtures.js";
 import { createClassActionOperationJournal } from "../operationJournal.js";
+import {
+  prepareRenewalPriceReplacementV2,
+  prepareRenewalScheduleAttachmentV2,
+} from "../../../renewalV2/index.js";
 
 type Journal = Awaited<ReturnType<typeof createClassActionOperationJournal>>;
 type Fresh = Awaited<ReturnType<Journal["reserveFreshAttempt"]>>;
@@ -24,8 +29,52 @@ export async function initialOperations(
     index: number;
   }) => Promise<void>,
   count = 1,
+  options: {
+    epochMs?: number;
+    workEndWallMs?: number;
+    endWallMs?: number;
+    afterBind?: () => Promise<void>;
+  } = {},
 ) {
   const h = await codecFixture();
+  if (options.epochMs !== undefined) {
+    const seconds = Math.floor(options.epochMs / 1000);
+    const source = h.record.attachRequest;
+    source.preparation.expected.periodStart = seconds - 1;
+    source.preparation.expected.periodEnd = seconds + 2592000;
+    const item = source.preparation.subscription.items.data[0];
+    item.current_period_start = seconds - 1;
+    item.current_period_end = seconds + 2592000;
+    source.firstDispatchedAt = seconds;
+    const prepared = await prepareRenewalPriceReplacementV2(source.preparation);
+    const request = await prepareRenewalScheduleAttachmentV2({
+      prepared,
+      apiVersion: source.apiVersion,
+      attachKey: source.attachKey,
+      firstDispatchedAt: seconds,
+    });
+    h.record.requestBinding = request.requestIdentity.binding;
+    h.record.dispatch = {
+      scope: request.scope,
+      apiVersion: request.apiVersion,
+      method: request.method,
+      path: request.path,
+      payload: request.payload,
+      key: request.key,
+      firstDispatchedAt: seconds,
+    };
+    Object.assign(h.record.timingPolicy, {
+      firstDispatchedAt: seconds,
+      periodStart: seconds - 1,
+      periodEnd: seconds + 2592000,
+      workEndWallMs: options.epochMs + 10000,
+      endWallMs: options.epochMs + 11000,
+    });
+  }
+  if (options.workEndWallMs !== undefined)
+    h.record.timingPolicy.workEndWallMs = options.workEndWallMs;
+  if (options.endWallMs !== undefined)
+    h.record.timingPolicy.endWallMs = options.endWallMs;
   const sdk = new BetterStripe(components.betterStripe, {
     STRIPE_SECRET_KEY: "sk_test_invalid_owner_core",
   });
@@ -34,6 +83,19 @@ export async function initialOperations(
     run: actionGeneric({
       args: {},
       handler: async (ctx): Promise<null> => {
+        const runMutation = ctx.runMutation;
+        if (options.afterBind)
+          ctx.runMutation = async (ref, ...args) => {
+            const result = await runMutation(ref, ...args);
+            if (
+              getFunctionAddress(ref).reference?.endsWith(
+                "/bindInitialBasis",
+              ) &&
+              options.afterBind
+            )
+              await options.afterBind();
+            return result;
+          };
         await Promise.all(
           Array.from({ length: count }, async (_, index) => {
             const logicalOperationId =

@@ -9,7 +9,6 @@ const method = Object.getOwnPropertyDescriptor(
   "rawRequest",
 )?.value;
 const u64 = 18446744073709551615n;
-const timerLimit = 2147483647;
 function stop(): never {
   throw Error("INITIAL_LINEAGE_UNBOUND");
 }
@@ -94,9 +93,7 @@ export function mintInitialLineage(
     lo < 0n ||
     hi < lo ||
     hi > u64 ||
-    hi - lo > 1000000n ||
-    startWallMs >= policy.workEndWallMs ||
-    policy.endWallMs - startWallMs > timerLimit
+    startWallMs >= policy.workEndWallMs
   )
     stop();
   const basis = Object.freeze({
@@ -108,7 +105,7 @@ export function mintInitialLineage(
     endWallMs: policy.endWallMs,
     endNs: lo + (BigInt(policy.endWallMs) - BigInt(startWallMs)) * 1000000n,
   });
-  if (basis.endNs > u64) stop();
+  if (basis.endNs > u64 || hi >= basis.workEndNs || hi >= basis.endNs) stop();
   const rawBasisJSON = JSON.stringify({
     startWallMs,
     startNsDecimal: lo.toString(),

@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.101.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.100.0...v0.101.0) (2026-10-31)
+
+
+### Features
+
+* retain parent-bound configure journal data ([#444](https://github.com/FantasticDevHQ/better-stripe/issues/444)) ([d497ce5](https://github.com/FantasticDevHQ/better-stripe/commit/d497ce5296c9d465de42f19494690e2eeabd933d))
+
 ## [0.100.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.99.0...v0.100.0) (2026-10-31)
 
 ### Features

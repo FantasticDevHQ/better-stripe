@@ -12,6 +12,7 @@ import {
   prepareRenewalPriceReplacementV2,
   prepareRenewalScheduleAttachmentV2,
   projectRenewalConfigurationV2,
+  constructRenewalConfigurationReceiptV2,
 } from "../../../renewalV2/index.js";
 import { INITIAL_NS } from "./producerInitialDeclarations.js";
 
@@ -266,7 +267,41 @@ async function setup(
     }
     return core.recoverAttach().invoke();
   }
-  return { ...input, core, child, calls, baseline, source, complete };
+  async function eventsFor(value: Awaited<ReturnType<typeof child>>) {
+    const request = value.record.configureRecord.request;
+    const transport = {
+      status: 200,
+      requestId: "req_synthetic_configure_channel",
+    };
+    const receipt = await constructRenewalConfigurationReceiptV2({
+      configuration: value.record.configureRecord.configuration,
+      actualDispatch: value.record.dispatch,
+      providerSnapshot: baseline.schedule,
+      transport,
+    });
+    return {
+      dispatch: { event: "dispatch", stage: "configure", request },
+      response: {
+        event: "response",
+        stage: "configure",
+        request,
+        body: baseline.schedule,
+        transport,
+      },
+      receiptEvent: { event: "receipt", stage: "configure", request, receipt },
+      receipt,
+    };
+  }
+  return {
+    ...input,
+    core,
+    child,
+    calls,
+    baseline,
+    source,
+    complete,
+    eventsFor,
+  };
 }
 export async function configureAdmissionFixture(
   work: (h: Awaited<ReturnType<typeof setup>>) => Promise<void>,
@@ -280,6 +315,7 @@ export async function configureAdmissionFixture(
       args: unknown,
     ) => Promise<void>;
     afterAppend?: () => Promise<void>;
+    beforeAppend?: () => Promise<void>;
   } = {},
 ) {
   const baseline = makeConfigureReadNativeBaseline();
@@ -299,6 +335,7 @@ export async function configureAdmissionFixture(
       source: captureRetainedInput(baseline.original),
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,
+      beforeAppend: options.beforeAppend,
       afterAppend: async () => {
         completion.appends++;
         if (completion.mode === "resume" && completion.appends === 2)

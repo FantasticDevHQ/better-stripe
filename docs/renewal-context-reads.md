@@ -262,10 +262,46 @@ committed; retained DATA and failed or lost replies cannot remint the consumed
 call.
 
 The result is an opaque private view containing `owner`, `basisJSON` and
-`operationalAuthority: false`. It supplies no configure transport, C10 channel,
-preflight/write actor or public scheduling API. Those integrations remain
-required, as do genuine generation and operational qualification. Production
-Source profile arrays remain empty.
+`operationalAuthority: false`. The separate private C10 factory below can use
+that identity. Configure transport, preflight/write actors and public scheduling
+remain required, as do genuine generation and operational qualification.
+Production Source profile arrays remain empty.
+
+## Private configure C10 channel
+
+`createAdmittedConfigureEventCompiler(token)` accepts only the actual admitted
+child identity. It captures one configure channel, including when capture fails;
+callers cannot replace its source, sender, Owner or options. Copied views and
+proxy identities cannot create another channel. The retained raw C6 configuration
+supplies its source. The compiler reconstructs C7 dispatch and complete C9 receipt
+DATA and compares each event before appending sequences 1 through 3 to the child
+attempt. The parent attachment history remains separate.
+
+The channel derives the canonical Owner from the original parent token. A fixed
+synchronous child guard adds binding and custody checks at every channel gate,
+including after hashing and around append/ACK handling and awaits. The guard
+must return undefined; asynchronous or other non-void results refuse. It cannot
+replace the Owner checks or retirement subscription. The guarded parent kernel
+stays independent of configure lineage code, preserving the existing legacy
+compiler and avoiding an import cycle.
+
+The sender receives the exact original reservation object from the actual child
+CAS and uses its original class-bound journal. A captured DATA copy is
+insufficient. The actual component append must commit and return its matching
+complete reply before C10 acknowledgement. Per-child work tracking follows the
+actual append RPC promise independently of a channel timeout. A timed-out channel
+can remain closed while a committed mutation reply is still pending. Late replies
+cannot reopen it. Separate child and SDK-root channels retain their own sequence,
+work and retirement state.
+
+C10 append acknowledgement establishes DATA consistency only. Dispatch intent,
+a committed response or receipt event, and a retained C9 do not establish provider
+custody, returned configure ACK custody, pending/effective replacement or fresh
+dispatch permission. Receipt retention remains a separate operation; a future
+configure completion pipeline must retain the complete C9 before publishing
+receipt event 3 and returning its actual acknowledgement. Future execution also
+requires its own frontier checks. This channel factory supplies no provider
+transport or preflight/write actor and activates no operational Source profile.
 
 ## Component operation journal
 

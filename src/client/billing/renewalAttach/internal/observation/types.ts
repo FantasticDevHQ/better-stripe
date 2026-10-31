@@ -25,7 +25,13 @@ export interface OwnerSample {
   readonly retired: false;
 }
 export type Resource =
-  "schedule" | "subscription" | "price" | "customer" | "coupon";
+  | "schedule"
+  | "subscription"
+  | "price"
+  | "customer"
+  | "coupon"
+  | "invoice"
+  | "invoice_lines";
 export interface ObservationReadRow {
   readonly resource: Resource;
   readonly id: string;

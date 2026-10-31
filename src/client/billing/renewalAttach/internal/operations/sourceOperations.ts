@@ -1,10 +1,40 @@
 import type { ObservationHistorySourceEntry } from "../observation/readerAuthorization.js";
 import type { ObservationRecord } from "../observation/types.js";
+import type { FunctionReference } from "convex/server";
 export type FreshObservationProfile = Readonly<{
   historyEntry: ObservationHistorySourceEntry;
   readProfile: "endive-schedule-first-44-v1";
   coversObservation(record: ObservationRecord): boolean;
 }>;
+export type InvoiceAuthorizationArgs = {
+  capability: "renewal_invoice_evidence_v1";
+  componentScope: string;
+  parentOperationId: string;
+  operationId: string;
+  providerScope: {
+    mode: "platform";
+    stripeAccount: null;
+    livemode: boolean;
+    customerAccountId: string;
+    customerId: string;
+    subscriptionId: string;
+    scheduleId: string;
+  };
+  originalInvoiceId: string;
+  currentInvoiceId: string;
+};
+export type InvoiceObservationProfile = Readonly<{
+  freshProfile: FreshObservationProfile;
+  readProfile: "endive-pinned-invoices-fence-7-v1";
+  authorizationQuery: FunctionReference<
+    "query",
+    "public" | "internal",
+    InvoiceAuthorizationArgs,
+    unknown
+  >;
+}>;
+export const COMPILED_INVOICE_OBSERVATION_ENTRIES: readonly InvoiceObservationProfile[] =
+  Object.freeze([]);
 /** Fixed internal operation associations. No production producer or class is bound. */
 export const COMPILED_INITIAL_ENTRIES: readonly unknown[] = Object.freeze([]);
 export const COMPILED_RECOVERY_ENTRIES: readonly unknown[] = Object.freeze([]);

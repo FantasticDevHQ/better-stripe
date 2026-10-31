@@ -46,3 +46,16 @@ it.each(["string", "minimal-expanded", "full-expanded"] as const)(
     expect(f.h.input).toEqual(before);
   },
 );
+
+it("distinct invoices cannot reuse one line ID for incompatible period inventories", async () => {
+  const f = invoiceRecipe("subscription_cycle", "open");
+  await prerequisites(f.h);
+  set(f.currentLine, "id", f.originalLine.id);
+  const result = await inspectRenewalEvidenceV1(f.h.input);
+  expect(result.invoiceEvidence).toEqual({
+    predicate: "conflict",
+    original: null,
+    current: null,
+    reason: "invoice_relation_mismatch",
+  });
+});

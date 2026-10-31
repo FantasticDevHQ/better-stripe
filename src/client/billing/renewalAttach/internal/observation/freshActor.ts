@@ -1,3 +1,9 @@
+import { getFunctionAddress } from "convex/server";
+import {
+  captureInvoiceObservationProfile,
+  invoiceProfileGuard,
+} from "./invoiceAuthorization.js";
+import type { InvoiceObservationProfile } from "../operations/sourceOperations.js";
 import {
   captureObservationInvocation,
   readObservationInvocation,
@@ -28,10 +34,42 @@ export async function captureFreshRenewalObservation(
   raw: unknown,
 ) {
   need(arguments.length === 2);
+  return captureFreshObservation(root, raw, null);
+}
+/** Separate qualified invoice capability; EMPTY before any input reflection. */
+export async function captureFreshInvoiceRenewalObservation(
+  root: object,
+  raw: unknown,
+) {
+  need(arguments.length === 2);
+  const profile = captureInvoiceObservationProfile(root);
+  return captureFreshObservation(root, raw, profile);
+}
+async function captureFreshObservation(
+  root: object,
+  raw: unknown,
+  invoiceProfile: InvoiceObservationProfile | null,
+) {
   const profile = captureFreshObservationProfile(root);
+  const invoiceAddress =
+    invoiceProfile &&
+    JSON.stringify(getFunctionAddress(invoiceProfile.authorizationQuery));
+  const invoiceGuard = () => {
+    if (invoiceProfile) {
+      invoiceProfileGuard(invoiceProfile);
+      need(
+        invoiceProfile.freshProfile === profile &&
+          JSON.stringify(
+            getFunctionAddress(invoiceProfile.authorizationQuery),
+          ) === invoiceAddress,
+      );
+    }
+  };
+  invoiceGuard();
   const token = await captureObservationInvocation(root, raw);
   let state: ObservationInvocationState;
   try {
+    invoiceGuard();
     state = readObservationInvocation(token);
     need(state.historyEntry === profile.historyEntry);
   } catch (error) {
@@ -44,8 +82,17 @@ export async function captureFreshRenewalObservation(
       need(arguments.length === 0 && !used);
       used = true;
       try {
+        invoiceGuard();
         const captured = await state.captureHistory();
-        const transport = captureFreshGetTransport(token, profile);
+        invoiceGuard();
+        const transport = captureFreshGetTransport(
+          token,
+          profile,
+          invoiceProfile,
+        );
+        let invoiceResult: Awaited<
+          ReturnType<typeof transport.acquireInvoices>
+        > | null = null;
         async function release(
           status:
             | "fresh_observation_data"
@@ -58,10 +105,17 @@ export async function captureFreshRenewalObservation(
           reason: string | null,
           failure: ReadFailure | null = null,
         ) {
-          await state.authorizeUnchanged();
+          await transport.finalizeInvoices();
           transport.guard();
           const output = captureReaderQueryDATA({
             status,
+            ...(invoiceProfile
+              ? {
+                  invoiceContext: invoiceResult?.context ?? null,
+                  invoiceInventory: invoiceResult?.status ?? "not_acquired",
+                  invoiceReason: invoiceResult?.reason ?? null,
+                }
+              : {}),
             ...captured,
             reads,
             evidence,
@@ -119,7 +173,7 @@ export async function captureFreshRenewalObservation(
                 configuration: captured.history.record.configuration,
                 configureReceipt: captured.history.rawConfigureReceipt,
                 reads,
-                invoiceContext: null,
+                invoiceContext: invoiceResult?.context ?? null,
                 historicalSnapshot: null,
               });
             } catch {
@@ -158,6 +212,18 @@ export async function captureFreshRenewalObservation(
             );
           validateCoupon(captured.history.record, id, result.body);
           reads.coupons.push(result.body);
+        }
+        if (invoiceProfile) {
+          invoiceResult = await transport.acquireInvoices();
+          if (invoiceResult.status === "provider_rejected")
+            return await release(
+              "observation_provider_rejected",
+              null,
+              null,
+              "complete",
+              null,
+              invoiceResult.failure,
+            );
         }
         const evidence = await analyze();
         return await release(

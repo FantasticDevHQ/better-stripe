@@ -1,4 +1,5 @@
 import { OWNER } from "../originalOwner.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 
 export interface FailureForwarder {
   forward(error: unknown): object | null;
@@ -8,7 +9,24 @@ export function owned<T>(
   work: () => T | PromiseLike<T>,
   failureControl: FailureForwarder | null = null,
 ): Promise<T> {
-  OWNER.check();
+  return runOwned(OWNER, work, failureControl);
+}
+export function ownedForInitialLineage(token: object) {
+  if (arguments.length !== 1) throw Error("INITIAL_ACTOR_STOP");
+  const owner = ownerForInitialLineage(token);
+  return function owned<T>(
+    work: () => T | PromiseLike<T>,
+    control: FailureForwarder | null = null,
+  ): Promise<T> {
+    return runOwned(owner, work, control);
+  };
+}
+function runOwned<T>(
+  owner: Pick<typeof OWNER, "check" | "subscribe">,
+  work: () => T | PromiseLike<T>,
+  failureControl: FailureForwarder | null,
+): Promise<T> {
+  owner.check();
   return new Promise((resolve, reject) => {
     let done = false,
       remove: (() => void) | null = null;
@@ -20,14 +38,14 @@ export function owned<T>(
       else reject(value);
     };
     const retire = () => finish(false, Error("INITIAL_ACTOR_STOP"));
-    remove = OWNER.subscribe(retire);
+    remove = owner.subscribe(retire);
     if (done) {
       remove();
       return;
     }
     let pending: T | PromiseLike<T>;
     try {
-      OWNER.check();
+      owner.check();
       pending = work();
     } catch {
       finish(false, Error("INITIAL_ACTOR_STOP"));
@@ -37,7 +55,7 @@ export function owned<T>(
       (value) => {
         if (done) return;
         try {
-          OWNER.check();
+          owner.check();
           finish(true, value);
         } catch {
           retire();
@@ -46,7 +64,7 @@ export function owned<T>(
       (error: unknown) => {
         if (done) return;
         try {
-          OWNER.check();
+          owner.check();
           const forwarded = failureControl
             ? failureControl.forward(error)
             : null;

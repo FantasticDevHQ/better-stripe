@@ -113,8 +113,7 @@ Each callback rechecks both clocks and the original policy before rearming. The
 later final deadline is not a timer span limit. Event-loop suspension can delay
 callbacks. Every continuation therefore checks both clocks before
 returning a value. Retirement is irreversible and never extends either original
-cutoff. Legacy actors still use their separate dormant identity; extracting and
-wiring their per-invocation kernels remains required before runtime activation.
+cutoff. Legacy actors retain their separate dormant identity and behavior.
 
 The private initial core can capture one attach-stage C10 compiler for its own
 lineage. This compiler takes the original raw source and actual acquired
@@ -127,8 +126,7 @@ Retiring one invocation rejects its pending channel without retiring another
 invocation's channel or removing already committed DATA. Stored events and C10
 append acknowledgements do not establish provider custody or a returned public
 operation acknowledgement. Legacy stage-channel facades retain their existing
-lazy Owner and behavior. Initial actor, acquisition and transport factory wiring
-remains required.
+lazy Owner and behavior.
 
 The core's private material classifiers also retain the original journal source
 and canonical Owner. Retained classification accepts no replacement source.
@@ -138,8 +136,29 @@ original source. Both paths keep the existing DATA-consistency-only result and
 bounded snapshots. They do not qualify acquisition or provider custody. Pending
 reconstruction is owned by that invocation; retirement rejects its continuation
 without closing another invocation's classifier. Legacy classifier exports keep
-their lazy Owner and existing refusal behavior. The initial actor still needs
-to wire these classifiers to its per-invocation acquisition and transport.
+their lazy Owner and existing refusal behavior.
+
+The private initial actor now uses those classifiers, the canonical transport and
+one acquisition reader for its lineage. Its operation retains one private origin
+association and a single-use source slot. The transport captures the selected
+SDK's original raw-request method and receiver, and receives the actual SDK
+promise. Its fixed read plan permits the original subscription, target price,
+billing customer and at most 40 original Coupon reads. It permits one attachment
+POST. Callers cannot supply a replacement client, source, plan, Owner or journal
+sink through the invocation core.
+
+The actor retains the complete captured C3 receipt in the component journal at
+sequence 2 before appending receipt event 3 or returning an acknowledgement.
+Receipt retention alone is DATA. If the Owner retires while a committed retention
+reply is pending, that DATA remains, but the actor refuses its acknowledgement.
+Another invocation keeps its own client, Owner, journal and continuation.
+
+Production Source class arrays remain empty. Empty admission returns before
+constructing an Owner or reading a Source, client or clock, including when the
+private actor is captured from a lineage that has no Owner yet. Tests admit
+synthetic profiles in ordinary Node and Convex-test with controlled HTTP. They
+do not qualify native execution or provider custody. Public scheduling, native
+profile qualification, recovery and later operation stages remain separate work.
 
 ## Component operation journal
 

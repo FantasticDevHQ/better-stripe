@@ -36,7 +36,10 @@ export async function initialOperations(
     endWallMs?: number;
     afterBind?: () => Promise<void>;
     afterAppend?: () => Promise<void>;
+    afterRetain?: () => Promise<void>;
     source?: RetainedInput;
+    sources?: readonly RetainedInput[];
+    keys?: readonly string[];
   } = {},
 ) {
   const h = await codecFixture();
@@ -107,16 +110,59 @@ export async function initialOperations(
       periodEnd: prepared.expected.periodEnd,
     },
   };
+  assert(!options.sources || options.sources.length === count);
+  assert(!options.keys || options.keys.length === count);
+  const records = options.sources
+    ? await Promise.all(
+        options.sources.map(async (original) => {
+          const raw = original.attachRequest;
+          const prepared = await prepareRenewalPriceReplacementV2(
+            raw.preparation,
+          );
+          const request = await prepareRenewalScheduleAttachmentV2({
+            prepared,
+            apiVersion: raw.apiVersion,
+            attachKey: raw.attachKey,
+            firstDispatchedAt: raw.firstDispatchedAt,
+          });
+          return {
+            ...record,
+            attachRequest: raw,
+            originalBundle: original.originalBundle,
+            requestBinding: request.requestIdentity.binding,
+            dispatch: {
+              scope: request.scope,
+              apiVersion: request.apiVersion,
+              method: request.method,
+              path: request.path,
+              payload: request.payload,
+              key: request.key,
+              firstDispatchedAt: request.firstDispatchedAt,
+            },
+            timingPolicy: {
+              ...record.timingPolicy,
+              firstDispatchedAt: raw.firstDispatchedAt,
+              periodStart: prepared.expected.periodStart,
+              periodEnd: prepared.expected.periodEnd,
+            },
+          };
+        }),
+      )
+    : null;
   const sdk = new BetterStripe(components.betterStripe, {
     STRIPE_SECRET_KEY: "sk_test_invalid_owner_core",
   });
+  const sdks = options.keys?.map(
+    (key) =>
+      new BetterStripe(components.betterStripe, { STRIPE_SECRET_KEY: key }),
+  );
   const refs = components.betterStripe.renewalOperations;
   const host = {
     run: actionGeneric({
       args: {},
       handler: async (ctx): Promise<null> => {
         const runMutation = ctx.runMutation;
-        if (options.afterBind || options.afterAppend)
+        if (options.afterBind || options.afterAppend || options.afterRetain)
           ctx.runMutation = async (ref, ...args) => {
             const result = await runMutation(ref, ...args);
             if (
@@ -133,35 +179,47 @@ export async function initialOperations(
               options.afterAppend
             )
               await options.afterAppend();
+            if (
+              getFunctionAddress(ref).reference?.endsWith(
+                "/retainProviderAcknowledgement",
+              ) &&
+              options.afterRetain
+            )
+              await options.afterRetain();
             return result;
           };
         await Promise.all(
           Array.from({ length: count }, async (_, index) => {
+            const current = records?.[index] ?? record;
+            const selectedSDK = sdks?.[index] ?? sdk;
             const logicalOperationId =
-              record.logicalOperationId + "-owner-" + index;
-            const recordJSON = canonical({ ...record, logicalOperationId });
+              current.logicalOperationId + "-owner-" + index;
+            const recordJSON = canonical({ ...current, logicalOperationId });
             const created = await ctx.runMutation(
               refs.mutations.createAuthorizedOperation,
               {
-                authorizationScope: record.authorization.scope,
-                authorizationRevision: record.authorization.revision,
+                authorizationScope: current.authorization.scope,
+                authorizationRevision: current.authorization.revision,
                 logicalOperationId,
                 recordJSON,
               },
             );
             assert(created.status === "created");
-            const journal = await createClassActionOperationJournal(sdk, {
-              actualActionCtx: ctx,
-              operationId: created.operationId,
-            });
+            const journal = await createClassActionOperationJournal(
+              selectedSDK,
+              {
+                actualActionCtx: ctx,
+                operationId: created.operationId,
+              },
+            );
             const fresh = await journal.reserveFreshAttempt({
               expectedRevision: 0,
               stage: "attach",
-              expectedRequestBinding: record.requestBinding,
+              expectedRequestBinding: current.requestBinding,
               recordJSON,
             });
             assert(fresh.result.disposition === "acquired" && fresh.call);
-            await work({ journal, fresh, sdk, index });
+            await work({ journal, fresh, sdk: selectedSDK, index });
           }),
         );
         return null;

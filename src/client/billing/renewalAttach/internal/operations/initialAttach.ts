@@ -1,6 +1,6 @@
 import { admitInitialOutput } from "../recovery/material.js";
 import { types } from "node:util";
-import { OWNER } from "../originalOwner.js";
+import { OWNER as LEGACY_OWNER } from "../originalOwner.js";
 import {
   prepareRenewalPriceReplacementV2 as c1,
   prepareRenewalScheduleAttachmentV2 as c2,
@@ -18,7 +18,7 @@ import {
   type FailureControl,
 } from "./types.js";
 import { equal } from "../../../renewalAggregate/shared.js";
-import { owned } from "./ownedAwait.js";
+import { owned as legacyOwned, ownedForInitialLineage } from "./ownedAwait.js";
 import type { Diagnostics } from "./providerFailure.js";
 import { bindRawAcquisitionFromSource } from "../acquisition/ownedAcquisition.js";
 import { createAttachEventCompiler } from "../c10/attachEvents.js";
@@ -29,46 +29,19 @@ import {
 } from "./sourceOperations.js";
 import { createInitialOwnedTransportWithAttemptCapability as createPair } from "./fixedTransport.js";
 
+import { sourceMethod, stop, need, seven, refuse } from "./initialActorData.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { readInitialLineage } from "../producer/lineageAuthority.js";
+import {
+  operationForInitialLineage,
+  retainInitialReceiptForLineage,
+} from "../producer/operationFactory.js";
+import { createInitialTransportForLineage } from "./fixedTransport.js";
+import { createInitialMaterialClassifiers } from "../material/classifiers.js";
+import { acquisitionForInitialLineage } from "../acquisition/ownedAcquisition.js";
+import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
 type Pair = ReturnType<typeof createPair>;
 
-function sourceMethod(object: unknown, name: string): SourceMethod {
-  need(object !== null && typeof object === "object" && !types.isProxy(object));
-  const d = Object.getOwnPropertyDescriptor(object, name);
-  need(
-    d &&
-      d.enumerable &&
-      "value" in d &&
-      typeof d.value === "function" &&
-      !types.isProxy(d.value),
-  );
-  return d.value as SourceMethod;
-}
-const stop = (): never => {
-  throw Error("INITIAL_ACTOR_STOP");
-};
-function need(value: unknown): asserts value {
-  if (!value) stop();
-}
-function seven(request: AttachRequest) {
-  const { scope, apiVersion, method, path, payload, key, firstDispatchedAt } =
-    request;
-  return Object.freeze({
-    scope,
-    apiVersion,
-    method,
-    path,
-    payload,
-    key,
-    firstDispatchedAt,
-  });
-}
-
-const refuse = (reason: string) =>
-  Object.freeze({
-    status: "not_dispatched",
-    reason,
-    operationalAuthority: false,
-  });
 /** Internal single-use actor. Empty class registry precedes every Source side effect. */
 export function captureInitialAttach() {
   need(arguments.length === 0);
@@ -76,6 +49,20 @@ export function captureInitialAttach() {
 }
 export function captureOwnedInitialAttachV2() {
   need(arguments.length === 0);
+  return initialKernel(null);
+}
+const actors = new WeakMap<object, ReturnType<typeof initialKernel>>();
+export function captureInitialAttachForLineage(token: object) {
+  need(arguments.length === 1);
+  readInitialLineage(token);
+  let actor = actors.get(token);
+  if (!actor) {
+    actor = initialKernel(token);
+    actors.set(token, actor);
+  }
+  return actor;
+}
+function initialKernel(token: object | null) {
   let consumed = false;
   return Object.freeze({
     async invoke() {
@@ -84,6 +71,31 @@ export function captureOwnedInitialAttachV2() {
       consumed = true;
       need(!types.isProxy(ENTRIES) && Array.isArray(ENTRIES));
       if (ENTRIES.length === 0) return refuse("no_qualified_native_class");
+
+      const OWNER =
+        token === null ? LEGACY_OWNER : ownerForInitialLineage(token);
+      const owned =
+        token === null ? legacyOwned : ownedForInitialLineage(token);
+      const classifyRetained =
+        token === null
+          ? classifyOwnedRetainedInitialAttachment
+          : (_raw: unknown) =>
+              createInitialMaterialClassifiers(token).retained();
+      const classifyFresh =
+        token === null
+          ? classifyOwnedInitialAttachment
+          : (raw: unknown) => {
+              const input = closed(raw, [
+                "attachRequest",
+                "originalBundle",
+                "currentBundle",
+                "observedAt",
+              ]);
+              return createInitialMaterialClassifiers(token).fresh(
+                input.currentBundle,
+                input.observedAt,
+              );
+            };
       let pair: Pair | null = null,
         failureControl: FailureControl | null = null,
         postEligible = false;
@@ -105,7 +117,10 @@ export function captureOwnedInitialAttachV2() {
       };
       try {
         OWNER.check();
-        const live = loadFixedInitialOperation();
+        const live =
+          token === null
+            ? loadFixedInitialOperation()
+            : (await owned(() => operationForInitialLineage(token))).operation;
         OWNER.check();
         if (live === null) return refuse("original_slot_unbound");
         const op = closed(live, [
@@ -121,7 +136,10 @@ export function captureOwnedInitialAttachV2() {
             op.originAssociation !== null &&
             typeof op.originAssociation === "object" &&
             !types.isProxy(op.originAssociation) &&
-            op.originAssociation === ORIGINAL_ORIGIN_ASSOCIATION,
+            op.originAssociation ===
+              (token === null
+                ? ORIGINAL_ORIGIN_ASSOCIATION
+                : readInitialLineage(token).originAssociation),
         );
         const takeOnce = sourceMethod(op.slot, "takeOnce");
         OWNER.check();
@@ -146,9 +164,7 @@ export function captureOwnedInitialAttachV2() {
           }),
         );
         OWNER.check();
-        const retained = await owned(() =>
-          classifyOwnedRetainedInitialAttachment(original),
-        );
+        const retained = await owned(() => classifyRetained(original));
         OWNER.check();
         if (retained.status !== "classified")
           return refuse("retained_material_unsupported");
@@ -169,7 +185,10 @@ export function captureOwnedInitialAttachV2() {
         if (matches.length !== 1) return refuse("retained_class_not_unique");
         const entry = matches[0];
         OWNER.check();
-        pair = createPair();
+        pair =
+          token === null
+            ? createPair()
+            : await owned(() => createInitialTransportForLineage(token));
         OWNER.check();
         need(
           pair.capability.assertSourceOperationBinding(
@@ -342,10 +361,20 @@ export function captureOwnedInitialAttachV2() {
         })();
         OWNER.check();
         failureControl = control;
-        const reader = bindRawAcquisitionFromSource(
-          OWNER,
-          activePair.transport.readTransport,
-        );
+        const reader =
+          token === null
+            ? bindRawAcquisitionFromSource(
+                OWNER,
+                activePair.transport.readTransport,
+              )
+            : {
+                async acquire(_expected: unknown) {
+                  const reader = await owned(() =>
+                    acquisitionForInitialLineage(token),
+                  );
+                  return reader.acquire();
+                },
+              };
         OWNER.check();
         let acquiredOnce = false;
         const acquire = async () => {
@@ -370,7 +399,7 @@ export function captureOwnedInitialAttachV2() {
         if (!acquired.ok) return refuse("current_read_unsupported");
 
         const fresh = await owned(() =>
-          classifyOwnedInitialAttachment({
+          classifyFresh({
             attachRequest: raw,
             originalBundle: original.originalBundle,
             currentBundle: acquired.bundle,
@@ -441,10 +470,13 @@ export function captureOwnedInitialAttachV2() {
           OWNER.check();
           return Reflect.apply(send, op.sink, [record, ack]);
         };
-        const compiler = createAttachEventCompiler(raw, {
-          send: sourceSend,
-          timeoutMs: 5000,
-        });
+        const compiler =
+          token === null
+            ? createAttachEventCompiler(raw, {
+                send: sourceSend,
+                timeoutMs: 5000,
+              })
+            : createInitialAttachEventCompiler(token);
         OWNER.check();
         await owned(() =>
           compiler.dispatch({ event: "dispatch", stage: "attach", request }),
@@ -489,6 +521,10 @@ export function captureOwnedInitialAttachV2() {
           }),
         );
         OWNER.check();
+        if (token !== null) {
+          await owned(() => retainInitialReceiptForLineage(token, receipt));
+          OWNER.check();
+        }
         await owned(() =>
           compiler.receipt({
             event: "receipt",

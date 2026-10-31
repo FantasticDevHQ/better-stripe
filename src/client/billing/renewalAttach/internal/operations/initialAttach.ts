@@ -55,9 +55,33 @@ type AttemptCustody = {
   response: Readonly<{ body: unknown; status: number }> | null;
   settled: boolean;
   returnedACK: boolean;
+  returnedOutput?: unknown;
   reserved: boolean;
 };
 const attempts = new WeakMap<object, AttemptCustody>();
+/** Exact successful return only; retained journal DATA never populates this reader. */
+export function readInitialAttachAcknowledgement(token: object) {
+  need(arguments.length === 1);
+  readInitialLineage(token);
+  const attempt = attempts.get(token);
+  if (!attempt?.returnedACK || !attempt.settled) return null;
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const output = attempt.returnedOutput;
+  const receipt = closed(output, [
+    "status",
+    "operationalAuthority",
+    "receipt",
+  ]).receipt;
+  owner.check();
+  return Object.freeze({
+    originalEntry: attempt.entry,
+    retainedPredicate: attempt.retainedPredicate,
+    freshPredicate: attempt.freshPredicate,
+    output,
+    receipt,
+  });
+}
 /** Consumes only actual settled attempt custody; stored DATA cannot register it. */
 export function takeInitialRecoveryRecord(token: object) {
   need(arguments.length === 1);
@@ -457,7 +481,10 @@ function initialKernel(token: object | null) {
         const result = admitInitialOutput(receipt, prepared, request);
         OWNER.check();
         control.takePostQuarantine();
-        if (attempt) attempt.returnedACK = true;
+        if (attempt) {
+          attempt.returnedOutput = result;
+          attempt.returnedACK = true;
+        }
         return result;
       } catch (error) {
         let live = false;

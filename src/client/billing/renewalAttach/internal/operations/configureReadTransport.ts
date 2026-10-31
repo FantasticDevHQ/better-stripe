@@ -3,7 +3,15 @@ import { OWNER } from "../originalOwner.js";
 import { closed, need, stop, type SourceMethod } from "./types.js";
 import { requiredJSONSnapshot } from "../material/requiredJson.js";
 import { resourceId } from "../../../renewalAggregate/shared.js";
-import { loadConfigureOwnedReadTransportSource } from "./sourceOperations.js";
+import {
+  loadConfigureOwnedReadTransportSource,
+  COMPILED_PREFLIGHT_ENTRIES,
+} from "./sourceOperations.js";
+import { readConfigureLineage } from "../producer/configureLineage.js";
+import { readAttachAcknowledgementForLineage } from "../producer/attachAcknowledgement.js";
+import { captureInitialStockRawDelegate } from "../producer/stockDelegateFactory.js";
+import { capturePreflightRecordDATA } from "../preflight/record.js";
+import { object } from "../producer/configureJournalData.js";
 
 const API = "2026-09-30.endive";
 type Resource = "subscription" | "price" | "customer" | "coupon" | "schedule";
@@ -159,8 +167,15 @@ export function createConfigureOwnedReadTransport() {
   OWNER.check();
   const source = loadConfigureOwnedReadTransportSource();
   OWNER.check();
+  return configureReadKernel(source, OWNER);
+}
+function configureReadKernel(
+  source: unknown,
+  owner: typeof OWNER,
+  guard?: () => void,
+) {
   const frame = closed(source, ["owner", "operation", "readPlan", "delegate"]);
-  need(frame.owner === OWNER);
+  need(frame.owner === owner);
   const operation = frame.operation,
     delegate = frame.delegate,
     readPlanReference = frame.readPlan,
@@ -179,7 +194,9 @@ export function createConfigureOwnedReadTransport() {
     }
     checking = true;
     try {
-      OWNER.check();
+      guard?.();
+      owner.check();
+      guard?.();
       if (closedOwner) stop();
     } catch {
       closedOwner = true;
@@ -281,5 +298,133 @@ export function createConfigureOwnedReadTransport() {
   return Object.freeze({
     transport: Object.freeze({ readTransport }),
     capability,
+  });
+}
+
+const admittedReads = new WeakSet<object>();
+/** Fixed, qualified readonly plan and actual stock promise; no caller frame. */
+export function createAdmittedConfigureReadTransport(token: object) {
+  need(
+    typeof token === "object" && token !== null && !admittedReads.has(token),
+  );
+  admittedReads.add(token);
+  need(arguments.length === 1);
+  need(
+    !types.isProxy(COMPILED_PREFLIGHT_ENTRIES) &&
+      Array.isArray(COMPILED_PREFLIGHT_ENTRIES) &&
+      COMPILED_PREFLIGHT_ENTRIES.length > 0,
+  );
+  const lineage = readConfigureLineage(token);
+  const acknowledgement = readAttachAcknowledgementForLineage(
+    lineage.parentToken,
+  );
+  const candidates = COMPILED_PREFLIGHT_ENTRIES.filter((entry) => {
+    const fields = closed(entry, ["originalEntry", "coversPreflight"]);
+    need(
+      typeof fields.coversPreflight === "function" &&
+        !types.isProxy(fields.coversPreflight),
+    );
+    return fields.originalEntry === acknowledgement.originalEntry;
+  });
+  need(candidates.length === 1);
+  const entry = candidates[0],
+    fields = closed(entry, ["originalEntry", "coversPreflight"]),
+    covers = fields.coversPreflight;
+  need(typeof covers === "function");
+  function guard() {
+    const current = readConfigureLineage(token);
+    need(
+      current.originalReservation === lineage.originalReservation &&
+        current.journal === lineage.journal &&
+        current.owner === lineage.owner,
+    );
+    need(
+      !types.isProxy(COMPILED_PREFLIGHT_ENTRIES) &&
+        Array.isArray(COMPILED_PREFLIGHT_ENTRIES) &&
+        COMPILED_PREFLIGHT_ENTRIES.includes(entry),
+    );
+    const now = closed(entry, ["originalEntry", "coversPreflight"]);
+    need(
+      now.originalEntry === acknowledgement.originalEntry &&
+        now.coversPreflight === covers &&
+        !types.isProxy(covers),
+    );
+    need(
+      readAttachAcknowledgementForLineage(lineage.parentToken) ===
+        acknowledgement,
+    );
+  }
+  guard();
+  const full = object(JSON.parse(lineage.reservation.recordJSON));
+  const retained = capturePreflightRecordDATA(full.configureRecord);
+  const expected = retained.configuration.preparation.expected;
+  const customer = retained.originalBundle.wireBillingCustomer.id;
+  need(typeof customer === "string");
+  const receipt = object(acknowledgement.receipt),
+    scheduleId = receipt.scheduleId;
+  need(typeof scheduleId === "string");
+  const rows = [
+    {
+      resource: "subscription",
+      path:
+        "/v1/subscriptions/" +
+        encodeURIComponent(expected.subscriptionId) +
+        query,
+    },
+    {
+      resource: "price",
+      path: "/v1/prices/" + encodeURIComponent(expected.targetPriceId),
+    },
+    {
+      resource: "customer",
+      path: "/v1/customers/" + encodeURIComponent(customer),
+    },
+    ...retained.originalBundle.couponReads.map((row) => {
+      need(typeof row.couponId === "string");
+      return {
+        resource: "coupon",
+        path: "/v1/coupons/" + encodeURIComponent(row.couponId),
+      };
+    }),
+    {
+      resource: "schedule",
+      path: "/v1/subscription_schedules/" + encodeURIComponent(scheduleId),
+    },
+  ];
+  const readPlan = Object.freeze(
+    rows.map((row, index) =>
+      Object.freeze({
+        ...row,
+        ordinal: index + 1,
+        method: "GET",
+        body: undefined,
+        options: Object.freeze({ apiVersion: API, maxNetworkRetries: 0 }),
+      }),
+    ),
+  );
+  const delegate = captureInitialStockRawDelegate(lineage.parentToken);
+  const pair = configureReadKernel(
+    { owner: lineage.owner, operation: token, readPlan, delegate },
+    lineage.owner,
+    guard,
+  );
+  need(
+    pair.capability.assertSourceOperationBinding(
+      token,
+      readPlan,
+      delegate,
+      delegate.rawRequest,
+    ),
+  );
+  need(pair.capability.reserveAcquisition());
+  guard();
+  return Object.freeze({
+    readTransport: pair.transport.readTransport,
+    guard,
+    entry,
+    covers,
+    acknowledgement,
+    retained,
+    scheduleId,
   });
 }

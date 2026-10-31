@@ -12,14 +12,13 @@ import type {
   ProjectedRenewalConfigurationV2,
   RenewalScheduleAttachmentReceiptV2,
 } from "../../../renewalV2/index.js";
-export function releasePreflight(
+export function releasePreflightDATA(
   record: PreflightRecord,
   currentEvidence: CurrentEvidence,
   request: ProjectedRenewalConfigurationV2,
   originalC6: ProjectedRenewalConfigurationV2,
   ackC3: RenewalScheduleAttachmentReceiptV2,
 ): PreflightOutput {
-  OWNER.check();
   need(
     equal(record.request, originalC6) &&
       equal(request, originalC6) &&
@@ -37,6 +36,24 @@ export function releasePreflight(
   for (const [path, value] of Object.entries(expected))
     need(captured.slots.get(path) === value);
   const output = freeze(materialize(captured.node));
-  OWNER.check();
   return output as PreflightOutput;
+}
+
+export function releasePreflight(
+  record: PreflightRecord,
+  currentEvidence: CurrentEvidence,
+  request: ProjectedRenewalConfigurationV2,
+  originalC6: ProjectedRenewalConfigurationV2,
+  ackC3: RenewalScheduleAttachmentReceiptV2,
+): PreflightOutput {
+  OWNER.check();
+  const output = releasePreflightDATA(
+    record,
+    currentEvidence,
+    request,
+    originalC6,
+    ackC3,
+  );
+  OWNER.check();
+  return output;
 }

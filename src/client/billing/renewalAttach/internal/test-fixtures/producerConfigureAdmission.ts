@@ -19,6 +19,10 @@ import { INITIAL_NS } from "./producerInitialDeclarations.js";
 const controls = vi.hoisted(() => ({
   entries: [{ coversRetained: () => true, coversFresh: () => true }],
   recovery: [] as { originalEntry: unknown; coversReplay(): boolean }[],
+  preflight: [] as {
+    originalEntry: unknown;
+    coversPreflight(...args: unknown[]): boolean;
+  }[],
   legacy: 0,
   selectors: 0,
 }));
@@ -30,6 +34,9 @@ vi.mock("../operations/sourceOperations.js", () => {
   return {
     COMPILED_INITIAL_ENTRIES: controls.entries,
     COMPILED_RECOVERY_ENTRIES: controls.recovery,
+    COMPILED_PREFLIGHT_ENTRIES: controls.preflight,
+    loadOwnedConfigureOperation: poison,
+    loadConfigureOwnedReadTransportSource: poison,
     ORIGINAL_ORIGIN_ASSOCIATION: null,
     loadFixedInitialOperation: poison,
     loadFixedExplicitRecoveryOperation: poison,
@@ -69,6 +76,7 @@ export const admissionControls = controls;
 const canonical = (value: unknown) => JSON.stringify(renewalSnapshot(value));
 beforeEach(() => {
   controls.legacy = 0;
+  controls.preflight.splice(0);
   controls.selectors = 0;
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
@@ -93,13 +101,19 @@ afterEach(() => {
 async function setup(
   input: Parameters<Parameters<typeof initialOperations>[0]>[0],
   completion: { mode: string; posts: number },
+  hooks: { beforeFetch?: (path: string, method: string) => Promise<void> },
 ) {
   const { journal, fresh, sdk, ctx, index } = input;
   assert(fresh.result.disposition === "acquired" && fresh.call);
   const parentReservation = fresh.result.reservation;
   const baseline = makeConfigureReadNativeBaseline();
   const source = captureRetainedInput(baseline.original);
-  const calls: { method: string; path: string }[] = [];
+  const calls: {
+    method: string;
+    path: string;
+    query: string;
+    hasBody: boolean;
+  }[] = [];
   const routes = new Map<string, unknown>([
     ["/v1/subscriptions/sub_original", source.originalBundle.wireSubscription],
     ["/v1/prices/price_target", source.originalBundle.wireTargetPrice],
@@ -110,9 +124,16 @@ async function setup(
     ]),
   ]);
   vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
-    const path = new URL(String(url)).pathname;
+    const parsed = new URL(String(url));
+    const path = parsed.pathname;
     const method = init?.method ?? "";
-    calls.push({ method, path });
+    calls.push({
+      method,
+      path,
+      query: parsed.search,
+      hasBody: init?.body !== undefined,
+    });
+    await hooks.beforeFetch?.(path, method);
     if (method === "POST") {
       completion.posts++;
       if (completion.mode === "replay" && completion.posts === 1)
@@ -267,6 +288,30 @@ async function setup(
     }
     return core.recoverAttach().invoke();
   }
+  function configureReads(value: Awaited<ReturnType<typeof child>>) {
+    const configuration = value.record.configureRecord.configuration;
+    const current = {
+      subscription: structuredClone(configuration.freshSubscription),
+      price: structuredClone(configuration.targetPrice),
+      customer: structuredClone(configuration.billingCustomer),
+      schedule: structuredClone(configuration.schedule),
+      coupons: structuredClone(source.originalBundle.couponReads),
+    };
+    routes.set("/v1/subscriptions/sub_original", current.subscription);
+    routes.set("/v1/prices/price_target", current.price);
+    routes.set("/v1/customers/cus_buyer", current.customer);
+    routes.set(
+      "/v1/subscription_schedules/" + baseline.schedule.id,
+      current.schedule,
+    );
+    for (const row of current.coupons)
+      routes.set(
+        "/v1/coupons/" + encodeURIComponent(String(row.couponId)),
+        row.wireCoupon,
+      );
+    vi.setSystemTime(baseline.configurationTime * 1000);
+    return current;
+  }
   async function eventsFor(value: Awaited<ReturnType<typeof child>>) {
     const request = value.record.configureRecord.request;
     const transport = {
@@ -301,6 +346,7 @@ async function setup(
     source,
     complete,
     eventsFor,
+    configureReads,
   };
 }
 export async function configureAdmissionFixture(
@@ -316,13 +362,14 @@ export async function configureAdmissionFixture(
     ) => Promise<void>;
     afterAppend?: () => Promise<void>;
     beforeAppend?: () => Promise<void>;
+    beforeFetch?: (path: string, method: string) => Promise<void>;
   } = {},
 ) {
   const baseline = makeConfigureReadNativeBaseline();
   const completion = { mode: "initial", posts: 0, appends: 0 };
   await initialOperations(
     async (input) => {
-      const h = await setup(input, completion);
+      const h = await setup(input, completion, options);
       try {
         await work(h);
       } finally {

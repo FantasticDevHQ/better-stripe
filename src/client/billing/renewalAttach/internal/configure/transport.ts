@@ -357,9 +357,13 @@ export function createConfigureReplayTransport() {
   return build(loadConfigureReplayTransportSource);
 }
 
-/** Actual completed preflight custody only; no caller-supplied frame or Owner. */
-export function createAdmittedConfigureWriteTransport(token: object) {
-  const source = captureAdmittedConfigureWriteFrame(token, arguments.length);
+type QualifiedPair = ReturnType<typeof qualifiedWrite>;
+const qualifiedWrites = new WeakMap<object, QualifiedPair>();
+const replayCaptures = new WeakSet<object>();
+function bindQualified(
+  source: ReturnType<typeof captureAdmittedConfigureWriteFrame>,
+  token: object,
+) {
   const pair = configureWriteKernel(source.frame, source.owner, source.guard);
   need(
     pair.capability.assertSourceOperationBinding(
@@ -373,5 +377,34 @@ export function createAdmittedConfigureWriteTransport(token: object) {
   );
   need(pair.capability.reserveAcquisition());
   source.guard();
-  return Object.freeze({ ...pair, ...source });
+  return Object.freeze({ ...source, ...pair });
+}
+function qualifiedWrite(token: object, arity: number) {
+  return bindQualified(captureAdmittedConfigureWriteFrame(token, arity), token);
+}
+/** Actual completed preflight custody only; no caller-supplied frame or Owner. */
+export function createAdmittedConfigureWriteTransport(token: object) {
+  const pair = qualifiedWrite(token, arguments.length);
+  qualifiedWrites.set(token, pair);
+  return pair;
+}
+/** Original actual pair identity for trusted producers, never reconstructed DATA. */
+export function readOriginalConfigureWriteTransport(token: object) {
+  need(arguments.length === 1);
+  const pair = qualifiedWrites.get(token);
+  need(pair);
+  pair.guard();
+  return pair;
+}
+/** Separate read generation; explicit recovery admission remains required by its actor. */
+export function createAdmittedConfigureReplayTransport(token: object) {
+  need(
+    typeof token === "object" && token !== null && !replayCaptures.has(token),
+  );
+  replayCaptures.add(token);
+  need(arguments.length === 1);
+  const source = readOriginalConfigureWriteTransport(token);
+  const disposition = source.transport.postDisposition();
+  need(disposition === "REJECTED" || disposition === "FULFILLED_UNVERIFIED");
+  return bindQualified(source, token);
 }

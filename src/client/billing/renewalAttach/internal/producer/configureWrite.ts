@@ -1,3 +1,9 @@
+import {
+  createConfigureWriteAttempt,
+  type ConfigureCompletion,
+} from "./configureAttemptAuthority.js";
+export { readAdmittedConfigureAcknowledgement } from "./configureAcknowledgement.js";
+export { readAdmittedConfigureWriteAttempt } from "./configureAttemptAuthority.js";
 import { freeze } from "../material/nodeKernel.js";
 import { closed as closedFields } from "../operations/types.js";
 import { readConfigureLineage } from "./configureLineage.js";
@@ -42,29 +48,11 @@ function matchesCurrentBundle(
   });
 }
 type Pair = ReturnType<typeof createAdmittedConfigureWriteTransport>;
-type ACK = ReturnType<typeof admitConfigureACK>;
-type Completion = Readonly<{
-  output: ACK;
-  receipt: unknown;
-  rawReceipt: unknown;
-  acknowledgement: Pair["preflight"]["acknowledgement"];
-  originalEntry: unknown;
-  configureEntry: unknown;
-  coversConfigure: unknown;
-  operationalAuthority: false;
-}>;
-type Attempt = { pair: Pair; receipt: unknown; rawReceipt: unknown };
-const attempts = new WeakMap<object, Attempt>();
-const completions = new WeakMap<
-  object,
-  { view: Completion; guard: () => void }
->();
 /** One fixed initial configure attempt. No replay, caller frame or output registration. */
 export function captureAdmittedConfigureWrite(token: object) {
   const pair = createAdmittedConfigureWriteTransport(token);
   need(arguments.length === 1);
-  const attempt: Attempt = { pair, receipt: null, rawReceipt: null };
-  attempts.set(token, attempt);
+  const attempt = createConfigureWriteAttempt(token, pair);
   const lineage = readConfigureLineage(token),
     owned = ownedAwaitForInitialLineage(lineage.parentToken);
   const compiler = createAdmittedConfigureEventCompiler(token),
@@ -101,6 +89,7 @@ export function captureAdmittedConfigureWrite(token: object) {
       need(!used);
       used = true;
       need(arguments.length === 0);
+      attempt.started = true;
       let actualError: Error | null = null;
       try {
         guard();
@@ -173,6 +162,7 @@ export function captureAdmittedConfigureWrite(token: object) {
         );
         guard();
         releasePreflightDATA(record, evidence, fresh, original, attachment);
+        attempt.freshEvidence = freeze(evidence);
         await checked(() => assertConfigurePreflightFrontier(token));
         const dispatch = {
           event: "dispatch",
@@ -191,6 +181,10 @@ export function captureAdmittedConfigureWrite(token: object) {
         }
         if (reply.outcome !== "fulfilled_safe")
           return configureControl("configure_unknown", "post_unverified");
+        attempt.response = Object.freeze({
+          body: reply.body,
+          transport: reply.transport,
+        });
         const response = {
           event: "response",
           stage: "configure",
@@ -224,6 +218,7 @@ export function captureAdmittedConfigureWrite(token: object) {
           events,
           receipt.binding,
         );
+        attempt.retention = freeze(retention);
         const known = {
           receiptJSON,
           receiptBinding: receipt.binding,
@@ -254,7 +249,7 @@ export function captureAdmittedConfigureWrite(token: object) {
             known,
           ),
         );
-        const view: Completion = Object.freeze({
+        const view: ConfigureCompletion = Object.freeze({
           output,
           receipt: returned.receipt,
           rawReceipt: returned.rawReceipt,
@@ -267,7 +262,7 @@ export function captureAdmittedConfigureWrite(token: object) {
         guard();
         // No callback, reflection or Owner sample follows the final gate before discard.
         pair.capability.discardFulfilledQuarantine();
-        completions.set(token, { view, guard });
+        attempt.completion = { view, guard };
         return output;
       } catch (error) {
         let live = false;
@@ -285,33 +280,9 @@ export function captureAdmittedConfigureWrite(token: object) {
             live ? "post_unverified" : "owner_closed_after_post",
           );
         throw error;
+      } finally {
+        attempt.settled = true;
       }
     },
   });
-}
-/** Actual returned ACK custody only, without accepting any copied receipt or output. */
-export function readAdmittedConfigureAcknowledgement(token: object) {
-  need(arguments.length === 1);
-  const completed = completions.get(token);
-  need(completed);
-  completed.guard();
-  return completed.view;
-}
-
-/** Private live attempt DATA, never an ACK registration or replay grant. */
-export function readAdmittedConfigureWriteAttempt(token: object) {
-  need(arguments.length === 1);
-  const attempt = attempts.get(token);
-  need(attempt);
-  attempt.pair.guard();
-  const view = Object.freeze({
-    postDisposition: attempt.pair.transport.postDisposition(),
-    receiptKnown: attempt.receipt !== null,
-    receipt: attempt.receipt,
-    rawReceipt: attempt.rawReceipt,
-    returned: completions.has(token),
-    operationalAuthority: false as const,
-  });
-  attempt.pair.guard();
-  return view;
 }

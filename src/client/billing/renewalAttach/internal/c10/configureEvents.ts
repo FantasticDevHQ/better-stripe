@@ -1,3 +1,4 @@
+import { readConfigureRecoveryAuthority } from "../producer/configureAttemptAuthority.js";
 import type { CapturedNode } from "./eventCodec.js";
 import type {
   ProjectedRenewalConfigurationV2,
@@ -38,6 +39,42 @@ export function createAdmittedConfigureEventCompiler(token: object) {
   const guard = () => {
     readConfigureLineage(token);
   };
+  const channel = createGuardedInitialStageChannel(
+    lineage.parentToken,
+    {
+      timeoutMs: 5000,
+      send(
+        record: Parameters<typeof send>[0],
+        ack: Parameters<typeof send>[1],
+      ) {
+        guard();
+        return send(record, (value) => {
+          guard();
+          ack(value);
+          guard();
+        });
+      },
+    },
+    guard,
+  );
+  return configureEventCompiler(lineage.configuration, channel);
+}
+const recoveryChannels = new WeakSet<object>();
+/** Distinct original-journal sender after synchronous actual recovery reservation. */
+export function createRecoveryConfigureEventCompiler(recovery: object) {
+  need(
+    typeof recovery === "object" &&
+      recovery !== null &&
+      !recoveryChannels.has(recovery),
+  );
+  recoveryChannels.add(recovery);
+  need(arguments.length === 1);
+  const state = readConfigureRecoveryAuthority(recovery);
+  const lineage = readConfigureLineage(state.token);
+  const guard = () => {
+    readConfigureRecoveryAuthority(recovery);
+  };
+  const send = journalWorkForConfigureLineage(state.token).captureSend();
   const channel = createGuardedInitialStageChannel(
     lineage.parentToken,
     {

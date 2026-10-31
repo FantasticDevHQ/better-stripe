@@ -28,10 +28,9 @@
 
 ## [0.98.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.97.1...v0.98.0) (2026-10-31)
 
-
 ### Features
 
-* bind initial renewal execution to invocation lineage ([#438](https://github.com/FantasticDevHQ/better-stripe/issues/438)) ([b64cfe6](https://github.com/FantasticDevHQ/better-stripe/commit/b64cfe64ecc2d35d5ca4d9aafd7eb9bc0e708a4d))
+- bind initial renewal execution to invocation lineage ([#438](https://github.com/FantasticDevHQ/better-stripe/issues/438)) ([b64cfe6](https://github.com/FantasticDevHQ/better-stripe/commit/b64cfe64ecc2d35d5ca4d9aafd7eb9bc0e708a4d))
 
 ## [0.97.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.97.0...v0.97.1) (2026-10-31)
 

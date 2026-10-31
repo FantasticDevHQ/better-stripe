@@ -71,11 +71,22 @@ Node-only mechanics establish no provider custody or native qualification and
 expose no caller-supplied clock, client or qualification API. The public
 preparation and receipt constructors are unchanged.
 
-The maintained SDK constructor also records an inert identity for its private
-renewal bridge. While operational profiles remain unqualified, the bridge
-refuses before invoking its client selector or entry. Normal construction and
-context reads remain available. This internal setup adds no public schedule
-writer.
+The maintained SDK constructor records an inert identity for its private renewal
+bridge. A fixed internal journal entry can bind an actual registered Action and
+an operation ID to that SDK instance and its component. This binding supports
+unsigned journal DATA: it does not select a Stripe client, create a clock or
+Owner, or qualify provider execution. The separate operational entry continues
+to refuse while execution profiles are unqualified. Normal construction and
+context reads remain available; no public schedule writer is added.
+
+Only the class-bound journal facade can retain a process-local identity for its
+original fulfilled `acquired` reservation call. Existing or conflicting replies,
+queries and generic DATA facades create no such identity. Consuming a valid call
+spends it before checking the expected class journal, so a wrong journal or
+failed check cannot make it reusable. The returned reservation and local tag
+remain unsigned bookkeeping DATA; copies cannot create or revive a call, a live
+Owner or provider authority. A handle lost across an Action return, restart or
+reply loss is not reconstructed from stored records or retried with a new key.
 
 ## Component operation journal
 
@@ -222,6 +233,23 @@ These storage APIs do not activate the internal actors or add a public SDK
 schedule writer. Host policy, actual runtime ownership, provider qualification
 and restart recovery require their own integration. Stored DATA never revives an
 old owner, resets a deadline or establishes delivery to a disconnected caller.
+
+The private Action journal adapter binds one operation ID and captures eight
+fixed generated references with the original Action methods and receiver. It
+forwards complete component results, checks captured method identities before
+each call, and rejects attempts to supply another operation ID or append a
+foreign reservation. Host-authorized creation remains a separate component
+operation. The adapter has no public package export, provider transport, live
+owner or fresh execution handle. An acquired or existing reservation returned
+through it is still storage DATA.
+
+Its private C10 sender requires the unchanged reservation object returned by
+that same adapter's actual reservation call. It canonicalizes the event, awaits
+the fixed append, and validates the complete matching commit reply before
+invoking the original acknowledgement callback once. Failure closes the sender
+without retry or fallback. A committed event survives a later parent Action
+failure; neither the callback nor the retained reply establishes live ownership,
+provider provenance or delivery to the caller.
 
 ## Internal initial material consistency
 

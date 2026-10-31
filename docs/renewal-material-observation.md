@@ -180,3 +180,53 @@ pending/effective classes and invoice-pointer limitation. Historical and termina
 provider qualification, successor invoice evidence and genuine Source binding
 remain separate requirements. These sequential reads do not atomically exclude other provider
 writers or establish payment, authentication or entitlement.
+
+## Private evidence analyzer development
+
+The private version 1 evidence interface separates schedule lifecycle facts,
+current material, historical snapshot consistency and invoice correlation. Its
+`apiVersion` names the analyzer's supported `2026-09-30.endive` profile. It does
+not authenticate the supplied resource bodies.
+
+The private analyzer admits the complete bounded input and reconstructs the
+original V2 configuration before reporting owned lifecycle facts. Canceled and
+released facts do not imply natural completion. Completion requires the complete
+owned phase history and defaults, a valid terminal timestamp and a proven target
+end. Supplied configure receipts are reconstructed and checked against the
+complete original configuration and the maintained full historical baseline.
+That baseline alone can agree on an arbitrary future end, so this profile also
+requires the existing narrow UTC weekly requested-duration predicate. Unproven
+calendar-duration profiles remain `unknown`; no month arithmetic is invented.
+The same weekly predicate remains required when the configure receipt is null.
+It has no public SDK export or provider transport. Existing observation methods
+retain their documented behavior.
+
+The input keeps complete raw resources and distinguishes absent fields from
+own `null` values. Current material reuses the maintained full attached, pending
+and active comparison, including settings, unique item identity and native
+period. If `latest_invoice` advances, the analyzer first recomputes the complete
+paired invoice proof. Only then may a separate comparison copy replace that
+single pointer with its retained original value; the actual input, original C1
+source and all request hashes remain unchanged. Full material drift still
+refuses a match. A valid billing line alone cannot establish full effectiveness.
+
+Invoice correlation uses the pinned Endive parent/pricing paths, the original
+Subscription and its actual item identities, and exact native `(start, end)`
+pairs. Original invoice reasons are `subscription_create` or `subscription_cycle`;
+renewal reason is `subscription_cycle`. The first profile checks every supplied
+page, at most two pages of 100 rows, and requires one eligible line. Incomplete,
+duplicate or nonprogressing inventories remain unknown. Decimal strings are
+compared exactly without floating-point conversion and retain their wire text.
+No `end - 1` or calendar approximation is applied. Invoice status, including
+`paid`, provides no payment, settlement, entitlement or exclusive-cause authority.
+
+A supplied historical snapshot is checked as complete unsigned material for the
+same original operation. It can match while live terminal or settings data
+conflicts; the axes remain separate. Terminal-only reads do not stand in for a
+full historical active snapshot. These comparisons do not prove that a snapshot
+was observed at an actual past time or supply a durable acquisition channel.
+
+The analyzer is private and performs no provider calls. Existing public and
+owned observation methods retain their output layouts and read profile. Actual
+Endive provider qualification, historical acquisition and operational Source
+binding remain separate requirements.

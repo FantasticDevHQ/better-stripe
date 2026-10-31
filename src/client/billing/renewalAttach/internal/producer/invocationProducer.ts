@@ -1,5 +1,6 @@
 import { mintInitialLineage, readInitialLineage } from "./lineageAuthority.js";
 import { captureLiveAttachRecovery } from "./recoveryEntry.js";
+import { readAttachAcknowledgementForLineage } from "./attachAcknowledgement.js";
 import { ownerForInitialLineage, type InitialOwner } from "./ownerFactory.js";
 import { ownedAwaitForInitialLineage } from "./ownedAwaitFactory.js";
 import { stockDelegateForInitialLineage } from "./stockDelegateFactory.js";
@@ -24,6 +25,9 @@ export type InitialInvocationCore = Readonly<{
   acquire(): Promise<RawAcquisitionResult>;
   initialAttach(): ReturnType<typeof captureInitialAttachForLineage>;
   recoverAttach(): ReturnType<typeof captureLiveAttachRecovery>;
+  attachAcknowledgement(): ReturnType<
+    typeof readAttachAcknowledgementForLineage
+  >;
   operationalAuthority: false;
 }>;
 
@@ -89,6 +93,10 @@ export async function captureInitialInvocationCore(
       recoverAttach() {
         if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
         return captureLiveAttachRecovery(token);
+      },
+      attachAcknowledgement() {
+        if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
+        return readAttachAcknowledgementForLineage(token);
       },
       operationalAuthority: false,
     });

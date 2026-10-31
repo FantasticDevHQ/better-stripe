@@ -202,6 +202,29 @@ ordinary Node and Convex-test mechanics with controlled HTTP, not native or
 provider qualification. Cross-process recovery cannot revive this Owner or
 reconstruct actual live response custody from stored DATA.
 
+The core's private `attachAcknowledgement()` reader retains the exact admitted
+output and receipt identities from one successful initial attachment, explicit
+replay or no-POST acknowledgement resumption. Each completion pipeline records
+its own return privately. The reader accepts no replacement receipt or context,
+checks the original Owner and entry predicates on every successful read, and
+returns one canonical process-local view with `operationalAuthority: false`.
+Serializing that view discards its process-local custody identity.
+
+Committed receipt DATA and even a complete receipt3 event can exist while the
+actual pipeline is still awaiting a journal reply. The reader refuses until the
+pipeline completes its successful internal return. An absent completion is not
+cached and does not construct an Owner, sample clocks or allocate a timer. A
+later successful read uses the existing original Owner and budget. Retirement,
+changed predicates, removed class eligibility, copied DATA or unknown lineage
+identities refuse. The same checks apply to cached views, and separate SDK roots
+retain distinct output and receipt identities.
+
+This reader supports future configure-source binding to the actual attachment
+receipt. Configure still needs its separately authorized stage operation,
+request/key, journal protocol and runtime factories. The internal return record
+does not establish delivery to a disconnected caller, qualify a provider profile
+or create a public scheduling entrypoint.
+
 ## Component operation journal
 
 The component's `renewalOperations` functions retain host-authorized operation

@@ -53,6 +53,26 @@ import {
 } from "./output.js";
 import { admitReplayMaterial, assertReplayMaterial } from "./material.js";
 
+const returnedAcknowledgements = new WeakMap<
+  object,
+  Readonly<{
+    originalEntry: unknown;
+    retainedPredicate: SourceMethod;
+    freshPredicate: SourceMethod;
+    output: unknown;
+    receipt: unknown;
+  }>
+>();
+/** Actual replay completion identity, independent of stored C3 receipt DATA. */
+export function readReplayAttachAcknowledgement(token: object) {
+  need(arguments.length === 1);
+  readInitialLineage(token);
+  const actual = returnedAcknowledgements.get(token);
+  if (!actual) return null;
+  ownerForInitialLineage(token).check();
+  return actual;
+}
+
 type Pair = ReturnType<typeof createPair>;
 
 function sourceMethod(object: unknown, name: string): SourceMethod {
@@ -485,6 +505,25 @@ function recoveryKernel(token: object | null) {
               );
         OWNER.check();
         control.takePostQuarantine();
+        if (token !== null) {
+          need(frame);
+          returnedAcknowledgements.set(
+            token,
+            Object.freeze({
+              originalEntry: op.originalEntry,
+              retainedPredicate,
+              freshPredicate: frame.snapshot.freshPredicate,
+              output: result,
+              receipt: closed(result, [
+                "kind",
+                "status",
+                "operationalAuthority",
+                "receipt",
+                "observation",
+              ]).receipt,
+            }),
+          );
+        }
         return result;
       } catch (error) {
         let live = false;

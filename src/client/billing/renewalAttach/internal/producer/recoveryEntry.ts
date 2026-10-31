@@ -11,11 +11,31 @@ import {
   seven,
   sourceMethod,
 } from "../operations/initialActorData.js";
-import { closed } from "../operations/types.js";
+import { closed, type SourceMethod } from "../operations/types.js";
 import { createRecoveryAttachEventCompiler } from "../c10/attachEvents.js";
 import { constructRenewalScheduleAttachmentReceiptV2 as c3 } from "../../../renewalV2/index.js";
 import { retainInitialReceiptForLineage } from "./operationFactory.js";
 import { admitInitialOutput } from "../recovery/material.js";
+
+const returnedAcknowledgements = new WeakMap<
+  object,
+  Readonly<{
+    originalEntry: unknown;
+    retainedPredicate: SourceMethod;
+    freshPredicate: SourceMethod;
+    output: unknown;
+    receipt: unknown;
+  }>
+>();
+/** Actual no-POST acknowledgement completion only, not a retained receipt lookup. */
+export function readResumedAttachAcknowledgement(token: object) {
+  need(arguments.length === 1);
+  readInitialLineage(token);
+  const actual = returnedAcknowledgements.get(token);
+  if (!actual) return null;
+  ownerForInitialLineage(token).check();
+  return actual;
+}
 
 const actors = new WeakMap<object, ReturnType<typeof construct>>();
 export function captureLiveAttachRecovery(token: object) {
@@ -103,6 +123,20 @@ function construct(token: object) {
         snapshot.request,
       );
       owner.check();
+      returnedAcknowledgements.set(
+        token,
+        Object.freeze({
+          originalEntry: snapshot.entry,
+          retainedPredicate: snapshot.retainedPredicate,
+          freshPredicate: snapshot.freshPredicate,
+          output: admitted,
+          receipt: closed(admitted, [
+            "status",
+            "operationalAuthority",
+            "receipt",
+          ]).receipt,
+        }),
+      );
       return admitted;
     },
   });

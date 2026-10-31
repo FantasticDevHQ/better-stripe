@@ -22,6 +22,10 @@ import {
   type RawReadTransport,
 } from "./rawWireSource.js";
 import { acquireCouponJoins } from "./rawCouponJoins.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { ownedAwaitForInitialLineage } from "../producer/ownedAwaitFactory.js";
+import { operationForInitialLineage } from "../producer/operationFactory.js";
+import { createInitialTransportForLineage } from "../operations/fixedTransport.js";
 const need: (x: unknown) => asserts x = (x) => {
   if (!x) throw Error("RAW_ACQUISITION_STOP");
 };
@@ -47,6 +51,44 @@ type RawSuccess = Readonly<{
 export type RawAcquisitionResult = typeof STOP | RawSuccess;
 export type RawConfigureAcquisitionResult =
   typeof STOP | (RawSuccess & Readonly<{ schedule: Record<string, unknown> }>);
+type InitialReader = Readonly<{ acquire(): Promise<RawAcquisitionResult> }>;
+const initialReaders = new WeakMap<object, Promise<InitialReader>>();
+
+/** Fixed source, transport and expected material; no replacement inputs. */
+export function acquisitionForInitialLineage(
+  token: object,
+): Promise<InitialReader> {
+  if (arguments.length !== 1) throw Error("RAW_ACQUISITION_STOP");
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const owned = ownedAwaitForInitialLineage(token);
+  let pending = initialReaders.get(token);
+  if (!pending) {
+    pending = owned(async () => {
+      try {
+        const frame = await operationForInitialLineage(token);
+        const pair = await createInitialTransportForLineage(token);
+        owner.check();
+        const reader = createSelectedRawAcquisition(
+          owner,
+          captureTransport(pair.transport.readTransport),
+        );
+        return Object.freeze({
+          acquire() {
+            if (arguments.length !== 0) throw Error("RAW_ACQUISITION_STOP");
+            return owned(() => reader.acquire(frame.expected));
+          },
+        });
+      } catch (error) {
+        owner.retire();
+        throw error;
+      }
+    });
+    initialReaders.set(token, pending);
+  }
+  const captured = pending;
+  return owned(() => captured);
+}
 const observed = z.union([
   z.null(),
   resourceId("sub_sched"),

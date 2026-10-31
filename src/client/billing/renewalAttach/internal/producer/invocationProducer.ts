@@ -5,6 +5,12 @@ import { stockDelegateForInitialLineage } from "./stockDelegateFactory.js";
 import type { createClassActionOperationJournal } from "../operationJournal.js";
 import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
 import { createInitialMaterialClassifiers } from "../material/classifiers.js";
+import { createInitialTransportForLineage } from "../operations/fixedTransport.js";
+import {
+  acquisitionForInitialLineage,
+  type RawAcquisitionResult,
+} from "../acquisition/ownedAcquisition.js";
+import { captureInitialAttachForLineage } from "../operations/initialAttach.js";
 
 export type InitialInvocationCore = Readonly<{
   owner: InitialOwner;
@@ -13,6 +19,9 @@ export type InitialInvocationCore = Readonly<{
   owned<T>(work: () => T | PromiseLike<T>): Promise<T>;
   attachEvents(): ReturnType<typeof createInitialAttachEventCompiler>;
   material: ReturnType<typeof createInitialMaterialClassifiers>;
+  transport(): ReturnType<typeof createInitialTransportForLineage>;
+  acquire(): Promise<RawAcquisitionResult>;
+  initialAttach(): ReturnType<typeof captureInitialAttachForLineage>;
   operationalAuthority: false;
 }>;
 
@@ -62,6 +71,19 @@ export async function captureInitialInvocationCore(
         return createInitialAttachEventCompiler(token);
       },
       material: createInitialMaterialClassifiers(token),
+      async transport() {
+        if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
+        return owned(() => createInitialTransportForLineage(token));
+      },
+      async acquire() {
+        if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
+        const reader = await owned(() => acquisitionForInitialLineage(token));
+        return owned(() => reader.acquire());
+      },
+      initialAttach() {
+        if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
+        return captureInitialAttachForLineage(token);
+      },
       operationalAuthority: false,
     });
   } catch (error) {

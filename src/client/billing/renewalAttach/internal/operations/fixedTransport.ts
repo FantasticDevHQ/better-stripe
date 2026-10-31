@@ -9,7 +9,6 @@ import {
   freezeJSON,
   type AttachRequest,
   type ReadRow,
-  type SourceMethod,
 } from "./types.js";
 import {
   safeDiagnostics,
@@ -23,34 +22,14 @@ import {
   loadOwnedTransportSource,
 } from "./sourceOperations.js";
 import { OWNER } from "../originalOwner.js";
-
-function sourceFunction(
-  service: unknown,
-  name: string,
-): { receiver: object; method: SourceMethod } {
-  need(service && typeof service === "object" && !types.isProxy(service));
-  const d = Object.getOwnPropertyDescriptor(service, name);
-  need(d && "value" in d && typeof d.value === "function");
-  // The function is selected once from validated own data, preserving its receiver.
-  return { receiver: service, method: d.value as SourceMethod };
-}
-
-/** Internal fixed attach profile: 43 reads and one POST, never a 44-GET profile. */
-function captureSource(raw: unknown) {
-  const b = closed(raw, ["owner", "request", "readPlan", "delegate"]);
-  need(b.owner === OWNER);
-  const owner = sourceFunction(b.owner, "check"),
-    delegate = sourceFunction(b.delegate, "rawRequest");
-  const { request, plan } = captureRequestAndReads(b.request, b.readPlan);
-  return Object.freeze({
-    owner: owner.receiver,
-    check: owner.method,
-    delegate: delegate.receiver,
-    send: delegate.method,
-    request,
-    plan: Object.freeze(plan),
-  });
-}
+import {
+  captureLegacyTransportSource,
+  captureInitialTransportSource,
+  checkTransportOwnerResult as checkOwnerResult,
+} from "./transportCapture.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { ownedAwaitForInitialLineage } from "../producer/ownedAwaitFactory.js";
+import { operationForInitialLineage } from "../producer/operationFactory.js";
 
 function validRead(
   row: ReadRow,
@@ -64,22 +43,6 @@ function validRead(
   need(
     value.apiVersion === row.options.apiVersion &&
       value.maxNetworkRetries === 0,
-  );
-}
-
-function checkOwnerResult(value: unknown) {
-  const x = closed(value, ["wallMs", "ns", "nowSeconds", "retired"]);
-  need(
-    typeof x.wallMs === "number" &&
-      Number.isSafeInteger(x.wallMs) &&
-      x.wallMs >= 0 &&
-      typeof x.ns === "bigint" &&
-      x.ns >= 0n &&
-      x.ns <= 18446744073709551615n &&
-      typeof x.nowSeconds === "number" &&
-      Number.isSafeInteger(x.nowSeconds) &&
-      x.nowSeconds === Math.floor(x.wallMs / 1000) &&
-      x.retired === false,
   );
 }
 
@@ -169,9 +132,12 @@ type Association = Readonly<{
   readPlan: unknown;
   delegate: unknown;
 }>;
-function build(source: unknown, association?: Association) {
-  const b = captureSource(source),
-    generation = Object.freeze({});
+function build(source: unknown, association?: Association, token?: object) {
+  const b =
+    token === undefined
+      ? captureLegacyTransportSource(source)
+      : captureInitialTransportSource(token, source);
+  const generation = Object.freeze({});
   let ordinal = 0,
     index = 0,
     pending: Attempt | null = null,
@@ -571,4 +537,45 @@ export function createInitialOwnedTransportWithAttemptCapability() {
 export function createRecoveryOwnedTransportWithAttemptCapability() {
   need(arguments.length === 0);
   return createAssociatedPair(loadRecoveryOwnedTransportSource);
+}
+
+const initialTransports = new WeakMap<
+  object,
+  Promise<ReturnType<typeof build>>
+>();
+/** Canonical private transport, constructed only from the original lineage. */
+export function createInitialTransportForLineage(token: object) {
+  if (arguments.length !== 1) throw Error("INITIAL_OPERATION_UNBOUND");
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const owned = ownedAwaitForInitialLineage(token);
+  let pending = initialTransports.get(token);
+  if (!pending) {
+    pending = owned(async () => {
+      try {
+        const frame = await operationForInitialLineage(token);
+        owner.check();
+        return build(
+          {
+            owner,
+            request: frame.request,
+            readPlan: frame.operation.readPlan,
+            delegate: frame.operation.delegate,
+          },
+          {
+            operation: frame.operation,
+            readPlan: frame.operation.readPlan,
+            delegate: frame.operation.delegate,
+          },
+          token,
+        );
+      } catch (error) {
+        owner.retire();
+        throw error;
+      }
+    });
+    initialTransports.set(token, pending);
+  }
+  const captured = pending;
+  return owned(() => captured);
 }

@@ -28,10 +28,9 @@
 
 ## [0.94.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.93.0...v0.94.0) (2026-10-31)
 
-
 ### Features
 
-* retain class-bound renewal journal call identities ([#426](https://github.com/FantasticDevHQ/better-stripe/issues/426)) ([c554b32](https://github.com/FantasticDevHQ/better-stripe/commit/c554b328a16abaddc53c3c045e2220ba1b11970d))
+- retain class-bound renewal journal call identities ([#426](https://github.com/FantasticDevHQ/better-stripe/issues/426)) ([c554b32](https://github.com/FantasticDevHQ/better-stripe/commit/c554b328a16abaddc53c3c045e2220ba1b11970d))
 
 ## [0.93.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.92.0...v0.93.0) (2026-10-31)
 

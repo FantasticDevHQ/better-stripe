@@ -391,3 +391,24 @@ export function captureInitialJournalSelection(
     },
   });
 }
+
+/** Same maintained SDK root; each Action retains its own checked RPC pointers. */
+export function checkConfigureJournalAssociation(
+  parent: object,
+  child: object,
+): void {
+  if (arguments.length !== 2) journalUnbound();
+  readCheckedJournalActionRPC(parent);
+  readCheckedJournalActionRPC(child);
+  const original = journalBindings.get(parent);
+  const next = journalBindings.get(child);
+  if (
+    !original ||
+    !next ||
+    original.root !== next.root ||
+    original.cell !== next.cell ||
+    original.rpc.component !== next.rpc.component ||
+    original.rpc.operationId === next.rpc.operationId
+  )
+    journalUnbound();
+}

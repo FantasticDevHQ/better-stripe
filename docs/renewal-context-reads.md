@@ -219,11 +219,53 @@ changed predicates, removed class eligibility, copied DATA or unknown lineage
 identities refuse. The same checks apply to cached views, and separate SDK roots
 retain distinct output and receipt identities.
 
-This reader supports future configure-source binding to the actual attachment
-receipt. Configure still needs its separately authorized stage operation,
-request/key, journal protocol and runtime factories. The internal return record
+This reader supplies private configure admission with the actual attachment
+receipt. Admission uses a separately authorized stage operation and request/key.
+Configure execution still requires its channels, transport, actors and complete
+journal integration. The internal return record
 does not establish delivery to a disconnected caller, qualify a provider profile
 or create a public scheduling entrypoint.
+
+## Private configure admission
+
+The private initial invocation core accepts `admitConfigure(call, journal)` only
+with the original winning child reservation call and its actual class-bound
+journal. It spends that call before checking arity or parent custody. The parent
+comes from the core's closure; callers cannot replace its Owner, receipt, ACK,
+client, selector, clocks or basis. A copied admission view cannot reconstruct the
+private identity.
+
+Admission requires the actual returned attachment ACK from initial completion,
+replay or no-POST resumption. A published receipt whose reply is still pending is
+insufficient. The parent and child journals must share the actual checked SDK
+root, root cell and component. Each retains its own checked Action receiver and
+RPC pointers; different genuine Action contexts are supported.
+
+The child retains the exact parent Owner, selected client, origin association,
+clock functions and original basis. Admission performs no new selection, Owner
+construction or origin capture. Normal Owner checks still sample its original
+clocks. Complete C3/C6/C7 source, parent history and retained acknowledgement DATA
+must agree, including typed dispatch/response contents before event hashing.
+Every used reservation, load, history, event, acknowledgement and binding reply
+receives complete bounded runtime DATA checks against the current source
+contract. Generated attachment-only declarations and reference identities stay
+unchanged; these checks do not establish genuine generation or deployed
+compatibility.
+
+The actual child basis transaction must commit and return its complete matching
+descriptor. Reads after binding require the original basis, head zero and no
+known child ACK. The no-ACK read precedes the final head read; no later journal
+await precedes readiness. This is a read fence, with no atomic lock against
+subsequent journal changes. Future execution must check its frontier again.
+Owner retirement rejects a pending admission even if its basis mutation has
+committed; retained DATA and failed or lost replies cannot remint the consumed
+call.
+
+The result is an opaque private view containing `owner`, `basisJSON` and
+`operationalAuthority: false`. It supplies no configure transport, C10 channel,
+preflight/write actor or public scheduling API. Those integrations remain
+required, as do genuine generation and operational qualification. Production
+Source profile arrays remain empty.
 
 ## Component operation journal
 

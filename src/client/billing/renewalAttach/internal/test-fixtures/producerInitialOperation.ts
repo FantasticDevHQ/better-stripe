@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { v } from "convex/values";
 import { convexTest } from "convex-test";
 import {
   actionGeneric,
   defineSchema,
   makeFunctionReference,
   getFunctionAddress,
+  type GenericActionCtx,
+  type GenericDataModel,
 } from "convex/server";
 import { BetterStripe } from "../../../../index.js";
 import { components } from "../../../../../../example/convex/_generated/api.js";
@@ -28,13 +31,22 @@ export async function initialOperations(
     fresh: Fresh;
     sdk: BetterStripe;
     index: number;
+    ctx: GenericActionCtx<GenericDataModel>;
+    inAnotherAction(
+      work: (ctx: GenericActionCtx<GenericDataModel>) => Promise<void>,
+    ): Promise<void>;
   }) => Promise<void>,
   count = 1,
   options: {
     epochMs?: number;
     workEndWallMs?: number;
     endWallMs?: number;
-    afterBind?: () => Promise<void>;
+    afterBind?: (reply: unknown) => Promise<void>;
+    afterQuery?: (
+      reply: unknown,
+      reference: string,
+      args: unknown,
+    ) => Promise<void>;
     afterAppend?: () => Promise<void>;
     beforeAppend?: () => Promise<void>;
     afterRetain?: () => Promise<void>;
@@ -158,11 +170,37 @@ export async function initialOperations(
       new BetterStripe(components.betterStripe, { STRIPE_SECRET_KEY: key }),
   );
   const refs = components.betterStripe.renewalOperations;
+  const secondaryWork = new Map<
+    string,
+    (ctx: GenericActionCtx<GenericDataModel>) => Promise<void>
+  >();
+  let secondaryId = 0;
   const host = {
+    secondary: actionGeneric({
+      args: { id: v.string() },
+      handler: async (ctx, args): Promise<null> => {
+        const work = secondaryWork.get(args.id);
+        assert(work);
+        secondaryWork.delete(args.id);
+        await work(ctx);
+        return null;
+      },
+    }),
     run: actionGeneric({
       args: {},
       handler: async (ctx): Promise<null> => {
         const runMutation = ctx.runMutation;
+        const runQuery = ctx.runQuery;
+        if (options.afterQuery)
+          ctx.runQuery = async (ref, ...args) => {
+            const reply = await runQuery(ref, ...args);
+            await options.afterQuery?.(
+              reply,
+              getFunctionAddress(ref).reference ?? "",
+              args[0],
+            );
+            return reply;
+          };
         if (
           options.afterBind ||
           options.afterAppend ||
@@ -184,7 +222,7 @@ export async function initialOperations(
               ) &&
               options.afterBind
             )
-              await options.afterBind();
+              await options.afterBind(result);
             if (
               getFunctionAddress(ref).reference?.endsWith(
                 "/appendStageEvent",
@@ -232,7 +270,27 @@ export async function initialOperations(
               recordJSON,
             });
             assert(fresh.result.disposition === "acquired" && fresh.call);
-            await work({ journal, fresh, sdk: selectedSDK, index });
+            await work({
+              journal,
+              fresh,
+              sdk: selectedSDK,
+              index,
+              ctx,
+              async inAnotherAction(work) {
+                const id = String(++secondaryId);
+                secondaryWork.set(id, work);
+                try {
+                  await ctx.runAction(
+                    makeFunctionReference<"action", { id: string }, null>(
+                      "initialOwner:secondary",
+                    ),
+                    { id },
+                  );
+                } finally {
+                  secondaryWork.delete(id);
+                }
+              },
+            });
           }),
         );
         return null;

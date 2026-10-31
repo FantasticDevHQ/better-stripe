@@ -19,7 +19,7 @@ import {
 } from "./types.js";
 import { equal } from "../../../renewalAggregate/shared.js";
 import { owned as legacyOwned, ownedForInitialLineage } from "./ownedAwait.js";
-import type { Diagnostics } from "./providerFailure.js";
+import { captureActorFailureControl } from "./actorFailureControl.js";
 import { bindRawAcquisitionFromSource } from "../acquisition/ownedAcquisition.js";
 import { createAttachEventCompiler } from "../c10/attachEvents.js";
 import {
@@ -40,7 +40,50 @@ import { createInitialTransportForLineage } from "./fixedTransport.js";
 import { createInitialMaterialClassifiers } from "../material/classifiers.js";
 import { acquisitionForInitialLineage } from "../acquisition/ownedAcquisition.js";
 import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
+import { journalWorkForInitialLineage } from "../producer/journalWorkFactory.js";
 type Pair = ReturnType<typeof createPair>;
+
+type AttemptCustody = {
+  entry: unknown;
+  retainedPredicate: SourceMethod;
+  freshPredicate: SourceMethod;
+  originalRecord: unknown;
+  raw: ReturnType<typeof captureRetainedInput>["attachRequest"];
+  prepared: Awaited<ReturnType<typeof c1>>;
+  request: AttachRequest;
+  pair: Pair;
+  response: Readonly<{ body: unknown; status: number }> | null;
+  settled: boolean;
+  returnedACK: boolean;
+  reserved: boolean;
+};
+const attempts = new WeakMap<object, AttemptCustody>();
+/** Consumes only actual settled attempt custody; stored DATA cannot register it. */
+export function takeInitialRecoveryRecord(token: object) {
+  need(arguments.length === 1);
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const attempt = attempts.get(token);
+  need(attempt && attempt.settled && !attempt.returnedACK && !attempt.reserved);
+  need(journalWorkForInitialLineage(token).idle());
+  const disposition = attempt.pair.transport.postDisposition();
+  need(
+    disposition === "REJECTED" ||
+      disposition === "FULFILLED_SAFE" ||
+      disposition === "FULFILLED_UNVERIFIED",
+  );
+  attempt.reserved = true;
+  return Object.freeze({
+    entry: attempt.entry,
+    retainedPredicate: attempt.retainedPredicate,
+    freshPredicate: attempt.freshPredicate,
+    originalRecord: attempt.originalRecord,
+    raw: attempt.raw,
+    prepared: attempt.prepared,
+    request: attempt.request,
+    response: attempt.response,
+  });
+}
 
 /** Internal single-use actor. Empty class registry precedes every Source side effect. */
 export function captureInitialAttach() {
@@ -96,6 +139,7 @@ function initialKernel(token: object | null) {
                 input.observedAt,
               );
             };
+      let attempt: AttemptCustody | undefined;
       let pair: Pair | null = null,
         failureControl: FailureControl | null = null,
         postEligible = false;
@@ -168,7 +212,11 @@ function initialKernel(token: object | null) {
         OWNER.check();
         if (retained.status !== "classified")
           return refuse("retained_material_unsupported");
-        const matches: { raw: unknown; fresh: SourceMethod }[] = [];
+        const matches: {
+          raw: unknown;
+          fresh: SourceMethod;
+          retained: SourceMethod;
+        }[] = [];
         for (const entry of ENTRIES) {
           OWNER.check();
           const retainedPredicate = sourceMethod(entry, "coversRetained"),
@@ -179,7 +227,11 @@ function initialKernel(token: object | null) {
               original.originalBundle,
             ]) === true
           )
-            matches.push({ raw: entry, fresh: freshPredicate });
+            matches.push({
+              raw: entry,
+              fresh: freshPredicate,
+              retained: retainedPredicate,
+            });
           OWNER.check();
         }
         if (matches.length !== 1) return refuse("retained_class_not_unique");
@@ -202,163 +254,7 @@ function initialKernel(token: object | null) {
 
         const activePair = pair;
         // Only this invocation's pair and actual locally rebuilt C2 enter this capsule.
-        const control = (() => {
-          const capability = activePair.capability,
-            takeQuarantine = capability.takeFulfilledQuarantine;
-          Object.freeze(request.payload);
-          Object.freeze(request.requestIdentity);
-          Object.freeze(request);
-          OWNER.check();
-          type Token = {
-            invocation: object;
-            phase: "read" | "post";
-            ordinal: number;
-            request: AttachRequest;
-            diagnostics: Diagnostics;
-          };
-          const tokens = new WeakMap<object, Token>(),
-            invocation = Object.freeze({});
-          let phase = "unused";
-          const tokenValue = (error: unknown) =>
-            error !== null &&
-            (typeof error === "object" || typeof error === "function")
-              ? tokens.get(error)
-              : undefined;
-          function consume(error: unknown, kind: "read" | "post") {
-            OWNER.check();
-            const value = tokenValue(error);
-            if (
-              error !== null &&
-              (typeof error === "object" || typeof error === "function")
-            )
-              tokens.delete(error);
-            if (
-              !value ||
-              value.invocation !== invocation ||
-              value.phase !== kind ||
-              phase !== (kind === "read" ? "failed" : "failed_post")
-            )
-              return null;
-            phase = kind === "read" ? "consumed" : "consumed_post";
-            const failure = Object.freeze({
-              category: "provider_rejected",
-              phase: kind,
-              ordinal: value.ordinal,
-              request: value.request,
-              diagnostics: value.diagnostics,
-              outcome: "unknown",
-              operationalAuthority: false,
-            });
-            const out = Error("INITIAL_PROVIDER_REJECTED");
-            Object.defineProperty(out, "failure", {
-              value: failure,
-              enumerable: false,
-              writable: false,
-              configurable: false,
-            });
-            return out;
-          }
-          return Object.freeze({
-            takePostQuarantine(...args: unknown[]) {
-              if (args.length !== 0) return null;
-              return Reflect.apply(takeQuarantine, capability, []) as
-                object | null;
-            },
-            begin() {
-              OWNER.check();
-              if (phase !== "unused") stop();
-              if (capability.assertVirginAcquisition() !== true) {
-                phase = "closed";
-                stop();
-              }
-              OWNER.check();
-              phase = "acquiring";
-            },
-            complete() {
-              OWNER.check();
-              if (phase !== "acquiring") stop();
-              phase = "complete";
-            },
-            takeReadFailure() {
-              OWNER.check();
-              if (phase !== "acquiring") stop();
-              const record = capability.consumeReadCatch();
-              OWNER.check();
-              if (record === null) {
-                phase = "unsupported";
-                return null;
-              }
-              need(
-                record.phase === "read" &&
-                  Number.isSafeInteger(record.ordinal) &&
-                  record.ordinal >= 1 &&
-                  record.ordinal <= 43,
-              );
-              const token = Object.freeze(Object.create(null)) as object;
-              tokens.set(
-                token,
-                Object.freeze({
-                  invocation,
-                  phase: "read",
-                  ordinal: record.ordinal,
-                  request,
-                  diagnostics: record.diagnostics,
-                }),
-              );
-              phase = "failed";
-              return token;
-            },
-            beginPost() {
-              OWNER.check();
-              if (phase !== "complete") stop();
-              phase = "posting";
-            },
-            takePostFailure(actualReply: unknown) {
-              OWNER.check();
-              if (phase !== "posting") stop();
-              const record = capability.consumePostCatch(actualReply);
-              OWNER.check();
-              if (record === null) {
-                phase = "post_without_token";
-                return null;
-              }
-              need(
-                record.phase === "post" &&
-                  Number.isSafeInteger(record.ordinal) &&
-                  record.ordinal >= 1 &&
-                  record.ordinal <= 44,
-              );
-              const token = Object.freeze(Object.create(null)) as object;
-              tokens.set(
-                token,
-                Object.freeze({
-                  invocation,
-                  phase: "post",
-                  ordinal: record.ordinal,
-                  request,
-                  diagnostics: record.diagnostics,
-                }),
-              );
-              phase = "failed_post";
-              return token;
-            },
-            forward(error: unknown) {
-              OWNER.check();
-              const value = tokenValue(error);
-              return value &&
-                value.invocation === invocation &&
-                (phase === "failed" || phase === "failed_post")
-                ? (error as object)
-                : null;
-            },
-            consume(error: unknown) {
-              return consume(error, "read");
-            },
-            consumePost(error: unknown) {
-              return consume(error, "post");
-            },
-          });
-        })();
+        const control = captureActorFailureControl(OWNER, activePair, request);
         OWNER.check();
         failureControl = control;
         const reader =
@@ -483,6 +379,28 @@ function initialKernel(token: object | null) {
         );
         OWNER.check();
         postEligible = true;
+        if (token !== null) {
+          attempt = {
+            entry: entry.raw,
+            retainedPredicate: entry.retained,
+            freshPredicate: entry.fresh,
+            originalRecord: {
+              originalRaw: original,
+              originalPrepared: prepared,
+              completeRequest: request,
+              retainedMaterial: retained.material,
+            },
+            raw,
+            prepared,
+            request,
+            pair: activePair,
+            response: null,
+            settled: false,
+            returnedACK: false,
+            reserved: false,
+          };
+          attempts.set(token, attempt);
+        }
         let postedOnce = false;
         const post = async () => {
           OWNER.check();
@@ -503,6 +421,8 @@ function initialKernel(token: object | null) {
         if (reply.outcome === "provider_rejected") stop();
         if (reply.outcome !== "fulfilled_safe") return uncertain();
         const body = reply.body;
+        if (attempt)
+          attempt.response = Object.freeze({ body, status: reply.statusCode });
         await owned(() =>
           compiler.response({
             event: "response",
@@ -537,6 +457,7 @@ function initialKernel(token: object | null) {
         const result = admitInitialOutput(receipt, prepared, request);
         OWNER.check();
         control.takePostQuarantine();
+        if (attempt) attempt.returnedACK = true;
         return result;
       } catch (error) {
         let live = false;
@@ -565,6 +486,8 @@ function initialKernel(token: object | null) {
           if (state === "NOT_STARTED") return refuse("post_not_started");
         }
         return stop();
+      } finally {
+        if (attempt) attempt.settled = true;
       }
     },
   });

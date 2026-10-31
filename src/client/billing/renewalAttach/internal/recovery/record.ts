@@ -1,5 +1,6 @@
 import { types } from "node:util";
 import { OWNER } from "../originalOwner.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import { requiredJSONSnapshot } from "../material/requiredJson.js";
 import {
   closed,
@@ -78,7 +79,20 @@ export type CapturedRecord = Readonly<{
 
 /** Detached unverified data only. The actor retains and proves its own record. */
 export function captureRecoveryRecord(live: unknown): CapturedRecord {
-  OWNER.check();
+  return captureRecord(live, OWNER);
+}
+export function captureRecoveryRecordForLineage(
+  token: object,
+  live: unknown,
+): CapturedRecord {
+  need(arguments.length === 2);
+  return captureRecord(live, ownerForInitialLineage(token));
+}
+function captureRecord(
+  live: unknown,
+  owner: { check(): unknown },
+): CapturedRecord {
+  owner.check();
   const slots = new Map<string, string>(),
     active = new Set<object>();
   let nodes = 0,
@@ -189,7 +203,7 @@ export function captureRecoveryRecord(live: unknown): CapturedRecord {
   const node = walk(live, "", 0);
   need(slots.size === 6 && rawNode);
   encode(node);
-  OWNER.check();
+  owner.check();
   return Object.freeze({
     node,
     slots,

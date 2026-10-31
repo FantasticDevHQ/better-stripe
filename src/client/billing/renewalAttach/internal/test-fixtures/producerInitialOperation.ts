@@ -36,6 +36,7 @@ export async function initialOperations(
     endWallMs?: number;
     afterBind?: () => Promise<void>;
     afterAppend?: () => Promise<void>;
+    beforeAppend?: () => Promise<void>;
     afterRetain?: () => Promise<void>;
     source?: RetainedInput;
     sources?: readonly RetainedInput[];
@@ -162,8 +163,20 @@ export async function initialOperations(
       args: {},
       handler: async (ctx): Promise<null> => {
         const runMutation = ctx.runMutation;
-        if (options.afterBind || options.afterAppend || options.afterRetain)
+        if (
+          options.afterBind ||
+          options.afterAppend ||
+          options.afterRetain ||
+          options.beforeAppend
+        )
           ctx.runMutation = async (ref, ...args) => {
+            if (
+              getFunctionAddress(ref).reference?.endsWith(
+                "/appendStageEvent",
+              ) &&
+              options.beforeAppend
+            )
+              await options.beforeAppend();
             const result = await runMutation(ref, ...args);
             if (
               getFunctionAddress(ref).reference?.endsWith(

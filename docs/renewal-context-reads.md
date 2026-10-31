@@ -43,8 +43,8 @@ not migrate its old binding or authorize a retry.
 
 ## Internal ownership and transport groundwork
 
-The internal `renewalAttach/internal` modules keep one original owner identity
-and adapt the stock Stripe client's inherited `rawRequest` method without
+The legacy `renewalAttach/internal` facades keep one dormant original Owner
+identity and adapt the stock Stripe client's inherited `rawRequest` method without
 changing its receiver, arguments, result or thrown value. The owner checks the
 same original wall and monotonic time bounds and closes permanently on expiry,
 regression or retirement. These modules do not read a clock at import time.
@@ -159,7 +159,48 @@ a clock, including when the
 private actor is captured from a lineage that has no Owner yet. Tests admit
 synthetic profiles in ordinary Node and Convex-test with controlled HTTP. They
 do not qualify native execution or provider custody. Public scheduling, native
-profile qualification, recovery and later operation stages remain separate work.
+profile qualification, cross-process recovery and later operation stages remain
+separate work.
+
+The private core also captures one single-use explicit recovery actor. It keeps
+actual initial attempt custody beside the initial actor, including its original
+selected entry and predicates, reconstructed request and safely captured SDK
+response when available. A stored or copied journal record cannot create this
+custody. Recovery consumes its reservation before awaiting construction and
+uses the same live Owner and original absolute deadlines.
+
+A settled unknown POST without a safe response can use one explicitly invoked
+same-request, same-key replay. It requires the committed dispatch event at head
+1, no known acknowledgement and no pending journal writes. The new transport
+pair retains the original selected SDK and bounded read plan. Complete fresh
+reads must preserve the original residual subscription, target, customer and
+Coupon material. The observed schedule association may remain null or become a
+validated non-null reference. That pre-POST observation remains unowned DATA;
+it never substitutes for the original creation acknowledgement. Recovery checks
+the complete journal frontier again after dispatch acknowledgement and before
+its POST. This read fence cannot atomically lock journal state and a provider
+request; another authorized writer may race the final read-to-call interval.
+Immutable conflicting history still refuses acknowledgement. The legacy
+recovery facade retains its existing association rules.
+
+When the original live invocation already holds a safe response, recovery
+resumes acknowledgement without another provider read or POST. It rebuilds C3
+from that response and the original request, idempotently completes matching C10
+events and receipt retention, and checks the original Owner before returning the
+fully admitted receipt. Existing event 2 or 3 must match complete immutable
+history. Conflicting DATA refuses.
+
+Each initial or recovery channel captures its own original-journal sender and
+keeps that sender's irreversible stop latch. Journal work tracking follows all
+actual send and retention promises for the lineage. A C10
+channel timeout can close its caller while the underlying mutation remains
+pending and may later commit. Recovery refuses while that work is pending. It
+also refuses an unattempted operation, a returned acknowledgement, changed
+entry predicates, missing class relation or a retired Owner. Retiring one
+invocation cannot retire another SDK root or return its receipt. These are
+ordinary Node and Convex-test mechanics with controlled HTTP, not native or
+provider qualification. Cross-process recovery cannot revive this Owner or
+reconstruct actual live response custody from stored DATA.
 
 ## Component operation journal
 

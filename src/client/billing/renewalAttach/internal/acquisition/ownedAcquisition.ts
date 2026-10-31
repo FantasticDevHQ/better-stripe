@@ -209,18 +209,18 @@ function captureTransport(sourceTransport: RawReadTransport): RawReadTransport {
   return capturedTransport;
 }
 
-function createSelectedRawAcquisition(
+export function createSelectedRawAcquisition(
   sourceOwner: typeof OWNER,
   sourceTransport: RawReadTransport,
 ): Readonly<{ acquire(rawExpected: unknown): Promise<RawAcquisitionResult> }>;
-function createSelectedRawAcquisition(
+export function createSelectedRawAcquisition(
   sourceOwner: typeof OWNER,
   sourceTransport: RawReadTransport,
   fixedScheduleId: string,
 ): Readonly<{
   acquire(rawExpected: unknown): Promise<RawConfigureAcquisitionResult>;
 }>;
-function createSelectedRawAcquisition(
+export function createSelectedRawAcquisition(
   sourceOwner: typeof OWNER,
   sourceTransport: RawReadTransport,
   fixedScheduleId: string | null = null,

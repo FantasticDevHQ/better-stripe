@@ -1,4 +1,5 @@
 import { readInitialLineage } from "./lineageAuthority.js";
+import { journalWorkForInitialLineage } from "./journalWorkFactory.js";
 import { ownerForInitialLineage } from "./ownerFactory.js";
 import { ownedAwaitForInitialLineage } from "./ownedAwaitFactory.js";
 import { captureInitialStockRawDelegate } from "./stockDelegateFactory.js";
@@ -69,7 +70,7 @@ async function construct(token: object) {
     ),
   );
   const delegate = captureInitialStockRawDelegate(token);
-  const send = lineage.journal.createC10Send(lineage.reservation);
+  const send = journalWorkForInitialLineage(token).captureSend();
   let spent = false;
   const slot = Object.freeze({
     takeOnce(...args: unknown[]) {
@@ -154,7 +155,7 @@ export async function retainInitialReceiptForLineage(
   if (typeof binding !== "string") stop();
   const receiptJSON = JSON.stringify(materialize(receiptNode));
   const retained = await owned(() =>
-    lineage.journal.retainProviderAcknowledgement({
+    journalWorkForInitialLineage(token).retain({
       attemptId: lineage.reservation.attemptId,
       expectedSequence: 2,
       receiptJSON,

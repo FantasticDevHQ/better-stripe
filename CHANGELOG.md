@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.97.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.96.0...v0.97.0) (2026-10-31)
+
+
+### Features
+
+* bind initial renewal channels to invocation Owners ([#434](https://github.com/FantasticDevHQ/better-stripe/issues/434)) ([83a3278](https://github.com/FantasticDevHQ/better-stripe/commit/83a3278fb6df17952b24a5c3f2143b7968727f2c))
+
 ## [0.96.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.95.0...v0.96.0) (2026-10-31)
 
 ### Features

@@ -17,6 +17,7 @@ const ms = (value: number) => Number.isSafeInteger(value) && value >= 0;
 // Only this module mints identities. Retained journal DATA cannot construct one.
 class InitialLineage {}
 type Lineage = Readonly<{
+  journal: ReturnType<typeof consumeInitialClassReservation>["journal"];
   reservation: ReturnType<typeof consumeInitialClassReservation>["reservation"];
   selection: ReturnType<typeof captureInitialJournalSelection>;
   client: Stripe;
@@ -47,10 +48,11 @@ export function mintInitialLineage(
   journal: unknown,
   arity: number,
 ): object {
-  const { reservation, binding } = consumeInitialClassReservation(
-    call,
-    journal,
-  );
+  const {
+    reservation,
+    binding,
+    journal: originalJournal,
+  } = consumeInitialClassReservation(call, journal);
   if (arity !== 2) stop();
   if (
     !("recordVersion" in reservation) ||
@@ -123,6 +125,7 @@ export function mintInitialLineage(
   lineages.set(
     token,
     Object.freeze({
+      journal: originalJournal,
       reservation,
       selection,
       client: client as Stripe,

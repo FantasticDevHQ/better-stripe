@@ -1,5 +1,6 @@
 /** Stage and append share one irreversible latch and the same original owner. */
 import { SOURCE_OWNER } from "./ownerBinding.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import {
   options as checkedOptions,
   closed,
@@ -17,6 +18,16 @@ import {
 type Time = { wallMs: number; ns: bigint };
 type Reject = (reason: Error) => void;
 export function createStageChannel(raw: unknown) {
+  return stageChannel(raw, SOURCE_OWNER);
+}
+/** Opaque original lineage only; no caller-supplied Owner or clock. */
+export function createInitialStageChannel(token: object, raw: unknown) {
+  return stageChannel(raw, ownerForInitialLineage(token));
+}
+function stageChannel(
+  raw: unknown,
+  owner: Pick<typeof SOURCE_OWNER, "basis" | "check" | "subscribe">,
+) {
   let closedChannel = false,
     unsubscribe = () => {},
     rejectStage: Reject | null = null,
@@ -29,11 +40,11 @@ export function createStageChannel(raw: unknown) {
     rejectStage?.(Error("C10_SOURCE_STOP"));
     rejectAppend?.(Error("C10_SOURCE_STOP"));
   };
-  const basis = SOURCE_OWNER.basis;
+  const basis = owner.basis;
   const gate = (): Time => {
     try {
       need(!closedChannel);
-      const t = SOURCE_OWNER.check();
+      const t = owner.check();
       need(
         basis &&
           Number.isSafeInteger(basis.startWallMs) &&
@@ -67,7 +78,7 @@ export function createStageChannel(raw: unknown) {
     }
   };
   gate();
-  const detach = SOURCE_OWNER.subscribe(close);
+  const detach = owner.subscribe(close);
   need(typeof detach === "function");
   unsubscribe = detach;
   if (closedChannel) unsubscribe();

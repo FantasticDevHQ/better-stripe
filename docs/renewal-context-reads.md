@@ -116,6 +116,20 @@ returning a value. Retirement is irreversible and never extends either original
 cutoff. Legacy actors still use their separate dormant identity; extracting and
 wiring their per-invocation kernels remains required before runtime activation.
 
+The private initial core can capture one attach-stage C10 compiler for its own
+lineage. This compiler takes the original raw source and actual acquired
+reservation from that lineage, and binds its sender to the same captured class
+journal. Its dispatch, response and receipt events use the existing compiler
+checks and actual component append transactions. C10 acknowledgement follows
+the matching committed append and checks the original Owner again. Callers
+cannot replace the source, sender, Owner or append timeout through this capture.
+Retiring one invocation rejects its pending channel without retiring another
+invocation's channel or removing already committed DATA. Stored events and C10
+append acknowledgements do not establish provider custody or a returned public
+operation acknowledgement. Legacy stage-channel facades retain their existing
+lazy Owner and behavior. Initial actor, classifier, acquisition and transport
+factory wiring remains required.
+
 ## Component operation journal
 
 The component's `renewalOperations` functions retain host-authorized operation

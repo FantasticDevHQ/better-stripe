@@ -3,12 +3,14 @@ import { ownerForInitialLineage, type InitialOwner } from "./ownerFactory.js";
 import { ownedAwaitForInitialLineage } from "./ownedAwaitFactory.js";
 import { stockDelegateForInitialLineage } from "./stockDelegateFactory.js";
 import type { createClassActionOperationJournal } from "../operationJournal.js";
+import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
 
 export type InitialInvocationCore = Readonly<{
   owner: InitialOwner;
   basisJSON: string;
   delegate: ReturnType<typeof stockDelegateForInitialLineage>;
   owned<T>(work: () => T | PromiseLike<T>): Promise<T>;
+  attachEvents(): ReturnType<typeof createInitialAttachEventCompiler>;
   operationalAuthority: false;
 }>;
 
@@ -44,11 +46,19 @@ export async function captureInitialInvocationCore(
     )
       throw Error("INITIAL_LINEAGE_UNBOUND");
     owner.check();
+    let channelCaptured = false;
     return Object.freeze({
       owner,
       basisJSON: lineage.basisJSON,
       owned,
       delegate: stockDelegateForInitialLineage(token),
+      attachEvents() {
+        owner.check();
+        if (channelCaptured) throw Error("INITIAL_CHANNEL_CONSUMED");
+        channelCaptured = true;
+        if (arguments.length !== 0) throw Error("INITIAL_CHANNEL_UNBOUND");
+        return createInitialAttachEventCompiler(token);
+      },
       operationalAuthority: false,
     });
   } catch (error) {

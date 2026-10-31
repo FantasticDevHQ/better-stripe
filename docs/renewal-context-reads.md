@@ -88,6 +88,30 @@ remain unsigned bookkeeping DATA; copies cannot create or revive a call, a live
 Owner or provider authority. A handle lost across an Action return, restart or
 reply loss is not reconstructed from stored records or retried with a new key.
 
+The private Node invocation core can consume that original call to construct an
+isolated Owner. It checks the SDK's pre-reservation own-data configuration
+descriptors and values before calling its constructor-captured selector. Extra
+client arguments, changed descriptors, copied handles and existing reservation
+results cannot select a client or sample a clock. This construction step grants
+no operational profile or public scheduling capability.
+
+Each lineage retains one selected stock client, its original raw-request method
+and receiver, and one canonical Owner. The core samples monotonic time immediately
+before and after its initial wall-clock sample. It uses the lower monotonic sample
+with the existing six-field basis formula and the original absolute wall cutoffs.
+Capture apertures above one millisecond, u64 overflow and timer spans above
+2,147,483,647 milliseconds refuse. Both clocks must remain monotone and below
+their work cutoffs, independently of paid-period and replay-age checks. These are
+local Node clock assumptions, not provider or real-time execution qualification.
+
+The core awaits the actual component basis-binding result before returning.
+Pending continuations retain their own Owner; retiring one lineage cannot retire
+another. Deadline notification uses a Node timer, whose callback can be delayed
+by event-loop suspension. Every continuation therefore checks both clocks before
+returning a value. Retirement is irreversible and never extends either original
+cutoff. Legacy actors still use their separate dormant identity; extracting and
+wiring their per-invocation kernels remains required before runtime activation.
+
 ## Component operation journal
 
 The component's `renewalOperations` functions retain host-authorized operation

@@ -168,7 +168,9 @@ type JournalState = Readonly<{
   root: object;
   cell: ReadyRoot;
   rpc: JournalRPC;
+  configuration: readonly (PropertyDescriptor | undefined)[];
 }>;
+const configurationKeys = ["_apiKey", "stripeApiVersion"] as const;
 const pendingJournalEntries = new WeakMap<object, PendingJournal>();
 const journalBindings = new WeakMap<object, JournalState>();
 const closedJournalBindings = new WeakSet<object>();
@@ -315,6 +317,11 @@ export async function beginClassAction(
     root: actualRoot,
     cell: entry.cell,
     rpc,
+    configuration: Object.freeze(
+      configurationKeys.map((key) =>
+        Object.getOwnPropertyDescriptor(actualRoot, key),
+      ),
+    ),
   });
   if (
     metadata.type !== "action" ||
@@ -331,4 +338,56 @@ export async function beginClassAction(
   journalBindings.set(binding, state);
   entry.binding = binding;
   return binding;
+}
+
+/** Private construction snapshot; journal DATA alone never calls this selector. */
+export function captureInitialJournalSelection(
+  binding: object,
+  apiVersion: string,
+) {
+  readCheckedJournalActionRPC(binding);
+  const state = journalBindings.get(binding);
+  if (!state) journalUnbound();
+  const captured = state;
+  function check() {
+    readCheckedJournalActionRPC(binding);
+    for (let index = 0; index < configurationKeys.length; index++) {
+      const before = captured.configuration[index];
+      const after = Object.getOwnPropertyDescriptor(
+        captured.root,
+        configurationKeys[index],
+      );
+      if (
+        !before ||
+        !after ||
+        !("value" in before) ||
+        !("value" in after) ||
+        before.value !== after.value ||
+        before.writable !== after.writable ||
+        before.enumerable !== after.enumerable ||
+        before.configurable !== after.configurable
+      )
+        journalUnbound();
+    }
+    if (
+      typeof captured.configuration[0]?.value !== "string" ||
+      captured.configuration[0].value.length === 0 ||
+      captured.configuration[1]?.value !== apiVersion
+    )
+      journalUnbound();
+  }
+  check();
+  return Object.freeze({
+    check,
+    select() {
+      check();
+      const client: unknown = Reflect.apply(
+        captured.cell.bootstrap.select,
+        captured.root,
+        [],
+      );
+      check();
+      return client;
+    },
+  });
 }

@@ -1,4 +1,5 @@
 /** Stage and append share one irreversible latch and the same original owner. */
+import { types } from "node:util";
 import { SOURCE_OWNER } from "./ownerBinding.js";
 import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import {
@@ -24,9 +25,23 @@ export function createStageChannel(raw: unknown) {
 export function createInitialStageChannel(token: object, raw: unknown) {
   return stageChannel(raw, ownerForInitialLineage(token));
 }
+/** A fixed internal guard can add checks, never replace the canonical Owner. */
+export function createGuardedInitialStageChannel(
+  token: object,
+  raw: unknown,
+  guard: () => unknown,
+) {
+  need(
+    arguments.length === 3 &&
+      typeof guard === "function" &&
+      !types.isProxy(guard),
+  );
+  return stageChannel(raw, ownerForInitialLineage(token), guard);
+}
 function stageChannel(
   raw: unknown,
   owner: Pick<typeof SOURCE_OWNER, "basis" | "check" | "subscribe">,
+  guard?: () => unknown,
 ) {
   let closedChannel = false,
     unsubscribe = () => {},
@@ -44,7 +59,9 @@ function stageChannel(
   const gate = (): Time => {
     try {
       need(!closedChannel);
+      if (guard) need(guard() === undefined);
       const t = owner.check();
+      if (guard) need(guard() === undefined);
       need(
         basis &&
           Number.isSafeInteger(basis.startWallMs) &&

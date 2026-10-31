@@ -12,13 +12,56 @@ import {
   captureConfigureReceipt,
 } from "./eventCapture.js";
 import { materialize } from "./eventCodec.js";
-import { createStageChannel } from "./appendAck.js";
+import {
+  createStageChannel,
+  createGuardedInitialStageChannel,
+} from "./appendAck.js";
+import { readConfigureLineage } from "../producer/configureLineage.js";
+import { journalWorkForConfigureLineage } from "../producer/configureJournalWork.js";
 import {
   projectRenewalConfigurationV2,
   constructRenewalConfigurationReceiptV2,
 } from "./publicApi.js";
 export function createConfigureEventCompiler(raw: unknown, options: unknown) {
-  const channel = createStageChannel(options);
+  return configureEventCompiler(raw, createStageChannel(options));
+}
+const admittedChannels = new WeakSet<object>();
+/** One exact admitted child, without replacement source, sender or Owner inputs. */
+export function createAdmittedConfigureEventCompiler(token: object) {
+  if (typeof token !== "object" || token === null)
+    throw Error("CONFIGURE_CHANNEL_UNBOUND");
+  if (admittedChannels.has(token)) throw Error("CONFIGURE_CHANNEL_CONSUMED");
+  admittedChannels.add(token);
+  if (arguments.length !== 1) throw Error("CONFIGURE_CHANNEL_UNBOUND");
+  const lineage = readConfigureLineage(token);
+  const send = journalWorkForConfigureLineage(token).captureSend();
+  const guard = () => {
+    readConfigureLineage(token);
+  };
+  const channel = createGuardedInitialStageChannel(
+    lineage.parentToken,
+    {
+      timeoutMs: 5000,
+      send(
+        record: Parameters<typeof send>[0],
+        ack: Parameters<typeof send>[1],
+      ) {
+        guard();
+        return send(record, (value) => {
+          guard();
+          ack(value);
+          guard();
+        });
+      },
+    },
+    guard,
+  );
+  return configureEventCompiler(lineage.configuration, channel);
+}
+function configureEventCompiler(
+  raw: unknown,
+  channel: ReturnType<typeof createStageChannel>,
+) {
   let source: ReturnType<typeof captureConfigureSource>;
   try {
     channel.gate();

@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   configureAdmissionFixture,
   admissionControls,
+  configureAdmissionCase,
+  prepareAdmittedConfigure,
 } from "../test-fixtures/producerConfigureAdmission.js";
 import { captureAdmittedConfigurePreflight } from "./configurePreflight.js";
 import {
@@ -11,21 +13,10 @@ import {
   readAdmittedConfigureWriteAttempt,
 } from "./configureWrite.js";
 
-it("commits dispatch, one exact configure POST, retained C9 and receipt publication before returning ACK custody", async () => {
-  await configureAdmissionFixture(async (h) => {
-    await h.complete();
-    const child = await h.child();
-    const token = await h.core.admitConfigure(child.fresh.call, child.journal);
-    h.configureReads(child);
-    admissionControls.preflight.push({
-      originalEntry: admissionControls.entries[0],
-      coversPreflight: () => true,
-    });
-    admissionControls.write.push({
-      originalEntry: admissionControls.entries[0],
-      coversConfigure: () => true,
-    });
-    await captureAdmittedConfigurePreflight(token).invoke();
+configureAdmissionCase(
+  "commits dispatch, one exact configure POST, retained C9 and receipt publication before returning ACK custody",
+  prepareAdmittedConfigure,
+  async (h, { child, token }) => {
     const before = h.calls.length;
     const actor = captureAdmittedConfigureWrite(token);
     expect(actor).not.toBeNull();
@@ -55,8 +46,8 @@ it("commits dispatch, one exact configure POST, retained C9 and receipt publicat
     expect(retained).not.toBeNull();
     expect(JSON.parse(retained!.receiptJSON)).toEqual(object(output).receipt);
     expect(admissionControls.legacy).toBe(0);
-  });
-});
+  },
+);
 
 function deferred() {
   let resolve!: () => void;

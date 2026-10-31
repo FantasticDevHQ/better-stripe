@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, vi } from "vitest";
 import { initialOperations } from "./producerInitialOperation.js";
 import { makeConfigureReadNativeBaseline } from "./configureReadNativeBaseline.js";
 import { captureRetainedInput } from "../material/capture.js";
+import { captureAdmittedConfigurePreflight } from "../producer/configurePreflight.js";
 import { captureInitialInvocationCore } from "../producer/invocationProducer.js";
 import { createClassActionOperationJournal } from "../operationJournal.js";
 import { components } from "../../../../../../example/convex/_generated/api.js";
@@ -415,4 +416,68 @@ export async function configureAdmissionFixture(
         1000,
     },
   );
+}
+
+/** Stage real Action prerequisites separately while joining every test continuation. */
+export function configureAdmissionCase<T>(
+  name: string,
+  prepare: (h: Awaited<ReturnType<typeof setup>>) => Promise<T>,
+  verify: (h: Awaited<ReturnType<typeof setup>>, state: T) => Promise<void>,
+  options: Parameters<typeof configureAdmissionFixture>[1] = {},
+) {
+  describe(name, () => {
+    let pending: Promise<void>,
+      start!: () => void,
+      run = false;
+    beforeEach(async () => {
+      run = false;
+      let ready!: () => void, failed!: (error: unknown) => void;
+      const prepared = new Promise<void>((resolve, reject) => {
+        ready = resolve;
+        failed = reject;
+      });
+      const entered = new Promise<void>((resolve) => {
+        start = resolve;
+      });
+      pending = configureAdmissionFixture(async (h) => {
+        const state = await prepare(h);
+        ready();
+        await entered;
+        if (run) await verify(h, state);
+      }, options);
+      void pending.catch(failed);
+      await prepared;
+    });
+    afterEach(async () => {
+      start?.();
+      await pending?.catch(() => {});
+    });
+    it(name, async () => {
+      run = true;
+      start();
+      await pending;
+    });
+  });
+}
+
+/** Actual initial ACK, child admission and completed readonly preflight prerequisites. */
+export async function prepareAdmittedConfigure(
+  h: Awaited<ReturnType<typeof setup>>,
+) {
+  await h.complete();
+  const child = await h.child();
+  const token = await h.core.admitConfigure(child.fresh.call, child.journal);
+  const current = h.configureReads(child);
+  if (controls.preflight.length === 0)
+    controls.preflight.push({
+      originalEntry: controls.entries[0],
+      coversPreflight: () => true,
+    });
+  if (controls.write.length === 0)
+    controls.write.push({
+      originalEntry: controls.entries[0],
+      coversConfigure: () => true,
+    });
+  await captureAdmittedConfigurePreflight(token).invoke();
+  return { child, token, current };
 }

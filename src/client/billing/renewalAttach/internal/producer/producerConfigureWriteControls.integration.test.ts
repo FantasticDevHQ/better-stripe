@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   configureAdmissionFixture,
   admissionControls,
+  configureAdmissionCase,
+  prepareAdmittedConfigure,
 } from "../test-fixtures/producerConfigureAdmission.js";
 import { captureAdmittedConfigurePreflight } from "./configurePreflight.js";
 import {
@@ -122,66 +124,64 @@ it.each([
     await expect(actor.invoke()).rejects.toThrow();
   });
 });
-it.each(["dispatch", "retention", "receipt"])(
-  "pending %s reply cannot return actual configure ACK",
-  async (phase) => {
-    const entered = deferred(),
-      released = deferred();
-    let armed = false,
-      appended = 0;
-    await configureAdmissionFixture(
-      async (h) => {
-        const { token, child } = await prepare(h);
-        armed = true;
-        const actor = captureAdmittedConfigureWrite(token),
-          pending = actor.invoke();
-        try {
-          expect(
-            await Promise.race([
-              entered.promise.then(() => true),
-              pending.then(
-                () => false,
-                () => false,
-              ),
-            ]),
-          ).toBe(true);
-          expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
-          await expect(actor.invoke()).rejects.toThrow();
-          expect(posts(h)).toHaveLength(phase === "dispatch" ? 0 : 1);
-          if (phase !== "dispatch")
-            expect(
-              await child.journal.readProviderAcknowledgement(),
-            ).not.toBeNull();
-        } finally {
-          released.resolve();
-        }
-        const output = await pending;
-        expect(object(output).status).toBe("configure_acknowledged");
+for (const phase of ["dispatch", "retention", "receipt"] as const) {
+  const entered = deferred(),
+    released = deferred();
+  let armed = false,
+    appended = 0;
+  configureAdmissionCase(
+    "pending " + phase + " reply cannot return actual configure ACK",
+    prepareAdmittedConfigure,
+    async (h, { token, child }) => {
+      armed = true;
+      const actor = captureAdmittedConfigureWrite(token),
+        pending = actor.invoke();
+      try {
         expect(
-          readAdmittedConfigureAcknowledgement(token).output === output,
+          await Promise.race([
+            entered.promise.then(() => true),
+            pending.then(
+              () => false,
+              () => false,
+            ),
+          ]),
         ).toBe(true);
+        expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
+        await expect(actor.invoke()).rejects.toThrow();
+        expect(posts(h)).toHaveLength(phase === "dispatch" ? 0 : 1);
+        if (phase !== "dispatch")
+          expect(
+            await child.journal.readProviderAcknowledgement(),
+          ).not.toBeNull();
+      } finally {
+        released.resolve();
+      }
+      const output = await pending;
+      expect(object(output).status).toBe("configure_acknowledged");
+      expect(
+        readAdmittedConfigureAcknowledgement(token).output === output,
+      ).toBe(true);
+    },
+    {
+      afterAppend: async () => {
+        if (
+          armed &&
+          ++appended === (phase === "dispatch" ? 1 : 3) &&
+          phase !== "retention"
+        ) {
+          entered.resolve();
+          await released.promise;
+        }
       },
-      {
-        afterAppend: async () => {
-          if (
-            armed &&
-            ++appended === (phase === "dispatch" ? 1 : 3) &&
-            phase !== "retention"
-          ) {
-            entered.resolve();
-            await released.promise;
-          }
-        },
-        afterRetain: async () => {
-          if (armed && phase === "retention") {
-            entered.resolve();
-            await released.promise;
-          }
-        },
+      afterRetain: async () => {
+        if (armed && phase === "retention") {
+          entered.resolve();
+          await released.promise;
+        }
       },
-    );
-  },
-);
+    },
+  );
+}
 it("retention rejection after commit keeps C9 but returns no ACK or second POST", async () => {
   let armed = false;
   await configureAdmissionFixture(

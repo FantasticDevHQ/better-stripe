@@ -25,13 +25,32 @@ export function sevenConfigure(request: {
   return { scope, apiVersion, method, path, payload, key, firstDispatchedAt };
 }
 /** Complete synthetic constructor DATA only, without an Owner or provider call. */
-export async function configureJournalFixture() {
+export async function configureJournalFixture(
+  options: { targetInterval?: "week"; sourcePadding?: string } = {},
+) {
   let fetches = 0;
   vi.stubGlobal("fetch", () => {
     fetches++;
     throw Error("UNEXPECTED_PROVIDER_CALL");
   });
   const baseline = makeConfigureReadNativeBaseline();
+  if (options.sourcePadding !== undefined)
+    Object.assign(baseline.original.originalBundle, {
+      witnessPadding: options.sourcePadding,
+    });
+  if (options.targetInterval) {
+    const prep = baseline.original.attachRequest.preparation;
+    Object.assign(prep.targetPrice.recurring, {
+      interval: options.targetInterval,
+    });
+    Object.assign(prep.subscription, { trial_start: null, trial_end: null });
+    baseline.original.originalBundle.wireTargetPrice = structuredClone(
+      prep.targetPrice,
+    );
+    baseline.original.originalBundle.wireSubscription = structuredClone(
+      prep.subscription,
+    );
+  }
   const attachRequest = structuredClone(baseline.original.attachRequest);
   const prepared = await c1(attachRequest.preparation);
   const attach = await c2({
@@ -126,8 +145,11 @@ export async function configureJournalFixture() {
   };
 }
 
-export async function configureComponentFixture(publishParent = true) {
-  const h = await configureJournalFixture();
+export async function configureComponentFixture(
+  publishParent = true,
+  options: { targetInterval?: "week"; sourcePadding?: string } = {},
+) {
+  const h = await configureJournalFixture(options);
   const { convexTest } = await import("convex-test");
   const { schema, modules } = await import("../../test.js");
   const { makeFunctionReference } = await import("convex/server");

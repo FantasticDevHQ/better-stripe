@@ -212,7 +212,10 @@ refuses a match. A valid billing line alone cannot establish full effectiveness.
 
 Invoice correlation uses the pinned Endive parent/pricing paths, the original
 Subscription and its actual item identities, and exact native `(start, end)`
-pairs. Original invoice reasons are `subscription_create` or `subscription_cycle`;
+pairs. The retained original and fresh current invoice pointers must name distinct
+invoice IDs. Supplying two period-specific inventories under one invoice ID
+cannot establish paired renewal invoice evidence, including with expanded
+pointers. Original invoice reasons are `subscription_create` or `subscription_cycle`;
 renewal reason is `subscription_cycle`. The first profile checks every supplied
 page, at most two pages of 100 rows, and requires one eligible line. Incomplete,
 duplicate or nonprogressing inventories remain unknown. Decimal strings are

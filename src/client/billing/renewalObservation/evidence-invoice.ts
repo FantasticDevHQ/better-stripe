@@ -184,6 +184,7 @@ export async function inspectInvoiceEvidenceV1(
     };
     const originalInvoiceId = invoiceId(originalSub.latest_invoice),
       currentInvoiceId = invoiceId(sub.latest_invoice);
+    relation(originalInvoiceId !== currentInvoiceId);
     const examine = (role: "original" | "current") => {
       const row = closed(inventory[role], ["invoice", "linePages"]);
       const invoice = invoiceRecordV1(row.invoice);

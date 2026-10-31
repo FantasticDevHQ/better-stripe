@@ -28,10 +28,9 @@
 
 ## [0.93.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.92.0...v0.93.0) (2026-10-31)
 
-
 ### Features
 
-* persist authorized renewal operations and attempt evidence ([6cd43f0](https://github.com/FantasticDevHQ/better-stripe/commit/6cd43f05d8982f3c30895a7a7cc46ace74e0bf54))
+- persist authorized renewal operations and attempt evidence ([6cd43f0](https://github.com/FantasticDevHQ/better-stripe/commit/6cd43f05d8982f3c30895a7a7cc46ace74e0bf54))
 
 ## [0.92.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.91.0...v0.92.0) (2026-10-30)
 

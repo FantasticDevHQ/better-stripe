@@ -14,6 +14,7 @@ import {
   codecFixture,
 } from "../../../../../component/renewalOperations/timingPolicy.fixtures.js";
 import { createClassActionOperationJournal } from "../operationJournal.js";
+import type { RetainedInput } from "../material/capture.js";
 import {
   prepareRenewalPriceReplacementV2,
   prepareRenewalScheduleAttachmentV2,
@@ -35,6 +36,7 @@ export async function initialOperations(
     endWallMs?: number;
     afterBind?: () => Promise<void>;
     afterAppend?: () => Promise<void>;
+    source?: RetainedInput;
   } = {},
 ) {
   const h = await codecFixture();
@@ -76,6 +78,35 @@ export async function initialOperations(
     h.record.timingPolicy.workEndWallMs = options.workEndWallMs;
   if (options.endWallMs !== undefined)
     h.record.timingPolicy.endWallMs = options.endWallMs;
+  const source = options.source?.attachRequest ?? h.record.attachRequest;
+  const prepared = await prepareRenewalPriceReplacementV2(source.preparation);
+  const request = await prepareRenewalScheduleAttachmentV2({
+    prepared,
+    apiVersion: source.apiVersion,
+    attachKey: source.attachKey,
+    firstDispatchedAt: source.firstDispatchedAt,
+  });
+  const record = {
+    ...h.record,
+    attachRequest: source,
+    originalBundle: options.source?.originalBundle ?? h.record.originalBundle,
+    requestBinding: request.requestIdentity.binding,
+    dispatch: {
+      scope: request.scope,
+      apiVersion: request.apiVersion,
+      method: request.method,
+      path: request.path,
+      payload: request.payload,
+      key: request.key,
+      firstDispatchedAt: request.firstDispatchedAt,
+    },
+    timingPolicy: {
+      ...h.record.timingPolicy,
+      firstDispatchedAt: source.firstDispatchedAt,
+      periodStart: prepared.expected.periodStart,
+      periodEnd: prepared.expected.periodEnd,
+    },
+  };
   const sdk = new BetterStripe(components.betterStripe, {
     STRIPE_SECRET_KEY: "sk_test_invalid_owner_core",
   });
@@ -107,13 +138,13 @@ export async function initialOperations(
         await Promise.all(
           Array.from({ length: count }, async (_, index) => {
             const logicalOperationId =
-              h.record.logicalOperationId + "-owner-" + index;
-            const recordJSON = canonical({ ...h.record, logicalOperationId });
+              record.logicalOperationId + "-owner-" + index;
+            const recordJSON = canonical({ ...record, logicalOperationId });
             const created = await ctx.runMutation(
               refs.mutations.createAuthorizedOperation,
               {
-                authorizationScope: h.record.authorization.scope,
-                authorizationRevision: h.record.authorization.revision,
+                authorizationScope: record.authorization.scope,
+                authorizationRevision: record.authorization.revision,
                 logicalOperationId,
                 recordJSON,
               },
@@ -126,7 +157,7 @@ export async function initialOperations(
             const fresh = await journal.reserveFreshAttempt({
               expectedRevision: 0,
               stage: "attach",
-              expectedRequestBinding: h.record.requestBinding,
+              expectedRequestBinding: record.requestBinding,
               recordJSON,
             });
             assert(fresh.result.disposition === "acquired" && fresh.call);

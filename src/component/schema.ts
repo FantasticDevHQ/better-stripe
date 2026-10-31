@@ -135,7 +135,18 @@ import { accountsTable } from "./core/schema";
 import { pricesTable, productsTable } from "./products/schema";
 import { webhookEventsTable } from "./webhooks/schema";
 
+import {
+  eventsTable as renewalOperationEvents,
+  attemptsTable as renewalOperationAttempts,
+  operationsTable as renewalOperations,
+  payloadsTable as renewalOperationPayloads,
+} from "./renewalOperations/schema.js";
+
 export default defineSchema({
+  renewalOperations,
+  renewalOperationAttempts,
+  renewalOperationEvents,
+  renewalOperationPayloads,
   reversalObservations,
   reversalObservationPayloads,
   reversalObservationRefs,

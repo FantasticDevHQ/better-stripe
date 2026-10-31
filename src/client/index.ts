@@ -68,7 +68,13 @@ import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js"
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
 export type * from "./billing/intents.js";
-import { RenewalContextClient } from "./renewalContextClient.js";
+import {
+  ClassOwnedActionRoot,
+  CLASS_ROOT_CONSTRUCTION_PERMIT,
+  finishClassRoot,
+  beginClassAction,
+  type ClassActionInput,
+} from "./billing/renewalAttach/internal/producer/classOwnedActionRoot.js";
 export type {
   CreateBillingPortalConfigurationOptions,
   RetrieveBillingPortalConfigurationOptions,
@@ -276,7 +282,7 @@ export type BetterStripeComponent = ComponentApi;
 
 // BETTER STRIPE CLIENT
 
-export class BetterStripe extends RenewalContextClient {
+export class BetterStripe extends ClassOwnedActionRoot {
   get usage() {
     return new UsageLedgerClient(this.component);
   }
@@ -288,7 +294,7 @@ export class BetterStripe extends RenewalContextClient {
   private _statementDescriptorSuffix?: string;
 
   constructor(component: BetterStripeComponent, options?: BetterStripeOptions) {
-    super(component);
+    super(component, CLASS_ROOT_CONSTRUCTION_PERMIT);
     this.stripeApiVersion = resolveStripeApiVersion(options?.stripeApiVersion);
     this._apiKey = options?.STRIPE_SECRET_KEY;
     this._triggers = options?.triggers;
@@ -304,6 +310,21 @@ export class BetterStripe extends RenewalContextClient {
         options.statementDescriptorSuffix,
       );
     }
+    finishClassRoot(this, {
+      prototype: BetterStripe.prototype,
+      select: this.#selectRenewalClient,
+      enter: this.#enterRenewalAction,
+    });
+  }
+
+  #selectRenewalClient(): Stripe {
+    return getStripeClient(this._apiKey!, this.stripeApiVersion, {
+      singleAttempt: true,
+    });
+  }
+
+  #enterRenewalAction(input: ClassActionInput) {
+    return beginClassAction(this, input);
   }
 
   /**

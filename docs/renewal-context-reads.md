@@ -71,6 +71,158 @@ Node-only mechanics establish no provider custody or native qualification and
 expose no caller-supplied clock, client or qualification API. The public
 preparation and receipt constructors are unchanged.
 
+The maintained SDK constructor also records an inert identity for its private
+renewal bridge. While operational profiles remain unqualified, the bridge
+refuses before invoking its client selector or entry. Normal construction and
+context reads remain available. This internal setup adds no public schedule
+writer.
+
+## Component operation journal
+
+The component's `renewalOperations` functions retain host-authorized operation
+DATA separately from the process-local ownership and transport machinery above.
+The host authenticates the caller and authorizes the exact operation before
+calling these server functions. An operation ID, stored request, binding or
+commit receipt does not establish provider provenance or a live owner.
+
+`createAuthorizedOperation` stores the complete canonical JSON record and its
+original authorization scope, revision and logical operation identity. An
+identical canonical request returns the existing operation. Changing the full
+request under the same logical identity returns a conflict and preserves the
+original. A new authorization revision requires a new logical operation identity.
+The finite JSON model preserves unknown nested fields, array order and own
+properties, including absent versus null values. Original record JSON must fit
+500,000 characters and UTF-8 bytes, 10,000 nodes and depth 40.
+
+Legacy `schemaVersion: 1` records retain their existing shape. Attachment-only
+`schemaVersion: 2` records instead declare a closed `timingPolicy` with `version: 1`,
+`firstDispatchedAt`, `periodStart`, `periodEnd`, `workEndWallMs` and `endWallMs`.
+First-dispatch and period fields use epoch seconds; wall cutoff fields use epoch
+milliseconds. They have no root `basis`; a policy does not establish a live
+execution origin.
+
+Before V2 creation, a successful creation duplicate or a stored-source read,
+the component reconstructs the actual pure C1 preparation from the complete
+`attachRequest.preparation`, then reconstructs C2. The entire seven-field
+dispatch, account, API version, request binding and policy must match the
+retained source. A stored preparation flag or matching period fields alone
+cannot replace these checks. The complete `originalBundle` remains opaque
+host-authorized DATA: no layout or equality to the preparation is inferred.
+Changing it still changes the immutable full record. Existing V1 records are
+not migrated or supplied with a new basis.
+
+`reserveAttempt` performs the first PREPARED-to-RESERVED transaction. Exactly one
+winning invocation receives `acquired`; an identical later request receives
+`existing` with the retained reservation. The result is DATA. Copying or loading
+it cannot create a fresh execution capability. Expiry, process loss and a missing
+reply do not release a new reservation or authorize another provider request.
+
+A V2 reservation carries `recordVersion: 2` and complete canonical
+`timingPolicyJSON` instead of legacy `basisJSON`. A reserved attempt with no
+bound basis is valid only at head zero, without events or a known receipt.
+This pending or orphaned DATA cannot authorize another execution.
+
+`bindInitialBasis` accepts exactly `operationId`, `attemptId`, `policyJSON` and
+`basisJSON`. The first binding requires the actual current V2 reservation,
+head zero, no events and no known receipt. It atomically adds only an inline
+`initialBasis` descriptor containing `version`, `attemptId`, `sourcePayloadId`,
+`stage`, `policyJSON` and `basisJSON`; source, attempt and revision remain unchanged.
+The result is `{ status: "bound", operationId, initialBasis }`.
+
+The closed six-field basis DATA consists of `startWallMs`, `startNsDecimal`,
+`workEndWallMs`, `workEndNsDecimal`, `endWallMs` and `endNsDecimal`. Wall values
+must be safe nonnegative integers, with start strictly before the work cutoff.
+Both cutoff wall values must equal the original policy. Nanoseconds use
+canonical unsigned decimal strings within the u64 range. Exact BigInt arithmetic
+checks each cutoff as `startNs + (cutoffWallMs - startWallMs) * 1000000`, with
+ordered endpoints and no Number rounding.
+
+The server checks arithmetic and retained identity without sampling a clock.
+It does not establish current paid-period or replay-age eligibility. Those checks
+require a separately qualified live invocation. Repeating the same complete
+normalized binding returns the original descriptor without writes, including
+after valid history and a known receipt. Changed input or corrupt retained
+links, canonical JSON, arithmetic, history or known DATA refuses without repair.
+Binding never reconstructs an owner from stored nanoseconds or extends a cutoff.
+
+`appendStageEvent` compares the complete retained reservation and appends a
+canonical event at the next sequence, from 1 through 3. An identical duplicate
+returns the original commit receipt. A conflicting duplicate refuses without
+replacing stored evidence. A dispatch event records intent, and a committed
+receipt event does not establish that the host returned success to its caller.
+V2 event writes require the checked bound basis for that same operation and
+attempt. Events or a known receipt without a bound basis are corruption; they
+cannot be adopted as a fresh binding.
+
+`retainProviderAcknowledgement` reconstructs the complete attachment receipt
+from the original raw preparation, dispatch and stored response. It compares
+the full receipt and applies the existing whole-output JSON and privacy rules.
+The transaction stores one owned receipt payload and a stable
+`knownAcknowledgement` reference. It does not append receipt event 3.
+
+A first retention must name the current history head, 2 or 3. When event 3
+exists, its complete request and receipt must match. An identical retry returns
+the original retention descriptor without writes. A caller that retained at
+head 2 can repeat that same request after matching event 3 is appended. A
+request for a future head refuses. Once a receipt is retained, event 3 must
+match its complete request and receipt before any append writes; copying the
+receipt binding alone is insufficient.
+
+Operation payloads carry their immutable operation ID. Event payloads also carry
+an attempt, stage and sequence. Receipt payloads carry their operation, attempt
+and stage. Creation links a new source payload to its actual
+operation within the same transaction. Readers refuse missing or conflicting
+ownership links, even when a foreign payload has identical JSON and a matching
+hash. They never infer or repair ownership from its contents.
+
+For V2, complete owned history and any known receipt are also checked before
+successful create-existing, reserve-existing and bind-duplicate returns, append
+returns or writes, and all four queries below. These checks reconstruct the full
+C3 receipt and validate every retained source/event/receipt reference, payload
+owner and complete canonical receipt JSON. An absent sequence or an identical
+old event does not bypass corrupt known DATA. The acknowledgement getter reuses
+that validated receipt; it does not treat a matching binding alone as sufficient.
+
+Read complete retained data through the bounded query protocol:
+
+| Query                         | Result                                                                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `loadAuthorizedOperation`     | Full canonical `recordJSON` once, revision and an active-attempt summary containing the remaining reservation fields. |
+| `readAttempt`                 | Complete reservation DATA and up to three ordered event descriptors, after validating the entire stored chain.        |
+| `readStageEvent`              | One complete canonical event JSON and its descriptor, selected by operation ID, active attempt ID and sequence.       |
+| `readProviderAcknowledgement` | `{ retention, receiptJSON }`, with the stable descriptor and full canonical receipt JSON once.                        |
+
+A V1 load keeps its four keys: `operationId`, `recordJSON`, `revision` and
+`activeAttempt`, with no added basis field. A V2 load has six keys: those four
+plus `recordVersion: 2` and the complete `initialBasis` descriptor or null.
+PREPARED revision zero has null attempt and basis. RESERVED revision one returns
+the checked policy-only attempt summary and its bound basis, or null while still
+unbound at head zero. Full source JSON appears only once in either load result.
+
+An event descriptor contains the operation, attempt, stage, original source payload,
+sequence, binding, event payload and event IDs. It contains no event JSON. Read
+each manifested event separately, comparing its complete descriptor with the
+manifest. Three events require one manifest query and three event queries.
+Previously stored entries remain immutable if another event is appended between
+reads; this protocol does not promise a snapshot across those calls.
+
+A missing operation returns null. For `readAttempt` and
+`readStageEvent`, an existing operation with a wrong or absent active attempt
+refuses. A valid sequence beyond the committed chain returns null
+only after the existing chain passes validation. Corrupt or incomplete history
+never becomes an empty or partial successful result.
+
+For `readProviderAcknowledgement`, null means no retained reference at the time
+of the query. A present reference with a missing or corrupt receipt, source,
+attempt or history refuses. This result cannot authorize another provider
+request. Read full source and event JSON through the other bounded queries when
+comparing the complete retained records.
+
+These storage APIs do not activate the internal actors or add a public SDK
+schedule writer. Host policy, actual runtime ownership, provider qualification
+and restart recovery require their own integration. Stored DATA never revives an
+old owner, resets a deadline or establishes delivery to a disconnected caller.
+
 ## Internal initial material consistency
 
 The internal `renewalAttach/internal/material` classifiers compare complete

@@ -559,3 +559,15 @@ export function consumeClassReservation(
     return callUnbound();
   }
 }
+
+/** Fixed Node producer entry, still distinct from operational profile admission. */
+export function consumeInitialClassReservation(
+  call: unknown,
+  journal: unknown,
+) {
+  const consumed = consumeClassReservation(call, journal);
+  if (typeof call !== "object" || call === null) callUnbound();
+  const state = winningCalls.get(call);
+  if (!state) callUnbound();
+  return Object.freeze({ ...consumed, binding: state.binding });
+}

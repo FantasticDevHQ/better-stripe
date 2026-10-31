@@ -28,10 +28,9 @@
 
 ## [0.100.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.99.0...v0.100.0) (2026-10-31)
 
-
 ### Features
 
-* retain actual attachment acknowledgement identities ([#442](https://github.com/FantasticDevHQ/better-stripe/issues/442)) ([72cfd30](https://github.com/FantasticDevHQ/better-stripe/commit/72cfd307d49f000a598e59479631af6bbe6ee8c8))
+- retain actual attachment acknowledgement identities ([#442](https://github.com/FantasticDevHQ/better-stripe/issues/442)) ([72cfd30](https://github.com/FantasticDevHQ/better-stripe/commit/72cfd307d49f000a598e59479631af6bbe6ee8c8))
 
 ## [0.99.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.98.0...v0.99.0) (2026-10-31)
 

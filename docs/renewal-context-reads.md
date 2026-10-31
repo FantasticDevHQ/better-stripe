@@ -263,7 +263,7 @@ call.
 
 The result is an opaque private view containing `owner`, `basisJSON` and
 `operationalAuthority: false`. The separate private C10 factory below can use
-that identity. Configure recovery actors and public scheduling
+that identity. Cross-process configure recovery and public scheduling
 remain required, as do genuine generation and operational qualification.
 Production Source profile arrays remain empty.
 
@@ -375,8 +375,60 @@ event 3 commits, its actual C10 ACK returns and the final complete history and
 retention fence passes. The view retains the exact returned output and its
 receipt/raw-receipt identities. A final guard precedes quarantine discard with
 no intervening callback or Owner sample. Late fulfillment after retirement stays
-unknown and cannot publish ACK custody. This initial-write path supplies no
-replay, resumption, public scheduling entrypoint or pending/effective claim.
+unknown and cannot publish ACK custody. This initial-write actor never replays itself. Separate recovery remains explicit;
+public scheduling and pending/effective acceptance remain outstanding.
+
+## Private same-live-Owner configure recovery
+
+`captureAdmittedConfigureRecovery(token)` synchronously reserves one recovery
+from the actual original child attempt before its first await. The original
+invocation must have started and settled, with idle journal work and no returned
+ACK. The attempt retains its actual qualified pair, original fresh evidence,
+preflight/profile pointers, immutable C7 and any owned safe response/C9/retention
+reply. A disposition marker, copied token or journal DATA cannot supply that
+custody. The original Owner, SDK client, method, basis and deadlines remain fixed.
+Production Source profile arrays remain empty.
+
+`NOT_STARTED`, `PENDING`, unsettled invocations and pending journal RPCs refuse.
+A committed row does not establish that its actual RPC reply returned. Recovery
+also refuses `FULFILLED_SAFE` without the actual saved response or C9. The write
+producer saves that safe response before awaiting response-event publication;
+a failed response append therefore cannot turn an owned response into permission
+for another POST.
+
+Unknown replay requires no owned response/C9, exact dispatch-only history and no
+known acknowledgement. A distinct replay transport performs its own fixed fresh
+GET generation. Complete raw baseline equality, fresh C6 reconstruction and the
+captured write predicate must preserve the original C7, key and first-dispatch
+time. Retention requires `0 <= now - originalFirstDispatch < 86400` before
+acquisition and again immediately before POST. The original Owner must still be
+live; this scalar rule never revives it. The actor re-ACKs the identical dispatch
+DATA and repeats the full head-one/ACK-null/idle fence before its single replay
+POST, with zero retries. Baseline drift or an already-applied state never becomes
+a newly projected request.
+
+Owned safe-response or C9 completion performs no provider GET or POST. It checks
+the complete existing journal prefix against that actual custody, uses a distinct
+original-journal sender, and re-ACKs or completes matching dispatch/response DATA.
+A stopped original sender cannot be reopened. The actor constructs missing C9
+from the owned response, retains complete canonical C9 and validates retention
+reply/readback before whole-output admission or receipt event three. Matching
+head-three DATA can be re-ACKed after a lost append reply. Every observed retained
+descriptor must stay identical; conflicts refuse without repair. An output-budget
+failure stays unknown with its complete known receipt, never truncated DATA.
+
+The unified `readAdmittedConfigureAcknowledgement(token)` returns only actual
+initial or recovered completion. Its output and receipt/raw-receipt identities
+come from the actual returned wrapper. There is no caller receipt/output
+registration API. Final guards precede quarantine discard without intervening
+callbacks. Pending work, retirement or observed pointer changes cannot publish
+late ACK custody or create another recovery reservation.
+
+These are bounded read fences, not an atomic provider-writer lock. The recovery
+is process-local and uses the same live Owner; persisted DATA cannot create a new
+Owner or a cross-process execution grant. Public scheduling, cross-process
+recovery, genuine generated/deployed compatibility, provider/native qualification
+and complete Dojo adoption remain separate acceptance work.
 
 ## Component operation journal
 

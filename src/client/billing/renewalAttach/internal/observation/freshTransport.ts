@@ -1,4 +1,15 @@
 import Stripe from "stripe";
+import { getFunctionAddress } from "convex/server";
+import {
+  createInvoiceReadPlan,
+  InvoiceAcquisitionStop,
+} from "./invoicePlan.js";
+import {
+  createInvoiceAuthorization,
+  invoiceProfileGuard,
+} from "./invoiceAuthorization.js";
+import type { InvoiceObservationProfile } from "../operations/sourceOperations.js";
+import type { InvoiceContextV1 } from "../../../renewalObservation/evidence-v1-types.js";
 import { types } from "node:util";
 import {
   COMPILED_FRESH_OBSERVATION_ENTRIES,
@@ -16,6 +27,7 @@ import {
   couponReadRow,
   observationCouponIds,
   validateBaseRouting,
+  validateCoupon,
 } from "./profile.js";
 import { captureObservationReply, safeReadDiagnostics } from "./capture.js";
 import type {
@@ -67,13 +79,30 @@ type Settlement = Readonly<{
 export function captureFreshGetTransport(
   token: object,
   profile: FreshObservationProfile,
+  invoiceProfile: InvoiceObservationProfile | null = null,
 ) {
-  freshNeed(arguments.length === 2);
+  freshNeed(arguments.length === 2 || arguments.length === 3);
   const state = readObservationInvocation(token),
     captured = state.readCaptured();
   freshNeed(state.historyEntry === profile.historyEntry);
   const covers = profile.coversObservation;
+  const invoiceAddress =
+    invoiceProfile &&
+    JSON.stringify(getFunctionAddress(invoiceProfile.authorizationQuery));
+  let invoiceAuthorization: ReturnType<
+    typeof createInvoiceAuthorization
+  > | null = null;
+  let invoiceUsed = false;
   function profileGuard() {
+    if (invoiceProfile) {
+      invoiceProfileGuard(invoiceProfile);
+      freshNeed(
+        invoiceProfile.freshProfile === profile &&
+          JSON.stringify(
+            getFunctionAddress(invoiceProfile.authorizationQuery),
+          ) === invoiceAddress,
+      );
+    }
     readObservationInvocation(token);
     freshNeed(
       COMPILED_FRESH_OBSERVATION_ENTRIES.includes(profile) &&
@@ -105,6 +134,7 @@ export function captureFreshGetTransport(
   );
   function guard() {
     profileGuard();
+    invoiceAuthorization?.guard();
     selection.check();
     freshNeed(
       Object.getPrototypeOf(client) === Stripe.prototype &&
@@ -136,6 +166,70 @@ export function captureFreshGetTransport(
     freshNeed(ordinal - 4 < ids.length);
     return couponReadRow(ids[ordinal - 4], ordinal + 1);
   }
+  async function dispatch(row: ObservationReadRow, invoiceRead = false) {
+    if (invoiceRead) await invoiceAuthorization!.authorize();
+    else await state.authorizeUnchanged();
+    guard();
+
+    let promise: object | null = null;
+    const cell: { capsule: Settlement | null } = { capsule: null };
+    const result: unknown = await state.owned(() => {
+      const actualPromise: unknown = Reflect.apply(method, client, [
+        "GET",
+        row.path,
+        undefined,
+        row.options,
+      ]);
+      freshNeed(
+        actualPromise &&
+          typeof actualPromise === "object" &&
+          !types.isProxy(actualPromise) &&
+          types.isPromise(actualPromise),
+      );
+      promise = actualPromise;
+      return Reflect.apply(nativeThen, actualPromise, [
+        (value: unknown) =>
+          (cell.capsule = Object.freeze({
+            promise: actualPromise,
+            kind: "fulfilled" as const,
+            value,
+          })),
+        (value: unknown) =>
+          (cell.capsule = Object.freeze({
+            promise: actualPromise,
+            kind: "rejected" as const,
+            value,
+          })),
+      ]) as Promise<Settlement>;
+    }, guard);
+    guard();
+    const capsule = cell.capsule;
+    freshNeed(capsule && result === capsule && capsule.promise === promise);
+    const settled: Settlement = capsule;
+    if (settled.kind === "rejected") {
+      ended = true;
+      return Object.freeze({
+        kind: "provider_rejected" as const,
+        failure: freeze({
+          category: "provider_rejected" as const,
+          phase: "read" as const,
+          resource: row.resource,
+          ordinal: row.ordinal,
+          request: {
+            method: "GET" as const,
+            path: row.path,
+            apiVersion: row.options.apiVersion,
+          },
+          diagnostics: safeReadDiagnostics(settled.value),
+          outcome: "unknown" as const,
+          operationalAuthority: false as const,
+        }),
+      });
+    }
+    const body = captureObservationReply(settled.value);
+    guard();
+    return Object.freeze({ kind: "fulfilled" as const, body });
+  }
   return Object.freeze({
     guard,
     async read(
@@ -152,7 +246,7 @@ export function captureFreshGetTransport(
       busy = true;
       try {
         guard();
-        freshNeed(ordinal < 44 && !types.isProxy(raw));
+        freshNeed(!invoiceUsed && ordinal < 44 && !types.isProxy(raw));
         const row = expected(),
           actual = closed(raw, [
             "resource",
@@ -178,68 +272,104 @@ export function captureFreshGetTransport(
             options.apiVersion === row.options.apiVersion &&
             options.maxNetworkRetries === 0,
         );
-        await state.authorizeUnchanged();
-        guard();
+        const result = await dispatch(row);
         ordinal++;
-        let promise: object | null = null;
-        const cell: { capsule: Settlement | null } = { capsule: null };
-        const result: unknown = await state.owned(() => {
-          const actualPromise: unknown = Reflect.apply(method, client, [
-            "GET",
-            row.path,
-            undefined,
-            row.options,
-          ]);
-          freshNeed(
-            actualPromise &&
-              typeof actualPromise === "object" &&
-              !types.isProxy(actualPromise) &&
-              types.isPromise(actualPromise),
-          );
-          promise = actualPromise;
-          return Reflect.apply(nativeThen, actualPromise, [
-            (value: unknown) =>
-              (cell.capsule = Object.freeze({
-                promise: actualPromise,
-                kind: "fulfilled" as const,
-                value,
-              })),
-            (value: unknown) =>
-              (cell.capsule = Object.freeze({
-                promise: actualPromise,
-                kind: "rejected" as const,
-                value,
-              })),
-          ]) as Promise<Settlement>;
-        }, guard);
-        guard();
-        const capsule = cell.capsule;
-        freshNeed(capsule && result === capsule && capsule.promise === promise);
-        const settled: Settlement = capsule;
-        if (settled.kind === "rejected") {
-          ended = true;
-          return Object.freeze({
-            kind: "provider_rejected" as const,
-            failure: freeze({
-              category: "provider_rejected" as const,
-              phase: "read" as const,
-              resource: row.resource,
-              ordinal: row.ordinal,
-              request: {
-                method: "GET" as const,
-                path: row.path,
-                apiVersion: row.options.apiVersion,
-              },
-              diagnostics: safeReadDiagnostics(settled.value),
-              outcome: "unknown" as const,
-              operationalAuthority: false as const,
-            }),
-          });
-        }
-        const body = captureObservationReply(settled.value);
-        guard();
+        if (result.kind === "provider_rejected") return result;
+        const body = result.body;
         bodies.push(body);
         return Object.freeze({ kind: "fulfilled" as const, body });
+      } catch (error) {
+        ended = true;
+        state.close();
+        throw error;
+      } finally {
+        busy = false;
+      }
+    },
+    async finalizeInvoices() {
+      if (invoiceAuthorization) await invoiceAuthorization.authorize();
+      else await state.authorizeUnchanged();
+      guard();
+    },
+    async acquireInvoices(): Promise<
+      Readonly<{
+        status: "complete" | "unavailable" | "conflict" | "provider_rejected";
+        context: InvoiceContextV1 | null;
+        reason: string | null;
+        failure: ReadFailure | null;
+      }>
+    > {
+      freshNeed(
+        arguments.length === 0 &&
+          invoiceProfile &&
+          !invoiceUsed &&
+          !busy &&
+          !ended,
+      );
+      invoiceUsed = true;
+      busy = true;
+      try {
+        guard();
+        const reads: ObservationReads = {
+          schedule: bodies[0],
+          subscription: bodies[1],
+          targetPrice: bodies[2],
+          billingCustomer: bodies[3],
+          coupons: bodies.slice(4),
+        };
+        validateBaseRouting(captured.history.record, reads);
+        const ids = observationCouponIds(
+          captured.history.record,
+          reads.subscription,
+        );
+        freshNeed(ordinal === 4 + ids.length);
+        reads.coupons.forEach((body, index) =>
+          validateCoupon(captured.history.record, ids[index], body),
+        );
+        let plan: ReturnType<typeof createInvoiceReadPlan>;
+        try {
+          plan = createInvoiceReadPlan(captured.history.record, reads, ordinal);
+        } catch (error) {
+          if (!(error instanceof InvoiceAcquisitionStop)) throw error;
+          return Object.freeze({
+            status: error.kind,
+            context: null,
+            reason: error.reason,
+            failure: null,
+          });
+        }
+        invoiceAuthorization = createInvoiceAuthorization(
+          token,
+          invoiceProfile,
+          plan.pins,
+        );
+        while (!plan.done()) {
+          const result = await dispatch(plan.row(), true);
+          if (result.kind === "provider_rejected")
+            return Object.freeze({
+              status: "provider_rejected",
+              context: null,
+              reason: null,
+              failure: result.failure,
+            });
+          try {
+            plan.accept(result.body);
+          } catch (error) {
+            if (!(error instanceof InvoiceAcquisitionStop)) throw error;
+            return Object.freeze({
+              status: error.kind,
+              context: null,
+              reason: error.reason,
+              failure: null,
+            });
+          }
+        }
+        return Object.freeze({
+          status: "complete",
+          context: plan.context(),
+          reason: null,
+          failure: null,
+        });
       } catch (error) {
         ended = true;
         state.close();

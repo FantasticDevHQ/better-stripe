@@ -41,6 +41,7 @@ export async function initialOperations(
   options: {
     identity?: { subject: string; issuer: string; tokenIdentifier: string };
     hostQuery?: ReturnType<typeof queryGeneric>;
+    hostInvoiceQuery?: ReturnType<typeof queryGeneric>;
     epochMs?: number;
     workEndWallMs?: number;
     endWallMs?: number;
@@ -180,6 +181,9 @@ export async function initialOperations(
   let secondaryId = 0;
   const host = {
     ...(options.hostQuery ? { authorize: options.hostQuery } : {}),
+    ...(options.hostInvoiceQuery
+      ? { authorizeInvoices: options.hostInvoiceQuery }
+      : {}),
     secondary: actionGeneric({
       args: { id: v.string() },
       handler: async (ctx, args): Promise<null> => {

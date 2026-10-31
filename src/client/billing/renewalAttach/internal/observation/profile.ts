@@ -70,7 +70,7 @@ function ids(record: ObservationRecord) {
   };
 }
 function row(
-  resource: Resource,
+  resource: Exclude<Resource, "invoice" | "invoice_lines">,
   id: string,
   ordinal: number,
 ): ObservationReadRow {

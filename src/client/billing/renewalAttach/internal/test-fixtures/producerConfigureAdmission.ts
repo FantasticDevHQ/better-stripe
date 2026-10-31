@@ -32,6 +32,7 @@ const controls = vi.hoisted(() => ({
   selectors: 0,
   history: [] as unknown[],
   observation: [] as unknown[],
+  invoices: [] as unknown[],
   onSelect: null as null | ((client: object) => void),
 }));
 vi.mock("../operations/sourceOperations.js", () => {
@@ -46,6 +47,7 @@ vi.mock("../operations/sourceOperations.js", () => {
     COMPILED_CONFIGURE_WRITE_ENTRIES: controls.write,
     COMPILED_OBSERVATION_HISTORY_ENTRIES: controls.history,
     COMPILED_FRESH_OBSERVATION_ENTRIES: controls.observation,
+    COMPILED_INVOICE_OBSERVATION_ENTRIES: controls.invoices,
     loadConfigureWriteTransportSource: poison,
     loadConfigureReplayTransportSource: poison,
     loadFixedConfigureWriteOperation: poison,
@@ -112,6 +114,7 @@ beforeEach(() => {
   controls.selectors = 0;
   controls.history.splice(0);
   controls.observation.splice(0);
+  controls.invoices.splice(0);
   controls.onSelect = null;
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
@@ -181,7 +184,10 @@ async function setup(
       if (completion.mode === "replay" && completion.posts === 1)
         throw Error("CONTROLLED_LOST_RESPONSE");
     }
-    const body = method === "POST" ? baseline.schedule : routes.get(path);
+    const body =
+      method === "POST"
+        ? baseline.schedule
+        : (routes.get(path + parsed.search) ?? routes.get(path));
     assert(body);
     assert(
       method === "GET" ||
@@ -404,6 +410,9 @@ export async function configureAdmissionFixture(
     hostQuery?: NonNullable<
       Parameters<typeof initialOperations>[2]
     >["hostQuery"];
+    hostInvoiceQuery?: NonNullable<
+      Parameters<typeof initialOperations>[2]
+    >["hostQuery"];
     count?: number;
     keys?: readonly string[];
     afterBind?: (reply: unknown) => Promise<void>;
@@ -434,6 +443,7 @@ export async function configureAdmissionFixture(
       keys: options.keys,
       identity: options.identity,
       hostQuery: options.hostQuery,
+      hostInvoiceQuery: options.hostInvoiceQuery,
       source: captureRetainedInput(baseline.original),
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,

@@ -251,6 +251,14 @@ export async function inspectInvoiceEvidenceV1(
     };
     const original = examine("original"),
       current = examine("current");
+    const lineIds = (role: "original" | "current") =>
+      array(invoiceRecordV1(inventory[role]).linePages).flatMap((page) =>
+        array(invoiceRecordV1(page).data).map(
+          (line) => invoiceRecordV1(line).id,
+        ),
+      );
+    const originalIds = new Set(lineIds("original"));
+    relation(lineIds("current").every((id) => !originalIds.has(id)));
     return {
       predicate: "invoice_lines_correlated",
       original,

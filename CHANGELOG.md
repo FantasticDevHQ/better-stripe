@@ -28,10 +28,9 @@
 
 ## [0.109.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.109.0...v0.109.1) (2026-10-31)
 
-
 ### Bug Fixes
 
-* require distinct renewal invoice identities ([#461](https://github.com/FantasticDevHQ/better-stripe/issues/461)) ([b34fddd](https://github.com/FantasticDevHQ/better-stripe/commit/b34fdddc080be1c2c59bc968c8de77687bd4da2a))
+- require distinct renewal invoice identities ([#461](https://github.com/FantasticDevHQ/better-stripe/issues/461)) ([b34fddd](https://github.com/FantasticDevHQ/better-stripe/commit/b34fdddc080be1c2c59bc968c8de77687bd4da2a))
 
 ## [0.109.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.108.0...v0.109.0) (2026-10-31)
 

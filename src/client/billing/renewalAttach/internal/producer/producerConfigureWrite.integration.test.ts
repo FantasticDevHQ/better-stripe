@@ -1,0 +1,158 @@
+import { object } from "./configureJournalData.js";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  configureAdmissionFixture,
+  admissionControls,
+  configureAdmissionCase,
+  prepareAdmittedConfigure,
+} from "../test-fixtures/producerConfigureAdmission.js";
+import { captureAdmittedConfigurePreflight } from "./configurePreflight.js";
+import {
+  captureAdmittedConfigureWrite,
+  readAdmittedConfigureAcknowledgement,
+  readAdmittedConfigureWriteAttempt,
+} from "./configureWrite.js";
+
+configureAdmissionCase(
+  "commits dispatch, one exact configure POST, retained C9 and receipt publication before returning ACK custody",
+  prepareAdmittedConfigure,
+  async (h, { child, token }) => {
+    const before = h.calls.length;
+    const actor = captureAdmittedConfigureWrite(token);
+    expect(actor).not.toBeNull();
+    const output = await actor!.invoke();
+    expect(object(output).status).toBe("configure_acknowledged");
+    const view = readAdmittedConfigureAcknowledgement(token);
+    expect(view!.output === output).toBe(true);
+    expect(view!.receipt === object(output).receipt).toBe(true);
+    expect(view!.rawReceipt === object(output).rawReceipt).toBe(true);
+    expect(view!.acknowledgement === h.core.attachAcknowledgement()).toBe(true);
+    const calls = h.calls.slice(before);
+    expect(calls.filter((call) => call.method === "GET")).toHaveLength(6);
+    expect(calls.filter((call) => call.method === "POST")).toEqual([
+      expect.objectContaining({
+        path: child.record.configureRecord.request.path,
+        idempotencyKey: child.record.configureRecord.request.key,
+        apiVersion: "2026-09-30.endive",
+      }),
+    ]);
+    if (child.fresh.result.disposition !== "acquired")
+      throw Error("INVALID_FIXTURE_CAS");
+    const history = await child.journal.readAttempt({
+      attemptId: child.fresh.result.reservation.attemptId,
+    });
+    expect(history!.events.map((event) => event.sequence)).toEqual([1, 2, 3]);
+    const retained = await child.journal.readProviderAcknowledgement();
+    expect(retained).not.toBeNull();
+    expect(JSON.parse(retained!.receiptJSON)).toEqual(object(output).receipt);
+    expect(admissionControls.legacy).toBe(0);
+  },
+);
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+describe("known C9 with oversized whole output", () => {
+  let pending: Promise<void>,
+    start: ReturnType<typeof deferred>,
+    postReady: ReturnType<typeof deferred>,
+    releasePost: ReturnType<typeof deferred>,
+    run = false,
+    armed = false;
+  beforeEach(async () => {
+    run = false;
+    armed = false;
+    start = deferred();
+    postReady = deferred();
+    releasePost = deferred();
+    let ready!: () => void, failed!: (error: unknown) => void;
+    const prepared = new Promise<void>((resolve, reject) => {
+      ready = resolve;
+      failed = reject;
+    });
+    pending = configureAdmissionFixture(
+      async (h) => {
+        await h.complete();
+        const child = await h.child();
+        const token = await h.core.admitConfigure(
+          child.fresh.call,
+          child.journal,
+        );
+        h.configureReads(child);
+        admissionControls.preflight.push({
+          originalEntry: admissionControls.entries[0],
+          coversPreflight: () => true,
+        });
+        admissionControls.write.push({
+          originalEntry: admissionControls.entries[0],
+          coversConfigure: () => true,
+        });
+        await captureAdmittedConfigurePreflight(token).invoke();
+        Reflect.set(h.baseline.schedule, "padding", "x".repeat(300000));
+        ready();
+        await start.promise;
+        if (!run) return;
+        armed = true;
+        const actor = captureAdmittedConfigureWrite(token);
+        expect(object(await actor.invoke()).status).toBe("configure_unknown");
+        expect(
+          await child.journal.readProviderAcknowledgement(),
+        ).not.toBeNull();
+        const attempt = readAdmittedConfigureWriteAttempt(token);
+        expect(attempt).not.toBeNull();
+        expect(attempt!.receiptKnown).toBe(true);
+        expect(Object.isFrozen(attempt!.receipt)).toBe(true);
+        expect(Object.isFrozen(attempt!.rawReceipt)).toBe(true);
+        expect(attempt!.receipt).not.toBeNull();
+        expect(attempt!.rawReceipt).not.toBeNull();
+        expect(attempt!.returned).toBe(false);
+        expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
+        await expect(actor.invoke()).rejects.toThrow();
+        expect(
+          h.calls.filter(
+            (call) =>
+              call.method === "POST" &&
+              call.path === child.record.configureRecord.request.path,
+          ),
+        ).toHaveLength(1);
+      },
+      {
+        beforeFetch: async (path, method) => {
+          if (
+            armed &&
+            method === "POST" &&
+            path.startsWith("/v1/subscription_schedules/")
+          ) {
+            postReady.resolve();
+            await releasePost.promise;
+          }
+        },
+      },
+    );
+    void pending.catch(failed);
+    await prepared;
+  });
+  beforeEach(async () => {
+    run = true;
+    start.resolve();
+    await Promise.race([
+      postReady.promise,
+      pending.then(() => {
+        throw Error("FIXTURE_SETTLED_BEFORE_POST");
+      }),
+    ]);
+  });
+  afterEach(async () => {
+    start?.resolve();
+    releasePost?.resolve();
+    await pending?.catch(() => {});
+  });
+  it("durably retains actual C9 even when whole-output admission fails", async () => {
+    releasePost.resolve();
+    await pending;
+  });
+});

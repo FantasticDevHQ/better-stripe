@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, vi } from "vitest";
 import { initialOperations } from "./producerInitialOperation.js";
 import { makeConfigureReadNativeBaseline } from "./configureReadNativeBaseline.js";
 import { captureRetainedInput } from "../material/capture.js";
+import { captureAdmittedConfigurePreflight } from "../producer/configurePreflight.js";
 import { captureInitialInvocationCore } from "../producer/invocationProducer.js";
 import { createClassActionOperationJournal } from "../operationJournal.js";
 import { components } from "../../../../../../example/convex/_generated/api.js";
@@ -23,6 +24,10 @@ const controls = vi.hoisted(() => ({
     originalEntry: unknown;
     coversPreflight(...args: unknown[]): boolean;
   }[],
+  write: [] as {
+    originalEntry: unknown;
+    coversConfigure(...args: unknown[]): boolean;
+  }[],
   legacy: 0,
   selectors: 0,
 }));
@@ -35,6 +40,11 @@ vi.mock("../operations/sourceOperations.js", () => {
     COMPILED_INITIAL_ENTRIES: controls.entries,
     COMPILED_RECOVERY_ENTRIES: controls.recovery,
     COMPILED_PREFLIGHT_ENTRIES: controls.preflight,
+    COMPILED_CONFIGURE_WRITE_ENTRIES: controls.write,
+    loadConfigureWriteTransportSource: poison,
+    loadConfigureReplayTransportSource: poison,
+    loadFixedConfigureWriteOperation: poison,
+    loadFixedConfigureReplayOperation: poison,
     loadOwnedConfigureOperation: poison,
     loadConfigureOwnedReadTransportSource: poison,
     ORIGINAL_ORIGIN_ASSOCIATION: null,
@@ -77,6 +87,7 @@ const canonical = (value: unknown) => JSON.stringify(renewalSnapshot(value));
 beforeEach(() => {
   controls.legacy = 0;
   controls.preflight.splice(0);
+  controls.write.splice(0);
   controls.selectors = 0;
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
@@ -113,6 +124,8 @@ async function setup(
     path: string;
     query: string;
     hasBody: boolean;
+    idempotencyKey: string | null;
+    apiVersion: string | null;
   }[] = [];
   const routes = new Map<string, unknown>([
     ["/v1/subscriptions/sub_original", source.originalBundle.wireSubscription],
@@ -132,6 +145,8 @@ async function setup(
       path,
       query: parsed.search,
       hasBody: init?.body !== undefined,
+      idempotencyKey: new Headers(init?.headers).get("idempotency-key"),
+      apiVersion: new Headers(init?.headers).get("stripe-version"),
     });
     await hooks.beforeFetch?.(path, method);
     if (method === "POST") {
@@ -143,7 +158,9 @@ async function setup(
     assert(body);
     assert(
       method === "GET" ||
-        (method === "POST" && path === "/v1/subscription_schedules"),
+        (method === "POST" &&
+          (path === "/v1/subscription_schedules" ||
+            path === "/v1/subscription_schedules/" + baseline.schedule.id)),
     );
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -362,6 +379,7 @@ export async function configureAdmissionFixture(
     ) => Promise<void>;
     afterAppend?: () => Promise<void>;
     beforeAppend?: () => Promise<void>;
+    afterRetain?: () => Promise<void>;
     beforeFetch?: (path: string, method: string) => Promise<void>;
   } = {},
 ) {
@@ -383,6 +401,7 @@ export async function configureAdmissionFixture(
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,
       beforeAppend: options.beforeAppend,
+      afterRetain: options.afterRetain,
       afterAppend: async () => {
         completion.appends++;
         if (completion.mode === "resume" && completion.appends === 2)
@@ -397,4 +416,68 @@ export async function configureAdmissionFixture(
         1000,
     },
   );
+}
+
+/** Stage real Action prerequisites separately while joining every test continuation. */
+export function configureAdmissionCase<T>(
+  name: string,
+  prepare: (h: Awaited<ReturnType<typeof setup>>) => Promise<T>,
+  verify: (h: Awaited<ReturnType<typeof setup>>, state: T) => Promise<void>,
+  options: Parameters<typeof configureAdmissionFixture>[1] = {},
+) {
+  describe(name, () => {
+    let pending: Promise<void>,
+      start!: () => void,
+      run = false;
+    beforeEach(async () => {
+      run = false;
+      let ready!: () => void, failed!: (error: unknown) => void;
+      const prepared = new Promise<void>((resolve, reject) => {
+        ready = resolve;
+        failed = reject;
+      });
+      const entered = new Promise<void>((resolve) => {
+        start = resolve;
+      });
+      pending = configureAdmissionFixture(async (h) => {
+        const state = await prepare(h);
+        ready();
+        await entered;
+        if (run) await verify(h, state);
+      }, options);
+      void pending.catch(failed);
+      await prepared;
+    });
+    afterEach(async () => {
+      start?.();
+      await pending?.catch(() => {});
+    });
+    it(name, async () => {
+      run = true;
+      start();
+      await pending;
+    });
+  });
+}
+
+/** Actual initial ACK, child admission and completed readonly preflight prerequisites. */
+export async function prepareAdmittedConfigure(
+  h: Awaited<ReturnType<typeof setup>>,
+) {
+  await h.complete();
+  const child = await h.child();
+  const token = await h.core.admitConfigure(child.fresh.call, child.journal);
+  const current = h.configureReads(child);
+  if (controls.preflight.length === 0)
+    controls.preflight.push({
+      originalEntry: controls.entries[0],
+      coversPreflight: () => true,
+    });
+  if (controls.write.length === 0)
+    controls.write.push({
+      originalEntry: controls.entries[0],
+      coversConfigure: () => true,
+    });
+  await captureAdmittedConfigurePreflight(token).invoke();
+  return { child, token, current };
 }

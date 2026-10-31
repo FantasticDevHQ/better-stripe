@@ -1,5 +1,6 @@
 import { types } from "node:util";
 import { OWNER } from "../originalOwner.js";
+import { captureAdmittedConfigureWriteFrame } from "../producer/configureWriteFactory.js";
 import { closed } from "../operations/types.js";
 import { equal } from "../../../renewalAggregate/shared.js";
 import {
@@ -34,6 +35,13 @@ function build(load: () => unknown) {
   OWNER.check();
   const raw = load();
   OWNER.check();
+  return configureWriteKernel(raw, OWNER);
+}
+function configureWriteKernel(
+  raw: unknown,
+  owner: typeof OWNER,
+  guard?: () => void,
+) {
   need(!types.isProxy(raw));
   const frame = closed(raw, [
     "owner",
@@ -42,7 +50,7 @@ function build(load: () => unknown) {
     "readPlan",
     "delegate",
   ]);
-  need(frame.owner === OWNER);
+  need(frame.owner === owner);
   const operation = frame.operation,
     readPlanReference = frame.readPlan,
     delegate = frame.delegate;
@@ -77,7 +85,9 @@ function build(load: () => unknown) {
     }
     checking = true;
     try {
-      OWNER.check();
+      guard?.();
+      owner.check();
+      guard?.();
       if (closedOwner) stop();
     } catch {
       closedOwner = true;
@@ -345,4 +355,23 @@ export function createConfigureWriteTransport() {
 export function createConfigureReplayTransport() {
   need(arguments.length === 0);
   return build(loadConfigureReplayTransportSource);
+}
+
+/** Actual completed preflight custody only; no caller-supplied frame or Owner. */
+export function createAdmittedConfigureWriteTransport(token: object) {
+  const source = captureAdmittedConfigureWriteFrame(token, arguments.length);
+  const pair = configureWriteKernel(source.frame, source.owner, source.guard);
+  need(
+    pair.capability.assertSourceOperationBinding(
+      token,
+      source.record.request,
+      source.frame.readPlan,
+      source.frame.delegate,
+      source.frame.delegate.rawRequest,
+      source.expected,
+    ),
+  );
+  need(pair.capability.reserveAcquisition());
+  source.guard();
+  return Object.freeze({ ...pair, ...source });
 }

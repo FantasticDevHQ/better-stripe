@@ -263,7 +263,7 @@ call.
 
 The result is an opaque private view containing `owner`, `basisJSON` and
 `operationalAuthority: false`. The separate private C10 factory below can use
-that identity. Configure write transport, write actors and public scheduling
+that identity. Configure recovery actors and public scheduling
 remain required, as do genuine generation and operational qualification.
 Production Source profile arrays remain empty.
 
@@ -299,9 +299,9 @@ a committed response or receipt event, and a retained C9 do not establish provid
 custody, returned configure ACK custody, pending/effective replacement or fresh
 dispatch permission. Receipt retention remains a separate operation; a future
 configure completion pipeline must retain the complete C9 before publishing
-receipt event 3 and returning its actual acknowledgement. Future execution also
-requires its own frontier checks. This channel factory supplies no provider
-transport or write actor and activates no operational Source profile.
+receipt event 3 and returning its actual acknowledgement. Execution requires its
+own frontier checks. This channel factory supplies no provider transport and
+activates no operational Source profile.
 
 ## Private admitted configure preflight
 
@@ -334,6 +334,49 @@ cannot register completion. Owner retirement and observed custody changes close
 the actor. The legacy preflight functions retain their original Owner checks
 around shared DATA kernels. This readonly consistency result grants no configure
 POST permission, returned configure ACK custody or public scheduling support.
+
+## Private admitted configure write
+
+`captureAdmittedConfigureWrite(token)` captures one initial write actor from the
+actual completed preflight view. It retains the actual parent ACK, original
+profile entry and preflight predicate pointers. A unique compiled write entry
+must link to that original entry, and its predicate identity remains fixed.
+Copied tokens, output DATA, pending preflight and replacement arguments cannot
+supply custody. Production profile arrays remain empty.
+
+The write transport preserves the legacy POST latch and quarantine kernel while
+using the admitted child's original parent Owner and stock SDK delegate. It
+performs its own fixed fresh GET sequence. The separate readonly preflight output
+cannot mark this pair's read generation complete. Current reads and a fresh C6
+reconstruction must still match the retained request exactly, including its key,
+first-dispatch time, path, payload and API version.
+
+Before dispatch intent, the actor checks the complete head-zero frontier. It
+awaits the actual committed dispatch event 1 and C10 ACK, then checks full stored
+event DATA, basis, absent acknowledgement, idle journal work and exact head one
+before POST. Each invocation permits at most one POST, with the retained key and
+zero retries. These checks are bounded read fences, not an atomic writer lock.
+The transport marks uncertainty before calling the stock delegate. Synchronous
+throws or non-Promise results cannot establish a proven provider rejection.
+
+Fulfillment enters quarantine before response inspection or Owner checks. Only
+safe captured response DATA can publish event 2. After actual C9 construction,
+the actor records the receipt as known, durably retains its complete canonical
+JSON at head two, validates the complete retention reply and reads it back.
+Retention precedes whole-output admission and receipt event 3. Output refusal,
+pending or rejected persistence replies, or failed event-3 publication cannot
+permit another POST or establish a returned ACK. A private live attempt view
+retains immutable actual C9/input DATA and POST disposition independently of the
+returned ACK view. Copied tokens cannot read it, and the view grants no replay
+or dispatch permission.
+
+`readAdmittedConfigureAcknowledgement(token)` returns custody only after receipt
+event 3 commits, its actual C10 ACK returns and the final complete history and
+retention fence passes. The view retains the exact returned output and its
+receipt/raw-receipt identities. A final guard precedes quarantine discard with
+no intervening callback or Owner sample. Late fulfillment after retirement stays
+unknown and cannot publish ACK custody. This initial-write path supplies no
+replay, resumption, public scheduling entrypoint or pending/effective claim.
 
 ## Component operation journal
 

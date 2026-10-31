@@ -28,10 +28,9 @@
 
 ## [0.97.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.97.0...v0.97.1) (2026-10-31)
 
-
 ### Refactoring
 
-* isolate initial renewal material classifiers ([#435](https://github.com/FantasticDevHQ/better-stripe/issues/435)) ([25a76c7](https://github.com/FantasticDevHQ/better-stripe/commit/25a76c78afa97f01dca41ac0e3521455903b8305))
+- isolate initial renewal material classifiers ([#435](https://github.com/FantasticDevHQ/better-stripe/issues/435)) ([25a76c7](https://github.com/FantasticDevHQ/better-stripe/commit/25a76c78afa97f01dca41ac0e3521455903b8305))
 
 ## [0.97.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.96.0...v0.97.0) (2026-10-31)
 

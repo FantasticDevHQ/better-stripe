@@ -1,3 +1,4 @@
+import { captureConfigureAdmission } from "./configureAdmission.js";
 import { mintInitialLineage, readInitialLineage } from "./lineageAuthority.js";
 import { captureLiveAttachRecovery } from "./recoveryEntry.js";
 import { readAttachAcknowledgementForLineage } from "./attachAcknowledgement.js";
@@ -28,6 +29,10 @@ export type InitialInvocationCore = Readonly<{
   attachAcknowledgement(): ReturnType<
     typeof readAttachAcknowledgementForLineage
   >;
+  admitConfigure(
+    call: unknown,
+    journal: unknown,
+  ): ReturnType<typeof captureConfigureAdmission>;
   operationalAuthority: false;
 }>;
 
@@ -97,6 +102,14 @@ export async function captureInitialInvocationCore(
       attachAcknowledgement() {
         if (arguments.length !== 0) throw Error("INITIAL_OPERATION_UNBOUND");
         return readAttachAcknowledgementForLineage(token);
+      },
+      admitConfigure(call: unknown, journal: unknown) {
+        return captureConfigureAdmission(
+          token,
+          call,
+          journal,
+          arguments.length,
+        );
       },
       operationalAuthority: false,
     });

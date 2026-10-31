@@ -19,6 +19,7 @@ class InitialLineage {}
 class InitialOrigin {}
 type Lineage = Readonly<{
   originAssociation: object;
+  binding: object;
   journal: ReturnType<typeof consumeInitialClassReservation>["journal"];
   reservation: ReturnType<typeof consumeInitialClassReservation>["reservation"];
   selection: ReturnType<typeof captureInitialJournalSelection>;
@@ -128,6 +129,7 @@ export function mintInitialLineage(
     token,
     Object.freeze({
       originAssociation: Object.freeze(new InitialOrigin()),
+      binding,
       journal: originalJournal,
       reservation,
       selection,

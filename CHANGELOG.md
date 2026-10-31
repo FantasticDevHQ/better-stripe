@@ -28,10 +28,9 @@
 
 ## [0.95.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.94.0...v0.95.0) (2026-10-31)
 
-
 ### Features
 
-* isolate renewal invocation Owner construction ([#428](https://github.com/FantasticDevHQ/better-stripe/issues/428)) ([3dea3ee](https://github.com/FantasticDevHQ/better-stripe/commit/3dea3eec53eb4f002a45a9eaa793b78a3ef4092b))
+- isolate renewal invocation Owner construction ([#428](https://github.com/FantasticDevHQ/better-stripe/issues/428)) ([3dea3ee](https://github.com/FantasticDevHQ/better-stripe/commit/3dea3eec53eb4f002a45a9eaa793b78a3ef4092b))
 
 ## [0.94.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.93.0...v0.94.0) (2026-10-31)
 

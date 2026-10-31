@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.103.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.102.0...v0.103.0) (2026-10-31)
+
+
+### Features
+
+* bind configure channels to admitted child custody ([#448](https://github.com/FantasticDevHQ/better-stripe/issues/448)) ([f48cfbe](https://github.com/FantasticDevHQ/better-stripe/commit/f48cfbe3f5da2722d7a8b5726ebc0c17b005ade9))
+
 ## [0.102.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.101.0...v0.102.0) (2026-10-31)
 
 ### Features

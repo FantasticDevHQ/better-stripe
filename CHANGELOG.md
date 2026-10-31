@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.110.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.109.1...v0.110.0) (2026-10-31)
+
+
+### Features
+
+* acquire bounded authorized renewal invoice evidence ([#463](https://github.com/FantasticDevHQ/better-stripe/issues/463)) ([7aaa4a2](https://github.com/FantasticDevHQ/better-stripe/commit/7aaa4a213078e6ab4d8c07753da0cd91c7fe3999))
+
 ## [0.109.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.109.0...v0.109.1) (2026-10-31)
 
 ### Bug Fixes

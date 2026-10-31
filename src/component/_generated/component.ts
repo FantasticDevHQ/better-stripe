@@ -8345,6 +8345,456 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
     };
+    renewalOperations: {
+      mutations: {
+        appendStageEvent: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            event: { binding: string; dataJSON: string; sequence: 1 | 2 | 3 };
+            expectedSequence: number;
+            reservation:
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  basisJSON: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  requestBinding: string;
+                  stage: "attach" | "configure";
+                }
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  recordVersion: 2;
+                  requestBinding: string;
+                  stage: "attach";
+                  timingPolicyJSON: string;
+                };
+          },
+          {
+            attemptId: string;
+            binding: string;
+            eventId: string;
+            operationId: string;
+            payloadId: string;
+            reservation:
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  basisJSON: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  requestBinding: string;
+                  stage: "attach" | "configure";
+                }
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  recordVersion: 2;
+                  requestBinding: string;
+                  stage: "attach";
+                  timingPolicyJSON: string;
+                };
+            sequence: 1 | 2 | 3;
+            sourcePayloadId: string;
+            stage: "attach" | "configure";
+          },
+          Name
+        >;
+        bindInitialBasis: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            attemptId: string;
+            basisJSON: string;
+            operationId: string;
+            policyJSON: string;
+          },
+          {
+            initialBasis: {
+              attemptId: string;
+              basisJSON: string;
+              policyJSON: string;
+              sourcePayloadId: string;
+              stage: "attach";
+              version: 1;
+            };
+            operationId: string;
+            status: "bound";
+          },
+          Name
+        >;
+        createAuthorizedOperation: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            authorizationRevision: number;
+            authorizationScope: string;
+            logicalOperationId: string;
+            recordJSON: string;
+          },
+          | { operationId: string; status: "created" }
+          | { operationId: string; status: "existing" }
+          | { reason: "identity_changed"; status: "conflict" },
+          Name
+        >;
+        reserveAttempt: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            expectedRequestBinding: string;
+            expectedRevision: number;
+            operationId: string;
+            recordJSON: string;
+            stage: "attach" | "configure";
+          },
+          | {
+              committedRevision: 1;
+              disposition: "acquired";
+              previousRevision: 0;
+              reservation:
+                | {
+                    accountJSON: string;
+                    apiVersion: string;
+                    attemptId: string;
+                    authorizationId: string;
+                    authorizationRevision: number;
+                    authorizationScope: string;
+                    basisJSON: string;
+                    committedRevision: 1;
+                    firstDispatchedAt: number;
+                    key: string;
+                    logicalOperationId: string;
+                    operationId: string;
+                    ordinal: 1;
+                    payloadId: string;
+                    preparedRevision: 0;
+                    recordJSON: string;
+                    requestBinding: string;
+                    stage: "attach" | "configure";
+                  }
+                | {
+                    accountJSON: string;
+                    apiVersion: string;
+                    attemptId: string;
+                    authorizationId: string;
+                    authorizationRevision: number;
+                    authorizationScope: string;
+                    committedRevision: 1;
+                    firstDispatchedAt: number;
+                    key: string;
+                    logicalOperationId: string;
+                    operationId: string;
+                    ordinal: 1;
+                    payloadId: string;
+                    preparedRevision: 0;
+                    recordJSON: string;
+                    recordVersion: 2;
+                    requestBinding: string;
+                    stage: "attach";
+                    timingPolicyJSON: string;
+                  };
+            }
+          | {
+              committedRevision: 1;
+              disposition: "existing";
+              reservation:
+                | {
+                    accountJSON: string;
+                    apiVersion: string;
+                    attemptId: string;
+                    authorizationId: string;
+                    authorizationRevision: number;
+                    authorizationScope: string;
+                    basisJSON: string;
+                    committedRevision: 1;
+                    firstDispatchedAt: number;
+                    key: string;
+                    logicalOperationId: string;
+                    operationId: string;
+                    ordinal: 1;
+                    payloadId: string;
+                    preparedRevision: 0;
+                    recordJSON: string;
+                    requestBinding: string;
+                    stage: "attach" | "configure";
+                  }
+                | {
+                    accountJSON: string;
+                    apiVersion: string;
+                    attemptId: string;
+                    authorizationId: string;
+                    authorizationRevision: number;
+                    authorizationScope: string;
+                    committedRevision: 1;
+                    firstDispatchedAt: number;
+                    key: string;
+                    logicalOperationId: string;
+                    operationId: string;
+                    ordinal: 1;
+                    payloadId: string;
+                    preparedRevision: 0;
+                    recordJSON: string;
+                    recordVersion: 2;
+                    requestBinding: string;
+                    stage: "attach";
+                    timingPolicyJSON: string;
+                  };
+            }
+          | { disposition: "conflict"; reason: "identity_changed" },
+          Name
+        >;
+        retainProviderAcknowledgement: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            attemptId: string;
+            expectedSequence: 2 | 3;
+            operationId: string;
+            receiptJSON: string;
+          },
+          {
+            attemptId: string;
+            dispatchEventId: string;
+            dispatchPayloadId: string;
+            operationId: string;
+            receiptBinding: string;
+            receiptPayloadId: string;
+            responseEventId: string;
+            responsePayloadId: string;
+            schemaVersion: 1;
+            sourcePayloadId: string;
+            stage: "attach";
+            status: "retained";
+          },
+          Name
+        >;
+      };
+      queries: {
+        loadAuthorizedOperation: FunctionReference<
+          "query",
+          "internal",
+          { operationId: string },
+          | null
+          | {
+              activeAttempt: null;
+              initialBasis: null;
+              operationId: string;
+              recordJSON: string;
+              recordVersion: 2;
+              revision: 0;
+            }
+          | {
+              activeAttempt: {
+                accountJSON: string;
+                apiVersion: string;
+                attemptId: string;
+                authorizationId: string;
+                authorizationRevision: number;
+                authorizationScope: string;
+                committedRevision: 1;
+                firstDispatchedAt: number;
+                key: string;
+                logicalOperationId: string;
+                operationId: string;
+                ordinal: 1;
+                payloadId: string;
+                preparedRevision: 0;
+                recordVersion: 2;
+                requestBinding: string;
+                stage: "attach";
+                timingPolicyJSON: string;
+              };
+              initialBasis: null | {
+                attemptId: string;
+                basisJSON: string;
+                policyJSON: string;
+                sourcePayloadId: string;
+                stage: "attach";
+                version: 1;
+              };
+              operationId: string;
+              recordJSON: string;
+              recordVersion: 2;
+              revision: 1;
+            }
+          | {
+              activeAttempt: null | {
+                accountJSON: string;
+                apiVersion: string;
+                attemptId: string;
+                authorizationId: string;
+                authorizationRevision: number;
+                authorizationScope: string;
+                basisJSON: string;
+                committedRevision: 1;
+                firstDispatchedAt: number;
+                key: string;
+                logicalOperationId: string;
+                operationId: string;
+                ordinal: 1;
+                payloadId: string;
+                preparedRevision: 0;
+                requestBinding: string;
+                stage: "attach" | "configure";
+              };
+              operationId: string;
+              recordJSON: string;
+              revision: 0 | 1;
+            },
+          Name
+        >;
+        readAttempt: FunctionReference<
+          "query",
+          "internal",
+          { attemptId: string; operationId: string },
+          null | {
+            events: Array<{
+              attemptId: string;
+              binding: string;
+              eventId: string;
+              operationId: string;
+              payloadId: string;
+              sequence: 1 | 2 | 3;
+              sourcePayloadId: string;
+              stage: "attach" | "configure";
+            }>;
+            reservation:
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  basisJSON: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  requestBinding: string;
+                  stage: "attach" | "configure";
+                }
+              | {
+                  accountJSON: string;
+                  apiVersion: string;
+                  attemptId: string;
+                  authorizationId: string;
+                  authorizationRevision: number;
+                  authorizationScope: string;
+                  committedRevision: 1;
+                  firstDispatchedAt: number;
+                  key: string;
+                  logicalOperationId: string;
+                  operationId: string;
+                  ordinal: 1;
+                  payloadId: string;
+                  preparedRevision: 0;
+                  recordJSON: string;
+                  recordVersion: 2;
+                  requestBinding: string;
+                  stage: "attach";
+                  timingPolicyJSON: string;
+                };
+          },
+          Name
+        >;
+        readProviderAcknowledgement: FunctionReference<
+          "query",
+          "internal",
+          { operationId: string },
+          null | {
+            receiptJSON: string;
+            retention: {
+              attemptId: string;
+              dispatchEventId: string;
+              dispatchPayloadId: string;
+              operationId: string;
+              receiptBinding: string;
+              receiptPayloadId: string;
+              responseEventId: string;
+              responsePayloadId: string;
+              schemaVersion: 1;
+              sourcePayloadId: string;
+              stage: "attach";
+              status: "retained";
+            };
+          },
+          Name
+        >;
+        readStageEvent: FunctionReference<
+          "query",
+          "internal",
+          { attemptId: string; operationId: string; sequence: 1 | 2 | 3 },
+          null | {
+            attemptId: string;
+            binding: string;
+            dataJSON: string;
+            eventId: string;
+            operationId: string;
+            payloadId: string;
+            sequence: 1 | 2 | 3;
+            sourcePayloadId: string;
+            stage: "attach" | "configure";
+          },
+          Name
+        >;
+      };
+    };
     reversalObservations: {
       mutations: {
         resume: FunctionReference<

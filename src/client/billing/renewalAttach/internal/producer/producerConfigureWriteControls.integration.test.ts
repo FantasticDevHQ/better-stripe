@@ -384,70 +384,129 @@ it.each(["event-payload-alias", "changed-id", "extra-field"])(
 describe("concurrent admitted children", () => {
   let pending: Promise<void>,
     start: ReturnType<typeof deferred>,
-    run = false;
+    postsReady: ReturnType<typeof deferred>,
+    releasePosts: ReturnType<typeof deferred>,
+    retainedReady: ReturnType<typeof deferred>,
+    releaseRetained: ReturnType<typeof deferred>,
+    run = false,
+    armed = false,
+    postCount = 0,
+    retainedCount = 0;
+  const stage = (ready: ReturnType<typeof deferred>) =>
+    Promise.race([
+      ready.promise,
+      pending.then(() => {
+        throw Error("FIXTURE_SETTLED_BEFORE_STAGE");
+      }),
+    ]);
   beforeEach(async () => {
     run = false;
+    armed = false;
+    postCount = 0;
+    retainedCount = 0;
     start = deferred();
+    postsReady = deferred();
+    releasePosts = deferred();
+    retainedReady = deferred();
+    releaseRetained = deferred();
     let ready!: () => void, failed!: (error: unknown) => void;
     const prepared = new Promise<void>((resolve, reject) => {
       ready = resolve;
       failed = reject;
     });
-    pending = configureAdmissionFixture(async (h) => {
-      const first = await prepare(h);
-      const child = await h.child();
-      const token = await h.core.admitConfigure(
-        child.fresh.call,
-        child.journal,
-      );
-      h.configureReads(child);
-      await captureAdmittedConfigurePreflight(token).invoke();
-      ready();
-      await start.promise;
-      if (!run) return;
-      const actors = [
-        captureAdmittedConfigureWrite(first.token),
-        captureAdmittedConfigureWrite(token),
-      ];
-      const outputs = await Promise.all(actors.map((actor) => actor.invoke()));
-      expect(outputs.map((output) => object(output).status)).toEqual([
-        "configure_acknowledged",
-        "configure_acknowledged",
-      ]);
-      expect(outputs[0] === outputs[1]).toBe(false);
-      expect(
-        readAdmittedConfigureAcknowledgement(first.token).output === outputs[0],
-      ).toBe(true);
-      expect(
-        readAdmittedConfigureAcknowledgement(token).output === outputs[1],
-      ).toBe(true);
-      expect(
-        posts(h)
-          .map((call) => call.idempotencyKey)
-          .sort(),
-      ).toEqual(
-        [
-          first.child.record.configureRecord.request.key,
-          child.record.configureRecord.request.key,
-        ].sort(),
-      );
-      const retained = await Promise.all([
-        first.child.journal.readProviderAcknowledgement(),
-        child.journal.readProviderAcknowledgement(),
-      ]);
-      expect(retained.every((value) => value !== null)).toBe(true);
-      expect(retained[0]!.receiptJSON === retained[1]!.receiptJSON).toBe(false);
-    });
+    pending = configureAdmissionFixture(
+      async (h) => {
+        const first = await prepare(h);
+        const child = await h.child();
+        const token = await h.core.admitConfigure(
+          child.fresh.call,
+          child.journal,
+        );
+        h.configureReads(child);
+        await captureAdmittedConfigurePreflight(token).invoke();
+        ready();
+        await start.promise;
+        if (!run) return;
+        armed = true;
+        const actors = [
+          captureAdmittedConfigureWrite(first.token),
+          captureAdmittedConfigureWrite(token),
+        ];
+        const outputs = await Promise.all(
+          actors.map((actor) => actor.invoke()),
+        );
+        expect(outputs.map((output) => object(output).status)).toEqual([
+          "configure_acknowledged",
+          "configure_acknowledged",
+        ]);
+        expect(outputs[0] === outputs[1]).toBe(false);
+        expect(
+          readAdmittedConfigureAcknowledgement(first.token).output ===
+            outputs[0],
+        ).toBe(true);
+        expect(
+          readAdmittedConfigureAcknowledgement(token).output === outputs[1],
+        ).toBe(true);
+        expect(
+          posts(h)
+            .map((call) => call.idempotencyKey)
+            .sort(),
+        ).toEqual(
+          [
+            first.child.record.configureRecord.request.key,
+            child.record.configureRecord.request.key,
+          ].sort(),
+        );
+        const retained = await Promise.all([
+          first.child.journal.readProviderAcknowledgement(),
+          child.journal.readProviderAcknowledgement(),
+        ]);
+        expect(retained.every((value) => value !== null)).toBe(true);
+        expect(retained[0]!.receiptJSON === retained[1]!.receiptJSON).toBe(
+          false,
+        );
+      },
+      {
+        beforeFetch: async (path, method) => {
+          if (
+            armed &&
+            method === "POST" &&
+            path.startsWith("/v1/subscription_schedules/")
+          ) {
+            if (++postCount === 2) postsReady.resolve();
+            await releasePosts.promise;
+          }
+        },
+        afterRetain: async () => {
+          if (armed) {
+            if (++retainedCount === 2) retainedReady.resolve();
+            await releaseRetained.promise;
+          }
+        },
+      },
+    );
     void pending.catch(failed);
     await prepared;
   });
+  beforeEach(async () => {
+    run = true;
+    start.resolve();
+    await stage(postsReady);
+  });
+  beforeEach(async () => {
+    releasePosts.resolve();
+    await stage(retainedReady);
+  });
   afterEach(async () => {
     start?.resolve();
+    releasePosts?.resolve();
+    releaseRetained?.resolve();
     await pending?.catch(() => {});
   });
   it("concurrent children retain separate POST keys, journals and returned outputs", async () => {
-    run = true;
-    start.resolve();
+    expect(postCount).toBe(2);
+    expect(retainedCount).toBe(2);
+    releaseRetained.resolve();
     await pending;
   });
 });

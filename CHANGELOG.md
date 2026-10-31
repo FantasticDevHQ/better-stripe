@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.107.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.106.0...v0.107.0) (2026-10-31)
+
+### Features
+
+- reconstruct retained renewal observation history ([#456](https://github.com/FantasticDevHQ/better-stripe/issues/456)) ([0d42eb5](https://github.com/FantasticDevHQ/better-stripe/commit/0d42eb5573c661b376f2dcf824441d92e1fb1b61))
+
 ## [0.106.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.105.0...v0.106.0) (2026-10-31)
 
 ### Features

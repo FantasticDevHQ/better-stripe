@@ -28,10 +28,9 @@
 
 ## [0.105.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.104.0...v0.105.0) (2026-10-31)
 
-
 ### Features
 
-* bind initial configure writes to admitted child custody ([#452](https://github.com/FantasticDevHQ/better-stripe/issues/452)) ([fabf8b1](https://github.com/FantasticDevHQ/better-stripe/commit/fabf8b1595e92f687bdcafb2b082ab4adedc5eaa))
+- bind initial configure writes to admitted child custody ([#452](https://github.com/FantasticDevHQ/better-stripe/issues/452)) ([fabf8b1](https://github.com/FantasticDevHQ/better-stripe/commit/fabf8b1595e92f687bdcafb2b082ab4adedc5eaa))
 
 ## [0.104.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.103.0...v0.104.0) (2026-10-31)
 

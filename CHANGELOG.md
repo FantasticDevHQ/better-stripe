@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.95.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.95.0...v0.95.1) (2026-10-31)
+
+### Bug Fixes
+
+- preserve renewal Owner clock deadlines ([#431](https://github.com/FantasticDevHQ/better-stripe/issues/431)) ([8d2637e](https://github.com/FantasticDevHQ/better-stripe/commit/8d2637ef433984791850871a04e6831ee56984e5))
+
 ## [0.95.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.94.0...v0.95.0) (2026-10-31)
 
 ### Features

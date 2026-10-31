@@ -294,9 +294,10 @@ it.each(["GET", "POST"])(
     );
   },
 );
-it("a returned ACK reader preserves output identity and closes after observed Source pointer drift", async () => {
-  await configureAdmissionFixture(async (h) => {
-    const { token } = await prepare(h);
+configureAdmissionCase(
+  "a returned ACK reader preserves output identity and closes after observed Source pointer drift",
+  prepare,
+  async (h, { token }) => {
     const output = await captureAdmittedConfigureWrite(token).invoke();
     const view = readAdmittedConfigureAcknowledgement(token);
     expect(view.output === output).toBe(true);
@@ -314,12 +315,14 @@ it("a returned ACK reader preserves output identity and closes after observed So
     admissionControls.write[0].coversConfigure = covers;
     expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
     expect(posts(h)).toHaveLength(1);
-  });
-});
-it("a genuine second Action context retains the original configure attempt custody", async () => {
-  await configureAdmissionFixture(async (h) => {
-    const { token } = await prepare(h),
-      actor = captureAdmittedConfigureWrite(token);
+  },
+);
+
+configureAdmissionCase(
+  "a genuine second Action context retains the original configure attempt custody",
+  prepare,
+  async (h, { token }) => {
+    const actor = captureAdmittedConfigureWrite(token);
     await h.inAnotherAction(async () => {
       const output = await actor.invoke();
       expect(object(output).status).toBe("configure_acknowledged");
@@ -329,57 +332,65 @@ it("a genuine second Action context retains the original configure attempt custo
     });
     expect(posts(h)).toHaveLength(1);
     expect(admissionControls.legacy).toBe(0);
-  });
-});
-
-it.each(["event-payload-alias", "changed-id", "extra-field"])(
-  "refuses %s in the final retention readback",
-  async (scenario) => {
-    let childId = "",
-      eventPayload = "",
-      forged = false;
-    await configureAdmissionFixture(
-      async (h) => {
-        const { token, child } = await prepare(h);
-        childId = child.created.operationId;
-        const output = await captureAdmittedConfigureWrite(token).invoke();
-        expect(forged).toBe(true);
-        expect(object(output).status).toBe("configure_unknown");
-        expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
-        expect(posts(h)).toHaveLength(1);
-      },
-      {
-        afterQuery: async (reply, reference, args) => {
-          if (!reply || object(args).operationId !== childId) return;
-          const own = object(reply);
-          if (
-            reference.endsWith("/readAttempt") &&
-            Array.isArray(own.events) &&
-            own.events.length === 3
-          ) {
-            const payload = object(own.events[2]).payloadId;
-            if (typeof payload === "string") eventPayload = payload;
-          }
-          if (
-            reference.endsWith("/readProviderAcknowledgement") &&
-            eventPayload &&
-            own.retention &&
-            typeof own.retention === "object"
-          ) {
-            Reflect.set(
-              own.retention,
-              scenario === "extra-field" ? "extra" : "receiptPayloadId",
-              scenario === "event-payload-alias"
-                ? eventPayload
-                : "controlled-changed-payload",
-            );
-            forged = true;
-          }
-        },
-      },
-    );
   },
 );
+
+for (const scenario of [
+  "event-payload-alias",
+  "changed-id",
+  "extra-field",
+] as const) {
+  let childId = "",
+    eventPayload = "",
+    forged = false;
+  configureAdmissionCase(
+    "refuses " + scenario + " in the final retention readback",
+    async (h) => {
+      childId = "";
+      eventPayload = "";
+      forged = false;
+      const state = await prepare(h);
+      childId = state.child.created.operationId;
+      return state;
+    },
+    async (h, { token }) => {
+      const output = await captureAdmittedConfigureWrite(token).invoke();
+      expect(forged).toBe(true);
+      expect(object(output).status).toBe("configure_unknown");
+      expect(() => readAdmittedConfigureAcknowledgement(token)).toThrow();
+      expect(posts(h)).toHaveLength(1);
+    },
+    {
+      afterQuery: async (reply, reference, args) => {
+        if (!reply || object(args).operationId !== childId) return;
+        const own = object(reply);
+        if (
+          reference.endsWith("/readAttempt") &&
+          Array.isArray(own.events) &&
+          own.events.length === 3
+        ) {
+          const payload = object(own.events[2]).payloadId;
+          if (typeof payload === "string") eventPayload = payload;
+        }
+        if (
+          reference.endsWith("/readProviderAcknowledgement") &&
+          eventPayload &&
+          own.retention &&
+          typeof own.retention === "object"
+        ) {
+          Reflect.set(
+            own.retention,
+            scenario === "extra-field" ? "extra" : "receiptPayloadId",
+            scenario === "event-payload-alias"
+              ? eventPayload
+              : "controlled-changed-payload",
+          );
+          forged = true;
+        }
+      },
+    },
+  );
+}
 
 describe("concurrent admitted children", () => {
   let pending: Promise<void>,
@@ -522,9 +533,10 @@ describe("independent SDK root lifetime", () => {
       ).toBe("configure_acknowledged");
     });
   });
-  it("retiring one SDK root cannot close a later independent root", async () => {
-    await configureAdmissionFixture(async (h) => {
-      const { token } = await prepare(h);
+  configureAdmissionCase(
+    "retiring one SDK root cannot close a later independent root",
+    prepare,
+    async (h, { token }) => {
       expect(() => readAdmittedConfigureAcknowledgement(prior)).toThrow();
       const output = await captureAdmittedConfigureWrite(token).invoke();
       expect(object(output).status).toBe("configure_acknowledged");
@@ -532,6 +544,6 @@ describe("independent SDK root lifetime", () => {
         readAdmittedConfigureAcknowledgement(token).output === output,
       ).toBe(true);
       expect(() => readAdmittedConfigureAcknowledgement(prior)).toThrow();
-    });
-  });
+    },
+  );
 });

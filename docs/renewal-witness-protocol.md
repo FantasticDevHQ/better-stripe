@@ -5,7 +5,7 @@ the persistence prerequisite for historical acquisition, not an activated
 capture or authorization API. It adds a table and ordinary transactional helpers,
 with no registered production query or mutation. Live capture, separate host
 retain/read capabilities, actual returned acknowledgement custody and genuine
-generated routes remain required in BTS-320.
+generated routes remain required before runtime activation.
 
 ## Payload and source checks
 
@@ -69,7 +69,7 @@ A successful transaction returns a row descriptor and full payload binding. It
 does not prove that an external caller received that result. A lost response can
 leave a durable row with no returned public acknowledgement. An explicit later
 identical request can recover the same descriptor, subject to the separate host
-policy and runtime custody checks required by BTS-320.
+policy and runtime custody checks required for historical acquisition.
 
 Descriptors always report false authentication, operational authority and public
 delivery, with provider qualification still required. The captured subject is

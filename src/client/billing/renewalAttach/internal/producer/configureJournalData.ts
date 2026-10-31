@@ -246,3 +246,87 @@ export function checkParentAcknowledgement(
     },
   });
 }
+
+/** Complete bounded configure history descriptors, without promoting DATA to custody. */
+export function captureConfigureHistory(
+  raw: unknown,
+  reservation: OperationalReservationDATA,
+  count: number,
+) {
+  const own = closed(raw, ["reservation", "events"]);
+  requireConfigure(
+    Number.isInteger(count) &&
+      count >= 1 &&
+      count <= 3 &&
+      !types.isProxy(own.events) &&
+      Array.isArray(own.events) &&
+      Object.getPrototypeOf(own.events) === Array.prototype &&
+      own.events.length === count,
+  );
+  const events = Array.from({ length: count }, (_, index) => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      own.events,
+      String(index),
+    );
+    requireConfigure(
+      descriptor && descriptor.enumerable && "value" in descriptor,
+    );
+    const event = closed(descriptor.value, [
+      "operationId",
+      "attemptId",
+      "stage",
+      "sourcePayloadId",
+      "sequence",
+      "binding",
+      "payloadId",
+      "eventId",
+    ]);
+    return {
+      operationId: reservation.operationId,
+      attemptId: reservation.attemptId,
+      stage: "configure" as const,
+      sourcePayloadId: reservation.payloadId,
+      sequence: index + 1,
+      binding: text(event.binding),
+      payloadId: text(event.payloadId),
+      eventId: text(event.eventId),
+    };
+  });
+  requireConfigure(
+    new Set(events.map((e) => e.eventId)).size === count &&
+      new Set(events.map((e) => e.payloadId)).size === count &&
+      events.every((e) => e.payloadId !== reservation.payloadId),
+  );
+  matchConfigureDATA(raw, { reservation, events });
+  return events;
+}
+export function checkConfigureRetention(
+  raw: unknown,
+  reservation: OperationalReservationDATA,
+  events: ReturnType<typeof captureConfigureHistory>,
+  receiptBinding: string,
+) {
+  requireConfigure(events.length >= 2);
+  const own = object(raw),
+    receiptPayloadId = text(own.receiptPayloadId);
+  requireConfigure(
+    receiptPayloadId !== reservation.payloadId &&
+      !events.some((event) => event.payloadId === receiptPayloadId),
+  );
+  const expected = {
+    status: "retained" as const,
+    operationId: reservation.operationId,
+    schemaVersion: 1 as const,
+    stage: "configure" as const,
+    attemptId: reservation.attemptId,
+    sourcePayloadId: reservation.payloadId,
+    dispatchEventId: events[0].eventId,
+    dispatchPayloadId: events[0].payloadId,
+    responseEventId: events[1].eventId,
+    responsePayloadId: events[1].payloadId,
+    receiptPayloadId,
+    receiptBinding,
+  };
+  matchConfigureDATA(raw, expected);
+  return expected;
+}

@@ -23,6 +23,10 @@ const controls = vi.hoisted(() => ({
     originalEntry: unknown;
     coversPreflight(...args: unknown[]): boolean;
   }[],
+  write: [] as {
+    originalEntry: unknown;
+    coversConfigure(...args: unknown[]): boolean;
+  }[],
   legacy: 0,
   selectors: 0,
 }));
@@ -35,6 +39,11 @@ vi.mock("../operations/sourceOperations.js", () => {
     COMPILED_INITIAL_ENTRIES: controls.entries,
     COMPILED_RECOVERY_ENTRIES: controls.recovery,
     COMPILED_PREFLIGHT_ENTRIES: controls.preflight,
+    COMPILED_CONFIGURE_WRITE_ENTRIES: controls.write,
+    loadConfigureWriteTransportSource: poison,
+    loadConfigureReplayTransportSource: poison,
+    loadFixedConfigureWriteOperation: poison,
+    loadFixedConfigureReplayOperation: poison,
     loadOwnedConfigureOperation: poison,
     loadConfigureOwnedReadTransportSource: poison,
     ORIGINAL_ORIGIN_ASSOCIATION: null,
@@ -77,6 +86,7 @@ const canonical = (value: unknown) => JSON.stringify(renewalSnapshot(value));
 beforeEach(() => {
   controls.legacy = 0;
   controls.preflight.splice(0);
+  controls.write.splice(0);
   controls.selectors = 0;
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
@@ -113,6 +123,8 @@ async function setup(
     path: string;
     query: string;
     hasBody: boolean;
+    idempotencyKey: string | null;
+    apiVersion: string | null;
   }[] = [];
   const routes = new Map<string, unknown>([
     ["/v1/subscriptions/sub_original", source.originalBundle.wireSubscription],
@@ -132,6 +144,8 @@ async function setup(
       path,
       query: parsed.search,
       hasBody: init?.body !== undefined,
+      idempotencyKey: new Headers(init?.headers).get("idempotency-key"),
+      apiVersion: new Headers(init?.headers).get("stripe-version"),
     });
     await hooks.beforeFetch?.(path, method);
     if (method === "POST") {
@@ -143,7 +157,9 @@ async function setup(
     assert(body);
     assert(
       method === "GET" ||
-        (method === "POST" && path === "/v1/subscription_schedules"),
+        (method === "POST" &&
+          (path === "/v1/subscription_schedules" ||
+            path === "/v1/subscription_schedules/" + baseline.schedule.id)),
     );
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -362,6 +378,7 @@ export async function configureAdmissionFixture(
     ) => Promise<void>;
     afterAppend?: () => Promise<void>;
     beforeAppend?: () => Promise<void>;
+    afterRetain?: () => Promise<void>;
     beforeFetch?: (path: string, method: string) => Promise<void>;
   } = {},
 ) {
@@ -383,6 +400,7 @@ export async function configureAdmissionFixture(
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,
       beforeAppend: options.beforeAppend,
+      afterRetain: options.afterRetain,
       afterAppend: async () => {
         completion.appends++;
         if (completion.mode === "resume" && completion.appends === 2)

@@ -33,6 +33,22 @@ function construct(token: object) {
         }
       };
     },
+    async retain(receiptJSON: string) {
+      requireConfigure(arguments.length === 1);
+      gate();
+      pending++;
+      try {
+        const reply = await original.journal.retainProviderAcknowledgement({
+          attemptId: original.reservation.attemptId,
+          expectedSequence: 2,
+          receiptJSON,
+        });
+        gate();
+        return reply;
+      } finally {
+        pending--;
+      }
+    },
     idle() {
       requireConfigure(arguments.length === 0);
       gate();

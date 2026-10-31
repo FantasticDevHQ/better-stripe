@@ -1,4 +1,10 @@
 import type { ObservationHistorySourceEntry } from "../observation/readerAuthorization.js";
+import type { ObservationRecord } from "../observation/types.js";
+export type FreshObservationProfile = Readonly<{
+  historyEntry: ObservationHistorySourceEntry;
+  readProfile: "endive-schedule-first-44-v1";
+  coversObservation(record: ObservationRecord): boolean;
+}>;
 /** Fixed internal operation associations. No production producer or class is bound. */
 export const COMPILED_INITIAL_ENTRIES: readonly unknown[] = Object.freeze([]);
 export const COMPILED_RECOVERY_ENTRIES: readonly unknown[] = Object.freeze([]);
@@ -47,6 +53,8 @@ export const COMPILED_OBSERVATION_ENTRIES: readonly unknown[] = Object.freeze(
   [],
 );
 export const COMPILED_OBSERVATION_HISTORY_ENTRIES: readonly ObservationHistorySourceEntry[] =
+  Object.freeze([]);
+export const COMPILED_FRESH_OBSERVATION_ENTRIES: readonly FreshObservationProfile[] =
   Object.freeze([]);
 export function loadFixedObservationOperation(): unknown {
   throw Error("OBSERVATION_SOURCE_UNBOUND");

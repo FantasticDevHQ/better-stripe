@@ -994,3 +994,58 @@ contradictory history rejects without automatic refetch. A synthetic registered
 host query in controlled tests does not bind a real installation policy. Fresh
 GET acquisition, provider lifecycle/invoice/history evidence, genuine generation
 and deployed compatibility remain outstanding.
+
+### Private fresh provider observer
+
+The private fresh observer shares one invocation with the authorized history
+reader. The invocation is minted into a private identity table and retains the
+actual class/Action binding, authorization and complete history. Returned reader
+DATA and copied tokens cannot create an observer. The reader closes the
+invocation after its DATA result; the observer keeps the same original 30-second
+budget through acquisition and final release. No timer is reset or nested.
+
+Provider reads need a separate compiled observer profile. Production entries are
+empty. An entry must bind the exact history entry, fixed
+`endive-schedule-first-44-v1` profile and an immutable, non-proxy qualifier returning
+literal true before client selection. Profile membership and qualifier identity
+remain guarded around awaits. The client comes from the maintained constructor's
+actual selection method at the pinned Endive API. It may be cached; the observer
+requires a fresh authorized selection, not a newly allocated instance or an old
+parent lineage.
+
+The transport captures the actual SDK `rawRequest` method and receiver. It
+permits only sequential schedule-first GET rows, undefined bodies, zero retries
+and at most 44 calls. Four base replies precede at most forty distinct coupon
+reads. It reauthenticates and requires the unchanged authorization snapshot before
+each GET and before output release. Method, receiver and root configuration drift
+refuse. Every result retains operational authority false.
+
+Only settlement of the actual returned SDK promise can produce provider-rejection
+DATA. A private capsule binds that promise and attempt before any diagnostic
+release. The captured native Promise method avoids a poisoned public `.then`.
+Final authorization is still required after an asynchronous rejection; timeout,
+authorization, synchronous dispatch and post-fulfillment decoder failures cannot
+masquerade as that rejection. Late settlement after expiry cannot resume reads or
+authorize output. The retained component receipt is never deleted on read failure.
+
+The observer passes exactly the seven-input evidence contract, with invoice and
+historical inputs null, and preserves the analyzer's twelve-key result and false
+authority flags. If analysis cannot be admitted, it returns an explicit
+`analysis_not_admitted` marker rather than inventing evidence. Monthly future
+duration can remain unknown even with retained C9 when the independent duration
+predicate is unqualified. The controlled weekly pending profile has no trial or
+anchor reset; active successor matching uses the actual native item/period and
+does not assume that the old item ID survives.
+
+Identity routing is checked separately from coupon eligibility. Multiple items or
+unsupported/overflowing coupon inventory stop after four base reads, with an
+explicit incomplete-inventory marker and the full authorized base DATA. Terminal
+facts from the analyzer are preserved, including unknown completion where proof
+is insufficient. An empty coupon array in this result does not assert a complete
+inventory. Foreign base identity returns conflict without adopting its material.
+
+Sequential resources are not an atomic snapshot, and initial/per-read/final
+authorization does not prove uninterrupted permission or exclusive provider
+causality. Invoice selection and full line pagination, authenticated immutable
+historical witnesses, a public installation binding, genuine generation/deployed
+compatibility, provider qualification and final Dojo acceptance remain required.

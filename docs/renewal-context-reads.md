@@ -127,8 +127,19 @@ Retiring one invocation rejects its pending channel without retiring another
 invocation's channel or removing already committed DATA. Stored events and C10
 append acknowledgements do not establish provider custody or a returned public
 operation acknowledgement. Legacy stage-channel facades retain their existing
-lazy Owner and behavior. Initial actor, classifier, acquisition and transport
-factory wiring remains required.
+lazy Owner and behavior. Initial actor, acquisition and transport factory wiring
+remains required.
+
+The core's private material classifiers also retain the original journal source
+and canonical Owner. Retained classification accepts no replacement source.
+Fresh classification accepts read DATA and its observed timestamp, then uses the
+existing raw Coupon join checks and actual C1/C2 reconstruction against the
+original source. Both paths keep the existing DATA-consistency-only result and
+bounded snapshots. They do not qualify acquisition or provider custody. Pending
+reconstruction is owned by that invocation; retirement rejects its continuation
+without closing another invocation's classifier. Legacy classifier exports keep
+their lazy Owner and existing refusal behavior. The initial actor still needs
+to wire these classifiers to its per-invocation acquisition and transport.
 
 ## Component operation journal
 

@@ -1,4 +1,8 @@
 import { OWNER } from "../originalOwner.js";
+import { ownerForInitialLineage } from "../producer/ownerFactory.js";
+import { readInitialLineage } from "../producer/lineageAuthority.js";
+import { ownedAwaitForInitialLineage } from "../producer/ownedAwaitFactory.js";
+type MaterialOwner = Pick<typeof OWNER, "check">;
 import {
   prepareRenewalPriceReplacementV2 as c1,
   prepareRenewalScheduleAttachmentV2 as c2,
@@ -190,19 +194,19 @@ function release(
   encode(node);
   return freeze(materialize(node)) as Classified;
 }
-async function retained(value: RetainedInput) {
+async function retained(owner: MaterialOwner, value: RetainedInput) {
   const raw = value.attachRequest;
-  OWNER.check();
+  owner.check();
   const prepared = await c1(raw.preparation);
-  OWNER.check();
-  OWNER.check();
+  owner.check();
+  owner.check();
   const request = await c2({
     prepared,
     apiVersion: raw.apiVersion,
     attachKey: raw.attachKey,
     firstDispatchedAt: raw.firstDispatchedAt,
   });
-  OWNER.check();
+  owner.check();
   const discounts = ownedRetainedEligibility(value),
     args = { attachRequest: raw, intent: "initial" as const };
   const reads = validateOwnedReadMaterial(
@@ -217,7 +221,7 @@ async function retained(value: RetainedInput) {
     undefined,
     discounts,
   );
-  OWNER.check();
+  owner.check();
   const result = release(
     material(args, false, prepared, request, reads, {
       actualFreshSubscription: raw.preparation.subscription,
@@ -225,22 +229,22 @@ async function retained(value: RetainedInput) {
     prepared,
     request,
   );
-  OWNER.check();
+  owner.check();
   return result;
 }
-async function fresh(value: FreshInput) {
+async function fresh(owner: MaterialOwner, value: FreshInput) {
   const raw = value.attachRequest;
-  OWNER.check();
+  owner.check();
   const prepared = await c1(raw.preparation);
-  OWNER.check();
-  OWNER.check();
+  owner.check();
+  owner.check();
   const request = await c2({
     prepared,
     apiVersion: raw.apiVersion,
     attachKey: raw.attachKey,
     firstDispatchedAt: raw.firstDispatchedAt,
   });
-  OWNER.check();
+  owner.check();
   const discounts = ownedCouponEligibility(value),
     b = value.currentBundle;
   const args = {
@@ -263,7 +267,7 @@ async function fresh(value: FreshInput) {
     undefined,
     discounts,
   );
-  OWNER.check();
+  owner.check();
   const result = release(
     material(args, true, prepared, request, reads, {
       actualFreshSubscription: b.wireSubscription,
@@ -271,24 +275,30 @@ async function fresh(value: FreshInput) {
     prepared,
     request,
   );
-  OWNER.check();
+  owner.check();
   return result;
 }
 /** Internal DATA consistency only; Source owner and acquisition provenance remain unbound. */
 export function classifyOwnedRetainedInitialAttachment(
   raw: unknown,
 ): Promise<Classified | typeof RETAINED_STOP> {
+  return classifyRetained(OWNER, raw);
+}
+function classifyRetained(
+  owner: MaterialOwner,
+  raw: unknown,
+): Promise<Classified | typeof RETAINED_STOP> {
   let value;
   try {
-    OWNER.check();
+    owner.check();
     value = captureRetainedInput(raw);
-    OWNER.check();
+    owner.check();
   } catch {
     return Promise.resolve(RETAINED_STOP);
   }
-  return retained(value).catch(() => {
+  return retained(owner, value).catch(() => {
     try {
-      OWNER.check();
+      owner.check();
     } catch {}
     return RETAINED_STOP;
   });
@@ -296,18 +306,50 @@ export function classifyOwnedRetainedInitialAttachment(
 export function classifyOwnedInitialAttachment(
   raw: unknown,
 ): Promise<Classified | typeof FRESH_STOP> {
+  return classifyFresh(OWNER, raw);
+}
+function classifyFresh(
+  owner: MaterialOwner,
+  raw: unknown,
+): Promise<Classified | typeof FRESH_STOP> {
   let value;
   try {
-    OWNER.check();
+    owner.check();
     value = captureOwnedInput(raw);
-    OWNER.check();
+    owner.check();
   } catch {
     return Promise.resolve(FRESH_STOP);
   }
-  return fresh(value).catch(() => {
+  return fresh(owner, value).catch(() => {
     try {
-      OWNER.check();
+      owner.check();
     } catch {}
     return FRESH_STOP;
+  });
+}
+
+/** Private original-call classifier factory. Inputs and outputs remain unsigned DATA. */
+export function createInitialMaterialClassifiers(token: object) {
+  if (arguments.length !== 1) throw Error("INITIAL_MATERIAL_UNBOUND");
+  const owner = ownerForInitialLineage(token);
+  owner.check();
+  const lineage = readInitialLineage(token);
+  const source = JSON.parse(lineage.reservation.recordJSON);
+  const original = {
+    attachRequest: source.attachRequest,
+    originalBundle: source.originalBundle,
+  };
+  const owned = ownedAwaitForInitialLineage(token);
+  return Object.freeze({
+    retained() {
+      if (arguments.length !== 0) throw Error("INITIAL_MATERIAL_UNBOUND");
+      return owned(() => classifyRetained(owner, original));
+    },
+    fresh(currentBundle: unknown, observedAt: unknown) {
+      if (arguments.length !== 2) throw Error("INITIAL_MATERIAL_UNBOUND");
+      return owned(() =>
+        classifyFresh(owner, { ...original, currentBundle, observedAt }),
+      );
+    },
   });
 }

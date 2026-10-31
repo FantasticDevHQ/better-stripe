@@ -4,6 +4,7 @@ import { ownedAwaitForInitialLineage } from "./ownedAwaitFactory.js";
 import { stockDelegateForInitialLineage } from "./stockDelegateFactory.js";
 import type { createClassActionOperationJournal } from "../operationJournal.js";
 import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
+import { createInitialMaterialClassifiers } from "../material/classifiers.js";
 
 export type InitialInvocationCore = Readonly<{
   owner: InitialOwner;
@@ -11,6 +12,7 @@ export type InitialInvocationCore = Readonly<{
   delegate: ReturnType<typeof stockDelegateForInitialLineage>;
   owned<T>(work: () => T | PromiseLike<T>): Promise<T>;
   attachEvents(): ReturnType<typeof createInitialAttachEventCompiler>;
+  material: ReturnType<typeof createInitialMaterialClassifiers>;
   operationalAuthority: false;
 }>;
 
@@ -59,6 +61,7 @@ export async function captureInitialInvocationCore(
         if (arguments.length !== 0) throw Error("INITIAL_CHANNEL_UNBOUND");
         return createInitialAttachEventCompiler(token);
       },
+      material: createInitialMaterialClassifiers(token),
       operationalAuthority: false,
     });
   } catch (error) {

@@ -247,8 +247,11 @@ it.each(["schedule", "coupon", "privacy", "predicate"])(
       if (scenario === "coupon")
         current.coupons[0].wireCoupon.times_redeemed = 99;
       if (scenario === "privacy")
-        current.subscription.future =
-          "Bearer synthetic-preflight-private-control";
+        Reflect.set(
+          current.subscription,
+          "future",
+          "Bearer synthetic-preflight-private-control",
+        );
       const before = h.calls.length,
         actor = captureAdmittedConfigurePreflight(token);
       await expect(actor.invoke()).rejects.toThrow();

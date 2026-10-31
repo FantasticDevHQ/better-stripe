@@ -154,7 +154,8 @@ reply is pending, that DATA remains, but the actor refuses its acknowledgement.
 Another invocation keeps its own client, Owner, journal and continuation.
 
 Production Source class arrays remain empty. Empty admission returns before
-constructing an Owner or reading a Source, client or clock, including when the
+constructing an Owner, loading Source data, invoking a client method or sampling
+a clock, including when the
 private actor is captured from a lineage that has no Owner yet. Tests admit
 synthetic profiles in ordinary Node and Convex-test with controlled HTTP. They
 do not qualify native execution or provider custody. Public scheduling, native

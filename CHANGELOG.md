@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.104.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.103.0...v0.104.0) (2026-10-31)
+
+### Features
+
+- bind readonly configure preflight to admitted custody ([#450](https://github.com/FantasticDevHQ/better-stripe/issues/450)) ([1a791b9](https://github.com/FantasticDevHQ/better-stripe/commit/1a791b9740b102fb47e75680b8e492961751d6f4))
+
 ## [0.103.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.102.0...v0.103.0) (2026-10-31)
 
 ### Features

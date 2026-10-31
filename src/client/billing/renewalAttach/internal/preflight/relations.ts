@@ -103,19 +103,17 @@ export function expectedSlots(
     ...Object.entries(record).filter(([k]) => k.startsWith("/request/")),
   ]);
 }
-export function verifyPreflightRecord(
+export function verifyPreflightRecordDATA(
   captured: CapturedPreflightRecord,
   originalC6: ProjectedRenewalConfigurationV2,
   ackC3: RenewalScheduleAttachmentReceiptV2,
 ): PreflightRecord {
-  OWNER.check();
   const expected = expectedSlots(originalC6, ackC3, false);
   for (const [path, value] of Object.entries(expected))
     need(captured.captured.slots.get(path) === value);
   const record = materialize(captured.captured.node) as PreflightRecord;
   need(equal(record.request, originalC6) && equal(record.attachReceipt, ackC3));
   verifyOriginalRaw(record, ackC3);
-  OWNER.check();
   return freeze(record);
 }
 function association(value: unknown, id: string, configuration: Configuration) {
@@ -172,11 +170,10 @@ function verifyOriginalRaw(
   };
   rebuild(preconfigure);
 }
-export function verifyCurrentPreflight(
+export function verifyCurrentPreflightDATA(
   record: PreflightRecord,
   evidence: CurrentEvidence,
 ) {
-  OWNER.check();
   closed(evidence, ["bundle", "schedule", "observedAt"]);
   need(Number.isSafeInteger(evidence.observedAt) && evidence.observedAt >= 0);
   const c = record.configuration,
@@ -205,5 +202,23 @@ export function verifyCurrentPreflight(
       equal(b.derivedCouponJoins, o.derivedCouponJoins),
   );
   association(b.wireSubscription.schedule, record.attachReceipt.scheduleId, c);
+}
+
+export function verifyPreflightRecord(
+  captured: CapturedPreflightRecord,
+  originalC6: ProjectedRenewalConfigurationV2,
+  ackC3: RenewalScheduleAttachmentReceiptV2,
+): PreflightRecord {
+  OWNER.check();
+  const record = verifyPreflightRecordDATA(captured, originalC6, ackC3);
+  OWNER.check();
+  return record;
+}
+export function verifyCurrentPreflight(
+  record: PreflightRecord,
+  evidence: CurrentEvidence,
+): void {
+  OWNER.check();
+  verifyCurrentPreflightDATA(record, evidence);
   OWNER.check();
 }

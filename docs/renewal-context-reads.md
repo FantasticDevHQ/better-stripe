@@ -263,7 +263,7 @@ call.
 
 The result is an opaque private view containing `owner`, `basisJSON` and
 `operationalAuthority: false`. The separate private C10 factory below can use
-that identity. Configure transport, preflight/write actors and public scheduling
+that identity. Configure write transport, write actors and public scheduling
 remain required, as do genuine generation and operational qualification.
 Production Source profile arrays remain empty.
 
@@ -301,7 +301,39 @@ dispatch permission. Receipt retention remains a separate operation; a future
 configure completion pipeline must retain the complete C9 before publishing
 receipt event 3 and returning its actual acknowledgement. Future execution also
 requires its own frontier checks. This channel factory supplies no provider
-transport or preflight/write actor and activates no operational Source profile.
+transport or write actor and activates no operational Source profile.
+
+## Private admitted configure preflight
+
+`captureAdmittedConfigurePreflight(token)` captures one readonly actor for the
+actual admitted child. Capture and invocation are each spent once, including
+failed calls and invalid extra arguments. The factory requires a unique compiled
+preflight entry linked to the actual returned parent ACK entry and retains its
+predicate identity. Production profile arrays remain empty, so this private path
+still refuses without a qualified Source profile.
+
+The actor uses the original parent Owner, SDK client, stock delegate promise and
+class-bound child journal. It never loads the legacy singleton Owner or transport
+source. The fixed plan reads the subscription with its existing expansions,
+price, customer, original coupons in order and attached schedule last. Its 4–44
+requests are GETs with explicit undefined bodies, API version
+`2026-09-30.endive` and zero network retries. No caller can substitute a plan,
+transport, source, clock, predicate or output.
+
+The actor reconstructs retained C6 and C3 DATA, compares complete current reads,
+reprojects the immutable C7 request and checks the compiled preflight predicate.
+Observation time comes from the original Owner. Reconstruction preserves the
+original first-dispatch time, key and deadlines. Complete operation, basis,
+head-zero and ACK-null journal checks fence acquisition and output release.
+ACK-null precedes the final head read. These bounded reads do not lock the journal
+against a later concurrent write.
+
+Successful completion privately retains the actual output identity, parent ACK
+view and compiled entry pointers. Pending reads, copied output or copied tokens
+cannot register completion. Owner retirement and observed custody changes close
+the actor. The legacy preflight functions retain their original Owner checks
+around shared DATA kernels. This readonly consistency result grants no configure
+POST permission, returned configure ACK custody or public scheduling support.
 
 ## Component operation journal
 

@@ -108,8 +108,9 @@ const child = (node: Node, key: string): Node => {
   need(row);
   return row[1];
 };
-export function capturePreflightRecord(raw: unknown): CapturedPreflightRecord {
-  OWNER.check();
+export function capturePreflightRecordDATA(
+  raw: unknown,
+): CapturedPreflightRecord {
   const captured = capture(raw, false);
   const configuration = freeze(
       materialize(child(captured.node, "configuration")),
@@ -117,11 +118,18 @@ export function capturePreflightRecord(raw: unknown): CapturedPreflightRecord {
     originalBundle = freeze(
       materialize(child(captured.node, "originalBundle")),
     ) as Bundle;
-  OWNER.check();
   return Object.freeze({ captured, configuration, originalBundle });
 }
 
 /** Package-private capture; release owns the same before/after Owner guards as the Source body. */
 export function capturePreflightOutput(value: unknown): CapturedRecord {
   return capture(value, true);
+}
+
+/** Legacy Source wrapper; DATA capture alone grants no invocation custody. */
+export function capturePreflightRecord(raw: unknown): CapturedPreflightRecord {
+  OWNER.check();
+  const captured = capturePreflightRecordDATA(raw);
+  OWNER.check();
+  return captured;
 }

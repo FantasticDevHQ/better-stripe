@@ -32,7 +32,7 @@ export const payloadsTable = defineTable({
 });
 const knownAcknowledgementFields = {
   schemaVersion: v.literal(1),
-  stage: v.literal("attach"),
+  stage,
   attemptId: v.id("renewalOperationAttempts"),
   sourcePayloadId: v.id("renewalOperationPayloads"),
   dispatchEventId: v.id("renewalOperationEvents"),
@@ -64,7 +64,7 @@ export const initialBasisDescriptor = v.object({
   version: v.literal(1),
   attemptId: v.id("renewalOperationAttempts"),
   sourcePayloadId: v.id("renewalOperationPayloads"),
-  stage: v.literal("attach"),
+  stage,
   policyJSON: v.string(),
   basisJSON: v.string(),
 });
@@ -130,7 +130,7 @@ const legacyAttemptFields = {
 const operationalAttemptFields = {
   ...attemptFields,
   recordVersion: v.literal(2),
-  stage: v.literal("attach"),
+  stage,
   timingPolicyJSON: v.string(),
 };
 export const attemptsTable = defineTable(

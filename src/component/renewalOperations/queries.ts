@@ -1,7 +1,7 @@
+import { readCheckedOperation as originalRecord } from "./operationContext.js";
 import { v } from "convex/values";
 import { query } from "../_generated/server.js";
 import {
-  originalRecord,
   currentReservation,
   eventChain,
   validateAttachAcknowledgement,

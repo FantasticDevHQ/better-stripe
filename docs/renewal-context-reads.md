@@ -242,15 +242,15 @@ The finite JSON model preserves unknown nested fields, array order and own
 properties, including absent versus null values. Original record JSON must fit
 500,000 characters and UTF-8 bytes, 10,000 nodes and depth 40.
 
-Legacy `schemaVersion: 1` records retain their existing shape. Attachment-only
-`schemaVersion: 2` records instead declare a closed `timingPolicy` with `version: 1`,
+Legacy `schemaVersion: 1` records retain their existing shape. Attachment and
+configure `schemaVersion: 2` records instead declare a closed `timingPolicy` with `version: 1`,
 `firstDispatchedAt`, `periodStart`, `periodEnd`, `workEndWallMs` and `endWallMs`.
 First-dispatch and period fields use epoch seconds; wall cutoff fields use epoch
 milliseconds. They have no root `basis`; a policy does not establish a live
 execution origin.
 
-Before V2 creation, a successful creation duplicate or a stored-source read,
-the component reconstructs the actual pure C1 preparation from the complete
+Before V2 attachment creation, a successful creation duplicate or a stored-source
+read, the component reconstructs the actual pure C1 preparation from the complete
 `attachRequest.preparation`, then reconstructs C2. The entire seven-field
 dispatch, account, API version, request binding and policy must match the
 retained source. A stored preparation flag or matching period fields alone
@@ -258,6 +258,28 @@ cannot replace these checks. The complete `originalBundle` remains opaque
 host-authorized DATA: no layout or equality to the preparation is inferred.
 Changing it still changes the immutable full record. Existing V1 records are
 not migrated or supplied with a new basis.
+
+A V2 configure record uses a separate logical operation identity, reservation,
+request binding and C7 key. Its closed `configureRecord` contains `configuration`,
+`request`, `attachReceipt` and the complete opaque `originalBundle`. Its closed
+`parentAttachment` contains `operationId`, `attemptId`, `sourcePayloadId` and
+`receiptBinding`. The host must authorize the exact parent and child pair. The
+component does not impose equality on their host authorization scope strings.
+
+Configure admission reconstructs C3, C6 and C7 and compares the complete dispatch,
+account, API version, request and timing policy. A keyed parent lookup requires a
+V2 attachment with its actual current attempt, bound basis, complete retained C3
+and published receipt event 3. The child must match that complete C3, raw attachment
+request and opaque original bundle. Its period and both wall cutoffs equal the
+parent's policy. Binding the child requires exactly the parent's canonical basis
+JSON, including the original wall and monotonic origins. Stored-source reads and
+duplicate operations recheck these links and refuse corrupt DATA without repair.
+
+This parent link establishes DATA consistency. Runtime configure admission still
+requires a fresh winning child reservation, the actual live parent owner and its
+actual returned attachment acknowledgement custody. Stored rows and equal basis
+JSON cannot reconstruct those capabilities. Source tests use an isolated component;
+genuine Convex generation, deployment and provider execution remain unverified.
 
 `reserveAttempt` performs the first PREPARED-to-RESERVED transaction. Exactly one
 winning invocation receives `acquired`; an identical later request receives
@@ -302,14 +324,20 @@ V2 event writes require the checked bound basis for that same operation and
 attempt. Events or a known receipt without a bound basis are corruption; they
 cannot be adopted as a fresh binding.
 
-`retainProviderAcknowledgement` reconstructs the complete attachment receipt
-from the original raw preparation, dispatch and stored response. It compares
+`retainProviderAcknowledgement` reconstructs the complete attachment C3 or V2
+configure C9 receipt from the checked source, dispatch and stored response. It compares
 the full receipt and applies the existing whole-output JSON and privacy rules.
+Configure C9 retention preserves the complete provider snapshot, transport,
+C7 request and consistency bindings, including absent versus null default settings.
+It means `configure_acknowledged`; it does not establish pending or effective
+replacement. V1 configure records retain their previous acknowledgement behavior.
 The transaction stores one owned receipt payload and a stable
 `knownAcknowledgement` reference. It does not append receipt event 3.
 
 A first retention must name the current history head, 2 or 3. When event 3
-exists, its complete request and receipt must match. An identical retry returns
+exists, its complete request and receipt must match. Retention at head 2 does
+not model or impose the size of a prospective receipt event 3; an actual event 3
+must independently satisfy the event JSON bounds. An identical retry returns
 the original retention descriptor without writes. A caller that retained at
 head 2 can repeat that same request after matching event 3 is appended. A
 request for a future head refuses. Once a receipt is retained, event 3 must
@@ -326,7 +354,7 @@ hash. They never infer or repair ownership from its contents.
 For V2, complete owned history and any known receipt are also checked before
 successful create-existing, reserve-existing and bind-duplicate returns, append
 returns or writes, and all four queries below. These checks reconstruct the full
-C3 receipt and validate every retained source/event/receipt reference, payload
+stage-specific C3 or C9 receipt and validate every retained source/event/receipt reference, payload
 owner and complete canonical receipt JSON. An absent sequence or an identical
 old event does not bypass corrupt known DATA. The acknowledgement getter reuses
 that validated receipt; it does not treat a matching binding alone as sufficient.

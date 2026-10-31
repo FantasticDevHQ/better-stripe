@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { convexTest } from "convex-test";
 import {
   actionGeneric,
+  queryGeneric,
   defineSchema,
   makeFunctionReference,
   getFunctionAddress,
@@ -38,6 +39,8 @@ export async function initialOperations(
   }) => Promise<void>,
   count = 1,
   options: {
+    identity?: { subject: string; issuer: string; tokenIdentifier: string };
+    hostQuery?: ReturnType<typeof queryGeneric>;
     epochMs?: number;
     workEndWallMs?: number;
     endWallMs?: number;
@@ -176,6 +179,7 @@ export async function initialOperations(
   >();
   let secondaryId = 0;
   const host = {
+    ...(options.hostQuery ? { authorize: options.hostQuery } : {}),
     secondary: actionGeneric({
       args: { id: v.string() },
       handler: async (ctx, args): Promise<null> => {
@@ -302,7 +306,7 @@ export async function initialOperations(
     "./initialOwner.ts": async () => host,
   });
   t.registerComponent("betterStripe", schema, modules);
-  await t.action(
+  await (options.identity ? t.withIdentity(options.identity) : t).action(
     makeFunctionReference<"action", {}, null>("initialOwner:run"),
     {},
   );

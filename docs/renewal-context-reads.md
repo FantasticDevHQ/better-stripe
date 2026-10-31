@@ -942,3 +942,55 @@ future-period observation entry still needs fresh host authorization, a separate
 bounded GET-only lifetime and complete lifecycle/invoice/history acquisition.
 Production Source profiles remain empty. Provider qualification, genuine
 generation/deployed compatibility and final Dojo acceptance remain outstanding.
+
+### Private fresh authorized history reader
+
+`captureAuthorizedObservationHistoryReader` supplies a private once-only `read()`
+method for a freshly authenticated Action. Its production compiled entry list is
+empty and refuses before root, Action or clock reflection. An enabled trusted
+entry must bind the exact maintained SDK component object, a stable installation
+scope key and a real host authorization query reference. The class bootstrap
+retains its existing three fields. Calling Action metadata does not identify the
+target component for authorization.
+
+The host query receives exactly the installation scope, attachment operation ID
+and configure operation ID. It must authenticate through its own `ctx.auth` and
+apply the host's business policy to both operations. It returns a closed stable
+authorization snapshot containing the authenticated `tokenIdentifier`, those
+exact scope/operation values, provider scope, authorization ID/revision and an
+expiry in wall-clock milliseconds. Provider scope is platform mode, null connected
+account, live mode, customer-account ID, original subscription ID and owned
+schedule ID. The reader compares that scope to the fully reconstructed retained
+history. Authorization snapshots may differ from the original retained host
+envelopes; permission to observe is checked afresh.
+
+The Action identity and host authorization query run before component DATA reads
+and again before release. Both authorization snapshots must be identical,
+including expiry; sliding expiries or revision changes reject. Authentication,
+RPC and root pointers, component identity and semantic function addresses are
+checked around every await. Convex generated references may be fresh proxy
+objects on access, so address checks compare the exact `name`, `reference` or
+`functionHandle` discriminator/value rather than proxy object equality.
+
+A new 30-second wall/monotonic budget starts before metadata binding and covers
+idle time before `read()`, both authorization phases and reconstruction. A timeout
+race closes hung calls permanently; late fulfillment cannot continue reading.
+Clock rollback, deadline equality, expired authorization and pointer drift close
+the reader. The old write Owner and its period boundary are never consulted.
+
+Only four existing component query routes are available: operation load, attempt
+manifest, full event and retained acknowledgement. A complete parent/child read
+makes at most twelve component queries plus two host authorization queries.
+Each query reply is detached and frozen before another query. Event counts are
+captured once from validated own DATA and cannot grow across awaits.
+There is no journal mutation, reservation, client selection or provider request.
+The result contains immutable retained history and the fresh authorization
+snapshot, with operational authority false. The embedded historical DATA retains
+its false provider-authentication and public-delivery claims.
+
+These checks establish two authorization points, not uninterrupted permission
+between them or after return. Sequential queries are not an atomic snapshot;
+contradictory history rejects without automatic refetch. A synthetic registered
+host query in controlled tests does not bind a real installation policy. Fresh
+GET acquisition, provider lifecycle/invoice/history evidence, genuine generation
+and deployed compatibility remain outstanding.

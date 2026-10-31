@@ -404,7 +404,16 @@ it("concurrent children retain separate POST keys, journals and returned outputs
     expect(
       readAdmittedConfigureAcknowledgement(token).output === outputs[1],
     ).toBe(true);
-    expect(new Set(posts(h).map((call) => call.idempotencyKey)).size).toBe(2);
+    expect(
+      posts(h)
+        .map((call) => call.idempotencyKey)
+        .sort(),
+    ).toEqual(
+      [
+        first.child.record.configureRecord.request.key,
+        child.record.configureRecord.request.key,
+      ].sort(),
+    );
     const retained = await Promise.all([
       first.child.journal.readProviderAcknowledgement(),
       child.journal.readProviderAcknowledgement(),

@@ -28,10 +28,9 @@
 
 ## [0.102.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.101.0...v0.102.0) (2026-10-31)
 
-
 ### Features
 
-* admit configure attempts with live attachment custody ([#446](https://github.com/FantasticDevHQ/better-stripe/issues/446)) ([cc2e80a](https://github.com/FantasticDevHQ/better-stripe/commit/cc2e80aff921815f1a97bd8820c183c8ea33ee44))
+- admit configure attempts with live attachment custody ([#446](https://github.com/FantasticDevHQ/better-stripe/issues/446)) ([cc2e80a](https://github.com/FantasticDevHQ/better-stripe/commit/cc2e80aff921815f1a97bd8820c183c8ea33ee44))
 
 ## [0.101.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.100.0...v0.101.0) (2026-10-31)
 

@@ -26,6 +26,18 @@ function rootUnbound(): never {
   throw Error("CLASS_ACTION_ROOT_UNBOUND");
 }
 
+/** Neutral construction identity only; no Action, client, Owner or execution grant. */
+export function readMaintainedRootComponent(actualRoot: object): Component {
+  const cell = roots.get(actualRoot);
+  if (
+    !cell ||
+    cell.phase !== "ready" ||
+    Object.getPrototypeOf(actualRoot) !== cell.bootstrap.prototype
+  )
+    rootUnbound();
+  return cell.component;
+}
+
 /** Internal neutral base; construction alone grants no operational authority. */
 export abstract class ClassOwnedActionRoot extends RenewalContextClient {
   protected constructor(

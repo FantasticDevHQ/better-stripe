@@ -30,6 +30,7 @@ const controls = vi.hoisted(() => ({
   }[],
   legacy: 0,
   selectors: 0,
+  history: [] as unknown[],
 }));
 vi.mock("../operations/sourceOperations.js", () => {
   const poison = () => {
@@ -41,6 +42,7 @@ vi.mock("../operations/sourceOperations.js", () => {
     COMPILED_RECOVERY_ENTRIES: controls.recovery,
     COMPILED_PREFLIGHT_ENTRIES: controls.preflight,
     COMPILED_CONFIGURE_WRITE_ENTRIES: controls.write,
+    COMPILED_OBSERVATION_HISTORY_ENTRIES: controls.history,
     loadConfigureWriteTransportSource: poison,
     loadConfigureReplayTransportSource: poison,
     loadFixedConfigureWriteOperation: poison,
@@ -89,6 +91,7 @@ beforeEach(() => {
   controls.preflight.splice(0);
   controls.write.splice(0);
   controls.selectors = 0;
+  controls.history.splice(0);
   controls.entries.splice(0, controls.entries.length, {
     coversRetained: () => true,
     coversFresh: () => true,
@@ -369,6 +372,10 @@ async function setup(
 export async function configureAdmissionFixture(
   work: (h: Awaited<ReturnType<typeof setup>>) => Promise<void>,
   options: {
+    identity?: NonNullable<Parameters<typeof initialOperations>[2]>["identity"];
+    hostQuery?: NonNullable<
+      Parameters<typeof initialOperations>[2]
+    >["hostQuery"];
     count?: number;
     keys?: readonly string[];
     afterBind?: (reply: unknown) => Promise<void>;
@@ -397,6 +404,8 @@ export async function configureAdmissionFixture(
     options.count ?? 1,
     {
       keys: options.keys,
+      identity: options.identity,
+      hostQuery: options.hostQuery,
       source: captureRetainedInput(baseline.original),
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,

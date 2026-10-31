@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import Stripe from "stripe";
+import { getStripeClient } from "../../../../helpers.js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { initialOperations } from "../test-fixtures/producerInitialOperation.js";
 import {
@@ -141,6 +142,82 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+it("retains the selected stock method receiver through controlled HTTP despite a foreign call receiver", async () => {
+  await initialOperations(async ({ fresh, journal, sdk }) => {
+    const requests: {
+      method: string | undefined;
+      authorization: string | null;
+      version: string | null;
+      redirect: RequestRedirect | undefined;
+    }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = new Headers(init?.headers);
+        requests.push({
+          method: init?.method,
+          authorization: headers.get("authorization"),
+          version: headers.get("stripe-version"),
+          redirect: init?.redirect,
+        });
+        return new Response(
+          JSON.stringify({
+            id: "sub_owner_receiver_probe",
+            object: "subscription",
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+              "request-id": "req_owner_receiver_probe",
+            },
+          },
+        );
+      },
+    );
+    const foreign = getStripeClient(
+      "sk_test_invalid_foreign_receiver",
+      sdk.stripeApiVersion,
+      { singleAttempt: true },
+    );
+    const core = await captureInitialInvocationCore(fresh.call, journal);
+    try {
+      const reply = await core.delegate.rawRequest.call(
+        foreign,
+        "GET",
+        "/v1/subscriptions/sub_owner_receiver_probe",
+        undefined,
+        {
+          apiVersion: sdk.stripeApiVersion,
+          maxNetworkRetries: 0,
+        },
+      );
+      expect(reply).toMatchObject({
+        id: "sub_owner_receiver_probe",
+        object: "subscription",
+      });
+      expect(requests).toEqual([
+        {
+          method: "GET",
+          authorization: "Bearer sk_test_invalid_owner_core",
+          version: sdk.stripeApiVersion,
+          redirect: "error",
+        },
+      ]);
+      core.owner.retire();
+      expect(() =>
+        core.delegate.rawRequest(
+          "GET",
+          "/v1/subscriptions/sub_owner_receiver_probe",
+        ),
+      ).toThrow("INITIAL_OWNER_STOP");
+      expect(requests).toHaveLength(1);
+    } finally {
+      core.owner.retire();
+    }
+  });
 });
 
 it("binds the actual fresh call to an isolated Owner with the original absolute cutoffs", async () => {

@@ -907,3 +907,38 @@ custody qualification before it can be enabled; see
 These helpers retain ordinary provider and caller metadata within their JSON
 limits. They do not redact, encrypt or certify that input or output is safe to
 log. Do not place secrets in metadata, and protect retained full records.
+
+### Private retained observation history DATA
+
+The private `captureRetainedObservationHistory` helper reconstructs a complete
+retained history snapshot without selecting a client or creating a read or write
+Owner. Its input has exactly `parent` and `configure`. Each contains the complete
+`operation`, `attempt`, `events` and `acknowledgement` query results. An active
+reserved v2 attachment parent must have three complete events and full retained
+C3. The reserved v3 configure child may have zero through three events. Standalone
+attachment history at head two and unreserved configure operations are outside
+this increment.
+
+The helper copies and freezes the entire own-DATA graph before its first await.
+The aggregate input is limited to 10,000 traversal nodes, depth 40 and 500,000
+UTF-8 bytes, with the existing component return-value limits also enforced.
+Proxies, accessors, hidden properties, sparse arrays and unsupported values reject.
+Every full event must match its manifest and canonical event binding. Full C3,
+C7, original raw material, account, API, parent linkage, period/deadline policy and
+bound basis must agree. Parent and child host authorization envelopes may differ.
+Only a head-zero child may have an unbound basis. Operation, attempt, event and
+payload identities must not alias.
+
+Missing C9 is valid at child heads zero, one and two. A complete response at head
+two is checked against the original request and configuration, but reconstruction
+alone does not make a receipt retained. A supplied C9 must match the full response,
+canonical receipt JSON and retention references. Head three requires retained C9.
+The output preserves the full detached snapshot and original configuration. Its
+authentication, public delivery and operational-authority flags are false.
+
+These are unsigned historical DATA checks. They do not prove an actual returned
+ACK, grant fresh authorization, revive an expired Owner or permit replay. The
+future-period observation entry still needs fresh host authorization, a separate
+bounded GET-only lifetime and complete lifecycle/invoice/history acquisition.
+Production Source profiles remain empty. Provider qualification, genuine
+generation/deployed compatibility and final Dojo acceptance remain outstanding.

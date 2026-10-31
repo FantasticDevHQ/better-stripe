@@ -16,13 +16,19 @@ function record(value: unknown): value is Record<string, unknown> {
 function text(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
-/** Intrinsic V2 policy DATA only; full C1/C2 validation is an async boundary. */
-function validateAttachTimingPolicy(value: Record<string, unknown>): void {
+/** Intrinsic V2 policy DATA only; complete stage reconstruction is async. */
+function validateStageTimingPolicy(value: Record<string, unknown>): void {
   const policy = value.timingPolicy;
   const dispatch = value.dispatch;
-  const source = value.attachRequest;
+  const configure = value.configureRecord;
+  const source =
+    value.stage === "attach"
+      ? value.attachRequest
+      : record(configure)
+        ? configure.configuration
+        : null;
   if (
-    value.stage !== "attach" ||
+    (value.stage !== "attach" && value.stage !== "configure") ||
     Object.prototype.hasOwnProperty.call(value, "basis") ||
     !Object.prototype.hasOwnProperty.call(value, "timingPolicy") ||
     !record(policy) ||
@@ -32,6 +38,43 @@ function validateAttachTimingPolicy(value: Record<string, unknown>): void {
     !record(source.preparation.expected)
   )
     stop();
+  if (value.stage === "configure") {
+    const parent = value.parentAttachment;
+    if (
+      !record(parent) ||
+      !record(configure) ||
+      !record(configure.attachReceipt) ||
+      !record(configure.request) ||
+      !record(configure.request.requestIdentity)
+    )
+      stop();
+    const parentKeys = [
+      "operationId",
+      "attemptId",
+      "sourcePayloadId",
+      "receiptBinding",
+    ];
+    if (
+      Object.keys(parent).length !== parentKeys.length ||
+      Object.keys(parent).some((key) => !parentKeys.includes(key))
+    )
+      stop();
+    for (const key of parentKeys) {
+      const field = parent[key];
+      if (!text(field) || field.length > 255) stop();
+    }
+    if (
+      typeof parent.receiptBinding !== "string" ||
+      !/^renewal-attach-receipt:v2:sha256:[0-9a-f]{64}$/.test(
+        parent.receiptBinding,
+      ) ||
+      parent.receiptBinding !== configure.attachReceipt.binding ||
+      configure.request.stage !== "configure" ||
+      configure.request.requestIdentity.binding !== value.requestBinding ||
+      configure.request.firstDispatchedAt !== source.firstDispatchedAt
+    )
+      stop();
+  }
   const fields = [
     "version",
     "firstDispatchedAt",
@@ -85,7 +128,7 @@ export function canonicalJournalRecord(raw: string) {
       (value.schemaVersion !== 1 && value.schemaVersion !== 2)
     )
       stop();
-    if (value.schemaVersion === 2) validateAttachTimingPolicy(value);
+    if (value.schemaVersion === 2) validateStageTimingPolicy(value);
     const authorization = value.authorization;
     if (
       !record(authorization) ||
@@ -157,11 +200,9 @@ export function journalReservationMaterial(
     accountJSON: JSON.stringify(renewalSnapshot(account)),
   });
   if (value.schemaVersion === 2) {
-    if (value.stage !== "attach") stop();
-    validateAttachTimingPolicy(value);
+    validateStageTimingPolicy(value);
     return Object.freeze({
       ...common,
-      stage: "attach" as const,
       recordVersion: 2 as const,
       timingPolicyJSON: JSON.stringify(renewalSnapshot(value.timingPolicy)),
     });

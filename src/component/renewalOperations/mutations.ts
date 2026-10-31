@@ -1,3 +1,9 @@
+import {
+  validateStageAcknowledgement,
+  validateStageReceiptEventDATA,
+} from "./stageAcknowledgement.js";
+import { validateConfigureParent } from "./configureParent.js";
+import { readCheckedOperation as originalRecord } from "./operationContext.js";
 import type { Infer } from "convex/values";
 import { mutation } from "../_generated/server.js";
 import {
@@ -10,7 +16,6 @@ import {
 import {
   findOperation,
   validateOperationalAttachSource,
-  originalRecord,
   currentReservation,
   checkedInitialBasis,
   reservationFields,
@@ -59,6 +64,7 @@ export const createAuthorizedOperation = mutation({
     )
       return conflict;
     await validateOperationalAttachSource(full);
+    await validateConfigureParent(ctx, full);
     const existing = await findOperation(
       ctx,
       args.authorizationScope,
@@ -206,7 +212,7 @@ export const appendStageEvent = mutation({
         : null;
     if (known !== null && incoming.sequence === 3) {
       try {
-        validateAttachReceiptEventDATA(incoming.json, known.admitted.receipt);
+        validateStageReceiptEventDATA(incoming.json, known.admitted);
       } catch {
         throw Error("RENEWAL_JOURNAL_CONFLICT");
       }
@@ -298,7 +304,7 @@ export const retainProviderAcknowledgement = mutation({
       if (
         !reservation ||
         reservation.attemptId !== args.attemptId ||
-        reservation.stage !== "attach"
+        (reservation.stage !== "attach" && !("recordVersion" in reservation))
       )
         throw Error("RENEWAL_JOURNAL_CONFLICT");
       if (
@@ -315,7 +321,7 @@ export const retainProviderAcknowledgement = mutation({
           args.expectedSequence !== head)
       )
         throw Error("RENEWAL_JOURNAL_CONFLICT");
-      const admitted = await validateAttachAcknowledgement(
+      const admitted = await validateStageAcknowledgement(
         full,
         reservation,
         events,
@@ -361,12 +367,12 @@ export const retainProviderAcknowledgement = mutation({
           kind: "receipt",
           operationId: row._id,
           attemptId: reservation.attemptId,
-          stage: "attach",
+          stage: reservation.stage,
         },
       });
       const known: Infer<typeof knownAcknowledgement> = {
         schemaVersion: 1,
-        stage: "attach",
+        stage: reservation.stage,
         attemptId: reservation.attemptId,
         sourcePayloadId: reservation.payloadId,
         dispatchEventId: events[0].eventId,
@@ -412,6 +418,9 @@ export const bindInitialBasis = mutation({
       const normalized = canonicalInitialBasis(args.policyJSON, args.basisJSON);
       if (normalized.policyJSON !== reservation.timingPolicyJSON)
         throw Error("RENEWAL_JOURNAL_CONFLICT");
+      const parent = await validateConfigureParent(ctx, full);
+      if (parent && parent.basisJSON !== normalized.basisJSON)
+        throw Error("RENEWAL_JOURNAL_CONFLICT");
       const existing = checkedInitialBasis(
         row,
         reservation.attemptId,
@@ -421,7 +430,7 @@ export const bindInitialBasis = mutation({
         version: 1,
         attemptId: reservation.attemptId,
         sourcePayloadId: reservation.payloadId,
-        stage: "attach",
+        stage: reservation.stage,
         policyJSON: normalized.policyJSON,
         basisJSON: normalized.basisJSON,
       };

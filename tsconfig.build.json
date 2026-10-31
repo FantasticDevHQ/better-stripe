@@ -17,6 +17,7 @@
     "src/client/billing/renewalAttach/internal/test-fixtures/**",
     "src/component/balanceFunding/workflow.fixtures.ts",
     "src/component/renewalOperations/acknowledgement.fixtures.ts",
+    "src/component/renewalOperations/configureJournal.fixtures.ts",
     "src/component/renewalOperations/timingPolicy.fixtures.ts",
     "src/testing/crossDomain/**"
   ]

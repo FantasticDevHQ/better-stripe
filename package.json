@@ -108,7 +108,15 @@
     "check:coverage": "node scripts/check-coverage.mjs",
     "format:check": "pnpm run format",
     "check:agents": "repo-gates check-agents",
-    "check:package": "pnpm run build:clean && vitest run scripts/documentation-contracts.test.mjs scripts/packed-docs.test.mjs scripts/public-docs.test.mjs scripts/usage-contracts-packed.test.mjs scripts/usage-composition-packed.test.mjs scripts/usage-models-packed.test.mjs"
+    "check:package": "pnpm run build:clean && vitest run scripts/documentation-contracts.test.mjs scripts/packed-docs.test.mjs scripts/public-docs.test.mjs scripts/usage-contracts-packed.test.mjs scripts/usage-composition-packed.test.mjs scripts/usage-models-packed.test.mjs",
+    "worktree:setup": "node scripts/worktree/cli.mjs setup",
+    "worktree:start": "node scripts/worktree/cli.mjs start",
+    "worktree:stop": "node scripts/worktree/cli.mjs stop",
+    "worktree:teardown": "node scripts/worktree/cli.mjs teardown",
+    "worktree:cleanup": "node scripts/worktree/cli.mjs cleanup",
+    "worktree:prune": "node scripts/worktree/cli.mjs prune",
+    "test:worktree": "node --test --test-concurrency=1 scripts/worktree/*.test.mjs",
+    "test:pr-standard": "node --test --test-concurrency=1 scripts/pr-standard.test.mjs scripts/enforce-pr-standard.test.mjs"
   },
   "dependencies": {
     "@convex-dev/workflow": "0.4.10",

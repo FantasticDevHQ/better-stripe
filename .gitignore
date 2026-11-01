@@ -14,3 +14,6 @@ dist/
 
 # Test coverage reports
 /coverage
+
+# Checkout-local worktree state
+.worktree/

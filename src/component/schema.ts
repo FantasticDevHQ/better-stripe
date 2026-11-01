@@ -141,8 +141,10 @@ import {
   operationsTable as renewalOperations,
   payloadsTable as renewalOperationPayloads,
 } from "./renewalOperations/schema.js";
+import { witnessesTable as renewalObservationWitnesses } from "./renewalWitnesses/schema.js";
 
 export default defineSchema({
+  renewalObservationWitnesses,
   renewalOperations,
   renewalOperationAttempts,
   renewalOperationEvents,

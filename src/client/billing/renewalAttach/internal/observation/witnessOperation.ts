@@ -3,6 +3,10 @@ import { matchConfigureDATA } from "../producer/configureJournalData.js";
 import { readCheckedJournalActionRPC } from "../producer/classOwnedActionRoot.js";
 import { readObservationInvocation } from "./invocation.js";
 import {
+  readFreshObservationTransport,
+  consumeFreshObservationAcquisition,
+} from "./freshTransport.js";
+import {
   captureReaderQueryDATA,
   readerText as text,
 } from "./readerAuthorization.js";
@@ -26,8 +30,6 @@ import {
   witnessNeed as need,
   type WitnessIdentity,
 } from "../../../../../shared/renewalWitness.js";
-import type { ObservationReads } from "./types.js";
-import type { InvoiceContextV1 } from "../../../renewalObservation/evidence-v1-types.js";
 
 /** Actor-private protocol. Caller DATA cannot register a token, grant or returned ACK. */
 export function createWitnessOperation(
@@ -35,10 +37,15 @@ export function createWitnessOperation(
   profile: WitnessProfile,
   mode: WitnessMode,
   identity: WitnessIdentity,
-  transportGuard: () => void,
 ) {
+  need(arguments.length === 4);
   const state = readObservationInvocation(token),
     rpc = readCheckedJournalActionRPC(state.binding);
+  const transport = readFreshObservationTransport(
+    token,
+    profile.freshProfile,
+    profile.invoiceProfile,
+  );
   const refs = rpc.component.renewalWitnesses;
   const retain = refs.mutations.retainAuthorizedWitness,
     read = refs.queries.readAuthorizedWitness;
@@ -50,7 +57,7 @@ export function createWitnessOperation(
   let used = false;
   function guard() {
     state.guard();
-    transportGuard();
+    transport.guard();
     witnessProfileGuard(profile, mode);
     need(
       readCheckedJournalActionRPC(state.binding) === rpc &&
@@ -81,13 +88,15 @@ export function createWitnessOperation(
   }
   return Object.freeze({
     guard,
-    async retain(
-      reads: ObservationReads,
-      invoiceContext: InvoiceContextV1 | null,
-    ) {
-      need(mode === "retain" && !used);
+    async retain() {
+      need(arguments.length === 0 && mode === "retain" && !used);
       used = true;
       guard();
+      const { reads, invoiceContext } = consumeFreshObservationAcquisition(
+        token,
+        profile.freshProfile,
+        profile.invoiceProfile,
+      );
       const payloadJSON = captureWitnessPayload(
         state,
         identity,

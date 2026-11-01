@@ -209,11 +209,13 @@ export async function prepareWitnessObservation(
   );
   witnessControls.onRetainGrant = null;
   witnessControls.onReadGrant = null;
-  const state = withInvoices
+  const invoiceState = withInvoices
     ? await prepareInvoiceObservation(h, { retained })
-    : await prepareFreshObservation(h, { active: true, retained });
-  const invoiceProfile =
-    "invoiceProfile" in state ? state.invoiceProfile : null;
+    : null;
+  const state =
+    invoiceState ??
+    (await prepareFreshObservation(h, { active: true, retained }));
+  const invoiceProfile = invoiceState?.invoiceProfile ?? null;
   const record = JSON.parse(
     state.full.configure.operation.recordJSON,
   ).configureRecord;
@@ -268,7 +270,7 @@ export async function prepareWitnessObservation(
     scope,
     captureProfile,
     readProfile,
-    invoiceInventories: "inventories" in state ? state.inventories : null,
+    invoiceInventories: invoiceState?.inventories ?? null,
   };
 }
 

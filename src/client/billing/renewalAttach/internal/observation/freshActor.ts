@@ -172,7 +172,6 @@ async function captureFreshObservation(
             witnessSpec.profile,
             witnessSpec.mode,
             witnessSpec.identity,
-            transport.guard,
           );
         if (witnessSpec?.mode === "read") await witness!.load();
         let invoiceResult: Awaited<
@@ -231,10 +230,7 @@ async function captureFreshObservation(
               need(
                 invoiceResult?.status === "complete" && invoiceResult.context,
               );
-            witnessRetention = await witness!.retain(
-              reads,
-              invoiceResult?.context ?? null,
-            );
+            witnessRetention = await witness!.retain();
             await transport.finalizeInvoices();
           } else if (witnessSpec?.mode === "read" && evidence === null)
             evidence = await analyze(reads);

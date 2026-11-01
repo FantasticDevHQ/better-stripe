@@ -76,6 +76,13 @@ witness identity, acquires complete current reads, and requires
 context and establish complete paired correlation. The existing base and invoice
 wrappers retain their own outputs and provider GET bounds.
 
+The original transport privately registers one acquisition cell per invocation
+after actual SDK selection. It records only its settled original GET bodies and
+complete fenced invoice context. Retention consumes that acquisition once; it
+accepts no supplied reads, invoice context or guard callback. A fresh invocation,
+selected SDK or copied observation DATA alone cannot create this receipt. Partial
+reads and a second transport under the same invocation refuse.
+
 A separate fixed host retention capability binds installation, current subject,
 operation pair, Customer/account/mode, schedule/subscription, complete C7 request
 binding, successor item and native period. Invoice permission does not imply

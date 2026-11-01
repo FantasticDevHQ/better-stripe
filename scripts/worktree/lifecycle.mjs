@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 import path from "node:path";
@@ -142,6 +143,18 @@ export async function setup(prepareOnly) {
   });
   if (!prepareOnly)
     await projectLock(async () => {
+      // The example consumes this workspace's compiled package exports.
+      // Build before every schema push so source changes cannot leave stale dist.
+      if (layout.prepareCommand) {
+        const command = layout.prepareCommand;
+        if (!Array.isArray(command) || !command.length ||
+          !command.every((part) => typeof part === "string" && part.length))
+          throw new Error("prepareCommand must be a nonempty argv array.");
+        execFileSync(command[0], command.slice(1), {
+          cwd: root,
+          stdio: "inherit",
+        });
+      }
       // First run uses the documented non-TTY anonymous flow, which generates a unique
       // name rather than the agent-mode constant that can select legacy HOME state.
       if (!s.deployment) {

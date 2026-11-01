@@ -4,7 +4,9 @@ Installed from FantasticDevHQ/convex-worktrees commit
 `52c0b76d960a98afedd48607d6737bc14a954c1e` using its Node installer.
 The upstream MIT license remains in `scripts/worktree/LICENSE`.
 The repository uses pnpm 10.32.1; the backend and Vite frontend both live in
-`example/`. This is not a Turborepo and requires no package relocation.
+`example/`. The layout prepareCommand builds the local library before each
+schema push because the example imports its compiled dist exports. On the shared
+VPS this build must run in UbiCloud CI rather than locally. This is not a Turborepo and requires no package relocation.
 
 Run `pnpm worktree:setup`, `pnpm worktree:start` (optionally `--frontend`),
 `pnpm worktree:stop`, `pnpm worktree:teardown`, `pnpm worktree:cleanup --yes`,

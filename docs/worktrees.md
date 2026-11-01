@@ -17,7 +17,12 @@ divergent checkouts. New worktrees use the immutable fetched commit; adoption
 must land on that base before new-worktree setup can use these commands.
 
 The layout adapter is `scripts/worktree.config.json`. Local frontend adaptations
-use Vite with strict ports and VITE_CONVEX_URL. No Stripe credentials are copied;
+use Vite with strict ports and VITE_CONVEX_URL. The adapter seeds a deliberately synthetic `sk_test_` key for schema validation,
+sets FRONTEND_URL to the reserved frontend port, and permits only the declared
+STRIPE_SECRET_KEY missing-variable failure on first bootstrap. The final push
+must succeed after seeding. The error adapter supports Convex 1.46 typed
+MissingEnvironmentVariables messages as well as the upstream legacy text.
+No Stripe credentials are copied;
 external Stripe operations require separate sandbox configuration and are not
 proven by the local isolation suite. Never use production credentials here.
 

@@ -1,10 +1,16 @@
 {
   "backend": "example",
   "frontend": "example",
-  "env": {},
+  "env": {
+    "STRIPE_SECRET_KEY": "sk_test_worktree_synthetic_not_a_credential"
+  },
   "secretEnv": [],
-  "siteUrlEnv": [],
-  "bootstrapMissingEnv": [],
+  "siteUrlEnv": [
+    "FRONTEND_URL"
+  ],
+  "bootstrapMissingEnv": [
+    "STRIPE_SECRET_KEY"
+  ],
   "prepareCommand": [
     "pnpm",
     "run",

@@ -18,6 +18,7 @@ import { safe, json } from "./files.mjs";
 import { alive, locked, available } from "./registry.mjs";
 import { state, checkConfig, childEnv, convexArgs } from "./config.mjs";
 import { packageBin } from "./dependencies.mjs";
+import { expectedMissingEnvironment } from "./bootstrap-errors.mjs";
 
 export async function run(
   args,
@@ -81,9 +82,7 @@ export async function run(
     );
     const expected =
       bootstrap &&
-      (config.bootstrapMissingEnv || []).some((key) =>
-        failure.output?.includes(`${key} is not set`),
-      );
+      expectedMissingEnvironment(failure.output, config.bootstrapMissingEnv || []);
     if (!expected) throw failure;
     console.log(
       "Fresh backend configured; setting declared local environment before retrying the schema push.",

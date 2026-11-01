@@ -76,3 +76,37 @@ jobs:
         if: ${{ env.CONVEX_DEPLOYMENT == '' }}
         run: |
           echo "::notice::Authoritative codegen regen-and-diff is inactive (CONVEX_DEPLOYMENT secret not set). Structural drift check still ran."
+
+  focused:
+    runs-on: ubicloud-standard-2-ubuntu-2404
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=512
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test --test-concurrency=1 scripts/pr-standard.test.mjs scripts/enforce-pr-standard.test.mjs scripts/worktree/*.test.mjs
+      - name: Runner identity
+        run: |
+          echo "Runner: $RUNNER_NAME / $RUNNER_OS / $RUNNER_ARCH"
+          uname -a
+
+  quality:
+    name: Repository quality gates
+    if: always()
+    needs: [ci, shadscan, codegen, focused]
+    runs-on: ubicloud-standard-2-ubuntu-2404
+    steps:
+      - name: Require every repository gate to succeed
+        env:
+          CI_RESULT: ${{ needs.ci.result }}
+          SHADSCAN_RESULT: ${{ needs.shadscan.result }}
+          CODEGEN_RESULT: ${{ needs.codegen.result }}
+          FOCUSED_RESULT: ${{ needs.focused.result }}
+        run: |
+          test "$CI_RESULT" = success
+          test "$SHADSCAN_RESULT" = success
+          test "$CODEGEN_RESULT" = success
+          test "$FOCUSED_RESULT" = success

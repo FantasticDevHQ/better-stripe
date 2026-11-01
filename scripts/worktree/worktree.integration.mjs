@@ -10,16 +10,22 @@ import { existsSync } from "node:fs";
 import { installDependencies } from "./dependencies.mjs";
 
 const source = await realpath(process.cwd());
-const layout = JSON.parse(await readFile(path.join(source, "scripts/worktree.config.json"), "utf8"));
+const layout = JSON.parse(
+  await readFile(path.join(source, "scripts/worktree.config.json"), "utf8"),
+);
 const backendPath = layout.backend || ".";
 const hasApp = existsSync(path.join(source, backendPath, "convex.json"));
 function run(cwd, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ["scripts/worktree/cli.mjs", ...args], {
-      cwd,
-      env: { ...process.env, CI: "true" },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const child = spawn(
+      process.execPath,
+      ["scripts/worktree/cli.mjs", ...args],
+      {
+        cwd,
+        env: { ...process.env, CI: "true" },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     let output = "";
     child.stdout.on("data", (d) => (output += d));
     child.stderr.on("data", (d) => (output += d));
@@ -49,7 +55,12 @@ async function rpc(s, kind, fn, args = {}) {
 
 test(
   "two real worktrees: isolated databases, concurrent backends, stable restart, safe teardown and cleanup",
-  { timeout: 600000, skip: hasApp ? false : "Run from a consuming Convex app with examples/probe.ts installed" },
+  {
+    timeout: 600000,
+    skip: hasApp
+      ? false
+      : "Run from a consuming Convex app with examples/probe.ts installed",
+  },
   async (t) => {
     const base = await realpath(
       await mkdtemp(path.join(tmpdir(), "convex-worktree-e2e-")),
@@ -65,9 +76,12 @@ test(
         }));
         if (result.code) {
           safeToRemove = false;
-          console.error("Cleanup limitation; temporary checkout preserved:", root, result.output);
-        }
-        else
+          console.error(
+            "Cleanup limitation; temporary checkout preserved:",
+            root,
+            result.output,
+          );
+        } else
           execFileSync("git", ["worktree", "remove", "--force", root], {
             cwd: source,
             stdio: "ignore",
@@ -84,10 +98,35 @@ test(
       // Fixtures exist only in disposable integration worktrees, never deployed publicly.
       const schemaPath = path.join(root, backendPath, "convex/schema.ts");
       const schema = await readFile(schemaPath, "utf8");
-      await writeFile(schemaPath, 'import { defineTable as probeTable } from "convex/server";\nimport { v as probeV } from "convex/values";\n' + schema.replace("defineSchema({", 'defineSchema({ worktreeProbes: probeTable({ value: probeV.string() }),'));
-      await writeFile(path.join(root, backendPath, "convex/probe.ts"), await readFile(path.join(source, "scripts/worktree/probe.fixture.txt"), "utf8"));
+      await writeFile(
+        schemaPath,
+        'import { defineTable as probeTable } from "convex/server";\nimport { v as probeV } from "convex/values";\n' +
+          schema.replace(
+            "defineSchema({",
+            "defineSchema({ worktreeProbes: probeTable({ value: probeV.string() }),",
+          ),
+      );
+      await writeFile(
+        path.join(root, backendPath, "convex/probe.ts"),
+        await readFile(
+          path.join(source, "scripts/worktree/probe.fixture.txt"),
+          "utf8",
+        ),
+      );
       execFileSync("git", ["add", "."], { cwd: root });
-      execFileSync("git", ["-c", "user.name=Worktree integration", "-c", "user.email=integration@example.invalid", "commit", "-m", "test: install local-only isolation probe"], { cwd: root, stdio: "ignore" });
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=Worktree integration",
+          "-c",
+          "user.email=integration@example.invalid",
+          "commit",
+          "-m",
+          "test: install local-only isolation probe",
+        ],
+        { cwd: root, stdio: "ignore" },
+      );
       installDependencies(root);
     }
     const setups = await Promise.allSettled(
@@ -99,14 +138,39 @@ test(
     // API in the fixture commit before asserting that development stays clean.
     for (const root of roots) {
       const changed = execFileSync("git", ["diff", "--name-only"], {
-        cwd: root, encoding: "utf8",
-      }).trim().split("\n").filter(Boolean);
-      assert.ok(changed.every((name) =>
-        name.startsWith(`${backendPath}/convex/_generated/`) ||
-        name.startsWith("src/component/_generated/")),
-      `Unexpected source changes during fixture codegen: ${changed.join(", ")}`);
-      execFileSync("git", ["add", `${backendPath}/convex/_generated`, "src/component/_generated"], { cwd: root });
-      execFileSync("git", ["-c", "user.name=Worktree integration", "-c", "user.email=integration@example.invalid", "commit", "--allow-empty", "-m", "test: generate disposable probe API"], { cwd: root, stdio: "ignore" });
+        cwd: root,
+        encoding: "utf8",
+      })
+        .trim()
+        .split("\n")
+        .filter(Boolean);
+      assert.ok(
+        changed.every(
+          (name) =>
+            name.startsWith(`${backendPath}/convex/_generated/`) ||
+            name.startsWith("src/component/_generated/"),
+        ),
+        `Unexpected source changes during fixture codegen: ${changed.join(", ")}`,
+      );
+      execFileSync(
+        "git",
+        ["add", `${backendPath}/convex/_generated`, "src/component/_generated"],
+        { cwd: root },
+      );
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=Worktree integration",
+          "-c",
+          "user.email=integration@example.invalid",
+          "commit",
+          "--allow-empty",
+          "-m",
+          "test: generate disposable probe API",
+        ],
+        { cwd: root, stdio: "ignore" },
+      );
     }
     const states = await Promise.all(
       roots.map((root) =>
@@ -119,7 +183,10 @@ test(
     const configs = await Promise.all(
       roots.map((root) =>
         readFile(
-          path.join(root, path.join(backendPath, ".convex/local/default/config.json")),
+          path.join(
+            root,
+            path.join(backendPath, ".convex/local/default/config.json"),
+          ),
           "utf8",
         ).then(JSON.parse),
       ),
@@ -133,22 +200,10 @@ test(
       "PASS: parallel setup, distinct deployment identities, six distinct reserved ports",
     );
     await Promise.all(roots.map((root) => ok(root, "start")));
-    await rpc(
-      states[0],
-      "mutation",
-      "probe:write",
-      { value: "alpha" },
-    );
-    await rpc(
-      states[1],
-      "mutation",
-      "probe:write",
-      { value: "beta" },
-    );
+    await rpc(states[0], "mutation", "probe:write", { value: "alpha" });
+    await rpc(states[1], "mutation", "probe:write", { value: "beta" });
     const entries = await Promise.all(
-      states.map((s) =>
-        rpc(s, "query", "probe:read"),
-      ),
+      states.map((s) => rpc(s, "query", "probe:read")),
     );
     assert.deepEqual(
       entries.map((rows) => rows.map((r) => r.value)),
@@ -178,9 +233,7 @@ test(
       before,
     );
     assert.equal(
-      (
-        await rpc(states[0], "query", "probe:read")
-      )[0].value,
+      (await rpc(states[0], "query", "probe:read"))[0].value,
       "alpha",
     );
     assert.deepEqual(
@@ -194,16 +247,12 @@ test(
     );
     await ok(roots[0], "teardown");
     assert.equal(
-      (
-        await rpc(states[1], "query", "probe:read")
-      )[0].value,
+      (await rpc(states[1], "query", "probe:read"))[0].value,
       "beta",
     );
     await ok(roots[0], "start");
     assert.equal(
-      (
-        await rpc(states[0], "query", "probe:read")
-      )[0].value,
+      (await rpc(states[0], "query", "probe:read"))[0].value,
       "alpha",
     );
     console.log(
@@ -237,9 +286,7 @@ test(
     );
     await ok(roots[0], "cleanup", "--yes");
     assert.equal(
-      (
-        await rpc(states[1], "query", "probe:read")
-      )[0].value,
+      (await rpc(states[1], "query", "probe:read"))[0].value,
       "beta",
     );
     console.log(

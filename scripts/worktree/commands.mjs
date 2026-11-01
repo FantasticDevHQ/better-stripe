@@ -11,11 +11,21 @@ import { packageBin } from "./dependencies.mjs";
 
 export async function main() {
   const command = process.argv[2];
-  if (layout.convex === false && ["start", "stop", "dev", "backend", "frontend", "_serve"].includes(command)) {
+  if (
+    layout.convex === false &&
+    ["start", "stop", "dev", "backend", "frontend", "_serve"].includes(command)
+  ) {
     await state();
-    if (!["start", "stop"].includes(command) || process.argv.includes("--frontend"))
-      throw new Error("No development services are configured with convex:false. Run development commands directly in this checkout.");
-    console.log("No backend or frontend services configured; nothing to start or stop.");
+    if (
+      !["start", "stop"].includes(command) ||
+      process.argv.includes("--frontend")
+    )
+      throw new Error(
+        "No development services are configured with convex:false. Run development commands directly in this checkout.",
+      );
+    console.log(
+      "No backend or frontend services configured; nothing to start or stop.",
+    );
     return;
   }
   if (command === "setup") await setup(process.argv.includes("--prepare-only"));
@@ -57,7 +67,9 @@ export async function main() {
       process.execPath,
       [
         packageBin("vite", "vite", [frontend, root]),
-        "--host", "127.0.0.1", "--strictPort",
+        "--host",
+        "127.0.0.1",
+        "--strictPort",
         "--port",
         String(s.ports.web),
       ],

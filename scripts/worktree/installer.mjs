@@ -23,20 +23,34 @@ export function installToolkit(sourceDirectory, targetDirectory) {
   if (!fs.statSync(target).isDirectory())
     throw new Error("Target must be an existing directory.");
   rejectSymlinks(source, "manifest.json");
-  const manifest = JSON.parse(fs.readFileSync(path.join(source, "manifest.json"), "utf8"));
-  if (!manifest.files || typeof manifest.files !== "object" || Array.isArray(manifest.files))
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(source, "manifest.json"), "utf8"),
+  );
+  if (
+    !manifest.files ||
+    typeof manifest.files !== "object" ||
+    Array.isArray(manifest.files)
+  )
     throw new Error("Invalid manifest files.");
   const pending = [];
   for (const [name, item] of Object.entries(manifest.files)) {
     const relative = item?.path;
-    if (typeof relative !== "string" || relative.includes("\\") ||
-        relative.split("/")[0] !== "scripts" ||
-        relative.split("/").some((part) => !part || part === "." || part === ".."))
+    if (
+      typeof relative !== "string" ||
+      relative.includes("\\") ||
+      relative.split("/")[0] !== "scripts" ||
+      relative.split("/").some((part) => !part || part === "." || part === "..")
+    )
       throw new Error(`Invalid destination path: ${relative}`);
     const sourcePath = item.source ?? relative;
-    if (typeof sourcePath !== "string" || sourcePath.includes("\\") ||
-        sourcePath.split("/")[0] !== "scripts" ||
-        sourcePath.split("/").some((part) => !part || part === "." || part === ".."))
+    if (
+      typeof sourcePath !== "string" ||
+      sourcePath.includes("\\") ||
+      sourcePath.split("/")[0] !== "scripts" ||
+      sourcePath
+        .split("/")
+        .some((part) => !part || part === "." || part === "..")
+    )
       throw new Error(`Invalid source path: ${sourcePath}`);
     rejectSymlinks(source, sourcePath);
     const data = fs.readFileSync(path.join(source, sourcePath));
@@ -44,7 +58,8 @@ export function installToolkit(sourceDirectory, targetDirectory) {
     if (checksum !== item.sha256) throw new Error(`Checksum mismatch: ${name}`);
     rejectSymlinks(target, relative);
     const destination = path.join(target, relative);
-    if (fs.existsSync(destination)) throw new Error(`Refusing to overwrite: ${destination}`);
+    if (fs.existsSync(destination))
+      throw new Error(`Refusing to overwrite: ${destination}`);
     pending.push({ destination, data });
   }
   // Validate all hashes and collisions before creating anything in the target.

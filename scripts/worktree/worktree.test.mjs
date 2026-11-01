@@ -279,38 +279,58 @@ test("interrupted bootstrap refuses a different deployment even on its reserved 
 
 async function managedBackend(f, root) {
   assert.equal((await f.run(root, "setup", "--prepare-only")).code, 0);
-  const s = JSON.parse(await readFile(join(root, ".worktree/local.json"), "utf8"));
+  const s = JSON.parse(
+    await readFile(join(root, ".worktree/local.json"), "utf8"),
+  );
   await mkdir(join(root, ".convex/local/default"), { recursive: true });
-  await writeFile(join(root, ".convex/local/default/config.json"), JSON.stringify({
-    deploymentName: `anonymous-${root.split("/").at(-1)}`,
-    ports: { cloud: s.ports.cloud, site: s.ports.site },
-  }));
+  await writeFile(
+    join(root, ".convex/local/default/config.json"),
+    JSON.stringify({
+      deploymentName: `anonymous-${root.split("/").at(-1)}`,
+      ports: { cloud: s.ports.cloud, site: s.ports.site },
+    }),
+  );
   return s;
 }
 
 test("a missing backend CLI cannot leave a recorded supervisor", async (t) => {
-  const f = await fixture(t), root = await f.root("no-cli");
+  const f = await fixture(t),
+    root = await f.root("no-cli");
   const s = await managedBackend(f, root);
   const result = await f.run(root, "_serve", `--owner=${s.id}`);
   assert.notEqual(result.code, 0);
   assert.match(result.output, /install.*dependenc/i);
-  await assert.rejects(readFile(join(root, ".worktree/runtime.json")), { code: "ENOENT" });
+  await assert.rejects(readFile(join(root, ".worktree/runtime.json")), {
+    code: "ENOENT",
+  });
 });
 
 test("a missing frontend CLI fails before starting the backend", async (t) => {
-  const f = await fixture(t), root = await f.root("no-frontend");
+  const f = await fixture(t),
+    root = await f.root("no-frontend");
   const s = await managedBackend(f, root);
   await mkdir(join(root, "node_modules/convex"), { recursive: true });
-  await writeFile(join(root, "node_modules/convex/package.json"), JSON.stringify({
-    name: "convex", bin: { convex: "cli.cjs" },
-  }));
-  await writeFile(join(root, "node_modules/convex/cli.cjs"), `
+  await writeFile(
+    join(root, "node_modules/convex/package.json"),
+    JSON.stringify({
+      name: "convex",
+      bin: { convex: "cli.cjs" },
+    }),
+  );
+  await writeFile(
+    join(root, "node_modules/convex/cli.cjs"),
+    `
     require("node:fs").writeFileSync("backend-started", "unexpected");
     console.log("Convex functions ready");
     setTimeout(() => process.exit(0), 500);
-  `);
+  `,
+  );
   const result = await f.run(root, "_serve", `--owner=${s.id}`, "--frontend");
   assert.match(result.output, /install.*dependenc/i);
-  await assert.rejects(readFile(join(root, "backend-started")), { code: "ENOENT" });
-  await assert.rejects(readFile(join(root, ".worktree/runtime.json")), { code: "ENOENT" });
+  await assert.rejects(readFile(join(root, "backend-started")), {
+    code: "ENOENT",
+  });
+  await assert.rejects(readFile(join(root, ".worktree/runtime.json")), {
+    code: "ENOENT",
+  });
 });

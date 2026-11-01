@@ -2,7 +2,15 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { root, backend, dir, stateFile, configFile, read, layout } from "./context.mjs";
+import {
+  root,
+  backend,
+  dir,
+  stateFile,
+  configFile,
+  read,
+  layout,
+} from "./context.mjs";
 import { safe, json } from "./files.mjs";
 import { packageBin } from "./dependencies.mjs";
 
@@ -11,9 +19,13 @@ export async function state() {
   const s = await read(stateFile, null);
   if (!s || s.root !== root || s.version !== 1 || !s.id)
     throw new Error("Run worktree:setup in this checkout first.");
-  if ((layout.convex === false) !== (s.mode === "none") ||
-      (s.mode === "none" && (s.ports !== undefined || s.deployment !== undefined)))
-    throw new Error("Worktree mode changed. Restore its original configuration and explicitly cleanup before changing modes.");
+  if (
+    (layout.convex === false) !== (s.mode === "none") ||
+    (s.mode === "none" && (s.ports !== undefined || s.deployment !== undefined))
+  )
+    throw new Error(
+      "Worktree mode changed. Restore its original configuration and explicitly cleanup before changing modes.",
+    );
   return s;
 }
 
@@ -49,7 +61,11 @@ export async function checkConfig(s, required = false) {
 export function childEnv(s, bootstrap = false) {
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
-    if (key.startsWith("CONVEX_") || key.startsWith("NEXT_PUBLIC_CONVEX_") || key.startsWith("VITE_CONVEX_"))
+    if (
+      key.startsWith("CONVEX_") ||
+      key.startsWith("NEXT_PUBLIC_CONVEX_") ||
+      key.startsWith("VITE_CONVEX_")
+    )
       delete env[key];
   }
   return {

@@ -11,7 +11,8 @@ try {
   if (process.argv[2] === "setup" && targetIndex >= 0) {
     await projectLock(async () => {
       const base = await refreshCheckout(root, { refreshCurrent: false });
-      if (!base) throw new Error("Creating a new worktree requires a Git checkout.");
+      if (!base)
+        throw new Error("Creating a new worktree requires a Git checkout.");
       const destination = process.argv[targetIndex + 1];
       const branchIndex = process.argv.indexOf("--branch");
       const branch = process.argv[branchIndex + 1];
@@ -33,8 +34,13 @@ try {
       );
       const prepare = process.argv.includes("--prepare-only");
       if (!prepare) {
-        const targetLayout = await read(path.join(target, "scripts/worktree.config.json"), {});
-        installDependencies(target, { allowEmpty: targetLayout.convex === false });
+        const targetLayout = await read(
+          path.join(target, "scripts/worktree.config.json"),
+          {},
+        );
+        installDependencies(target, {
+          allowEmpty: targetLayout.convex === false,
+        });
       }
       execFileSync(
         process.execPath,

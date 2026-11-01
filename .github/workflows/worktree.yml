@@ -5,22 +5,8 @@ on:
 permissions:
   contents: read
 jobs:
-  focused:
-    runs-on: ubicloud-standard-2-ubuntu-2404
-    timeout-minutes: 15
-    env:
-      NODE_OPTIONS: --max-old-space-size=512
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: node --test --test-concurrency=1 scripts/pr-standard.test.mjs scripts/enforce-pr-standard.test.mjs scripts/worktree/*.test.mjs
-      - name: Runner identity
-        run: |
-          echo "Runner: $RUNNER_NAME / $RUNNER_OS / $RUNNER_ARCH"
-          uname -a
   integration:
+    name: Real app backend isolation
     runs-on: ubicloud-standard-2-ubuntu-2404
     timeout-minutes: 30
     env:

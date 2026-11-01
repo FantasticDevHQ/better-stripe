@@ -5,15 +5,7 @@
     "STRIPE_SECRET_KEY": "sk_test_worktree_synthetic_not_a_credential"
   },
   "secretEnv": [],
-  "siteUrlEnv": [
-    "FRONTEND_URL"
-  ],
-  "bootstrapMissingEnv": [
-    "STRIPE_SECRET_KEY"
-  ],
-  "prepareCommand": [
-    "pnpm",
-    "run",
-    "build"
-  ]
+  "siteUrlEnv": ["FRONTEND_URL"],
+  "bootstrapMissingEnv": ["STRIPE_SECRET_KEY"],
+  "prepareCommand": ["pnpm", "run", "build"]
 }

@@ -29,14 +29,18 @@ async function fixture(t, branch = "main") {
     origin,
     root,
     run: (...args) =>
-      spawnSync(process.execPath, [script, "setup", ...args, "--prepare-only"], {
-        cwd: root,
-        env: {
-          ...process.env,
-          WORKTREE_REGISTRY_DIR: path.join(base, "registry"),
+      spawnSync(
+        process.execPath,
+        [script, "setup", ...args, "--prepare-only"],
+        {
+          cwd: root,
+          env: {
+            ...process.env,
+            WORKTREE_REGISTRY_DIR: path.join(base, "registry"),
+          },
+          encoding: "utf8",
         },
-        encoding: "utf8",
-      }),
+      ),
   };
 }
 test("setup refuses dirty tracked files without discarding changes", async (t) => {
@@ -56,8 +60,14 @@ for (const branch of ["master", "masters", "develop", "release/base"]) {
     git(f.origin, "commit", "-m", "Advance base");
     const r = f.run();
     assert.equal(r.status, 0, r.stderr);
-    assert.equal(git(f.root, "rev-parse", "HEAD"), git(f.origin, "rev-parse", "HEAD"));
-    assert.equal(git(f.root, "rev-parse", `refs/heads/${branch}`), git(f.origin, "rev-parse", "HEAD"));
+    assert.equal(
+      git(f.root, "rev-parse", "HEAD"),
+      git(f.origin, "rev-parse", "HEAD"),
+    );
+    assert.equal(
+      git(f.root, "rev-parse", `refs/heads/${branch}`),
+      git(f.origin, "rev-parse", "HEAD"),
+    );
   });
 }
 
@@ -67,16 +77,25 @@ test("setup discovers the live remote default instead of using stale origin/HEAD
   await writeFile(path.join(f.origin, "develop.txt"), "new default");
   git(f.origin, "add", ".");
   git(f.origin, "commit", "-m", "New default branch");
-  assert.equal(git(f.root, "symbolic-ref", "refs/remotes/origin/HEAD"), "refs/remotes/origin/main");
+  assert.equal(
+    git(f.root, "symbolic-ref", "refs/remotes/origin/HEAD"),
+    "refs/remotes/origin/main",
+  );
   const r = f.run();
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(git(f.root, "rev-parse", "HEAD"), git(f.origin, "rev-parse", "HEAD"));
+  assert.equal(
+    git(f.root, "rev-parse", "HEAD"),
+    git(f.origin, "rev-parse", "HEAD"),
+  );
 });
 
 test("configured develop creates a fresh worktree without advancing the caller's main", async (t) => {
   const f = await fixture(t);
   await mkdir(path.join(f.origin, "scripts"));
-  await writeFile(path.join(f.origin, "scripts/worktree.config.json"), JSON.stringify({ baseBranch: "develop", backend: ".", frontend: "." }));
+  await writeFile(
+    path.join(f.origin, "scripts/worktree.config.json"),
+    JSON.stringify({ baseBranch: "develop", backend: ".", frontend: "." }),
+  );
   git(f.origin, "add", ".");
   git(f.origin, "commit", "-m", "Configure development base");
   git(f.root, "pull", "--ff-only");
@@ -87,7 +106,12 @@ test("configured develop creates a fresh worktree without advancing the caller's
   git(f.origin, "commit", "-m", "Advance development");
   const expected = git(f.origin, "rev-parse", "HEAD");
   git(f.origin, "switch", "main");
-  git(f.root, "config", "remote.origin.fetch", "+refs/heads/main:refs/remotes/origin/main");
+  git(
+    f.root,
+    "config",
+    "remote.origin.fetch",
+    "+refs/heads/main:refs/remotes/origin/main",
+  );
   const target = path.join(f.base, "configured-worktree");
   const r = f.run("--path", target, "--branch", "feature/from-develop");
   assert.equal(r.status, 0, r.stderr);
@@ -109,7 +133,10 @@ test("missing remote default requires an explicit base instead of assuming main"
 test("invalid configured base is rejected before fetching or modifying a checkout", async (t) => {
   const f = await fixture(t);
   await mkdir(path.join(f.root, "scripts"));
-  await writeFile(path.join(f.root, "scripts/worktree.config.json"), JSON.stringify({ baseBranch: "--upload-pack=unexpected" }));
+  await writeFile(
+    path.join(f.root, "scripts/worktree.config.json"),
+    JSON.stringify({ baseBranch: "--upload-pack=unexpected" }),
+  );
   git(f.root, "config", "user.email", "test@example.invalid");
   git(f.root, "config", "user.name", "Test");
   git(f.root, "add", ".");
@@ -127,7 +154,10 @@ test("a tag matching the remote shorthand cannot shadow new-worktree creation", 
   const target = path.join(f.base, "unambiguous-worktree");
   const r = f.run("--path", target, "--branch", "feature/from-base");
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(git(target, "rev-parse", "HEAD"), git(f.origin, "rev-parse", "HEAD"));
+  assert.equal(
+    git(target, "rev-parse", "HEAD"),
+    git(f.origin, "rev-parse", "HEAD"),
+  );
 });
 
 test("a tag matching the local base cannot prevent its sibling checkout fast-forward", async (t) => {
@@ -140,11 +170,17 @@ test("a tag matching the local base cannot prevent its sibling checkout fast-for
   git(f.origin, "commit", "-m", "Advance base");
   const r = spawnSync(process.execPath, [script, "setup", "--prepare-only"], {
     cwd: sibling,
-    env: { ...process.env, WORKTREE_REGISTRY_DIR: path.join(f.base, "registry") },
+    env: {
+      ...process.env,
+      WORKTREE_REGISTRY_DIR: path.join(f.base, "registry"),
+    },
     encoding: "utf8",
   });
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(git(f.root, "rev-parse", "HEAD"), git(f.origin, "rev-parse", "HEAD"));
+  assert.equal(
+    git(f.root, "rev-parse", "HEAD"),
+    git(f.origin, "rev-parse", "HEAD"),
+  );
 });
 test("setup fetches and fast-forwards stale checkout and local main", async (t) => {
   const f = await fixture(t);

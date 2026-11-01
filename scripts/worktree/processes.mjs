@@ -82,7 +82,10 @@ export async function run(
     );
     const expected =
       bootstrap &&
-      expectedMissingEnvironment(failure.output, config.bootstrapMissingEnv || []);
+      expectedMissingEnvironment(
+        failure.output,
+        config.bootstrapMissingEnv || [],
+      );
     if (!expected) throw failure;
     console.log(
       "Fresh backend configured; setting declared local environment before retrying the schema push.",
@@ -130,7 +133,9 @@ export async function reserve(s) {
 export async function serve(s, withFrontend = false) {
   await checkConfig(s, true);
   const backendArgs = convexArgs(s);
-  const frontendBin = withFrontend ? packageBin("vite", "vite", [frontend, root]) : null;
+  const frontendBin = withFrontend
+    ? packageBin("vite", "vite", [frontend, root])
+    : null;
   await json(path.join(dir, "runtime.json"), { pid: process.pid, id: s.id });
   const children = [];
   let stopping = false;
@@ -169,7 +174,9 @@ export async function serve(s, withFrontend = false) {
       process.execPath,
       [
         frontendBin,
-        "--host", "127.0.0.1", "--strictPort",
+        "--host",
+        "127.0.0.1",
+        "--strictPort",
         "--port",
         String(s.ports.web),
       ],
@@ -196,7 +203,12 @@ export async function start(withFrontend = false) {
   const log = openSync(path.join(dir, "backend.log"), "w", 0o600);
   const child = spawn(
     process.execPath,
-    [script, "_serve", `--owner=${s.id}`, ...(withFrontend ? ["--frontend"] : [])],
+    [
+      script,
+      "_serve",
+      `--owner=${s.id}`,
+      ...(withFrontend ? ["--frontend"] : []),
+    ],
     {
       cwd: root,
       env: process.env,

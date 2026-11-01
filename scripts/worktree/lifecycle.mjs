@@ -35,7 +35,13 @@ export async function setup(prepareOnly) {
     await safe(stateFile);
     await fs.mkdir(dir, { recursive: true, mode: 0o700 });
     if (existsSync(stateFile)) await state();
-    else await json(stateFile, { version: 1, root, id: randomUUID(), mode: "none" });
+    else
+      await json(stateFile, {
+        version: 1,
+        root,
+        id: randomUUID(),
+        mode: "none",
+      });
     console.log("Worktree ready; no backend or frontend services configured.");
     return;
   }
@@ -147,8 +153,11 @@ export async function setup(prepareOnly) {
       // Build before every schema push so source changes cannot leave stale dist.
       if (layout.prepareCommand) {
         const command = layout.prepareCommand;
-        if (!Array.isArray(command) || !command.length ||
-          !command.every((part) => typeof part === "string" && part.length))
+        if (
+          !Array.isArray(command) ||
+          !command.length ||
+          !command.every((part) => typeof part === "string" && part.length)
+        )
           throw new Error("prepareCommand must be a nonempty argv array.");
         execFileSync(command[0], command.slice(1), {
           cwd: root,
@@ -220,10 +229,17 @@ export async function teardown(cleanup = false) {
       await fs.rm(stateFile);
       // Only remove our own identity file. A user may keep unrelated files in
       // .worktree; an empty directory can be removed without recursive deletion.
-      try { await fs.rmdir(dir); }
-      catch (error) { if (error.code !== "ENOTEMPTY" && error.code !== "EEXIST") throw error; }
+      try {
+        await fs.rmdir(dir);
+      } catch (error) {
+        if (error.code !== "ENOTEMPTY" && error.code !== "EEXIST") throw error;
+      }
     }
-    console.log(cleanup ? "Managed worktree state cleaned." : "No managed services; worktree state preserved.");
+    console.log(
+      cleanup
+        ? "Managed worktree state cleaned."
+        : "No managed services; worktree state preserved.",
+    );
     return;
   }
   if (cleanup) await checkConfig(s);

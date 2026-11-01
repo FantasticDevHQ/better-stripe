@@ -37,3 +37,15 @@ agent instructions, run `node scripts/check.mjs`, and reconcile every exported
 module/test against the recorded commit. Preserve the Vite adapter, pnpm policy,
 LICENSE, safe freshness behavior and ownership checks. Re-run focused and real
 backend tests. The root `scripts/worktree.mjs` is an upstream compatibility shim.
+
+## Required CI contexts
+
+`Repository quality gates` requires successful full check:all, Shadscan, codegen
+and standalone Node test jobs. Failure, cancellation or skipping any dependency
+fails the aggregate. The original `ci` status remains available.
+`Real app backend isolation` runs two real example backends. Both use UbiCloud
+Linux. `PR standard` is the commit status published by the metadata enforcer,
+which executes only trusted base code with its write token. That context becomes
+available only after the workflow and scripts land on base. The coordinator
+configures required statuses after activation; merging this PR does not itself
+change branch protection. Preserve existing required checks and review policies.

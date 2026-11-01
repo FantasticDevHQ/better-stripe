@@ -42,7 +42,7 @@ the title. Choose the declaration that matches the actual scope:
 | `Relates to JIF-123` | An informational relation with no status automation.                                                                     |
 
 The ID may be replaced by the raw full Linear issue URL, for example
-`Refs https://linear.app/dojoco/issue/JIF-123/issue-title`. The validator also
+`Refs <raw issue URL>`. The validator also
 accepts Linear's other documented closing, non-closing, and relation keywords,
 such as `Closes`, `Implements`, `References`, and `Related to`. Put the declaration
 on its own visible line, outside comments or code examples. Keep extra informational
@@ -51,7 +51,7 @@ Reviewers assess whether the selected intent matches the PR's scope.
 
 An ordinary Markdown ticket link is useful context but does not declare this
 intent. Magic words in PR comments do not create Linear associations. These rules
-follow [Linear's GitHub integration documentation](https://linear.app/docs/github#linking-linear-issues-to-github-prs).
+follow Linear's GitHub integration documentation.
 
 Linear also supports IDs in branch names and PR titles. The explicit body statement
 records intent; its absence is not proof that a missing native association was

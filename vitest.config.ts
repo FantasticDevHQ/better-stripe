@@ -22,7 +22,7 @@ export default defineConfig({
   test: {
     // Bound concurrent Convex/Vite module loading so cold imports do not starve
     // timed integration tests or leave timed-out workflows running into the next test.
-    maxWorkers: 2,
+    maxWorkers: 1,
     silent: true,
     coverage: {
       reporter: ["text", "json-summary", "html"],
@@ -102,7 +102,14 @@ export default defineConfig({
         test: {
           name: "scripts",
           include: ["scripts/**/*.test.{ts,js,mjs}"],
-          exclude: ["dist/**", "node_modules/**"],
+          // These use node:test and run in the required focused CI job.
+          exclude: [
+            "dist/**",
+            "node_modules/**",
+            "scripts/worktree/**",
+            "scripts/pr-standard.test.mjs",
+            "scripts/enforce-pr-standard.test.mjs",
+          ],
         },
       },
     ],

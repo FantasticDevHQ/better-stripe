@@ -28,10 +28,9 @@
 
 ## [0.112.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.111.0...v0.112.0) (2026-11-01)
 
-
 ### Features
 
-* capture and read authorized renewal witnesses ([#467](https://github.com/FantasticDevHQ/better-stripe/issues/467)) ([600471a](https://github.com/FantasticDevHQ/better-stripe/commit/600471ab9baf3cce32ca893aa2ee3c31eb91500d))
+- capture and read authorized renewal witnesses ([#467](https://github.com/FantasticDevHQ/better-stripe/issues/467)) ([600471a](https://github.com/FantasticDevHQ/better-stripe/commit/600471ab9baf3cce32ca893aa2ee3c31eb91500d))
 
 ## [0.111.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.110.0...v0.111.0) (2026-11-01)
 

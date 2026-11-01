@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.113.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.0...v0.113.1) (2026-11-01)
+
+
+### Maintenance
+
+* BTS-322 adopt repository and Convex worktree standards ([#472](https://github.com/FantasticDevHQ/better-stripe/issues/472)) ([10a9090](https://github.com/FantasticDevHQ/better-stripe/commit/10a90905889836db06073443a2e4624970d187fd))
+
 ## [0.113.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.112.0...v0.113.0) (2026-11-01)
 
 ### Features

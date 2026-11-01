@@ -4,7 +4,6 @@ import { convexTest } from "convex-test";
 import {
   actionGeneric,
   queryGeneric,
-  defineSchema,
   makeFunctionReference,
   getFunctionAddress,
   type GenericActionCtx,
@@ -13,6 +12,11 @@ import {
 import { BetterStripe } from "../../../../index.js";
 import { components } from "../../../../../../example/convex/_generated/api.js";
 import { modules, schema } from "../../../../../test.js";
+import {
+  modules as exampleModules,
+  schema as exampleSchema,
+} from "../../../../../../example/test.js";
+import type { MutationCtx as ExampleMutationCtx } from "../../../../../../example/convex/_generated/server.js";
 import {
   canonical,
   codecFixture,
@@ -33,6 +37,7 @@ export async function initialOperations(
     sdk: BetterStripe;
     index: number;
     ctx: GenericActionCtx<GenericDataModel>;
+    runHost(work: (ctx: ExampleMutationCtx) => Promise<void>): Promise<void>;
     inAnotherAction(
       work: (ctx: GenericActionCtx<GenericDataModel>) => Promise<void>,
       identity?: { subject: string; issuer: string; tokenIdentifier: string },
@@ -293,6 +298,7 @@ export async function initialOperations(
               sdk: selectedSDK,
               index,
               ctx,
+              runHost: (work) => t.run(work),
               async inAnotherAction(work, identity) {
                 const id = String(++secondaryId);
                 secondaryWork.set(id, work);
@@ -316,9 +322,9 @@ export async function initialOperations(
       },
     }),
   };
-  const t = convexTest(defineSchema({}), {
-    "./_generated/api.ts": async () => ({}),
-    "./initialOwner.ts": async () => host,
+  const t = convexTest(exampleSchema, {
+    ...exampleModules,
+    "./convex/initialOwner.ts": async () => host,
   });
   t.registerComponent("betterStripe", schema, modules);
   await (options.identity ? t.withIdentity(options.identity) : t).action(

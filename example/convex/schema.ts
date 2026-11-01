@@ -11,7 +11,9 @@ import { storeBalanceTables } from "./storeBalance/schema";
 import { storePlansTables } from "./storePlans/schema";
 import { stripeTables } from "./stripe/schema";
 import { usersTables } from "./users/schema";
+import { renewalAuthorizationTables } from "./renewalAuthorization/schema";
 export default defineSchema({
+  ...renewalAuthorizationTables,
   ...meteredUsageTables,
   ...meteredProductTables,
   ...usersTables,

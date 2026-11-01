@@ -8392,7 +8392,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   recordJSON: string;
                   recordVersion: 2;
                   requestBinding: string;
-                  stage: "attach";
+                  stage: "attach" | "configure";
                   timingPolicyJSON: string;
                 };
           },
@@ -8441,7 +8441,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   recordJSON: string;
                   recordVersion: 2;
                   requestBinding: string;
-                  stage: "attach";
+                  stage: "attach" | "configure";
                   timingPolicyJSON: string;
                 };
             sequence: 1 | 2 | 3;
@@ -8465,7 +8465,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               basisJSON: string;
               policyJSON: string;
               sourcePayloadId: string;
-              stage: "attach";
+              stage: "attach" | "configure";
               version: 1;
             };
             operationId: string;
@@ -8540,7 +8540,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     recordJSON: string;
                     recordVersion: 2;
                     requestBinding: string;
-                    stage: "attach";
+                    stage: "attach" | "configure";
                     timingPolicyJSON: string;
                   };
             }
@@ -8586,7 +8586,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     recordJSON: string;
                     recordVersion: 2;
                     requestBinding: string;
-                    stage: "attach";
+                    stage: "attach" | "configure";
                     timingPolicyJSON: string;
                   };
             }
@@ -8613,7 +8613,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             responsePayloadId: string;
             schemaVersion: 1;
             sourcePayloadId: string;
-            stage: "attach";
+            stage: "attach" | "configure";
             status: "retained";
           },
           Name
@@ -8651,7 +8651,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 preparedRevision: 0;
                 recordVersion: 2;
                 requestBinding: string;
-                stage: "attach";
+                stage: "attach" | "configure";
                 timingPolicyJSON: string;
               };
               initialBasis: null | {
@@ -8659,7 +8659,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 basisJSON: string;
                 policyJSON: string;
                 sourcePayloadId: string;
-                stage: "attach";
+                stage: "attach" | "configure";
                 version: 1;
               };
               operationId: string;
@@ -8747,7 +8747,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   recordJSON: string;
                   recordVersion: 2;
                   requestBinding: string;
-                  stage: "attach";
+                  stage: "attach" | "configure";
                   timingPolicyJSON: string;
                 };
           },
@@ -8770,7 +8770,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               responsePayloadId: string;
               schemaVersion: 1;
               sourcePayloadId: string;
-              stage: "attach";
+              stage: "attach" | "configure";
               status: "retained";
             };
           },
@@ -8790,6 +8790,94 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             sequence: 1 | 2 | 3;
             sourcePayloadId: string;
             stage: "attach" | "configure";
+          },
+          Name
+        >;
+      };
+    };
+    renewalWitnesses: {
+      mutations: {
+        retainAuthorizedWitness: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            identity: {
+              componentScope: string;
+              operationId: string;
+              parentOperationId: string;
+              witnessId: string;
+            };
+            payloadJSON: string;
+          },
+          | {
+              descriptor: {
+                authenticationEstablished: false;
+                capturedSubject: string;
+                customerAccountId: string;
+                customerId: string;
+                identity: {
+                  componentScope: string;
+                  operationId: string;
+                  parentOperationId: string;
+                  witnessId: string;
+                };
+                livemode: boolean;
+                nativePeriod: { end: number; start: number };
+                observedAtMs: number;
+                observedItemId: string;
+                operationalAuthority: false;
+                payloadBinding: string;
+                providerQualificationRequired: true;
+                publicDeliveryEstablished: false;
+                scheduleId: string;
+                subscriptionId: string;
+                version: 1;
+                witnessRowId: string;
+              };
+              status: "retained";
+            }
+          | { reason: "identity_changed"; status: "conflict" },
+          Name
+        >;
+      };
+      queries: {
+        readAuthorizedWitness: FunctionReference<
+          "query",
+          "internal",
+          {
+            identity: {
+              componentScope: string;
+              operationId: string;
+              parentOperationId: string;
+              witnessId: string;
+            };
+          },
+          null | {
+            descriptor: {
+              authenticationEstablished: false;
+              capturedSubject: string;
+              customerAccountId: string;
+              customerId: string;
+              identity: {
+                componentScope: string;
+                operationId: string;
+                parentOperationId: string;
+                witnessId: string;
+              };
+              livemode: boolean;
+              nativePeriod: { end: number; start: number };
+              observedAtMs: number;
+              observedItemId: string;
+              operationalAuthority: false;
+              payloadBinding: string;
+              providerQualificationRequired: true;
+              publicDeliveryEstablished: false;
+              scheduleId: string;
+              subscriptionId: string;
+              version: 1;
+              witnessRowId: string;
+            };
+            payloadJSON: string;
           },
           Name
         >;

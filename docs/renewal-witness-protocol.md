@@ -1,11 +1,15 @@
 # Immutable renewal witness protocol
 
-This component protocol stores complete unsigned renewal snapshot DATA. It is
-the persistence prerequisite for historical acquisition, not an activated
-capture or authorization API. It adds a table and ordinary transactional helpers,
-with no registered production query or mutation. Live capture, separate host
-retain/read capabilities, actual returned acknowledgement custody and genuine
-generated routes remain required before runtime activation.
+This component protocol stores complete unsigned renewal snapshot DATA. Its
+trusted host component routes retain and read immutable witnesses through strict
+argument and return validators. Host authentication and authorization must precede
+component calls; storage DATA does not supply either permission.
+
+Private source wrappers connect the protocol to a fresh observation invocation.
+Their production capture and read profiles remain frozen and EMPTY. Genuine
+generated references, qualified host bindings, deployed compatibility and provider
+qualification remain required before activation. These private wrappers are not
+public SDK entrypoints.
 
 ## Payload and source checks
 
@@ -65,6 +69,34 @@ transaction concurrency provides the first-wins behavior across calls.
 
 ## Retention and historical meaning
 
+The private capture wrapper uses the actual fresh Action, selected SDK and original
+30-second observation lifetime. It accepts the operation pair and one fixed
+witness identity, acquires complete current reads, and requires
+`current_target_material_match`. A selected invoice profile must acquire its full
+context and establish complete paired correlation. The existing base and invoice
+wrappers retain their own outputs and provider GET bounds.
+
+The original transport privately registers one acquisition cell per invocation
+after actual SDK selection. It records only its settled original GET bodies and
+complete fenced invoice context. Retention consumes that acquisition once; it
+accepts no supplied reads, invoice context or guard callback. A fresh invocation,
+selected SDK or copied observation DATA alone cannot create this receipt. Partial
+reads and a second transport under the same invocation refuse.
+
+A separate fixed host retention capability binds installation, current subject,
+operation pair, Customer/account/mode, schedule/subscription, complete C7 request
+binding, successor item and native period. Invoice permission does not imply
+retention permission. The wrapper awaits the original native mutation Promise,
+checks the complete descriptor, reads back the exact full payload, then rechecks
+the base, applicable invoice and retention grants before returning retention DATA.
+Public `.then` substitutions and copied replies cannot replace the original RPC
+settlement. Pending or rejected replies do not become acknowledgements. The wrapper
+does not retry a lost reply or choose another witness identity.
+
+Acquisition metadata measures the same fresh lifetime used for those reads. It
+does not reuse the old write Owner or restart a deadline. Its wall and monotonic
+durations remain unsigned host observation metadata.
+
 A successful transaction returns a row descriptor and full payload binding. It
 does not prove that an external caller received that result. A lost response can
 leave a durable row with no returned public acknowledgement. An explicit later
@@ -82,7 +114,26 @@ not revive a write Owner, manufacture a native past observation, prove atomic
 acquisition or establish exclusive causality. Fetching an old invoice later is
 not a substitute for the complete active snapshot.
 
-The controlled tests exercise real component transaction helpers and journal
-records. Production route generation, deployment, native/provider qualification,
-actual capture/read integration, release acceptance and Dojo adoption remain
-separate requirements. Existing execution holds remain in force.
+A later fresh invocation obtains a distinct host read grant before loading the
+complete stored witness. The grant binds its full scope, row identity and payload
+digest and is rechecked before release. A separately authorized later subject can
+read without replacing the immutable captured subject. Source/material/digest
+checks and the current immutable C7 context still apply.
+
+Current and lifecycle analysis use the later invocation's current C9 context.
+Historical material analysis uses the witness's own stored C7 and nullable C9
+context. A C9 retained later is not injected into a captured-null witness. This
+keeps historical material independent of current settings, terminal status or
+invoice-read availability while preserving the existing seven-field evidence
+input and twelve-field result. The stored full invoice context can establish
+historical material even when the later invocation has no invoice-read capability.
+If live acquisition fails before intent identity can be reconstructed, the read
+wrapper preserves the already validated immutable C7 identity. Current and
+lifecycle evidence remain unknown; stored historical material does not replace
+those axes.
+
+The controlled tests exercise actual registered component transactions, complete
+journal records and private Action/SDK capture and readback. Genuine route
+generation, deployment, native/provider qualification, complete integration and
+release acceptance and Dojo adoption remain separate requirements. Existing
+execution holds remain in force.

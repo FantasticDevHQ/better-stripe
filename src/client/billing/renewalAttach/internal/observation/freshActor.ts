@@ -1,4 +1,18 @@
 import { getFunctionAddress } from "convex/server";
+import { types } from "node:util";
+import { closed } from "../c10/ownData.js";
+import {
+  witnessIdentity,
+  witnessText,
+} from "../../../../../shared/renewalWitness.js";
+import {
+  captureWitnessProfile,
+  witnessProfileGuard,
+  witnessAddress,
+  type WitnessMode,
+  type WitnessProfile,
+} from "./witnessAuthorization.js";
+import { createWitnessOperation } from "./witnessOperation.js";
 import {
   captureInvoiceObservationProfile,
   invoiceProfileGuard,
@@ -45,16 +59,77 @@ export async function captureFreshInvoiceRenewalObservation(
   const profile = captureInvoiceObservationProfile(root);
   return captureFreshObservation(root, raw, profile);
 }
+type WitnessSpec = Readonly<{
+  profile: WitnessProfile;
+  mode: WitnessMode;
+  identity: ReturnType<typeof witnessIdentity>;
+}>;
+export async function captureFreshWitnessRenewalObservation(
+  root: object,
+  raw: unknown,
+) {
+  need(arguments.length === 2);
+  return captureWitnessObservation(root, raw, "retain");
+}
+export async function captureHistoricalWitnessRenewalObservation(
+  root: object,
+  raw: unknown,
+) {
+  need(arguments.length === 2);
+  return captureWitnessObservation(root, raw, "read");
+}
+function captureWitnessObservation(
+  root: object,
+  raw: unknown,
+  mode: WitnessMode,
+) {
+  const profile = captureWitnessProfile(root, mode);
+  need(!types.isProxy(raw));
+  const input = closed(raw, [
+    "actualActionCtx",
+    "parentOperationId",
+    "operationId",
+    "witnessId",
+  ]);
+  const identity = witnessIdentity({
+    componentScope: profile.freshProfile.historyEntry.componentScope,
+    witnessId: witnessText(input.witnessId),
+    parentOperationId: input.parentOperationId,
+    operationId: input.operationId,
+  });
+  return captureFreshObservation(
+    root,
+    {
+      actualActionCtx: input.actualActionCtx,
+      parentOperationId: identity.parentOperationId,
+      operationId: identity.operationId,
+    },
+    profile.invoiceProfile,
+    { profile, mode, identity },
+  );
+}
 async function captureFreshObservation(
   root: object,
   raw: unknown,
   invoiceProfile: InvoiceObservationProfile | null,
+  witnessSpec: WitnessSpec | null = null,
 ) {
   const profile = captureFreshObservationProfile(root);
+  const witnessQueryAddress =
+    witnessSpec && witnessAddress(witnessSpec.profile.authorizationQuery);
   const invoiceAddress =
     invoiceProfile &&
     JSON.stringify(getFunctionAddress(invoiceProfile.authorizationQuery));
   const invoiceGuard = () => {
+    if (witnessSpec) {
+      witnessProfileGuard(witnessSpec.profile, witnessSpec.mode);
+      need(
+        witnessSpec.profile.freshProfile === profile &&
+          witnessSpec.profile.invoiceProfile === invoiceProfile &&
+          witnessAddress(witnessSpec.profile.authorizationQuery) ===
+            witnessQueryAddress,
+      );
+    }
     if (invoiceProfile) {
       invoiceProfileGuard(invoiceProfile);
       need(
@@ -90,9 +165,42 @@ async function captureFreshObservation(
           profile,
           invoiceProfile,
         );
+        const witness =
+          witnessSpec &&
+          createWitnessOperation(
+            token,
+            witnessSpec.profile,
+            witnessSpec.mode,
+            witnessSpec.identity,
+          );
+        if (witnessSpec?.mode === "read") await witness!.load();
         let invoiceResult: Awaited<
           ReturnType<typeof transport.acquireInvoices>
         > | null = null;
+        async function analyze(reads: ObservationReads | null) {
+          return state.owned(async () => {
+            try {
+              const evidence = await inspectRenewalEvidenceV1({
+                version: 1,
+                apiVersion: "2026-09-30.endive",
+                configuration: captured.history.record.configuration,
+                configureReceipt: captured.history.rawConfigureReceipt,
+                reads,
+                invoiceContext: invoiceResult?.context ?? null,
+                historicalSnapshot: null,
+              });
+              if (witnessSpec?.mode !== "read") return evidence;
+              const historical = await witness!.historicalEvidence();
+              return {
+                ...evidence,
+                identity: evidence.identity ?? historical.identity,
+                historicalMaterial: historical.material,
+              };
+            } catch {
+              return null;
+            }
+          }, transport.guard);
+        }
         async function release(
           status:
             | "fresh_observation_data"
@@ -107,8 +215,33 @@ async function captureFreshObservation(
         ) {
           await transport.finalizeInvoices();
           transport.guard();
+          let witnessRetention: Awaited<
+            ReturnType<ReturnType<typeof createWitnessOperation>["retain"]>
+          > | null = null;
+          if (witnessSpec?.mode === "retain") {
+            need(
+              status === "fresh_observation_data" &&
+                reads &&
+                evidence?.currentMaterial.predicate ===
+                  "current_target_material_match" &&
+                couponInventory === "complete",
+            );
+            if (invoiceProfile)
+              need(
+                invoiceResult?.status === "complete" && invoiceResult.context,
+              );
+            witnessRetention = await witness!.retain();
+            await transport.finalizeInvoices();
+          } else if (witnessSpec?.mode === "read" && evidence === null)
+            evidence = await analyze(reads);
+          if (witness) await witness.finalize();
           const output = captureReaderQueryDATA({
             status,
+            ...(witnessSpec?.mode === "retain"
+              ? { witnessRetention }
+              : witnessSpec?.mode === "read"
+                ? { witness: { descriptor: witness!.descriptor() } }
+                : {}),
             ...(invoiceProfile
               ? {
                   invoiceContext: invoiceResult?.context ?? null,
@@ -130,11 +263,14 @@ async function captureFreshObservation(
             operationalAuthority: false as const,
           });
           transport.guard();
+          witness?.guard();
           return output;
         }
         const base: unknown[] = [];
         for (const row of baseReadRows(captured.history.record)) {
+          witness?.guard();
           const result = await transport.read(row);
+          witness?.guard();
           if (result.kind === "provider_rejected")
             return await release(
               "observation_provider_rejected",
@@ -164,23 +300,6 @@ async function captureFreshObservation(
             "PROVIDER_IDENTITY_CONFLICT",
           );
         }
-        async function analyze() {
-          return state.owned(async () => {
-            try {
-              return await inspectRenewalEvidenceV1({
-                version: 1,
-                apiVersion: "2026-09-30.endive",
-                configuration: captured.history.record.configuration,
-                configureReceipt: captured.history.rawConfigureReceipt,
-                reads,
-                invoiceContext: invoiceResult?.context ?? null,
-                historicalSnapshot: null,
-              });
-            } catch {
-              return null;
-            }
-          }, transport.guard);
-        }
         let ids: readonly string[];
         try {
           validateBaseRouting(captured.history.record, reads);
@@ -189,7 +308,7 @@ async function captureFreshObservation(
             reads.subscription,
           );
         } catch {
-          const analysis = await analyze();
+          const analysis = await analyze(reads);
           return await release(
             "unsupported_observation_profile",
             reads,
@@ -200,7 +319,9 @@ async function captureFreshObservation(
         }
         for (const id of ids) {
           const row = couponReadRow(id, 5 + reads.coupons.length);
+          witness?.guard();
           const result = await transport.read(row);
+          witness?.guard();
           if (result.kind === "provider_rejected")
             return await release(
               "observation_provider_rejected",
@@ -214,7 +335,9 @@ async function captureFreshObservation(
           reads.coupons.push(result.body);
         }
         if (invoiceProfile) {
+          witness?.guard();
           invoiceResult = await transport.acquireInvoices();
+          witness?.guard();
           if (invoiceResult.status === "provider_rejected")
             return await release(
               "observation_provider_rejected",
@@ -225,7 +348,7 @@ async function captureFreshObservation(
               invoiceResult.failure,
             );
         }
-        const evidence = await analyze();
+        const evidence = await analyze(reads);
         return await release(
           "fresh_observation_data",
           reads,

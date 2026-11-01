@@ -147,7 +147,9 @@ export async function prepareInvoiceObservation(
   const profile = Object.freeze({
     freshProfile: state.profile,
     readProfile: "endive-pinned-invoices-fence-7-v1",
-    authorizationQuery: makeFunctionReference("initialOwner:authorizeInvoices"),
+    authorizationQuery: makeFunctionReference<"query">(
+      "initialOwner:authorizeInvoices",
+    ),
   });
   admissionControls.invoices.splice(
     0,

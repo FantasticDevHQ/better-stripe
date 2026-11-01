@@ -33,6 +33,7 @@ type CapturedHistory = Readonly<{
 export interface ObservationInvocationState {
   readonly binding: object;
   readonly historyEntry: ObservationHistorySourceEntry;
+  readonly startedAt: Readonly<{ wallMs: number; ns: bigint }>;
   guard(): void;
   check(): { wallMs: number; ns: bigint };
   close(): void;
@@ -273,6 +274,7 @@ export async function captureObservationInvocation(
     Object.freeze({
       binding,
       historyEntry: entry,
+      startedAt: lifetime.startedAt,
       guard() {
         lifetime.check();
         guard();

@@ -413,6 +413,12 @@ export async function configureAdmissionFixture(
     hostInvoiceQuery?: NonNullable<
       Parameters<typeof initialOperations>[2]
     >["hostQuery"];
+    hostWitnessRetainQuery?: NonNullable<
+      Parameters<typeof initialOperations>[2]
+    >["hostQuery"];
+    hostWitnessReadQuery?: NonNullable<
+      Parameters<typeof initialOperations>[2]
+    >["hostQuery"];
     count?: number;
     keys?: readonly string[];
     afterBind?: (reply: unknown) => Promise<void>;
@@ -444,6 +450,8 @@ export async function configureAdmissionFixture(
       identity: options.identity,
       hostQuery: options.hostQuery,
       hostInvoiceQuery: options.hostInvoiceQuery,
+      hostWitnessRetainQuery: options.hostWitnessRetainQuery,
+      hostWitnessReadQuery: options.hostWitnessReadQuery,
       source: captureRetainedInput(baseline.original),
       afterBind: options.afterBind,
       afterQuery: options.afterQuery,

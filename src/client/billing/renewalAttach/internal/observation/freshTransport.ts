@@ -21,6 +21,7 @@ import {
   captureInitialJournalSelection,
 } from "../producer/classOwnedActionRoot.js";
 import { readObservationInvocation } from "./invocation.js";
+import { captureReaderQueryDATA } from "./readerAuthorization.js";
 import { closed, freeze } from "../c10/ownData.js";
 import {
   baseReadRows,
@@ -47,6 +48,42 @@ const method = Object.getOwnPropertyDescriptor(
   "rawRequest",
 )?.value;
 const nativeThen = Promise.prototype.then;
+type Acquisition = Readonly<{
+  reads: ObservationReads;
+  invoiceContext: InvoiceContextV1 | null;
+}>;
+type TransportCell = Readonly<{
+  profile: FreshObservationProfile;
+  invoiceProfile: InvoiceObservationProfile | null;
+  guard(): void;
+  consume(): Acquisition;
+}>;
+const actualTransports = new WeakMap<object, TransportCell | null>();
+/** Only the original factory registers this guard after actual SDK selection. */
+export function readFreshObservationTransport(
+  token: object,
+  profile: FreshObservationProfile,
+  invoiceProfile: InvoiceObservationProfile | null,
+) {
+  const cell = actualTransports.get(token);
+  freshNeed(
+    cell && cell.profile === profile && cell.invoiceProfile === invoiceProfile,
+  );
+  cell.guard();
+  return cell;
+}
+/** Returned DATA cannot register or replenish this once-consumed acquisition. */
+export function consumeFreshObservationAcquisition(
+  token: object,
+  profile: FreshObservationProfile,
+  invoiceProfile: InvoiceObservationProfile | null,
+) {
+  return readFreshObservationTransport(
+    token,
+    profile,
+    invoiceProfile,
+  ).consume();
+}
 export function captureFreshObservationProfile(
   root: object,
 ): FreshObservationProfile {
@@ -84,6 +121,9 @@ export function captureFreshGetTransport(
   freshNeed(arguments.length === 2 || arguments.length === 3);
   const state = readObservationInvocation(token),
     captured = state.readCaptured();
+  freshNeed(!actualTransports.has(token));
+  // Reserve before any Source callback or SDK selection; failed setup stays unavailable.
+  actualTransports.set(token, null);
   freshNeed(state.historyEntry === profile.historyEntry);
   const covers = profile.coversObservation;
   const invoiceAddress =
@@ -93,6 +133,7 @@ export function captureFreshGetTransport(
     typeof createInvoiceAuthorization
   > | null = null;
   let invoiceUsed = false;
+  let completeInvoiceContext: InvoiceContextV1 | null = null;
   function profileGuard() {
     if (invoiceProfile) {
       invoiceProfileGuard(invoiceProfile);
@@ -149,6 +190,53 @@ export function captureFreshGetTransport(
   let ordinal = 0,
     busy = false,
     ended = false;
+  let acquisitionConsumed = false;
+  actualTransports.set(
+    token,
+    Object.freeze({
+      profile,
+      invoiceProfile,
+      guard,
+      consume() {
+        guard();
+        freshNeed(
+          !acquisitionConsumed &&
+            !busy &&
+            !ended &&
+            ordinal >= 4 &&
+            bodies.length === ordinal,
+        );
+        const reads: ObservationReads = {
+          schedule: bodies[0],
+          subscription: bodies[1],
+          targetPrice: bodies[2],
+          billingCustomer: bodies[3],
+          coupons: bodies.slice(4),
+        };
+        validateBaseRouting(captured.history.record, reads);
+        const ids = observationCouponIds(
+          captured.history.record,
+          reads.subscription,
+        );
+        freshNeed(ordinal === 4 + ids.length);
+        ids.forEach((id, index) =>
+          validateCoupon(captured.history.record, id, reads.coupons[index]),
+        );
+        freshNeed(
+          invoiceProfile === null
+            ? !invoiceUsed
+            : completeInvoiceContext !== null,
+        );
+        const acquired = captureReaderQueryDATA({
+          reads,
+          invoiceContext: completeInvoiceContext,
+        });
+        acquisitionConsumed = true;
+        guard();
+        return acquired;
+      },
+    }),
+  );
   function expected() {
     if (ordinal < 4) return base[ordinal];
     const reads: ObservationReads = {
@@ -364,9 +452,10 @@ export function captureFreshGetTransport(
             });
           }
         }
+        completeInvoiceContext = plan.context();
         return Object.freeze({
           status: "complete",
-          context: plan.context(),
+          context: completeInvoiceContext,
           reason: null,
           failure: null,
         });

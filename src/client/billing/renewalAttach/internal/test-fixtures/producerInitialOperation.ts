@@ -35,6 +35,7 @@ export async function initialOperations(
     ctx: GenericActionCtx<GenericDataModel>;
     inAnotherAction(
       work: (ctx: GenericActionCtx<GenericDataModel>) => Promise<void>,
+      identity?: { subject: string; issuer: string; tokenIdentifier: string },
     ): Promise<void>;
   }) => Promise<void>,
   count = 1,
@@ -42,6 +43,8 @@ export async function initialOperations(
     identity?: { subject: string; issuer: string; tokenIdentifier: string };
     hostQuery?: ReturnType<typeof queryGeneric>;
     hostInvoiceQuery?: ReturnType<typeof queryGeneric>;
+    hostWitnessRetainQuery?: ReturnType<typeof queryGeneric>;
+    hostWitnessReadQuery?: ReturnType<typeof queryGeneric>;
     epochMs?: number;
     workEndWallMs?: number;
     endWallMs?: number;
@@ -184,6 +187,12 @@ export async function initialOperations(
     ...(options.hostInvoiceQuery
       ? { authorizeInvoices: options.hostInvoiceQuery }
       : {}),
+    ...(options.hostWitnessRetainQuery
+      ? { authorizeWitnessRetention: options.hostWitnessRetainQuery }
+      : {}),
+    ...(options.hostWitnessReadQuery
+      ? { authorizeWitnessRead: options.hostWitnessReadQuery }
+      : {}),
     secondary: actionGeneric({
       args: { id: v.string() },
       handler: async (ctx, args): Promise<null> => {
@@ -284,16 +293,18 @@ export async function initialOperations(
               sdk: selectedSDK,
               index,
               ctx,
-              async inAnotherAction(work) {
+              async inAnotherAction(work, identity) {
                 const id = String(++secondaryId);
                 secondaryWork.set(id, work);
                 try {
-                  await ctx.runAction(
-                    makeFunctionReference<"action", { id: string }, null>(
-                      "initialOwner:secondary",
-                    ),
-                    { id },
-                  );
+                  const ref = makeFunctionReference<
+                    "action",
+                    { id: string },
+                    null
+                  >("initialOwner:secondary");
+                  if (identity)
+                    await t.withIdentity(identity).action(ref, { id });
+                  else await ctx.runAction(ref, { id });
                 } finally {
                   secondaryWork.delete(id);
                 }

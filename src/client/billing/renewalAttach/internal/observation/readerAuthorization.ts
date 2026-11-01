@@ -175,5 +175,10 @@ export function createObservationReaderLifetime() {
       throw error;
     }
   }
-  return Object.freeze({ check, close, owned });
+  return Object.freeze({
+    startedAt: Object.freeze({ ...initial }),
+    check,
+    close,
+    owned,
+  });
 }

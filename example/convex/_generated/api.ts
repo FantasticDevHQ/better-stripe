@@ -122,6 +122,9 @@ import type * as recipientPayouts_policy_actions from "../recipientPayouts/polic
 import type * as recipientPayouts_policy_helpers from "../recipientPayouts/policy/helpers.js";
 import type * as recipientPayouts_policyView from "../recipientPayouts/policyView.js";
 import type * as recipientPayouts_public_actions from "../recipientPayouts/public/actions.js";
+import type * as renewalAuthorization_authorization from "../renewalAuthorization/authorization.js";
+import type * as renewalAuthorization_queries from "../renewalAuthorization/queries.js";
+import type * as renewalAuthorization_validators from "../renewalAuthorization/validators.js";
 import type * as sandboxFixtures_helpers from "../sandboxFixtures/helpers.js";
 import type * as sandboxFixtures_internal_actions from "../sandboxFixtures/internal/actions.js";
 import type * as sandboxFixtures_plan from "../sandboxFixtures/plan.js";
@@ -340,6 +343,9 @@ const fullApi: ApiFromModules<{
   "recipientPayouts/policy/helpers": typeof recipientPayouts_policy_helpers;
   "recipientPayouts/policyView": typeof recipientPayouts_policyView;
   "recipientPayouts/public/actions": typeof recipientPayouts_public_actions;
+  "renewalAuthorization/authorization": typeof renewalAuthorization_authorization;
+  "renewalAuthorization/queries": typeof renewalAuthorization_queries;
+  "renewalAuthorization/validators": typeof renewalAuthorization_validators;
   "sandboxFixtures/helpers": typeof sandboxFixtures_helpers;
   "sandboxFixtures/internal/actions": typeof sandboxFixtures_internal_actions;
   "sandboxFixtures/plan": typeof sandboxFixtures_plan;

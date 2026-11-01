@@ -1,0 +1,44 @@
+name: Worktree toolkit
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  focused:
+    runs-on: ubicloud-standard-2-ubuntu-2404
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=512
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test --test-concurrency=1 scripts/pr-standard.test.mjs scripts/enforce-pr-standard.test.mjs scripts/worktree/*.test.mjs
+      - name: Runner identity
+        run: |
+          echo "Runner: $RUNNER_NAME / $RUNNER_OS / $RUNNER_ARCH"
+          uname -a
+  integration:
+    runs-on: ubicloud-standard-2-ubuntu-2404
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=512
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Two real example backends
+        run: node --test --test-concurrency=1 scripts/worktree/worktree.integration.mjs
+      - name: Runner identity
+        if: always()
+        run: |
+          echo "Runner: $RUNNER_NAME / $RUNNER_OS / $RUNNER_ARCH"
+          uname -a

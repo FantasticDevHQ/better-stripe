@@ -1,0 +1,8 @@
+{
+  "backend": "example",
+  "frontend": "example",
+  "env": {},
+  "secretEnv": [],
+  "siteUrlEnv": [],
+  "bootstrapMissingEnv": []
+}

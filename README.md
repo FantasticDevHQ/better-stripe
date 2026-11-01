@@ -163,3 +163,9 @@ for publishing. Run `pnpm run check:all` before submitting changes.
 ## License
 
 MIT
+
+[A Fantastic.Dev Project](https://fantastic.dev)
+
+[![Fantastic.Dev](assets/fantastic-dev-badge.svg)](https://fantastic.dev)
+
+![Fantastic.Dev logo](assets/fantastic-dev-logo.svg)

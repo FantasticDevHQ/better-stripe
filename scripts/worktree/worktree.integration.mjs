@@ -95,6 +95,19 @@ test(
     );
     for (const result of setups)
       if (result.status === "rejected") throw result.reason;
+    // The disposable probe adds a function to the real app. Keep its generated
+    // API in the fixture commit before asserting that development stays clean.
+    for (const root of roots) {
+      const changed = execFileSync("git", ["diff", "--name-only"], {
+        cwd: root, encoding: "utf8",
+      }).trim().split("\n").filter(Boolean);
+      assert.ok(changed.every((name) =>
+        name.startsWith(`${backendPath}/convex/_generated/`) ||
+        name.startsWith("src/component/_generated/")),
+      `Unexpected source changes during fixture codegen: ${changed.join(", ")}`);
+      execFileSync("git", ["add", `${backendPath}/convex/_generated`, "src/component/_generated"], { cwd: root });
+      execFileSync("git", ["-c", "user.name=Worktree integration", "-c", "user.email=integration@example.invalid", "commit", "--allow-empty", "-m", "test: generate disposable probe API"], { cwd: root, stdio: "ignore" });
+    }
     const states = await Promise.all(
       roots.map((root) =>
         readFile(path.join(root, ".worktree/local.json"), "utf8").then(

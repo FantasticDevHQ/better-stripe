@@ -2,7 +2,7 @@
   <a href="https://fantastic.dev"><img src="assets/fantastic-dev-logo.svg" width="80" height="80" alt="Fantastic.Dev" /></a>
 </p>
 
-<h1 align="center">better-stripe</h1>
+<h1 align="center">Better Stripe</h1>
 
 <p align="center"><strong>Stripe billing and Connect marketplaces, built for Convex.</strong></p>
 
@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <a href="#installation">Install</a> · <a href="#quick-start">Quick start</a> · <a href="#documentation">Documentation</a>
+  <a href="#installation">Install</a> · <a href="#quick-start">Quick start</a> · <a href="#have-my-agent-set-this-up">Agent setup</a> · <a href="#documentation">Documentation</a>
 </p>
 
 ---
@@ -68,6 +68,38 @@ Stripe SDKs are included as dependencies.
 
 ## Quick start
 
+### Have my agent set this up
+
+Copy this into your coding agent in your existing Convex application:
+
+```text
+Integrate Better Stripe into this existing Convex app using:
+https://github.com/FantasticDevHQ/better-stripe
+https://github.com/FantasticDevHQ/better-stripe/blob/main/docs/configuration.md
+https://github.com/FantasticDevHQ/better-stripe/blob/main/docs/webhooks.md
+
+Read applicable AGENTS.md/AGENT.md files. Inspect Git status, existing payment
+code, package manager, lockfile, Convex version and authentication boundaries.
+Preserve user changes, existing architecture and application-owned fulfillment.
+Install @fantastic.dev/better-stripe with this app's package manager. Follow the
+README's manual setup to mount the component, create the host BetterStripe
+client and export its webhook handlers, then register the webhook route.
+Check the Accounts v2 setup guide for the intended Connect or customer-only use.
+
+Use existing authorized Stripe sandbox access. Keep keys and signing secrets
+out of source, chat and logs. Explain any human account/preview-access steps.
+Configure separate V1 snapshot and V2 thin event destinations only with user
+authorization. Do not charge, refund, transfer funds or change production.
+
+Run this app's Convex code generation and typecheck. Verify the installed
+component and host handlers with the project's documented local/test utilities.
+Distinguish wiring/typecheck success from an actual verified sandbox webhook
+or payment; report anything not exercised. Report changed files, exact commands,
+checks passed and remaining account or webhook configuration.
+```
+
+### Manual setup
+
 Set `STRIPE_SECRET_KEY` in your Convex deployment, then wire the component, client,
 and webhook route as follows. See [configuration](docs/configuration.md) for all
 environment variables and TypeScript setup.
@@ -83,10 +115,10 @@ import { v } from "convex/values";
 // betterStripe requires STRIPE_SECRET_KEY; declare it at the app level and pass
 // it to the component by reference.
 const app = defineApp({
-  env: { STRIPE_SECRET_KEY: v.string() },
+	env: { STRIPE_SECRET_KEY: v.string() },
 });
 app.use(betterStripe, {
-  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+	env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
 });
 
 export default app;
@@ -101,14 +133,14 @@ import { BetterStripe } from "@fantastic.dev/better-stripe";
 import { components } from "./_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-  triggers: {
-    checkoutSession: {
-      onCompleted: async (ctx, session) => {
-        // App-specific transactional logic (same DB transaction)
-      },
-    },
-  },
+	STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+	triggers: {
+		checkoutSession: {
+			onCompleted: async (ctx, session) => {
+				// App-specific transactional logic (same DB transaction)
+			},
+		},
+	},
 });
 
 // Export the webhook handler pair; http.ts passes their refs to registerRoutes.
@@ -129,11 +161,11 @@ import { components, internal } from "./_generated/api";
 const http = httpRouter();
 
 registerRoutes(http, components.betterStripe, {
-  webhookPath: "/stripe/webhook",
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
-  webhooks: internal.stripe,
+	webhookPath: "/stripe/webhook",
+	stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+	webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+	webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
+	webhooks: internal.stripe,
 });
 
 export default http;

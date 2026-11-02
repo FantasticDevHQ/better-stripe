@@ -19,7 +19,7 @@
   <a href="https://www.npmjs.com/package/@fantastic.dev/better-stripe"><img src="https://img.shields.io/npm/v/@fantastic.dev/better-stripe?style=flat-square" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/@fantastic.dev/better-stripe"><img src="https://img.shields.io/npm/dm/@fantastic.dev/better-stripe?style=flat-square" alt="npm monthly downloads" /></a>
   <a href="https://github.com/FantasticDevHQ/better-stripe/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/FantasticDevHQ/better-stripe/ci.yml?branch=main&amp;style=flat-square&amp;label=checks" alt="Repository checks on main" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/FantasticDevHQ/better-stripe?style=flat-square" alt="MIT license" /></a>
+  <a href="https://www.npmjs.com/package/@fantastic.dev/better-stripe"><img src="https://img.shields.io/npm/l/@fantastic.dev/better-stripe?style=flat-square" alt="MIT package license" /></a>
   <a href="https://github.com/FantasticDevHQ/better-stripe/stargazers"><img src="https://img.shields.io/github/stars/FantasticDevHQ/better-stripe?style=flat-square" alt="GitHub stars" /></a>
 </p>
 

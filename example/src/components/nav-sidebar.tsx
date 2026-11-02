@@ -47,6 +47,7 @@ export function NavSidebar() {
   const items = NAV_ITEMS[currentRole];
   const [openMobile, setOpenMobile] = useState(false);
 
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const desktopHomeRef = useRef<HTMLAnchorElement>(null);
 
@@ -64,10 +65,14 @@ export function NavSidebar() {
       <DialogTrigger
         render={
           <Button
+            ref={menuButtonRef}
             variant="outline"
             size="icon"
             className="fixed top-2.5 left-4 z-50 md:hidden"
             aria-label="Open navigation menu"
+            aria-expanded={openMobile}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpenMobile(true)}
           />
         }
       >
@@ -130,13 +135,14 @@ export function NavSidebar() {
         />
         <DialogPrimitive.Popup
           id="mobile-navigation"
+          data-mobile={openMobile}
           aria-modal="true"
           className="bg-background fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto border-r p-4 shadow-xl outline-none md:hidden"
           initialFocus={closeButtonRef}
           finalFocus={() =>
             window.matchMedia("(min-width: 768px)").matches
               ? desktopHomeRef.current
-              : true
+              : menuButtonRef.current
           }
         >
           <nav className="h-full" aria-label="Mobile navigation">

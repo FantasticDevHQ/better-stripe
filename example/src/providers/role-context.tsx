@@ -2,6 +2,7 @@ import {
   type ReactNode,
   type Context,
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -9,6 +10,7 @@ import {
 } from "react";
 
 import { useQuery } from "convex/react";
+import { useNavigate } from "react-router-dom";
 import { EmptyState } from "@/components/empty-state";
 
 import { api } from "../../convex/_generated/api";
@@ -42,6 +44,7 @@ if (import.meta.hot?.data) import.meta.hot.data.roleContext = RoleContext;
 const STORAGE_KEY = "betterlearn-role";
 
 export function RoleProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [sellerId, setSellerState] = useState(
     () => localStorage.getItem("betterstripe-seller") ?? "",
   );
@@ -140,7 +143,18 @@ export function RoleProvider({ children }: { children: ReactNode }) {
               No demo persona is available for this role yet. Open admin setup
               to seed the example.
             </EmptyState>
-            <button onClick={() => setRole("admin")}>Open admin setup</button>
+            <button
+              onClick={() => {
+                // Keep the role and router update together so the route guard
+                // never redirects Admin away from the previous role's route.
+                startTransition(() => {
+                  setRole("admin");
+                  navigate("/admin/setup");
+                });
+              }}
+            >
+              Open admin setup
+            </button>
           </div>
         )}
       </RoleContext.Provider>

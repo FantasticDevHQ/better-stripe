@@ -11,6 +11,13 @@ import {
 vi.mock("@/components/app-providers", () => ({ ThemeToggle: () => null }));
 beforeEach(() => {
   window.scrollTo = vi.fn();
+  window.matchMedia = vi
+    .fn()
+    .mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
 });
 
 const persona = vi.hoisted(() => ({ role: "visitor" }));

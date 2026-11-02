@@ -35,7 +35,9 @@ legacy redirect components, so a disallowed persona goes to its role home first.
 
 `role-navigation.ts` owns the role policy and menu inventory. `AppShell` guards
 the committed route match, rather than the pending browser location, to avoid
-rendering an old redirect outlet while navigation is in flight. Persona changes
+rendering an old redirect outlet while navigation is in flight. If a persona changes
+while an allowed destination is loading, the guard waits for that destination
+instead of replacing the explicit navigation with the role home. Persona changes
 and seller selection keep their existing provider IDs and remount behavior.
 Persona selection is demo UI state, never backend authorization.
 

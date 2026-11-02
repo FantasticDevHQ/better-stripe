@@ -1,12 +1,30 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
+import { useLocation } from "@/test/router-location";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  createMemoryHistory,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { RoleProvider, useRole } from "@/providers/role-context";
 import { ThemeContext } from "@/providers/use-theme";
 const data = vi.hoisted(() => ({ users: undefined as unknown }));
 vi.mock("convex/react", () => ({ useQuery: () => data.users }));
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  window.scrollTo = vi.fn();
+  window.matchMedia = vi
+    .fn()
+    .mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+});
 function Persona() {
   const context = useRole();
   return (
@@ -75,7 +93,7 @@ it.each(
   ),
 )(
   "opens setup as Admin for missing $role from $path with seededAdmin=$seededAdmin",
-  ({ role, path, seededAdmin }) => {
+  async ({ role, path, seededAdmin }) => {
     localStorage.setItem("betterlearn-role", role);
     data.users = seededAdmin
       ? [
@@ -87,32 +105,44 @@ it.each(
           },
         ]
       : [];
-    render(
-      <MemoryRouter initialEntries={[path]}>
+    const root = createRootRoute({
+      component: () => (
         <ThemeContext.Provider
           value={{ theme: "light", resolvedTheme: "light", setTheme: () => {} }}
         >
           <CurrentPath />
           <RoleProvider>
-            <Routes>
-              <Route element={<AppShell />}>
-                <Route path="/admin/setup" element={<Persona />} />
-                <Route path="*" element={<p>Original destination</p>} />
-              </Route>
-            </Routes>
+            <AppShell />
           </RoleProvider>
         </ThemeContext.Provider>
-      </MemoryRouter>,
-    );
+      ),
+    });
+    const setup = createRoute({
+      getParentRoute: () => root,
+      path: "/admin/setup",
+      component: Persona,
+    });
+    const original = createRoute({
+      getParentRoute: () => root,
+      path: "$",
+      component: () => <p>Original destination</p>,
+    });
+    const router = createRouter({
+      routeTree: root.addChildren([setup, original]),
+      history: createMemoryHistory({ initialEntries: [path] }),
+    });
+    await router.load();
+    render(<RouterProvider router={router} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Open admin setup" }));
 
+    await screen.findByText(seededAdmin ? "admin:admin:" : "admin::");
     expect(screen.getByLabelText("Current path")).toHaveTextContent(
       /^\/admin\/setup$/,
     );
     expect(localStorage.getItem("betterlearn-role")).toBe("admin");
     expect(
-      screen.getByText(seededAdmin ? "admin:admin:" : "admin::"),
+      await screen.findByText(seededAdmin ? "admin:admin:" : "admin::"),
     ).toBeInTheDocument();
     expect(screen.queryByText("Original destination")).not.toBeInTheDocument();
   },

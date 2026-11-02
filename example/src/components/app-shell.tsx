@@ -5,7 +5,12 @@ import { RoleSwitcher } from "@/components/role-switcher";
 import { Separator } from "@/components/ui/separator";
 import { useRole } from "@/providers/role-context";
 import { canVisit, roleHome } from "@/lib/role-navigation";
-import { Navigate, useMatches, Outlet } from "@tanstack/react-router";
+import {
+  Navigate,
+  useMatches,
+  useRouterState,
+  Outlet,
+} from "@tanstack/react-router";
 
 export function AppShell() {
   const { currentUser, currentRole } = useRole();
@@ -13,6 +18,15 @@ export function AppShell() {
   const pathname = useMatches({
     select: (matches) => matches.at(-1)?.pathname ?? "/",
   });
+
+  const pendingDestination = useRouterState({
+    select: (state) => (state.isLoading ? state.location.pathname : undefined),
+  });
+  // Persona changes can precede the route commit. Wait for an allowed in-flight
+  // destination rather than replacing the explicit setup/role-switch navigation.
+  const awaitingAllowedRoute =
+    pendingDestination !== undefined &&
+    canVisit(currentRole, pendingDestination);
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
@@ -40,7 +54,7 @@ export function AppShell() {
         <main className="min-w-0 flex-1 p-6">
           {canVisit(currentRole, pathname) ? (
             <Outlet key={currentUser.id || currentRole} />
-          ) : (
+          ) : awaitingAllowedRoute ? null : (
             <Navigate to={roleHome(currentRole)} replace />
           )}
         </main>

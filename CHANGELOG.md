@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.113.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.1...v0.113.2) (2026-11-02)
+
+
+### Documentation
+
+* FANT-122 adopt the Fantastic.Dev OSS header ([#474](https://github.com/FantasticDevHQ/better-stripe/issues/474)) ([2149445](https://github.com/FantasticDevHQ/better-stripe/commit/21494456ec1d44c9ef960e351b56823101421f9b))
+
 ## [0.113.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.0...v0.113.1) (2026-11-01)
 
 ### Maintenance

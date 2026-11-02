@@ -143,6 +143,13 @@ describe("NavSidebar mobile navigation", () => {
         name: "Open navigation menu",
       });
       await user.click(trigger);
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole("dialog")).getByRole("button", {
+            name: "Close navigation menu",
+          }),
+        ).toHaveFocus(),
+      );
       const controls = screen.getAllByRole("button", {
         name: "Close navigation menu",
         hidden: true,

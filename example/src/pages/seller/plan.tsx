@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/empty-state";
 import { StorePaymentSource } from "@/components/store-payment-source";
 import { StoreInvoiceEstimate } from "@/components/store-invoice-estimate";
 import { useAction, useQuery } from "convex/react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import {
   BillingPortal,
   EmbeddedCheckout,

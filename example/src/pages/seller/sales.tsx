@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { Sales } from "@fantastic.dev/better-stripe/react";
 import { useRole } from "@/providers/role-context";
@@ -40,7 +40,11 @@ export function SellerSales() {
                       </code>
                       <Link
                         className="text-primary text-sm underline"
-                        to={`/seller/refunds?${new URLSearchParams({ payment_intent: sale.paymentIntentId, charge_id: sale.chargeId ?? "" })}`}
+                        to="/seller/refunds"
+                        search={{
+                          payment_intent: sale.paymentIntentId,
+                          charge_id: sale.chargeId ?? "",
+                        }}
                       >
                         Refund or reverse
                       </Link>

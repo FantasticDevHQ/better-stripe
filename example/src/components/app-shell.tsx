@@ -5,11 +5,14 @@ import { RoleSwitcher } from "@/components/role-switcher";
 import { Separator } from "@/components/ui/separator";
 import { useRole } from "@/providers/role-context";
 import { canVisit, roleHome } from "@/lib/role-navigation";
-import { Navigate, useLocation, Outlet } from "react-router-dom";
+import { Navigate, useMatches, Outlet } from "@tanstack/react-router";
 
 export function AppShell() {
   const { currentUser, currentRole } = useRole();
-  const location = useLocation();
+  // Guard the committed match, so a pending destination cannot expose the old outlet.
+  const pathname = useMatches({
+    select: (matches) => matches.at(-1)?.pathname ?? "/",
+  });
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
@@ -35,7 +38,7 @@ export function AppShell() {
       <div className="flex flex-1">
         <NavSidebar />
         <main className="min-w-0 flex-1 p-6">
-          {canVisit(currentRole, location.pathname) ? (
+          {canVisit(currentRole, pathname) ? (
             <Outlet key={currentUser.id || currentRole} />
           ) : (
             <Navigate to={roleHome(currentRole)} replace />

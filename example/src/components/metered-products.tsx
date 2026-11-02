@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { useSearchParams } from "@/lib/use-url-search";
 import {
   useWorkflowAction,
   type UsageConfigurationProps,
@@ -109,7 +110,8 @@ function ProductPage({
       {role === "admin" && (
         <Link
           className="text-sm underline"
-          to="/demo/metered-usage?diagnostics=protocol"
+          to="/demo/metered-usage"
+          search={{ diagnostics: "protocol" }}
         >
           Developer protocol diagnostics
         </Link>

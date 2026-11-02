@@ -3,7 +3,7 @@ import {
   IntegrationSwitch,
   type IntegrationMode,
 } from "@fantastic.dev/better-stripe/react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export function IntegrationExamples({
   headless,

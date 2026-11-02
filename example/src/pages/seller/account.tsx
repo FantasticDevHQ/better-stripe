@@ -1,6 +1,6 @@
 import { IntegrationExamples } from "@/components/integration-examples";
 import { ConnectExample } from "@/components/connect-example";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SellerOnboarding } from "./onboarding";
 import { SellerMarketplaceAccount } from "./marketplace-account";

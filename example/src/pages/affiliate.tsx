@@ -11,7 +11,7 @@ import {
 import { WorkflowTable } from "@/components/workflow-table";
 import type { ReactNode } from "react";
 import { useQuery } from "convex/react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
@@ -250,7 +250,14 @@ export function AffiliateLinks() {
                   return (
                     <div key={store.accountId}>
                       <div className="flex flex-wrap items-center justify-between gap-3">
-                        <Link className="font-medium underline" to={path}>
+                        <Link
+                          className="font-medium underline"
+                          to="/stores"
+                          search={{
+                            store: store.accountId,
+                            ref: AFFILIATE_REFERRAL_CODE,
+                          }}
+                        >
                           {store.name}
                         </Link>
                         <Button

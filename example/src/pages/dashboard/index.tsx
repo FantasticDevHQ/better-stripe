@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRole } from "@/providers/role-context";
 import { useQuery } from "convex/react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 
 import { api } from "../../../convex/_generated/api";
 

@@ -4,7 +4,6 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { AppThemeProvider as ThemeProvider } from "./providers/app-theme";
 import { createRoot } from "react-dom/client";
 import { ErrorBoundary } from "react-error-boundary";
-import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { AppErrorFallback } from "./components/app-error-fallback";
@@ -18,11 +17,11 @@ createRoot(document.getElementById("root")!).render(
     <ErrorBoundary FallbackComponent={AppErrorFallback}>
       <ThemeProvider>
         <ThemeHotkey />
-        <BrowserRouter>
-          <ConvexProvider client={convex}>
-            <App />
-          </ConvexProvider>
-        </BrowserRouter>
+
+        <ConvexProvider client={convex}>
+          <App />
+        </ConvexProvider>
+
         <AppToaster />
       </ThemeProvider>
     </ErrorBoundary>

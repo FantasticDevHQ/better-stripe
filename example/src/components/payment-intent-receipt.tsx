@@ -1,7 +1,7 @@
 import { EmptyState } from "@/components/empty-state";
 import { PaymentReceipt } from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { api } from "../../convex/_generated/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 export function PaymentIntentReceipt({

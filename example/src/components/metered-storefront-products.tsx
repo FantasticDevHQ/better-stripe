@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import type { UsageConfigurationValue } from "@fantastic.dev/better-stripe/usage";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +63,8 @@ export function MeteredStorefrontProducts({
                   render={
                     <Link
                       aria-label={`Review ${product.name} membership`}
-                      to={`/demo/metered-usage?offer=${product.metered.offerId}`}
+                      to="/demo/metered-usage"
+                      search={{ offer: product.metered.offerId }}
                     />
                   }
                 >

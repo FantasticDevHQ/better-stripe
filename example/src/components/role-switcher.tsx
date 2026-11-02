@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { roleHome } from "@/lib/role-navigation";
 import { type Role, useRole } from "@/providers/role-context";
 import { Eye, Palette, Settings, User, Users } from "lucide-react";
@@ -36,7 +36,7 @@ export function RoleSwitcher() {
                 shopping &&
                 (role.value === "customer" || role.value === "visitor")
               ))
-                navigate(roleHome(role.value));
+                void navigate({ to: roleHome(role.value) });
             }}
           >
             <Icon className="mr-1.5 h-3.5 w-3.5" />

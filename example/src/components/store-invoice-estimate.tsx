@@ -3,7 +3,7 @@ import {
   formatPrice,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction } from "convex/react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

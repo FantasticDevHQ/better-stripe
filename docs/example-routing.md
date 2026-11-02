@@ -2,8 +2,10 @@
 
 The Vite example uses TanStack Router without TanStack Start. The code-based
 route tree in `example/src/router.tsx` registers every existing URL under one
-layout. `App.tsx` mounts its `RouterProvider`; Convex and theme providers remain
-in `main.tsx`. The published SDK, React workflows and testing exports do not
+layout. `App.tsx` mounts its `RouterProvider` and a persona/shell `InnerWrap`;
+Convex and theme providers remain
+in `main.tsx`. Route render errors use the existing safe, retryable
+`AppErrorFallback`, so raw provider errors are never shown by the router. The published SDK, React workflows and testing exports do not
 import the example router.
 
 Use TanStack `Link` and `useNavigate` with a route path and a separate `search`

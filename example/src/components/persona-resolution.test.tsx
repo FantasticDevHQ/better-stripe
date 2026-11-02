@@ -17,13 +17,11 @@ vi.mock("convex/react", () => ({ useQuery: () => data.users }));
 beforeEach(() => {
   localStorage.clear();
   window.scrollTo = vi.fn();
-  window.matchMedia = vi
-    .fn()
-    .mockReturnValue({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    });
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
 });
 function Persona() {
   const context = useRole();

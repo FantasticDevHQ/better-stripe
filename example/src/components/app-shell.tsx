@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { AppCommandMenu } from "@/components/app-command-menu";
 import { ThemeToggle } from "@/components/app-providers";
 import { NavSidebar } from "@/components/nav-sidebar";
@@ -12,7 +13,7 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 
-export function AppShell() {
+export function AppShell({ children }: { children?: ReactNode }) {
   const { currentUser, currentRole } = useRole();
   // Guard the committed match, so a pending destination cannot expose the old outlet.
   const pathname = useMatches({
@@ -53,8 +54,12 @@ export function AppShell() {
         <NavSidebar />
         <main className="min-w-0 flex-1 p-6">
           {canVisit(currentRole, pathname) ? (
-            <Outlet key={currentUser.id || currentRole} />
-          ) : awaitingAllowedRoute ? null : (
+            <Fragment key={currentUser.id || currentRole}>
+              {children ?? <Outlet />}
+            </Fragment>
+          ) : awaitingAllowedRoute ? (
+            <p role="status">Loading page…</p>
+          ) : (
             <Navigate to={roleHome(currentRole)} replace />
           )}
         </main>

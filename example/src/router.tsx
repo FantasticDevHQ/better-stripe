@@ -9,7 +9,7 @@ import {
   SubscriptionComponents,
   HostedBillingExample,
 } from "@/components/package-examples";
-import { AppShell } from "@/components/app-shell";
+import { AppErrorFallback } from "@/components/app-error-fallback";
 import { AdminOverview } from "@/pages/admin/index";
 import { AdminStorePlans } from "@/pages/admin/store-plans";
 import { AdminProducts } from "@/pages/admin/products";
@@ -37,6 +37,7 @@ import { Landing } from "@/pages/landing";
 import { Affiliate, AffiliateSales, AffiliateLinks } from "@/pages/affiliate";
 import {
   createRootRoute,
+  Outlet,
   createRoute,
   createRouter,
   type RouterHistory,
@@ -50,15 +51,10 @@ import {
   LegacySplit,
   LegacyAccount,
 } from "@/components/legacy-route-redirects";
-import { RoleProvider } from "@/providers/role-context";
 
 const rootRoute = createRootRoute({
   validateSearch,
-  component: () => (
-    <RoleProvider>
-      <AppShell />
-    </RoleProvider>
-  ),
+  component: Outlet,
 });
 const route = <const Path extends string>(
   path: Path,
@@ -185,7 +181,15 @@ const routeTree = rootRoute.addChildren([
 
 // Each test/application instance owns its history. No TanStack Start server runtime.
 export function createExampleRouter(history?: RouterHistory) {
-  return createRouter({ routeTree, history, parseSearch, stringifySearch });
+  return createRouter({
+    routeTree,
+    history,
+    parseSearch,
+    stringifySearch,
+    defaultErrorComponent: ({ error, reset }) => (
+      <AppErrorFallback error={error} resetErrorBoundary={reset} />
+    ),
+  });
 }
 export const router = createExampleRouter();
 export type RoutePath = keyof typeof router.routesByPath;

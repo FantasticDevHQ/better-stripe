@@ -1,6 +1,13 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { beforeEach, expect, it, vi } from "vitest";
+import { AppLayout } from "../App";
 import { createExampleRouter } from "../router";
 import {
   parseSearch,
@@ -10,17 +17,16 @@ import {
 
 vi.mock("@/components/app-providers", () => ({ ThemeToggle: () => null }));
 beforeEach(() => {
+  persona.fail = false;
   window.scrollTo = vi.fn();
-  window.matchMedia = vi
-    .fn()
-    .mockReturnValue({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    });
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
 });
 
-const persona = vi.hoisted(() => ({ role: "visitor" }));
+const persona = vi.hoisted(() => ({ role: "visitor", fail: false }));
 vi.mock("@/providers/role-context", () => ({
   RoleProvider: ({ children }: { children: React.ReactNode }) => children,
   useRole: () => ({
@@ -30,7 +36,12 @@ vi.mock("@/providers/role-context", () => ({
     setRole: vi.fn(),
   }),
 }));
-vi.mock("../pages/landing", () => ({ Landing: () => <h1>Storefront</h1> }));
+vi.mock("../pages/landing", () => ({
+  Landing: () => {
+    if (persona.fail) throw new Error("private_provider_token_secret");
+    return <h1>Storefront</h1>;
+  },
+}));
 vi.mock("../pages/seller/account", () => ({
   SellerAccount: () => <h1>Seller account</h1>,
 }));
@@ -129,7 +140,7 @@ async function mount(path: string, role: string) {
   const history = createMemoryHistory({ initialEntries: ["/", path] });
   const router = createExampleRouter(history);
   await router.load();
-  const view = render(<RouterProvider router={router} />);
+  const view = render(<RouterProvider router={router} InnerWrap={AppLayout} />);
   return { router, history, ...view };
 }
 it.each(["/marketplace/split", "/demo/destination-charge"])(
@@ -189,4 +200,27 @@ it("supports push, Back and Forward with direct-link query state", async () => {
   expect(
     await screen.findByRole("heading", { name: "Admin setup" }),
   ).toBeVisible();
+});
+
+it("keeps route render failures behind the existing safe, retryable fallback", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    persona.fail = true;
+    await mount("/stores", "visitor");
+    expect(
+      await screen.findByRole("heading", { name: "Something went wrong" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/private_provider_token_secret/),
+    ).not.toBeInTheDocument();
+    persona.fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("heading", { name: "Storefront" }),
+    ).toBeVisible();
+  } finally {
+    errors.mockRestore();
+    warnings.mockRestore();
+  }
 });

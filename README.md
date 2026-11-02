@@ -115,10 +115,10 @@ import { v } from "convex/values";
 // betterStripe requires STRIPE_SECRET_KEY; declare it at the app level and pass
 // it to the component by reference.
 const app = defineApp({
-	env: { STRIPE_SECRET_KEY: v.string() },
+  env: { STRIPE_SECRET_KEY: v.string() },
 });
 app.use(betterStripe, {
-	env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
+  env: { STRIPE_SECRET_KEY: app.env.STRIPE_SECRET_KEY },
 });
 
 export default app;
@@ -133,14 +133,14 @@ import { BetterStripe } from "@fantastic.dev/better-stripe";
 import { components } from "./_generated/api";
 
 export const stripe = new BetterStripe(components.betterStripe, {
-	STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-	triggers: {
-		checkoutSession: {
-			onCompleted: async (ctx, session) => {
-				// App-specific transactional logic (same DB transaction)
-			},
-		},
-	},
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  triggers: {
+    checkoutSession: {
+      onCompleted: async (ctx, session) => {
+        // App-specific transactional logic (same DB transaction)
+      },
+    },
+  },
 });
 
 // Export the webhook handler pair; http.ts passes their refs to registerRoutes.
@@ -161,11 +161,11 @@ import { components, internal } from "./_generated/api";
 const http = httpRouter();
 
 registerRoutes(http, components.betterStripe, {
-	webhookPath: "/stripe/webhook",
-	stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-	webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-	webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
-	webhooks: internal.stripe,
+  webhookPath: "/stripe/webhook",
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  webhookSecretV2: process.env.STRIPE_WEBHOOK_SECRET_V2,
+  webhooks: internal.stripe,
 });
 
 export default http;

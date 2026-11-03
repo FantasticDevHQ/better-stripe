@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.114.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.114.0...v0.114.1) (2026-11-03)
+
+
+### Tests
+
+* **example:** BTS-327 probe temporary Stripe sandbox capabilities ([#483](https://github.com/FantasticDevHQ/better-stripe/issues/483)) ([d8f40b0](https://github.com/FantasticDevHQ/better-stripe/commit/d8f40b0a7d5c44e977dd1449bc4c130431f43363))
+
 ## [0.114.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.4...v0.114.0) (2026-11-03)
 
 ### Features

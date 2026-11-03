@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NavSidebar } from "./nav-sidebar";
 import { RoleSwitcher } from "./role-switcher";
 
@@ -12,6 +12,19 @@ const state = vi.hoisted(() => ({
   setSeller: vi.fn(),
 }));
 vi.mock("@/providers/role-context", () => ({ useRole: () => state }));
+// JSDOM does not implement the responsive media query used by the drawer.
+beforeEach(() => {
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+
 function renderRole(role: string) {
   state.currentRole = role;
   render(

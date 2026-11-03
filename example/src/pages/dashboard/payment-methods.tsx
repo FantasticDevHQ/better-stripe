@@ -17,7 +17,7 @@ import {
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CreditCard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 
 import { api } from "../../../convex/_generated/api";
 

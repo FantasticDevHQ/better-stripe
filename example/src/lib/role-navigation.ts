@@ -1,7 +1,9 @@
+import type { RoutePath } from "../router";
+
 export type Role = "customer" | "seller" | "affiliate" | "admin" | "visitor";
 export interface NavItem {
   label: string;
-  to: string;
+  to: RoutePath;
   end?: boolean;
 }
 export const NAV_ITEMS: Record<Role, NavItem[]> = {
@@ -43,13 +45,15 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   visitor: [{ label: "Stores", to: "/stores" }],
 };
 export function roleHome(role: Role) {
-  return {
-    customer: "/stores",
-    seller: "/demo/store-earnings",
-    affiliate: "/affiliate",
-    admin: "/admin",
-    visitor: "/stores",
-  }[role];
+  return (
+    {
+      customer: "/stores",
+      seller: "/demo/store-earnings",
+      affiliate: "/affiliate",
+      admin: "/admin",
+      visitor: "/stores",
+    } as const
+  )[role];
 }
 export function canVisit(role: Role, path: string) {
   if (path.startsWith("/admin")) return role === "admin";

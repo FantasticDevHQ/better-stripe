@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Command } from "cmdk";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 
 const CommandDialog = Command.Dialog;
 const CommandInput = Command.Input;
@@ -16,7 +16,7 @@ import { useRole } from "@/providers/role-context";
 export function AppCommandMenu() {
   const { currentRole } = useRole();
   const destinations = [
-    { label: "Home", path: "/" },
+    { label: "Home", path: "/" as const },
     ...NAV_ITEMS[currentRole].map((item) => ({
       label: item.label,
       path: item.to,
@@ -41,9 +41,9 @@ export function AppCommandMenu() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const goTo = (path: string) => {
+  const goTo = (path: import("../router").RoutePath) => {
     setOpen(false);
-    navigate(path);
+    void navigate({ to: path });
   };
 
   return (

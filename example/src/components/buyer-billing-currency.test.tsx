@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
 import { getFunctionName } from "convex/server";
 import { expect, it, vi } from "vitest";
 import { Billing } from "../pages/dashboard/billing";

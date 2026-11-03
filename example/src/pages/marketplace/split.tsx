@@ -14,7 +14,8 @@ import {
   SplitBreakdown,
 } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { useSearchParams } from "@/lib/use-url-search";
 
 import { api } from "../../../convex/_generated/api";
 import {
@@ -112,8 +113,6 @@ export function AffiliateSplitDemo() {
     saleAmount: DEMO_SALE_AMOUNT,
   });
 
-  const referralLink = `/marketplace/split?ref=${AFFILIATE_REFERRAL_CODE}`;
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-2">
@@ -153,7 +152,11 @@ export function AffiliateSplitDemo() {
                   nativeButton={false}
                   role="link"
                   render={
-                    <Link to={referralLink} aria-label="Open affiliate link" />
+                    <Link
+                      to="/marketplace/split"
+                      search={{ ref: AFFILIATE_REFERRAL_CODE }}
+                      aria-label="Open affiliate link"
+                    />
                   }
                 >
                   visit with ?ref={AFFILIATE_REFERRAL_CODE}

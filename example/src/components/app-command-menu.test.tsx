@@ -11,7 +11,7 @@ vi.mock("@/providers/role-context", () => ({
 
 const navigate = vi.hoisted(() => vi.fn());
 
-vi.mock("react-router-dom", () => ({
+vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigate,
 }));
 
@@ -54,7 +54,7 @@ describe("AppCommandMenu", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Overview" }));
 
-    expect(navigate).toHaveBeenCalledWith("/admin");
+    expect(navigate).toHaveBeenCalledWith({ to: "/admin" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

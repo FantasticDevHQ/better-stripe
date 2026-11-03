@@ -1,6 +1,6 @@
 import { SellerCosts } from "@/components/seller-costs";
 import { RefundPreviewSummary } from "@/components/refund-preview-summary";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import { useMemo, useState } from "react";
 import {
   PaymentDetails,

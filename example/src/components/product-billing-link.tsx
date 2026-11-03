@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 export function ProductBillingLink({
   productId,
   description,
@@ -11,7 +11,8 @@ export function ProductBillingLink({
       <p className="text-sm text-muted-foreground">{description ?? ""}</p>
       <Link
         className="text-sm text-primary underline"
-        to={`/demo/metered-usage?product=${encodeURIComponent(productId)}`}
+        to="/demo/metered-usage"
+        search={{ product: productId }}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
       >

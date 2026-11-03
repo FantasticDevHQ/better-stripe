@@ -761,7 +761,7 @@ example/
 │   └── money-assertions.ts       # Pure reversal/reconciliation helpers (unit-tested)
 ├── playwright.config.ts          # Playwright harness (dev-server wiring)
 ├── src/
-│   ├── main.tsx                  # BrowserRouter + ConvexProvider
+│   ├── main.tsx                  # TanStack Router + ConvexProvider
 │   ├── App.tsx                   # Routes
 │   ├── components/ui/            # shadcn/ui components
 │   ├── components/
@@ -1648,3 +1648,5 @@ Closing the tab or clearing browser data loses the demo identity. Production hos
 must retain and authorize the original operation on the server and define their
 own concurrency, retry-age and reconciliation policies. See the
 [public request identity contract](../docs/client-api.md#retain-a-caller-owned-portal-request).
+
+See [example routing](../docs/example-routing.md) for the typed route tree, legacy redirects, search contracts and verification commands.

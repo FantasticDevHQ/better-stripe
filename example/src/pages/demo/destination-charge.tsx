@@ -9,7 +9,7 @@ import { buildCheckoutReturnUrl } from "@/lib/checkout-return-url";
 import { ChargeSummary, Checkout } from "@fantastic.dev/better-stripe/react";
 import { useAction, useQuery } from "convex/react";
 import { CheckCircle } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 
 import { api } from "../../../convex/_generated/api";
 

@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import { useQuery } from "convex/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/empty-state";
 
 import { api } from "../../convex/_generated/api";
@@ -149,7 +149,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
                 // never redirects Admin away from the previous role's route.
                 startTransition(() => {
                   setRole("admin");
-                  navigate("/admin/setup");
+                  void navigate({ to: "/admin/setup" });
                 });
               }}
             >

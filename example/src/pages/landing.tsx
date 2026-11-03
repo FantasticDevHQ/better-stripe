@@ -2,7 +2,8 @@ import { MeteredStorefrontProducts } from "@/components/metered-storefront-produ
 import { Storefront } from "@fantastic.dev/better-stripe/react";
 import { EmptyState } from "@/components/empty-state";
 import { useQuery } from "convex/react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { useSearchParams } from "@/lib/use-url-search";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,7 +122,12 @@ export function Landing() {
                               role="link"
                               render={
                                 <Link
-                                  to={card.checkoutUrl!}
+                                  to="/checkout"
+                                  search={Object.fromEntries(
+                                    new URLSearchParams(
+                                      card.checkoutUrl!.split("?")[1],
+                                    ),
+                                  )}
                                   aria-label={card.accessibilityLabel}
                                 />
                               }

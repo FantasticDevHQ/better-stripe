@@ -3,7 +3,7 @@ import {
   formatPrice,
 } from "@fantastic.dev/better-stripe/react";
 import { useQuery } from "convex/react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useRole } from "@/providers/role-context";

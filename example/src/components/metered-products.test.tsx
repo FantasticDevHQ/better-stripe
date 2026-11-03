@@ -1,6 +1,6 @@
 import { render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
 import { getFunctionName } from "convex/server";
 import { afterEach, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({

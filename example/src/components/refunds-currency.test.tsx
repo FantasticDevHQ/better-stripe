@@ -15,7 +15,7 @@ vi.mock("@/providers/role-context", () => ({
   useRole: () => ({ currentUser: { id: "seller_id" } }),
 }));
 vi.mock("@/components/seller-costs", () => ({ SellerCosts: () => null }));
-vi.mock("react-router-dom", () => ({
+vi.mock("@/lib/use-url-search", () => ({
   useSearchParams: () => [
     new URLSearchParams("payment_intent=pi_test&charge_id=ch_test"),
   ],

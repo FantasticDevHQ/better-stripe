@@ -7,7 +7,8 @@ import {
 } from "@testing-library/react";
 import { getFunctionName } from "convex/server";
 import { ErrorBoundary } from "react-error-boundary";
-import { MemoryRouter, useNavigate } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
+import { useNavigate } from "@tanstack/react-router";
 import { beforeEach, expect, it, vi } from "vitest";
 
 import { CheckoutStatusPage } from "../pages/checkout-status";
@@ -124,7 +125,9 @@ function mount(search = "?session_id=cs_original") {
     ...view,
     refresh: () => view.rerender(tree()),
     session: (sessionId: string) =>
-      act(() => navigate(`/checkout-status?session_id=${sessionId}`)),
+      act(() =>
+        navigate({ to: "/checkout/status", search: { session_id: sessionId } }),
+      ),
   };
 }
 function readReceipt() {
@@ -196,7 +199,8 @@ it.each(switches)(
     readReceipt();
     expect(await screen.findByText("$35.00")).toBeVisible();
     hooks.context = { ...next };
-    if (next.sessionId !== original.sessionId) view.session(next.sessionId);
+    if (next.sessionId !== original.sessionId)
+      await view.session(next.sessionId);
     else view.refresh();
     expectNoCapture();
     expect(hooks.read).toHaveBeenCalledTimes(1);
@@ -217,7 +221,8 @@ it.each(switches)(
     const view = mount();
     readReceipt();
     hooks.context = { ...next };
-    if (next.sessionId !== original.sessionId) view.session(next.sessionId);
+    if (next.sessionId !== original.sessionId)
+      await view.session(next.sessionId);
     else view.refresh();
     expectNoCapture();
     hooks.read.mockResolvedValueOnce(ready(next, 1234, "eur"));

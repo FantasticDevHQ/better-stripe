@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/use-url-search";
 import { MeteredProducts } from "./metered-products";
 import { useState } from "react";
 import { useAction, useQuery } from "convex/react";

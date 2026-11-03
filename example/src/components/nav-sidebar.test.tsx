@@ -7,7 +7,8 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
+import { useLocation } from "@/test/router-location";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NavSidebar } from "./nav-sidebar";

@@ -15,7 +15,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/providers/role-context";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { NavigationLink as NavLink } from "./navigation-link";
 
 import { NAV_ITEMS } from "@/lib/role-navigation";
 

@@ -1,5 +1,5 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "@/test/router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NavSidebar } from "./nav-sidebar";
 import { RoleSwitcher } from "./role-switcher";
@@ -115,7 +115,7 @@ describe("marketplace role navigation", () => {
 it("keeps the referral URL when switching from affiliate preview to a visitor", async () => {
   state.currentRole = "affiliate";
   const { fireEvent } = await import("@testing-library/react");
-  const { useLocation } = await import("react-router-dom");
+  const { useLocation } = await import("@/test/router-location");
   function Location() {
     const location = useLocation();
     return (

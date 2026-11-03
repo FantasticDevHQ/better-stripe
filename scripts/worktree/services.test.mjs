@@ -1,3 +1,4 @@
+import "./test-safety.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -16,6 +17,7 @@ async function fixture(t) {
         cwd: root,
         env: {
           ...process.env,
+          PATH: `${path.join(root, "bin")}:${process.env.PATH}`,
           WORKTREE_REGISTRY_DIR: path.join(base, "registry"),
         },
       });
@@ -134,6 +136,18 @@ test("startup-failure reports service name and cleans partial startup", async (t
     bad = service();
   bad.command = [process.execPath, "-e", "process.exit(7)"];
   const root = await f.root("partial", { first: service(), broken: bad });
+  // Simulate a supervisor whose argv disappears during exit. Startup still
+  // owns its ChildProcess and must not rediscover it through a PID snapshot.
+  await fs.mkdir(path.join(root, "bin"));
+  await fs.writeFile(
+    path.join(root, "bin/ps"),
+    "#!/bin/sh\nprintf 'S unrelated\\n'\n",
+    { mode: 0o700 },
+  );
+  await fs.appendFile(
+    path.join(root, "scripts/example/service.mjs"),
+    "\nprocess.removeAllListeners('SIGINT');process.on('SIGINT',()=>{});\n",
+  );
   const r = await f.run(root, "start", "--profile", "example");
   assert.notEqual(r.code, 0);
   assert.match(r.output, /Service broken.*(7|failed)/);

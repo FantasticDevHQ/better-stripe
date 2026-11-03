@@ -107,9 +107,12 @@ export async function ownedRunning(s) {
   if (!runtime || !alive(runtime.pid)) return false;
   const command = execFileSync(
     "ps",
-    ["-p", String(runtime.pid), "-o", "command="],
+    ["-p", String(runtime.pid), "-o", "stat=,command="],
     { encoding: "utf8" },
   );
+  // kill(pid, 0) also succeeds for an exited process awaiting reaping. It has
+  // no command line to validate and must never receive a shutdown signal.
+  if (command.trimStart().startsWith("Z")) return false;
   if (!command.includes(script) || !command.includes(`--owner=${s.id}`)) {
     throw new Error(
       "Recorded PID belongs to another process; refusing to signal it.",
@@ -316,7 +319,9 @@ export async function start(withFrontend = false) {
       (record) => record.status === "failed",
     );
     if (failed || !alive(child.pid)) {
-      await stopOnly(s);
+      // Startup owns this child object. A PID/argv lookup can race its exit
+      // and replace the actual service failure with a false ownership error.
+      await stopChildren([child]);
       throw new Error(
         failed?.error ?? "Supervisor exited; inspect .worktree/backend.log.",
       );
@@ -332,7 +337,7 @@ export async function start(withFrontend = false) {
     }
     await sleep(100);
   }
-  await stopOnly(s);
+  await stopChildren([child]);
   throw new Error(
     "Backend readiness timed out; inspect .worktree/backend.log.",
   );

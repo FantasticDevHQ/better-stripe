@@ -78,7 +78,9 @@ export async function launchServices(profile, s, children, fail, isStopping) {
     let probe;
     try {
       if (exited || isStopping())
-        throw new Error(`Service ${name} exited during startup`);
+        throw new Error(
+          records[name].error ?? `Service ${name} failed during startup`,
+        );
       const ready = new Promise((resolve, reject) => {
         probe = spawn(
           service.readiness.command[0],
@@ -114,7 +116,9 @@ export async function launchServices(profile, s, children, fail, isStopping) {
       });
       await Promise.race([ready, died]);
       if (exited || isStopping())
-        throw new Error(`Service ${name} exited during startup`);
+        throw new Error(
+          records[name].error ?? `Service ${name} failed during startup`,
+        );
       records[name].status = "ready";
       await save();
     } catch (error) {

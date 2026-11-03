@@ -30,13 +30,16 @@ The runner supports explicit profiles, ordered hooks and managed services.
 See [the profile contract](../scripts/worktree/PROFILES.md) for declaration syntax,
 phase order, context, readiness and retained service selection. Better Stripe
 keeps its Vite host/strict-port adapter, library prepareCommand build and typed
-missing-environment bootstrap handling. No Stripe profile is activated by this
+missing-environment bootstrap handling. Startup cleanup uses owned child objects,
+and stopped zombie processes do not trigger a false foreign-PID error. Service
+startup failures retain their original diagnostic. No Stripe profile is activated by this
 runner upgrade. Stripe provisioning remains a separate consumer change.
 
 Run `pnpm test:worktree` and `pnpm test:pr-standard` for focused tests.
 If you override TMPDIR, use a directory outside every Git checkout. Some generic
 fixtures discover configuration in parent directories. A fixture under this
 repository can select this repository's real worktree state and cleanup paths.
+The fixture preflight rejects these nested temporary directories before tests run.
 Never use `.worktree/tmp` for the worktree toolkit tests.
 Full `pnpm run check:all` runs on UbiCloud CI. Shared agents must serialize
 installs and real backend integration with

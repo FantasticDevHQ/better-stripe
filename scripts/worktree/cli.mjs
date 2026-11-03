@@ -6,7 +6,9 @@ import { refreshCheckout } from "./freshness.mjs";
 import { main } from "./commands.mjs";
 import { projectLock } from "./registry.mjs";
 import { installDependencies } from "./dependencies.mjs";
+import { validateProfiles } from "./hooks.mjs";
 try {
+  if (["setup", "start"].includes(process.argv[2])) validateProfiles();
   const targetIndex = process.argv.indexOf("--path");
   if (process.argv[2] === "setup" && targetIndex >= 0) {
     await projectLock(async () => {
@@ -33,6 +35,9 @@ try {
         { stdio: "inherit" },
       );
       const prepare = process.argv.includes("--prepare-only");
+      const profileIndex = process.argv.indexOf("--profile");
+      const profileArgs =
+        profileIndex < 0 ? [] : ["--profile", process.argv[profileIndex + 1]];
       if (!prepare) {
         const targetLayout = await read(
           path.join(target, "scripts/worktree.config.json"),
@@ -44,7 +49,12 @@ try {
       }
       execFileSync(
         process.execPath,
-        [script, "setup", ...(prepare ? ["--prepare-only"] : [])],
+        [
+          script,
+          "setup",
+          ...(prepare ? ["--prepare-only"] : []),
+          ...profileArgs,
+        ],
         { cwd: target, stdio: "inherit" },
       );
     });

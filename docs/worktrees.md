@@ -89,7 +89,7 @@ replaces the example's remote IDs or deletes remote accounts.
 Focused regression tests use fixtures, not external credentials:
 
 ```sh
-NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example/sandbox-capabilities.test.mjs scripts/example/sandbox-webhooks.test.mjs
+TMPDIR="$PWD/.worktree/tmp" NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example
 ```
 
 ## Required CI contexts

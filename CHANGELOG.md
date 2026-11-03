@@ -28,10 +28,9 @@
 
 ## [0.113.4](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.3...v0.113.4) (2026-11-03)
 
-
 ### Bug Fixes
 
-* **example:** BTS-324 fix mobile drawer keyboard accessibility ([#479](https://github.com/FantasticDevHQ/better-stripe/issues/479)) ([dcf612f](https://github.com/FantasticDevHQ/better-stripe/commit/dcf612fdc3d466b608365baea578ba5d6454d925))
+- **example:** fix mobile drawer keyboard accessibility ([#479](https://github.com/FantasticDevHQ/better-stripe/issues/479)) ([dcf612f](https://github.com/FantasticDevHQ/better-stripe/commit/dcf612fdc3d466b608365baea578ba5d6454d925))
 
 ## [0.113.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.2...v0.113.3) (2026-11-03)
 

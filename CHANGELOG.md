@@ -26,6 +26,16 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.113.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.2...v0.113.3) (2026-11-03)
+
+### Bug Fixes
+
+- **example:** open admin setup from missing persona shortcut ([#478](https://github.com/FantasticDevHQ/better-stripe/issues/478)) ([368a7f2](https://github.com/FantasticDevHQ/better-stripe/commit/368a7f20b183956a8a0816ef48ee491fd5074fe3))
+
+### Documentation
+
+- FTD-236 use Better Stripe and expose agent setup ([#476](https://github.com/FantasticDevHQ/better-stripe/issues/476)) ([1a79ddd](https://github.com/FantasticDevHQ/better-stripe/commit/1a79dddb144801b54630182bded2e140047ad27c))
+
 ## [0.113.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.1...v0.113.2) (2026-11-02)
 
 ### Documentation

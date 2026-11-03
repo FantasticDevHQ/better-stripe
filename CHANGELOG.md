@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.114.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.4...v0.114.0) (2026-11-03)
+
+### Features
+
+- **example:** migrate the example to TanStack Router ([#480](https://github.com/FantasticDevHQ/better-stripe/issues/480)) ([4db1d0a](https://github.com/FantasticDevHQ/better-stripe/commit/4db1d0af87fe614534a88168f124580e478b1e88))
+
 ## [0.113.4](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.3...v0.113.4) (2026-11-03)
 
 ### Bug Fixes

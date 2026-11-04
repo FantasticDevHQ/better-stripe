@@ -32,8 +32,11 @@ phase order, context, readiness and retained service selection. Better Stripe
 keeps its Vite host/strict-port adapter, library prepareCommand build and typed
 missing-environment bootstrap handling. Startup cleanup uses owned child objects,
 and stopped zombie processes do not trigger a false foreign-PID error. Service
-startup failures retain their original diagnostic. No Stripe profile is activated by this
-runner upgrade. Stripe provisioning remains a separate consumer change.
+startup failures retain their original diagnostic. The opt-in `example` profile
+leases account-owned Stripe sandboxes through consumer hooks. Follow the
+[sandbox setup guide](stripe-sandbox-worktrees.md) to create a sandbox in the
+Dashboard and register its key with a hidden prompt. No hand-written JSON is
+required. Webhook forwarding remains a separate BTS-328 service change.
 
 Run `pnpm test:worktree` and `pnpm test:pr-standard` for focused tests.
 If you override TMPDIR, use a directory outside every Git checkout. Some generic
@@ -103,7 +106,7 @@ replaces the example's remote IDs or deletes remote accounts.
 Focused regression tests use fixtures, not external credentials:
 
 ```sh
-TMPDIR="$PWD/.worktree/tmp" NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example
+TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example
 ```
 
 ## Required CI contexts

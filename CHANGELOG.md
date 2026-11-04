@@ -28,10 +28,9 @@
 
 ## [0.115.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.114.1...v0.115.0) (2026-11-04)
 
-
 ### Features
 
-* **example:** BTS-326 lease account-owned Stripe sandboxes ([#486](https://github.com/FantasticDevHQ/better-stripe/issues/486)) ([feb48d6](https://github.com/FantasticDevHQ/better-stripe/commit/feb48d604dfa1747fe7bc114d40f7dcf7076df76))
+- **example:** lease account-owned Stripe sandboxes ([#486](https://github.com/FantasticDevHQ/better-stripe/issues/486)) ([feb48d6](https://github.com/FantasticDevHQ/better-stripe/commit/feb48d604dfa1747fe7bc114d40f7dcf7076df76))
 
 ## [0.114.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.114.0...v0.114.1) (2026-11-03)
 

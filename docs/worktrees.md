@@ -36,7 +36,7 @@ startup failures retain their original diagnostic. The opt-in `example` profile
 leases account-owned Stripe sandboxes through consumer hooks. Follow the
 [sandbox setup guide](stripe-sandbox-worktrees.md) to create a sandbox in the
 Dashboard and register its key with a hidden prompt. No hand-written JSON is
-required. Webhook forwarding remains a separate BTS-328 service change.
+required. Managed webhook forwarding remains a separate service change.
 
 Run `pnpm test:worktree` and `pnpm test:pr-standard` for focused tests.
 If you override TMPDIR, use a directory outside every Git checkout. Some generic

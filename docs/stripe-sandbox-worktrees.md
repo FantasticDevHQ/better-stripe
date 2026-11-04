@@ -12,33 +12,40 @@ Stripe documents a limit of five sandboxes per account. One slot supports one
 leased example worktree, including a stopped worktree that retains its Stripe data.
 Start with one slot; add a second for concurrent development and isolation testing.
 
-For FantasticDev, first check the **organization** account picker. Stripe supports
-an organization sandbox with new account sandboxes inside it. This can provide a
-dedicated BetterStripe test environment without creating a new live account:
+Use a dedicated account named **Better Stripe** inside the **FantasticDev**
+organization. Leave this account unactivated for live payments. Its account-owned
+sandboxes supply the worktree pool.
+
+The hierarchy is:
+
+```text
+FantasticDev organization
+└── Better Stripe account (unactivated for live payments)
+    ├── betterstripe-dev-a sandbox
+    ├── betterstripe-dev-b sandbox
+    └── up to five account-owned sandbox slots
+```
 
 1. Sign in to Stripe and select the FantasticDev organization.
-2. Open the account picker, then **Switch to sandbox → Create sandbox**.
-3. Select **Create all new sandboxes**. Name the organization sandbox
-   `BetterStripe development`.
-4. Add an account sandbox named `betterstripe-dev-a`. Stripe also asks for its
-   business location; use the location approved for your organization.
-5. Create the sandbox, then open the account sandbox inside it.
+2. Use the organization's account management flow to create an account named
+   `Better Stripe`. Supply the business location approved for your organization.
+3. Keep the account unactivated for live payments. Select the new account.
+4. Open **account picker → Switch to sandbox → Create sandbox**.
+5. Name the first sandbox `betterstripe-dev-a` and create it under Better Stripe.
+6. Open the sandbox and confirm that the Dashboard shows a sandbox banner before
+   retrieving any keys.
 
-The organization guide does not establish an increased quota for this option.
-Check the options and quota shown by your Dashboard. If this option is unavailable
-or does not provide the capacity you need, an organization administrator can
-evaluate a dedicated BetterStripe account under FantasticDev. Confirm the account
-structure with the administrator before creating another live account. Never
-delete another project's sandbox to make room.
+Add further account-level sandboxes as needed, up to the account's five-slot
+limit. Keep the sandboxes used by other FantasticDev accounts unchanged. This
+setup uses a dedicated account's sandbox capacity rather than an organization
+sandbox container.
 
-For an existing dedicated account, open **account picker → Switch to sandbox →
-Create sandbox**, enter `betterstripe-dev-a`, and choose whether to copy the
-account's settings. Copied settings can include capabilities required by Connect.
-A blank sandbox may need additional product configuration. Confirm that the
-Dashboard shows a sandbox banner before retrieving any keys.
+Stripe can copy account settings and capabilities into a sandbox. An unactivated
+account may have incomplete settings; verify Accounts v2, Connect and payout test
+flows in the new sandbox before considering the full example ready. The dedicated
+account structure alone does not prove that each product capability is available.
 
-Sources: [manage account sandboxes](https://docs.stripe.com/sandboxes/dashboard/manage)
-and [manage organization sandboxes](https://docs.stripe.com/sandboxes/dashboard/organizations),
+Source: [manage account sandboxes](https://docs.stripe.com/sandboxes/dashboard/manage),
 checked 2026-11-04. Dashboard options depend on your role and account configuration.
 
 ## Register the first sandbox
@@ -111,7 +118,7 @@ bootstrap key behavior. The generic runner contains no Stripe-specific commands.
 On the shared agents host, follow [the CI and resource rules](worktrees.md): the
 required full gates and library build run on UbiCloud CI.
 
-Webhook forwarding is delivered separately in **BTS-328**. Credential registration
+Managed webhook forwarding is a separate feature. Credential registration
 and leasing alone do not start a listener or prove signed event delivery. Until
 that service lands, do not treat successful backend startup as full example
 readiness.

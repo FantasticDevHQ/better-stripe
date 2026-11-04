@@ -7,5 +7,33 @@
   "secretEnv": [],
   "siteUrlEnv": ["FRONTEND_URL"],
   "bootstrapMissingEnv": ["STRIPE_SECRET_KEY"],
-  "prepareCommand": ["pnpm", "run", "build"]
+  "prepareCommand": ["pnpm", "run", "build"],
+  "profiles": {
+    "example": {
+      "hooks": {
+        "beforeImport": [
+          {
+            "name": "stripe-sandbox-lease",
+            "command": [
+              "node",
+              "scripts/example/sandbox-pool-cli.mjs",
+              "prepare"
+            ],
+            "timeoutMs": 90000
+          }
+        ],
+        "beforeStart": [
+          {
+            "name": "stripe-sandbox-lease",
+            "command": [
+              "node",
+              "scripts/example/sandbox-pool-cli.mjs",
+              "verify"
+            ],
+            "timeoutMs": 60000
+          }
+        ]
+      }
+    }
+  }
 }

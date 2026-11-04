@@ -1,7 +1,7 @@
 # Local example worktrees
 
 Installed from FantasticDevHQ/convex-worktrees commit
-`52c0b76d960a98afedd48607d6737bc14a954c1e` using its Node installer.
+`b09c1d798f5bb00534fb659fe64531313131c4e7` using its Node installer.
 The upstream MIT license remains in `scripts/worktree/LICENSE`.
 The repository uses pnpm 10.32.1; the backend and Vite frontend both live in
 `example/`. The layout prepareCommand builds the local library before each
@@ -26,7 +26,24 @@ No Stripe credentials are copied;
 external Stripe operations require separate sandbox configuration and are not
 proven by the local isolation suite. Never use production credentials here.
 
+The runner supports explicit profiles, ordered hooks and managed services.
+See [the profile contract](../scripts/worktree/PROFILES.md) for declaration syntax,
+phase order, context, readiness and retained service selection. Better Stripe
+keeps its Vite host/strict-port adapter, library prepareCommand build and typed
+missing-environment bootstrap handling. Startup cleanup uses owned child objects,
+and stopped zombie processes do not trigger a false foreign-PID error. Service
+startup failures retain their original diagnostic. The opt-in `example` profile
+leases account-owned Stripe sandboxes through consumer hooks. Follow the
+[sandbox setup guide](stripe-sandbox-worktrees.md) to create a sandbox in the
+Dashboard and register its key with a hidden prompt. No hand-written JSON is
+required. Managed webhook forwarding remains a separate service change.
+
 Run `pnpm test:worktree` and `pnpm test:pr-standard` for focused tests.
+If you override TMPDIR, use a directory outside every Git checkout. Some generic
+fixtures discover configuration in parent directories. A fixture under this
+repository can select this repository's real worktree state and cleanup paths.
+The fixture preflight rejects these nested temporary directories before tests run.
+Never use `.worktree/tmp` for the worktree toolkit tests.
 Full `pnpm run check:all` runs on UbiCloud CI. Shared agents must serialize
 installs and real backend integration with
 `flock -w 3600 /home/cloudagent/.cache/fantastic-heavy.lock`, limit Node heaps to
@@ -89,7 +106,7 @@ replaces the example's remote IDs or deletes remote accounts.
 Focused regression tests use fixtures, not external credentials:
 
 ```sh
-TMPDIR="$PWD/.worktree/tmp" NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example
+TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=512 pnpm exec vitest run --project scripts --maxWorkers=1 scripts/example
 ```
 
 ## Required CI contexts

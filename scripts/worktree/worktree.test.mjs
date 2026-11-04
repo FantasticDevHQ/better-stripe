@@ -1,3 +1,4 @@
+import "./test-safety.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -11,35 +12,42 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import net from "node:net";
 import { fileURLToPath } from "node:url";
 
-const script = fileURLToPath(new URL("./cli.mjs", import.meta.url));
-async function fixture(t) {
-  const dir = await realpath(await mkdtemp(join(tmpdir(), "worktree-test-")));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-  const registry = join(dir, "registry");
-  async function run(root, ...args) {
-    return await new Promise((resolve) => {
-      const child = spawn(process.execPath, [script, ...args], {
-        cwd: root,
-        env: { ...process.env, WORKTREE_REGISTRY_DIR: registry },
-      });
-      let output = "";
-      child.stdout.on("data", (d) => (output += d));
-      child.stderr.on("data", (d) => (output += d));
-      child.on("exit", (code) => resolve({ code, output }));
-    });
-  }
-  async function root(name) {
-    const path = join(dir, name);
-    await mkdir(path);
-    await writeFile(join(path, "convex.json"), "{}");
-    return path;
-  }
-  return { dir, registry, run, root };
-}
+import { fixture, script } from "./test-fixture.mjs";
+
+test("an exited zombie supervisor is not mistaken for a foreign live process", async (t) => {
+  const f = await fixture(t),
+    root = await f.root("zombie");
+  assert.equal((await f.run(root, "setup", "--prepare-only")).code, 0);
+  const state = JSON.parse(
+    await readFile(join(root, ".worktree/local.json"), "utf8"),
+  );
+  await writeFile(
+    join(root, ".worktree/runtime.json"),
+    JSON.stringify({ id: state.id, pid: process.pid }),
+  );
+  const bin = join(root, "bin");
+  await mkdir(bin);
+  await writeFile(
+    join(bin, "ps"),
+    "#!/bin/sh\nprintf 'Z [node] <defunct>\\n'\n",
+    { mode: 0o700 },
+  );
+  const result = spawnSync(process.execPath, [script, "stop"], {
+    cwd: root,
+    env: {
+      ...process.env,
+      PATH: `${bin}:${process.env.PATH}`,
+      WORKTREE_REGISTRY_DIR: f.registry,
+    },
+    encoding: "utf8",
+    timeout: 5000,
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
 
 test("parallel setups reserve different ports, including stopped worktrees", async (t) => {
   const f = await fixture(t),

@@ -13,7 +13,15 @@ import {
   dir,
   sleep,
   read,
+  layout,
+  stateFile,
 } from "./context.mjs";
+import {
+  launchServices,
+  stopChildren,
+  serviceStatus,
+  markServicesStopped,
+} from "./services.mjs";
 import { safe, json } from "./files.mjs";
 import { alive, locked, available } from "./registry.mjs";
 import { state, checkConfig, childEnv, convexArgs } from "./config.mjs";
@@ -99,9 +107,12 @@ export async function ownedRunning(s) {
   if (!runtime || !alive(runtime.pid)) return false;
   const command = execFileSync(
     "ps",
-    ["-p", String(runtime.pid), "-o", "command="],
+    ["-p", String(runtime.pid), "-o", "stat=,command="],
     { encoding: "utf8" },
   );
+  // kill(pid, 0) also succeeds for an exited process awaiting reaping. It has
+  // no command line to validate and must never receive a shutdown signal.
+  if (command.trimStart().startsWith("Z")) return false;
   if (!command.includes(script) || !command.includes(`--owner=${s.id}`)) {
     throw new Error(
       "Recorded PID belongs to another process; refusing to signal it.",
@@ -131,74 +142,151 @@ export async function reserve(s) {
 }
 
 export async function serve(s, withFrontend = false) {
-  await checkConfig(s, true);
-  const backendArgs = convexArgs(s);
+  const managed = s.mode !== "none";
+  if (managed) await checkConfig(s, true);
+  const profile = s.serviceProfile
+    ? validateProfiles(layout, ["--profile", s.serviceProfile])
+    : null;
+  const backendArgs = managed ? convexArgs(s) : null;
   const frontendBin = withFrontend
     ? packageBin("vite", "vite", [frontend, root])
     : null;
-  await json(path.join(dir, "runtime.json"), { pid: process.pid, id: s.id });
+  const runtimeFile = path.join(dir, "runtime.json");
+  const runtime = { pid: process.pid, id: s.id, ready: false };
+  await safe(runtimeFile);
+  await json(runtimeFile, runtime);
   const children = [];
   let stopping = false;
+  let markStopped;
   async function stop(code = 0) {
     if (stopping) return;
     stopping = true;
-    for (const child of children)
-      if (child.exitCode === null) child.kill("SIGINT");
-    await Promise.all(
-      children.map((child) =>
-        child.exitCode !== null
-          ? null
-          : new Promise((resolve) => child.once("exit", resolve)),
-      ),
-    );
-    await fs.rm(path.join(dir, "runtime.json"), { force: true });
+    await stopChildren(children);
+    if (markStopped) await markStopped();
+    await markServicesStopped(s);
+    await fs.rm(runtimeFile, { force: true });
     process.exit(code);
   }
+  const failure = (message) => {
+    console.error(message);
+    void stop(1);
+  };
   process.on("SIGTERM", () => void stop());
   process.on("SIGINT", () => void stop());
-  const backendChild = spawn(process.execPath, backendArgs, {
-    cwd: backend,
-    env: childEnv(s),
-    stdio: ["ignore", "inherit", "inherit"],
-  });
-  children.push(backendChild);
-  backendChild.on("error", (error) => {
-    console.error(error.message);
-    void stop(1);
-  });
-  backendChild.on("exit", (code) => {
-    if (!stopping) void stop(code ?? 1);
-  });
-  if (withFrontend) {
-    const web = spawn(
-      process.execPath,
-      [
-        frontendBin,
-        "--host",
-        "127.0.0.1",
-        "--strictPort",
-        "--port",
-        String(s.ports.web),
-      ],
-      { cwd: frontend, env: childEnv(s), stdio: "inherit" },
+  try {
+    if (managed) {
+      await new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, backendArgs, {
+          cwd: backend,
+          env: childEnv(s),
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        children.push(child);
+        let output = "";
+        const timer = setTimeout(
+          () => reject(new Error("Backend readiness timed out")),
+          120000,
+        );
+        const consume = (data) => {
+          process.stdout.write(data);
+          output = (output + data).slice(-65536);
+          if (output.includes("Convex functions ready")) {
+            clearTimeout(timer);
+            resolve();
+          }
+        };
+        child.stdout.on("data", consume);
+        child.stderr.on("data", consume);
+        child.once("error", (error) => {
+          clearTimeout(timer);
+          reject(error);
+          if (!stopping) failure(error.message);
+        });
+        child.once("exit", (code) => {
+          clearTimeout(timer);
+          reject(new Error(`Backend exited (${code})`));
+          if (!stopping) failure(`Backend exited (${code})`);
+        });
+      });
+    }
+    markStopped = await launchServices(
+      profile,
+      s,
+      children,
+      failure,
+      () => stopping,
     );
-    children.push(web);
-    web.on("exit", (code) => {
-      if (!stopping) void stop(code ?? 1);
-    });
+    if (stopping) return;
+    if (withFrontend) {
+      const web = spawn(
+        process.execPath,
+        [
+          frontendBin,
+          "--host",
+          "127.0.0.1",
+          "--strictPort",
+          "--port",
+          String(s.ports.web),
+        ],
+        { cwd: frontend, env: childEnv(s), stdio: "inherit" },
+      );
+      children.push(web);
+      web.once("error", (error) => {
+        if (!stopping) failure(error.message);
+      });
+      web.once("exit", (code) => {
+        if (!stopping) failure(`Frontend exited (${code})`);
+      });
+    }
+    runtime.ready = true;
+    await json(runtimeFile, runtime);
+  } catch (error) {
+    failure(error.message);
   }
 }
 
+import { validateProfiles, runHooks } from "./hooks.mjs";
+
 export async function start(withFrontend = false) {
+  const explicit = validateProfiles();
   const s = await state();
+  const profile =
+    explicit ??
+    (s.serviceProfile
+      ? validateProfiles(layout, ["--profile", s.serviceProfile])
+      : null);
   if (await ownedRunning(s)) {
+    if (explicit && explicit.name !== s.serviceProfile)
+      throw new Error("Stop before changing the active service profile.");
     console.log("Already running.");
     return;
   }
-  await checkConfig(s, true);
-  convexArgs(s);
-  if (withFrontend) packageBin("vite", "vite", [frontend, root]);
-  await reserve(s);
+  if (s.mode === "none" && withFrontend)
+    throw new Error("No frontend configured with convex:false.");
+  if (s.mode !== "none") {
+    await checkConfig(s, true);
+    convexArgs(s);
+    if (withFrontend) packageBin("vite", "vite", [frontend, root]);
+  }
+  await runHooks(explicit, "beforeStart", s);
+  if (profile) {
+    s.serviceProfile = profile.name;
+    await json(stateFile, s);
+  }
+  if (s.mode === "none" && !Object.keys(profile?.services ?? {}).length) {
+    console.log(
+      "No backend or frontend services configured; nothing to start or stop.",
+    );
+    return;
+  }
+  if (s.mode !== "none") await reserve(s);
+  await serviceStatus(s);
+  await json(path.join(dir, "services.json"), {
+    id: s.id,
+    profile: profile?.name ?? null,
+    services: {},
+  });
+  await safe(path.join(dir, "runtime.json"));
   await safe(path.join(dir, "backend.log"));
   const log = openSync(path.join(dir, "backend.log"), "w", 0o600);
   const child = spawn(
@@ -218,30 +306,51 @@ export async function start(withFrontend = false) {
   );
   closeSync(log);
   child.unref();
-  for (let n = 0; n < 1200; n++) {
-    if (!alive(child.pid))
-      throw new Error("Backend exited; inspect .worktree/backend.log.");
-    const output = await fs.readFile(path.join(dir, "backend.log"), "utf8");
-    if (output.includes("Convex functions ready")) {
+  const deadline =
+    Date.now() +
+    125000 +
+    Object.values(profile?.services ?? {}).reduce(
+      (total, service) => total + service.readiness.timeoutMs,
+      0,
+    );
+  while (Date.now() < deadline) {
+    const statuses = await serviceStatus(s);
+    const failed = Object.values(statuses?.services ?? {}).find(
+      (record) => record.status === "failed",
+    );
+    if (failed || !alive(child.pid)) {
+      // Startup owns this child object. A PID/argv lookup can race its exit
+      // and replace the actual service failure with a false ownership error.
+      await stopChildren([child]);
+      throw new Error(
+        failed?.error ?? "Supervisor exited; inspect .worktree/backend.log.",
+      );
+    }
+    const runtime = await read(path.join(dir, "runtime.json"), null);
+    if (runtime?.id === s.id && runtime.pid === child.pid && runtime.ready) {
       console.log(
-        `Backend ready at http://127.0.0.1:${s.ports.cloud}${withFrontend ? `; frontend http://localhost:${s.ports.web}` : ""}`,
+        s.mode === "none"
+          ? "Profile services ready."
+          : `Backend ready at http://127.0.0.1:${s.ports.cloud}${withFrontend ? `; frontend http://localhost:${s.ports.web}` : ""}`,
       );
       return;
     }
     await sleep(100);
   }
-  await stopOnly(s);
+  await stopChildren([child]);
   throw new Error(
     "Backend readiness timed out; inspect .worktree/backend.log.",
   );
 }
 
 export async function stopOnly(s) {
+  if (s.mode === "none" && !s.serviceProfile) return;
   const runtime = await ownedRunning(s);
   if (!runtime) return;
   process.kill(runtime.pid, "SIGTERM");
   for (let n = 0; n < 200; n++) {
     if (!alive(runtime.pid)) {
+      if (s.mode === "none") return;
       for (let attempt = 0; attempt < 200; attempt++) {
         if ((await available(s.ports.cloud)) && (await available(s.ports.site)))
           return;

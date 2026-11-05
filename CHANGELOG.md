@@ -28,10 +28,9 @@
 
 ## [0.115.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.115.0...v0.115.1) (2026-11-05)
 
-
 ### Documentation
 
-* **worktree:** BTS-326 clarify single-machine sandbox pools ([#488](https://github.com/FantasticDevHQ/better-stripe/issues/488)) ([ec98222](https://github.com/FantasticDevHQ/better-stripe/commit/ec982221cdd76b5f046ff7979ac441d05ea0292d))
+- **worktree:** clarify single-machine sandbox pools ([#488](https://github.com/FantasticDevHQ/better-stripe/issues/488)) ([ec98222](https://github.com/FantasticDevHQ/better-stripe/commit/ec982221cdd76b5f046ff7979ac441d05ea0292d))
 
 ## [0.115.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.114.1...v0.115.0) (2026-11-04)
 

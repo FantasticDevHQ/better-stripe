@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.116.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.115.1...v0.116.0) (2026-11-05)
+
+
+### Features
+
+* **example:** BTS-328 manage Stripe webhook listeners ([#490](https://github.com/FantasticDevHQ/better-stripe/issues/490)) ([679a5c5](https://github.com/FantasticDevHQ/better-stripe/commit/679a5c5dd6baf1490942e23f33fd62789cbdf551))
+
 ## [0.115.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.115.0...v0.115.1) (2026-11-05)
 
 ### Documentation

@@ -217,6 +217,11 @@ proof, packed consumers and account/clock limits. Existing apps should follow
 
 ## Contributing
 
+Example worktrees with Stripe use a **single-machine sandbox pool of one to five
+keys**. Other machines need separate sandbox accounts, keys and pools; leases do
+not coordinate across machines. See the
+[worktree sandbox setup and limits](docs/stripe-sandbox-worktrees.md#single-machine-use-only).
+
 See the [development guide](docs/development.md) for local setup and code generation,
 [testing utilities](docs/testing.md) for fixtures, and the [release guide](docs/releasing.md)
 for publishing. Run `pnpm run check:all` before submitting changes.

@@ -5,12 +5,47 @@ worktree leases one sandbox exclusively. Ordinary library work does not need a
 sandbox. The temporary sandbox probe found permission failures for Accounts v2,
 Connect and payouts; its temporary keys cannot run the full example.
 
+## Single-machine use only
+
+**Worktree sandbox leasing works on one machine only.** The pool lock and lease
+registry are local files. They do not coordinate leases between computers,
+developers' machines, virtual machines or CI runners.
+
+Keep a pool of **one to five sandbox test secret keys** on each machine that runs
+the example. One key is enough for one leased worktree; five keys are optional.
+Each key must belong to a different sandbox account. The pool is a list of keys
+with account and lease metadata, stored as the `sandboxes` array in the private
+pool file. The registration command maintains this array for you.
+
+**Every additional machine needs a separate pool with different sandbox accounts
+and keys.** This includes your other laptop, another developer's computer, and a
+CI runner. Different keys for the same sandbox account do not provide isolation.
+Do not copy a pool to another machine or register the same sandbox account on two
+machines. Independent local registries could lease it at the same time and mix
+Stripe objects and webhook events between backends.
+
+The chosen key stays in the ignored `.worktree/backend.env` and is imported into
+that worktree's local Convex environment. This file is local runtime configuration;
+it is not distributed through Git or synchronized to other machines.
+
+The current CI suite uses the synthetic bootstrap key. It verifies real local
+Convex backend isolation, but does not run real Stripe operations. A future CI
+job that exercises Stripe must receive a separate CI-owned pool through secure
+credential delivery. Ephemeral or parallel runners cannot share the developer
+pool: use separate sandbox accounts per runner, or add shared lease coordination
+before sharing a pool across runners. That coordination is not implemented here.
+
+The five-sandbox limit belongs to the parent Stripe account; creating a local pool
+file on another machine does not create additional Stripe sandbox capacity.
+
 ## Choose where the sandboxes belong
 
 Keep BetterStripe development separate from sandboxes used by other projects.
 Stripe documents a limit of five sandboxes per account. One slot supports one
 leased example worktree, including a stopped worktree that retains its Stripe data.
 Start with one slot; add a second for concurrent development and isolation testing.
+Only include sandboxes reserved for this machine. Other machines need separate
+sandboxes and their own pools within the available account capacity.
 
 Use a dedicated account named **Better Stripe** inside the **FantasticDev**
 organization. Leave this account unactivated for live payments. Its account-owned
@@ -89,7 +124,10 @@ use an existing Stripe CLI login. See Stripe's
 [sandbox key guide](https://docs.stripe.com/sandboxes/dashboard/manage-access).
 
 To register a second sandbox, repeat these steps with `betterstripe-dev-b` and
-that sandbox's own key. Sharing a key under two names is rejected.
+that sandbox's own key. Repeat as needed for a pool of one to five keys; you do
+not need to register all five. Sharing a key under two names is rejected. Before
+registration, confirm that the sandbox is not assigned to another machine; the
+local registration command cannot check another machine's pool.
 
 ## Use the example profile
 
@@ -126,8 +164,8 @@ readiness.
 For a custom pool location, pass `--pool /absolute/private/path/sandboxes.json`
 during registration and set `STRIPE_SANDBOX_POOL_FILE` to that same absolute path
 for setup/start/release. All worktrees sharing sandbox accounts must use the same
-pool and registry on one host. Copying the pool to another machine does not provide
-cross-machine lease coordination.
+pool and registry on one host. A different path does not add cross-machine lease
+coordination. Keep this pool and its sandbox accounts exclusive to this machine.
 
 ## Retention and recovery
 

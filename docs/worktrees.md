@@ -1,5 +1,14 @@
 # Local example worktrees
 
+**Stripe sandbox pools support one machine only.** A machine can use a pool of
+one to five distinct sandbox keys. Worktrees on that machine share its local lease
+registry; other machines and CI runners do not. Each additional machine needs its
+own pool backed by different sandbox accounts and keys. Do not copy a pool between
+machines. The selected key remains in ignored `.worktree/backend.env` and is
+imported into that worktree's local Convex environment. See the
+[single-machine limits and setup guide](stripe-sandbox-worktrees.md#single-machine-use-only).
+Current CI uses synthetic Stripe credentials and does not verify real Stripe flows.
+
 Installed from FantasticDevHQ/convex-worktrees commit
 `b09c1d798f5bb00534fb659fe64531313131c4e7` using its Node installer.
 The upstream MIT license remains in `scripts/worktree/LICENSE`.
@@ -27,7 +36,7 @@ external Stripe operations require separate sandbox configuration and are not
 proven by the local isolation suite. Never use production credentials here.
 
 The runner supports explicit profiles, ordered hooks and managed services.
-See [the profile contract](../scripts/worktree/PROFILES.md) for declaration syntax,
+See [the profile contract](https://github.com/FantasticDevHQ/better-stripe/blob/main/scripts/worktree/PROFILES.md) for declaration syntax,
 phase order, context, readiness and retained service selection. Better Stripe
 keeps its Vite host/strict-port adapter, library prepareCommand build and typed
 missing-environment bootstrap handling. Startup cleanup uses owned child objects,

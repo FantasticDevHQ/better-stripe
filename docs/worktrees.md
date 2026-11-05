@@ -36,7 +36,7 @@ external Stripe operations require separate sandbox configuration and are not
 proven by the local isolation suite. Never use production credentials here.
 
 The runner supports explicit profiles, ordered hooks and managed services.
-See [the profile contract](../scripts/worktree/PROFILES.md) for declaration syntax,
+See [the profile contract](https://github.com/FantasticDevHQ/better-stripe/blob/main/scripts/worktree/PROFILES.md) for declaration syntax,
 phase order, context, readiness and retained service selection. Better Stripe
 keeps its Vite host/strict-port adapter, library prepareCommand build and typed
 missing-environment bootstrap handling. Startup cleanup uses owned child objects,

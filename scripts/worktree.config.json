@@ -33,6 +33,15 @@
             "timeoutMs": 60000
           }
         ]
+      },
+      "services": {
+        "stripe": {
+          "command": ["node", "scripts/example/stripe-service.mjs"],
+          "readiness": {
+            "command": ["node", "scripts/example/stripe-readiness.mjs"],
+            "timeoutMs": 90000
+          }
+        }
       }
     }
   }

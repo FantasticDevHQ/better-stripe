@@ -14,7 +14,7 @@ export const defaultPoolFile = () =>
   process.env.STRIPE_SANDBOX_POOL_FILE ||
   path.join(userInfo().homedir, ".config/better-stripe/sandboxes.json");
 
-async function noLinks(file) {
+export async function noLinks(file) {
   let current = path.parse(path.resolve(file)).root;
   for (const part of path.resolve(file).split(path.sep).filter(Boolean)) {
     current = path.join(current, part);
@@ -49,7 +49,7 @@ async function privateFile(file, fallback) {
   }
 }
 
-async function atomic(file, value) {
+export async function atomic(file, value) {
   await noLinks(file);
   const temporary = `${file}.${randomUUID()}.tmp`;
   try {
@@ -342,15 +342,22 @@ export async function leaseSandbox({
   });
 }
 
-export async function requireLease({ poolFile = defaultPoolFile(), context }) {
+export async function readLeaseCredentials({
+  poolFile = defaultPoolFile(),
+  context,
+}) {
   await validateContext(context);
   return locked(poolFile, async () => {
     const { slot, lease } = await association(poolFile, context, false);
     const content = await fs.readFile(context.environmentFile, "utf8");
     if (!content.split("\n").includes(`STRIPE_SECRET_KEY=${slot.secretKey}`))
       throw recovery();
-    return lease;
+    return { lease, secretKey: slot.secretKey };
   });
+}
+
+export async function requireLease(options) {
+  return (await readLeaseCredentials(options)).lease;
 }
 
 export async function releaseLease({ poolFile = defaultPoolFile(), context }) {

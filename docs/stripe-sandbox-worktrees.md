@@ -156,10 +156,53 @@ bootstrap key behavior. The generic runner contains no Stripe-specific commands.
 On the shared agents host, follow [the CI and resource rules](worktrees.md): the
 required full gates and library build run on UbiCloud CI.
 
-Managed webhook forwarding is a separate feature. Credential registration
-and leasing alone do not start a listener or prove signed event delivery. Until
-that service lands, do not treat successful backend startup as full example
-readiness.
+## Managed webhook listeners
+
+Install the [Stripe CLI](https://docs.stripe.com/cli/install) before starting the
+example profile. The listener flags were checked with CLI 1.55.6. If `stripe` is
+not on PATH, set `STRIPE_CLI` to its absolute executable path. No Stripe CLI login
+is required: the service uses the leased key and an explicit private CLI config.
+Inherited Stripe account, key and API override variables are removed from listener
+environments so they cannot select another sandbox.
+
+`pnpm worktree:start --profile example --frontend` starts the local backend first,
+then a managed `stripe` service, then the frontend. The service owns two foreground
+CLI listeners: snapshot events and supported thin events. Both forward platform
+and Connect events to `http://127.0.0.1:<reserved-site-port>/stripe/webhook`.
+Snapshot forwarding uses `--all-snapshot`. Thin forwarding explicitly selects
+Accounts v2 account, configuration, identity, requirement, person and account-link
+events, plus the two billing meter error types supported by the handler. It does
+not subscribe to all V1 resource thin events. The selected event names are in
+`scripts/example/stripe-listeners.mjs`.
+
+The service captures each listener's signing secret privately. It updates
+`STRIPE_WEBHOOK_SECRET` and `STRIPE_WEBHOOK_SECRET_V2` in `.worktree/backend.env`,
+then imports only these two values into the same local Convex backend. Private
+listener state is in `.worktree/stripe-listener/` with owner-only permissions.
+Raw CLI output and signing secrets are not printed to the supervisor log.
+
+Readiness is published only after both listeners have reported their secrets and
+the Convex import succeeds. The readiness probe checks the worktree ID, lease,
+service PID and supervisor PID against current runner state; an old marker cannot
+satisfy a different service process. Startup is bounded. A missing CLI, failed
+import or required-listener exit fails the named service and stops its siblings.
+Use `pnpm worktree:start --profile example` when preparing the first service start.
+The runner retains the service profile, so plain start after stop resumes these
+services too. The service rechecks the lease on every start, even when the runner
+does not rerun the explicit beforeStart hook.
+
+`pnpm worktree:stop` stops both owned listeners and removes readiness while retaining
+the sandbox lease and private configuration. Restart reuses the same sandbox and
+imports the current listener secrets again. Repeated start while the supervisor is
+active reuses it. These controls do not create Dashboard webhook destinations or
+delete remote Stripe resources.
+
+Fixture tests verify local process ownership, import ordering, failure handling,
+restart and separate worktree secrets. They do not establish successful real Stripe
+delivery or Admin Setup. Verify signed snapshot, thin and Connect events and the
+example's seed/test flows against your chosen sandbox before calling that sandbox
+ready for full example use. See the [CLI listener reference](https://docs.stripe.com/cli/listen)
+and [thin event types](https://docs.stripe.com/api/v2/core/events/event-types).
 
 For a custom pool location, pass `--pool /absolute/private/path/sandboxes.json`
 during registration and set `STRIPE_SANDBOX_POOL_FILE` to that same absolute path

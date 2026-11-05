@@ -45,7 +45,10 @@ startup failures retain their original diagnostic. The opt-in `example` profile
 leases account-owned Stripe sandboxes through consumer hooks. Follow the
 [sandbox setup guide](stripe-sandbox-worktrees.md) to create a sandbox in the
 Dashboard and register its key with a hidden prompt. No hand-written JSON is
-required. Managed webhook forwarding remains a separate service change.
+required. The profile also owns snapshot and thin webhook listeners, imports their
+signing secrets into the local backend and waits for service readiness before
+starting the frontend. See the sandbox guide for CLI prerequisites, lifecycle and
+the limits of fixture verification.
 
 Run `pnpm test:worktree` and `pnpm test:pr-standard` for focused tests.
 If you override TMPDIR, use a directory outside every Git checkout. Some generic

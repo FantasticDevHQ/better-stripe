@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.117.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.116.0...v0.117.0) (2026-11-10)
+
+
+### Features
+
+* BTS-384 guard reset, prune webhook ledger, order subscription events ([#492](https://github.com/FantasticDevHQ/better-stripe/issues/492)) ([d3424cc](https://github.com/FantasticDevHQ/better-stripe/commit/d3424ccf3e0b1eaf493c009c8e5f93c53509235d))
+
 ## [0.116.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.115.1...v0.116.0) (2026-11-05)
 
 ### Features

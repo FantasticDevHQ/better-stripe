@@ -296,7 +296,7 @@ export async function assertPriceOwner(
 export async function assertPriceSoldByAccount(
   ctx: ActionCtx,
   args: { stripePriceId: string; destinationAccountId: string },
-): Promise<void> {
+) {
   const stripePriceId = requireNonBlank(args.stripePriceId, "stripePriceId");
   const destinationAccountId = requireNonBlank(
     args.destinationAccountId,
@@ -308,9 +308,10 @@ export async function assertPriceSoldByAccount(
         stripeProductId: price.stripeProductId,
       })
     : null;
-  if (!product || product.accountId !== destinationAccountId) {
+  if (!price || !product || product.accountId !== destinationAccountId) {
     throw new Error("Price not found for this destination account");
   }
+  return price;
 }
 
 // =============================================================================

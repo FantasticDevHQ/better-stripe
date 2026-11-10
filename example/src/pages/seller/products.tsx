@@ -80,7 +80,11 @@ export function SellerProducts() {
   } = useProductManager({
     scopeKey: currentUser.id,
     createProduct: (args) =>
-      createProduct({ ...args, accountId: account!.stripeAccountId }),
+      createProduct({
+        ...args,
+        userId: currentUser.id,
+        accountId: account!.stripeAccountId,
+      }),
     createPrice,
     deactivatePrice: (args) =>
       deactivatePrice({ ...args, userId: currentUser.id }),

@@ -53,11 +53,11 @@ export const createStoreSubscriptionCheckout = action({
 });
 
 /**
- * BTS-58 — create an embedded checkout session for the buyer to purchase the
+ * Create an embedded checkout session for the buyer to purchase the
  * store's one-time price as a destination charge, with the platform's 10%
- * application fee. Passing `amount` (the known price) up front computes a
+ * application fee. The server-owned price amount computes a
  * fixed `application_fee_amount` at session-creation time — no per-charge
- * webhook step needed, unlike the fixed/tiered default (BTS-60).
+ * webhook step needed, unlike the fixed/tiered default.
  */
 export const createDestinationChargeCheckout = action({
   args: {
@@ -65,12 +65,21 @@ export const createDestinationChargeCheckout = action({
     userId: v.string(),
     stripePriceId: v.string(),
     destinationAccountId: v.string(),
-    amount: v.number(),
     returnUrl: v.string(),
   },
   returns: checkoutSessionResultValidator,
   handler: async (ctx, args) => {
-    await assertPriceSoldByAccount(ctx, args);
+    const price = await assertPriceSoldByAccount(ctx, args);
+    if (
+      !price.active ||
+      price.type !== "one_time" ||
+      !Number.isSafeInteger(price.unitAmount) ||
+      price.unitAmount <= 0
+    ) {
+      throw new Error(
+        "Destination checkout requires an active fixed one-time price.",
+      );
+    }
     return stripe.createCheckoutSession(ctx, {
       idempotencyKey: args.requestId
         ? `destination_${args.userId}_${args.requestId}`
@@ -81,7 +90,7 @@ export const createDestinationChargeCheckout = action({
       returnUrl: args.returnUrl,
       uiMode: "embedded",
       destinationAccountId: args.destinationAccountId,
-      amount: args.amount,
+      amount: price.unitAmount,
       fee: { percent: DEMO_FEE_PERCENT },
     });
   },

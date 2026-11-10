@@ -42,6 +42,7 @@ export function validateOwnedReadMaterial(
   prepared: RenewalPreparationMaterial,
   scheduleId: string | undefined,
   ownedDiscounts: { subscription: unknown; item: unknown },
+  allowEmptyDiscounts = false,
 ) {
   supportedVersion(args.apiVersion);
   const subscription = renewalSubscription
@@ -152,6 +153,7 @@ export function validateOwnedReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    allowEmptyDiscounts && customer.data.discount === null,
   );
   const itemDiscounts = qualifySourceDiscounts(
     ownedDiscounts.item,
@@ -159,6 +161,7 @@ export function validateOwnedReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    allowEmptyDiscounts && customer.data.discount === null,
   );
   return {
     prepared,

@@ -56,6 +56,10 @@
     "./usage": {
       "types": "./dist/client/usage/index.d.ts",
       "default": "./dist/client/usage/index.js"
+    },
+    "./node": {
+      "types": "./dist/client/node.d.ts",
+      "default": "./dist/client/node.js"
     }
   },
   "main": "./dist/client/index.js",

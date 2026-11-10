@@ -14,6 +14,8 @@ import {
   type RawAcquisitionResult,
 } from "../acquisition/ownedAcquisition.js";
 import { captureInitialAttachForLineage } from "../operations/initialAttach.js";
+import type { OriginalBasis } from "../originalOwner.js";
+import { admitNodeAttachmentLineage } from "./nodeAttachmentProfile.js";
 
 export type InitialInvocationCore = Readonly<{
   owner: InitialOwner;
@@ -41,8 +43,33 @@ export async function captureInitialInvocationCore(
   call: unknown,
   journal: Awaited<ReturnType<typeof createClassActionOperationJournal>>,
 ): Promise<InitialInvocationCore> {
-  const token = mintInitialLineage(call, journal, arguments.length);
+  return captureCore(call, journal, arguments.length, false);
+}
+
+/** Fixed public Node entry. Other private cores retain dormant profiles. */
+export async function capturePublicInitialInvocationCore(
+  call: unknown,
+  journal: Awaited<ReturnType<typeof createClassActionOperationJournal>>,
+  captureBasis: (basis: Readonly<OriginalBasis>) => void,
+): Promise<InitialInvocationCore> {
+  return captureCore(call, journal, arguments.length - 1, true, captureBasis);
+}
+
+async function captureCore(
+  call: unknown,
+  journal: Awaited<ReturnType<typeof createClassActionOperationJournal>>,
+  arity: number,
+  publicNode: boolean,
+  captureBasis?: (basis: Readonly<OriginalBasis>) => void,
+): Promise<InitialInvocationCore> {
+  const token = mintInitialLineage(call, journal, arity);
+  if (publicNode) admitNodeAttachmentLineage(token);
   const lineage = readInitialLineage(token);
+  if (publicNode) {
+    if (typeof captureBasis !== "function")
+      throw Error("INITIAL_LINEAGE_UNBOUND");
+    captureBasis(lineage.basis);
+  }
   const owner = ownerForInitialLineage(token);
   try {
     const owned = ownedAwaitForInitialLineage(token);

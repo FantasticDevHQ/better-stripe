@@ -211,7 +211,9 @@ For the opt-in local sandbox browser checks, run `E2E_LIVE_BACKEND=1 pnpm exec p
 Renewal component integration tests use this existing app and its opt-in
 authenticated [renewal authorization queries](../docs/renewal-example-authorization.md).
 Their permission fixtures do not authenticate the persona switcher or issue
-production consent grants.
+production consent grants. The package now exposes a limited test-mode
+[Node attachment API](../docs/renewal-attachment.md); this example does not yet
+provide the complete attach/configure/observe renewal workflow.
 
 This app has **no real authentication**. The role switcher just picks a
 seeded persona and every Convex call passes that persona's `userId` as a

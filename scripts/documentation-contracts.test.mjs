@@ -36,6 +36,7 @@ const documents = files.map((file) => ({
 // need resolution; unrelated ambient @types packages are not part of this audit.
 const paths = {
   root: "dist/client/index.d.ts",
+  node: "dist/client/node.d.ts",
   react: "dist/react/index.d.ts",
   usage: "dist/client/usage/index.d.ts",
   testing: "dist/testing/index.d.ts",
@@ -68,7 +69,7 @@ it("resolves documented package imports and server reference methods against bui
   const failures = [];
   for (const { file, text } of documents) {
     for (const match of text.matchAll(
-      /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+["']@fantastic\.dev\/better-stripe(?:\/(react|usage|testing))?["']/g,
+      /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+["']@fantastic\.dev\/better-stripe(?:\/(react|usage|testing|node))?["']/g,
     )) {
       const names = new Set(
         modules[match[2] ?? "root"].map((symbol) => symbol.name),

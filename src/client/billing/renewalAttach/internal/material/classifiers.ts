@@ -1,3 +1,4 @@
+import { isNodeAttachmentLineage } from "../producer/nodeAttachmentProfile.js";
 import { OWNER } from "../originalOwner.js";
 import { ownerForInitialLineage } from "../producer/ownerFactory.js";
 import { readInitialLineage } from "../producer/lineageAuthority.js";
@@ -69,7 +70,7 @@ function material(
     freshness: fresh ? "fresh" : "retained",
   };
 }
-type InitialMaterial = ReturnType<typeof material>;
+export type InitialMaterial = ReturnType<typeof material>;
 type Classified = {
   status: "classified";
   kind: "RENEWAL_MATERIAL_V2_DATA_CONSISTENCY_ONLY";
@@ -194,7 +195,11 @@ function release(
   encode(node);
   return freeze(materialize(node)) as Classified;
 }
-async function retained(owner: MaterialOwner, value: RetainedInput) {
+async function retained(
+  owner: MaterialOwner,
+  value: RetainedInput,
+  allowEmpty = false,
+) {
   const raw = value.attachRequest;
   owner.check();
   const prepared = await c1(raw.preparation);
@@ -220,6 +225,7 @@ async function retained(owner: MaterialOwner, value: RetainedInput) {
     prepared,
     undefined,
     discounts,
+    allowEmpty,
   );
   owner.check();
   const result = release(
@@ -232,7 +238,11 @@ async function retained(owner: MaterialOwner, value: RetainedInput) {
   owner.check();
   return result;
 }
-async function fresh(owner: MaterialOwner, value: FreshInput) {
+async function fresh(
+  owner: MaterialOwner,
+  value: FreshInput,
+  allowEmpty = false,
+) {
   const raw = value.attachRequest;
   owner.check();
   const prepared = await c1(raw.preparation);
@@ -266,6 +276,7 @@ async function fresh(owner: MaterialOwner, value: FreshInput) {
     prepared,
     undefined,
     discounts,
+    allowEmpty,
   );
   owner.check();
   const result = release(
@@ -287,6 +298,7 @@ export function classifyOwnedRetainedInitialAttachment(
 function classifyRetained(
   owner: MaterialOwner,
   raw: unknown,
+  allowEmpty = false,
 ): Promise<Classified | typeof RETAINED_STOP> {
   let value;
   try {
@@ -296,7 +308,7 @@ function classifyRetained(
   } catch {
     return Promise.resolve(RETAINED_STOP);
   }
-  return retained(owner, value).catch(() => {
+  return retained(owner, value, allowEmpty).catch(() => {
     try {
       owner.check();
     } catch {}
@@ -311,6 +323,7 @@ export function classifyOwnedInitialAttachment(
 function classifyFresh(
   owner: MaterialOwner,
   raw: unknown,
+  allowEmpty = false,
 ): Promise<Classified | typeof FRESH_STOP> {
   let value;
   try {
@@ -320,7 +333,7 @@ function classifyFresh(
   } catch {
     return Promise.resolve(FRESH_STOP);
   }
-  return fresh(owner, value).catch(() => {
+  return fresh(owner, value, allowEmpty).catch(() => {
     try {
       owner.check();
     } catch {}
@@ -343,12 +356,18 @@ export function createInitialMaterialClassifiers(token: object) {
   return Object.freeze({
     retained() {
       if (arguments.length !== 0) throw Error("INITIAL_MATERIAL_UNBOUND");
-      return owned(() => classifyRetained(owner, original));
+      return owned(() =>
+        classifyRetained(owner, original, isNodeAttachmentLineage(token)),
+      );
     },
     fresh(currentBundle: unknown, observedAt: unknown) {
       if (arguments.length !== 2) throw Error("INITIAL_MATERIAL_UNBOUND");
       return owned(() =>
-        classifyFresh(owner, { ...original, currentBundle, observedAt }),
+        classifyFresh(
+          owner,
+          { ...original, currentBundle, observedAt },
+          isNodeAttachmentLineage(token),
+        ),
       );
     },
   });

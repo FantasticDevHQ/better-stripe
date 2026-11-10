@@ -7,6 +7,24 @@ snapshots for an exact cross-product renewal request. It performs no provider I/
 and supplies no schedule writer. See the [renewal replacement contract](./renewal-price-replacements.md)
 for its selectors, private binding, required staged protocol and preservation gate.
 
+### Public renewal attachment
+
+`prepareRenewalAttachmentOperation(options)` is a pure helper that constructs
+the immutable component journal creation arguments and request binding.
+`BetterStripe.attachRenewalSchedule(ctx, options)` is available through
+`@fantastic.dev/better-stripe/node` in a Convex Node action. It accepts the stored
+`operationId`, exact `requestBinding` and a host `authorizationQuery`.
+
+The initial profile is test-mode platform subscriptions using API version
+`2026-09-30.endive`, classic billing, an ordinary anchor, unchanged cadence and
+no subscription, item or inherited customer discounts. It makes at most one
+creation POST per original operation. Outcomes are `attached_incomplete`,
+`not_dispatched`, `conflict`, `timeout` or `unknown`. A timeout retains an
+explicitly unknown outcome. Attachment does not configure a future
+price. There are no automatic retries or restart recovery. See the
+[attachment guide](renewal-attachment.md) for preparation, authorization,
+readback, fixed deadlines and concurrent-writer limits.
+
 ### Pure renewal material observation
 
 ```ts

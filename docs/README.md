@@ -39,12 +39,12 @@ guide for your integration.
 
 ## Renewal price replacement
 
-These guides describe preparation, read and comparison helpers and the internal
-modules behind them. The public methods that attach a renewal schedule, configure
-it and observe the result are not yet released, so nothing here changes a
-subscription at the provider. Guides marked internal document modules with no
-public package export.
+The public Node entrypoint can attach a schedule under the limited test-mode
+profile documented below. Public configuration and provider-confirmed observation
+remain unavailable, so attachment alone does not schedule a price change.
+Guides marked internal describe modules without a public package export.
 
+- [Public renewal attachment](renewal-attachment.md), host authorization, one provider write and journal readback.
 - [Exact price replacement at renewal](renewal-price-replacements.md), the pure `prepareRenewalPriceReplacement` contract.
 - [Context reads and attachment request preparation](renewal-context-reads.md), `readRenewalPriceReplacementContext` and `prepareRenewalScheduleAttachment`.
 - [Compare renewal schedule material](renewal-material-observation.md), `inspectRenewalScheduleMaterialV2` over supplied reads.

@@ -1,5 +1,6 @@
 import { canUpsertAccount } from "../accountClosure/helpers.js";
 import { assertPayoutResetSafe } from "./resetSafety.js";
+import { assertTestModeForReset } from "./stripeMode.js";
 import { v } from "convex/values";
 
 import type { TableNames } from "../_generated/dataModel";
@@ -152,6 +153,10 @@ export const upsertAccountInternal = mutation({
 // UTILITY
 // =============================================================================
 
+/**
+ * Dev/test reset utility. Refuses to run unless the component's
+ * `STRIPE_SECRET_KEY` is a test-mode key (`sk_test_` / `rk_test_`).
+ */
 export const clearAllTables = mutation({
   args: {},
   returns: v.object({
@@ -159,6 +164,7 @@ export const clearAllTables = mutation({
     tables: v.array(v.string()),
   }),
   handler: async (ctx) => {
+    assertTestModeForReset("clearAllTables");
     await assertPayoutResetSafe(ctx);
     // Derive table names from the schema definition so the clear list can never
     // drift out of sync when new tables are added.

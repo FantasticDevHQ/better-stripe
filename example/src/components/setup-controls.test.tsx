@@ -59,6 +59,7 @@ describe("setup controls", () => {
   it("shows configured and missing environment variables, and refreshes", async () => {
     checkEnvVars.mockResolvedValueOnce({
       stripeSecretKey: false,
+      stripePublishableKey: false,
       webhookSecret: true,
       webhookSecretV2: false,
     });
@@ -67,10 +68,26 @@ describe("setup controls", () => {
     expect(
       await screen.findByText(/Set your Stripe secret key first/),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Not set")).toHaveLength(2);
+    expect(screen.getAllByText("Not set")).toHaveLength(3);
+    // Named once in the intro copy and once as a status row.
+    expect(screen.getAllByText("STRIPE_PUBLISHABLE_KEY")).toHaveLength(2);
     expect(screen.getByText("Set")).toBeInTheDocument();
     checkEnvVars.mockResolvedValueOnce({
       stripeSecretKey: true,
+      stripePublishableKey: false,
+      webhookSecret: true,
+      webhookSecretV2: true,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(
+      await screen.findByText(/Set your Stripe publishable key/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("All environment variables are set."),
+    ).not.toBeInTheDocument();
+    checkEnvVars.mockResolvedValueOnce({
+      stripeSecretKey: true,
+      stripePublishableKey: true,
       webhookSecret: true,
       webhookSecretV2: true,
     });
@@ -89,6 +106,7 @@ describe("setup controls", () => {
     );
     checkEnvVars.mockResolvedValueOnce({
       stripeSecretKey: true,
+      stripePublishableKey: true,
       webhookSecret: false,
       webhookSecretV2: false,
     });

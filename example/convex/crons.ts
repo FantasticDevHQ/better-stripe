@@ -13,4 +13,10 @@ crons.interval(
   internal.affiliateRecovery.jobs.actions.start,
   {},
 );
+crons.daily(
+  "prune webhook event ledger",
+  { hourUTC: 4, minuteUTC: 15 },
+  internal.webhookLedger.actions.prune,
+  {},
+);
 export default crons;

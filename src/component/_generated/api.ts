@@ -53,6 +53,7 @@ import type * as core_mutations from "../core/mutations.js";
 import type * as core_personalAccountMapping from "../core/personalAccountMapping.js";
 import type * as core_queries from "../core/queries.js";
 import type * as core_resetSafety from "../core/resetSafety.js";
+import type * as core_stripeMode from "../core/stripeMode.js";
 import type * as core_validators from "../core/validators.js";
 import type * as costRecovery_claims from "../costRecovery/claims.js";
 import type * as costRecovery_completion from "../costRecovery/completion.js";
@@ -287,6 +288,7 @@ const fullApi: ApiFromModules<{
   "core/personalAccountMapping": typeof core_personalAccountMapping;
   "core/queries": typeof core_queries;
   "core/resetSafety": typeof core_resetSafety;
+  "core/stripeMode": typeof core_stripeMode;
   "core/validators": typeof core_validators;
   "costRecovery/claims": typeof costRecovery_claims;
   "costRecovery/completion": typeof costRecovery_completion;

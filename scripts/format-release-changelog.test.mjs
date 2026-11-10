@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { formatReleaseChangelog } from "./format-release-changelog.mjs";
+import { internalReferencePattern } from "./internal-references.mjs";
 
 const repository = "FantasticDevHQ/better-stripe";
 const branch =
@@ -79,6 +80,32 @@ describe("formatReleaseChangelog", () => {
     const repeated = setup(output);
     expect(await repeated.run()).toBe(false);
     expect(repeated.request).toHaveBeenCalledTimes(2);
+  });
+  it("removes issue IDs from every internal tracker, not only this repository's", async () => {
+    const notes = `## [0.114.0](https://example.com/compare) (2026-11-03)
+
+### Documentation
+
+* FTD-236 use Better Stripe and expose agent setup ([#476](https://github.com/FantasticDevHQ/better-stripe/issues/476))
+* FANT-122 adopt the OSS header ([#474](https://github.com/FantasticDevHQ/better-stripe/issues/474))
+* **example:** DOJO-962 compose billing history (CNW-7)
+* keep UTF-8, SHA-256 and ISO-8601 wording (FORG-12, LCH-3)
+`;
+    const { request, run } = setup(notes);
+    expect(await run()).toBe(true);
+    const update = JSON.parse(request.mock.calls[2][1].body);
+    const output = Buffer.from(update.content, "base64").toString();
+    expect(output).not.toMatch(internalReferencePattern);
+    expect(output).toContain(
+      "- use Better Stripe and expose agent setup ([#476](https://github.com/FantasticDevHQ/better-stripe/issues/476))",
+    );
+    expect(output).toContain(
+      "- adopt the OSS header ([#474](https://github.com/FantasticDevHQ/better-stripe/issues/474))",
+    );
+    expect(output).toContain("- **example:** compose billing history\n");
+    expect(output).toContain("- keep UTF-8, SHA-256 and ISO-8601 wording");
+    const repeated = setup(output);
+    expect(await repeated.run()).toBe(false);
   });
   it("formats generated markdown and commits only the changelog on the release branch", async () => {
     const { request, run } = setup();

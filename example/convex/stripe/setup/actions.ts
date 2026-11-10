@@ -1,11 +1,16 @@
 /**
  * Setup actions for the better-stripe example app.
  *
- * Called by the setup script: `npx convex run stripe/setup/actions:ensureWebhook`
+ * Internal only: `ensureWebhook` creates a Stripe webhook endpoint and
+ * returns its signing secret, so it must never be callable from a client.
+ * Nothing in the app or its scripts calls it today (the Admin Setup page uses
+ * `stripe/public/actions:setupWebhooks`, which stores the secrets server-side
+ * instead of returning them). Operators can still run it from a trusted shell:
+ * `npx convex run stripe/setup/actions:ensureWebhook '{"siteUrl":"..."}'`
  */
 import { v } from "convex/values";
 
-import { action } from "../../_generated/server";
+import { internalAction } from "../../_generated/server";
 
 import { stripe } from "../helpers";
 
@@ -18,7 +23,7 @@ import { stripe } from "../helpers";
  *
  * Returns the endpoint ID, URL, and signing secret.
  */
-export const ensureWebhook = action({
+export const ensureWebhook = internalAction({
   args: {
     siteUrl: v.string(),
   },

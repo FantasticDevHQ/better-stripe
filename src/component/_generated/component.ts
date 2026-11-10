@@ -1858,6 +1858,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -1882,7 +1883,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             trialStart?: string;
             userId: string;
           },
-          null,
+          null | "stale",
           Name
         >;
       };
@@ -1908,6 +1909,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2059,6 +2061,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2106,6 +2109,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2267,6 +2271,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2314,6 +2319,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2361,6 +2367,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2408,6 +2415,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2467,6 +2475,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             feeRefundedAmount?: number;
             isCollectionPaused?: boolean;
             isTrialing: boolean;
+            lastEventCreated?: number;
             metadata?: any;
             orgId?: string;
             priceId?: string;
@@ -2592,6 +2601,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               feeRefundedAmount?: number;
               isCollectionPaused?: boolean;
               isTrialing: boolean;
+              lastEventCreated?: number;
               metadata?: any;
               orgId?: string;
               priceId?: string;
@@ -11182,6 +11192,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           { stripeEventId: string },
           null,
+          Name
+        >;
+        pruneWebhookEvents: FunctionReference<
+          "mutation",
+          "internal",
+          { limit?: number; olderThanMs?: number },
+          { deleted: number; hasMore: boolean },
           Name
         >;
       };

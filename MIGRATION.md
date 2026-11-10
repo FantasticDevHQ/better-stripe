@@ -53,13 +53,15 @@ Leave `stripeApiVersion` unset to use this pin. The legacy string override is
 retained for compatibility, but overriding it does not change the SDK's types
 or convert webhook payloads and can make requests inconsistent with them.
 
-## Remove Dojo's consumer patch
+## Remove local consumer patches
 
-Remove the `@getdojo/better-stripe@0.2.0` entry from pnpm's
-`patchedDependencies` and delete `patches/@getdojo__better-stripe@0.2.0.patch`.
+If your application patched `@getdojo/better-stripe@0.2.0` to retry failed
+fulfillment hooks, remove that entry from pnpm's `patchedDependencies` and delete
+the patch file (for example `patches/@getdojo__better-stripe@0.2.0.patch`).
 Update the dependency/imports and regenerate the lockfile. The upstream
 `RegisterRoutesConfig.retryOnHookError` has the same signature and V1 semantics
-as that patch. Dojo can keep its existing selector:
+as that patch, so an existing selector can be kept unchanged. For example, a
+selector keyed on application-owned Checkout metadata:
 
 ```ts
 retryOnHookError: (event) => {
@@ -223,3 +225,47 @@ The public `adoptPayouts` and explicit funded-activation flows now collect large
 New optional collection references in adoption proofs are internal validation/cache identities. Hosts must use the package to obtain provider-verified proof; do not forge these references or rewrite old attempted claims. Successful import/prepare/attempt cleans disposable read-only caches while retaining financial claims and original schedule restoration records. Legacy small component proof calls remain supported.
 
 New historical claims retain the complete proof for their allocated sources, while the import still validates all batch sources and prior claims. Unrelated source observations are no longer duplicated on every new historical claim. Existing claims are not rewritten; fresh adoption/activation verification still reads complete account membership.
+
+## Webhook ledger retention, guarded reset and subscription event ordering
+
+**Webhook ledger retention (opt-in).** The `webhookEvents` ledger previously grew
+without bound. `stripe.pruneWebhookEvents(ctx, { olderThanMs?, limit? })` deletes
+one batch of `processed`, `ignored` and `failed` rows older than the retention
+window (default 30 days, minimum 3 days) and returns `{ deleted, hasMore }`.
+Nothing is pruned until you schedule it; add the daily cron from
+[Ledger retention](docs/webhooks.md#ledger-retention). The table's `by_status`
+index is replaced by `by_status_processedAt`; Convex rebuilds it on deploy and
+no data migration is needed.
+
+**`clearAll` only runs in test mode (behavior change).** `stripe.clearAll(ctx)`
+and the component's `core/mutations:clearAllTables` now throw unless the
+component's `STRIPE_SECRET_KEY` starts with `sk_test_` or `rk_test_`. A live key
+or a missing key is refused before any row is deleted. Development and CI
+deployments that already use a test key are unaffected. Component tests that
+call the reset under `convex-test` must set the variable, for example
+`vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_...")`. There is no override: remove
+any reset path that was reachable from a live deployment.
+
+**Subscription events are applied in event-time order.** `subscriptions` rows
+gain an optional `lastEventCreated` field (Stripe event `created`, epoch
+seconds), set by webhook processing. A subscription event older than the stored
+value is skipped, so a late `customer.subscription.updated` no longer
+reactivates a canceled subscription, and `triggers.subscription.onCreate`,
+`onUpdate` and `onDelete` do not run for a skipped event. Existing rows need no
+backfill; the first webhook event applied to a row sets the field. See
+[Event ordering](docs/webhooks.md#event-ordering) for the same-second tie rule.
+
+Visible contract changes:
+
+- Subscription documents returned by the client and component queries may
+  include `lastEventCreated`. Host return validators that spread or copy a whole
+  subscription document into a strict `v.object` must allow the new optional
+  number.
+- The component mutation `billing/mutations:upsertSubscription` accepts an
+  optional `lastEventCreated` argument and returns `null | "stale"` instead of
+  `null`. `stripe.upsertSubscription(ctx, ...)` still returns `null` and, like
+  every write without an event time, always applies and preserves the stored
+  value.
+- Hosts that call the component mutation directly from their own webhook code
+  should pass the event's `created` value and skip their own side effects when
+  the result is `"stale"`.

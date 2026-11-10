@@ -1,12 +1,58 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TableNames } from "../_generated/dataModel";
 import { api } from "../_generated/api.js";
 import { schema, modules } from "../../test.js";
 
+const seedAccount = (t: ReturnType<typeof convexTest>) =>
+  t.mutation(api.core.mutations.upsertAccount, {
+    stripeAccountId: "acct_guarded",
+    userId: "user_guarded",
+  });
+const accountCount = (t: ReturnType<typeof convexTest>) =>
+  t.run(async (ctx) => (await ctx.db.query("accounts").take(10)).length);
+
 describe("core — clearAllTables", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each(["sk_live_abc123", "rk_live_abc123", "pk_test_abc123"])(
+    "refuses to run with a non-test key (%s)",
+    async (key) => {
+      vi.stubEnv("STRIPE_SECRET_KEY", key);
+      const t = convexTest(schema, modules);
+      await seedAccount(t);
+      await expect(
+        t.mutation(api.core.mutations.clearAllTables, {}),
+      ).rejects.toThrow(/clearAllTables refused.*not a test-mode key/);
+      expect(await accountCount(t)).toBe(1);
+    },
+  );
+
+  it.each([undefined, ""])(
+    "refuses to run when the secret key is missing (%s)",
+    async (key) => {
+      vi.stubEnv("STRIPE_SECRET_KEY", key);
+      const t = convexTest(schema, modules);
+      await seedAccount(t);
+      await expect(
+        t.mutation(api.core.mutations.clearAllTables, {}),
+      ).rejects.toThrow(/clearAllTables refused.*STRIPE_SECRET_KEY is not set/);
+      expect(await accountCount(t)).toBe(1);
+    },
+  );
+
+  it("runs with a restricted test-mode key", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_abc123");
+    const t = convexTest(schema, modules);
+    await seedAccount(t);
+    const result = await t.mutation(api.core.mutations.clearAllTables, {});
+    expect(result.cleared).toBe(1);
+    expect(await accountCount(t)).toBe(0);
+  });
+
   it("clearAllTables: removes all records from every table", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_abc123");
     const t = convexTest(schema, modules);
 
     // Seed one row in every schema table so a drifted clear list is caught.

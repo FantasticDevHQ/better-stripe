@@ -7,6 +7,7 @@ import {
   checkoutSessionStatusValidator,
   invoiceStatusValidator,
   subscriptionStatusValidator,
+  upsertSubscriptionResultValidator,
 } from "./validators";
 
 // =============================================================================
@@ -33,8 +34,14 @@ export const upsertSubscription = mutation({
     currency: v.optional(v.string()),
     ...feeRoutingFields,
     metadata: v.optional(v.any()),
+    /**
+     * Stripe event `created` (epoch seconds) when the write comes from a
+     * webhook. Omit for direct writes (API results, bulk sync): those always
+     * apply and keep the stored watermark.
+     */
+    lastEventCreated: v.optional(v.number()),
   },
-  returns: v.null(),
+  returns: upsertSubscriptionResultValidator,
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("subscriptions")
@@ -44,7 +51,33 @@ export const upsertSubscription = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch("subscriptions", existing._id, args);
+      const { lastEventCreated: incoming, ...fields } = args;
+      const stored = existing.lastEventCreated;
+      if (incoming !== undefined && stored !== undefined) {
+        // Stripe does not order deliveries. An older event never overwrites a
+        // newer one; within the same second the terminal state wins.
+        const stale =
+          incoming < stored ||
+          (incoming === stored &&
+            existing.status === "canceled" &&
+            args.status !== "canceled");
+        if (stale) {
+          console.info(
+            `[better-stripe] upsertSubscription: skipped stale event for ${args.stripeSubscriptionId} ` +
+              `(event created ${incoming}, status ${args.status}; stored ${stored}, status ${existing.status})`,
+          );
+          return "stale" as const;
+        }
+      }
+      // An undefined value in a patch REMOVES the field, so the watermark key
+      // is only present when this write carries one.
+      await ctx.db.patch(
+        "subscriptions",
+        existing._id,
+        incoming === undefined
+          ? fields
+          : { ...fields, lastEventCreated: incoming },
+      );
     } else {
       await ctx.db.insert("subscriptions", args);
     }

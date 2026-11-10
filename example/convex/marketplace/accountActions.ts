@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { action } from "../_generated/server";
 
 import { stripe } from "../stripe/helpers";
+import { assertAccountOwner } from "../users/authorization";
 
 import { RECIPIENT_ACCOUNT_CONFIGURATION } from "./accountConfiguration";
 
@@ -32,30 +33,41 @@ export const createMarketplaceAccountOnboarding = action({
  * component DB itself, so no extra resync is needed here.
  */
 export const addMarketplaceCustomerConfig = action({
-  args: { stripeAccountId: v.string() },
+  args: { userId: v.string(), stripeAccountId: v.string() },
   returns: v.object({
     success: v.boolean(),
     appliedConfigurations: v.array(v.string()),
   }),
-  handler: async (ctx, args) => stripe.addCustomerConfiguration(ctx, args),
+  handler: async (ctx, args) => {
+    await assertAccountOwner(ctx, args);
+    return stripe.addCustomerConfiguration(ctx, {
+      stripeAccountId: args.stripeAccountId,
+    });
+  },
 });
 
 /** Add recipient capabilities and persist this account in the component. */
 export const addMarketplaceRecipientConfig = action({
-  args: { stripeAccountId: v.string() },
+  args: { userId: v.string(), stripeAccountId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const result = await stripe.addRecipientConfiguration(ctx, args);
+    await assertAccountOwner(ctx, args);
+    const result = await stripe.addRecipientConfiguration(ctx, {
+      stripeAccountId: args.stripeAccountId,
+    });
     return { success: result.success };
   },
 });
 
 /** Add merchant capabilities and persist this account in the component. */
 export const addMarketplaceMerchantConfig = action({
-  args: { stripeAccountId: v.string() },
+  args: { userId: v.string(), stripeAccountId: v.string() },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const result = await stripe.addMerchantConfiguration(ctx, args);
+    await assertAccountOwner(ctx, args);
+    const result = await stripe.addMerchantConfiguration(ctx, {
+      stripeAccountId: args.stripeAccountId,
+    });
     return { success: result.success };
   },
 });
@@ -79,13 +91,15 @@ export const createMarketplaceSelfPurchaseCheckout = action({
     clientSecret: v.optional(v.string()),
     url: v.optional(v.string()),
   }),
-  handler: async (ctx, args) =>
-    stripe.createCheckoutSession(ctx, {
+  handler: async (ctx, args) => {
+    await assertAccountOwner(ctx, args);
+    return stripe.createCheckoutSession(ctx, {
       userId: args.userId,
       accountId: args.stripeAccountId,
       stripePriceId: args.stripePriceId,
       mode: "payment",
       uiMode: "redirect",
       returnUrl: args.returnUrl,
-    }),
+    });
+  },
 });

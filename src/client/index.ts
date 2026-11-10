@@ -226,6 +226,7 @@ import type {
 } from "./stripe-types.js";
 import { componentRef, DISPATCHER_UPSERT_PATHS } from "./webhooks/helpers.js";
 import { upsertDeletedSubscriptionAndTrigger } from "./webhooks/subscriptionDeleted.js";
+import * as ledgerImpl from "./webhooks/ledger.js";
 import type {
   AccountLinkWithStatus,
   AsyncHookCtx,
@@ -1479,21 +1480,16 @@ export class BetterStripe extends ClassOwnedActionRoot {
 
   async listWebhookEvents(
     ctx: RunCtx,
-    opts?: { eventType?: string; status?: string; limit?: number },
+    opts?: Parameters<typeof ledgerImpl.listWebhookEvents>[2],
   ) {
-    return (await ctx.runQuery(
-      componentRef(this.component, "webhooks/queries/listWebhookEvents"),
-      opts ?? {},
-    )) as Array<{
-      _id: string;
-      _creationTime: number;
-      stripeEventId: string;
-      eventType: string;
-      livemode?: boolean;
-      processedAt: number;
-      status: "pending" | "processed" | "failed";
-      lastError?: string;
-    }>;
+    return ledgerImpl.listWebhookEvents(this.component, ctx, opts);
+  }
+  /** Delete one bounded batch of old terminal webhook-ledger rows. */
+  async pruneWebhookEvents(
+    ctx: RunCtx,
+    opts?: ledgerImpl.PruneWebhookEventsOptions,
+  ) {
+    return ledgerImpl.pruneWebhookEvents(this.component, ctx, opts);
   }
 
   // DATA MANAGEMENT
@@ -1596,7 +1592,9 @@ export class BetterStripe extends ClassOwnedActionRoot {
         componentRef(component, spec.getter),
         lookup,
       )) as T | null;
-      await ctx.runMutation(componentRef(component, spec.upsert), record);
+      const upsert = componentRef(component, spec.upsert);
+      // A skipped out-of-order event wrote nothing: no trigger.
+      if ((await ctx.runMutation(upsert, record)) === "stale") return;
       const newDoc = (await ctx.runQuery(
         componentRef(component, spec.getter),
         lookup,

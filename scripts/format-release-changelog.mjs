@@ -2,6 +2,18 @@
 // Format the generated release PR with the same pinned Prettier used by CI.
 import { pathToFileURL } from "node:url";
 import { format, resolveConfig } from "prettier";
+import { internalIssueIdSource } from "./internal-references.mjs";
+
+// Every internal tracker prefix, not only this repository's own team key:
+// commit subjects also carry IDs from sibling teams' trackers. A bare `BTS`
+// (no number) is stripped too, as before.
+const issueReference = `(?:${internalIssueIdSource}|BTS)`;
+// `(ABC-1)` and `(ABC-1, XYZ-2)`: drop the whole parenthetical, not just the IDs.
+const parenthesizedIssueReferences = new RegExp(
+  `[ \\t]*\\([ \\t]*${issueReference}(?:[ \\t]*[,/&][ \\t]*${issueReference})*[ \\t]*\\)`,
+  "gi",
+);
+const bareIssueReference = new RegExp(`[ \\t]*\\b${issueReference}\\b`, "gi");
 
 function publicChangelog(source) {
   return source
@@ -14,8 +26,8 @@ function publicChangelog(source) {
       "",
     )
     .replace(/https?:\/\/(?:www\.)?linear\.app\/[^\s)]*/gi, "")
-    .replace(/[ \t]*\([ \t]*BTS(?:-\d+)?[ \t]*\)/gi, "")
-    .replace(/[ \t]*\bBTS(?:-\d+)?\b/gi, "");
+    .replace(parenthesizedIssueReferences, "")
+    .replace(bareIssueReference, "");
 }
 
 export async function formatReleaseChangelog({

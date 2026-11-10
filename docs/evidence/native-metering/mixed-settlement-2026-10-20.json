@@ -1,7 +1,7 @@
 {
   "kind": "native-mixed-invoice-settlement",
   "date": "2026-10-20",
-  "ticket": "BTS-287",
+  "scope": "Mixed-invoice settlement for metered subscriptions",
   "livemode": false,
   "apiVersion": "2026-09-30.endive",
   "method": "Compiled BetterStripe SDK against native Stripe test APIs; isolated Accounts v2 payer/test clock for initial and renewal cash; original product example invoice replay through billing hook and durable settlement workflow. No shared customer clock advancement.",

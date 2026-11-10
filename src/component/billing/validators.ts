@@ -54,7 +54,19 @@ export const subscriptionFields = {
   currency: v.optional(v.string()),
   ...feeRoutingFields,
   metadata: v.optional(v.any()),
+  /**
+   * Stripe event `created` (epoch seconds) of the newest webhook event applied
+   * to this row. Absent until a webhook writes the row; older events are
+   * skipped so out-of-order deliveries cannot regress state.
+   */
+  lastEventCreated: v.optional(v.number()),
 };
+
+/** Returned by `upsertSubscription` when an out-of-order event was skipped. */
+export const upsertSubscriptionResultValidator = v.union(
+  v.null(),
+  v.literal("stale"),
+);
 
 /** Full `subscriptions` document, including system fields. */
 export const subscriptionDocValidator = v.object({

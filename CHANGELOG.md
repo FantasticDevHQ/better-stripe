@@ -70,13 +70,13 @@
 
 ### Documentation
 
-- FTD-236 use Better Stripe and expose agent setup ([#476](https://github.com/FantasticDevHQ/better-stripe/issues/476)) ([1a79ddd](https://github.com/FantasticDevHQ/better-stripe/commit/1a79dddb144801b54630182bded2e140047ad27c))
+- use Better Stripe and expose agent setup ([#476](https://github.com/FantasticDevHQ/better-stripe/issues/476)) ([1a79ddd](https://github.com/FantasticDevHQ/better-stripe/commit/1a79dddb144801b54630182bded2e140047ad27c))
 
 ## [0.113.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.1...v0.113.2) (2026-11-02)
 
 ### Documentation
 
-- FANT-122 adopt the Fantastic.Dev OSS header ([#474](https://github.com/FantasticDevHQ/better-stripe/issues/474)) ([2149445](https://github.com/FantasticDevHQ/better-stripe/commit/21494456ec1d44c9ef960e351b56823101421f9b))
+- adopt the Fantastic.Dev OSS header ([#474](https://github.com/FantasticDevHQ/better-stripe/issues/474)) ([2149445](https://github.com/FantasticDevHQ/better-stripe/commit/21494456ec1d44c9ef960e351b56823101421f9b))
 
 ## [0.113.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.113.0...v0.113.1) (2026-11-01)
 

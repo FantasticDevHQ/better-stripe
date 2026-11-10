@@ -974,7 +974,8 @@ when the disposable cache has been removed.
 
 ### Development reset safeguards
 
-`clearAllTables` is a development/test utility. It rejects active or changing
+`clearAllTables` is a development/test utility. It refuses to run unless the
+component's `STRIPE_SECRET_KEY` is a test-mode key. It also rejects active or changing
 payout schedules, unresolved reserved/submitted claims, financially bound
 collections and known pending/in-transit provider payouts. The host must quiesce
 provider writers and verify live provider state before invoking reset. Restore

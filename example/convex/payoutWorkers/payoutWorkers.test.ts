@@ -2,7 +2,7 @@ import { modules } from "../../test";
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
 import type Stripe from "stripe";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import componentSchema from "../../../dist/component/schema.js";
 import { setup as paymentSetup } from "../../../src/client/connect/payoutExecutionTestHelpers.js";
 import type { RunCtx } from "../../../src/client/helpers.js";
@@ -27,7 +27,12 @@ vi.mock("../stripe/helpers", async () => {
     },
   };
 });
-afterEach(() => vi.useRealTimers());
+// The component reset refuses to run unless its key is a test-mode key.
+beforeEach(() => vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_reset_guard"));
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+});
 async function setup(role: "seller" | "affiliate" = "affiliate") {
   const payment = await paymentSetup();
   sdk.current = Object.assign(payment.provider, {

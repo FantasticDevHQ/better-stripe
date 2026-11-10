@@ -8,6 +8,10 @@ import { action } from "../_generated/server";
 
 import { stripe } from "../stripe/helpers";
 import {
+  assertAccountOwner,
+  assertPriceSoldByAccount,
+} from "../users/authorization";
+import {
   type BalanceSnapshot,
   checkoutSessionResultValidator,
   DEMO_FEE_PERCENT,
@@ -32,8 +36,9 @@ export const createStoreSubscriptionCheckout = action({
     destinationAccountId: v.string(),
     returnUrl: v.string(),
   },
-  handler: async (ctx, args) =>
-    stripe.createCheckoutSession(ctx, {
+  handler: async (ctx, args) => {
+    await assertPriceSoldByAccount(ctx, args);
+    return stripe.createCheckoutSession(ctx, {
       userId: args.userId,
       stripePriceId: args.stripePriceId,
       mode: "subscription",
@@ -43,7 +48,8 @@ export const createStoreSubscriptionCheckout = action({
       // Percent-only override so the fee rides on `application_fee_percent` and
       // lands on the first invoice (see file header).
       fee: { percent: DEMO_FEE_PERCENT },
-    }),
+    });
+  },
 });
 
 /**
@@ -63,8 +69,9 @@ export const createDestinationChargeCheckout = action({
     returnUrl: v.string(),
   },
   returns: checkoutSessionResultValidator,
-  handler: async (ctx, args) =>
-    stripe.createCheckoutSession(ctx, {
+  handler: async (ctx, args) => {
+    await assertPriceSoldByAccount(ctx, args);
+    return stripe.createCheckoutSession(ctx, {
       idempotencyKey: args.requestId
         ? `destination_${args.userId}_${args.requestId}`
         : undefined,
@@ -76,17 +83,19 @@ export const createDestinationChargeCheckout = action({
       destinationAccountId: args.destinationAccountId,
       amount: args.amount,
       fee: { percent: DEMO_FEE_PERCENT },
-    }),
+    });
+  },
 });
 
 /**
  * Read a connected account's live Stripe balance (available/pending) so the
  * seller dashboard reflects funds from the destination transfer before the
  * rolling payout lands. Returns `null` without a live key or if Stripe rejects
- * the read, so the demo degrades to payouts-only rather than erroring.
+ * the read, so the demo degrades to payouts-only rather than erroring. Throws
+ * when `userId` is not linked to `stripeAccountId`.
  */
 export const getRecipientBalance = action({
-  args: { stripeAccountId: v.string() },
+  args: { userId: v.string(), stripeAccountId: v.string() },
   returns: v.union(
     v.null(),
     v.object({
@@ -95,7 +104,10 @@ export const getRecipientBalance = action({
       currency: v.string(),
     }),
   ),
-  handler: async (_ctx, args): Promise<BalanceSnapshot | null> => {
+  handler: async (ctx, args): Promise<BalanceSnapshot | null> => {
+    // Ownership is checked outside the degrade-to-null path below: a foreign
+    // account is a refusal, not a "balance unavailable".
+    await assertAccountOwner(ctx, args);
     if (!env.STRIPE_SECRET_KEY) return null;
     try {
       const raw = new Stripe(env.STRIPE_SECRET_KEY, {

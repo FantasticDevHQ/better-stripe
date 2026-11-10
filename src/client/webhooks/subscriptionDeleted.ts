@@ -37,11 +37,12 @@ export async function upsertDeletedSubscriptionAndTrigger(
         `[better-stripe] subscriptionDeleted: ambiguous previous identity (stripeSubscriptionId=${id})`,
       );
   }
-  await ctx.runMutation(
+  const result = await ctx.runMutation(
     componentRef(component, DISPATCHER_UPSERT_PATHS.subscriptionDeleted),
     record,
   );
-  if (!onSubscriptionDeleted) return;
+  // A skipped out-of-order event wrote nothing: no trigger.
+  if (result === "stale" || !onSubscriptionDeleted) return;
   const doc = (await ctx.runQuery(getter, {
     ...lookup,
     requireUnique: true,

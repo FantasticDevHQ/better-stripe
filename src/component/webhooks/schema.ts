@@ -7,4 +7,5 @@ import { webhookEventFields } from "./validators";
  */
 export const webhookEventsTable = defineTable(webhookEventFields)
   .index("by_stripeEventId", ["stripeEventId"])
-  .index("by_status", ["status"]);
+  // Status prefix + ledger time: serves status lookups and retention pruning.
+  .index("by_status_processedAt", ["status", "processedAt"]);

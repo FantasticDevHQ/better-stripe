@@ -38,8 +38,7 @@ uses render props or companion hooks to apply shadcn styling.
 | Admin webhooks                            | `WebhookEvents`, `useWebhookFilters`                                                                                                                   |
 | Admin setup                               | `useWebhookSetup`, `WebhookSetup`, `EnvironmentStatus`, `FixtureProgress`, `useTaskRunner`, `StripeSetup`, `ClipboardButton`, shared actions/resources |
 | Admin sandbox testing                     | `useTaskRunner`, `SandboxTesting`, `WorkflowTasks`                                                                                                     |
-| Legacy affiliate split demo               | `Checkout`, `SplitBreakdown`, `EarningsSummary`, bound package hook factories                                                                          |
-| Legacy destination-charge module          | `Checkout`, `ChargeSummary`; the legacy public route currently resolves to the split demo                                                              |
+| Legacy split and destination-charge demos | Page modules removed; `/marketplace/split` and `/demo/destination-charge` redirect to the storefront                                                   |
 | Integration presentation switch           | `IntegrationSwitch`; only the active view mounts                                                                                                       |
 | Connect alternatives                      | `Connect` with account management, onboarding, payments/refunds, disputes, balances, payouts and notifications                                         |
 | Styled shared tables                      | `Collection` and domain collections; `WorkflowTable` only maps their state/columns to shadcn                                                           |

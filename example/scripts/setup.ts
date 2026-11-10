@@ -1,7 +1,10 @@
 /**
  * Setup script for the better-stripe example app.
  *
- * Reads STRIPE_SECRET_KEY from .env.local and sets it as a Convex env var.
+ * Reads STRIPE_SECRET_KEY (required) and STRIPE_PUBLISHABLE_KEY (optional)
+ * from .env.local and sets them as Convex env vars. The browser reads the
+ * publishable key through Convex (`stripe/public/queries:getPublishableKey`),
+ * not from a Vite variable.
  * This is the only setup step that requires CLI access — everything else
  * (webhooks, seeding, syncing) can be done from the Admin UI at /admin/setup.
  *
@@ -10,6 +13,8 @@
 import { config } from "dotenv";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+
+import { convexEnvVarsToSet } from "./setup-env";
 
 // Load .env.local from the example directory
 const envPath = resolve(import.meta.dirname, "..", ".env.local");
@@ -52,10 +57,22 @@ function convexEnvSet(name: string, value: string): void {
 function main() {
   console.log("\n🔧 better-stripe example — Setup\n");
 
-  // ─── Set STRIPE_SECRET_KEY in Convex ────────────────────────────────
-  console.log("Setting STRIPE_SECRET_KEY in Convex environment...");
-  convexEnvSet("STRIPE_SECRET_KEY", STRIPE_SECRET_KEY!);
-  console.log("   ✅ Done\n");
+  // ─── Set the Stripe keys in Convex ──────────────────────────────────
+  const vars = convexEnvVarsToSet(process.env);
+  for (const { name, value } of vars) {
+    console.log(`Setting ${name} in Convex environment...`);
+    convexEnvSet(name, value);
+    console.log("   ✅ Done\n");
+  }
+  if (!vars.some(({ name }) => name === "STRIPE_PUBLISHABLE_KEY")) {
+    console.log(
+      "⚠️  STRIPE_PUBLISHABLE_KEY not found in .env.local — checkout and",
+    );
+    console.log(
+      "   embedded components will not load until you add it and rerun, or run:",
+    );
+    console.log("     npx convex env set STRIPE_PUBLISHABLE_KEY pk_test_...\n");
+  }
 
   // ─── Summary ────────────────────────────────────────────────────────
   console.log("🎉 Stripe key configured!\n");

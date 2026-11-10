@@ -1,4 +1,5 @@
 import { EnvVarsCard } from "@/components/setup-env-vars";
+import { ResetCard } from "@/components/setup-reset";
 import { CopyButton } from "@/components/setup-controls";
 import {
   useWorkflowAction,
@@ -435,64 +436,6 @@ function SyncCard() {
             </div>
           ))}
         </div>
-      </div>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 5: Reset
-// ---------------------------------------------------------------------------
-
-function ResetCard() {
-  const resetAll = useAction(api.admin.actions.resetAll);
-  const reset = useWorkflowAction(async () => {
-    await resetAll({});
-    return true;
-  }, "reset");
-  const isResetting = reset.isPending;
-  const done = reset.result ?? false;
-  const error = reset.error;
-  const handleReset = () => reset.run();
-
-  return (
-    <Card size="panel">
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">5. Reset</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Clear all data from the app database (users) and the better-stripe
-              component database (accounts, products, prices, subscriptions,
-              invoices, payments, payouts, webhook events). Use this when you
-              reset your Stripe sandbox. Restore custom payout policies to
-              Stripe-managed defaults first. Active or unresolved payout state
-              blocks reset and preserves local records.
-            </p>
-          </div>
-          <Button
-            variant="destructive-solid"
-            className="shrink-0"
-            onClick={handleReset}
-            disabled={isResetting}
-          >
-            {isResetting ? "Resetting…" : "Reset All Data"}
-          </Button>
-        </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {done && (
-          <Alert>
-            <AlertDescription>
-              All data cleared. Click "Seed Data" above to re-populate.
-            </AlertDescription>
-          </Alert>
-        )}
       </div>
     </Card>
   );

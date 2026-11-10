@@ -1,7 +1,7 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
 import { makeFunctionReference } from "convex/server";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { schema, modules } from "../../test.js";
 const m = (name: string) =>
   makeFunctionReference<"mutation">(`costRecovery/${name}`);
@@ -330,10 +330,15 @@ it("does not let an empty old group clear another group's lock, and reset includ
     outcome: "collect",
   });
   expect((await t.query(q("balance"), scope)).activeGroupKey).toBe("active");
-  await t.mutation(
-    makeFunctionReference<"mutation">("core/mutations:clearAllTables"),
-    {},
-  );
+  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_cost_recovery_reset");
+  try {
+    await t.mutation(
+      makeFunctionReference<"mutation">("core/mutations:clearAllTables"),
+      {},
+    );
+  } finally {
+    vi.unstubAllEnvs();
+  }
   expect(await t.query(q("balance"), scope)).toMatchObject({
     amountDue: 0,
     collectedAmount: 0,

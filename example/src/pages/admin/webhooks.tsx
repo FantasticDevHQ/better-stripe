@@ -28,7 +28,7 @@ import { useQuery } from "convex/react";
 
 import { api } from "../../../convex/_generated/api";
 
-type WebhookStatus = "processed" | "failed" | "pending";
+type WebhookStatus = "processing" | "processed" | "failed" | "ignored";
 
 function statusVariant(
   status: WebhookStatus,
@@ -38,7 +38,8 @@ function statusVariant(
       return "default";
     case "failed":
       return "destructive";
-    case "pending":
+    case "processing":
+    case "ignored":
       return "secondary";
   }
 }

@@ -220,6 +220,7 @@ import type * as stripe_triggerLog_queries from "../stripe/triggerLog/queries.js
 import type * as stripe_webhooks from "../stripe/webhooks.js";
 import type * as users_authorization from "../users/authorization.js";
 import type * as users_queries from "../users/queries.js";
+import type * as webhookLedger_actions from "../webhookLedger/actions.js";
 
 import type {
   ApiFromModules,
@@ -441,6 +442,7 @@ const fullApi: ApiFromModules<{
   "stripe/webhooks": typeof stripe_webhooks;
   "users/authorization": typeof users_authorization;
   "users/queries": typeof users_queries;
+  "webhookLedger/actions": typeof webhookLedger_actions;
 }> = anyApi as any;
 
 /**

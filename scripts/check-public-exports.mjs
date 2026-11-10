@@ -1,4 +1,10 @@
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
+
+import { assertNoTestArtifacts } from "./check-dist-artifacts.mjs";
+
+// The published tarball ships `dist` verbatim; tests and fixtures must not be in it.
+assertNoTestArtifacts(fileURLToPath(new URL("../dist", import.meta.url)));
 
 // Exercise the emitted package graph with Node's standard ESM resolver.
 // Bundled source tests cannot detect missing extensions in this graph.

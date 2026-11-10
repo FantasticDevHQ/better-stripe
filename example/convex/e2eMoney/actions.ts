@@ -16,7 +16,7 @@
  */
 import { v } from "convex/values";
 
-import { action } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 
 import { stripe } from "../stripe/helpers";
 import { DEMO_CURRENCY, rawStripe } from "./helpers";
@@ -42,7 +42,7 @@ import { DEMO_CURRENCY, rawStripe } from "./helpers";
  * are the spike's validated shape — re-verify against Stripe's V2 docs on the
  * first live run (the harness SKIPs, never falsely PASSES, if activation fails).
  */
-export const provisionTestRecipient = action({
+export const provisionTestRecipient = internalAction({
   args: { label: v.string(), businessUrl: v.optional(v.string()) },
   handler: async (ctx, args) => {
     void ctx;
@@ -143,7 +143,7 @@ export const provisionTestRecipient = action({
  * payments row — the same fee path a destination-charge subscription's invoice
  * takes. Returns the ids the harness asserts against.
  */
-export const e2eDestinationFeeSale = action({
+export const e2eDestinationFeeSale = internalAction({
   args: {
     storeAccountId: v.string(),
     amount: v.number(),
@@ -179,7 +179,7 @@ export const e2eDestinationFeeSale = action({
  * the dispute test token so Stripe raises `charge.dispute.created` (clawback
  * reverses the transfers). Returns the ids the harness asserts against.
  */
-export const e2eSplitSale = action({
+export const e2eSplitSale = internalAction({
   args: {
     storeAccountId: v.string(),
     affiliateAccountId: v.string(),
@@ -243,7 +243,7 @@ export const e2eSplitSale = action({
  * the async dispute path — both exercise the `reverseTransfers` primitive). The
  * webhook records the reversal on the transfer rows.
  */
-export const e2eRefundCharge = action({
+export const e2eRefundCharge = internalAction({
   args: { stripePaymentIntentId: v.string() },
   handler: async (ctx, args) =>
     stripe.createRefund(ctx, {
@@ -262,7 +262,7 @@ export const e2eRefundCharge = action({
  * precondition of the BTS-66 refund question. Returns the ids the harness
  * asserts against.
  */
-export const e2ePerChargeFeeSale = action({
+export const e2ePerChargeFeeSale = internalAction({
   args: {
     storeAccountId: v.string(),
     amount: v.number(),
@@ -306,7 +306,7 @@ export const e2ePerChargeFeeSale = action({
  * `amount_reversed` plus each reversal's amount, which lets the harness pin
  * BOTH the preserved fee reversal and the capped refund reversal.
  */
-export const e2eTransferState = action({
+export const e2eTransferState = internalAction({
   args: { stripeChargeId: v.string() },
   returns: v.union(
     v.null(),

@@ -638,16 +638,30 @@ Refunds denormalize cumulative state onto the linked `payments` row (`refundedAm
 
 ### Operational
 
-| Method                                                                                    | Description                                                                     |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `syncAllAccounts(ctx)`                                                                    | Sync all V2 accounts from Stripe to component DB                                |
-| `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                        |
-| `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                              |
-| `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                      |
-| `listEventDestinations(ctx, { limit? })`                                                  | List all V2 event destinations                                                  |
-| `listWebhookEndpoints(ctx, { limit? })`                                                   | List V1 webhook endpoints                                                       |
-| `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                    |
-| `webhookHandlers()`                                                                       | Returns the `{ syncWebhook, asyncWebhook }` pair to export from a Convex module |
+| Method                                                                                    | Description                                                                          |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `syncAllAccounts(ctx)`                                                                    | Sync all V2 accounts from Stripe to component DB                                     |
+| `syncAllProducts(ctx)`                                                                    | Sync all products and prices from Stripe                                             |
+| `syncAllSubscriptions(ctx)`                                                               | Sync all subscriptions from Stripe                                                   |
+| `setupEventDestination(ctx, { url, eventPayload?, name?, description?, enabledEvents? })` | Create or update a V2 event destination (snapshot or thin)                           |
+| `listEventDestinations(ctx, { limit? })`                                                  | List all V2 event destinations                                                       |
+| `listWebhookEndpoints(ctx, { limit? })`                                                   | List V1 webhook endpoints                                                            |
+| `createWebhookEndpoint(ctx, { url, description?, enabledEvents? })`                       | Create a V1 webhook endpoint                                                         |
+| `listWebhookEvents(ctx, { eventType?, status?, limit? })`                                 | List webhook-ledger rows, most recent first                                          |
+| `pruneWebhookEvents(ctx, { olderThanMs?, limit? })`                                       | Delete one batch of old terminal webhook-ledger rows; returns `{ deleted, hasMore }` |
+| `clearAll(ctx)`                                                                           | Dev/test reset: delete every component row. Test-mode keys only                      |
+| `webhookHandlers()`                                                                       | Returns the `{ syncWebhook, asyncWebhook }` pair to export from a Convex module      |
+
+`pruneWebhookEvents` defaults to a 30-day retention window and 500 rows per
+call, rejects a window under three days, and clamps `limit` to 1,000. Loop while
+`hasMore` from a scheduled function; see
+[Ledger retention](webhooks.md#ledger-retention).
+
+`clearAll` is destructive and irreversible. The component refuses it unless its
+`STRIPE_SECRET_KEY` starts with `sk_test_` or `rk_test_`; a live key, any other
+value, or a missing key throws an error that names the reason, before any row is
+read or deleted. It also still refuses while payout restoration records, payout
+claims, in-flight payouts or unresolved affiliate operations exist.
 
 ### Standalone Function
 

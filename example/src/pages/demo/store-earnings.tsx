@@ -59,7 +59,7 @@ export function StoreEarnings() {
   } = useWorkflowResource(
     () =>
       accountId
-        ? getBalance({ stripeAccountId: accountId })
+        ? getBalance({ userId: currentUser.id, stripeAccountId: accountId })
         : Promise.resolve(null),
     accountId ?? "missing",
   );

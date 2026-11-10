@@ -16,7 +16,10 @@ export function EnvVarsCard() {
   } = useWorkflowResource(() => checkEnvVars({}), "environment");
   const envs = data ?? null;
   const allSet =
-    envs?.stripeSecretKey && envs?.webhookSecret && envs?.webhookSecretV2;
+    envs?.stripeSecretKey &&
+    envs?.stripePublishableKey &&
+    envs?.webhookSecret &&
+    envs?.webhookSecretV2;
 
   return (
     <Card size="panel">
@@ -26,7 +29,9 @@ export function EnvVarsCard() {
             <h2 className="text-lg font-semibold">1. Environment Variables</h2>
             <p className="text-muted-foreground mt-1 text-sm">
               Convex environment variables must be set for the app to connect to
-              Stripe. Set <code>STRIPE_SECRET_KEY</code> first — the webhook
+              Stripe. Set <code>STRIPE_SECRET_KEY</code> first, then{" "}
+              <code>STRIPE_PUBLISHABLE_KEY</code> (the browser reads it through
+              Convex for Stripe Elements and embedded components). The webhook
               secrets are set after running webhook setup (step 2).
             </p>
           </div>
@@ -45,11 +50,16 @@ export function EnvVarsCard() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : envs ? (
           <div className="space-y-2">
             {[
               { name: "STRIPE_SECRET_KEY", set: envs.stripeSecretKey },
+              {
+                name: "STRIPE_PUBLISHABLE_KEY",
+                set: envs.stripePublishableKey,
+              },
               { name: "STRIPE_WEBHOOK_SECRET", set: envs.webhookSecret },
               { name: "STRIPE_WEBHOOK_SECRET_V2", set: envs.webhookSecretV2 },
             ].map(({ name, set }) => (
@@ -83,6 +93,25 @@ export function EnvVarsCard() {
                 <div className="bg-muted flex items-center gap-2 rounded-md p-3 font-mono text-xs">
                   <code className="flex-1">
                     npx convex env set STRIPE_SECRET_KEY sk_test_your_key_here
+                  </code>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {envs && envs.stripeSecretKey && !envs.stripePublishableKey && (
+          <Alert>
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>
+                  Set your Stripe publishable key so checkout and embedded
+                  components can load in the browser:
+                </p>
+                <div className="bg-muted flex items-center gap-2 rounded-md p-3 font-mono text-xs">
+                  <code className="flex-1">
+                    npx convex env set STRIPE_PUBLISHABLE_KEY
+                    pk_test_your_key_here
                   </code>
                 </div>
               </div>

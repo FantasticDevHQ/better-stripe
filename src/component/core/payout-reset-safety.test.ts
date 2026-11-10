@@ -1,8 +1,11 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test";
 import { makeFunctionReference } from "convex/server";
-import { expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { schema, modules } from "../../test.js";
+// The reset only runs against a test-mode key; these cases exercise the payout guards behind it.
+beforeEach(() => vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_reset_safety"));
+afterEach(() => vi.unstubAllEnvs());
 const reset = makeFunctionReference<"mutation">(
   "core/mutations:clearAllTables",
 );

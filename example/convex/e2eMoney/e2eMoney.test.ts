@@ -1,7 +1,42 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { reversalsMatchExactly } from "../../scripts/money-assertions";
-import { fullRefundReversalPlan, reconcilesToCharge } from "./helpers";
+import {
+  fullRefundReversalPlan,
+  rawStripe,
+  reconcilesToCharge,
+} from "./helpers";
+
+/**
+ * Every e2eMoney driver creates real charges/refunds through `rawStripe()`, so
+ * it must fail closed before constructing a client for anything but a
+ * test-mode key.
+ */
+describe("rawStripe test-mode guard", () => {
+  const original = process.env.STRIPE_SECRET_KEY;
+  afterEach(() => {
+    if (original === undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY = original;
+  });
+
+  it.each(["sk_live_should_never_run", "rk_live_should_never_run", "nonsense"])(
+    "refuses the key %s",
+    (key) => {
+      process.env.STRIPE_SECRET_KEY = key;
+      expect(() => rawStripe()).toThrowError(/test-mode key/);
+    },
+  );
+
+  it("refuses a missing key", () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    expect(() => rawStripe()).toThrowError(/not set/);
+  });
+
+  it("builds a client for a test-mode key", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_e2e_money";
+    expect(rawStripe().paymentIntents).toBeDefined();
+  });
+});
 
 /**
  * The money assertions in the e2e:webhooks harness (BTS-49) hinge on one

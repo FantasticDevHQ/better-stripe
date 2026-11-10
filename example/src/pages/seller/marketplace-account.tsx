@@ -115,7 +115,10 @@ export function SellerMarketplaceAccount({
   const accountManager = useAccountManager({
     scopeKey: currentUser.id,
     configure: (configuration) => {
-      const args = { stripeAccountId: account!.stripeAccountId };
+      const args = {
+        userId: currentUser.id,
+        stripeAccountId: account!.stripeAccountId,
+      };
       return configuration === "customer"
         ? addCustomerConfig(args)
         : configuration === "recipient"

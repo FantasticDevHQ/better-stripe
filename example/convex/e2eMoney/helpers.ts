@@ -21,6 +21,8 @@ import Stripe from "stripe";
 
 import { components } from "../_generated/api";
 
+import { assertTestModeStripeKey } from "../users/authorization";
+
 // Match the API version the BetterStripe client pins (see seed.ts).
 export type StripeApiVersion = NonNullable<
   NonNullable<ConstructorParameters<typeof Stripe>[1]>["apiVersion"]
@@ -28,10 +30,15 @@ export type StripeApiVersion = NonNullable<
 
 export const STRIPE_API_VERSION: StripeApiVersion = "2026-09-30.endive";
 
+/**
+ * Every driver in `./actions` creates real charges/refunds, so the raw client
+ * fails closed unless the deployment key is a test-mode key (missing, live,
+ * and malformed keys all throw before a client is constructed).
+ */
 export function rawStripe(): Stripe {
   const key = env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY not set on the deployment");
-  return new Stripe(key, { apiVersion: STRIPE_API_VERSION });
+  assertTestModeStripeKey(key);
+  return new Stripe(key as string, { apiVersion: STRIPE_API_VERSION });
 }
 
 export const connectQueries = components.betterStripe.connect.queries;

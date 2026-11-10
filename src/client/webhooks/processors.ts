@@ -51,6 +51,7 @@ export async function processEvent(
         whCtx,
         obj as Stripe.Subscription,
         "subscriptionUpserted",
+        event.created,
       );
       break;
     case "customer.subscription.deleted":
@@ -58,6 +59,7 @@ export async function processEvent(
         whCtx,
         obj as Stripe.Subscription,
         "subscriptionDeleted",
+        event.created,
       );
       break;
     case "checkout.session.completed":
@@ -223,6 +225,8 @@ async function upsertSubscriptionFromStripe(
   whCtx: WebhookContext,
   subscription: Stripe.Subscription,
   dispatcherName: "subscriptionUpserted" | "subscriptionDeleted",
+  /** Stripe event `created`; the component skips events older than the row. */
+  eventCreated: number | undefined,
 ): Promise<void> {
   const { userId, orgId } = extractIdentifiers(
     subscription.metadata as Record<string, string> | null,
@@ -256,6 +260,7 @@ async function upsertSubscriptionFromStripe(
     trialStart: trial.trialStart,
     trialEnd: trial.trialEnd,
     metadata: subscription.metadata ?? undefined,
+    lastEventCreated: eventCreated,
   });
 }
 

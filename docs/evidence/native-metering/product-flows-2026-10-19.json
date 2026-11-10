@@ -1,7 +1,7 @@
 {
   "kind": "product-metered-example-native-test-mode",
   "date": "2026-10-19",
-  "ticket": "BTS-284",
+  "scope": "Product metered-usage example flows",
   "livemode": false,
   "method": "Public host adapter actions backed by the compiled BetterStripe package, plus actual browser actions with Stripe synthetic test cards. Retained IDs are test resources, not credentials.",
   "included_overage": {

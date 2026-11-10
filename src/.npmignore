@@ -1,0 +1,11 @@
+# Test-only sources are not published. Keep in sync with tsconfig.build.json.
+test.ts
+*.test.ts
+*.test.tsx
+*.test.js
+*.fixture.ts
+*.fixtures.ts
+*TestHelpers.ts
+**/test-fixtures/**
+testing/component-db.ts
+testing/crossDomain/**

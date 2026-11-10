@@ -247,11 +247,12 @@ checkout workflow and Vite example can use these callbacks with application styl
 
 ## Publication and consumer acceptance
 
-A source merge does not activate an API in a published package. DOJO-908,
-DOJO-1037, DOJO-1041, and DOJO-2257 require a verified published version and
-explicit consumer adoption, authorized adapters, translated UI, and their own
-acceptance evidence. These package changes do not complete those tickets or add
-a second Dojo financial ledger, payout table, catalog store, or webhook processor.
+A source merge does not activate an API in a published package. Consumer work
+that depends on these read contracts requires a verified published version and
+explicit consumer adoption, authorized adapters, translated UI, and its own
+acceptance evidence. These package changes do not complete that consumer work or
+add a second consumer financial ledger, payout table, catalog store, or webhook
+processor.
 Use the repository release workflow; do not publish npm manually.
 
 ## Provider invoice pages

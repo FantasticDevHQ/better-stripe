@@ -283,6 +283,36 @@ export async function assertPriceOwner(
   );
 }
 
+/**
+ * Verify a buyer-facing destination checkout routes to the account that
+ * actually sells the price. The buyer is the actor and never owns the
+ * destination, so this is not an actor-owner check: it binds the two
+ * client-supplied ids to each other instead. The price's owning product must
+ * carry an `accountId` equal to `destinationAccountId`, otherwise a caller
+ * could route any price's proceeds to an arbitrary connected account. Missing
+ * price, missing product, platform-catalog product, and mismatch all collapse
+ * into one rejection.
+ */
+export async function assertPriceSoldByAccount(
+  ctx: ActionCtx,
+  args: { stripePriceId: string; destinationAccountId: string },
+): Promise<void> {
+  const stripePriceId = requireNonBlank(args.stripePriceId, "stripePriceId");
+  const destinationAccountId = requireNonBlank(
+    args.destinationAccountId,
+    "destinationAccountId",
+  );
+  const price = await stripe.getPriceByStripeId(ctx, { stripePriceId });
+  const product = price
+    ? await stripe.getProductByStripeId(ctx, {
+        stripeProductId: price.stripeProductId,
+      })
+    : null;
+  if (!product || product.accountId !== destinationAccountId) {
+    throw new Error("Price not found for this destination account");
+  }
+}
+
 // =============================================================================
 // Test-mode money guard (BTS-77, shared here for BTS-83)
 // =============================================================================

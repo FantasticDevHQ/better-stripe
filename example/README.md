@@ -53,7 +53,7 @@ Detailed assessments show carried-forward and withheld funds, in-flight payouts
 and verified paid principal net of payout returns. Source rows separate store,
 affiliate and other contributions, with their in-flight and paid amounts.
 
-`convex/recipientPayoutPolicy.ts` derives the demo account and outstanding seller
+`convex/recipientPayouts/policy/` derives the demo account and outstanding seller
 costs server-side. It preserves other currency settings and retries a persisted
 schedule operation. New settings operations include the resolved Stripe account
 in their identity so a replaced recipient cannot collide with the old account's
@@ -67,7 +67,9 @@ See [the package settings contract](../docs/react-workflows.md#payout-settings).
 ### Reset & Re-seed
 
 The Admin reset button and CLI use the same payout safety check before clearing
-app users or component records. Restore custom payout policies to Stripe-managed
+every app table in `convex/schema.ts` and the component records. The Admin
+button asks for confirmation first, and the Admin action refuses to run when
+`STRIPE_SECRET_KEY` is a live or malformed key. Restore custom payout policies to Stripe-managed
 defaults and reconcile pending payouts first. A refused reset preserves owner
 bindings and schedule restoration records so these operations can still finish.
 
@@ -126,7 +128,7 @@ Beyond the classic demo personas, the seed creates a real marketplace
 ### Automatic payout attempts
 
 Deploying the example installs the five-minute cron in `convex/crons.ts`.
-`convex/payoutWorkers.ts` dispatches ready custom policies, retained attempts,
+`convex/payoutWorkers/actions.ts` dispatches ready custom policies, retained attempts,
 pending schedule operations and expired holding deadlines through BetterStripe.
 It validates the demo user's linked recipient account and withholds uncollected
 seller costs, including costs reserved on unpaid invoices.
@@ -147,10 +149,16 @@ to the same claim for reconciliation. See the package's
 - Copy `.env.local.example` to `.env.local` and fill in your keys:
   ```
   VITE_CONVEX_URL=             # from `pnpm exec convex dev`
-  VITE_STRIPE_PUBLISHABLE_KEY= # pk_test_...
-  STRIPE_SECRET_KEY=           # sk_test_... (used by setup script)
   VITE_CONVEX_SITE_URL=        # https://your-deployment.convex.site
+  STRIPE_SECRET_KEY=           # sk_test_... (copied to Convex by the setup script)
+  STRIPE_PUBLISHABLE_KEY=      # pk_test_... (copied to Convex by the setup script)
   ```
+  The publishable key is not a Vite variable. The browser reads it through the
+  `stripe/public/queries:getPublishableKey` Convex query, which returns the
+  deployment's `STRIPE_PUBLISHABLE_KEY`. `pnpm run setup` copies both Stripe
+  keys from `.env.local` into the Convex environment; to set the publishable
+  key by hand run `pnpm exec convex env set STRIPE_PUBLISHABLE_KEY pk_test_...`.
+  The Admin Setup page reports whether each variable is present.
 
 ## Architecture
 
@@ -196,7 +204,7 @@ The old `/marketplace/split` and `/demo/destination-charge` links redirect to th
 
 The role menu, command menu, and route redirects use the same role rules. These are demonstration UI boundaries, not authentication.
 
-For the opt-in local sandbox browser checks, run `E2E_LIVE_BACKEND=1 pnpm exec playwright test marketplace-roles.spec.ts` from `example/`. These tests use a normal browser and record video. They create synthetic test-mode payments and a subscription; see [the October 13 QA report](QA-2026-10-13.md) for coverage and remaining limits.
+For the opt-in local sandbox browser checks, run `E2E_LIVE_BACKEND=1 pnpm exec playwright test marketplace-roles.spec.ts` from `example/`. These tests use a normal browser and record video. They create synthetic test-mode payments and a subscription.
 
 ## Demo security model
 
@@ -214,8 +222,10 @@ calling an action directly (devtools, a script) can pass any `userId` they
 like.
 
 Given that, **ownership checks in this app are a binding, not
-authentication**: every state-changing action (subscription lifecycle,
-disputes, refunds, transfer reversals) loads its target resource
+authentication**: the state-changing actions that take a resource id
+(subscription lifecycle, disputes, refunds, transfer reversals, connected
+account configuration, self-purchase checkout, seller dashboard links, and
+the seller balance read) load their target resource
 server-side and verifies the resource's persisted owner -- a
 subscription's `userId`, or a payment/dispute/transfer's connected
 Stripe account -- matches the `userId` the caller claims, **before** any
@@ -223,14 +233,22 @@ Stripe side effect runs. This stops a client from operating on someone
 else's subscription, dispute, or sale even though it can claim to be
 anyone; it does not stop a client from lying about which persona it is,
 because there is no session to check that against. The shared gate lives
-in `convex/authz.ts` (`assertOwnership` plus a per-resource
+in `convex/users/authorization.ts` (`assertOwnership` plus a per-resource
 `assert*Owner` wrapper for subscriptions, seller accounts, disputes,
-payments, and transfers) and replaces the narrower `assertSubscriptionOwner`
-subscription price-ownership check.
+payments, transfers, and prices) and replaces the narrower
+`assertSubscriptionOwner` subscription price-ownership check. A buyer-facing
+destination checkout cannot bind the buyer to the seller's account, so
+`assertPriceSoldByAccount` instead verifies that the destination account is
+the one that sells the requested price. Actions that create a new resource
+for the claimed persona (account onboarding, checkout as yourself) have
+nothing to bind and trust the claimed `userId`, as do the Admin pages: the
+admin role is a demo UI boundary, so the Admin Setup actions are callable by
+anyone who can reach the deployment. `seedDemoData` and `resetAll` refuse a
+live or malformed Stripe key, and the reset button asks for confirmation.
 
 Money-moving and dispute-closing actions (`issueRefund`,
 `reverseSaleTransfers`, `acceptDispute`) are also gated by
-`assertTestModeStripeKey` (`convex/authz.ts`, shared with the admin Testing
+`assertTestModeStripeKey` (`convex/users/authorization.ts`, shared with the admin Testing
 page's test-mode guard) **before** any Stripe call: it fails closed unless
 `STRIPE_SECRET_KEY` is an unambiguous `sk_test_`/`rk_test_` key. **Never
 deploy this example with a live secret key** -- these actions make real
@@ -241,36 +259,36 @@ E2E money-layer notes below).
 
 ### BetterStripe Client Methods
 
-| Method                                  | Used In                               |
-| --------------------------------------- | ------------------------------------- |
-| `stripe.listProducts()`                 | queries.ts, admin/products            |
-| `stripe.listPricesByProduct()`          | queries.ts                            |
-| `stripe.listPrices()`                   | queries.ts                            |
-| `stripe.createProduct()`                | actions.ts, admin/products            |
-| `stripe.createPrice()`                  | actions.ts, admin/products            |
-| `stripe.listSubscriptions()`            | queries.ts, admin/subscriptions       |
-| `stripe.listSubscriptionsByUser()`      | queries.ts, dashboard/billing         |
-| `stripe.cancelSubscription()`           | actions.ts, dashboard/billing         |
-| `stripe.listInvoices()`                 | queries.ts, dashboard/invoices        |
-| `stripe.listPayouts()`                  | queries.ts, seller/payouts            |
-| `stripe.createAccountWithOnboarding()`  | actions.ts, seller/onboarding         |
-| `stripe.restartAccountOnboarding()`     | actions.ts, seller/onboarding         |
-| `stripe.getAccountByUserId()`           | queries.ts, seller/account            |
-| `stripe.getAccountLinkWithStatus()`     | actions.ts, seller/onboarding         |
-| `stripe.createCheckoutSession()`        | actions.ts, checkout                  |
-| `stripe.getCheckoutSessionByStripeId()` | queries.ts, checkout-status           |
-| `stripe.listPaymentMethods()`           | actions.ts, dashboard/payment-methods |
-| `stripe.attachPaymentMethod()`          | actions.ts, dashboard/payment-methods |
-| `stripe.detachPaymentMethod()`          | actions.ts, dashboard/payment-methods |
-| `stripe.getPublishableKey()`            | queries.ts                            |
-| `stripe.getStripeMode()`                | queries.ts                            |
-| `stripe.setupEventDestination()`        | actions.ts, admin/setup               |
-| `stripe.listEventDestinations()`        | actions.ts, admin/setup               |
-| `stripe.listWebhookEvents()`            | queries.ts, admin/webhooks            |
-| `stripe.syncAllProducts()`              | actions.ts, admin/setup               |
-| `stripe.syncAllSubscriptions()`         | actions.ts, admin/setup               |
-| `stripe.syncAllAccounts()`              | actions.ts, admin/setup               |
-| `stripe.clearAll()`                     | reset.ts                              |
+| Method                                  | Used In (under `convex/`)                                          |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| `stripe.listProducts()`                 | products/queries.ts, storefront/public/queries.ts                  |
+| `stripe.listPricesByProduct()`          | products/queries.ts, storefront/public/queries.ts                  |
+| `stripe.listPrices()`                   | products/queries.ts                                                |
+| `stripe.createProduct()`                | products/actions.ts, accounts/actions.ts                           |
+| `stripe.createPrice()`                  | products/actions.ts                                                |
+| `stripe.listSubscriptions()`            | billing/public/queries.ts                                          |
+| `stripe.listSubscriptionsByUser()`      | billing/public/queries.ts                                          |
+| `stripe.cancelSubscription()`           | billing/public/actions.ts                                          |
+| `stripe.listInvoices()`                 | billing/public/queries.ts, marketplace/queries.ts                  |
+| `stripe.listPayouts()`                  | connect/queries.ts, marketplace/queries.ts                         |
+| `stripe.createAccountWithOnboarding()`  | accounts/actions.ts, marketplace/accountActions.ts                 |
+| `stripe.restartAccountOnboarding()`     | accounts/actions.ts                                                |
+| `stripe.getAccountByUserId()`           | accounts/helpers.ts (via accounts/queries.ts)                      |
+| `stripe.getAccountLinkWithStatus()`     | accounts/actions.ts                                                |
+| `stripe.createCheckoutSession()`        | storefront/checkout.ts, storePlans/public/actions.ts, marketplace/ |
+| `stripe.getCheckoutSessionByStripeId()` | billing/public/queries.ts                                          |
+| `stripe.listPaymentMethods()`           | billing/public/actions.ts                                          |
+| `stripe.attachPaymentMethod()`          | billing/public/actions.ts                                          |
+| `stripe.detachPaymentMethod()`          | billing/public/actions.ts                                          |
+| `stripe.getPublishableKey()`            | stripe/public/queries.ts                                           |
+| `stripe.getStripeMode()`                | stripe/public/queries.ts                                           |
+| `stripe.setupEventDestination()`        | stripe/public/actions.ts                                           |
+| `stripe.listEventDestinations()`        | stripe/public/actions.ts                                           |
+| `stripe.listWebhookEvents()`            | stripe/public/queries.ts                                           |
+| `stripe.syncAllProducts()`              | admin/actions.ts                                                   |
+| `stripe.syncAllSubscriptions()`         | admin/actions.ts                                                   |
+| `stripe.syncAllAccounts()`              | admin/actions.ts                                                   |
+| `stripe.clearAll()`                     | admin/reset/actions.ts                                             |
 
 ### Connect Onboarding (V2 Accounts)
 
@@ -370,11 +388,11 @@ adding configurations later, after the account already exists — see
 | Async Hook   | `onPaymentFailed`             | Logs failed payment        |
 | Async Hook   | `onTrialEnding`               | Logs trial ending          |
 
-Every trigger and hook also records a row in the app's `triggerLog` table (`convex/triggerLogger.ts`) so the E2E webhook test can assert they actually ran — sync triggers write in the same transaction as the dispatcher mutation.
+Every trigger and hook also records a row in the app's `triggerLog` table (written by `convex/stripe/helpers.ts`, read through `convex/stripe/triggerLog/`) so the E2E webhook test can assert they actually ran — sync triggers write in the same transaction as the dispatcher mutation.
 
 ### Setup Script (`pnpm run setup`)
 
-The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All other setup (webhooks, seeding, syncing) is done through the Admin UI at `/admin/setup`.
+The setup script copies `STRIPE_SECRET_KEY` (required) and `STRIPE_PUBLISHABLE_KEY` (optional, skipped when blank) from `.env.local` into the Convex environment. All other setup (webhooks, seeding, syncing) is done through the Admin UI at `/admin/setup`.
 
 ### E2E Webhook Test (`npm run e2e:webhooks`)
 
@@ -384,7 +402,7 @@ The setup script only sets `STRIPE_SECRET_KEY` in the Convex environment. All ot
 
 **Pre-release only, not CI** — this needs a real (test-mode) Stripe account + a linked Convex dev deployment, so it can't run in CI. It is the release gate that proves the money actually _moves_, which mocks can't catch.
 
-After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by `convex/e2eMoney.ts`) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
+After the event-coverage phase, the harness runs a money phase (`runMoneyAssertions` in the same script, backed by the internal functions in `convex/e2eMoney/`, which the script invokes through `convex run` and which refuse to run without a test-mode key) that drives real Stripe test-mode scenarios through the real webhook engine and asserts the persisted ledger:
 
 | Check                                                           | What it drives                                                                                                                                                                 | What it asserts                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -407,7 +425,7 @@ So a real clawback regression can no longer pass the gate silently.
 
 Gating: set `E2E_SKIP_MONEY=1` to run the event phase only. A legitimate live-drive failure (recipient provisioning, the dispute never landing) SKIPs the affected rows with a reason; a genuine wrong outcome — including a landed-but-not-reversed dispute — FAILs. **No false PASS, no false FAIL.**
 
-> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the refund reversal cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`pnpm exec convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The refund reversal scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
+> **Status:** the money-assertion code is reviewed + typecheck/lint-clean and unit-covered for its pure helpers (`convex/e2eMoney/e2eMoney.test.ts` — reconciliation, exact-reversal matching, and the refund reversal cap plan), but the full harness live run (real Stripe + deployment) has **not** been executed yet — run it manually before a release (`pnpm exec convex dev --once` in `example/` to push the current functions, then `pnpm --filter ./example run e2e:webhooks`); it is not CI-runnable. The refund reversal scenario's underlying Stripe behavior (recipient-create requirements, async capability activation, the full-refund reversal **cap**) WAS verified live on 2026-07-03 by direct API probe — the harness row re-verifies it end-to-end through the webhook engine on each release run.
 
 ### Direct checkout and Express login fixtures
 
@@ -484,8 +502,8 @@ sync back to the UI. Current live-backend specs:
 - `e2e/seller-disputes.spec.ts` — seller disputes demo; see below.
 - `e2e/marketplace-account.spec.ts` — marketplace account lifecycle;
   see below.
-- `e2e/destination-charge.spec.ts` — destination charge + platform fee demo,
-  single recipient; see below.
+- `e2e/destination-charge.spec.ts` — the legacy destination-charge route
+  redirects to the storefront; see below.
 - `e2e/refunds-reversals.spec.ts` — refunds & reversals seller ops page
   ; see below.
 
@@ -493,7 +511,7 @@ sync back to the UI. Current live-backend specs:
 
 The one-time checkout demo has two layers:
 
-- **Backend-independent** (runs everywhere, incl. CI): the payment-mode
+- **Backend-independent** (needs no backend; run locally, there is no Playwright job in CI): the payment-mode
   checkout and success routes boot without page errors.
 - **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): landing → the seeded
   one-time product (Ceramics Masterclass, from the marketplace seed) →
@@ -518,7 +536,7 @@ Visit `/stores` as Customer or Visitor to choose a seller and price. Recurring p
 
 Avery's referral links are on `/affiliate/links`. Opening a link and choosing Customer or Visitor preserves `ref=avery` through checkout. A referred sale pays the platform fee first, then Avery receives the effective percentage of the remainder or a fixed amount capped at that remainder and the seller receives the rest. View the affiliate's own transfer ledger on `/affiliate`. The old `/marketplace/split` route redirects to this storefront; its compatibility behavior is covered by `e2e/affiliate-split.spec.ts`.
 
-The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials. See [October 13 QA](QA-2026-10-13.md) for amounts, evidence, and coverage limits.
+The live suite records normal-browser video because direct Stripe checkout stalled in headless Chromium during this QA run. The ordinary boot suite remains independent of Stripe credentials.
 
 #### Seller disputes flow (`e2e/seller-disputes.spec.ts`)
 
@@ -536,7 +554,7 @@ stack. It offers two surfaces via tabs:
 
 Two layers, like the checkout demo:
 
-- **Backend-independent** (runs everywhere, incl. CI): the `/seller/disputes`
+- **Backend-independent** (needs no backend; run locally, there is no Playwright job in CI): the `/seller/disputes`
   route boots without page errors.
 - **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): open the disputes page →
   open a dispute → submit evidence → observe the transfer reversal +
@@ -587,8 +605,9 @@ The marketplace account demo shows "one V2 account, configurations
 accrue": a single Stripe account is both a payouts recipient and a billable
 customer. Two layers:
 
-- **Backend-independent** (runs everywhere, incl. CI): `/seller/marketplace-account`
-  boots without page errors, both pre-onboarding and when returning from a
+- **Backend-independent** (needs no backend; run locally, there is no Playwright job in CI): `/seller/marketplace-account`
+  (a legacy link that now redirects to `/seller/account?section=stripe-settings`,
+  where the same panel is embedded as **Stripe settings**) boots without page errors, both pre-onboarding and when returning from a
   (placeholder) purchase session. The page is role-gated (`seller`), preset
   via `localStorage` the same way the admin specs do.
 - **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): seller onboards via
@@ -605,11 +624,13 @@ customer. Two layers:
 
 Manual QA (until the live-E2E spec is verified against a real deployment):
 
-1. As the `seller` role, visit `/seller/marketplace-account`. With no account
+1. As the `seller` role, visit `/seller/account?section=stripe-settings`
+   (the old `/seller/marketplace-account` link redirects there). With no account
    yet, pick a country and click **Onboard as recipient** — you're redirected
    to hosted Stripe Express.
 2. Complete the Express onboarding form (test-mode identity + bank details).
-   Stripe redirects back to `/seller/marketplace-account`.
+   Stripe returns to `/seller/marketplace-account`, which redirects to the
+   Stripe settings section of `/seller/account`.
 3. Once **Applied Configurations** shows `Recipient (payouts)` and onboarding
    is `complete`, click **Add customer configuration** — the badge list
    should grow to include `Customer (billable)`.
@@ -639,7 +660,7 @@ one PaymentIntent or all refunds) read back what actually landed.
 
 Two layers, like the other demos:
 
-- **Backend-independent** (runs everywhere, incl. CI): the route boots
+- **Backend-independent** (needs no backend; run locally, there is no Playwright job in CI): the route boots
   without page errors.
 - **Live flow** (skipped unless `E2E_LIVE_BACKEND=1`): the refund and
   reversal controls, payment-status figures, and refund-history table
@@ -698,7 +719,9 @@ The webhook endpoint accepts both V1 and V2 event payloads, verified with separa
 
 The setup flow creates:
 
-- **Users**: Alex Customer, Jordan Seller, Sam Admin
+- **Users** (8 personas): Alex Customer, Jordan Seller, Sam Admin, and Riley
+  Visitor, plus the marketplace scenario: sellers Maya Merchant and Sasha
+  Studio, Avery Affiliate, and Billie Buyer
 - **Products**:
   - Classic Tee -- $29 one-time purchase
   - Tee of the Month Club -- $19/mo or $189/yr subscription
@@ -709,79 +732,64 @@ The setup flow creates:
 - **Convex** (backend + real-time subscriptions)
 - **better-stripe** (Stripe V2 Accounts component)
 - **shadcn/ui** + **Tailwind CSS v4** (UI components)
-- **React Router** (client-side routing)
+- **TanStack Router** (client-side routing)
 - **lucide-react** (icons)
 
 ## Project Structure
 
 ```
 example/
-├── convex/
-│   ├── convex.config.ts          # app.use(betterStripe)
-│   ├── schema.ts                 # users table only
-│   ├── http.ts                   # registerRoutes() webhook endpoint (V1 + V2)
-│   ├── stripe.ts                 # BetterStripe client + triggers + hooks
-│   ├── queries.ts                # Query wrappers for component data
-│   ├── actions.ts                # Action wrappers for Stripe API calls + admin setup
-│   ├── authz.ts                  # assertOwnership + per-resource assert*Owner, assertTestModeStripeKey
-│   ├── setup.ts                  # ensureWebhook action (legacy, used by setup script)
-│   ├── seed.ts                   # Seed DB + Stripe products + marketplace scenario
-│   ├── reset.ts                  # Clear all data
-│   ├── users.ts                  # User queries
-│   ├── marketplace.ts            # Store subscription checkout + earnings/payout helpers
-│   ├── affiliateSplit.ts         # Referral attribution + split-sale math
-│   ├── subscriptionLifecycle.ts  # Buyer subscription cancel/resume lifecycle
-│   ├── triggerLogger.ts          # triggerLog table writer for sync triggers + async hooks
-│   ├── e2eMoney.ts               # Money-layer assertions backend for e2e:webhooks
-│   ├── lib/
-│   │   └── marketplace.ts        # Pure fee/catalog helpers shared by actions.ts + the frontend
-│   └── *.test.ts                 # Vitest unit tests colocated per module above
-├── e2e/                          # Playwright suite (see "Browser E2E Tests" below)
-│   ├── smoke.spec.ts             # App boots + routes (backend-independent)
-│   ├── admin-pages.spec.ts       # Admin pages boot-check
-│   ├── admin-products.spec.ts    # Admin product Edit + Deactivate
-│   ├── admin-testing.spec.ts     # Admin Testing page boot-check
-│   ├── dashboard-pages.spec.ts   # Customer dashboard pages boot-check
-│   ├── seller-pages.spec.ts      # Seller pages boot-check
-│   ├── seller-onboarding.spec.ts # Seller onboarding flow boot-check
-│   ├── payment-methods.spec.ts   # Payment methods page boot-check
-│   ├── nav-demo-links.spec.ts    # Nav sidebar demo route links boot-check
-│   ├── one-time-checkout.spec.ts # One-time payment flow
-│   ├── subscription-payout.spec.ts    # Paid subscription + payout flow
-│   ├── affiliate-split.spec.ts        # Affiliate split breakdown demo
-│   ├── seller-disputes.spec.ts        # Seller disputes demo
-│   ├── dispute-chargeback.spec.ts     # Dispute + chargeback lifecycle
-│   ├── marketplace-account.spec.ts    # Marketplace account lifecycle
-│   ├── destination-charge.spec.ts     # Destination charge + platform fee demo
-│   ├── refunds-reversals.spec.ts      # Refunds & reversals seller ops page
-│   └── buyer-subscription-lifecycle.spec.ts  # Buyer subscription lifecycle
+├── convex/                       # One folder per domain; tests are colocated as *.test.ts
+│   ├── convex.config.ts          # app.use(betterStripe) + deployment env declarations
+│   ├── schema.ts                 # Composes each domain's tables (users, storefront, payouts, ...)
+│   ├── http.ts                   # Mounts the webhook routes from stripe/http.ts (V1 + V2)
+│   ├── crons.ts                  # Scheduled jobs (payout worker and maintenance)
+│   ├── stripe/                   # BetterStripe client, triggers + hooks (helpers.ts), webhook
+│   │                             # setup/status (public/), triggerLog, internal ensureWebhook (setup/)
+│   ├── users/                    # User queries + authorization.ts (assertOwnership,
+│   │                             # assert*Owner, assertTestModeStripeKey)
+│   ├── accounts/                 # Connected-account onboarding, links, persona account lookup
+│   ├── products/                 # Product and price queries/actions
+│   ├── billing/                  # Subscriptions, invoices, payment methods, checkout history
+│   ├── storefront/               # Store catalog + buyer checkout
+│   ├── marketplace/              # Marketplace account actions, split math, demo context queries
+│   ├── connect/                  # Seller disputes, refunds, transfer reversals, payouts
+│   ├── storePlans/, storeBalance/, sellerCosts/      # Paid store plans and seller cost billing
+│   ├── sellerAffiliateRates/, affiliateDefaults/, affiliateRecovery/  # Affiliate terms + recovery
+│   ├── recipientPayouts/, payoutWorkers/, settlement/  # Payout policy, worker, settlement
+│   ├── meteredProducts/, meteredUsage/, renewalAuthorization/  # Usage billing + renewals
+│   ├── admin/                    # Setup page actions, seed/ and reset/ (CLI: admin/seed/actions:run)
+│   ├── adminTesting/, sandboxFixtures/               # Test-mode triggers and sandbox fixtures
+│   ├── checkoutExamples/, embeddedExamples/, readContracts/  # Integration example backends
+│   └── e2eMoney/, e2eCheckout/   # Internal drivers for e2e:webhooks and the live browser specs
+├── e2e/                          # Playwright specs (*.spec.ts; see "Browser E2E Tests")
 ├── scripts/
-│   ├── setup.ts                  # Sets STRIPE_SECRET_KEY in Convex env
-│   ├── e2e-webhooks.ts           # Automated webhook + money-layer E2E test (see below)
-│   └── money-assertions.ts       # Pure reversal/reconciliation helpers (unit-tested)
+│   ├── setup.ts                  # Copies the Stripe keys from .env.local into the Convex env
+│   ├── setup-env.ts              # Pure helper: which keys the setup script copies
+│   ├── e2e-webhooks.ts           # Automated webhook + money-layer E2E test (see above)
+│   ├── money-assertions.ts       # Pure reversal/reconciliation helpers (unit-tested)
+│   ├── convex-cli.ts             # `convex run` / `convex env set` wrappers for the scripts
+│   └── test-balance-renewals.ts  # Live balance-renewal check (e2e:balance-renewals)
 ├── playwright.config.ts          # Playwright harness (dev-server wiring)
 ├── src/
-│   ├── main.tsx                  # TanStack Router + ConvexProvider
-│   ├── App.tsx                   # Routes
+│   ├── main.tsx                  # ConvexProvider, theme, error boundary
+│   ├── App.tsx                   # TanStack RouterProvider + role/app shell layout
+│   ├── router.tsx                # Route table, role guards, legacy redirects
 │   ├── components/ui/            # shadcn/ui components
-│   ├── components/
-│   │   ├── app-shell.tsx         # Layout: header + sidebar
-│   │   ├── role-switcher.tsx     # Role toggle
-│   │   └── nav-sidebar.tsx       # Role-aware navigation
+│   ├── components/               # App shell, navigation, setup cards, checkout and
+│   │                             # payout panels, each with colocated *.test.tsx
 │   ├── pages/
-│   │   ├── landing.tsx           # Pricing (real products from Stripe)
-│   │   ├── checkout.tsx          # EmbeddedCheckout
-│   │   ├── checkout-status.tsx   # CheckoutStatus
+│   │   ├── landing.tsx           # Storefront (`/` and `/stores`)
+│   │   ├── checkout.tsx          # Checkout
+│   │   ├── checkout-status.tsx   # Checkout return page
+│   │   ├── affiliate.tsx         # Affiliate earnings, sales, links
 │   │   ├── dashboard/            # Customer: billing, invoices, payment methods
-│   │   ├── seller/               # Seller: onboarding, account, payouts, products, refunds
-│   │   ├── admin/                # Admin: products, subscriptions, webhooks, setup, testing
-│   │   ├── demo/                 # Marketplace money-model demos: subscribe, store-earnings, destination-charge
-│   │   └── marketplace/          # Affiliate split breakdown demo (split.tsx)
-│   ├── providers/
-│   │   └── role-context.tsx      # Demo role switcher (mock auth)
-│   └── lib/                      # Pure helpers shared by pages (checkout-return-url,
-│                                  # store-earnings, current-subscription, stripe-hooks,
-│                                  # dispute-hooks), each with a colocated *.test.ts
+│   │   ├── seller/               # Seller: account, sales, plan, payouts, products, refunds, disputes
+│   │   ├── admin/                # Admin: overview, store plans, products, subscriptions,
+│   │   │                         # webhooks, affiliate recovery, testing, setup
+│   │   └── demo/                 # subscribe, store-earnings, affiliate-recovery, allocation
+│   ├── providers/                # Demo role switcher (mock auth), theme
+│   └── lib/                      # Pure helpers shared by pages, each with a colocated test
 ├── .env.local.example
 └── package.json
 ```

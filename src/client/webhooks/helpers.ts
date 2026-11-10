@@ -69,6 +69,7 @@ const COMPONENT_FUNCTION_MAP: Record<string, string> = {
   markWebhookEventProcessed: "webhooks/mutations/markWebhookEventProcessed",
   markWebhookEventFailed: "webhooks/mutations/markWebhookEventFailed",
   markWebhookEventIgnored: "webhooks/mutations/markWebhookEventIgnored",
+  pruneWebhookEvents: "webhooks/mutations/pruneWebhookEvents",
 };
 
 // =============================================================================

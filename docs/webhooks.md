@@ -111,7 +111,7 @@ Unselected callbacks, V2 hooks and scheduled `asyncWebhook` hooks keep best-effo
 acknowledgment behavior. Required fulfillment belongs in the selected V1
 `onEvent`/`events` path, not a scheduled hook. Refund synchronization independently
 requires ledger success even without an application retry selector. See
-[the migration contract](../MIGRATION.md#remove-dojos-consumer-patch).
+[the migration contract](../MIGRATION.md#remove-local-consumer-patches).
 
 ### Ledger-Based Deduplication
 
@@ -122,6 +122,115 @@ The component maintains a `webhookEvents` table that tracks every event by its S
 - **Crash recovery** -- if a delivery dies mid-processing (timeout, restart), the `processing` row goes stale after 10 minutes and the event is reprocessed on Stripe's next retry instead of deduplicating forever
 - **Failure tracking** -- failed events are marked with status and error message
 - **Observability** -- all events (including unsupported types) are logged with `ignored` status
+
+Rows are kept until you prune them; see [Ledger retention](#ledger-retention).
+
+### Ledger retention
+
+Every delivery writes one `webhookEvents` row: `stripeEventId`, `eventType`,
+`livemode`, `processedAt`, `status` (`processing`, `processed`, `failed` or
+`ignored`) and, for failures, `lastError`. Rows are small, but the table grows
+by one row per Stripe event forever unless you prune it.
+
+`stripe.pruneWebhookEvents(ctx, { olderThanMs?, limit? })` deletes one bounded
+batch of rows in a terminal state (`processed`, `ignored`, `failed`) whose
+`processedAt` is older than the retention window, and returns
+`{ deleted, hasMore }`. It reads through an index on status and time, never a
+table scan, and it never deletes `processing` rows.
+
+| Option        | Default | Bounds                                 |
+| ------------- | ------- | -------------------------------------- |
+| `olderThanMs` | 30 days | Minimum 3 days; a smaller value throws |
+| `limit`       | 500     | Clamped to 1,000 rows per call         |
+
+The three-day floor exists because the ledger is the replay guard. Stripe
+retries an undelivered event for up to three days, so a row deleted sooner
+could let a late retry of an already-processed event run a second time.
+Pruning a `failed` row is safe: a failed event is reprocessed on retry whether
+or not its row still exists. Keep a longer window if you use the ledger for
+support or audit lookups.
+
+Schedule it from the host app. One call is one transaction, so loop while
+`hasMore` with an upper bound:
+
+```ts
+// convex/webhookLedger/actions.ts
+import { v } from "convex/values";
+import { internalAction } from "../_generated/server";
+import { stripe } from "../stripe/helpers";
+
+const MAX_BATCHES = 10;
+
+export const prune = internalAction({
+  args: {},
+  returns: v.object({ deleted: v.number(), hasMore: v.boolean() }),
+  handler: async (ctx): Promise<{ deleted: number; hasMore: boolean }> => {
+    let deleted = 0;
+    let hasMore = true;
+    for (let batch = 0; batch < MAX_BATCHES && hasMore; batch++) {
+      const result = await stripe.pruneWebhookEvents(ctx);
+      deleted += result.deleted;
+      hasMore = result.hasMore;
+    }
+    return { deleted, hasMore };
+  },
+});
+```
+
+```ts
+// convex/crons.ts
+crons.daily(
+  "prune webhook event ledger",
+  { hourUTC: 4, minuteUTC: 15 },
+  internal.webhookLedger.actions.prune,
+  {},
+);
+```
+
+A backlog larger than one run drains over the following runs. The component
+does not schedule pruning itself; without this cron the ledger is kept forever.
+
+### Event ordering
+
+Stripe does not guarantee delivery order, and a retried event can arrive long
+after newer ones. What the component does about it depends on the object:
+
+- **Subscriptions are protected by event time.** Each `subscriptions` row
+  stores `lastEventCreated`, the `created` timestamp (epoch seconds) of the
+  newest webhook event applied to it. A `customer.subscription.*` event older
+  than that watermark is skipped: the row is not written, no
+  `triggers.subscription.*` callback runs, one informational line is logged,
+  and the event is still marked `processed` in the ledger and acknowledged with
+  a 200. A late `customer.subscription.updated` can therefore no longer
+  reactivate a subscription that `customer.subscription.deleted` already
+  canceled.
+- **Money-moving invoice and payment steps re-fetch from Stripe.** Platform-fee
+  collection and split transfers read the current invoice, PaymentIntent or
+  charge from Stripe before acting and guard with idempotency markers, so a
+  stale or replayed snapshot cannot collect or transfer twice.
+- **Mirrored `invoices` and `payments` rows are not ordering-protected.** Their
+  status and amounts are written from the delivered snapshot, so the last
+  delivery wins. Read the object from Stripe before making a decision that
+  depends on an exact invoice or payment status.
+- **Accounts V2 thin events** carry no state at all; the component always
+  fetches the latest account.
+
+Limits to be aware of:
+
+- Stripe event timestamps have one-second granularity. Two subscription events
+  created in the same second are applied in arrival order, with one exception:
+  a row that is already `canceled` is not overwritten by a non-canceled event
+  from the same second, so the terminal state wins ties.
+- Writes that do not come from a webhook (the client's subscription methods
+  after a Stripe API call, `syncAllSubscriptions`, a direct `upsertSubscription`)
+  carry no event time. They always apply and leave the stored watermark
+  unchanged.
+- Rows written before this protection existed have no watermark; the first
+  webhook event applied to them sets it.
+- The skip covers the component table write and sync triggers. `onEvent`/`events`
+  callbacks still receive every verified event, and `after*` async hooks read
+  the committed document, so they observe the current state rather than the
+  stale payload.
 
 ### Supported Events
 

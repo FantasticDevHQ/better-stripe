@@ -186,6 +186,8 @@ export type StripeComponentSubscription = {
   trialStart?: string;
   trialEnd?: string;
   metadata?: Record<string, unknown>;
+  /** Stripe event `created` (epoch seconds) of the newest webhook event applied. */
+  lastEventCreated?: number;
 };
 
 export type StripeComponentCheckoutSession = {

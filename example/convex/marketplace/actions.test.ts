@@ -45,6 +45,9 @@ beforeEach(() => {
   vi.mocked(stripe.getPriceByStripeId).mockResolvedValue({
     stripePriceId: "price_store",
     stripeProductId: "prod_store",
+    active: true,
+    type: "one_time",
+    unitAmount: 12_900,
   } as never);
   vi.mocked(stripe.getProductByStripeId).mockResolvedValue({
     stripeProductId: "prod_store",
@@ -107,7 +110,7 @@ const checkoutActions = [
   [
     "createDestinationChargeCheckout",
     api.marketplace.actions.createDestinationChargeCheckout,
-    { amount: 10_000 },
+    {},
   ],
 ] as const;
 
@@ -158,5 +161,74 @@ describe.each(checkoutActions)(
       await expect(t.action(ref, args)).rejects.toThrow(/Price not found/);
       expect(stripe.createCheckoutSession).not.toHaveBeenCalled();
     });
+  },
+);
+
+it("derives the destination fee base from the server-side price", async () => {
+  const t = convexTest(schema, modules);
+  await t.action(api.marketplace.actions.createDestinationChargeCheckout, {
+    userId: "buyer",
+    stripePriceId: "price_store",
+    destinationAccountId: "acct_store",
+    requestId: "purchase-123",
+    returnUrl: "https://example.com/return",
+  });
+  expect(stripe.createCheckoutSession).toHaveBeenCalledExactlyOnceWith(
+    expect.anything(),
+    expect.objectContaining({
+      amount: 12_900,
+      mode: "payment",
+      fee: { percent: 10 },
+      idempotencyKey: "destination_buyer_purchase-123",
+    }),
+  );
+});
+
+const destinationArgs = {
+  userId: "buyer",
+  stripePriceId: "price_store",
+  destinationAccountId: "acct_store",
+  returnUrl: "https://example.com/return",
+};
+
+it("refuses a client-supplied checkout amount", async () => {
+  const t = convexTest(schema, modules);
+  await expect(
+    t.action(api.marketplace.actions.createDestinationChargeCheckout, {
+      ...destinationArgs,
+      amount: 1,
+    } as never),
+  ).rejects.toThrow(/Unexpected field.*amount/);
+  expect(stripe.createCheckoutSession).not.toHaveBeenCalled();
+});
+
+it.each([
+  { active: false, type: "one_time", unitAmount: 12_900 },
+  { active: true, type: "recurring", unitAmount: 12_900 },
+  { active: true, type: "one_time", unitAmount: 0 },
+  { active: true, type: "one_time", unitAmount: -1 },
+  { active: true, type: "one_time", unitAmount: 1.5 },
+  { active: true, type: "one_time", unitAmount: Number.MAX_SAFE_INTEGER + 1 },
+  { active: true, type: "one_time", unitAmount: undefined },
+  { active: true, type: "one_time", unitAmount: NaN },
+  { active: true, type: "one_time", unitAmount: Infinity },
+])(
+  "refuses an unavailable or unsupported destination price %j",
+  async (price) => {
+    vi.mocked(stripe.getPriceByStripeId).mockResolvedValue({
+      stripePriceId: "price_store",
+      stripeProductId: "prod_store",
+      ...price,
+    } as never);
+    const t = convexTest(schema, modules);
+    await expect(
+      t.action(
+        api.marketplace.actions.createDestinationChargeCheckout,
+        destinationArgs,
+      ),
+    ).rejects.toThrow(
+      "Destination checkout requires an active fixed one-time price.",
+    );
+    expect(stripe.createCheckoutSession).not.toHaveBeenCalled();
   },
 );

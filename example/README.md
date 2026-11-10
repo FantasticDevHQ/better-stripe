@@ -246,6 +246,14 @@ admin role is a demo UI boundary, so the Admin Setup actions are callable by
 anyone who can reach the deployment. `seedDemoData` and `resetAll` refuse a
 live or malformed Stripe key, and the reset button asks for confirmation.
 
+The account-scoped `accounts.actions.createProductForAccount` action requires
+`userId` alongside `accountId` and checks that they are linked before creating a
+product. `marketplace.actions.createDestinationChargeCheckout` accepts a price
+and destination, with no client `amount` argument. It uses the bound catalog
+price's amount for the platform fee and refuses inactive, recurring, or
+non-positive/non-integer amounts. These checks retain the demo persona model;
+production apps must authenticate the actor server-side.
+
 Money-moving and dispute-closing actions (`issueRefund`,
 `reverseSaleTransfers`, `acceptDispute`) are also gated by
 `assertTestModeStripeKey` (`convex/users/authorization.ts`, shared with the admin Testing

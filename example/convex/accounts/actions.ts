@@ -30,16 +30,26 @@ export const createSellerLoginLink = action({
 
 export const createProductForAccount = action({
   args: {
+    userId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     accountId: v.string(),
   },
-  handler: async (ctx, args) =>
-    stripe.createProduct(ctx, {
+  returns: v.object({
+    productId: v.union(v.string(), v.null()),
+    stripeProductId: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    await assertAccountOwner(ctx, {
+      userId: args.userId,
+      stripeAccountId: args.accountId,
+    });
+    return stripe.createProduct(ctx, {
       name: args.name,
       description: args.description,
       accountId: args.accountId,
-    }),
+    });
+  },
 });
 
 // Accounts

@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.117.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.117.0...v0.117.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **example:** BTS-385 guard product ownership and checkout fee amounts ([#494](https://github.com/FantasticDevHQ/better-stripe/issues/494)) ([1e0b91c](https://github.com/FantasticDevHQ/better-stripe/commit/1e0b91c5a9710d45d829ce82ffd5ff43c6420d04))
+
 ## [0.117.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.116.0...v0.117.0) (2026-11-10)
 
 ### Features

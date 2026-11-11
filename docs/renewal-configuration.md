@@ -91,8 +91,9 @@ Unsupported material is refused before a provider write. This includes flexible
 billing, calendar-edge anchors, changed cadence/currency, metered or multiple
 items, discounts, active trials, scheduled cancellation, paused subscriptions,
 billing thresholds, pending updates/setup/invoice items, enabled managed payments,
-nondefault trial settings and unknown phase/default fields. Supported tax,
-collection/payment/invoice, routing, fees, on-behalf-of, descriptions and metadata
+nondefault trial settings, non-null `application_fee_percent` including zero,
+and unknown phase/default fields. Application fees must remain null. Supported
+tax, collection/payment/invoice, routing, on-behalf-of, descriptions and metadata
 must pass the lossless phase mappings and inheritance checks. Ambiguous null,
 unset, inheritance or reference changes are refused rather than omitted.
 

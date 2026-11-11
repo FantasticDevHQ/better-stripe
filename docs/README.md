@@ -39,12 +39,14 @@ guide for your integration.
 
 ## Renewal price replacement
 
-The public Node entrypoint can attach a schedule under the limited test-mode
-profile documented below. Public configuration and provider-confirmed observation
-remain unavailable, so attachment alone does not schedule a price change.
+The public Node entrypoint can attach and configure a schedule under the limited
+test-mode profiles documented below. Configuration requires the same live SDK
+instance/action and original attachment deadline. Provider-confirmed observation
+remains unavailable; a configure ACK does not prove a pending or effective change.
 Guides marked internal describe modules without a public package export.
 
 - [Public renewal attachment](renewal-attachment.md), host authorization, one provider write and journal readback.
+- [Public renewal configuration](renewal-configuration.md), exact attachment binding, phase preservation, journal ACK and detailed limits.
 - [Exact price replacement at renewal](renewal-price-replacements.md), the pure `prepareRenewalPriceReplacement` contract.
 - [Context reads and attachment request preparation](renewal-context-reads.md), `readRenewalPriceReplacementContext` and `prepareRenewalScheduleAttachment`.
 - [Compare renewal schedule material](renewal-material-observation.md), `inspectRenewalScheduleMaterialV2` over supplied reads.

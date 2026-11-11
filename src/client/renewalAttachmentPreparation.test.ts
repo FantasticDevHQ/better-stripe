@@ -68,3 +68,54 @@ it("refuses empty lists when a customer discount would be inherited", async () =
   });
   await expect(prepareRenewalAttachmentOperation(input)).rejects.toThrow();
 });
+
+it("retains disabled managed payments and inactive Endive trial defaults", async () => {
+  const input = options();
+  Object.assign(input.preparation.subscription, {
+    managed_payments: { enabled: false },
+    trial_start: null,
+    trial_end: null,
+    trial_settings: {
+      end_behavior: {
+        billing_cycle_anchor: "now",
+        missing_payment_method: "create_invoice",
+      },
+    },
+  });
+  const built = await prepareRenewalAttachmentOperation(input);
+  expect(
+    JSON.parse(built.createArgs.recordJSON).originalBundle.wireSubscription,
+  ).toEqual(input.preparation.subscription);
+});
+
+it.each([
+  { managed_payments: { enabled: true } },
+  { managed_payments: {} },
+  { managed_payments: { enabled: false, unknown: true } },
+  { trial_settings: { end_behavior: { missing_payment_method: "cancel" } } },
+  {
+    trial_start: 1,
+    trial_end: 2,
+    trial_settings: {
+      end_behavior: {
+        billing_cycle_anchor: "now",
+        missing_payment_method: "create_invoice",
+      },
+    },
+  },
+  {
+    trial_start: null,
+    trial_end: null,
+    trial_settings: {
+      end_behavior: {
+        billing_cycle_anchor: "now",
+        missing_payment_method: "create_invoice",
+        unknown: true,
+      },
+    },
+  },
+])("refuses unsupported defaults %j", async (settings) => {
+  const input = options();
+  Object.assign(input.preparation.subscription, settings);
+  await expect(prepareRenewalAttachmentOperation(input)).rejects.toThrow();
+});

@@ -198,7 +198,7 @@ function release(
 async function retained(
   owner: MaterialOwner,
   value: RetainedInput,
-  allowEmpty = false,
+  publicAttachment = false,
 ) {
   const raw = value.attachRequest;
   owner.check();
@@ -225,7 +225,7 @@ async function retained(
     prepared,
     undefined,
     discounts,
-    allowEmpty,
+    publicAttachment,
   );
   owner.check();
   const result = release(
@@ -241,7 +241,7 @@ async function retained(
 async function fresh(
   owner: MaterialOwner,
   value: FreshInput,
-  allowEmpty = false,
+  publicAttachment = false,
 ) {
   const raw = value.attachRequest;
   owner.check();
@@ -276,7 +276,7 @@ async function fresh(
     prepared,
     undefined,
     discounts,
-    allowEmpty,
+    publicAttachment,
   );
   owner.check();
   const result = release(
@@ -298,7 +298,7 @@ export function classifyOwnedRetainedInitialAttachment(
 function classifyRetained(
   owner: MaterialOwner,
   raw: unknown,
-  allowEmpty = false,
+  publicAttachment = false,
 ): Promise<Classified | typeof RETAINED_STOP> {
   let value;
   try {
@@ -308,7 +308,7 @@ function classifyRetained(
   } catch {
     return Promise.resolve(RETAINED_STOP);
   }
-  return retained(owner, value, allowEmpty).catch(() => {
+  return retained(owner, value, publicAttachment).catch(() => {
     try {
       owner.check();
     } catch {}
@@ -323,7 +323,7 @@ export function classifyOwnedInitialAttachment(
 function classifyFresh(
   owner: MaterialOwner,
   raw: unknown,
-  allowEmpty = false,
+  publicAttachment = false,
 ): Promise<Classified | typeof FRESH_STOP> {
   let value;
   try {
@@ -333,7 +333,7 @@ function classifyFresh(
   } catch {
     return Promise.resolve(FRESH_STOP);
   }
-  return fresh(owner, value, allowEmpty).catch(() => {
+  return fresh(owner, value, publicAttachment).catch(() => {
     try {
       owner.check();
     } catch {}

@@ -43,6 +43,43 @@ it("refuses revoked host authorization before any provider request", async () =>
   );
 });
 
+it.each([false, true])(
+  "compares exact inactive Endive defaults before attachment (drift %s)",
+  async (drift) => {
+    await attachmentFixture(
+      async ({ client, ctx, options, calls }) => {
+        expect((await client.attachRenewalSchedule(ctx, options)).status).toBe(
+          drift ? "not_dispatched" : "attached_incomplete",
+        );
+        expect(calls.filter((row) => row.method === "POST")).toHaveLength(
+          drift ? 0 : 1,
+        );
+      },
+      {
+        fresh(subscription) {
+          if (drift) subscription.managed_payments = null;
+        },
+        source(source) {
+          const subscription = source.attachRequest.preparation.subscription;
+          Object.assign(subscription, {
+            managed_payments: { enabled: false },
+            trial_start: null,
+            trial_end: null,
+            trial_settings: {
+              end_behavior: {
+                billing_cycle_anchor: "now",
+                missing_payment_method: "create_invoice",
+              },
+            },
+          });
+          source.originalBundle.wireSubscription =
+            structuredClone(subscription);
+        },
+      },
+    );
+  },
+);
+
 it("refuses a foreign request binding before any provider request", async () => {
   await attachmentFixture(async ({ client, ctx, options, calls }) => {
     expect(

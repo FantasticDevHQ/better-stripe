@@ -24,6 +24,15 @@ Flexible billing, calendar-edge anchors, changed cadence, discounts and other
 states refused by the existing preparation/preservation validators are unsupported.
 No unsupported setting is silently removed.
 
+Endive's explicit `managed_payments: { enabled: false }` is supported alongside
+null. Its exact default `trial_settings.end_behavior` with
+`billing_cycle_anchor: "now"` and `missing_payment_method: "create_invoice"`
+is supported only when both `trial_start` and `trial_end` are null. These inactive
+defaults remain in the retained source and must match the fresh read; enabled
+managed payments, trial history with nonnull settings, different trial settings
+and additional fields are refused. This qualification applies only to initial
+attachment.
+
 The method reads the original subscription, target price and billing customer
 again before dispatch. Changed paid terms, foreign identities and an existing
 schedule are refused. Full captured provider material is compared; these reads

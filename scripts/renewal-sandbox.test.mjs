@@ -50,9 +50,8 @@ it.skipIf(!key)(
       const buyer = await stripe.v2.core.accounts.create(
         {
           display_name: "Renewal attachment sandbox fixture",
-          configuration: {
-            customer: { automatic_indirect_tax: { enabled: false } },
-          },
+          contact_email: "renewal-sandbox@example.com",
+          configuration: { customer: {} },
           metadata: { qualification: runId },
         },
         { idempotencyKey: `${runId}:buyer` },
@@ -60,6 +59,7 @@ it.skipIf(!key)(
       resources.buyerId = buyer.id;
       const products = [];
       const prices = [];
+      stage = "catalog fixture";
       for (const [name, amount] of [
         ["Original", 1000],
         ["Replacement", 1200],
@@ -82,6 +82,7 @@ it.skipIf(!key)(
         prices.push(price.id);
         resources.priceIds = [...prices];
       }
+      stage = "subscription fixture";
       const subscription = await stripe.subscriptions.create(
         {
           customer_account: buyer.id,
@@ -94,6 +95,7 @@ it.skipIf(!key)(
         { idempotencyKey: `${runId}:subscription` },
       );
       resources.subscriptionId = subscription.id;
+      stage = "invoice fixture";
       if (typeof subscription.latest_invoice !== "string")
         throw Error("Fixture invoice missing");
       await stripe.invoices.pay(
@@ -232,6 +234,13 @@ it.skipIf(!key)(
     } catch (error) {
       report.passed = false;
       report.failedStage = stage;
+      if (error instanceof Stripe.errors.StripeError)
+        report.providerError = {
+          type: error.type,
+          code: error.code,
+          param: error.param,
+          status: error.statusCode,
+        };
       // Provider errors can carry request details. Keep keys and raw bodies out of evidence.
       throw Error(
         `Sandbox attachment qualification failed at ${stage} (${error instanceof Error ? error.name : "error"})`,

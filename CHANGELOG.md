@@ -28,10 +28,9 @@
 
 ## [0.119.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.118.0...v0.119.0) (2026-11-11)
 
-
 ### Features
 
-* **renewal:** BTS-303 deliver public renewal configuration ([#498](https://github.com/FantasticDevHQ/better-stripe/issues/498)) ([e277835](https://github.com/FantasticDevHQ/better-stripe/commit/e27783540ba780603362e834c549f6db80932a81))
+- **renewal:** deliver public renewal configuration ([#498](https://github.com/FantasticDevHQ/better-stripe/issues/498)) ([e277835](https://github.com/FantasticDevHQ/better-stripe/commit/e27783540ba780603362e834c549f6db80932a81))
 
 ## [0.118.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.117.1...v0.118.0) (2026-11-11)
 

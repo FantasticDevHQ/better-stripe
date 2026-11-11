@@ -1,3 +1,4 @@
+import { writeEntriesForLineage } from "./nodeAttachmentProfile.js";
 import { types } from "node:util";
 import { COMPILED_CONFIGURE_WRITE_ENTRIES } from "../operations/sourceOperations.js";
 import { closed } from "../operations/types.js";
@@ -17,12 +18,13 @@ export function captureAdmittedConfigureWriteFrame(
   captures.add(token);
   need(arity === 1);
   const lineage = readConfigureLineage(token);
-  const preflight = readAdmittedConfigurePreflight(token);
-  need(
-    !types.isProxy(COMPILED_CONFIGURE_WRITE_ENTRIES) &&
-      Array.isArray(COMPILED_CONFIGURE_WRITE_ENTRIES),
+  const entries = writeEntriesForLineage(
+    lineage.parentToken,
+    COMPILED_CONFIGURE_WRITE_ENTRIES,
   );
-  const candidates = COMPILED_CONFIGURE_WRITE_ENTRIES.filter((entry) => {
+  const preflight = readAdmittedConfigurePreflight(token);
+  need(!types.isProxy(entries) && Array.isArray(entries));
+  const candidates = entries.filter((entry) => {
     const fields = closed(entry, ["originalEntry", "coversConfigure"]);
     ownMethod(entry, "coversConfigure");
     return fields.originalEntry === preflight.originalEntry;
@@ -44,9 +46,9 @@ export function captureAdmittedConfigureWriteFrame(
       );
       need(readAdmittedConfigurePreflight(token) === preflight);
       need(
-        !types.isProxy(COMPILED_CONFIGURE_WRITE_ENTRIES) &&
-          Array.isArray(COMPILED_CONFIGURE_WRITE_ENTRIES) &&
-          COMPILED_CONFIGURE_WRITE_ENTRIES.includes(entry),
+        !types.isProxy(entries) &&
+          Array.isArray(entries) &&
+          entries.includes(entry),
       );
       const fields = closed(entry, ["originalEntry", "coversConfigure"]);
       need(

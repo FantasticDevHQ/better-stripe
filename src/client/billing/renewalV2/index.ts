@@ -225,6 +225,7 @@ export async function constructRenewalScheduleAttachmentReceiptV2(
 }
 
 export type ProjectRenewalConfigurationV2Options = {
+  executionProfile?: "node-endive-configure-v1";
   preparation: PrepareRenewalPriceReplacementV2Options;
   /** Raw attachment inputs, not a stored receipt or caller verification handle. */
   attachReceipt: ConstructRenewalScheduleAttachmentReceiptV2Options;
@@ -284,7 +285,12 @@ export async function reconstructConfigurationV2(
       conflict("invalid_attach_receipt_binding");
     ownedScheduleId = receipt.scheduleId;
     const key = validateConfigureStart(args, receipt);
-    const reads = validateReadMaterial(args, prepared, receipt.scheduleId);
+    const reads = validateReadMaterial(
+      args,
+      prepared,
+      receipt.scheduleId,
+      args.executionProfile === "node-endive-configure-v1",
+    );
     const { schedule, payload } = configureMaterial(
       // Unlike V1's record parser, retain every own key of the captured body.
       z

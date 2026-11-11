@@ -59,3 +59,50 @@ export function initialEntriesForLineage(
 export function isNodeAttachmentLineage(token: object) {
   return admitted.has(token);
 }
+
+const preflightEntries = Object.freeze([
+  Object.freeze({
+    originalEntry: entries[0],
+    coversPreflight(record: unknown) {
+      return coversConfiguration(record);
+    },
+  }),
+]);
+const writeEntries = Object.freeze([
+  Object.freeze({
+    originalEntry: entries[0],
+    coversConfigure(record: unknown) {
+      return coversConfiguration(record);
+    },
+  }),
+]);
+function coversConfiguration(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+  const record = value as {
+    request?: {
+      profile?: import("../../../renewalAggregate/profile.js").RenewalProfile;
+    };
+    configuration?: { preparation?: { expected?: { livemode?: boolean } } };
+  };
+  return (
+    !!record.request?.profile &&
+    supportsAttachmentProfile({
+      profile: record.request.profile,
+      livemode: record.configuration?.preparation?.expected?.livemode !== false,
+      subscriptionDiscounts: [],
+      itemDiscounts: [],
+    })
+  );
+}
+export function preflightEntriesForLineage(
+  token: object,
+  dormant: readonly unknown[],
+) {
+  return isNodeAttachmentLineage(token) ? preflightEntries : dormant;
+}
+export function writeEntriesForLineage(
+  token: object,
+  dormant: readonly unknown[],
+) {
+  return isNodeAttachmentLineage(token) ? writeEntries : dormant;
+}

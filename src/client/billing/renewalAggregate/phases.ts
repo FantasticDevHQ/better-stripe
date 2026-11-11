@@ -183,18 +183,31 @@ export function assemblePhases(
     currentProductId: expected.currentProductId,
     targetProductId: expected.targetProductId,
   };
-  const phaseDiscount = projectRenewalDiscounts({
-    ...discountContext,
-    level: "subscription",
-    redemptions: reads.discounts,
-    phaseDiscounts: phaseReferences(discounts, reads.discounts),
-  });
-  const itemDiscount = projectRenewalDiscounts({
-    ...discountContext,
-    level: "subscription_item",
-    redemptions: reads.itemDiscounts,
-    phaseDiscounts: phaseReferences(phaseItem.discounts, reads.itemDiscounts),
-  });
+  const emptyDiscounts =
+    reads.publicConfiguration &&
+    reads.discounts.length === 0 &&
+    reads.itemDiscounts.length === 0 &&
+    discounts.length === 0 &&
+    phaseItem.discounts.length === 0;
+  const phaseDiscount = emptyDiscounts
+    ? { status: "projected" as const, discounts: [] }
+    : projectRenewalDiscounts({
+        ...discountContext,
+        level: "subscription",
+        redemptions: reads.discounts,
+        phaseDiscounts: phaseReferences(discounts, reads.discounts),
+      });
+  const itemDiscount = emptyDiscounts
+    ? { status: "projected" as const, discounts: [] }
+    : projectRenewalDiscounts({
+        ...discountContext,
+        level: "subscription_item",
+        redemptions: reads.itemDiscounts,
+        phaseDiscounts: phaseReferences(
+          phaseItem.discounts,
+          reads.itemDiscounts,
+        ),
+      });
   if (phaseDiscount.status !== "projected") unsupported(phaseDiscount.reason);
   if (itemDiscount.status !== "projected") unsupported(itemDiscount.reason);
   const effectiveAnchor =

@@ -1,3 +1,4 @@
+import { preflightEntriesForLineage } from "../producer/nodeAttachmentProfile.js";
 import { types } from "node:util";
 import { OWNER } from "../originalOwner.js";
 import { closed, need, stop, type SourceMethod } from "./types.js";
@@ -309,16 +310,16 @@ export function createAdmittedConfigureReadTransport(token: object) {
   );
   admittedReads.add(token);
   need(arguments.length === 1);
-  need(
-    !types.isProxy(COMPILED_PREFLIGHT_ENTRIES) &&
-      Array.isArray(COMPILED_PREFLIGHT_ENTRIES) &&
-      COMPILED_PREFLIGHT_ENTRIES.length > 0,
-  );
   const lineage = readConfigureLineage(token);
+  const entries = preflightEntriesForLineage(
+    lineage.parentToken,
+    COMPILED_PREFLIGHT_ENTRIES,
+  );
+  need(!types.isProxy(entries) && Array.isArray(entries) && entries.length > 0);
   const acknowledgement = readAttachAcknowledgementForLineage(
     lineage.parentToken,
   );
-  const candidates = COMPILED_PREFLIGHT_ENTRIES.filter((entry) => {
+  const candidates = entries.filter((entry) => {
     const fields = closed(entry, ["originalEntry", "coversPreflight"]);
     need(
       typeof fields.coversPreflight === "function" &&
@@ -339,9 +340,9 @@ export function createAdmittedConfigureReadTransport(token: object) {
         current.owner === lineage.owner,
     );
     need(
-      !types.isProxy(COMPILED_PREFLIGHT_ENTRIES) &&
-        Array.isArray(COMPILED_PREFLIGHT_ENTRIES) &&
-        COMPILED_PREFLIGHT_ENTRIES.includes(entry),
+      !types.isProxy(entries) &&
+        Array.isArray(entries) &&
+        entries.includes(entry),
     );
     const now = closed(entry, ["originalEntry", "coversPreflight"]);
     need(

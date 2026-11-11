@@ -40,7 +40,7 @@ export function validateConfigurationFields(raw: unknown) {
       "firstDispatchedAt",
       "configureKey",
     ],
-    ["billingCustomer"],
+    ["billingCustomer", "executionProfile"],
   );
   ownData(
     root.preparation,
@@ -60,6 +60,7 @@ const preparation = z
   .strict();
 const input = z
   .object({
+    executionProfile: z.literal("node-endive-configure-v1").optional(),
     preparation,
     attachReceipt: z.unknown(),
     freshSubscription: z.unknown(),

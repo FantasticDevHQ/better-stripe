@@ -1,3 +1,4 @@
+import { retainLiveAttachment } from "./liveAttachment.js";
 import { canonicalJournalRecord } from "../../../shared/renewalOperationJournal.js";
 import { createClassActionOperationJournal } from "./internal/operationJournal.js";
 import { capturePublicInitialInvocationCore } from "./internal/producer/invocationProducer.js";
@@ -105,6 +106,7 @@ export const attachRenewalSchedule: AttachmentExecutor = async (
   const attemptId = fresh.result.reservation.attemptId;
   let core:
     Awaited<ReturnType<typeof capturePublicInitialInvocationCore>> | undefined;
+  let retainedLive = false;
   let originalWorkEndNs: bigint | undefined;
   const deadlineElapsed = () =>
     Date.now() >= record.timingPolicy.workEndWallMs ||
@@ -132,13 +134,22 @@ export const attachRenewalSchedule: AttachmentExecutor = async (
     if (!raw || typeof raw !== "object")
       throw Error("INVALID_ATTACHMENT_OUTCOME");
     const outcome = raw as Record<string, unknown>;
-    if (outcome.status === "attach_acknowledged" && "receipt" in outcome)
+    if (outcome.status === "attach_acknowledged" && "receipt" in outcome) {
+      retainLiveAttachment(
+        root,
+        operationId,
+        ctx,
+        core,
+        record.timingPolicy.workEndWallMs,
+      );
+      retainedLive = true;
       return {
         status: "attached_incomplete",
         operationId,
         attemptId,
         receipt: outcome.receipt as RenewalScheduleAttachmentReceiptV2,
       };
+    }
     if (deadlineElapsed()) return timeout();
     if (outcome.status === "not_dispatched" && "reason" in outcome)
       return refuse(String(outcome.reason));
@@ -165,6 +176,6 @@ export const attachRenewalSchedule: AttachmentExecutor = async (
       reason: "attachment_not_acknowledged",
     };
   } finally {
-    core?.owner.retire();
+    if (!retainedLive) core?.owner.retire();
   }
 };

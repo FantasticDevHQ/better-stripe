@@ -403,7 +403,7 @@ function rawSchemas(stage: Stage) {
         "firstDispatchedAt",
         "configureKey",
       ],
-      ["billingCustomer"],
+      ["billingCustomer", "executionProfile"],
     );
     preparation("preparation");
     set("attachReceipt", [

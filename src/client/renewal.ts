@@ -48,3 +48,10 @@ export {
   prepareRenewalAttachmentOperation,
   type PrepareRenewalAttachmentOperationOptions,
 } from "./renewalAttachmentPreparation.js";
+
+export { prepareRenewalConfigurationOperation } from "./renewalConfigurationPreparation.js";
+export type {
+  ConfigureRenewalScheduleOptions,
+  ConfigureRenewalScheduleResult,
+  RenewalConfigurationAuthorization,
+} from "./renewalConfigurationTypes.js";

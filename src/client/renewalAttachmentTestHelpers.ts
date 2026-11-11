@@ -35,6 +35,12 @@ export async function attachmentFixture(
     }[];
   }) => Promise<void>,
   overrides: {
+    configure?: boolean;
+    configurePost?: "lost" | "conflict";
+    configureDrift?: boolean;
+    configureAuthorization?: boolean;
+    afterConfigureResponse?: () => void;
+
     source?: (source: RetainedInput) => void;
     key?: string;
     authorize?: boolean;
@@ -69,6 +75,18 @@ export async function attachmentFixture(
   const fresh = structuredClone(source.originalBundle.wireSubscription);
   overrides.fresh?.(fresh);
   const post = structuredClone(original.post);
+  if (overrides.configure) {
+    const phase = (
+      post.phases as {
+        discounts: unknown[];
+        items: { discounts: unknown[] }[];
+      }[]
+    )[0];
+    phase.discounts = [];
+    phase.items[0].discounts = [];
+    post.billing_mode = structuredClone(subscription.billing_mode);
+  }
+  let attached = false;
   const calls: {
     method: string;
     path: string;
@@ -98,11 +116,34 @@ export async function attachmentFixture(
           }),
           { status: 409, headers: { "content-type": "application/json" } },
         );
+      if (attached && method === "POST" && overrides.configurePost === "lost")
+        throw new TypeError("Configure response lost");
+      if (
+        attached &&
+        method === "POST" &&
+        overrides.configurePost === "conflict"
+      )
+        return new Response(
+          JSON.stringify({
+            error: { type: "idempotency_error", message: "Conflict" },
+          }),
+          { status: 409, headers: { "content-type": "application/json" } },
+        );
+      if (overrides.configure && method === "POST") attached = true;
       const body =
-        method === "POST"
+        method === "POST" ||
+        url.pathname.startsWith("/v1/subscription_schedules/")
           ? post
           : url.pathname.startsWith("/v1/subscriptions/")
-            ? fresh
+            ? attached
+              ? {
+                  ...fresh,
+                  schedule: post.id,
+                  ...(overrides.configureDrift
+                    ? { description: "changed" }
+                    : {}),
+                }
+              : fresh
             : url.pathname.startsWith("/v1/prices/")
               ? source.originalBundle.wireTargetPrice
               : source.originalBundle.wireBillingCustomer;
@@ -123,6 +164,7 @@ export async function attachmentFixture(
       args: {
         capability: v.string(),
         operationId: v.string(),
+        attachmentOperationId: v.optional(v.string()),
         authorizationScope: v.string(),
         authorizationId: v.string(),
         authorizationRevision: v.number(),
@@ -131,13 +173,20 @@ export async function attachmentFixture(
         expected: v.any(),
       },
       returns: v.boolean(),
-      handler: () => overrides.authorize !== false,
+      handler: (_ctx, args) =>
+        args.capability === "renewal_configuration_v1"
+          ? overrides.configureAuthorization !== false
+          : overrides.authorize !== false,
     }),
     run: actionGeneric({
       args: {},
       returns: v.null(),
       handler: async (ctx) => {
-        if (overrides.delayResponseJournalMs || overrides.delayBasisJournalMs) {
+        if (
+          overrides.delayResponseJournalMs ||
+          overrides.delayBasisJournalMs ||
+          overrides.afterConfigureResponse
+        ) {
           const runMutation = ctx.runMutation;
           ctx.runMutation = async (ref, ...args) => {
             const result = await runMutation(ref, ...args);
@@ -149,12 +198,19 @@ export async function attachmentFixture(
                 setTimeout(resolve, overrides.delayBasisJournalMs),
               );
             const event = (
-              args[0] as { event?: { sequence?: number } } | undefined
+              args[0] as
+                { event?: { sequence?: number; dataJSON?: string } } | undefined
             )?.event;
             if (event?.sequence === 2)
               await new Promise((resolve) =>
                 setTimeout(resolve, overrides.delayResponseJournalMs),
               );
+            if (
+              event?.sequence === 2 &&
+              event.dataJSON &&
+              JSON.parse(event.dataJSON).stage === "configure"
+            )
+              overrides.afterConfigureResponse?.();
             return result;
           };
         }

@@ -41,6 +41,7 @@ export function validateReadMaterial(
   args: Omit<z.infer<typeof readInput>, "prepared">,
   prepared: RenewalPreparationMaterial,
   scheduleId?: string,
+  publicConfiguration = false,
 ) {
   supportedVersion(args.apiVersion);
   const subscription = renewalSubscription
@@ -114,15 +115,45 @@ export function validateReadMaterial(
     unsupported("outside_original_paid_period");
   for (const field of [
     "billing_thresholds",
-    "managed_payments",
     "next_pending_invoice_item_invoice",
     "pending_invoice_item_interval",
     "pending_setup_intent",
     "canceled_at",
     "ended_at",
-    "trial_settings",
   ])
     if (source[field] !== null) unsupported(`unsupported_original_${field}`);
+  if (
+    source.managed_payments !== null &&
+    !(publicConfiguration && equal(source.managed_payments, { enabled: false }))
+  )
+    unsupported("unsupported_original_managed_payments");
+  if (
+    source.trial_settings !== null &&
+    !(
+      publicConfiguration &&
+      source.trial_start === null &&
+      source.trial_end === null &&
+      equal(source.trial_settings, {
+        end_behavior: {
+          billing_cycle_anchor: "now",
+          missing_payment_method: "create_invoice",
+        },
+      })
+    )
+  )
+    unsupported("unsupported_original_trial_settings");
+  if (
+    publicConfiguration &&
+    (args.apiVersion !== "2026-09-30.endive" ||
+      prepared.expected.livemode ||
+      (source.billing_mode as { type?: unknown })?.type !== "classic" ||
+      !Array.isArray(source.discounts) ||
+      source.discounts.length ||
+      !Array.isArray(item.discounts) ||
+      item.discounts.length ||
+      customer.data.discount !== null)
+  )
+    unsupported("unsupported_public_configure_profile");
   if (item.billing_thresholds !== null)
     unsupported("unsupported_item_billing_thresholds");
   if (item.current_trial !== null)
@@ -151,6 +182,7 @@ export function validateReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    publicConfiguration && customer.data.discount === null,
   );
   const itemDiscounts = qualifySourceDiscounts(
     item.discounts,
@@ -158,8 +190,10 @@ export function validateReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    publicConfiguration && customer.data.discount === null,
   );
   return {
+    publicConfiguration,
     prepared,
     subscription: source,
     item,

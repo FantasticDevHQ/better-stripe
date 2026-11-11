@@ -7,8 +7,9 @@ Node entrypoint has been imported in that same runtime.
 
 Attachment creates a schedule from the current subscription. It does **not**
 configure a replacement price, prove a future effective change, or change host
-membership and entitlements. Configuration and provider-confirmed observation
-are separate capabilities.
+membership and entitlements. Use [public configuration](./renewal-configuration.md) to configure the exact
+acknowledged attachment in the same action and original window. Provider-confirmed
+observation is a separate capability.
 
 ## Supported profile
 
@@ -30,8 +31,7 @@ null. Its exact default `trial_settings.end_behavior` with
 is supported only when both `trial_start` and `trial_end` are null. These inactive
 defaults remain in the retained source and must match the fresh read; enabled
 managed payments, trial history with nonnull settings, different trial settings
-and additional fields are refused. This qualification applies only to initial
-attachment.
+and additional fields are refused. Configuration uses its own explicit qualified profile; see its detailed limits.
 
 The method reads the original subscription, target price and billing customer
 again before dispatch. Changed paid terms, foreign identities and an existing

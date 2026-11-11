@@ -90,7 +90,7 @@ const schema = {
       "firstDispatchedAt",
       "configureKey",
     ],
-    optional: ["billingCustomer"],
+    optional: ["billingCustomer", "executionProfile"],
     preparationRequired: ["subscription", "targetPrice", "expected", "key"],
     preparationOptional: ["billingCustomer"],
     rawAttachReceiptRequired: [

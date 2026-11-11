@@ -937,3 +937,24 @@ Its explicit **Start a new billing request** button begins another operation.
 Browser storage, persona selection and its conservative 23-hour retry cutoff are
 demo choices; production hosts need durable authenticated storage and an explicit
 policy for unknown outcomes.
+
+### Configure an attached renewal schedule
+
+`BetterStripe` from `@fantastic.dev/better-stripe/node` exposes
+`configureRenewalSchedule(ctx, { operationId, requestBinding, authorizationQuery })`.
+Prepare its caller-owned identity with `prepareRenewalConfigurationOperation`.
+It requires the same live SDK instance/action and original deadline as a successful
+attachment, configures the exact retained schedule with at most one provider POST,
+and retains the configure ACK bound to that attachment. `configure_acknowledged`
+is an owned response acknowledgement, without a pending/effective claim.
+
+The initial platform test-mode Endive profile excludes flexible billing,
+calendar-edge anchors, changed cadence/currency, discounts, active trials,
+scheduled cancellation, paused subscriptions, metered/multiple items, pending
+updates, billing thresholds, enabled managed payments, nondefault trial settings,
+non-null `application_fee_percent` including zero, non-null schedule default sources,
+and unknown phase/default fields. Supported settings must pass lossless mapping
+and inheritance checks. See [configuration and detailed limits](./renewal-configuration.md)
+for host authorization, identity retention, supported inactive defaults, journal
+readback and unknown/timeout rules. Restart recovery and replay are outside this
+public API.

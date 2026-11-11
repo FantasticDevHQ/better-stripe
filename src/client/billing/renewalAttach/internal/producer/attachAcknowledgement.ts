@@ -1,3 +1,4 @@
+import { initialEntriesForLineage } from "./nodeAttachmentProfile.js";
 import { types } from "node:util";
 import { readInitialLineage } from "./lineageAuthority.js";
 import { ownerForInitialLineage } from "./ownerFactory.js";
@@ -25,11 +26,8 @@ function need(value: unknown): asserts value {
 export function readAttachAcknowledgementForLineage(token: object) {
   need(arguments.length === 1);
   readInitialLineage(token);
-  need(
-    !types.isProxy(COMPILED_INITIAL_ENTRIES) &&
-      Array.isArray(COMPILED_INITIAL_ENTRIES) &&
-      COMPILED_INITIAL_ENTRIES.length > 0,
-  );
+  const entries = initialEntriesForLineage(token, COMPILED_INITIAL_ENTRIES);
+  need(!types.isProxy(entries) && Array.isArray(entries) && entries.length > 0);
   const candidates = [
     readInitialAttachAcknowledgement(token),
     readReplayAttachAcknowledgement(token),
@@ -39,7 +37,7 @@ export function readAttachAcknowledgementForLineage(token: object) {
   const owner = ownerForInitialLineage(token);
   owner.check();
   const actual = candidates[0];
-  need(COMPILED_INITIAL_ENTRIES.includes(actual.originalEntry));
+  need(entries.includes(actual.originalEntry));
   need(
     sourceMethod(actual.originalEntry, "coversRetained") ===
       actual.retainedPredicate,

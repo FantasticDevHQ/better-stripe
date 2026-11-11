@@ -11,6 +11,7 @@ import { expect, it } from "vitest";
 import {
   BetterStripe,
   prepareRenewalAttachmentOperation,
+  prepareRenewalConfigurationOperation,
 } from "../src/client/node.js";
 import { components } from "../example/convex/_generated/api.js";
 import { modules, schema } from "../src/test.js";
@@ -22,7 +23,7 @@ import {
 // Opt-in only. A skipped probe is not sandbox evidence. Never run with a live key.
 const key = process.env.BTS_RENEWAL_SANDBOX_KEY;
 it.skipIf(!key)(
-  "qualifies public attachment against a dedicated real Stripe sandbox",
+  "qualifies public attachment and configuration against a dedicated real Stripe sandbox",
   async () => {
     if (!/^[rs]k_test_/.test(key))
       throw Error("A dedicated Stripe test key is required");
@@ -35,6 +36,7 @@ it.skipIf(!key)(
     const cleanup = [];
     let stage = "setup",
       acknowledged = false,
+      configureUncertain = false,
       measured = false;
     const calls = [];
     const originalFetch = globalThis.fetch;
@@ -125,6 +127,7 @@ it.skipIf(!key)(
           args: {
             capability: v.string(),
             operationId: v.string(),
+            attachmentOperationId: v.optional(v.string()),
             authorizationScope: v.string(),
             authorizationId: v.string(),
             authorizationRevision: v.number(),
@@ -214,6 +217,88 @@ it.skipIf(!key)(
               1,
             );
             report.duplicateProviderWrites = 0;
+            stage = "public configure preparation";
+            const parent = await ctx.runQuery(
+              refs.queries.loadAuthorizedOperation,
+              { operationId: operation.operationId },
+            );
+            const configuration = await prepareRenewalConfigurationOperation({
+              attachment: {
+                operationId: operation.operationId,
+                recordJSON: parent.recordJSON,
+                attemptId: parent.activeAttempt.attemptId,
+                sourcePayloadId: parent.activeAttempt.payloadId,
+                receiptJSON: receipt.receiptJSON,
+              },
+              authorization: {
+                scope: "sandbox-qualification",
+                id: runId,
+                revision: 1,
+              },
+              logicalOperationId: `${runId}:configure`,
+              configureKey: `${runId}:configure`,
+              firstDispatchedAt: Math.floor(Date.now() / 1000),
+            });
+            const child = await ctx.runMutation(
+              refs.mutations.createAuthorizedOperation,
+              configuration.createArgs,
+            );
+            expect(child.status).toBe("created");
+            report.configureIdentity = {
+              operationId: child.operationId,
+              logicalOperationId: `${runId}:configure`,
+              key: `${runId}:configure`,
+              firstDispatchedAt: JSON.parse(configuration.createArgs.recordJSON)
+                .dispatch.firstDispatchedAt,
+            };
+            const configureOptions = {
+              operationId: child.operationId,
+              requestBinding: configuration.requestBinding,
+              authorizationQuery: options.authorizationQuery,
+            };
+            stage = "public configuration";
+            measured = true;
+            configureUncertain = true;
+            const configured = await client.configureRenewalSchedule(
+              ctx,
+              configureOptions,
+            );
+            measured = false;
+            report.configureResult = configured.status;
+            expect(configured.status).toBe("configure_acknowledged");
+            configureUncertain = false;
+            expect(calls.filter((row) => row.method === "POST")).toHaveLength(
+              2,
+            );
+            const configureAck = await ctx.runQuery(
+              refs.queries.readProviderAcknowledgement,
+              { operationId: child.operationId },
+            );
+            expect(configureAck).not.toBeNull();
+            report.configureAcknowledgementRetained = true;
+            measured = true;
+            expect(
+              (await client.configureRenewalSchedule(ctx, configureOptions))
+                .status,
+            ).toBe("conflict");
+            measured = false;
+            expect(calls.filter((row) => row.method === "POST")).toHaveLength(
+              2,
+            );
+            report.configureProviderWrites = 1;
+            stage = "provider configure readback";
+            const schedule = await stripe.subscriptionSchedules.retrieve(
+              resources.scheduleId,
+            );
+            expect(schedule.phases).toHaveLength(2);
+            expect(schedule.phases[0].items[0].price).toBe(prices[0]);
+            expect(schedule.phases[0].end_date).toBe(expected.periodEnd);
+            expect(schedule.phases[1].start_date).toBe(expected.periodEnd);
+            expect(schedule.phases[1].items[0].price).toBe(prices[1]);
+            expect(schedule.phases[0].items[0].quantity).toBe(item.quantity);
+            expect(schedule.phases[1].items[0].quantity).toBe(item.quantity);
+            report.providerPhaseBoundaryVerified = true;
+
             return null;
           },
         }),
@@ -234,6 +319,11 @@ it.skipIf(!key)(
     } catch (error) {
       report.passed = false;
       report.failedStage = stage;
+      if (
+        error instanceof Error &&
+        /^RENEWAL_CONFIGURATION_[a-z_]+$/.test(error.message)
+      )
+        report.refusalReason = error.message;
       if (error instanceof Stripe.errors.StripeError)
         report.providerError = {
           type: error.type,
@@ -257,7 +347,7 @@ it.skipIf(!key)(
         }
       };
       // Cleanup is separate from the operation under test. Unknown writes are held for investigation.
-      if (acknowledged && resources.scheduleId)
+      if (acknowledged && !configureUncertain && resources.scheduleId)
         await clean("release acknowledged fixture schedule", () =>
           stripe.subscriptionSchedules.release(resources.scheduleId),
         );

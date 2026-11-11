@@ -64,9 +64,10 @@ new transport pair. An observed Schedule remains unowned evidence; matching its
 shape never substitutes for the acknowledged creation response. Complete
 acknowledged results pass bounded JSON admission before the final owner check.
 
-The compiled registries remain empty, and the original Source and stock client
-bindings remain unbound. Normal actor invocation refuses before Source access;
-there is no package-root export or qualified operational entry. These internal
+The legacy compiled registries remain empty, and their original Source and stock
+client bindings remain unbound. Their normal actor invocation refuses before
+Source access. The separate [public Node attachment entry](renewal-attachment.md)
+admits only its own original winning lineage into a fixed test-mode profile. These internal
 Node-only mechanics establish no provider custody or native qualification and
 expose no caller-supplied clock, client or qualification API. The public
 preparation and receipt constructors are unchanged.
@@ -77,7 +78,8 @@ an operation ID to that SDK instance and its component. This binding supports
 unsigned journal DATA: it does not select a Stripe client, create a clock or
 Owner, or qualify provider execution. The separate operational entry continues
 to refuse while execution profiles are unqualified. Normal construction and
-context reads remain available; no public schedule writer is added.
+context reads remain available. The public Node entrypoint separately binds
+initial attachment for its documented test-mode profile.
 
 Only the class-bound journal facade can retain a process-local identity for its
 original fulfilled `acquired` reservation call. Existing or conflicting replies,
@@ -706,7 +708,9 @@ binding, method/path, complete payload `{ from_subscription: subscriptionId }`,
 key and original first-dispatch time. It generates no phase, metadata, arbitrary
 create option, receipt or provider acknowledgement.
 
-No attachment writer is exposed by these helpers. There are currently no
+No attachment writer is exposed by these pure helpers. The separate
+[Node attachment method](renewal-attachment.md) covers only its documented
+test-mode profile. There are currently no
 accepted provider execution profiles. A positive structural preflight remains
 insufficient to authorize a POST; callers cannot unlock one with a qualification
 flag. Direct existing forever discount IDs are representable by the projection

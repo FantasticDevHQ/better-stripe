@@ -41,6 +41,7 @@ import { createInitialMaterialClassifiers } from "../material/classifiers.js";
 import { acquisitionForInitialLineage } from "../acquisition/ownedAcquisition.js";
 import { createInitialAttachEventCompiler } from "../c10/attachEvents.js";
 import { journalWorkForInitialLineage } from "../producer/journalWorkFactory.js";
+import { initialEntriesForLineage } from "../producer/nodeAttachmentProfile.js";
 type Pair = ReturnType<typeof createPair>;
 
 type AttemptCustody = {
@@ -136,8 +137,9 @@ function initialKernel(token: object | null) {
       need(arguments.length === 0);
       if (consumed) return refuse("invocation_consumed");
       consumed = true;
-      need(!types.isProxy(ENTRIES) && Array.isArray(ENTRIES));
-      if (ENTRIES.length === 0) return refuse("no_qualified_native_class");
+      const entries = initialEntriesForLineage(token, ENTRIES);
+      need(!types.isProxy(entries) && Array.isArray(entries));
+      if (entries.length === 0) return refuse("no_qualified_native_class");
 
       const OWNER =
         token === null ? LEGACY_OWNER : ownerForInitialLineage(token);
@@ -241,7 +243,7 @@ function initialKernel(token: object | null) {
           fresh: SourceMethod;
           retained: SourceMethod;
         }[] = [];
-        for (const entry of ENTRIES) {
+        for (const entry of entries) {
           OWNER.check();
           const retainedPredicate = sourceMethod(entry, "coversRetained"),
             freshPredicate = sourceMethod(entry, "coversFresh");

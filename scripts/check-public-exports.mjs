@@ -11,8 +11,15 @@ assertNoTestArtifacts(fileURLToPath(new URL("../dist", import.meta.url)));
 const sdk = await import("@fantastic.dev/better-stripe");
 const react = await import("@fantastic.dev/better-stripe/react");
 const testing = await import("@fantastic.dev/better-stripe/testing");
+const node = await import("@fantastic.dev/better-stripe/node");
 
 assert.equal(typeof sdk.BetterStripe, "function");
+assert.equal(node.BetterStripe, sdk.BetterStripe);
+assert.equal(
+  typeof node.BetterStripe.prototype.attachRenewalSchedule,
+  "function",
+);
+assert.equal(typeof sdk.prepareRenewalAttachmentOperation, "function");
 assert.equal(typeof sdk.qualifyCapturedCheckoutPayment, "function");
 assert.equal(typeof react.Checkout, "function");
 assert.equal(typeof react.PlanPricingEditor, "function");

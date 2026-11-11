@@ -1,4 +1,9 @@
 /** Public pure renewal preparation functions and their input/result types. */
+export type {
+  AttachRenewalScheduleOptions,
+  AttachRenewalScheduleResult,
+  RenewalAttachmentAuthorization,
+} from "./renewalAttachmentTypes.js";
 export { prepareRenewalPriceReplacement } from "./billing/renewalPriceReplacement.js";
 export type {
   PrepareRenewalPriceReplacementOptions,
@@ -38,3 +43,8 @@ export type {
   RenewalScheduleMaterialReads,
   RenewalScheduleMaterialObservationV2,
 } from "./billing/renewalV2/observation.js";
+
+export {
+  prepareRenewalAttachmentOperation,
+  type PrepareRenewalAttachmentOperationOptions,
+} from "./renewalAttachmentPreparation.js";

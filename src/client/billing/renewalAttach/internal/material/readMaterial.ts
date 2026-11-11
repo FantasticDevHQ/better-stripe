@@ -42,6 +42,7 @@ export function validateOwnedReadMaterial(
   prepared: RenewalPreparationMaterial,
   scheduleId: string | undefined,
   ownedDiscounts: { subscription: unknown; item: unknown },
+  publicAttachment = false,
 ) {
   supportedVersion(args.apiVersion);
   const subscription = renewalSubscription
@@ -115,15 +116,36 @@ export function validateOwnedReadMaterial(
     unsupported("outside_original_paid_period");
   for (const field of [
     "billing_thresholds",
-    "managed_payments",
     "next_pending_invoice_item_invoice",
     "pending_invoice_item_interval",
     "pending_setup_intent",
     "canceled_at",
     "ended_at",
-    "trial_settings",
   ])
     if (source[field] !== null) unsupported(`unsupported_original_${field}`);
+  // Endive returns these defaults even when neither feature is in use. Admit
+  // their exact inactive shapes only on the public initial-attachment lineage.
+  // The complete raw source remains retained and compared before dispatch.
+  if (
+    source.managed_payments !== null &&
+    !(publicAttachment && equal(source.managed_payments, { enabled: false }))
+  )
+    unsupported("unsupported_original_managed_payments");
+  if (
+    source.trial_settings !== null &&
+    !(
+      publicAttachment &&
+      source.trial_start === null &&
+      source.trial_end === null &&
+      equal(source.trial_settings, {
+        end_behavior: {
+          billing_cycle_anchor: "now",
+          missing_payment_method: "create_invoice",
+        },
+      })
+    )
+  )
+    unsupported("unsupported_original_trial_settings");
   if (item.billing_thresholds !== null)
     unsupported("unsupported_item_billing_thresholds");
   if (item.current_trial !== null)
@@ -152,6 +174,7 @@ export function validateOwnedReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    publicAttachment && customer.data.discount === null,
   );
   const itemDiscounts = qualifySourceDiscounts(
     ownedDiscounts.item,
@@ -159,6 +182,7 @@ export function validateOwnedReadMaterial(
     prepared.expected,
     customer.data.id,
     args.observedAt,
+    publicAttachment && customer.data.discount === null,
   );
   return {
     prepared,

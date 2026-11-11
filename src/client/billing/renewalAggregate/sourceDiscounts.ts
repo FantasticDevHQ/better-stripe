@@ -66,11 +66,13 @@ export function qualifySourceDiscounts(
   },
   customerId: string,
   observedAt: number,
+  allowEmpty = false,
 ): OriginalRedemptions {
   const parsed = originalRedemptions.safeParse(value);
   if (!parsed.success)
     unsupported("incomplete_or_unsupported_discount_evidence");
-  if (!parsed.data.length) unsupported("ambiguous_empty_discount_hierarchy");
+  if (!parsed.data.length && !allowEmpty)
+    unsupported("ambiguous_empty_discount_hierarchy");
   if (
     new Set(parsed.data.map((discount) => discount.id)).size !==
     parsed.data.length

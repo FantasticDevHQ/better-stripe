@@ -28,10 +28,9 @@
 
 ## [0.118.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.117.1...v0.118.0) (2026-11-11)
 
-
 ### Features
 
-* BTS-302 expose public renewal attachment in Node ([#496](https://github.com/FantasticDevHQ/better-stripe/issues/496)) ([1159f28](https://github.com/FantasticDevHQ/better-stripe/commit/1159f2867aac3622f60bd13a41eab6ff872cee7f))
+- expose public renewal attachment in Node ([#496](https://github.com/FantasticDevHQ/better-stripe/issues/496)) ([1159f28](https://github.com/FantasticDevHQ/better-stripe/commit/1159f2867aac3622f60bd13a41eab6ff872cee7f))
 
 ## [0.117.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.117.0...v0.117.1) (2026-11-10)
 

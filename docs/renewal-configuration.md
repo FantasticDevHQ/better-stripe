@@ -85,7 +85,10 @@ The qualified path accepts null or exact inactive
 `trial_settings.end_behavior` with `billing_cycle_anchor: "now"` and
 `missing_payment_method: "create_invoice"` only with null trial start/end. Full
 raw source and defaults remain retained and compared. Legacy projection without
-the explicit execution profile keeps its conservative guards.
+the explicit execution profile keeps its conservative guards. The qualified
+configure profile also accepts an absent or null schedule
+`default_settings.default_source`; non-null sources remain unsupported. This
+inactive field stays in the retained raw defaults and fresh baseline comparison.
 
 Unsupported material is refused before a provider write. This includes flexible
 billing, calendar-edge anchors, changed cadence/currency, metered or multiple

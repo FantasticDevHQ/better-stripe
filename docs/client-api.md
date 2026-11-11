@@ -952,7 +952,8 @@ The initial platform test-mode Endive profile excludes flexible billing,
 calendar-edge anchors, changed cadence/currency, discounts, active trials,
 scheduled cancellation, paused subscriptions, metered/multiple items, pending
 updates, billing thresholds, enabled managed payments, nondefault trial settings,
-non-null `application_fee_percent` including zero, and unknown phase/default fields. Supported settings must pass lossless mapping
+non-null `application_fee_percent` including zero, non-null schedule default sources,
+and unknown phase/default fields. Supported settings must pass lossless mapping
 and inheritance checks. See [configuration and detailed limits](./renewal-configuration.md)
 for host authorization, identity retention, supported inactive defaults, journal
 readback and unknown/timeout rules. Restart recovery and replay are outside this

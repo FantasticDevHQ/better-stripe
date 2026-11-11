@@ -360,3 +360,19 @@ it("exports the pure public API without exposing shared internal material helper
   expect(root).not.toHaveProperty("validateReadMaterial");
   expect(root).not.toHaveProperty("configureMaterial");
 });
+
+it("keeps the unqualified projector conservative for Endive default_source null", async () => {
+  const { raw } = scenario();
+  (raw.schedule.default_settings as Record<string, unknown>).default_source =
+    null;
+  (
+    raw.attachReceipt.providerSnapshot.default_settings as Record<
+      string,
+      unknown
+    >
+  ).default_source = null;
+  expect(await project(raw)).toMatchObject({
+    status: "attached_unconfigured",
+    reason: "unsupported_schedule_defaults",
+  });
+});

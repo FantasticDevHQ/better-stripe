@@ -282,3 +282,49 @@ it("returns timeout after configure response journal work retires the original o
     },
   );
 });
+
+it.each([null, "src_foreign"])(
+  "qualifies only the inactive Endive default_source %s",
+  async (defaultSource) => {
+    await attachmentFixture(
+      async (h) => {
+        await h.client.attachRenewalSchedule(h.ctx, h.options);
+        if (defaultSource !== null) {
+          await expect(prepare(h)).rejects.toThrow(
+            "unsupported_schedule_defaults",
+          );
+          expect(h.calls.filter((c) => c.method === "POST")).toHaveLength(1);
+          return;
+        }
+        const options = await prepare(h);
+        const stored = await h.ctx.runQuery(
+          components.betterStripe.renewalOperations.queries
+            .loadAuthorizedOperation,
+          { operationId: options.operationId },
+        );
+        expect(
+          JSON.parse(stored!.recordJSON).configureRecord.configuration.schedule
+            .default_settings.default_source,
+        ).toBeNull();
+        expect(
+          (await h.client.configureRenewalSchedule(h.ctx, options)).status,
+        ).toBe("configure_acknowledged");
+      },
+      { configure: true, defaultSource },
+    );
+  },
+);
+
+it("compares the retained inactive default_source against fresh schedule drift", async () => {
+  await attachmentFixture(
+    async (h) => {
+      await h.client.attachRenewalSchedule(h.ctx, h.options);
+      const options = await prepare(h);
+      expect(
+        await h.client.configureRenewalSchedule(h.ctx, options),
+      ).toMatchObject({ status: "not_dispatched" });
+      expect(h.calls.filter((c) => c.method === "POST")).toHaveLength(1);
+    },
+    { configure: true, defaultSource: null, configureDefaultSourceDrift: true },
+  );
+});

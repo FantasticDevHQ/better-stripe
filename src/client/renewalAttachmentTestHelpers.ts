@@ -36,6 +36,8 @@ export async function attachmentFixture(
   }) => Promise<void>,
   overrides: {
     configure?: boolean;
+    defaultSource?: string | null;
+    configureDefaultSourceDrift?: boolean;
     configurePost?: "lost" | "conflict";
     configureDrift?: boolean;
     configureAuthorization?: boolean;
@@ -85,6 +87,9 @@ export async function attachmentFixture(
     phase.discounts = [];
     phase.items[0].discounts = [];
     post.billing_mode = structuredClone(subscription.billing_mode);
+    if ("defaultSource" in overrides)
+      (post.default_settings as Record<string, unknown>).default_source =
+        overrides.defaultSource;
   }
   let attached = false;
   const calls: {
@@ -130,7 +135,7 @@ export async function attachmentFixture(
           { status: 409, headers: { "content-type": "application/json" } },
         );
       if (overrides.configure && method === "POST") attached = true;
-      const body =
+      let body =
         method === "POST" ||
         url.pathname.startsWith("/v1/subscription_schedules/")
           ? post
@@ -147,6 +152,15 @@ export async function attachmentFixture(
             : url.pathname.startsWith("/v1/prices/")
               ? source.originalBundle.wireTargetPrice
               : source.originalBundle.wireBillingCustomer;
+      if (
+        overrides.configureDefaultSourceDrift &&
+        method === "GET" &&
+        url.pathname.startsWith("/v1/subscription_schedules/")
+      ) {
+        body = structuredClone(post);
+        (body.default_settings as Record<string, unknown>).default_source =
+          "src_foreign";
+      }
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "content-type": "application/json" },

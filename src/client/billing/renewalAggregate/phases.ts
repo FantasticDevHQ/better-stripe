@@ -91,7 +91,12 @@ export function assemblePhases(
   Stripe.SubscriptionScheduleUpdateParams.Phase,
   Stripe.SubscriptionScheduleUpdateParams.Phase,
 ] {
-  const defaultsResult = defaultsSchema.safeParse(schedule.default_settings);
+  // Endive emits the inactive legacy source explicitly. Only the qualified
+  // public profile admits null; complete raw defaults remain bound and compared.
+  const schema = reads.publicConfiguration
+    ? defaultsSchema.extend({ default_source: z.null().optional() })
+    : defaultsSchema;
+  const defaultsResult = schema.safeParse(schedule.default_settings);
   if (!defaultsResult.success) unsupported("unsupported_schedule_defaults");
   if (!Array.isArray(schedule.phases) || schedule.phases.length !== 1)
     unsupported("unsupported_phase_configuration");

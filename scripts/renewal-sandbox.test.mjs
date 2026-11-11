@@ -319,6 +319,11 @@ it.skipIf(!key)(
     } catch (error) {
       report.passed = false;
       report.failedStage = stage;
+      if (
+        error instanceof Error &&
+        /^RENEWAL_CONFIGURATION_[a-z_]+$/.test(error.message)
+      )
+        report.refusalReason = error.message;
       if (error instanceof Stripe.errors.StripeError)
         report.providerError = {
           type: error.type,

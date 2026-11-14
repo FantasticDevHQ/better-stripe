@@ -75,6 +75,22 @@ Releases are automated with [Release Please](https://github.com/googleapis/relea
 2. **On merge to `main`**, the `Release` workflow opens or updates a release PR that bumps `package.json`, `CHANGELOG.md`, the README version line and `.release-please-manifest.json`. It removes internal tracker IDs and links from the generated changelog (the prefixes in `scripts/internal-references.mjs`), formats it with the repository's pinned Prettier and commits any formatting changes through the release GitHub App, so CI validates the formatted branch. An already formatted changelog creates no extra commit. After formatting, the workflow enables squash auto-merge for the generated release PR using the release GitHub App.
 3. **Auto-merge waits for green checks**. The active `main` ruleset requires `ci`, `Shadscan UI quality gate (100)` and `codegen`, with no bypass actors. Failed or pending required checks prevent merging. Once GitHub merges the generated release PR, the resulting `Release` workflow run tags the version, creates the GitHub release and publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers) with provenance. There's no npm token.
 
-Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). If publishing fails after the GitHub release is created, use **Re-run failed jobs** on that run. Check npm first if the outcome is uncertain: a published version can't be overwritten.
+Release policy lives in `release-please-config.json`. Keep the workflow file named `release.yml`, because the trusted publisher on npmjs.com is bound to that filename. A manually pushed `vX.Y.Z` tag also publishes, but only if it matches `package.json` and `CHANGELOG.md` has a section for it (`scripts/release-notes.mjs`). Verification runs on UbiCloud in four single-worker test shards, with build, typecheck,
+lint and codegen checks retained. Publish waits for every shard to succeed and
+rebuilds the same tag on GitHub-hosted `ubuntu-24.04`. npm rejects provenance from
+self-hosted runners, including UbiCloud; keep OIDC and provenance enabled and the
+workflow filename unchanged. Neither the test worker count nor the 20-minute
+job timeout needs to increase.
+
+If publishing fails after the GitHub release is created, check the exact npm version
+first: a published version can't be overwritten. Use **Re-run failed jobs** for a
+transient failure. If the workflow itself needed fixing, rerunning the old run
+still uses its old workflow. Instead dispatch `Release` from the corrected `main`
+with `release_tag` set to the existing tag, for example `v0.119.0`. This skips
+Release Please, verifies the existing tag through every release check, then
+publishes it without moving the tag or creating another GitHub release. Leave
+`release_tag` empty for ordinary Release Please maintenance. After publication,
+verify the exact version, tarball, provenance and intended dist-tag on npm;
+a GitHub release or a green run with Publish skipped is insufficient.
 
 The private `example` workspace isn't published.

@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.119.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.0...v0.119.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **release:** BTS-387 restore provenance publishing and shard verification ([#500](https://github.com/FantasticDevHQ/better-stripe/issues/500)) ([445e1f4](https://github.com/FantasticDevHQ/better-stripe/commit/445e1f47965cd1ca78fac06f1b887ba064221cc9))
+
 ## [0.119.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.118.0...v0.119.0) (2026-11-11)
 
 ### Features

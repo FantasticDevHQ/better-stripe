@@ -28,10 +28,9 @@
 
 ## [0.119.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.2...v0.119.3) (2026-11-21)
 
-
 ### Continuous Integration
 
-* **standards:** add the issue standard workflow ([#502](https://github.com/FantasticDevHQ/better-stripe/issues/502)) ([095a29a](https://github.com/FantasticDevHQ/better-stripe/commit/095a29a1960d02be956c2ea92064613cb4344c4a))
+- **standards:** add the issue standard workflow ([#502](https://github.com/FantasticDevHQ/better-stripe/issues/502)) ([095a29a](https://github.com/FantasticDevHQ/better-stripe/commit/095a29a1960d02be956c2ea92064613cb4344c4a))
 
 ## [0.119.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.1...v0.119.2) (2026-11-21)
 

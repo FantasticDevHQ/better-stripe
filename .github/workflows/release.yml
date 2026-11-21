@@ -85,6 +85,27 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      # Release PRs meet the PR standard with no bot exemption. `prs_created` is
+      # true whenever Release Please created or updated the release PR (it
+      # rewrites the branch and body on every update). Before the formatting
+      # commit, the step appends the required sections after the generated body,
+      # then amends the release commit with a `No-ticket: automated release`
+      # footer and force-pushes it with a lease using the App token, so CI runs
+      # on the new head. See scripts/release-pr-standard.mjs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.release-pr.outputs.prs_created == 'true'
+        with:
+          ref: ${{ fromJSON(steps.release-pr.outputs.pr).headBranchName }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: .release-pr
+          fetch-depth: 2 # the release commit and its parent, for the amend
+          persist-credentials: false
+      - name: Make the release PR meet the PR standard
+        if: steps.release-pr.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_PR: ${{ steps.release-pr.outputs.pr }}
+        run: node scripts/release-pr-standard.mjs .release-pr
       - name: Format the generated release changelog
         if: steps.release-pr.outputs.prs_created == 'true'
         env:

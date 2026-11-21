@@ -89,7 +89,9 @@ export async function formatReleaseChangelog({
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      message: "chore: format release changelog",
+      // Release PRs meet the PR standard: every commit needs a ticket footer.
+      message:
+        "chore: format release changelog\n\nNo-ticket: automated release\n",
       branch: pr.head.ref,
       sha: file.sha,
       content: Buffer.from(formatted).toString("base64"),

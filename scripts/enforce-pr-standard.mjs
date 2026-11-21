@@ -47,12 +47,13 @@ export async function enforcePullRequestStandard({ api, number, runUrl }) {
           merge: (item.parents?.length ?? 0) > 1,
         })),
       );
-      if (batch.length < 100) break;
-      // GitHub lists at most 250 commits for a PR. Do not silently skip any.
-      if (page === 3)
+      // GitHub lists at most 250 commits, including a partial final page.
+      // Reaching the cap cannot prove that every commit was returned.
+      if (commits.length >= 250)
         throw new Error(
           "PR commit listing reached GitHub's 250-commit limit; split the PR before validation",
         );
+      if (batch.length < 100) break;
     }
     const errors = validatePullRequest(pr, files, commits);
     let previous;

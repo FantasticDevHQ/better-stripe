@@ -48,7 +48,12 @@ function fixture(pr, comments = [], commits = goodCommits) {
     calls.push({ method, path, data });
     if (path === "/pulls/65") return pr;
     if (path.startsWith("/pulls/65/files?")) return [];
-    if (path.startsWith("/pulls/65/commits?")) return commits;
+    if (path.startsWith("/pulls/65/commits?")) {
+      const page = Number(
+        new URL(path, "https://api.github.com").searchParams.get("page"),
+      );
+      return commits.slice((page - 1) * 100, Math.min(page * 100, 250));
+    }
     if (path.startsWith("/issues/65/comments?")) return comments;
     return {};
   };
@@ -194,5 +199,32 @@ for (const statusFails of [false, true]) {
       (error) => error === original,
     );
     assert.deepEqual(statuses, ["pending", "failure"]);
+  });
+}
+
+for (const count of [249, 250, 251]) {
+  test(`commit pagination fails closed at GitHub's cap (${count} commits)`, async () => {
+    const commits = Array.from({ length: count }, (_, index) => ({
+      ...goodCommits[0],
+      sha: `commit-${index}`,
+    }));
+    // A commit hidden beyond GitHub's cap must never escape validation.
+    if (count > 250) commits[250].commit = { message: "ci: missing ticket" };
+    const { calls, run } = fixture(valid, [], commits);
+    if (count < 250) {
+      assert.equal(await run(), true);
+    } else {
+      await assert.rejects(run(), /250-commit limit/);
+      assert.deepEqual(
+        calls
+          .filter((call) => call.path.startsWith("/statuses/"))
+          .map((call) => call.data.state),
+        ["pending", "failure"],
+      );
+    }
+    assert.equal(
+      calls.filter((call) => call.path.includes("/commits?")).length,
+      3,
+    );
   });
 }

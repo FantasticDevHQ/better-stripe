@@ -187,8 +187,8 @@ async function main() {
     runId: process.env.GITHUB_RUN_ID,
     runUrl,
   });
-  // This repository's validator checks the title and body; the org validator
-  // also requires every commit to carry a ticket reference or this footer.
+  // Validate the title and body here. The amended commit is not on GitHub yet,
+  // so its ticket reference or footer is checked directly below.
   const message = withTicketFooter(
     await git(dir)(["log", "-1", "--format=%B", "HEAD"]),
   );

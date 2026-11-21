@@ -218,6 +218,22 @@ proof, packed consumers and account/clock limits. Existing apps should follow
 
 ## Contributing
 
+Contributions are welcome. Read the
+[contributing guide](https://github.com/FantasticDevHQ/.github/blob/main/CONTRIBUTING.md)
+and [Code of Conduct](https://github.com/FantasticDevHQ/.github/blob/main/CODE_OF_CONDUCT.md),
+and report vulnerabilities privately as described in the
+[security policy](https://github.com/FantasticDevHQ/.github/blob/main/SECURITY.md).
+
+Source development needs Node.js 24 (as CI uses; the package supports Node.js
+20+ and the Vite example needs 22.12+) and pnpm 10.32.1, pinned in
+`package.json`.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm run check:all   # build, lint, format, typecheck, codegen drift, size/debt/circular/secrets gates, Shadscan, tests, coverage, AGENTS.md and CI parity
+pnpm run test:pr-standard   # PR metadata validator and bot tests
+```
+
 Example worktrees with Stripe use a **single-machine sandbox pool of one to five
 keys**. Other machines need separate sandbox accounts, keys and pools; leases do
 not coordinate across machines. See the
@@ -225,8 +241,8 @@ not coordinate across machines. See the
 
 See the [development guide](docs/development.md) for local setup and code generation,
 [testing utilities](docs/testing.md) for fixtures, and the [release guide](docs/releasing.md)
-for publishing. Run `pnpm run check:all` before submitting changes.
+for publishing. Pull requests follow the [PR standard](docs/pull-request-standard.md).
 
 ## License
 
-MIT
+[MIT](LICENSE), Copyright (c) 2026 Fantastic.Dev.

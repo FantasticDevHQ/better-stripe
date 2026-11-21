@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.119.4](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.3...v0.119.4) (2026-11-21)
+
+### Continuous Integration
+
+- **standards:** add the PR standard re-run workflow ([#506](https://github.com/FantasticDevHQ/better-stripe/issues/506)) ([2bbdbb2](https://github.com/FantasticDevHQ/better-stripe/commit/2bbdbb253cd725d15c56c057a0008e477ee4429d))
+
 ## [0.119.3](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.2...v0.119.3) (2026-11-21)
 
 ### Continuous Integration

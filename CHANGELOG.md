@@ -28,10 +28,9 @@
 
 ## [0.119.5](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.4...v0.119.5) (2026-11-21)
 
-
 ### Documentation
 
-* **community:** adopt organization community health defaults ([#504](https://github.com/FantasticDevHQ/better-stripe/issues/504)) ([adfb8e1](https://github.com/FantasticDevHQ/better-stripe/commit/adfb8e1536f18029d649a25bf25d3daeb3ce889c))
+- **community:** adopt organization community health defaults ([#504](https://github.com/FantasticDevHQ/better-stripe/issues/504)) ([adfb8e1](https://github.com/FantasticDevHQ/better-stripe/commit/adfb8e1536f18029d649a25bf25d3daeb3ce889c))
 
 ## [0.119.4](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.3...v0.119.4) (2026-11-21)
 

@@ -118,6 +118,9 @@ describe("formatReleaseChangelog", () => {
     expect(options.method).toBe("PUT");
     expect(update.sha).toBe("original-blob");
     expect(update.branch).toBe(branch);
+    expect(update.message).toBe(
+      "chore: format release changelog\n\nNo-ticket: automated release\n",
+    );
     expect(Buffer.from(update.content, "base64").toString()).toBe(formatted);
   });
   it("does not create another commit when formatting is already correct", async () => {

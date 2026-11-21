@@ -28,10 +28,9 @@
 
 ## [0.119.2](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.1...v0.119.2) (2026-11-21)
 
-
 ### Continuous Integration
 
-* **release:** OSS-43 make release PRs meet the PR standard ([#503](https://github.com/FantasticDevHQ/better-stripe/issues/503)) ([9f44b54](https://github.com/FantasticDevHQ/better-stripe/commit/9f44b5448d8a51a07a0ed3a71f905aa37b4de77b))
+- **release:** OSS-43 make release PRs meet the PR standard ([#503](https://github.com/FantasticDevHQ/better-stripe/issues/503)) ([9f44b54](https://github.com/FantasticDevHQ/better-stripe/commit/9f44b5448d8a51a07a0ed3a71f905aa37b4de77b))
 
 ## [0.119.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.0...v0.119.1) (2026-11-14)
 

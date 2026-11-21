@@ -112,7 +112,7 @@ Summary must list them again; the validator enforces this through the commits.
 
 An ordinary Markdown ticket link is context, not a declaration. Magic words in
 PR comments do not create Linear associations. These rules follow
-[Linear's GitHub integration documentation](https://linear.app/docs/github).
+Linear's GitHub integration documentation.
 
 ### One-time Linear setup per team
 

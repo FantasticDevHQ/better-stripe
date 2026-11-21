@@ -64,7 +64,7 @@ test("release body is idempotent and refreshes the run identity", () => {
   );
 });
 
-test("a release title without a ticket fails this repository's title rule", () => {
+test("a release title without a ticket passes with a No ticket declaration", () => {
   const untitled = "chore(main): release 0.4.2";
   const body = releaseBody({
     body: generated,
@@ -73,13 +73,13 @@ test("a release title without a ticket fails this repository's title rule", () =
     runUrl,
   });
   assert.match(body, /^No ticket: automated release$/m);
-  assert.match(
-    validatePullRequest({ title: untitled, body }).join(),
-    /TICKET-123/,
+  assert.deepEqual(
+    validatePullRequest({ title: untitled, body }, ["CHANGELOG.md"], [commit]),
+    [],
   );
 });
 
-test("Release Please titles carry the release ticket this repository's validator requires", () => {
+test("Release Please titles carry the configured release ticket", () => {
   const config = JSON.parse(
     readFileSync(
       new URL("../release-please-config.json", import.meta.url),

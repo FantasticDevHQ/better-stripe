@@ -112,7 +112,7 @@ Summary must list them again; the validator enforces this through the commits.
 
 An ordinary Markdown ticket link is context, not a declaration. Magic words in
 PR comments do not create Linear associations. These rules follow
-Linear's GitHub integration documentation.
+[Linear's GitHub integration documentation](https://linear.app/docs/github).
 
 ### One-time Linear setup per team
 
@@ -205,11 +205,18 @@ so metadata edits can clear a failure without another commit. Operators can use
 the workflow's manual PR-number input to revalidate existing PRs or retry an API
 failure. Run `pnpm run test:pr-standard` to test the validator and bot behavior.
 
+Metadata bodies accept LF, CRLF and lone CR line endings. If the metadata API or
+feedback update fails after the head is known, the enforcer attempts a failure
+status and rethrows the original error even if status publication also fails.
+
 ## CI compute
 
 The metadata job uses `ubicloud-standard-2-ubuntu-2404`, the repository's default
 Linux UbiCloud runner. Existing test and deployment jobs keep their configured
-UbiCloud sizes. GitHub Actions schedules these workflows; repository Actions and
+UbiCloud sizes. npm provenance publishing requires a supported GitHub-hosted
+build/publish job under an approved runner exception; new exceptions require
+explicit owner approval. Keep ordinary verification on UbiCloud and follow the
+[release guide](releasing.md). GitHub Actions schedules these workflows; repository Actions and
 the UbiCloud integration's repository access must both remain enabled. A queued
 job without a runner calls for checking integration access, not changing providers.
 

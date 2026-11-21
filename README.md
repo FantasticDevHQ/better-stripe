@@ -225,8 +225,8 @@ and report vulnerabilities privately as described in the
 [security policy](https://github.com/FantasticDevHQ/.github/blob/main/SECURITY.md).
 
 Source development needs Node.js 24 (as CI uses; the package supports Node.js
-20+ and the Vite example needs 22.12+) and pnpm 10.32.1, pinned in
-`package.json`.
+20+, and the example's Vite and ESLint toolchain needs 20.19+, 22.13+ or 24+)
+and pnpm 10.32.1, pinned in `package.json`.
 
 ```sh
 pnpm install --frozen-lockfile

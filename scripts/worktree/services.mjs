@@ -18,6 +18,9 @@ export async function stopChildren(children) {
   await Promise.all(
     children.map(async (child) => {
       if (child.exitCode !== null || child.signalCode !== null) return;
+      // Startup unrefs the supervisor. Keep it alive until close is delivered,
+      // including after the SIGKILL timer fires.
+      child.ref();
       await new Promise((resolve) => {
         const timer = setTimeout(() => child.kill("SIGKILL"), 2000);
         child.once("close", () => {

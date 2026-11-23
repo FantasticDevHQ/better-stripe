@@ -208,8 +208,8 @@ function validatePreparation(opts: PreparePaymentIntentOptions) {
 
 /**
  * Create an unconfirmed, card-only PaymentIntent for a server-priced amount.
- * No client secret is returned, so the browser cannot pay it; only
- * `confirmPaymentIntent` on the server can. Persist the returned ID with the
+ * No client secret is returned, so the browser cannot pay it; in this API only
+ * `confirmPaymentIntent` on the server makes it payable. Persist the returned ID with the
  * host's hold before confirming.
  */
 export async function preparePaymentIntent(

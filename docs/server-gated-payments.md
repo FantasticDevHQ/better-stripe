@@ -12,8 +12,9 @@ in the UI does not revoke it, and Checkout's shortest expiry is 30 minutes.
 
 Server-gated payments are prepared and confirmed in two steps on the server.
 `prepare` creates an unconfirmed, card-only PaymentIntent and returns only its
-ID: no client secret leaves the server, so the browser cannot pay it. `confirm`
-is the only way it becomes payable. It checks your deadline before reading the
+ID: no client secret leaves the server, so the browser cannot pay it. In this
+API, `confirm` is the only call that makes it payable (anything holding your
+Stripe secret key could also confirm it). It checks your deadline before reading the
 payment and again immediately before sending the confirmation, and sends no
 confirmation if either check fails. The deadline is not enforced atomically at
 Stripe: a confirmation sent just before it, or a request delayed in transit, may
@@ -186,11 +187,14 @@ response), you still have the `paymentIntentId` from `prepare`. Read it with
   `already_canceled`. If it reports `succeeded` or `not_cancelable`, the earlier
   confirmation took effect: keep the hold. While the hold lasts, the buyer can
   try again before the deadline.
-- `requires_action`, `processing` or `succeeded`: it took effect inside the hold.
-  Treat it as an in-flight payment.
+- `requires_action`, `processing` or `succeeded`: a confirmation took effect.
+  Because the deadline is checked before sending, not at Stripe, it may have
+  taken effect just after the deadline. Treat it as an in-flight payment.
 
-`confirm` sends no confirmation once `notAfter` has passed, so recovery itself
-never starts one; a request sent earlier may still arrive. A cancel also wins over a confirmation request that arrives at
+A `confirm` call that fails either deadline check sends no confirmation. A call
+that passed its second check just before the deadline may still deliver its
+request to Stripe after it, as may any request delayed in transit. Recovery
+therefore relies on `cancel` outcomes, not on the deadline alone. A cancel also wins over a confirmation request that arrives at
 Stripe after it: Stripe does not confirm a cancelled PaymentIntent.
 
 ## Cancel when the hold ends

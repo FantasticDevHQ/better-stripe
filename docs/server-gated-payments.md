@@ -129,9 +129,13 @@ export const payForHold = action({
 - `customerAccount` (optional). A V2 buyer account (`acct_…`) that must belong to
   `userId` in the component.
 - `idempotencyKey` (required). Reuse it only to retry the same preparation. If a
-  prepare response is lost, retry with the same key: Stripe replays the original
-  PaymentIntent. An unconfirmed PaymentIntent cannot be paid from the browser,
-  so a retry is safe at any time.
+  prepare response is lost, retry promptly with the same key: within Stripe's
+  idempotency retention (keys can be pruned once they are at least 24 hours
+  old), Stripe replays the original PaymentIntent. After a key may have been
+  pruned, a retry can create a second PaymentIntent, so reconcile first (for
+  example in the Stripe Dashboard, by your `metadata`) before creating again. A
+  duplicate unconfirmed PaymentIntent cannot be paid from the browser, because
+  no client secret leaves the server, but you should still cancel it.
 - `metadata`, `receiptEmail`. Keys starting with `bs` and the `userId` key are
   reserved for the component.
 
@@ -180,9 +184,11 @@ If `confirm` fails without a result (for example the network dropped the
 response), you still have the `paymentIntentId` from `prepare`. Read it with
 `getState`:
 
-- `requires_payment_method` or `requires_confirmation`: the confirmation has not
-  taken effect so far. A request that is still in transit could still reach
-  Stripe, so this read alone is not a reason to release the hold. If the hold has
+- `requires_payment_method` or `requires_confirmation`: the payment is currently
+  awaiting a payment method or confirmation. The read does not show whether the
+  earlier attempt reached Stripe: it may never have arrived, it may have reached
+  Stripe and failed (for example a decline), or it may still be in transit.
+  This read alone is not a reason to release the hold. If the hold has
   ended, call `cancel`, and release the hold only when it reports `canceled` or
   `already_canceled`. If it reports `succeeded` or `not_cancelable`, the earlier
   confirmation took effect: keep the hold. While the hold lasts, the buyer can

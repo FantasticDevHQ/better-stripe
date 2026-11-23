@@ -766,8 +766,10 @@ protects its own attribution keys and strips the reserved `bs*` namespace. Never
 accept browser-provided amounts, user IDs or metadata as authorization.
 
 When your server must decide whether a payment may complete, for example while a
-short hold is active, use `paymentControl.confirm` to create and confirm the
-PaymentIntent on the server from a Stripe.js ConfirmationToken. Use
+short hold is active, use `paymentControl.prepare` to create an unconfirmed,
+card-only PaymentIntent without a client secret, then `paymentControl.confirm`
+to confirm it on the server from a Stripe.js ConfirmationToken before a
+deadline. Use
 `paymentControl.cancel`, `paymentControl.getState` and
 `paymentControl.expireCheckoutSession` to cancel a payment, read its live state,
 or expire an open Checkout Session, idempotently. See

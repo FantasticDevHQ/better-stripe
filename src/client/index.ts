@@ -68,7 +68,7 @@ export * from "./payoutPolicy.js";
 import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
-import { PaymentControlClient } from "./billing/paymentControl.js";
+import { PaymentControlClient } from "./billing/paymentControlClient.js";
 export type * from "./billing/intents.js";
 import {
   ClassOwnedActionRoot,

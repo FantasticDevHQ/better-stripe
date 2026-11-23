@@ -7,36 +7,45 @@ cancelled, never captured.
 
 A hosted or embedded Checkout Session, or a PaymentIntent whose client secret is
 already in the browser, stays payable until it expires or is cancelled. Hiding it
-in the UI does not revoke it, and Checkout's shortest expiry is 30 minutes. With
-server confirmation, no PaymentIntent exists until your server confirms it, so a
-hold that ends before confirmation leaves nothing payable. A payment confirmed
-inside the hold can still be in flight afterwards: a `requires_action` payment
-stays payable through its authentication step until it completes or you cancel
-it. Keep the hold for in-flight payments, and bound them with `cancel` (see
-[Cancel when the hold ends](#cancel-when-the-hold-ends)).
+in the UI does not revoke it, and Checkout's shortest expiry is 30 minutes.
 
-| Method                                            | Purpose                                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `paymentControl.confirm(ctx, opts)`               | Create and confirm a PaymentIntent from a Stripe.js ConfirmationToken, on the server. |
-| `paymentControl.cancel(ctx, opts)`                | Cancel a payment the component created. Idempotent.                                   |
-| `paymentControl.getState(ctx, opts)`              | Read the live provider state of a payment the component created.                      |
-| `paymentControl.expireCheckoutSession(ctx, opts)` | Expire an open Checkout Session the component created. Idempotent.                    |
+Server-gated payments are prepared and confirmed in two steps on the server.
+`prepare` creates an unconfirmed, card-only PaymentIntent and returns only its
+ID: no client secret leaves the server, so the browser cannot pay it. `confirm`
+is the only way it becomes payable, and it is refused once your deadline has
+passed. After the deadline, nothing can confirm it. You can only read it and
+cancel it.
 
-All four are server APIs. Call them from your own Convex actions after you have
-authenticated the caller and authorized the payment. Never forward browser-chosen
-amounts, user IDs, or metadata.
+A payment confirmed inside the hold can still be in flight afterwards. A
+`requires_action` payment stays payable through its authentication step until it
+completes or you cancel it. Keep the hold for in-flight payments, and bound them
+with `cancel` (see [Cancel when the hold ends](#cancel-when-the-hold-ends)).
+
+| Method                                            | Purpose                                                                           |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `paymentControl.prepare(ctx, opts)`               | Create an unconfirmed, card-only PaymentIntent for a server-priced amount.        |
+| `paymentControl.confirm(ctx, opts)`               | Confirm a prepared payment from a Stripe.js ConfirmationToken, before a deadline. |
+| `paymentControl.cancel(ctx, opts)`                | Cancel a payment the component created. Idempotent.                               |
+| `paymentControl.getState(ctx, opts)`              | Read the live provider state of a payment the component created.                  |
+| `paymentControl.expireCheckoutSession(ctx, opts)` | Expire an open Checkout Session the component created. Idempotent.                |
+
+All of them are server APIs. Call them from your own Convex actions after you
+have authenticated the caller and authorized the payment. Never forward
+browser-chosen amounts, user IDs, or metadata.
 
 ## Flow
 
-1. The browser mounts the Payment Element in deferred-intent mode, with the
-   amount and currency your server quoted, and creates a ConfirmationToken.
-2. The browser sends the token ID (`ctoken_…`) to your action.
-3. Your action checks, in one mutation, that the hold is still active and records
+1. When the hold starts, your action calls `paymentControl.prepare` with the
+   server-priced amount and stores the returned `paymentIntentId` on the hold.
+2. The browser mounts the Payment Element in deferred-intent mode, card only,
+   with the same amount and currency, and creates a ConfirmationToken.
+3. The browser sends the token ID (`ctoken_…`) to your action.
+4. Your action checks, in one mutation, that the hold is still active and records
    that the payment was sent. If the hold has ended, it refuses. Nothing is
    charged.
-4. Your action calls `paymentControl.confirm` with the server-priced amount and an
-   optional `notAfter` deadline.
-5. If the result is `requires_action`, the browser completes authentication with
+5. Your action calls `paymentControl.confirm` with the stored `paymentIntentId`,
+   the token and a `notAfter` deadline.
+6. If the result is `requires_action`, the browser completes authentication with
    the returned `clientSecret`.
 
 ```ts
@@ -62,7 +71,20 @@ if (result.status === "requires_action")
 ```
 
 ```ts
-// Server: your Convex action.
+// Server: when the hold starts.
+const { paymentIntentId } = await betterStripe.paymentControl.prepare(ctx, {
+  userId,
+  amount: hold.amount,
+  currency: hold.currency,
+  idempotencyKey: `hold:${hold._id}:prepare`,
+  metadata: { holdId: hold._id },
+});
+await ctx.runMutation(internal.holds.attachPayment, {
+  holdId: hold._id,
+  paymentIntentId,
+});
+
+// Server: your Convex action for the pay button.
 export const payForHold = action({
   args: { holdId: v.id("holds"), confirmationTokenId: v.string() },
   handler: async (ctx, args) => {
@@ -74,16 +96,12 @@ export const payForHold = action({
     });
     const result = await betterStripe.paymentControl.confirm(ctx, {
       userId,
-      amount: hold.amount,
-      currency: hold.currency,
+      paymentIntentId: hold.paymentIntentId,
       confirmationTokenId: args.confirmationTokenId,
-      idempotencyKey: `hold:${hold._id}:attempt:${hold.attempt}`,
       notAfter: hold.expiresAt + GRACE_MS,
-      metadata: { holdId: hold._id },
     });
     await ctx.runMutation(internal.holds.recordPayment, {
       holdId: hold._id,
-      paymentIntentId: result.paymentIntentId,
       status: result.status,
     });
     return result;
@@ -91,29 +109,38 @@ export const payForHold = action({
 });
 ```
 
-### Confirmation options
+### Prepare options
 
 - `userId` (required, nonempty). The component stores it as `metadata.userId`, and
-  `cancel` and `getState` match it exactly. For a guest, use an ID scoped by your
-  host, such as `guest:<purchaseId>`.
+  `confirm`, `cancel` and `getState` match it exactly. For a guest, use an ID
+  scoped by your host, such as `guest:<purchaseId>`.
 - Either `amount` (a positive integer in minor units) and `currency` (three
   lowercase letters), or `stripePriceId` for an active, fixed, one-time price.
 - `customerAccount` (optional). A V2 buyer account (`acct_…`) that must belong to
   `userId` in the component.
-- `idempotencyKey` (required). Use a new key for each confirmation attempt, and
-  reuse it only to retry that same attempt.
-- `notAfter` (optional), in Unix milliseconds. The component checks it before any
-  provider request and again just before the PaymentIntent is created. A late
-  call throws `PAYMENT_CONFIRMATION_REFUSED` without contacting Stripe. Choose a
-  value no earlier than the time your own mutation accepted as "sent". It gates
-  new submissions only; see [Recover a lost response](#recover-a-lost-response).
-- `paymentMethods`: `"card"` (default) or `"automatic"`. `"automatic"` requires
-  `returnUrl`, because redirect-based methods return through it. For short
-  holds, prefer `"card"`: delayed methods such as bank debits can stay
-  `processing` for days, and Stripe cannot cancel every method while it is
-  processing.
+- `idempotencyKey` (required). Reuse it only to retry the same preparation. If a
+  prepare response is lost, retry with the same key: Stripe replays the original
+  PaymentIntent. An unconfirmed PaymentIntent cannot be paid from the browser,
+  so a retry is safe at any time.
 - `metadata`, `receiptEmail`. Keys starting with `bs` and the `userId` key are
   reserved for the component.
+
+The result is `{ paymentIntentId, status, amount, currency }`. It never includes
+a client secret.
+
+### Confirm options
+
+- `userId`, `paymentIntentId` and, when you used one, `customerAccount`.
+- `confirmationTokenId` (required): the `ctoken_…` ID from Stripe.js.
+- `notAfter` (recommended), in Unix milliseconds. The component checks it before
+  any provider request and again immediately before the confirmation. A late call
+  throws `PAYMENT_CONFIRMATION_REFUSED` without contacting Stripe. Choose a value
+  no earlier than the time your own mutation accepted as "sent".
+- `returnUrl` (optional). Passed to Stripe for authentication flows that redirect.
+
+`confirm` only confirms a payment in `requires_payment_method` or
+`requires_confirmation`. A payment that is already in flight or finished is
+reported as it is and is never confirmed twice.
 
 The result is `{ paymentIntentId, status, clientSecret?, lastPaymentError? }`:
 
@@ -123,22 +150,25 @@ The result is `{ paymentIntentId, status, clientSecret?, lastPaymentError? }`:
 - `requires_action`: the only status that returns `clientSecret`, for
   `stripe.handleNextAction`. Never persist or log it.
 - `requires_payment_method` with `lastPaymentError`: the attempt failed, for
-  example a decline. It is reported instead of thrown. The PaymentIntent cannot
-  be paid from the browser, because its secret never left the server. Cancel it,
-  then let the buyer try again with a new ConfirmationToken and idempotency key.
+  example a decline. It is reported instead of thrown. The buyer can try again
+  with a new ConfirmationToken on the same `paymentIntentId`, while the hold
+  lasts.
 
-### Recover a lost response
+### Recover an uncertain confirmation
 
-If the confirm call fails without a result (for example the network dropped the
-response), Stripe may still have created and confirmed the payment, and you do
-not have its ID. Persist each attempt (its `idempotencyKey` and options) before
-calling `confirm`. To recover, call `confirm` again for that same attempt, with
-the same `idempotencyKey` and options but without `notAfter`. Stripe replays the
-original result, including its `paymentIntentId`, and no second payment is
-created. Then keep, release or cancel the hold from that result. Only omit
-`notAfter` for an attempt your own records show was already submitted inside
-the hold; a new attempt after the deadline must keep it. Stripe keeps
-idempotent results for at least 24 hours, so recover promptly.
+If `confirm` fails without a result (for example the network dropped the
+response), you still have the `paymentIntentId` from `prepare`. Read it with
+`getState`:
+
+- `requires_payment_method` or `requires_confirmation`: the confirmation never
+  took effect. If the hold has ended, `cancel` it and release the hold. Otherwise
+  the buyer can try again before the deadline.
+- `requires_action`, `processing` or `succeeded`: it took effect inside the hold.
+  Treat it as an in-flight payment.
+
+`confirm` is always refused after `notAfter`, so recovery can never confirm a
+payment late. A cancel also wins over a confirmation request that arrives at
+Stripe after it: Stripe does not confirm a cancelled PaymentIntent.
 
 ## Cancel when the hold ends
 
@@ -161,8 +191,8 @@ const result = await betterStripe.paymentControl.cancel(ctx, {
 
 The method reads the payment first. It returns at once for a payment that is
 already cancelled or succeeded, and otherwise asks Stripe to cancel it. That
-includes `processing`, which Stripe can cancel for some payment methods. Card
-payments in `processing` cannot be cancelled and settle within seconds.
+includes `processing`, which Stripe can cancel for some payment methods but not
+for cards.
 If the payment changes state between that read and the cancel (for example the
 buyer finishes authentication), it reads again and reports what Stripe says. It
 never reports a paid payment as cancelled.
@@ -170,9 +200,15 @@ never reports a paid payment as cancelled.
 A payment that is in flight before your deadline (`requires_action` or
 `processing`) is not cancelled by the deadline itself. Keep its hold, and call
 `cancel` after a bounded grace period if it has not reached a terminal status.
-Release the hold on `canceled` or `already_canceled`. On `not_cancelable`, keep
-the hold and read the payment again later with `getState` until it succeeds or
-fails.
+Release the hold on `canceled` or `already_canceled`.
+
+`not_cancelable` means the card payment is already `processing`: the buyer
+finished the payment and Stripe is settling it. Neither the component nor Stripe
+can stop it. For cards, Stripe resolves `processing` promptly to `succeeded` or
+`requires_payment_method` and sends the matching webhook. Keep the hold until
+then, and read it again with `getState` if you need to. Server-gated payments
+are card-only because delayed methods, such as bank debits, can stay
+`processing` for days.
 
 ## Read the authoritative state
 
@@ -216,7 +252,7 @@ to the provider status.
 
 ## Ownership and errors
 
-`cancel` and `getState` require the payment's `metadata.userId` to equal `userId`.
+`confirm`, `cancel` and `getState` require the payment's `metadata.userId` to equal `userId`.
 The component writes that key on every PaymentIntent it creates and does not let
 host metadata override it. The check proves that the payment carries this
 ownership attribution. It does not prove that the component created it: a
@@ -231,8 +267,10 @@ provider request. Other provider errors propagate.
 ## Verification
 
 The package tests drive the real Stripe SDK and the real component database
-against a synthetic, stateful Stripe HTTP layer. They cover confirmation outcomes,
-deadline refusal, recovery of a lost response after the deadline, ownership,
+against a synthetic, stateful Stripe HTTP layer. They cover preparation and confirmation outcomes,
+deadline refusal, recovery when a confirmation response is lost after Stripe
+applied it and when the request never reached Stripe, a lost prepare response,
+no second confirmation of an in-flight payment, ownership,
 idempotent cancel and expiry, processing payments Stripe can and cannot cancel,
 a Checkout Session created through the component and then expired, and a buyer
 who completes payment while the host is cancelling. They make no network requests.

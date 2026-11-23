@@ -58,42 +58,80 @@ const guest = {
   metadata: { purchaseId: "purchase_14dec", type: "day_purchase" },
 };
 
+let attempts = 0;
+
+async function prepared(f: Awaited<ReturnType<typeof fixture>>) {
+  return f.client.paymentControl.prepare(f.ctx, {
+    ...guest,
+    idempotencyKey: `purchase_14dec:prepare:${++attempts}`,
+  });
+}
+
+/** Prepare, then confirm inside the deadline. */
 async function confirmed(
   f: Awaited<ReturnType<typeof fixture>>,
   confirmationTokenId: string,
-  idempotencyKey = `confirm:${confirmationTokenId}`,
 ) {
+  const { paymentIntentId } = await prepared(f);
   return f.client.paymentControl.confirm(f.ctx, {
-    ...guest,
+    userId: guest.userId,
+    paymentIntentId,
     confirmationTokenId,
-    idempotencyKey,
+    notAfter: Date.now() + 60_000,
   });
 }
 
 // ---------------------------------------------------------------------------
-// Server-gated confirmation
+// Server-gated preparation and confirmation
 // ---------------------------------------------------------------------------
 
-it("creates and confirms a server-priced payment from a confirmation token in one server call", async () => {
+it("prepares an unconfirmed, card-only payment for a server-priced amount without releasing a secret", async () => {
   const f = await fixture();
-  const result = await confirmed(f, "ctoken_succeeds", "purchase_14dec:1");
+  const result = await f.client.paymentControl.prepare(f.ctx, {
+    ...guest,
+    idempotencyKey: "purchase_14dec:prepare",
+  });
   expect(result).toEqual({
     paymentIntentId: "pi_test_1",
-    status: "succeeded",
+    status: "requires_payment_method",
+    amount: 900,
+    currency: "usd",
   });
+  expect(result).not.toHaveProperty("clientSecret");
   const [create] = f.stripe.writes();
   expect(create.path).toBe("/v1/payment_intents");
-  expect(create.idempotencyKey).toBe("purchase_14dec:1");
+  expect(create.idempotencyKey).toBe("purchase_14dec:prepare");
   expect(create.version).toBe("2026-09-30.endive");
   expect(Object.fromEntries(create.params)).toEqual({
     amount: "900",
     currency: "usd",
-    confirm: "true",
-    confirmation_token: "ctoken_succeeds",
     "allowed_payment_method_types[0]": "card",
     "metadata[purchaseId]": "purchase_14dec",
     "metadata[type]": "day_purchase",
     "metadata[userId]": "guest:purchase_14dec",
+  });
+});
+
+it("confirms a prepared payment on the server from a confirmation token", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await prepared(f);
+  expect(
+    await f.client.paymentControl.confirm(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() + 60_000,
+      returnUrl: "https://app.example/checkout/return",
+    }),
+  ).toEqual({ paymentIntentId, status: "succeeded" });
+  const confirm = f.stripe.writes()[1];
+  expect(confirm.path).toBe(`/v1/payment_intents/${paymentIntentId}/confirm`);
+  expect(confirm.idempotencyKey).toBe(
+    `bs-confirm:${paymentIntentId}:ctoken_succeeds`,
+  );
+  expect(Object.fromEntries(confirm.params)).toEqual({
+    confirmation_token: "ctoken_succeeds",
+    return_url: "https://app.example/checkout/return",
   });
 });
 
@@ -110,9 +148,10 @@ it("returns the client secret only when the browser must complete an authenticat
   });
 });
 
-it("reports a declined confirmation as a failed attempt instead of throwing, without a reusable secret", async () => {
+it("reports a decline instead of throwing, and lets the same payment be confirmed again with a new token", async () => {
   const f = await fixture();
-  expect(await confirmed(f, "ctoken_declined")).toEqual({
+  const declined = await confirmed(f, "ctoken_declined");
+  expect(declined).toEqual({
     paymentIntentId: "pi_test_1",
     status: "requires_payment_method",
     lastPaymentError: {
@@ -122,89 +161,154 @@ it("reports a declined confirmation as a failed attempt instead of throwing, wit
       message: "Your card was declined.",
     },
   });
+  expect(
+    await f.client.paymentControl.confirm(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId: declined.paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() + 60_000,
+    }),
+  ).toEqual({ paymentIntentId: "pi_test_1", status: "succeeded" });
+  expect(f.stripe.intents.size).toBe(1);
 });
 
 it("refuses confirmation after the host deadline before any provider request", async () => {
   const f = await fixture();
-  await expect(
-    f.client.paymentControl.confirm(f.ctx, {
-      ...guest,
-      confirmationTokenId: "ctoken_succeeds",
-      idempotencyKey: "late",
-      notAfter: Date.now() - 1,
-    }),
-  ).rejects.toThrow(/deadline/);
-  expect(f.stripe.calls).toEqual([]);
-  expect(f.stripe.intents.size).toBe(0);
-});
-
-it("recovers a submitted attempt whose response was lost, after the deadline, without a second payment", async () => {
-  const f = await fixture();
-  const attempt = {
-    ...guest,
-    confirmationTokenId: "ctoken_needs_action",
-    idempotencyKey: "purchase_14dec:attempt:1",
-  };
-  f.stripe.loseNextResponse();
-  await expect(
-    f.client.paymentControl.confirm(f.ctx, {
-      ...attempt,
-      notAfter: Date.now() + 60_000,
-    }),
-  ).rejects.toThrow();
-  // Stripe created it, but the host never learned its ID.
-  expect(f.stripe.intents.size).toBe(1);
-
-  // A new late submission is still refused without contacting Stripe.
+  const { paymentIntentId } = await prepared(f);
   const before = f.stripe.calls.length;
   await expect(
     f.client.paymentControl.confirm(f.ctx, {
-      ...attempt,
+      userId: guest.userId,
+      paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
       notAfter: Date.now() - 1,
     }),
   ).rejects.toThrow(/deadline/);
   expect(f.stripe.calls).toHaveLength(before);
-
-  // Recovery: the same attempt, same key, without a deadline replays it.
-  const recovered = await f.client.paymentControl.confirm(f.ctx, attempt);
-  expect(recovered).toMatchObject({
-    paymentIntentId: "pi_test_1",
-    status: "requires_action",
-  });
-  expect(f.stripe.intents.size).toBe(1);
-  // The host can now bound it.
-  expect(
-    await f.client.paymentControl.cancel(f.ctx, {
-      userId: guest.userId,
-      paymentIntentId: recovered.paymentIntentId,
-    }),
-  ).toMatchObject({ outcome: "canceled" });
+  expect(f.stripe.intents.get(paymentIntentId)!.status).toBe(
+    "requires_payment_method",
+  );
 });
 
-it("confirms inside the deadline and binds a V2 buyer account it owns", async () => {
+it("never confirms an in-flight or finished payment twice", async () => {
   const f = await fixture();
-  const result = await f.client.paymentControl.confirm(f.ctx, {
+  const first = await confirmed(f, "ctoken_needs_action");
+  const writes = f.stripe.writes().length;
+  expect(
+    await f.client.paymentControl.confirm(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId: first.paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() + 60_000,
+    }),
+  ).toMatchObject({ status: "requires_action" });
+  expect(f.stripe.writes()).toHaveLength(writes);
+});
+
+it("recovers a confirmation whose response was lost after Stripe applied it, without confirming again", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await prepared(f);
+  f.stripe.loseNextResponse();
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId,
+      confirmationTokenId: "ctoken_needs_action",
+      notAfter: Date.now() + 60_000,
+    }),
+  ).rejects.toThrow();
+  // After the deadline the host can only read and cancel; it cannot confirm.
+  const scope = { userId: guest.userId, paymentIntentId };
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...scope,
+      confirmationTokenId: "ctoken_needs_action",
+      notAfter: Date.now() - 1,
+    }),
+  ).rejects.toThrow(/deadline/);
+  expect(await f.client.paymentControl.getState(f.ctx, scope)).toMatchObject({
+    status: "requires_action",
+  });
+  // In flight before the deadline: the host keeps the hold, then bounds it.
+  expect(await f.client.paymentControl.cancel(f.ctx, scope)).toMatchObject({
+    outcome: "canceled",
+  });
+  expect(f.stripe.intents.size).toBe(1);
+});
+
+it("recovers a confirmation that never reached Stripe, and no late payment can be made", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await prepared(f);
+  f.stripe.failNextRequest();
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() + 60_000,
+    }),
+  ).rejects.toThrow();
+  const scope = { userId: guest.userId, paymentIntentId };
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...scope,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() - 1,
+    }),
+  ).rejects.toThrow(/deadline/);
+  // Never confirmed: release the hold by cancelling the unconfirmed payment.
+  expect(await f.client.paymentControl.getState(f.ctx, scope)).toMatchObject({
+    status: "requires_payment_method",
+    amountReceived: 0,
+  });
+  expect(await f.client.paymentControl.cancel(f.ctx, scope)).toMatchObject({
+    outcome: "canceled",
+  });
+  expect(
+    f.stripe
+      .writes()
+      .filter((call) => call.path.endsWith("/confirm"))
+      .map((call) => call.path),
+  ).toEqual([`/v1/payment_intents/${paymentIntentId}/confirm`]);
+  expect(f.stripe.intents.get(paymentIntentId)!.status).toBe("canceled");
+});
+
+it("recovers a prepared payment whose response was lost by replaying the same key", async () => {
+  const f = await fixture();
+  const opts = { ...guest, idempotencyKey: "purchase_14dec:prepare:lost" };
+  f.stripe.loseNextResponse();
+  await expect(f.client.paymentControl.prepare(f.ctx, opts)).rejects.toThrow();
+  expect(await f.client.paymentControl.prepare(f.ctx, opts)).toMatchObject({
+    paymentIntentId: "pi_test_1",
+  });
+  expect(f.stripe.intents.size).toBe(1);
+});
+
+it("prepares for a fixed price and binds a V2 buyer account it owns", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await f.client.paymentControl.prepare(f.ctx, {
     userId: "buyer",
     customerAccount: "acct_buyer",
     stripePriceId: "price_fixed",
-    confirmationTokenId: "ctoken_succeeds",
     idempotencyKey: "buyer:1",
-    notAfter: Date.now() + 60_000,
-    paymentMethods: "automatic",
-    returnUrl: "https://app.example/checkout/return",
   });
-  expect(result.status).toBe("succeeded");
-  const create = f.stripe.writes()[0];
-  expect(Object.fromEntries(create.params)).toMatchObject({
+  expect(Object.fromEntries(f.stripe.writes()[0].params)).toMatchObject({
     amount: "900",
     currency: "usd",
     customer_account: "acct_buyer",
-    "automatic_payment_methods[enabled]": "true",
-    return_url: "https://app.example/checkout/return",
+    "allowed_payment_method_types[0]": "card",
     "metadata[userId]": "buyer",
     "metadata[stripePriceId]": "price_fixed",
     "metadata[stripeProductId]": "prod_fixed",
   });
+  expect(
+    await f.client.paymentControl.confirm(f.ctx, {
+      userId: "buyer",
+      customerAccount: "acct_buyer",
+      paymentIntentId,
+      confirmationTokenId: "ctoken_succeeds",
+    }),
+  ).toMatchObject({ status: "succeeded" });
 });
 
 it.each([
@@ -216,30 +320,50 @@ it.each([
   ["a zero amount", { amount: 0 }],
   ["a fractional amount", { amount: 9.5 }],
   ["an invalid currency", { currency: "US Dollars" }],
-  ["a non-token confirmation", { confirmationTokenId: "pm_card_visa" }],
   ["a price and an amount together", { stripePriceId: "price_fixed" }],
-  ["an invalid deadline", { notAfter: Number.NaN }],
-  ["automatic methods without a return URL", { paymentMethods: "automatic" }],
   ["a missing idempotency key", { idempotencyKey: undefined }],
-])("rejects %s before any provider write", async (_name, override) => {
+])(
+  "refuses to prepare %s before any provider write",
+  async (_name, override) => {
+    const f = await fixture();
+    await expect(
+      f.client.paymentControl.prepare(f.ctx, {
+        ...guest,
+        idempotencyKey: "invalid",
+        ...override,
+      } as never),
+    ).rejects.toThrow();
+    expect(f.stripe.writes()).toEqual([]);
+  },
+);
+
+it.each([
+  ["a non-token confirmation", { confirmationTokenId: "pm_card_visa" }],
+  ["an invalid deadline", { notAfter: Number.NaN }],
+  ["another owner", { userId: "someone-else" }],
+  ["a foreign buyer account", { customerAccount: "acct_buyer" }],
+])("refuses to confirm with %s", async (_name, override) => {
   const f = await fixture();
+  const { paymentIntentId } = await prepared(f);
   await expect(
     f.client.paymentControl.confirm(f.ctx, {
-      ...guest,
+      userId: guest.userId,
+      paymentIntentId,
       confirmationTokenId: "ctoken_succeeds",
-      idempotencyKey: "invalid",
       ...override,
     } as never),
   ).rejects.toThrow();
-  expect(f.stripe.writes()).toEqual([]);
+  expect(f.stripe.writes()).toHaveLength(1);
+  expect(f.stripe.intents.get(paymentIntentId)!.status).toBe(
+    "requires_payment_method",
+  );
 });
 
 it("protects component ownership metadata from host-supplied keys", async () => {
   const f = await fixture();
-  await f.client.paymentControl.confirm(f.ctx, {
+  await f.client.paymentControl.prepare(f.ctx, {
     ...guest,
     metadata: { userId: "forged", bsSplit: "forged", type: "day_purchase" },
-    confirmationTokenId: "ctoken_succeeds",
     idempotencyKey: "forged",
   });
   const params = f.stripe.writes()[0].params;
@@ -262,7 +386,7 @@ it("AC-001 cancels an unconfirmed payment and treats a second cancel as a no-op"
       reason: "abandoned",
     }),
   ).toEqual({ paymentIntentId, outcome: "canceled", status: "canceled" });
-  const cancel = f.stripe.writes()[1];
+  const cancel = f.stripe.writes()[2];
   expect(cancel.path).toBe(`/v1/payment_intents/${paymentIntentId}/cancel`);
   expect(cancel.params.get("cancellation_reason")).toBe("abandoned");
 
@@ -272,7 +396,7 @@ it("AC-001 cancels an unconfirmed payment and treats a second cancel as a no-op"
     status: "canceled",
   });
   // The second cancel only reads; it never writes to the provider again.
-  expect(f.stripe.writes()).toHaveLength(2);
+  expect(f.stripe.writes()).toHaveLength(3);
 });
 
 it("AC-001 cancels a declined attempt so it can never be confirmed later", async () => {
@@ -315,6 +439,7 @@ it("leaves a succeeded payment alone without a provider write", async () => {
   ).toMatchObject({ outcome: "succeeded", status: "succeeded" });
   expect(f.stripe.writes().map((call) => call.path)).toEqual([
     "/v1/payment_intents",
+    `/v1/payment_intents/${paid.paymentIntentId}/confirm`,
   ]);
 });
 
@@ -343,9 +468,12 @@ it("cancels a processing payment when Stripe allows it, and reports not_cancelab
     status: "canceled",
   });
   // Both were attempted at the provider; neither was assumed.
-  expect(f.stripe.writes().map((call) => call.path)).toEqual([
-    "/v1/payment_intents",
-    "/v1/payment_intents",
+  expect(
+    f.stripe
+      .writes()
+      .map((call) => call.path)
+      .filter((path) => path.endsWith("/cancel")),
+  ).toEqual([
     `/v1/payment_intents/${card.paymentIntentId}/cancel`,
     `/v1/payment_intents/${delayed.paymentIntentId}/cancel`,
   ]);
@@ -373,7 +501,7 @@ it("refuses to cancel or read another owner's payment or one without component o
       paymentIntentId: "not-a-payment",
     }),
   ).rejects.toThrow();
-  expect(f.stripe.writes()).toHaveLength(1);
+  expect(f.stripe.writes()).toHaveLength(2);
   expect(f.stripe.intents.get(paymentIntentId)!.status).toBe("requires_action");
 });
 
@@ -392,7 +520,7 @@ it("AC-003 reads the live provider state of a payment it created", async () => {
     amount: 900,
     amountReceived: 900,
     currency: "usd",
-    latestChargeId: "ch_test_1",
+    latestChargeId: "ch_pi_test_1",
     createdAt: 1_800_000_000_000,
     livemode: false,
     metadata: { purchaseId: "purchase_14dec", type: "day_purchase" },
@@ -432,13 +560,18 @@ it("AC-003 reads the live provider state of a payment it created", async () => {
 
 it("AC-003 binds a buyer-account payment to its V2 account", async () => {
   const f = await fixture();
-  const { paymentIntentId } = await f.client.paymentControl.confirm(f.ctx, {
+  const { paymentIntentId } = await f.client.paymentControl.prepare(f.ctx, {
     userId: "buyer",
     customerAccount: "acct_buyer",
     amount: 900,
     currency: "usd",
-    confirmationTokenId: "ctoken_processing",
     idempotencyKey: "buyer:processing",
+  });
+  await f.client.paymentControl.confirm(f.ctx, {
+    userId: "buyer",
+    customerAccount: "acct_buyer",
+    paymentIntentId,
+    confirmationTokenId: "ctoken_processing",
   });
   expect(
     await f.client.paymentControl.getState(f.ctx, {

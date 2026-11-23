@@ -39,8 +39,10 @@ export function createStripeTestLayer(key: string) {
   const calls: ProviderCall[] = [];
   /** Run before the next cancel/expire is applied, to model a racing confirmation. */
   let beforeWrite: (() => void) | undefined;
-  /** Apply the next request at the provider, then drop its response. */
+  /** Apply the next write at the provider, then drop its response. */
   let loseNextResponse = false;
+  /** Drop the next write before it reaches the provider. */
+  let failNextRequest = false;
   let sequence = 0;
 
   const error = (status: number, body: Record<string, unknown>) => ({
@@ -59,34 +61,56 @@ export function createStripeTestLayer(key: string) {
     });
 
   function createIntent(params: URLSearchParams) {
-    const token = params.get("confirmation_token") ?? "";
-    const outcome = TOKEN_OUTCOMES[token];
-    if (params.get("confirm") !== "true" || !outcome)
+    if (params.has("confirm") || params.has("confirmation_token"))
       return error(400, {
         type: "invalid_request_error",
-        message: "Unknown confirmation token.",
+        message: "Server-gated payments are created unconfirmed.",
       });
     const metadata: Record<string, string> = {};
     for (const [name, value] of params)
       if (name.startsWith("metadata["))
         metadata[name.slice("metadata[".length, -1)] = value;
     const id = `pi_test_${++sequence}`;
-    const status = outcome === "declined" ? "requires_payment_method" : outcome;
     const intent: Intent = {
-      cancelableWhileProcessing: token === "ctoken_processing_cancelable",
       id,
       object: "payment_intent",
-      status,
+      status: "requires_payment_method",
       amount: Number(params.get("amount")),
-      amount_received:
-        status === "succeeded" ? Number(params.get("amount")) : 0,
+      amount_received: 0,
       currency: params.get("currency"),
       customer_account: params.get("customer_account"),
       client_secret: `${id}_secret_test`,
       created: 1_800_000_000,
       canceled_at: null,
       cancellation_reason: null,
-      latest_charge: status === "succeeded" ? `ch_test_${sequence}` : null,
+      latest_charge: null,
+      last_payment_error: null,
+      livemode: false,
+      metadata,
+    };
+    intents.set(id, intent);
+    return { status: 200, body: intent };
+  }
+
+  function confirmIntent(intent: Intent, params: URLSearchParams) {
+    const token = params.get("confirmation_token") ?? "";
+    const outcome = TOKEN_OUTCOMES[token];
+    if (!outcome)
+      return error(400, {
+        type: "invalid_request_error",
+        message: "Unknown confirmation token.",
+      });
+    if (
+      intent.status !== "requires_payment_method" &&
+      intent.status !== "requires_confirmation"
+    )
+      return unexpected(intent, "payment_intent");
+    const status = outcome === "declined" ? "requires_payment_method" : outcome;
+    Object.assign(intent, {
+      status,
+      cancelableWhileProcessing: token === "ctoken_processing_cancelable",
+      amount_received: status === "succeeded" ? intent.amount : 0,
+      latest_charge: status === "succeeded" ? `ch_${intent.id}` : null,
       last_payment_error:
         outcome === "declined"
           ? {
@@ -96,10 +120,7 @@ export function createStripeTestLayer(key: string) {
               message: "Your card was declined.",
             }
           : null,
-      livemode: false,
-      metadata,
-    };
-    intents.set(id, intent);
+    });
     if (outcome === "declined")
       return error(402, {
         type: "card_error",
@@ -143,7 +164,11 @@ export function createStripeTestLayer(key: string) {
     let match: RegExpMatchArray | null;
     if (method === "POST" && path === "/v1/payment_intents")
       return createIntent(params);
-    if ((match = path.match(/^\/v1\/payment_intents\/([^/]+)(\/cancel)?$/))) {
+    if (
+      (match = path.match(
+        /^\/v1\/payment_intents\/([^/]+)(\/cancel|\/confirm)?$/,
+      ))
+    ) {
       const intent = intents.get(match[1]);
       if (!intent)
         return error(404, {
@@ -152,7 +177,10 @@ export function createStripeTestLayer(key: string) {
           message: "No such payment_intent.",
         });
       if (method === "GET" && !match[2]) return { status: 200, body: intent };
-      if (method === "POST" && match[2]) return cancelIntent(intent, params);
+      if (method === "POST" && match[2] === "/cancel")
+        return cancelIntent(intent, params);
+      if (method === "POST" && match[2] === "/confirm")
+        return confirmIntent(intent, params);
     }
     if (
       (match = path.match(/^\/v1\/checkout\/sessions\/([^/]+)(\/expire)?$/))
@@ -218,6 +246,10 @@ export function createStripeTestLayer(key: string) {
       version: headers.get("Stripe-Version"),
       params,
     });
+    if (failNextRequest && method === "POST") {
+      failNextRequest = false;
+      throw new TypeError("network unreachable");
+    }
     const replayKey = idempotencyKey && `${pathname}:${idempotencyKey}`;
     const result =
       (replayKey && replays.get(replayKey)) || route(method, pathname, params);
@@ -226,7 +258,7 @@ export function createStripeTestLayer(key: string) {
         status: result.status,
         body: JSON.parse(JSON.stringify(result.body)),
       });
-    if (loseNextResponse) {
+    if (loseNextResponse && method === "POST") {
       loseNextResponse = false;
       throw new TypeError("network connection lost");
     }
@@ -275,6 +307,9 @@ export function createStripeTestLayer(key: string) {
     },
     loseNextResponse() {
       loseNextResponse = true;
+    },
+    failNextRequest() {
+      failNextRequest = true;
     },
     raceNextWrite(change: () => void) {
       beforeWrite = change;

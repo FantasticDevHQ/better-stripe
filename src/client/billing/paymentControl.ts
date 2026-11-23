@@ -32,24 +32,37 @@ export type ServerPaymentEconomics =
   | { amount: number; currency: string; stripePriceId?: never }
   | { stripePriceId: string; amount?: never; currency?: never };
 
-export type ConfirmPaymentIntentOptions = IntentScope &
-  ServerPaymentEconomics & {
-    /** `ctoken_…` from Stripe.js `createConfirmationToken`. */
-    confirmationTokenId: string;
-    /**
-     * Host deadline for a new submission, in Unix milliseconds. Checked before
-     * and immediately before the provider request; later calls are refused
-     * without contacting Stripe. To recover an attempt the host already
-     * submitted (for example after a lost response), retry it with the same
-     * `idempotencyKey` and options but without `notAfter`; Stripe replays the
-     * original result.
-     */
-    notAfter?: number;
-    receiptEmail?: string;
-    /** Card-only by default. `automatic` requires `returnUrl` for redirect methods. */
-    paymentMethods?: "card" | "automatic";
-    returnUrl?: string;
-  };
+export type PreparePaymentIntentOptions = IntentScope &
+  ServerPaymentEconomics & { receiptEmail?: string };
+
+export type PreparedPayment = {
+  paymentIntentId: string;
+  status: PaymentIntentStatus;
+  /** Minor units. */
+  amount: number;
+  currency: string;
+};
+
+/** Host-authorized selectors of a payment the component created. */
+export type PaymentIntentOwnerOptions = {
+  userId: string;
+  paymentIntentId: string;
+  /** When supplied, the V2 buyer account must belong to `userId` and match the payment. */
+  customerAccount?: string;
+};
+
+export type ConfirmPaymentIntentOptions = PaymentIntentOwnerOptions & {
+  /** `ctoken_…` from Stripe.js `createConfirmationToken`. */
+  confirmationTokenId: string;
+  /**
+   * Host deadline, in Unix milliseconds. Checked before any provider request
+   * and again immediately before the confirmation; a later call is refused
+   * without contacting Stripe. There is no way to confirm after it: recover
+   * an uncertain attempt with `getState` and `cancel` on the prepared ID.
+   */
+  notAfter?: number;
+  returnUrl?: string;
+};
 
 export type PaymentErrorSummary = {
   type: string;
@@ -68,14 +81,6 @@ export type ServerConfirmedPayment = {
   clientSecret?: string;
   /** Present when the confirmation attempt failed (for example a decline). */
   lastPaymentError?: PaymentErrorSummary;
-};
-
-/** Host-authorized selectors of a payment the component created. */
-export type PaymentIntentOwnerOptions = {
-  userId: string;
-  paymentIntentId: string;
-  /** When supplied, the V2 buyer account must belong to `userId` and match the payment. */
-  customerAccount?: string;
 };
 
 export type CancelPaymentIntentOptions = PaymentIntentOwnerOptions & {
@@ -177,13 +182,12 @@ function refuseIfLate(notAfter: number | undefined) {
     );
 }
 
-function validateConfirmation(opts: ConfirmPaymentIntentOptions) {
+function validatePreparation(opts: PreparePaymentIntentOptions) {
   const hasAmount = opts.amount !== undefined || opts.currency !== undefined;
   const hasPrice = opts.stripePriceId !== undefined;
   if (
     typeof opts.userId !== "string" ||
     !opts.userId ||
-    !selector(opts.confirmationTokenId, CONFIRMATION_TOKEN_ID) ||
     hasAmount === hasPrice ||
     (hasAmount &&
       (!Number.isSafeInteger(opts.amount) ||
@@ -191,85 +195,63 @@ function validateConfirmation(opts: ConfirmPaymentIntentOptions) {
         typeof opts.currency !== "string" ||
         !CURRENCY.test(opts.currency))) ||
     (hasPrice &&
-      (typeof opts.stripePriceId !== "string" || !opts.stripePriceId)) ||
-    (opts.notAfter !== undefined && !Number.isFinite(opts.notAfter)) ||
-    (opts.paymentMethods !== undefined &&
-      opts.paymentMethods !== "card" &&
-      opts.paymentMethods !== "automatic") ||
-    (opts.paymentMethods === "automatic" && !opts.returnUrl) ||
-    (opts.returnUrl !== undefined && typeof opts.returnUrl !== "string")
+      (typeof opts.stripePriceId !== "string" || !opts.stripePriceId))
   )
     throwStripeError(
       "INVALID_CONFIGURATION",
-      "Server confirmation needs a user, a confirmation token, either a positive integer amount with a currency or a price, and a return URL for automatic payment methods.",
+      "A payment needs a user and either a positive integer amount with a currency or a price.",
     );
 }
 
 /**
- * Create and confirm a PaymentIntent on the server from a Stripe.js
- * ConfirmationToken. No PaymentIntent or client secret exists before the host
- * decides the payment may proceed, so nothing payable outlives the host's hold.
+ * Create an unconfirmed, card-only PaymentIntent for a server-priced amount.
+ * No client secret is returned, so the browser cannot pay it; only
+ * `confirmPaymentIntent` on the server can. Persist the returned ID with the
+ * host's hold before confirming.
  */
-export async function confirmPaymentIntent(
+export async function preparePaymentIntent(
   stripe: Stripe,
   component: Component,
   ctx: RunCtx,
-  opts: ConfirmPaymentIntentOptions,
-): Promise<ServerConfirmedPayment> {
-  validateConfirmation(opts);
-  refuseIfLate(opts.notAfter);
+  opts: PreparePaymentIntentOptions,
+): Promise<PreparedPayment> {
+  validatePreparation(opts);
   const request = await authorizeIntentScope(component, ctx, opts);
   const economics =
     opts.stripePriceId !== undefined
       ? await resolveOneTimePrice(stripe, opts.stripePriceId)
       : { amount: opts.amount!, currency: opts.currency! };
-  refuseIfLate(opts.notAfter);
-  let intent: Stripe.PaymentIntent;
-  try {
-    intent = await stripe.paymentIntents.create(
-      {
-        amount: economics.amount,
-        currency: economics.currency,
-        confirm: true,
-        confirmation_token: opts.confirmationTokenId,
-        customer_account: opts.customerAccount,
-        receipt_email: opts.receiptEmail,
-        return_url: opts.returnUrl,
-        ...(opts.paymentMethods === "automatic"
-          ? { automatic_payment_methods: { enabled: true } }
-          : { allowed_payment_method_types: ["card" as const] }),
-        metadata: {
-          ...stripReservedMetadata(opts.metadata),
-          userId: opts.userId,
-          ...("stripePriceId" in economics
-            ? {
-                stripePriceId: economics.stripePriceId,
-                stripeProductId: economics.stripeProductId,
-              }
-            : {}),
-        },
+  const intent = await stripe.paymentIntents.create(
+    {
+      amount: economics.amount,
+      currency: economics.currency,
+      customer_account: opts.customerAccount,
+      receipt_email: opts.receiptEmail,
+      allowed_payment_method_types: ["card"],
+      metadata: {
+        ...stripReservedMetadata(opts.metadata),
+        userId: opts.userId,
+        ...("stripePriceId" in economics
+          ? {
+              stripePriceId: economics.stripePriceId,
+              stripeProductId: economics.stripeProductId,
+            }
+          : {}),
       },
-      request,
-    );
-  } catch (error) {
-    // A declined confirmation still creates the PaymentIntent. Report it so the
-    // host can release or cancel it; no client secret leaves the server.
-    const failed = providerError(error);
-    const payment = failed.payment_intent;
-    if (
-      failed.type !== "StripeCardError" ||
-      !payment ||
-      !selector(payment.id, PAYMENT_INTENT_ID)
-    )
-      throw error;
-    return {
-      paymentIntentId: payment.id,
-      status: qualify(payment.status),
-      ...(payment.last_payment_error
-        ? { lastPaymentError: errorSummary(payment.last_payment_error) }
-        : {}),
-    };
-  }
+    },
+    request,
+  );
+  return {
+    paymentIntentId: intent.id,
+    status: qualify(intent.status),
+    amount: intent.amount,
+    currency: intent.currency,
+  };
+}
+
+function confirmationResult(
+  intent: Stripe.PaymentIntent,
+): ServerConfirmedPayment {
   const status = qualify(intent.status);
   if (status === "requires_action" && !intent.client_secret)
     throw new Error("Stripe did not return a payment secret.");
@@ -283,6 +265,67 @@ export async function confirmPaymentIntent(
       ? { lastPaymentError: errorSummary(intent.last_payment_error) }
       : {}),
   };
+}
+
+/**
+ * Confirm a prepared payment on the server from a Stripe.js ConfirmationToken,
+ * only while `notAfter` has not passed. A payment that is already in flight or
+ * terminal is reported, never confirmed again. A decline is reported with
+ * `lastPaymentError`; the same payment can be confirmed again with a new token.
+ */
+export async function confirmPaymentIntent(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: ConfirmPaymentIntentOptions,
+): Promise<ServerConfirmedPayment> {
+  const token = opts.confirmationTokenId;
+  const notAfter = opts.notAfter;
+  const returnUrl = opts.returnUrl;
+  if (
+    !selector(token, CONFIRMATION_TOKEN_ID) ||
+    (notAfter !== undefined && !Number.isFinite(notAfter)) ||
+    (returnUrl !== undefined && (typeof returnUrl !== "string" || !returnUrl))
+  )
+    throwStripeError(
+      "INVALID_CONFIGURATION",
+      "Confirmation needs a ConfirmationToken ID and a finite deadline.",
+    );
+  refuseIfLate(notAfter);
+  const intent = await retrieveOwnedPayment(stripe, component, ctx, opts);
+  const status = qualify(intent.status);
+  if (
+    status !== "requires_payment_method" &&
+    status !== "requires_confirmation"
+  )
+    return confirmationResult(intent);
+  refuseIfLate(notAfter);
+  try {
+    return confirmationResult(
+      await stripe.paymentIntents.confirm(
+        intent.id,
+        {
+          confirmation_token: token,
+          ...(returnUrl ? { return_url: returnUrl } : {}),
+        },
+        { idempotencyKey: `bs-confirm:${intent.id}:${token}` },
+      ),
+    );
+  } catch (error) {
+    // A decline leaves the PaymentIntent awaiting a new payment method. Report
+    // it; no client secret leaves the server.
+    const failed = providerError(error);
+    const payment = failed.payment_intent;
+    if (failed.type !== "StripeCardError" || payment?.id !== intent.id)
+      throw error;
+    return {
+      paymentIntentId: payment.id,
+      status: qualify(payment.status),
+      ...(payment.last_payment_error
+        ? { lastPaymentError: errorSummary(payment.last_payment_error) }
+        : {}),
+    };
+  }
 }
 
 async function retrieveOwnedPayment(
@@ -523,36 +566,4 @@ export async function expireCheckoutSession(
     status,
     paymentStatus: session.payment_status,
   };
-}
-
-/**
- * Server-gated payment control, reached as `betterStripe.paymentControl`.
- * Server-only: the host authenticates the caller and authorizes the payment
- * (for example, checks that its hold is still active) before each call.
- */
-export class PaymentControlClient {
-  constructor(
-    private readonly component: Component,
-    private readonly stripe: () => Stripe,
-  ) {}
-
-  /** Create and confirm a payment from a Stripe.js ConfirmationToken. */
-  confirm(ctx: RunCtx, opts: ConfirmPaymentIntentOptions) {
-    return confirmPaymentIntent(this.stripe(), this.component, ctx, opts);
-  }
-
-  /** Cancel a payment the component created, idempotently. */
-  cancel(ctx: RunCtx, opts: CancelPaymentIntentOptions) {
-    return cancelPaymentIntent(this.stripe(), this.component, ctx, opts);
-  }
-
-  /** Authoritative live state of a payment the component created. */
-  getState(ctx: RunCtx, opts: PaymentIntentOwnerOptions) {
-    return getPaymentIntentState(this.stripe(), this.component, ctx, opts);
-  }
-
-  /** Expire an open Checkout Session the component created, idempotently. */
-  expireCheckoutSession(ctx: RunCtx, opts: ExpireCheckoutSessionOptions) {
-    return expireCheckoutSession(this.stripe(), this.component, ctx, opts);
-  }
 }

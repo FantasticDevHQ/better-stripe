@@ -134,8 +134,11 @@ a client secret.
 - `confirmationTokenId` (required): the `ctoken_…` ID from Stripe.js.
 - `notAfter` (recommended), in Unix milliseconds. The component checks it before
   any provider request and again immediately before the confirmation. A late call
-  throws `PAYMENT_CONFIRMATION_REFUSED` without contacting Stripe. Choose a value
-  no earlier than the time your own mutation accepted as "sent".
+  throws `PAYMENT_CONFIRMATION_REFUSED` without contacting Stripe. The refusal
+  covers only that call: an earlier confirmation whose response you lost may
+  still have taken effect, so read the payment with `getState` before you release
+  the hold. Choose a value no earlier than the time your own mutation accepted as
+  "sent".
 - `returnUrl` (optional). Passed to Stripe for authentication flows that redirect.
 
 `confirm` only confirms a payment in `requires_payment_method` or
@@ -204,9 +207,11 @@ Release the hold on `canceled` or `already_canceled`.
 
 `not_cancelable` means the card payment is already `processing`: the buyer
 finished the payment and Stripe is settling it. Neither the component nor Stripe
-can stop it. For cards, Stripe resolves `processing` promptly to `succeeded` or
-`requires_payment_method` and sends the matching webhook. Keep the hold until
-then, and read it again with `getState` if you need to. Server-gated payments
+can stop it. Stripe moves it to `succeeded` or `requires_payment_method` and
+sends the matching webhook. Card payments rarely stay in `processing` for long,
+but Stripe does not document a guaranteed time bound, and neither does this
+package. Keep the hold until a terminal status arrives, and read it with
+`getState` if you need to. Server-gated payments
 are card-only because delayed methods, such as bank debits, can stay
 `processing` for days.
 

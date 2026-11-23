@@ -178,7 +178,7 @@ function refuseIfLate(notAfter: number | undefined) {
   if (notAfter !== undefined && Date.now() > notAfter)
     throwStripeError(
       "PAYMENT_CONFIRMATION_REFUSED",
-      "The payment deadline has passed. Nothing was charged.",
+      "The payment deadline has passed, so this confirmation was refused. An earlier confirmation of this payment may still have taken effect: read it with getState before releasing the hold.",
     );
 }
 

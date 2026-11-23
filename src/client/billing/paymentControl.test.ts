@@ -236,6 +236,36 @@ it("recovers a confirmation whose response was lost after Stripe applied it, wit
   expect(f.stripe.intents.size).toBe(1);
 });
 
+it("refuses a late retry of a lost successful confirmation without claiming nothing was charged", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await prepared(f);
+  const scope = { userId: guest.userId, paymentIntentId };
+  f.stripe.loseNextResponse();
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...scope,
+      confirmationTokenId: "ctoken_succeeds",
+      notAfter: Date.now() + 60_000,
+    }),
+  ).rejects.toThrow();
+  const late = f.client.paymentControl.confirm(f.ctx, {
+    ...scope,
+    confirmationTokenId: "ctoken_succeeds",
+    notAfter: Date.now() - 1,
+  });
+  await expect(late).rejects.toThrow(/confirmation was refused/);
+  await expect(late).rejects.toThrow(/getState/);
+  await expect(late).rejects.not.toThrow(/Nothing was charged/i);
+  // The payment did succeed: the host must keep the hold, not release it.
+  expect(await f.client.paymentControl.getState(f.ctx, scope)).toMatchObject({
+    status: "succeeded",
+    amountReceived: 900,
+  });
+  expect(await f.client.paymentControl.cancel(f.ctx, scope)).toMatchObject({
+    outcome: "succeeded",
+  });
+});
+
 it("recovers a confirmation that never reached Stripe, and no late payment can be made", async () => {
   const f = await fixture();
   const { paymentIntentId } = await prepared(f);

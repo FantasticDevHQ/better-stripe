@@ -28,15 +28,13 @@
 
 ## [0.120.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.5...v0.120.0) (2026-11-23)
 
-
 ### Features
 
-* **payments:** BTS-389 add server-gated payment confirmation, cancellation and state ([#510](https://github.com/FantasticDevHQ/better-stripe/issues/510)) ([2070271](https://github.com/FantasticDevHQ/better-stripe/commit/2070271bf98784a4d2df8b12b0506e8e3aa17931))
-
+- **payments:** add server-gated payment confirmation, cancellation and state ([#510](https://github.com/FantasticDevHQ/better-stripe/issues/510)) ([2070271](https://github.com/FantasticDevHQ/better-stripe/commit/2070271bf98784a4d2df8b12b0506e8e3aa17931))
 
 ### Bug Fixes
 
-* **worktree:** retain supervisor until shutdown completes ([#512](https://github.com/FantasticDevHQ/better-stripe/issues/512)) ([715fe3a](https://github.com/FantasticDevHQ/better-stripe/commit/715fe3aa0bcad5dda1255937afe47481e75fafe2))
+- **worktree:** retain supervisor until shutdown completes ([#512](https://github.com/FantasticDevHQ/better-stripe/issues/512)) ([715fe3a](https://github.com/FantasticDevHQ/better-stripe/commit/715fe3aa0bcad5dda1255937afe47481e75fafe2))
 
 ## [0.119.5](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.4...v0.119.5) (2026-11-21)
 

@@ -13,8 +13,10 @@ Server-gated payments are prepared and confirmed in two steps on the server.
 `prepare` creates an unconfirmed, card-only PaymentIntent and returns only its
 ID: no client secret leaves the server, so the browser cannot pay it. `confirm`
 is the only way it becomes payable, and it is refused once your deadline has
-passed. After the deadline, nothing can confirm it. You can only read it and
-cancel it.
+passed. After the deadline, the component sends no new confirmation; you can
+only read the payment and cancel it. A confirmation already sent before the
+deadline may still reach Stripe, so release a hold only on a cancel outcome
+that proves it (see [Cancel when the hold ends](#cancel-when-the-hold-ends)).
 
 A payment confirmed inside the hold can still be in flight afterwards. A
 `requires_action` payment stays payable through its authentication step until it
@@ -41,8 +43,10 @@ browser-chosen amounts, user IDs, or metadata.
    with the same amount and currency, and creates a ConfirmationToken.
 3. The browser sends the token ID (`ctoken_…`) to your action.
 4. Your action checks, in one mutation, that the hold is still active and records
-   that the payment was sent. If the hold has ended, it refuses. Nothing is
-   charged.
+   that the payment was sent. If the hold has ended, it refuses, and this call
+   confirms nothing. If an earlier confirmation of the same payment is
+   uncertain, recover its state first (see
+   [Recover an uncertain confirmation](#recover-an-uncertain-confirmation)).
 5. Your action calls `paymentControl.confirm` with the stored `paymentIntentId`,
    the token and a `notAfter` deadline.
 6. If the result is `requires_action`, the browser completes authentication with
@@ -163,14 +167,18 @@ If `confirm` fails without a result (for example the network dropped the
 response), you still have the `paymentIntentId` from `prepare`. Read it with
 `getState`:
 
-- `requires_payment_method` or `requires_confirmation`: the confirmation never
-  took effect. If the hold has ended, `cancel` it and release the hold. Otherwise
-  the buyer can try again before the deadline.
+- `requires_payment_method` or `requires_confirmation`: the confirmation has not
+  taken effect so far. A request that is still in transit could still reach
+  Stripe, so this read alone is not a reason to release the hold. If the hold has
+  ended, call `cancel`, and release the hold only when it reports `canceled` or
+  `already_canceled`. If it reports `succeeded` or `not_cancelable`, the earlier
+  confirmation took effect: keep the hold. While the hold lasts, the buyer can
+  try again before the deadline.
 - `requires_action`, `processing` or `succeeded`: it took effect inside the hold.
   Treat it as an in-flight payment.
 
-`confirm` is always refused after `notAfter`, so recovery can never confirm a
-payment late. A cancel also wins over a confirmation request that arrives at
+`confirm` is always refused after `notAfter`, so recovery never sends a late
+confirmation. A cancel also wins over a confirmation request that arrives at
 Stripe after it: Stripe does not confirm a cancelled PaymentIntent.
 
 ## Cancel when the hold ends

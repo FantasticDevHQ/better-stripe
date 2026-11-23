@@ -19,6 +19,8 @@ const TOKEN_OUTCOMES: Record<string, string> = {
   ctoken_succeeds: "succeeded",
   ctoken_needs_action: "requires_action",
   ctoken_processing: "processing",
+  // A delayed method Stripe still lets the merchant cancel while processing.
+  ctoken_processing_cancelable: "processing",
   ctoken_declined: "declined",
 };
 
@@ -37,6 +39,8 @@ export function createStripeTestLayer(key: string) {
   const calls: ProviderCall[] = [];
   /** Run before the next cancel/expire is applied, to model a racing confirmation. */
   let beforeWrite: (() => void) | undefined;
+  /** Apply the next request at the provider, then drop its response. */
+  let loseNextResponse = false;
   let sequence = 0;
 
   const error = (status: number, body: Record<string, unknown>) => ({
@@ -69,6 +73,7 @@ export function createStripeTestLayer(key: string) {
     const id = `pi_test_${++sequence}`;
     const status = outcome === "declined" ? "requires_payment_method" : outcome;
     const intent: Intent = {
+      cancelableWhileProcessing: token === "ctoken_processing_cancelable",
       id,
       object: "payment_intent",
       status,
@@ -109,7 +114,10 @@ export function createStripeTestLayer(key: string) {
   function cancelIntent(intent: Intent, params: URLSearchParams) {
     beforeWrite?.();
     beforeWrite = undefined;
-    if (!CANCELABLE.has(intent.status))
+    if (
+      !CANCELABLE.has(intent.status) &&
+      !(intent.status === "processing" && intent.cancelableWhileProcessing)
+    )
       return unexpected(intent, "payment_intent");
     Object.assign(intent, {
       status: "canceled",
@@ -159,6 +167,25 @@ export function createStripeTestLayer(key: string) {
       if (method === "GET" && !match[2]) return { status: 200, body: session };
       if (method === "POST" && match[2]) return expireSession(session);
     }
+    if (method === "POST" && path === "/v1/checkout/sessions") {
+      const id = `cs_test_${++sequence}`;
+      const metadata: Record<string, string> = {};
+      for (const [name, value] of params)
+        if (name.startsWith("metadata["))
+          metadata[name.slice("metadata[".length, -1)] = value;
+      const session: Session = {
+        id,
+        object: "checkout.session",
+        status: "open",
+        payment_status: "unpaid",
+        mode: params.get("mode"),
+        client_secret: `${id}_secret_test`,
+        url: null,
+        metadata,
+      };
+      sessions.set(id, session);
+      return { status: 200, body: session };
+    }
     if (method === "GET" && path === "/v1/prices/price_fixed")
       return {
         status: 200,
@@ -199,6 +226,10 @@ export function createStripeTestLayer(key: string) {
         status: result.status,
         body: JSON.parse(JSON.stringify(result.body)),
       });
+    if (loseNextResponse) {
+      loseNextResponse = false;
+      throw new TypeError("network connection lost");
+    }
     return new Response(JSON.stringify(result.body), {
       status: result.status,
       headers: { "Content-Type": "application/json", "Request-Id": "req_test" },
@@ -241,6 +272,9 @@ export function createStripeTestLayer(key: string) {
         customer_account: null,
         metadata: {},
       });
+    },
+    loseNextResponse() {
+      loseNextResponse = true;
     },
     raceNextWrite(change: () => void) {
       beforeWrite = change;

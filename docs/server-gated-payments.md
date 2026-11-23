@@ -8,8 +8,12 @@ cancelled, never captured.
 A hosted or embedded Checkout Session, or a PaymentIntent whose client secret is
 already in the browser, stays payable until it expires or is cancelled. Hiding it
 in the UI does not revoke it, and Checkout's shortest expiry is 30 minutes. With
-server confirmation, no PaymentIntent exists until your server confirms it, so
-nothing payable outlives a hold.
+server confirmation, no PaymentIntent exists until your server confirms it, so a
+hold that ends before confirmation leaves nothing payable. A payment confirmed
+inside the hold can still be in flight afterwards: a `requires_action` payment
+stays payable through its authentication step until it completes or you cancel
+it. Keep the hold for in-flight payments, and bound them with `cancel` (see
+[Cancel when the hold ends](#cancel-when-the-hold-ends)).
 
 | Method                                            | Purpose                                                                               |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -101,9 +105,13 @@ export const payForHold = action({
 - `notAfter` (optional), in Unix milliseconds. The component checks it before any
   provider request and again just before the PaymentIntent is created. A late
   call throws `PAYMENT_CONFIRMATION_REFUSED` without contacting Stripe. Choose a
-  value no earlier than the time your own mutation accepted as "sent".
+  value no earlier than the time your own mutation accepted as "sent". It gates
+  new submissions only; see [Recover a lost response](#recover-a-lost-response).
 - `paymentMethods`: `"card"` (default) or `"automatic"`. `"automatic"` requires
-  `returnUrl`, because redirect-based methods return through it.
+  `returnUrl`, because redirect-based methods return through it. For short
+  holds, prefer `"card"`: delayed methods such as bank debits can stay
+  `processing` for days, and Stripe cannot cancel every method while it is
+  processing.
 - `metadata`, `receiptEmail`. Keys starting with `bs` and the `userId` key are
   reserved for the component.
 
@@ -118,6 +126,19 @@ The result is `{ paymentIntentId, status, clientSecret?, lastPaymentError? }`:
   example a decline. It is reported instead of thrown. The PaymentIntent cannot
   be paid from the browser, because its secret never left the server. Cancel it,
   then let the buyer try again with a new ConfirmationToken and idempotency key.
+
+### Recover a lost response
+
+If the confirm call fails without a result (for example the network dropped the
+response), Stripe may still have created and confirmed the payment, and you do
+not have its ID. Persist each attempt (its `idempotencyKey` and options) before
+calling `confirm`. To recover, call `confirm` again for that same attempt, with
+the same `idempotencyKey` and options but without `notAfter`. Stripe replays the
+original result, including its `paymentIntentId`, and no second payment is
+created. Then keep, release or cancel the hold from that result. Only omit
+`notAfter` for an attempt your own records show was already submitted inside
+the hold; a new attempt after the deadline must keep it. Stripe keeps
+idempotent results for at least 24 hours, so recover promptly.
 
 ## Cancel when the hold ends
 
@@ -136,16 +157,22 @@ const result = await betterStripe.paymentControl.cancel(ctx, {
 | `canceled`         | This call cancelled the payment.                      | Release.               |
 | `already_canceled` | It was already cancelled. No provider write was made. | Release.               |
 | `succeeded`        | It was paid before the cancel took effect.            | Keep: it is paid.      |
-| `not_cancelable`   | It is `processing`; Stripe will settle it.            | Keep until it settles. |
+| `not_cancelable`   | It is `processing` and Stripe refused to cancel it.   | Keep until it settles. |
 
-The method reads the payment first and cancels only from a cancellable status.
+The method reads the payment first. It returns at once for a payment that is
+already cancelled or succeeded, and otherwise asks Stripe to cancel it. That
+includes `processing`, which Stripe can cancel for some payment methods. Card
+payments in `processing` cannot be cancelled and settle within seconds.
 If the payment changes state between that read and the cancel (for example the
 buyer finishes authentication), it reads again and reports what Stripe says. It
 never reports a paid payment as cancelled.
 
 A payment that is in flight before your deadline (`requires_action` or
-`processing`) is not cancelled by the deadline itself. Keep its hold, and cancel
-it only after a bounded grace period if it never reaches a terminal status.
+`processing`) is not cancelled by the deadline itself. Keep its hold, and call
+`cancel` after a bounded grace period if it has not reached a terminal status.
+Release the hold on `canceled` or `already_canceled`. On `not_cancelable`, keep
+the hold and read the payment again later with `getState` until it succeeds or
+fails.
 
 ## Read the authoritative state
 
@@ -190,10 +217,14 @@ to the provider status.
 ## Ownership and errors
 
 `cancel` and `getState` require the payment's `metadata.userId` to equal `userId`.
+The component writes that key on every PaymentIntent it creates and does not let
+host metadata override it. The check proves that the payment carries this
+ownership attribution. It does not prove that the component created it: a
+PaymentIntent created elsewhere on the same Stripe account with the same
+`metadata.userId` also matches. Pass only payment IDs from your own records.
 When you pass `customerAccount`, the account must belong to `userId` in the
 component and match the payment's V2 `customer_account`. A payment that does not
-match, or that the component did not create, throws `PAYMENT_NOT_FOUND` without
-revealing whether it exists. A Checkout Session not recorded for `userId` throws
+match throws `PAYMENT_NOT_FOUND` without revealing whether it exists. A Checkout Session not recorded for `userId` throws
 `CHECKOUT_NOT_FOUND`. Invalid selectors throw `INVALID_CONFIGURATION` before any
 provider request. Other provider errors propagate.
 
@@ -201,7 +232,9 @@ provider request. Other provider errors propagate.
 
 The package tests drive the real Stripe SDK and the real component database
 against a synthetic, stateful Stripe HTTP layer. They cover confirmation outcomes,
-deadline refusal, ownership, idempotent cancel and expiry, and a buyer who
-completes payment while the host is cancelling. They make no network requests.
+deadline refusal, recovery of a lost response after the deadline, ownership,
+idempotent cancel and expiry, processing payments Stripe can and cannot cancel,
+a Checkout Session created through the component and then expired, and a buyer
+who completes payment while the host is cancelling. They make no network requests.
 They do not replace a live Stripe test-mode run in your app with real Stripe.js
 and authentication.

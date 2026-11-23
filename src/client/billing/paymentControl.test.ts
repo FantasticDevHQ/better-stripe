@@ -138,6 +138,49 @@ it("refuses confirmation after the host deadline before any provider request", a
   expect(f.stripe.intents.size).toBe(0);
 });
 
+it("recovers a submitted attempt whose response was lost, after the deadline, without a second payment", async () => {
+  const f = await fixture();
+  const attempt = {
+    ...guest,
+    confirmationTokenId: "ctoken_needs_action",
+    idempotencyKey: "purchase_14dec:attempt:1",
+  };
+  f.stripe.loseNextResponse();
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...attempt,
+      notAfter: Date.now() + 60_000,
+    }),
+  ).rejects.toThrow();
+  // Stripe created it, but the host never learned its ID.
+  expect(f.stripe.intents.size).toBe(1);
+
+  // A new late submission is still refused without contacting Stripe.
+  const before = f.stripe.calls.length;
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...attempt,
+      notAfter: Date.now() - 1,
+    }),
+  ).rejects.toThrow(/deadline/);
+  expect(f.stripe.calls).toHaveLength(before);
+
+  // Recovery: the same attempt, same key, without a deadline replays it.
+  const recovered = await f.client.paymentControl.confirm(f.ctx, attempt);
+  expect(recovered).toMatchObject({
+    paymentIntentId: "pi_test_1",
+    status: "requires_action",
+  });
+  expect(f.stripe.intents.size).toBe(1);
+  // The host can now bound it.
+  expect(
+    await f.client.paymentControl.cancel(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId: recovered.paymentIntentId,
+    }),
+  ).toMatchObject({ outcome: "canceled" });
+});
+
 it("confirms inside the deadline and binds a V2 buyer account it owns", async () => {
   const f = await fixture();
   const result = await f.client.paymentControl.confirm(f.ctx, {
@@ -261,29 +304,54 @@ it("never reports a payment that succeeded first as canceled", async () => {
   ).toEqual({ paymentIntentId, outcome: "succeeded", status: "succeeded" });
 });
 
-it("leaves succeeded and processing payments alone and says so", async () => {
+it("leaves a succeeded payment alone without a provider write", async () => {
   const f = await fixture();
   const paid = await confirmed(f, "ctoken_succeeds");
-  const pending = await confirmed(f, "ctoken_processing");
   expect(
     await f.client.paymentControl.cancel(f.ctx, {
       userId: guest.userId,
       paymentIntentId: paid.paymentIntentId,
     }),
   ).toMatchObject({ outcome: "succeeded", status: "succeeded" });
-  expect(
-    await f.client.paymentControl.cancel(f.ctx, {
-      userId: guest.userId,
-      paymentIntentId: pending.paymentIntentId,
-    }),
-  ).toMatchObject({ outcome: "not_cancelable", status: "processing" });
   expect(f.stripe.writes().map((call) => call.path)).toEqual([
-    "/v1/payment_intents",
     "/v1/payment_intents",
   ]);
 });
 
-it("refuses to cancel or read another owner's payment or one the component did not create", async () => {
+it("cancels a processing payment when Stripe allows it, and reports not_cancelable when Stripe refuses", async () => {
+  const f = await fixture();
+  const card = await confirmed(f, "ctoken_processing");
+  const delayed = await confirmed(f, "ctoken_processing_cancelable");
+  expect(
+    await f.client.paymentControl.cancel(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId: card.paymentIntentId,
+    }),
+  ).toEqual({
+    paymentIntentId: card.paymentIntentId,
+    outcome: "not_cancelable",
+    status: "processing",
+  });
+  expect(
+    await f.client.paymentControl.cancel(f.ctx, {
+      userId: guest.userId,
+      paymentIntentId: delayed.paymentIntentId,
+    }),
+  ).toEqual({
+    paymentIntentId: delayed.paymentIntentId,
+    outcome: "canceled",
+    status: "canceled",
+  });
+  // Both were attempted at the provider; neither was assumed.
+  expect(f.stripe.writes().map((call) => call.path)).toEqual([
+    "/v1/payment_intents",
+    "/v1/payment_intents",
+    `/v1/payment_intents/${card.paymentIntentId}/cancel`,
+    `/v1/payment_intents/${delayed.paymentIntentId}/cancel`,
+  ]);
+});
+
+it("refuses to cancel or read another owner's payment or one without component ownership metadata", async () => {
   const f = await fixture();
   const { paymentIntentId } = await confirmed(f, "ctoken_needs_action");
   f.stripe.foreignIntent("pi_foreign");
@@ -403,26 +471,41 @@ it("fails closed on a status this API does not know", async () => {
 // AC-002: expire an open Checkout Session created through the component
 // ---------------------------------------------------------------------------
 
-it("AC-002 expires an open Checkout Session, records it, and treats a repeat as a no-op", async () => {
+it("AC-002 expires an open Checkout Session created through the component, records it, and treats a repeat as a no-op", async () => {
   const f = await fixture();
-  f.stripe.openSession("cs_test_hold");
-  await f.recordCheckout("cs_test_hold", "buyer");
-  const opts = { userId: "buyer", stripeSessionId: "cs_test_hold" };
+  const created = await f.client.createCheckoutSession(f.ctx, {
+    userId: "buyer",
+    stripePriceId: "price_fixed",
+    mode: "payment",
+    uiMode: "embedded",
+    returnUrl: "https://app.example/checkout/return",
+    idempotencyKey: "checkout:hold:1",
+  });
+  const stripeSessionId = created.stripeSessionId;
+  expect(created.clientSecret).toBeTruthy();
+  expect(await f.checkoutRow(stripeSessionId)).toMatchObject({
+    status: "open",
+    userId: "buyer",
+  });
+  const opts = { userId: "buyer", stripeSessionId };
 
   expect(
     await f.client.paymentControl.expireCheckoutSession(f.ctx, opts),
   ).toEqual({
-    stripeSessionId: "cs_test_hold",
+    stripeSessionId,
     outcome: "expired",
     status: "expired",
     paymentStatus: "unpaid",
   });
-  const [expire] = f.stripe.writes();
-  expect(expire.path).toBe("/v1/checkout/sessions/cs_test_hold/expire");
-  expect(await f.checkoutRow("cs_test_hold")).toMatchObject({
+  const writesAfterExpire = f.stripe.writes();
+  const expire = writesAfterExpire[writesAfterExpire.length - 1];
+  expect(expire.path).toBe(`/v1/checkout/sessions/${stripeSessionId}/expire`);
+  expect(f.stripe.sessions.get(stripeSessionId)!.status).toBe("expired");
+  expect(await f.checkoutRow(stripeSessionId)).toMatchObject({
     status: "expired",
     userId: "buyer",
   });
+  const writes = f.stripe.writes().length;
 
   expect(
     await f.client.paymentControl.expireCheckoutSession(f.ctx, opts),
@@ -430,7 +513,7 @@ it("AC-002 expires an open Checkout Session, records it, and treats a repeat as 
     outcome: "already_expired",
     status: "expired",
   });
-  expect(f.stripe.writes()).toHaveLength(1);
+  expect(f.stripe.writes()).toHaveLength(writes);
 });
 
 it("AC-002 reports a session that completed first and never expires it", async () => {

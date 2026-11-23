@@ -37,8 +37,12 @@ export type ConfirmPaymentIntentOptions = IntentScope &
     /** `ctoken_…` from Stripe.js `createConfirmationToken`. */
     confirmationTokenId: string;
     /**
-     * Host deadline, in Unix milliseconds. Checked immediately before the
-     * provider request; later calls are refused without contacting Stripe.
+     * Host deadline for a new submission, in Unix milliseconds. Checked before
+     * and immediately before the provider request; later calls are refused
+     * without contacting Stripe. To recover an attempt the host already
+     * submitted (for example after a lost response), retry it with the same
+     * `idempotencyKey` and options but without `notAfter`; Stripe replays the
+     * original result.
      */
     notAfter?: number;
     receiptEmail?: string;
@@ -83,7 +87,8 @@ export type PaymentCancellation = {
   /**
    * `canceled`: this call cancelled it. `already_canceled`: nothing to do.
    * `succeeded`: it was paid first and was left alone. `not_cancelable`: it is
-   * `processing`; Stripe settles it and a later read reports the result.
+   * `processing` with a payment method Stripe cannot cancel mid-flight; Stripe
+   * settles it and a later read reports the result.
    */
   outcome: "canceled" | "already_canceled" | "succeeded" | "not_cancelable";
   status: PaymentIntentStatus;
@@ -377,15 +382,17 @@ export async function getPaymentIntentState(
   return observe(await retrieveOwnedPayment(stripe, component, ctx, opts));
 }
 
+/** Terminal outcomes. `processing` counts only after Stripe refused a cancel. */
 function settled(
   paymentIntentId: string,
   status: PaymentIntentStatus,
+  refused = false,
 ): PaymentCancellation | undefined {
   if (status === "canceled")
     return { paymentIntentId, outcome: "already_canceled", status };
   if (status === "succeeded")
     return { paymentIntentId, outcome: "succeeded", status };
-  if (status === "processing")
+  if (status === "processing" && refused)
     return { paymentIntentId, outcome: "not_cancelable", status };
   return undefined;
 }
@@ -393,7 +400,8 @@ function settled(
 /**
  * Cancel a payment the component created. Idempotent: an already cancelled
  * payment is reported without a provider write, and a payment that succeeded
- * first is never reported as cancelled.
+ * first is never reported as cancelled. A `processing` payment is cancelled
+ * when Stripe allows it for its payment method, else reported `not_cancelable`.
  */
 export async function cancelPaymentIntent(
   stripe: Stripe,
@@ -424,7 +432,7 @@ export async function cancelPaymentIntent(
     const status = qualify(canceled.status);
     if (status === "canceled")
       return { paymentIntentId: id, outcome: "canceled", status };
-    const result = settled(id, status);
+    const result = settled(id, status, true);
     if (!result)
       throwStripeError(
         "STRIPE_API_ERROR",
@@ -435,9 +443,10 @@ export async function cancelPaymentIntent(
     if (providerError(error).code !== "payment_intent_unexpected_state")
       throw error;
     // It changed state between our read and the cancel (for example the buyer
-    // finished authentication). Report what Stripe now says.
+    // finished authentication), or Stripe cannot cancel its payment method
+    // while processing. Report what Stripe now says.
     const after = await stripe.paymentIntents.retrieve(id);
-    const result = settled(id, qualify(after.status));
+    const result = settled(id, qualify(after.status), true);
     if (!result) throw error;
     return result;
   }
@@ -483,12 +492,15 @@ export async function expireCheckoutSession(
       if (session.status === "open") throw error;
     }
   }
-  const status = session.status;
-  if (status !== "expired" && status !== "complete")
-    throwStripeError(
-      "STRIPE_API_ERROR",
-      `Checkout Session could not be expired from ${String(status)}.`,
-    );
+  const status: "expired" | "complete" =
+    session.status === "expired"
+      ? "expired"
+      : session.status === "complete"
+        ? "complete"
+        : throwStripeError(
+            "STRIPE_API_ERROR",
+            `Checkout Session could not be expired from ${String(session.status)}.`,
+          );
   if (row.status !== status)
     await runMutationOrThrow(
       ctx,

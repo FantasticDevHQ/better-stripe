@@ -765,6 +765,14 @@ package checks a supplied customer account's persisted `userId` ownership,
 protects its own attribution keys and strips the reserved `bs*` namespace. Never
 accept browser-provided amounts, user IDs or metadata as authorization.
 
+When your server must decide whether a payment may complete, for example while a
+short hold is active, use `paymentControl.confirm` to create and confirm the
+PaymentIntent on the server from a Stripe.js ConfirmationToken. Use
+`paymentControl.cancel`, `paymentControl.getState` and
+`paymentControl.expireCheckoutSession` to cancel a payment, read its live state,
+or expire an open Checkout Session, idempotently. See
+[Server-gated payments](server-gated-payments.md).
+
 Grant paid access only after the existing verified webhook/settlement flow.
 Creation and browser confirmation are not settlement proof. Customer-account
 operations require Accounts v2 support in the sandbox or merchant account; the

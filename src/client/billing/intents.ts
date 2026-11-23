@@ -25,7 +25,12 @@ export type CreateSetupIntentOptions = IntentScope & {
   /** Host records consent for the selected usage before provisioning. */
   consent: true;
 };
-async function authorize(component: Component, ctx: RunCtx, opts: IntentScope) {
+/** Validate the retry key and, when supplied, the authenticated owner of a V2 customer account. */
+export async function authorizeIntentScope(
+  component: Component,
+  ctx: RunCtx,
+  opts: IntentScope,
+) {
   if (typeof opts.idempotencyKey !== "string")
     throw new Error("An explicit idempotency key is required.");
   const request = idempotencyOptions(opts.idempotencyKey)!;
@@ -44,14 +49,12 @@ async function authorize(component: Component, ctx: RunCtx, opts: IntentScope) {
     );
   return request;
 }
-export async function createPaymentIntent(
+/** Provider economics of an active, positive, fixed one-time price. */
+export async function resolveOneTimePrice(
   stripe: Stripe,
-  component: Component,
-  ctx: RunCtx,
-  opts: CreatePaymentIntentOptions,
+  stripePriceId: string,
 ) {
-  const request = await authorize(component, ctx, opts);
-  const price = await stripe.prices.retrieve(opts.stripePriceId, {
+  const price = await stripe.prices.retrieve(stripePriceId, {
     expand: ["product"],
   });
   const product = price.product;
@@ -67,9 +70,24 @@ export async function createPaymentIntent(
     throw new Error(
       "Payment Intents require an active product and a positive fixed one-time price.",
     );
+  return {
+    amount: price.unit_amount!,
+    currency: price.currency,
+    stripePriceId: price.id,
+    stripeProductId: product.id,
+  };
+}
+export async function createPaymentIntent(
+  stripe: Stripe,
+  component: Component,
+  ctx: RunCtx,
+  opts: CreatePaymentIntentOptions,
+) {
+  const request = await authorizeIntentScope(component, ctx, opts);
+  const price = await resolveOneTimePrice(stripe, opts.stripePriceId);
   const intent = await stripe.paymentIntents.create(
     {
-      amount: price.unit_amount!,
+      amount: price.amount,
       currency: price.currency,
       customer_account: opts.customerAccount,
       receipt_email: opts.receiptEmail,
@@ -79,8 +97,8 @@ export async function createPaymentIntent(
       metadata: {
         ...stripReservedMetadata(opts.metadata),
         userId: opts.userId,
-        stripePriceId: price.id,
-        stripeProductId: product.id,
+        stripePriceId: price.stripePriceId,
+        stripeProductId: price.stripeProductId,
       },
     },
     request,
@@ -97,7 +115,7 @@ export async function createSetupIntent(
 ) {
   if (!opts.customerAccount)
     throw new Error("A customer account is required for setup.");
-  const request = await authorize(component, ctx, opts);
+  const request = await authorizeIntentScope(component, ctx, opts);
   if (opts.consent !== true)
     throw new Error("Explicit saved-card consent is required.");
   if (opts.usage !== "on_session" && opts.usage !== "off_session")

@@ -186,6 +186,7 @@ The [documentation index](docs/README.md) lists all guides. Start with:
 
 - [Configuration](docs/configuration.md), environment variables and API versions.
 - [Client API](docs/client-api.md), server methods and recovery workflows.
+- [Server-gated payments](docs/server-gated-payments.md), confirm, cancel and read a payment on the server, and expire Checkout Sessions, for short holds.
 - [Renewal attachment](docs/renewal-attachment.md), a single-attempt schedule attachment from a Convex Node action, limited to the documented sandbox profile.
 - [Webhooks and triggers](docs/webhooks.md), event setup and transactional callbacks.
 - [React API](docs/react-api.md) and [workflow examples](docs/react-workflows.md).

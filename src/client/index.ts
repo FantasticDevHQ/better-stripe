@@ -57,6 +57,7 @@ import { AffiliateRecoveryClient } from "./affiliateRecovery.js";
 export * from "./affiliateRecovery.js";
 import { CheckoutRequestClient } from "./checkoutRequests.js";
 export type { PreparedCheckoutSession } from "./billing/preparedCheckout.js";
+export type * from "./billing/paymentControl.js";
 import * as payoutSyncImpl from "./connect/payoutSync.js";
 export type {
   PayoutSyncOptions,
@@ -67,6 +68,7 @@ export * from "./payoutPolicy.js";
 import type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 export type { CreateCheckoutSessionOptions } from "./billing/checkoutOptions.js";
 import * as intentsImpl from "./billing/intents.js";
+import { PaymentControlClient } from "./billing/paymentControl.js";
 export type * from "./billing/intents.js";
 import {
   ClassOwnedActionRoot,
@@ -668,6 +670,10 @@ export class BetterStripe extends ClassOwnedActionRoot {
     );
   }
 
+  /** Server-gated confirm, cancel, payment state and Checkout expiry. */
+  get paymentControl() {
+    return new PaymentControlClient(this.component, () => this.stripe());
+  }
   // CHECKOUT METHODS
   get checkoutRequests() {
     return new CheckoutRequestClient(

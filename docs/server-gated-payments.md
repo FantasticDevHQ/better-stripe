@@ -133,8 +133,7 @@ export const payForHold = action({
   idempotency retention (keys can be pruned once they are at least 24 hours
   old), the retry returns the response Stripe saved for that key, if it saved
   one: the original PaymentIntent, or the original error, which you then
-  reconcile. If Stripe never executed the first request, the retry creates the
-  PaymentIntent for the first time. After a key may have been pruned, a retry
+  reconcile. If Stripe never executed the first request, the retry can execute it and create the PaymentIntent for the first time, or it can itself fail, for example with a validation error. After a key may have been pruned, a retry
   can create a second PaymentIntent, so reconcile first (for example in the
   Stripe Dashboard, by your `metadata`) before creating again. A
   duplicate unconfirmed PaymentIntent cannot be paid from the browser, because

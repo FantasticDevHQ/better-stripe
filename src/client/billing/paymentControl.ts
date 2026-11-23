@@ -55,10 +55,11 @@ export type ConfirmPaymentIntentOptions = PaymentIntentOwnerOptions & {
   /** `ctoken_…` from Stripe.js `createConfirmationToken`. */
   confirmationTokenId: string;
   /**
-   * Host deadline, in Unix milliseconds. Checked before any provider request
-   * and again immediately before the confirmation; a later call is refused
-   * without contacting Stripe. The component sends no new confirmation after
-   * it, but one sent earlier may still reach Stripe. Recover an uncertain
+   * Host deadline, in Unix milliseconds. Checked before the ownership read and again immediately
+   * before the confirmation request. Failing the first check makes no provider
+   * request; failing the second sends no confirmation. The deadline is not
+   * enforced atomically at Stripe: a request that passed the second check, or
+   * one sent earlier, may still reach Stripe afterwards. Recover an uncertain
    * attempt with `getState` and `cancel` on the prepared ID, and release a
    * hold only when `cancel` reports `canceled` or `already_canceled`.
    */
@@ -180,7 +181,7 @@ function refuseIfLate(notAfter: number | undefined) {
   if (notAfter !== undefined && Date.now() > notAfter)
     throwStripeError(
       "PAYMENT_CONFIRMATION_REFUSED",
-      "The payment deadline has passed, so this confirmation was refused. An earlier confirmation of this payment may still have taken effect: read it with getState before releasing the hold.",
+      "The payment deadline has passed, so this confirmation was refused. An earlier confirmation of this payment may still have taken effect: check it with getState, and release the hold only after cancel reports canceled or already_canceled.",
     );
 }
 
@@ -270,10 +271,13 @@ function confirmationResult(
 }
 
 /**
- * Confirm a prepared payment on the server from a Stripe.js ConfirmationToken,
- * only while `notAfter` has not passed. A payment that is already in flight or
- * terminal is reported, never confirmed again. A decline is reported with
- * `lastPaymentError`; the same payment can be confirmed again with a new token.
+ * Confirm a prepared payment on the server from a Stripe.js ConfirmationToken.
+ * `notAfter` is checked before the ownership read and immediately before the
+ * confirmation request. If the read observes an in-flight or terminal payment,
+ * the call returns it without sending a confirmation. The read and the
+ * confirmation are separate requests, so hosts must serialize attempts for one
+ * payment. A decline is reported with `lastPaymentError`; the same payment can
+ * be confirmed again with a new token.
  */
 export async function confirmPaymentIntent(
   stripe: Stripe,

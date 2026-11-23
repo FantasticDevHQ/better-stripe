@@ -190,7 +190,7 @@ it("refuses confirmation after the host deadline before any provider request", a
   );
 });
 
-it("never confirms an in-flight or finished payment twice", async () => {
+it("sends no confirmation for a payment observed in flight", async () => {
   const f = await fixture();
   const first = await confirmed(f, "ctoken_needs_action");
   const writes = f.stripe.writes().length;

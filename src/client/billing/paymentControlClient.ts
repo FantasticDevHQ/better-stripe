@@ -29,7 +29,7 @@ export class PaymentControlClient {
     return preparePaymentIntent(this.stripe(), this.component, ctx, opts);
   }
 
-  /** Confirm a prepared payment from a Stripe.js ConfirmationToken, before `notAfter`. */
+  /** Confirm a prepared payment from a Stripe.js ConfirmationToken; `notAfter` is checked before sending. */
   confirm(ctx: RunCtx, opts: ConfirmPaymentIntentOptions) {
     return confirmPaymentIntent(this.stripe(), this.component, ctx, opts);
   }

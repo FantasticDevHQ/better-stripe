@@ -129,11 +129,14 @@ export const payForHold = action({
 - `customerAccount` (optional). A V2 buyer account (`acct_…`) that must belong to
   `userId` in the component.
 - `idempotencyKey` (required). Reuse it only to retry the same preparation. If a
-  prepare response is lost, retry promptly with the same key: within Stripe's
+  prepare response is lost, retry promptly with the same key. Within Stripe's
   idempotency retention (keys can be pruned once they are at least 24 hours
-  old), Stripe replays the original PaymentIntent. After a key may have been
-  pruned, a retry can create a second PaymentIntent, so reconcile first (for
-  example in the Stripe Dashboard, by your `metadata`) before creating again. A
+  old), the retry returns the response Stripe saved for that key, if it saved
+  one: the original PaymentIntent, or the original error, which you then
+  reconcile. If Stripe never executed the first request, the retry creates the
+  PaymentIntent for the first time. After a key may have been pruned, a retry
+  can create a second PaymentIntent, so reconcile first (for example in the
+  Stripe Dashboard, by your `metadata`) before creating again. A
   duplicate unconfirmed PaymentIntent cannot be paid from the browser, because
   no client secret leaves the server, but you should still cancel it.
 - `metadata`, `receiptEmail`. Keys starting with `bs` and the `userId` key are

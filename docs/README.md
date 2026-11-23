@@ -23,6 +23,7 @@ guide for your integration.
 - [Captured Checkout payment observations](captured-checkout-payment.md), expanded provider evidence without fee or access authority.
 - [Subscription payment methods](subscription-payment-methods.md).
 - [SetupIntent recovery](setup-intent-recovery.md).
+- [Server-gated payments](server-gated-payments.md), server confirmation, idempotent cancel, live payment state, and Checkout expiry for short holds.
 - [Balance funding state](balance-funding-state.md) and [workflow](balance-funding-workflow.md).
 - [Metered billing guides](#metered-usage), all three models, package APIs, runnable examples and rollout.
 

@@ -33,7 +33,11 @@ export type ServerPaymentEconomics =
   | { stripePriceId: string; amount?: never; currency?: never };
 
 export type PreparePaymentIntentOptions = IntentScope &
-  ServerPaymentEconomics & { receiptEmail?: string };
+  ServerPaymentEconomics & {
+    receiptEmail?: string;
+    /** Require a server confirmation after any browser authentication. */
+    serverOnlyConfirmation?: boolean;
+  };
 
 export type PreparedPayment = {
   paymentIntentId: string;
@@ -52,8 +56,10 @@ export type PaymentIntentOwnerOptions = {
 };
 
 export type ConfirmPaymentIntentOptions = PaymentIntentOwnerOptions & {
-  /** `ctoken_…` from Stripe.js `createConfirmationToken`. */
+  /** `ctoken_…` from Stripe.js. Reuse the original token ID for continuation. */
   confirmationTokenId: string;
+  /** Continue a manual intent after Stripe.js has authenticated its attached card. */
+  afterAuthentication?: boolean;
   /**
    * Host deadline, in Unix milliseconds. Checked before the ownership read and again immediately
    * before the confirmation request. Failing the first check makes no provider
@@ -208,9 +214,9 @@ function validatePreparation(opts: PreparePaymentIntentOptions) {
 
 /**
  * Create an unconfirmed, card-only PaymentIntent for a server-priced amount.
- * No client secret is returned, so the browser cannot pay it; in this API only
- * `confirmPaymentIntent` on the server makes it payable. Persist the returned ID with the
- * host's hold before confirming.
+ * No client secret is returned. With `serverOnlyConfirmation`, Stripe requires
+ * server confirmation even after the browser receives a secret for authentication.
+ * Persist the returned ID with the host's hold before confirming.
  */
 export async function preparePaymentIntent(
   stripe: Stripe,
@@ -231,6 +237,9 @@ export async function preparePaymentIntent(
       customer_account: opts.customerAccount,
       receipt_email: opts.receiptEmail,
       allowed_payment_method_types: ["card"],
+      ...(opts.serverOnlyConfirmation === true
+        ? { confirmation_method: "manual" }
+        : {}),
       metadata: {
         ...stripReservedMetadata(opts.metadata),
         userId: opts.userId,
@@ -271,7 +280,8 @@ function confirmationResult(
 }
 
 /**
- * Confirm a prepared payment on the server from a Stripe.js ConfirmationToken.
+ * Confirm from a Stripe.js ConfirmationToken, or continue a manual payment
+ * after authentication using the card already attached at Stripe.
  * `notAfter` is checked before the ownership read and immediately before the
  * confirmation request. If the read observes an in-flight or terminal payment,
  * the call returns it without sending a confirmation. The read and the
@@ -286,6 +296,7 @@ export async function confirmPaymentIntent(
   opts: ConfirmPaymentIntentOptions,
 ): Promise<ServerConfirmedPayment> {
   const token = opts.confirmationTokenId;
+  const afterAuthentication = opts.afterAuthentication === true;
   const notAfter = opts.notAfter;
   const returnUrl = opts.returnUrl;
   if (
@@ -305,16 +316,26 @@ export async function confirmPaymentIntent(
     status !== "requires_confirmation"
   )
     return confirmationResult(intent);
+  const manual = intent.confirmation_method === "manual";
+  const awaitingContinuation =
+    manual &&
+    status === "requires_confirmation" &&
+    Boolean(intent.payment_method);
+  if (afterAuthentication !== awaitingContinuation)
+    return confirmationResult(intent);
   refuseIfLate(notAfter);
   try {
     return confirmationResult(
       await stripe.paymentIntents.confirm(
         intent.id,
         {
-          confirmation_token: token,
+          ...(afterAuthentication ? {} : { confirmation_token: token }),
+          ...(manual ? { use_stripe_sdk: true } : {}),
           ...(returnUrl ? { return_url: returnUrl } : {}),
         },
-        { idempotencyKey: `bs-confirm:${intent.id}:${token}` },
+        {
+          idempotencyKey: `bs-${afterAuthentication ? "reconfirm" : "confirm"}:${intent.id}:${token}`,
+        },
       ),
     );
   } catch (error) {

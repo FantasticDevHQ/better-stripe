@@ -79,6 +79,7 @@ export function createStripeTestLayer(key: string) {
       amount_received: 0,
       currency: params.get("currency"),
       customer_account: params.get("customer_account"),
+      confirmation_method: params.get("confirmation_method") ?? "automatic",
       client_secret: `${id}_secret_test`,
       created: 1_800_000_000,
       canceled_at: null,
@@ -94,7 +95,13 @@ export function createStripeTestLayer(key: string) {
 
   function confirmIntent(intent: Intent, params: URLSearchParams) {
     const token = params.get("confirmation_token") ?? "";
-    const outcome = TOKEN_OUTCOMES[token];
+    const outcome =
+      !token &&
+      intent.confirmation_method === "manual" &&
+      intent.status === "requires_confirmation" &&
+      intent.payment_method
+        ? "succeeded"
+        : TOKEN_OUTCOMES[token];
     if (!outcome)
       return error(400, {
         type: "invalid_request_error",

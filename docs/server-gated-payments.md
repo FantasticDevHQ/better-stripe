@@ -23,8 +23,10 @@ it, and release a hold only on a cancel outcome that proves it (see
 [Cancel when the hold ends](#cancel-when-the-hold-ends)).
 
 A payment confirmed inside the hold can still be in flight afterwards. A
-`requires_action` payment stays payable through its authentication step until it
-completes or you cancel it. Keep the hold for in-flight payments, attempt
+`requires_action` payment with automatic confirmation can complete during
+authentication. For server-only payments, authentication returns the payment to
+`requires_confirmation`, and the server must confirm it again. Keep the hold
+for in-flight payments, attempt
 cancellation with `cancel` when your grace period ends, and keep the hold if
 Stripe reports `succeeded` or `not_cancelable` (see
 [Cancel when the hold ends](#cancel-when-the-hold-ends)).
@@ -76,8 +78,17 @@ const result = await payForHold({
   holdId,
   confirmationTokenId: confirmationToken.id,
 });
-if (result.status === "requires_action")
-  await stripe.handleNextAction({ clientSecret: result.clientSecret });
+let status = result.status;
+if (result.status === "requires_action" && result.clientSecret) {
+  const next = await stripe.handleNextAction({
+    clientSecret: result.clientSecret,
+  });
+  if (next.error) return showError(next.error);
+  status = next.paymentIntent.status;
+  if (status === "requires_confirmation")
+    status = (await continuePaymentForHold({ holdId })).status;
+}
+// Render the payment status. Fulfillment still comes from verified webhooks.
 ```
 
 ```ts
@@ -140,6 +151,9 @@ export const payForHold = action({
   no client secret leaves the server, but you should still cancel it.
 - `metadata`, `receiptEmail`. Keys starting with `bs` and the `userId` key are
   reserved for the component.
+- `serverOnlyConfirmation: true` creates the intent with Stripe's manual
+  confirmation method. This requires a server confirmation even after Stripe.js
+  receives the client secret for authentication.
 
 The result is `{ paymentIntentId, status, amount, currency }`. It never includes
 a client secret.
@@ -147,7 +161,13 @@ a client secret.
 ### Confirm options
 
 - `userId`, `paymentIntentId` and, when you used one, `customerAccount`.
-- `confirmationTokenId` (required): the `ctoken_…` ID from Stripe.js.
+- `confirmationTokenId` (required): the `ctoken_…` ID from Stripe.js. For a
+  continuation, reuse the original attempt's token ID.
+- `afterAuthentication: true` continues an authenticated server-only payment
+  observed in `requires_confirmation`. Stripe uses the card already attached to
+  the intent. The token ID scopes retry idempotency and is omitted from the
+  Stripe request. An ordinary confirm leaves an attached card awaiting manual
+  confirmation alone.
 - `notAfter` (recommended), in Unix milliseconds. The component checks it before
   the ownership read and again immediately before the confirmation request, and
   throws `PAYMENT_CONFIRMATION_REFUSED` if either check fails. Failing the first
@@ -175,10 +195,46 @@ The result is `{ paymentIntentId, status, clientSecret?, lastPaymentError? }`:
   `requires_payment_method` is a reason to call `cancel`, not to release.
 - `requires_action`: the only status that returns `clientSecret`, for
   `stripe.handleNextAction`. Never persist or log it.
+- `requires_confirmation`: after successful authentication on a server-only
+  intent, call `confirm` again with `afterAuthentication: true`.
 - `requires_payment_method` with `lastPaymentError`: the attempt failed, for
   example a decline. It is reported instead of thrown. The buyer can try again
   with a new ConfirmationToken on the same `paymentIntentId`, while the hold
   lasts.
+
+### Migrate to server-only confirmation
+
+First deploy `continuePaymentForHold` as a continuation action that authenticates the buyer, loads the
+hold and its original confirmation attempt, and checks that the hold still
+allows that attempt to finish. Serialize this call with other confirmation
+attempts for the same hold. The browser should send only the hold ID to this
+action, including after an authentication redirect returns to your app.
+
+After a successful `stripe.handleNextAction`, call the continuation action
+when Stripe.js returns `requires_confirmation`. The server re-reads the
+PaymentIntent and uses the same ownership and deadline checks as the first
+confirmation:
+
+```ts
+const result = await betterStripe.paymentControl.confirm(ctx, {
+  userId,
+  paymentIntentId: hold.paymentIntentId,
+  confirmationTokenId: attempt.confirmationTokenId,
+  afterAuthentication: true,
+  notAfter: hold.expiresAt + GRACE_MS,
+});
+```
+
+Handle the server result before showing payment completion. The continuation
+uses a different Stripe idempotency key from the first confirmation. Reuse the
+same original token ID to retry a continuation whose result was lost.
+See [Stripe's manual confirmation lifecycle](https://docs.stripe.com/api/payment_intents/confirm).
+
+Then enable `serverOnlyConfirmation: true` on new preparations. Existing
+intents retain their original Stripe confirmation method, so continue to
+reconcile or cancel them by their original IDs. Use a fresh preparation
+idempotency key for each replacement payment, since changing confirmation
+mode changes the Stripe request parameters.
 
 ### Recover an uncertain confirmation
 
@@ -194,7 +250,8 @@ response), you still have the `paymentIntentId` from `prepare`. Read it with
   ended, call `cancel`, and release the hold only when it reports `canceled` or
   `already_canceled`. If it reports `succeeded` or `not_cancelable`, the earlier
   confirmation took effect: keep the hold. While the hold lasts, the buyer can
-  try again before the deadline.
+  try again before the deadline. For an authenticated server-only intent in
+  `requires_confirmation`, retry the continuation for the same attempt.
 - `requires_action`, `processing` or `succeeded`: a confirmation took effect.
   Because the deadline is checked before sending, not at Stripe, it may have
   taken effect just after the deadline. Treat it as an in-flight payment.

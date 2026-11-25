@@ -64,6 +64,77 @@ it("confirms a prepared payment on the server from a confirmation token", async 
   });
 });
 
+it("prepares a server-only PaymentIntent with Stripe manual confirmation", async () => {
+  const f = await fixture();
+  await f.client.paymentControl.prepare(f.ctx, {
+    ...guest,
+    idempotencyKey: "purchase_14dec:server-only",
+    serverOnlyConfirmation: true,
+  });
+  expect(f.stripe.writes()[0].params.get("confirmation_method")).toBe("manual");
+});
+
+it("reconfirms the authenticated card on the server without submitting the original token again", async () => {
+  const f = await fixture();
+  const { paymentIntentId } = await f.client.paymentControl.prepare(f.ctx, {
+    ...guest,
+    idempotencyKey: "purchase_14dec:authenticate",
+    serverOnlyConfirmation: true,
+  });
+  const opts = {
+    userId: guest.userId,
+    paymentIntentId,
+    confirmationTokenId: "ctoken_needs_action",
+  };
+  const continuation = { ...opts, afterAuthentication: true };
+  expect(await f.client.paymentControl.confirm(f.ctx, opts)).toMatchObject({
+    status: "requires_action",
+    clientSecret: `${paymentIntentId}_secret_test`,
+  });
+  expect(
+    await f.client.paymentControl.confirm(f.ctx, continuation),
+  ).toMatchObject({ status: "requires_action" });
+
+  // Model Stripe's state after the browser completes handleNextAction.
+  Object.assign(f.stripe.intents.get(paymentIntentId)!, {
+    status: "requires_confirmation",
+    payment_method: "pm_authenticated",
+  });
+  expect(await f.client.paymentControl.confirm(f.ctx, opts)).toEqual({
+    paymentIntentId,
+    status: "requires_confirmation",
+  });
+  expect(f.stripe.writes()).toHaveLength(2);
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...continuation,
+      notAfter: Date.now() - 1,
+    }),
+  ).rejects.toThrow(/deadline/);
+  await expect(
+    f.client.paymentControl.confirm(f.ctx, {
+      ...continuation,
+      userId: "other",
+    }),
+  ).rejects.toThrow();
+  expect(f.stripe.writes()).toHaveLength(2);
+  expect(await f.client.paymentControl.confirm(f.ctx, continuation)).toEqual({
+    paymentIntentId,
+    status: "succeeded",
+  });
+  const reconfirm = f.stripe.writes()[2];
+  expect(f.stripe.writes()[1].params.get("use_stripe_sdk")).toBe("true");
+  expect(reconfirm.path).toBe(`/v1/payment_intents/${paymentIntentId}/confirm`);
+  expect(reconfirm.idempotencyKey).not.toBe(
+    f.stripe.writes()[1].idempotencyKey,
+  );
+  expect(Object.fromEntries(reconfirm.params)).toEqual({
+    use_stripe_sdk: "true",
+  });
+  await f.client.paymentControl.confirm(f.ctx, continuation);
+  expect(f.stripe.writes()).toHaveLength(3);
+});
+
 it("returns the client secret only when the browser must complete an authentication step", async () => {
   const f = await fixture();
   expect(await confirmed(f, "ctoken_needs_action")).toEqual({

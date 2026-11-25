@@ -26,6 +26,13 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.121.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.120.0...v0.121.0) (2026-11-25)
+
+
+### Features
+
+* **payments:** BTS-391 add server-only payment confirmation ([#513](https://github.com/FantasticDevHQ/better-stripe/issues/513)) ([ccfa45f](https://github.com/FantasticDevHQ/better-stripe/commit/ccfa45f886fcc24eb443134a303466ca0b86a384))
+
 ## [0.120.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.119.5...v0.120.0) (2026-11-23)
 
 ### Features

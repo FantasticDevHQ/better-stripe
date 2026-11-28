@@ -82,7 +82,7 @@ test("invalid PR fails its own head status and receives actionable feedback", as
   assert.match(comment.data.body, /type\(scope\): description/);
 });
 
-test("a commit without a Linear reference fails with actionable feedback", async () => {
+test("valid PR metadata supplies the reference for a commit without a footer", async () => {
   const { calls, run } = fixture(
     valid,
     [],
@@ -91,12 +91,8 @@ test("a commit without a Linear reference fails with actionable feedback", async
       { sha: "deadbeef", commit: { message: "ci: tweak" }, parents: [{}] },
     ],
   );
-  assert.equal(await run(), false);
-  const comment = calls.find((call) => call.path === "/issues/65/comments");
-  assert.match(
-    comment.data.body,
-    /Commit deadbee "ci: tweak" has no ticket or issue reference/,
-  );
+  assert.equal(await run(), true);
+  assert.equal(calls.at(-1).data.state, "success");
 });
 
 test("merge commits are exempt from the commit rule", async () => {

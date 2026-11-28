@@ -211,7 +211,9 @@ function collectCommitTickets(commits) {
     if (commit.merge) continue;
     const message = commit.message ?? "";
     const subject = message.split(/\r?\n/, 1)[0];
-    const subjectTicket = subject.match(/ \(([A-Z][A-Z0-9]+-[1-9]\d*)\)\s*$/)?.[1];
+    const subjectTicket = subject.match(
+      / \(([A-Z][A-Z0-9]+-[1-9]\d*)\)\s*$/,
+    )?.[1];
     if (subjectTicket) tickets.add(subjectTicket);
     for (const id of declaredTickets(message)) tickets.add(id);
   }
@@ -287,9 +289,7 @@ export function validatePullRequest(
     if (matches.length === 1 && name === "Agent")
       errors.push(...agentErrors(matches[0].text));
     if (matches.length === 1 && name === "Summary")
-      errors.push(
-        ...linkageErrors(matches[0].text, title, commitTickets),
-      );
+      errors.push(...linkageErrors(matches[0].text, title, commitTickets));
     if (matches.length === 1 && name === "Evidence")
       errors.push(...uiEvidenceErrors(matches[0].text, files));
   }

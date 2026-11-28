@@ -83,10 +83,14 @@ test("invalid PR fails its own head status and receives actionable feedback", as
 });
 
 test("valid PR metadata supplies the reference for a commit without a footer", async () => {
-  const { calls, run } = fixture(valid, [], [
-    ...goodCommits,
-    { sha: "deadbeef", commit: { message: "ci: tweak" }, parents: [{}] },
-  ]);
+  const { calls, run } = fixture(
+    valid,
+    [],
+    [
+      ...goodCommits,
+      { sha: "deadbeef", commit: { message: "ci: tweak" }, parents: [{}] },
+    ],
+  );
   assert.equal(await run(), true);
   assert.equal(calls.at(-1).data.state, "success");
 });

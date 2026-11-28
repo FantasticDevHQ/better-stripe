@@ -26,6 +26,12 @@
 - Remove internal tracker references from public documentation and add a
   regression check that prevents their reintroduction.
 
+## [0.121.1](https://github.com/FantasticDevHQ/better-stripe/compare/v0.121.0...v0.121.1) (2026-11-28)
+
+### Continuous Integration
+
+- **standards:** OSS-54 inherit ticket linkage from the pull request ([#515](https://github.com/FantasticDevHQ/better-stripe/issues/515)) ([5097651](https://github.com/FantasticDevHQ/better-stripe/commit/50976510927cd951043554dd48561b220ce38ef5))
+
 ## [0.121.0](https://github.com/FantasticDevHQ/better-stripe/compare/v0.120.0...v0.121.0) (2026-11-25)
 
 ### Features
